@@ -30,7 +30,7 @@
 
 struct SCIP_ProbData
 {
-   SCIP*            origscip;           /* the original problem */
+   SCIP*            origprob;           /* the original problem */
    SCIP**           pricingprobs;       /* the array of pricing problems */
    int              npricingprobs;      /* the number of pricing problems */
    SCIP_CONS**      masterconss;        /* array of cons in the original problem that belong to the master problem */
@@ -101,7 +101,7 @@ SCIP_DECL_PROBTRANS(probtransGcg)
    assert(sourcedata != NULL);
    assert(targetdata != NULL);
 
-   (*targetdata)->origscip = sourcedata->origscip;        
+   (*targetdata)->origprob = sourcedata->origprob;        
 
    return SCIP_OKAY;
 }
@@ -125,8 +125,8 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    assert(probdata != NULL);
 
    /* free original problem */
-   SCIP_CALL( SCIPfreeTransform(probdata->origscip) );
-   SCIP_CALL( SCIPfree(probdata->origscip) );
+   SCIP_CALL( SCIPfreeTransform(probdata->origprob) );
+   SCIP_CALL( SCIPfree(probdata->origprob) );
 
    return SCIP_OKAY;
 }
@@ -174,17 +174,17 @@ SCIP_RETCODE SCIPcreateProbGcg(
    }
    
    /* initializing the scip data structure for the original problem */  
-   SCIP_CALL( SCIPcreate(&(probdata->origscip)) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(probdata->origscip) );
+   SCIP_CALL( SCIPcreate(&(probdata->origprob)) );
+   SCIP_CALL( SCIPincludeDefaultPlugins(probdata->origprob) );
  
    /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(probdata->origscip, "conflict/useprop", FALSE) ); 
-   SCIP_CALL( SCIPsetBoolParam(probdata->origscip, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(probdata->origscip, "conflict/useboundlp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(probdata->origscip, "conflict/usesb", FALSE) ); 
-   SCIP_CALL( SCIPsetBoolParam(probdata->origscip, "conflict/usepseudo", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useprop", FALSE) ); 
+   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useinflp", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useboundlp", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usesb", FALSE) ); 
+   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usepseudo", FALSE) );
 
-   SCIP_CALL( SCIPcreateProb(probdata->origscip, "origprob", NULL, NULL, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPcreateProb(probdata->origprob, "origprob", NULL, NULL, NULL, NULL, NULL, NULL) );
    
    /* initialize the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingprobs), npricingprobs) );
@@ -262,11 +262,11 @@ SCIP_RETCODE GCGcreateConsLinear(
    assert(probdata != NULL);
 
    /* add constraint to the original program */
-   SCIP_CALL( SCIPcreateConsLinear(probdata->origscip, &cons, name, ncoefs, vars, coefs, lhs, rhs, initial, 
+   SCIP_CALL( SCIPcreateConsLinear(probdata->origprob, &cons, name, ncoefs, vars, coefs, lhs, rhs, initial, 
          separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
-   SCIP_CALL( SCIPaddCons(probdata->origscip, cons) );
+   SCIP_CALL( SCIPaddCons(probdata->origprob, cons) );
    SCIPdebugMessage("added constraint %s to the original problem\n", name);
-   //SCIP_CALL( SCIPreleaseCons(probdata->origscip, &cons) );
+   //SCIP_CALL( SCIPreleaseCons(probdata->origprob, &cons) );
 
    /* if constraint belongs to the master problem, create it for the scip instance */
    if ( pricingprobnr == -1 )
@@ -290,11 +290,72 @@ SCIP_RETCODE GCGcreateConsLinear(
       SCIP_CALL( ensureSizePricingConss(scip, probdata, pricingprobnr, probdata->npricingconss+1) );
       probdata->pricingconss[pricingprobnr][probdata->npricingconss[pricingprobnr]] = cons;
       probdata->npricingconss[pricingprobnr]++;
-
       
    }
-   
-   
-   
 
+}
+
+
+/** creates a variable of the original program */
+SCIP_RETCODE GCGcreateVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            var,                /**< pointer to variable object */
+   const char*           name,               /**< name of variable, or NULL for automatic name creation */
+   SCIP_Real             lb,                 /**< lower bound of variable */
+   SCIP_Real             ub,                 /**< upper bound of variable */
+   SCIP_Real             obj,                /**< objective function value */
+   SCIP_VARTYPE          vartype,            /**< type of variable */
+   SCIP_Bool             initial,            /**< should var's column be present in the initial root LP? */
+   SCIP_Bool             removable           /**< is var's column removable from the LP (due to aging or cleanup)? */
+   )
+{
+   SCIP_PROBDATA* probdata;
+
+   probdata = SCIPgetProbdata(scip);
+
+   assert(probdata != NULL);
+   assert(var != NULL);
+   assert(lb <= ub);
+
+   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+
+/** adds variable to the original problem */
+SCIP_RETCODE GCGaddOriginalVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< variable to add */
+   )
+{
+   SCIP_PROBDATA* probdata;
+
+   probdata = SCIPgetProbdata(scip);
+
+   assert(probdata != NULL);
+   assert(var != NULL);
+
+   SCIP_CALL( SCIPaddVar(probdata->origprob, var) );
+
+   /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
+    * without making the returned *var invalid
+    */
+   SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
+
+   return SCIP_OKAY;
+}
+
+
+SCIP* GCGprobGetOrigprob(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbdata(scip);
+   
+   assert(probdata != NULL);
+   
+   return probdata->origprob;
 }

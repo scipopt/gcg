@@ -17,9 +17,7 @@
 /**@file   reader_lpb.c
  * @ingroup FILEReaders 
  * @brief  LPB file reader
- * @author Tobias Achterberg
- * @author Marc Pfetsch
- * @author Stefan Heinz
+ * @author Gerald Gamrath
  *
  * @todo Test for uniqueness of variable names (after cutting down).
  */
@@ -713,15 +711,10 @@ SCIP_RETCODE getVariable(
 
       /* create new variable of the given name */
       SCIPdebugMessage("creating new variable: <%s>\n", name);
-      SCIP_CALL( SCIPcreateVar(scip, &newvar, name, 0.0, SCIPinfinity(scip), 0.0, SCIP_VARTYPE_CONTINUOUS,
+      SCIP_CALL( GCGcreateVar(scip, &newvar, name, 0.0, SCIPinfinity(scip), 0.0, SCIP_VARTYPE_CONTINUOUS,
             initial, removable, NULL, NULL, NULL, NULL) );
-      SCIP_CALL( SCIPaddVar(scip, newvar) );
+      SCIP_CALL( GCGaddOriginalVar(scip, newvar) );
       *var = newvar;
-
-      /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
-       * without making the returned *var invalid
-       */
-      SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
 
       if( created != NULL )
          *created = TRUE;
@@ -937,7 +930,7 @@ SCIP_RETCODE readObjective(
       /* set the objective values */
       for( i = 0; i < ncoefs; ++i )
       {
-         SCIP_CALL( SCIPchgVarObj(scip, vars[i], coefs[i]) );
+         SCIP_CALL( SCIPchgVarObj(GCGprobGetOrigprob(scip), vars[i], coefs[i]) );
       }
    }
 
@@ -1053,13 +1046,8 @@ SCIP_RETCODE readConstraints(
    modifiable = FALSE;
    dynamic = dynamicconss;
    removable = dynamicrows || lpbinput->inusercuts;
-   SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, ncoefs, vars, coefs, lhs, rhs,
-         initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, FALSE) );
-   SCIP_CALL( SCIPaddCons(scip, cons) );
-   SCIPdebugMessage("(line %d) created constraint%s: ", lpbinput->linenumber,
-      lpbinput->inlazyconstraints ? " (lazy)" : (lpbinput->inusercuts ? " (user cut)" : ""));
-   SCIPdebug( SCIP_CALL( SCIPprintCons(scip, cons, NULL) ) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+   SCIP_CALL( GCGcreateConsLinear(scip, name, ncoefs, vars, coefs, lhs, rhs,
+         initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, FALSE, -1) );
 
  TERMINATE:
    /* free memory */
