@@ -1345,7 +1345,7 @@ SCIP_RETCODE readLPBFile(
    }
 
    /* create problem */
-   SCIP_CALL( SCIPcreateProb(scip, filename, NULL, NULL, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPcreateProbGCG(scip, filename, npricingprobs) );
 
    /* parse the file */
    lpbinput->section = LPB_START;
