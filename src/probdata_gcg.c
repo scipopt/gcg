@@ -22,10 +22,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include "probdata_gcg.h"
-#include "scip/cons_linear.h"
+//#include "scip/cons_linear.h"
 #include "scip/scip.h"
+#include "scip/scipdefplugins.h"
 #include <assert.h>
 
+
+#define MAX_LINELEN       65536
 
 
 struct SCIP_ProbData
@@ -46,6 +49,7 @@ struct SCIP_ProbData
  * Local methods
  */
 
+static
 SCIP_RETCODE ensureSizeMasterConss(
    SCIP*                 scip,
    SCIP_PROBDATA*        probdata,
@@ -66,6 +70,7 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
+static
 SCIP_RETCODE ensureSizePricingConss(
    SCIP*                 scip,
    SCIP_PROBDATA*        probdata,
@@ -123,10 +128,11 @@ static
 SCIP_DECL_PROBDELORIG(probdelorigGcg)
 {
    assert(probdata != NULL);
+   assert(*probdata != NULL);
 
    /* free original problem */
-   SCIP_CALL( SCIPfreeTransform(probdata->origprob) );
-   SCIP_CALL( SCIPfree(probdata->origprob) );
+   SCIP_CALL( SCIPfreeTransform((*probdata)->origprob) );
+   SCIP_CALL( SCIPfree(&((*probdata)->origprob)) );
 
    return SCIP_OKAY;
 }
@@ -145,11 +151,11 @@ SCIP_RETCODE SCIPcreateProbGcg(
    int                   npricingprobs       /**< number of pricing problems */
    )
 {
-   SCIP* subscip;
-   int i;
    char* probname;
+   SCIP_PROBDATA* probdata;
+   int i;
    
-   printf("Creating problem: %s \n", name);
+   printf("Creating problem: %s\n", name);
    
    /* allocate memory */
    SCIP_CALL( SCIPallocMemory(scip, &probdata) );
@@ -168,9 +174,9 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->npricingconss), npricingprobs) );
    for ( i = 0; i < npricingprobs; i++ )
    {
-      probdata->maxpricingconss = 5;
-      probdata->npricingconss = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingconss[i]), probdata->maxpricingconss) );
+      probdata->maxpricingconss[i] = 5;
+      probdata->npricingconss[i] = 0;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingconss[i]), probdata->maxpricingconss[i]) );
    }
    
    /* initializing the scip data structure for the original problem */  
@@ -190,7 +196,8 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingprobs), npricingprobs) );
    for ( i = 0; i < npricingprobs; i++ )
    {
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricing_block_%n", i);
+      //SCIP_CALL( SCIPallocBufferArray(scip, probname, MAX_LINELEN) );
+      //(void) SCIPsnprintf(probname, MAX_LINELEN, "pricing_block_%n", i);
 
       /* initializing the scip data structure for the original problem */  
       SCIP_CALL( SCIPcreate(&(probdata->pricingprobs[i])) );
@@ -247,22 +254,22 @@ SCIP_RETCODE GCGcreateConsLinear(
                                               *   are seperated as constraints. */
    SCIP_Bool             removable,          /**< should the relaxation be removed from the LP due to aging or cleanup?
                                               *   Usually set to FALSE. Set to TRUE for 'lazy constraints' and 'user cuts'. */
-   SCIP_Bool             stickingatnode      /**< should the constraint always be kept at the node where it was added, even
+   SCIP_Bool             stickingatnode,     /**< should the constraint always be kept at the node where it was added, even
                                               *   if it may be moved to a more global node?
                                               *   Usually set to FALSE. Set to TRUE to for constraints that represent node data. */
-   SCIP_Bool             pricingprobnr       /**< number of the pricing problem this constraint belongs to,
+   int                   pricingprobnr       /**< number of the pricing problem this constraint belongs to,
                                               *   -1 if the constraint should appear in the master problem? */
    )
 {
    SCIP_PROBDATA* probdata;
    SCIP_CONS* cons;
 
-   probdata = SCIPgetProbdata(scip);
+   probdata = SCIPgetProbData(scip);
 
    assert(probdata != NULL);
 
    /* add constraint to the original program */
-   SCIP_CALL( SCIPcreateConsLinear(probdata->origprob, &cons, name, ncoefs, vars, coefs, lhs, rhs, initial, 
+   SCIP_CALL( SCIPcreateConsLinear(probdata->origprob, &cons, name, nvars, vars, vals, lhs, rhs, initial, 
          separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
    SCIP_CALL( SCIPaddCons(probdata->origprob, cons) );
    SCIPdebugMessage("added constraint %s to the original problem\n", name);
@@ -276,7 +283,7 @@ SCIP_RETCODE GCGcreateConsLinear(
       probdata->masterconss[probdata->nmasterconss] = cons;
       probdata->nmasterconss++;
       
-      SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, ncoefs, vars, coefs, lhs, rhs, initial, 
+      SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, nvars, vars, vals, lhs, rhs, initial, 
             separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
       SCIP_CALL( SCIPaddCons(scip, cons) );
       SCIPdebugMessage("added constraint %s to the master problem\n", name);
@@ -287,11 +294,13 @@ SCIP_RETCODE GCGcreateConsLinear(
    else
    {
       /* add constraint to array pricingconss */
-      SCIP_CALL( ensureSizePricingConss(scip, probdata, pricingprobnr, probdata->npricingconss+1) );
+      SCIP_CALL( ensureSizePricingConss(scip, probdata, pricingprobnr, probdata->npricingconss[pricingprobnr]+1) );
       probdata->pricingconss[pricingprobnr][probdata->npricingconss[pricingprobnr]] = cons;
       probdata->npricingconss[pricingprobnr]++;
       
    }
+
+   return SCIP_OKAY;
 
 }
 
@@ -311,7 +320,7 @@ SCIP_RETCODE GCGcreateVar(
 {
    SCIP_PROBDATA* probdata;
 
-   probdata = SCIPgetProbdata(scip);
+   probdata = SCIPgetProbData(scip);
 
    assert(probdata != NULL);
    assert(var != NULL);
@@ -331,7 +340,7 @@ SCIP_RETCODE GCGaddOriginalVar(
 {
    SCIP_PROBDATA* probdata;
 
-   probdata = SCIPgetProbdata(scip);
+   probdata = SCIPgetProbData(scip);
 
    assert(probdata != NULL);
    assert(var != NULL);
@@ -341,7 +350,7 @@ SCIP_RETCODE GCGaddOriginalVar(
    /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
     * without making the returned *var invalid
     */
-   SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
+   SCIP_CALL( SCIPreleaseVar(scip, &var) );
 
    return SCIP_OKAY;
 }
@@ -353,7 +362,7 @@ SCIP* GCGprobGetOrigprob(
 {
    SCIP_PROBDATA* probdata;
    
-   probdata = SCIPgetProbdata(scip);
+   probdata = SCIPgetProbData(scip);
    
    assert(probdata != NULL);
    

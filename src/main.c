@@ -22,13 +22,10 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#include "reader_col.h"
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
-#include "pricer_coloring.h"
-#include "branch_coloring.h"
-#include "coloringplugins.h"
+#include "gcgplugins.h"
 
 static
 SCIP_RETCODE SCIPrunColoringShell(

@@ -44,7 +44,6 @@ include $(SCIPDIR)/make/make.project
 MAINNAME	=	gcg
 MAINOBJ		=	reader_lpb.o \
 			probdata_gcg.o \
-			pricer_gcg.o \
 			gcgplugins.o \
 			main.o
 
