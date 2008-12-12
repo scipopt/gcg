@@ -14,53 +14,57 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   reader_col.h
- * @brief  COL file reader
- * @author Gerald Gamrath
+/**@file   reader_lpb.h
+ * @brief  LPB file reader
+ * @author Tobias Achterberg
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_READER_COL_H__
-#define __SCIP_READER_COL_H__
+#ifndef __SCIP_READER_LPB_H__
+#define __SCIP_READER_LPB_H__
 
 
 #include "scip/scip.h"
-#include "tclique/tclique.h"
-#include "probdata_coloring.h"
-#include "scip/cons_linear.h"
-#include "scip/type_cons.h"
-#include "scip/scip.h"
 
-/** bubble sort of two joint arrays of int, sorted s.t. the second array is in non-increasing order */
+
+/** includes the lpb file reader into SCIP */
 extern
-void COLORreaderBubbleSortIntInt(
-   int*                  values,             /**< int array to be permuted in the same way */
-   int*                  keys,               /**< int array to be sorted */
-   int                   len                 /**< length of arrays */
-   );
-
-/** bubble sort of two joint arrays of int and reals, sorted s.t. the second array is in non-increasing order */
-extern
-void COLORreaderBubbleSortIntReal(
-   int*                  values,             /**< int array to be permuted in the same way */
-   SCIP_Real*            keys,               /**< SCIP_Real array to be sorted */
-   int                   len                 /**< length of arrays */
-   );
-
-
-/** creates the initial LP */
-extern
-SCIP_RETCODE COLORreaderCreateSetsForUncoveredNodes(
-   SCIP*                 scip,               /**< SCIP data structure */   
-   TCLIQUE_GRAPH*        graph               /**< pointer to graph data structure */
-   );
-
-
-/** includes the col file reader into SCIP */
-extern
-SCIP_RETCODE SCIPincludeReaderCol(
+SCIP_RETCODE SCIPincludeReaderLpb(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/* reads problem from file */
+extern
+SCIP_RETCODE SCIPreadLpb(
+   SCIP*              scip,               /**< SCIP data structure */
+   SCIP_READER*       reader,             /**< the file reader itself */
+   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   );
+
+
+/* writes problem to file */
+extern
+SCIP_RETCODE SCIPwriteLpb(
+   SCIP*              scip,               /**< SCIP data structure */
+   FILE*              file,               /**< output file, or NULL if standard output should be used */
+   const char*        name,               /**< problem name */
+   SCIP_Bool          transformed,        /**< TRUE iff problem is the transformed problem */
+   SCIP_OBJSENSE      objsense,           /**< objective sense */
+   SCIP_Real          objscale,           /**< scalar applied to objective function; external objective value is
+					     extobj = objsense * objscale * (intobj + objoffset) */
+   SCIP_Real          objoffset,          /**< objective offset from bound shifting and fixing */
+   SCIP_VAR**         vars,               /**< array with active variables ordered binary, integer, implicit, continuous */
+   int                nvars,              /**< number of mutable variables in the problem */
+   int                nbinvars,           /**< number of binary variables */
+   int                nintvars,           /**< number of general integer variables */
+   int                nimplvars,          /**< number of implicit integer variables */
+   int                ncontvars,          /**< number of continuous variables */
+   SCIP_CONS**        conss,              /**< array with constraints of the problem */
+   int                nconss,             /**< number of constraints in the problem */
+   SCIP_RESULT*       result              /**< pointer to store the result of the file writing call */
    );
 
 #endif
