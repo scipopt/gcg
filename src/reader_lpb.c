@@ -364,7 +364,7 @@ SCIP_Bool getNextToken(
    lpbinput->token[tokenlen] = '\0';
 
    SCIPdebugMessage("(line %d) read token: '%s'\n", lpbinput->linenumber, lpbinput->token);
-   printf("(line %d) read token: '%s'\n", lpbinput->linenumber, lpbinput->token);
+   //printf("(line %d) read token: '%s'\n", lpbinput->linenumber, lpbinput->token);
 
    return TRUE;
 }
@@ -700,7 +700,7 @@ SCIP_RETCODE getVariable(
    assert(name != NULL);
    assert(var != NULL);
 
-   *var = SCIPfindVar(scip, name);
+   *var = SCIPfindVar(GCGprobGetOrigprob(scip), name);
    if( *var == NULL )
    {
       SCIP_VAR* newvar;
@@ -802,8 +802,9 @@ SCIP_RETCODE readCoefficients(
          {
             /* the second token was a brace: the first token is the pricing problem number */
             *pricingprobnr = atoi(lpbinput->tokenbuf);
+            *pricingprobnr = (*pricingprobnr)--;
             SCIPdebugMessage("(line %d) read pricing problem number: '%d'\n", lpbinput->linenumber, *pricingprobnr);
-            printf("(line %d) read pricing problem number: '%d'\n", lpbinput->linenumber, *pricingprobnr);
+            //printf("(line %d) read pricing problem number: '%d'\n", lpbinput->linenumber, *pricingprobnr);
 
             /* read the third token, which may be the name of the line */
             if( getNextToken(lpbinput) )
@@ -822,7 +823,7 @@ SCIP_RETCODE readCoefficients(
                      strncpy(name, lpbinput->tokenbuf, LPB_MAX_LINELEN);
                      name[LPB_MAX_LINELEN - 1] = '\0';
                      SCIPdebugMessage("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-                     printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
+                     //printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
                   }
                   else
                   {
@@ -842,7 +843,7 @@ SCIP_RETCODE readCoefficients(
                strncpy(name, lpbinput->tokenbuf, LPB_MAX_LINELEN);
                name[LPB_MAX_LINELEN - 1] = '\0';
                SCIPdebugMessage("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-               printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
+               //printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
             }
             else
             {
@@ -993,7 +994,6 @@ SCIP_RETCODE readConstraints(
    )
 {
    char name[LPB_MAX_LINELEN];
-   SCIP_CONS* cons;
    SCIP_VAR** vars;
    SCIP_Real* coefs;
    SCIP_Bool newsection;
@@ -1299,7 +1299,7 @@ SCIP_RETCODE readGenerals(
       }
 
       /* mark the variable to be integral */
-      SCIP_CALL( SCIPchgVarType(scip, var, SCIP_VARTYPE_INTEGER) );
+      SCIP_CALL( SCIPchgVarType(GCGprobGetOrigprob(scip), var, SCIP_VARTYPE_INTEGER) );
    }
 
    return SCIP_OKAY;
@@ -1334,13 +1334,13 @@ SCIP_RETCODE readBinaries(
       /* mark the variable to be binary and change its bounds appropriately */
       if( SCIPvarGetLbGlobal(var) < 0.0 )
       {
-         SCIP_CALL( SCIPchgVarLb(scip, var, 0.0) );
+         SCIP_CALL( SCIPchgVarLb(GCGprobGetOrigprob(scip), var, 0.0) );
       }
       if( SCIPvarGetUbGlobal(var) > 1.0 )
       {
-         SCIP_CALL( SCIPchgVarUb(scip, var, 1.0) );
+         SCIP_CALL( SCIPchgVarUb(GCGprobGetOrigprob(scip), var, 1.0) );
       }
-      SCIP_CALL( SCIPchgVarType(scip, var, SCIP_VARTYPE_BINARY) );
+      SCIP_CALL( SCIPchgVarType(GCGprobGetOrigprob(scip), var, SCIP_VARTYPE_BINARY) );
    }
 
    return SCIP_OKAY;

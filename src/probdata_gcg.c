@@ -59,7 +59,7 @@ SCIP_RETCODE ensureSizeMasterConss(
    assert(scip != NULL);
    assert(probdata != NULL);
    assert(probdata->masterconss != NULL);
-   
+
    if ( probdata->maxmasterconss < size )
    {
       probdata->maxmasterconss = MAX(probdata->maxmasterconss + 5, size);
@@ -106,7 +106,17 @@ SCIP_DECL_PROBTRANS(probtransGcg)
    assert(sourcedata != NULL);
    assert(targetdata != NULL);
 
-   (*targetdata)->origprob = sourcedata->origprob;        
+   SCIP_CALL( SCIPallocMemory(scip, targetdata) );
+
+   (*targetdata)->origprob = sourcedata->origprob;
+   (*targetdata)->pricingprobs = sourcedata->pricingprobs;
+   (*targetdata)->npricingprobs = sourcedata->npricingprobs;
+   (*targetdata)->masterconss = sourcedata->masterconss;
+   (*targetdata)->maxmasterconss = sourcedata->maxmasterconss;
+   (*targetdata)->nmasterconss = sourcedata->nmasterconss;
+   (*targetdata)->pricingconss = sourcedata->pricingconss;
+   (*targetdata)->maxpricingconss = sourcedata->maxpricingconss;
+   (*targetdata)->npricingconss = sourcedata->npricingconss;
 
    return SCIP_OKAY;
 }
@@ -116,6 +126,12 @@ SCIP_DECL_PROBTRANS(probtransGcg)
 static
 SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 {
+   assert(scip !=  NULL);
+   assert(probdata != NULL);
+   assert(*probdata != NULL);
+
+   SCIPfreeMemory(scip, probdata);
+
    return SCIP_OKAY;
 }
 
@@ -127,12 +143,36 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 static
 SCIP_DECL_PROBDELORIG(probdelorigGcg)
 {
+   int i;
+
    assert(probdata != NULL);
    assert(*probdata != NULL);
+
+   /* free pricing problems */
+   for ( i = (*probdata)->npricingprobs - 1; i >= 0 ; i-- )
+   {
+      SCIP_CALL( SCIPfreeTransform((*probdata)->pricingprobs[i]) );
+      SCIP_CALL( SCIPfree(&((*probdata)->pricingprobs[i])) );
+   }
 
    /* free original problem */
    SCIP_CALL( SCIPfreeTransform((*probdata)->origprob) );
    SCIP_CALL( SCIPfree(&((*probdata)->origprob)) );
+
+   /* free array for constraints */
+   for ( i = (*probdata)->npricingprobs-1; i >= 0; i-- )
+   {
+      SCIPfreeMemoryArray(scip, &((*probdata)->pricingconss[i]));
+   }
+   SCIPfreeMemoryArray(scip, &((*probdata)->pricingconss));
+   SCIPfreeMemoryArray(scip, &((*probdata)->maxpricingconss));
+   SCIPfreeMemoryArray(scip, &((*probdata)->npricingconss));
+
+   SCIPfreeMemoryArray(scip, &((*probdata)->masterconss));
+
+   SCIPfreeMemoryArray(scip, &((*probdata)->pricingprobs));
+
+   SCIPfreeMemory(scip, probdata);
 
    return SCIP_OKAY;
 }
@@ -163,6 +203,7 @@ SCIP_RETCODE SCIPcreateProbGcg(
    /* initialize data */
    probdata->npricingprobs = npricingprobs;
    probdata->maxmasterconss = 5;
+   probdata->nmasterconss = 0;
 
 
    /* array of constraints belonging to the master problems */
@@ -216,6 +257,9 @@ SCIP_RETCODE SCIPcreateProbGcg(
    /* create problem in SCIP */
    SCIP_CALL( SCIPcreateProb(scip, name, probdelorigGcg, probtransGcg, probdeltransGcg, 
          probinitsolGcg, probexitsolGcg, probdata) );
+
+   SCIP_CALL( SCIPactivatePricer(scip, SCIPfindPricer(scip, "gcg")) );
+
 
 
    return SCIP_OKAY;
@@ -283,7 +327,7 @@ SCIP_RETCODE GCGcreateConsLinear(
       probdata->masterconss[probdata->nmasterconss] = cons;
       probdata->nmasterconss++;
       
-      SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, nvars, vars, vals, lhs, rhs, initial, 
+      SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, 0, NULL, NULL, lhs, rhs, initial, 
             separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
       SCIP_CALL( SCIPaddCons(scip, cons) );
       SCIPdebugMessage("added constraint %s to the master problem\n", name);
