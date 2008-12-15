@@ -714,7 +714,7 @@ SCIP_RETCODE getVariable(
 
       /* create new variable of the given name */
       SCIPdebugMessage("creating new variable: <%s>\n", name);
-      SCIP_CALL( GCGcreateVar(scip, &newvar, name, 0.0, SCIPinfinity(scip), 0.0, SCIP_VARTYPE_CONTINUOUS,
+      SCIP_CALL( GCGcreateOrigVar(scip, &newvar, name, 0.0, SCIPinfinity(scip), 0.0, SCIP_VARTYPE_CONTINUOUS,
             initial, removable) );
       SCIP_CALL( GCGaddOriginalVar(scip, newvar) );
       *var = newvar;

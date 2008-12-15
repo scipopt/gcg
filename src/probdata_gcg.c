@@ -22,7 +22,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include "probdata_gcg.h"
-//#include "scip/cons_linear.h"
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include <assert.h>
@@ -36,12 +35,22 @@ struct SCIP_ProbData
    SCIP*            origprob;           /* the original problem */
    SCIP**           pricingprobs;       /* the array of pricing problems */
    int              npricingprobs;      /* the number of pricing problems */
-   SCIP_CONS**      masterconss;        /* array of cons in the original problem that belong to the master problem */
+   SCIP_CONS**      masterconss;        /* array of cons in the master problem */
    int              maxmasterconss;     /* length of the array mastercons */
    int              nmasterconss;       /* number of constraints saved in mastercons */
+   SCIP_CONS**      origmasterconss;    /* array of cons in the original problem that belong to the master problem */
+   int              maxorigmasterconss; /* length of the array origmastercons */
+   int              norigmasterconss;   /* number of constraints saved in origmastercons */
    SCIP_CONS***     pricingconss;       /* array of arrays of cons in the original problem belonging to pricing problem nr. i*/
    int*             maxpricingconss;    /* length of pricingcons at position i*/
    int*             npricingconss;      /* number of constraints belonging to pricing problem i */
+};
+
+struct SCIP_VarData
+{
+   int pricingprobnr;
+   SCIP_VAR* pricingvar;
+   SCIP_VAR* origvar;
 };
 
 
@@ -59,13 +68,18 @@ SCIP_RETCODE ensureSizeMasterConss(
    assert(scip != NULL);
    assert(probdata != NULL);
    assert(probdata->masterconss != NULL);
+   assert(probdata->maxmasterconss == probdata->maxorigmasterconss);
+   assert(probdata->nmasterconss == probdata->norigmasterconss);
 
    if ( probdata->maxmasterconss < size )
    {
       probdata->maxmasterconss = MAX(probdata->maxmasterconss + 5, size);
+      probdata->maxorigmasterconss = probdata->maxmasterconss;
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(probdata->masterconss), probdata->maxmasterconss) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(probdata->origmasterconss), probdata->maxorigmasterconss) );
    }
    assert(probdata->maxmasterconss >= size);
+   assert(probdata->maxorigmasterconss >= size);
 
    return SCIP_OKAY;
 }
@@ -111,12 +125,19 @@ SCIP_DECL_PROBTRANS(probtransGcg)
    (*targetdata)->origprob = sourcedata->origprob;
    (*targetdata)->pricingprobs = sourcedata->pricingprobs;
    (*targetdata)->npricingprobs = sourcedata->npricingprobs;
-   (*targetdata)->masterconss = sourcedata->masterconss;
-   (*targetdata)->maxmasterconss = sourcedata->maxmasterconss;
-   (*targetdata)->nmasterconss = sourcedata->nmasterconss;
+   (*targetdata)->origmasterconss = sourcedata->origmasterconss;
+   (*targetdata)->maxorigmasterconss = sourcedata->maxorigmasterconss;
+   (*targetdata)->norigmasterconss = sourcedata->norigmasterconss;
    (*targetdata)->pricingconss = sourcedata->pricingconss;
    (*targetdata)->maxpricingconss = sourcedata->maxpricingconss;
    (*targetdata)->npricingconss = sourcedata->npricingconss;
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &((*targetdata)->masterconss), sourcedata->maxmasterconss) );
+   (*targetdata)->maxmasterconss = sourcedata->maxmasterconss;
+   (*targetdata)->nmasterconss = sourcedata->nmasterconss;
+   
+   SCIP_CALL( SCIPtransformConss(scip, sourcedata->nmasterconss, 
+         sourcedata->masterconss, (*targetdata)->masterconss) );
 
    return SCIP_OKAY;
 }
@@ -126,9 +147,18 @@ SCIP_DECL_PROBTRANS(probtransGcg)
 static
 SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 {
+   int i;
+
    assert(scip !=  NULL);
    assert(probdata != NULL);
    assert(*probdata != NULL);
+
+   for ( i = 0; i < (*probdata)->nmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->masterconss[i]) );
+   }
+
+   SCIPfreeMemoryArray(scip, &(*probdata)->masterconss);
 
    SCIPfreeMemory(scip, probdata);
 
@@ -144,9 +174,26 @@ static
 SCIP_DECL_PROBDELORIG(probdelorigGcg)
 {
    int i;
+   int j;
 
    assert(probdata != NULL);
    assert(*probdata != NULL);
+
+   for ( i = 0; i < (*probdata)->npricingprobs; i++ )
+   {
+      for ( j = 0; j < (*probdata)->npricingconss[i]; j++ )
+      {
+         SCIP_CALL( SCIPreleaseCons(scip, &((*probdata)->pricingconss[i][j])) );
+      }
+   }
+   for ( i = 0; i < (*probdata)->norigmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->origmasterconss[i]) );
+   }
+   for ( i = 0; i < (*probdata)->nmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->masterconss[i]) );
+   }
 
    /* free pricing problems */
    for ( i = (*probdata)->npricingprobs - 1; i >= 0 ; i-- )
@@ -169,6 +216,7 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    SCIPfreeMemoryArray(scip, &((*probdata)->npricingconss));
 
    SCIPfreeMemoryArray(scip, &((*probdata)->masterconss));
+   SCIPfreeMemoryArray(scip, &((*probdata)->origmasterconss));
 
    SCIPfreeMemoryArray(scip, &((*probdata)->pricingprobs));
 
@@ -204,10 +252,13 @@ SCIP_RETCODE SCIPcreateProbGcg(
    probdata->npricingprobs = npricingprobs;
    probdata->maxmasterconss = 5;
    probdata->nmasterconss = 0;
+   probdata->maxorigmasterconss = 5;
+   probdata->norigmasterconss = 0;
 
 
-   /* array of constraints belonging to the master problems */
+   /* arrays of constraints belonging to the master problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->masterconss), probdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->origmasterconss), probdata->maxorigmasterconss) );
    
    /* array for saving of constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingconss), npricingprobs) );
@@ -322,25 +373,53 @@ SCIP_RETCODE GCGcreateConsLinear(
    /* if constraint belongs to the master problem, create it for the scip instance */
    if ( pricingprobnr == -1 )
    {
-      /* add constraint to array masterconss */
-      SCIP_CALL( ensureSizeMasterConss(scip, probdata, probdata->nmasterconss+1) );
-      probdata->masterconss[probdata->nmasterconss] = cons;
-      probdata->nmasterconss++;
-      
+      /* add constraint to array origmasterconss */
+      SCIP_CALL( ensureSizeMasterConss(scip, probdata, probdata->norigmasterconss+1) );
+      probdata->origmasterconss[probdata->norigmasterconss] = cons;
+      probdata->norigmasterconss++;
+
       SCIP_CALL( SCIPcreateConsLinear(scip, &cons, name, 0, NULL, NULL, lhs, rhs, initial, 
-            separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
+            separate, enforce, check, propagate, local, TRUE, dynamic, removable, stickingatnode) );
       SCIP_CALL( SCIPaddCons(scip, cons) );
       SCIPdebugMessage("added constraint %s to the master problem\n", name);
-      SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+      //SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+
+      /* add constraint to array masterconss */
+      //SCIP_CALL( ensureSizeMasterConss(scip, probdata, probdata->nmasterconss+1) );
+      probdata->masterconss[probdata->nmasterconss] = cons;
+      probdata->nmasterconss++;
    }
 
    /* constraint belongs to one of the pricing problems */
    else
    {
+      int i;
+      SCIP_VARDATA* vardata;
+      SCIP_VAR* var;
+
       /* add constraint to array pricingconss */
       SCIP_CALL( ensureSizePricingConss(scip, probdata, pricingprobnr, probdata->npricingconss[pricingprobnr]+1) );
       probdata->pricingconss[pricingprobnr][probdata->npricingconss[pricingprobnr]] = cons;
       probdata->npricingconss[pricingprobnr]++;
+
+      /* create (empty) constraint in the pricing problem */
+      SCIP_CALL( SCIPcreateConsLinear(probdata->pricingprobs[pricingprobnr], &cons, name, 0, NULL, NULL, lhs, 
+            rhs, initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, 
+            stickingatnode) );
+      
+      /* add variables to the constraint */
+      for ( i = 0; i < nvars; i++ )
+      {
+         assert(!SCIPisFeasZero(vals[i]));
+         vardata = SCIPvarGetData(vars[i]);
+         assert(vardata->pricingprobnr == -1 || vardata->pricingprobnr == pricingprobnr);
+         assert( (vardata->pricingprobnr == -1) == (vardata->pricingvar == NULL));
+         if ( vardata->pricingprobnr == -1 )
+         {
+            SCIP_CALL( GCGcreatePricingVar(scip, &var, vars[i], pricingprobnr) );
+         }
+      }
+      SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, var, vals[i]) );
       
    }
 
@@ -350,7 +429,7 @@ SCIP_RETCODE GCGcreateConsLinear(
 
 
 /** creates a variable of the original program */
-SCIP_RETCODE GCGcreateVar(
+SCIP_RETCODE GCGcreateOrigVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            var,                /**< pointer to variable object */
    const char*           name,               /**< name of variable, or NULL for automatic name creation */
@@ -363,6 +442,7 @@ SCIP_RETCODE GCGcreateVar(
    )
 {
    SCIP_PROBDATA* probdata;
+   SCIP_VARDATA* vardata;
 
    probdata = SCIPgetProbData(scip);
 
@@ -370,7 +450,55 @@ SCIP_RETCODE GCGcreateVar(
    assert(var != NULL);
    assert(lb <= ub);
 
-   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
+   vardata->pricingprobnr = -1;
+   vardata->pricingvar = NULL;
+   vardata->origvar = NULL;
+
+   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, vardata) );
+
+   return SCIP_OKAY;
+}
+
+
+/** creates a variable of a pricing problem program */
+SCIP_RETCODE GCGcreatePricingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            var,                /**< pointer to variable object */
+   SCIP_VAR*             origvar,            /**< corresponding variable in the original program */
+   int                   pricingprobnr       /**< number of the pricing problem to which the variable belongs */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   SCIP_VARDATA* vardata;
+   SCIP_VARDATA* origvardata;
+   //SCIP* pricingprob;
+
+   probdata = SCIPgetProbData(scip);
+
+   assert(probdata != NULL);
+   assert(origvar != NULL);
+   assert(pricingprobnr >= 0 && pricingprobnr < probdata->npricingprobs);
+   
+   origvardata = SCIPvarGetData(origvar);
+   
+   assert(origvardata != NULL);
+   assert(origvardata->pricingvar == NULL);
+   assert(origvardata->pricingprobnr == -1);
+   assert(origvardata->origvar == NULL);
+
+   SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
+   vardata->pricingprobnr = pricingprobnr;
+   vardata->pricingvar = NULL;
+   vardata->origvar = origvar;
+
+   SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], var, SCIPvarGetName(origvar), 
+         SCIPvarGetLbOriginal(origvar), SCIPvarGetUbOriginal(origvar), 0, SCIPvarGetType(origvar), 
+         TRUE, FALSE, NULL, NULL, NULL, vardata) );
+
+   origvardata->pricingprobnr = pricingprobnr;
+   origvardata->pricingvar = *var;
+
 
    return SCIP_OKAY;
 }
@@ -411,4 +539,44 @@ SCIP* GCGprobGetOrigprob(
    assert(probdata != NULL);
    
    return probdata->origprob;
+}
+
+
+void GCGprobGetMasterConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,
+   int*                  nconss
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   assert(nconss != NULL);
+   assert(probdata->masterconss != NULL);
+   assert(probdata->nmasterconss >= 0);
+
+   *conss = probdata->masterconss;   
+   *nconss = probdata->nmasterconss;
+}
+
+void GCGprobGetOrigConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,
+   int*                  nconss
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   assert(nconss != NULL);
+   assert(probdata->origmasterconss != NULL);
+   assert(probdata->norigmasterconss >= 0);
+
+   *conss = probdata->origmasterconss;   
+   *nconss = probdata->norigmasterconss;
+
 }

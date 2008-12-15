@@ -76,7 +76,7 @@ SCIP_RETCODE GCGcreateConsLinear(
 
 
 /** creates a variable of the original program */
-SCIP_RETCODE GCGcreateVar(
+SCIP_RETCODE GCGcreateOrigVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            var,                /**< pointer to variable object */
    const char*           name,               /**< name of variable, or NULL for automatic name creation */
@@ -88,6 +88,14 @@ SCIP_RETCODE GCGcreateVar(
    SCIP_Bool             removable           /**< is var's column removable from the LP (due to aging or cleanup)? */
    );
 
+/** creates a variable of a pricing problem program */
+SCIP_RETCODE GCGcreatePricingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            var,                /**< pointer to variable object */
+   SCIP_VAR*             origvar,            /**< corresponding variable in the original program */
+   int                   pricingprobnr       /**< number of the pricing problem to which the variable belongs */
+   );
+
 
 /** adds variable to the original problem */
 SCIP_RETCODE GCGaddOriginalVar(
@@ -97,6 +105,18 @@ SCIP_RETCODE GCGaddOriginalVar(
 
 SCIP* GCGprobGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+void GCGprobGetMasterConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,
+   int*                  nconss
+   );
+
+void GCGprobGetOrigConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,
+   int*                  nconss
    );
 
 #endif

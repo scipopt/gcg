@@ -98,7 +98,6 @@ static
 SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 {  
    SCIP_PRICERDATA* pricerdata;
-   int i;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -118,8 +117,6 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 {  
    SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
 
-   int              i;
-   int              j;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -138,9 +135,10 @@ static
 SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {  
    SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-
+   SCIP_CONS** conss;
+   int nconss;
+   SCIP_Real* farkas;
    int              i;
-   int              j;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -149,7 +147,18 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
 
-   printf("pricerfarkas\n");
+   GCGprobGetMasterConss(scip, &conss, &nconss);
+   SCIP_CALL( SCIPallocBufferArray(scip, &farkas, nconss) );
+   
+   for ( i = 0; i < nconss; i++ )
+   {
+      farkas[i] = SCIPgetDualfarkasLinear(scip, conss[i]);
+      printf("%f\n", farkas[i]);
+   }
+
+   
+
+   SCIPfreeBufferArray(scip, &farkas);   
 
    return SCIP_OKAY;
 }
@@ -178,7 +187,5 @@ SCIP_RETCODE SCIPincludePricerGcg(
          pricerInitsolGcg, pricerExitsolGcg, pricerRedcostGcg, pricerFarkasGcg,
          pricerdata) );
 
-   printf("pricer included\n");
-   
    return SCIP_OKAY;
 }
