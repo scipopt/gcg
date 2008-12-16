@@ -92,6 +92,7 @@
 #include "scip/reader_mps.h"
 #include "scip/reader_sol.h"
 #include "scip/reader_zpl.h"
+#include "scip/reader_cip.h"
 #include "scip/sepa_clique.h"
 #include "scip/sepa_cmir.h"
 #include "scip/sepa_flowcover.h"

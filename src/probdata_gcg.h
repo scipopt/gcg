@@ -26,7 +26,7 @@
 
 #include "scip/scip.h"
 #include "tclique/tclique.h"   /* def. of clique data structures */
-
+#include "struct_vardata.h"
 
 /** sets up the problem data */
 extern
@@ -39,6 +39,7 @@ SCIP_RETCODE SCIPcreateProbGcg(
 
 
 /** creates and captures a linear constraint */
+extern
 SCIP_RETCODE GCGcreateConsLinear(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           name,               /**< name of constraint */
@@ -76,6 +77,7 @@ SCIP_RETCODE GCGcreateConsLinear(
 
 
 /** creates a variable of the original program */
+extern
 SCIP_RETCODE GCGcreateOrigVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            var,                /**< pointer to variable object */
@@ -89,6 +91,7 @@ SCIP_RETCODE GCGcreateOrigVar(
    );
 
 /** creates a variable of a pricing problem program */
+extern
 SCIP_RETCODE GCGcreatePricingVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            var,                /**< pointer to variable object */
@@ -98,22 +101,57 @@ SCIP_RETCODE GCGcreatePricingVar(
 
 
 /** adds variable to the original problem */
+extern
 SCIP_RETCODE GCGaddOriginalVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var                 /**< variable to add */
    );
 
+extern
+SCIP_RETCODE GCGchgOrigVarUb(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_Real             newbound            /**< new value for bound */
+   );
+
+extern
+SCIP_RETCODE GCGchgOrigVarLb(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_Real             newbound            /**< new value for bound */
+   );
+
+SCIP_RETCODE GCGchgOrigVarType(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_VARTYPE          vartype             /**< new type of variable */
+   );
+
+extern
 SCIP* GCGprobGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+extern
+SCIP* GCGprobGetPricingprob(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
+extern
+int GCGprobGetNPricingprobs(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+extern
 void GCGprobGetMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          conss,
    int*                  nconss
    );
 
-void GCGprobGetOrigConss(
+extern
+void GCGprobGetOrigMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          conss,
    int*                  nconss

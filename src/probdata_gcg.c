@@ -46,12 +46,6 @@ struct SCIP_ProbData
    int*             npricingconss;      /* number of constraints belonging to pricing problem i */
 };
 
-struct SCIP_VarData
-{
-   int pricingprobnr;
-   SCIP_VAR* pricingvar;
-   SCIP_VAR* origvar;
-};
 
 
 /*
@@ -404,22 +398,26 @@ SCIP_RETCODE GCGcreateConsLinear(
 
       /* create (empty) constraint in the pricing problem */
       SCIP_CALL( SCIPcreateConsLinear(probdata->pricingprobs[pricingprobnr], &cons, name, 0, NULL, NULL, lhs, 
-            rhs, initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, 
-            stickingatnode) );
+            rhs, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, modifiable, FALSE, FALSE, 
+            FALSE) );
+      SCIP_CALL( SCIPaddCons(probdata->pricingprobs[pricingprobnr], cons) );
       
       /* add variables to the constraint */
       for ( i = 0; i < nvars; i++ )
       {
-         assert(!SCIPisFeasZero(vals[i]));
+         assert(!SCIPisFeasZero(scip, vals[i]));
          vardata = SCIPvarGetData(vars[i]);
-         assert(vardata->pricingprobnr == -1 || vardata->pricingprobnr == pricingprobnr);
-         assert( (vardata->pricingprobnr == -1) == (vardata->pricingvar == NULL));
-         if ( vardata->pricingprobnr == -1 )
+         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         assert( (vardata->data.origvardata.pricingvar == NULL) == (vardata->data.origvardata.pricingprobnr == -1) );
+         if ( vardata->data.origvardata.pricingprobnr == -1 )
          {
             SCIP_CALL( GCGcreatePricingVar(scip, &var, vars[i], pricingprobnr) );
          }
+
+         SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, var, vals[i]) );
       }
-      SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, var, vals[i]) );
+
+      SCIP_CALL( SCIPprintCons(probdata->pricingprobs[pricingprobnr], cons, NULL) );
       
    }
 
@@ -451,14 +449,91 @@ SCIP_RETCODE GCGcreateOrigVar(
    assert(lb <= ub);
 
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
-   vardata->pricingprobnr = -1;
-   vardata->pricingvar = NULL;
-   vardata->origvar = NULL;
+   vardata->vartype = GCG_VARTYPE_ORIGINAL;
+   vardata->data.origvardata.pricingprobnr = -1;
+   vardata->data.origvardata.pricingvar = NULL;
 
    SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, vardata) );
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGchgOrigVarUb(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_Real             newbound            /**< new value for bound */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   SCIP_VARDATA* vardata;
+
+   probdata = SCIPgetProbData(scip);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   
+   if ( vardata->data.origvardata.pricingvar != NULL )
+   {
+      SCIP_CALL( SCIPchgVarUb(probdata->pricingprobs[vardata->data.origvardata.pricingprobnr], 
+            vardata->data.origvardata.pricingvar, newbound) );
+   }
+
+   SCIP_CALL( SCIPchgVarUb(probdata->origprob, var, newbound) );
 
    return SCIP_OKAY;
 }
+
+
+SCIP_RETCODE GCGchgOrigVarLb(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_Real             newbound            /**< new value for bound */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   SCIP_VARDATA* vardata;
+
+   probdata = SCIPgetProbData(scip);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+
+   if ( vardata->data.origvardata.pricingvar != NULL )
+   {
+      SCIP_CALL( SCIPchgVarLb(probdata->pricingprobs[vardata->data.origvardata.pricingprobnr], 
+            vardata->data.origvardata.pricingvar, newbound) );
+   }
+
+   SCIP_CALL( SCIPchgVarLb(probdata->origprob, var, newbound) );
+
+   return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE GCGchgOrigVarType(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to change the bound for */
+   SCIP_VARTYPE          vartype             /**< new type of variable */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   SCIP_VARDATA* vardata;
+
+   probdata = SCIPgetProbData(scip);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+
+   if ( vardata->data.origvardata.pricingvar != NULL )
+   {
+      SCIP_CALL( SCIPchgVarType(probdata->pricingprobs[vardata->data.origvardata.pricingprobnr], 
+            vardata->data.origvardata.pricingvar, vartype) );
+   }
+
+   SCIP_CALL( SCIPchgVarType(probdata->origprob, var, vartype) );
+
+   return SCIP_OKAY;
+}
+
 
 
 /** creates a variable of a pricing problem program */
@@ -472,7 +547,6 @@ SCIP_RETCODE GCGcreatePricingVar(
    SCIP_PROBDATA* probdata;
    SCIP_VARDATA* vardata;
    SCIP_VARDATA* origvardata;
-   //SCIP* pricingprob;
 
    probdata = SCIPgetProbData(scip);
 
@@ -483,25 +557,35 @@ SCIP_RETCODE GCGcreatePricingVar(
    origvardata = SCIPvarGetData(origvar);
    
    assert(origvardata != NULL);
-   assert(origvardata->pricingvar == NULL);
-   assert(origvardata->pricingprobnr == -1);
-   assert(origvardata->origvar == NULL);
+   assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(origvardata->data.origvardata.pricingvar == NULL);
+   assert(origvardata->data.origvardata.pricingprobnr == -1);
+
 
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
-   vardata->pricingprobnr = pricingprobnr;
-   vardata->pricingvar = NULL;
-   vardata->origvar = origvar;
+   vardata->vartype = GCG_VARTYPE_PRICING;
+   vardata->data.pricingvardata.pricingprobnr = pricingprobnr;
+   vardata->data.pricingvardata.origvar = origvar;
+
+   //printf("var = %s, ub = %f, type = %d\n", SCIPvarGetName(origvar), SCIPvarGetUbGlobal(origvar), SCIPvarGetType(origvar));
 
    SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], var, SCIPvarGetName(origvar), 
-         SCIPvarGetLbOriginal(origvar), SCIPvarGetUbOriginal(origvar), 0, SCIPvarGetType(origvar), 
+         SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
          TRUE, FALSE, NULL, NULL, NULL, vardata) );
 
-   origvardata->pricingprobnr = pricingprobnr;
-   origvardata->pricingvar = *var;
+   origvardata->data.origvardata.pricingvar = *var;
+   origvardata->data.origvardata.pricingprobnr = pricingprobnr;
 
+   SCIP_CALL( SCIPaddVar(probdata->pricingprobs[pricingprobnr], *var) );
+
+   /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
+    * without making the returned *var invalid
+    */
+   //SCIP_CALL( SCIPreleaseVar(probdata->pricingprobs[pricingprobnr], var) );
 
    return SCIP_OKAY;
 }
+
 
 
 /** adds variable to the original problem */
@@ -522,7 +606,7 @@ SCIP_RETCODE GCGaddOriginalVar(
    /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
     * without making the returned *var invalid
     */
-   SCIP_CALL( SCIPreleaseVar(scip, &var) );
+   //SCIP_CALL( SCIPreleaseVar(scip, &var) );
 
    return SCIP_OKAY;
 }
@@ -541,6 +625,32 @@ SCIP* GCGprobGetOrigprob(
    return probdata->origprob;
 }
 
+SCIP* GCGprobGetPricingprob(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   
+   return probdata->pricingprobs[pricingprobnr];
+}
+
+int GCGprobGetNPricingprobs(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   
+   return probdata->npricingprobs;
+}
 
 void GCGprobGetMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -561,7 +671,7 @@ void GCGprobGetMasterConss(
    *nconss = probdata->nmasterconss;
 }
 
-void GCGprobGetOrigConss(
+void GCGprobGetOrigMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          conss,
    int*                  nconss

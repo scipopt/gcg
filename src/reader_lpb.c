@@ -1262,9 +1262,9 @@ SCIP_RETCODE readBounds(
 
       /* change the bounds of the variable if bounds have been given (do not destroy earlier specification of bounds) */
       if ( lb != 0.0 )
-	 SCIP_CALL( SCIPchgVarLb(scip, var, lb) );
+	 SCIP_CALL( GCGchgOrigVarLb(scip, var, lb) );
       if ( ub != SCIPinfinity(scip) )
-	 SCIP_CALL( SCIPchgVarUb(scip, var, ub) );
+	 SCIP_CALL( GCGchgOrigVarUb(scip, var, ub) );
       SCIPdebugMessage("(line %d) new bounds: <%s>[%g,%g]\n", lpbinput->linenumber, SCIPvarGetName(var),
 	 SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var));
    }
@@ -1299,7 +1299,7 @@ SCIP_RETCODE readGenerals(
       }
 
       /* mark the variable to be integral */
-      SCIP_CALL( SCIPchgVarType(GCGprobGetOrigprob(scip), var, SCIP_VARTYPE_INTEGER) );
+      SCIP_CALL( GCGchgOrigVarType(scip, var, SCIP_VARTYPE_INTEGER) );
    }
 
    return SCIP_OKAY;
@@ -1334,13 +1334,13 @@ SCIP_RETCODE readBinaries(
       /* mark the variable to be binary and change its bounds appropriately */
       if( SCIPvarGetLbGlobal(var) < 0.0 )
       {
-         SCIP_CALL( SCIPchgVarLb(GCGprobGetOrigprob(scip), var, 0.0) );
+         SCIP_CALL( GCGchgOrigVarLb(scip, var, 0.0) );
       }
       if( SCIPvarGetUbGlobal(var) > 1.0 )
       {
-         SCIP_CALL( SCIPchgVarUb(GCGprobGetOrigprob(scip), var, 1.0) );
+         SCIP_CALL( GCGchgOrigVarUb(scip, var, 1.0) );
       }
-      SCIP_CALL( SCIPchgVarType(GCGprobGetOrigprob(scip), var, SCIP_VARTYPE_BINARY) );
+      SCIP_CALL( GCGchgOrigVarType(scip, var, SCIP_VARTYPE_BINARY) );
    }
 
    return SCIP_OKAY;
@@ -1378,7 +1378,7 @@ SCIP_RETCODE readLPBFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   int npricingprobs = 60;
+   int npricingprobs = 7;
    
    assert(lpbinput != NULL);
 
