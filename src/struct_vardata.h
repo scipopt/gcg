@@ -39,7 +39,8 @@ typedef enum GCG_Vartype GCG_VARTYPE;
 struct GCG_OrigVarData
 {
    SCIP_VAR*             pricingvar;             /**< corresponding variable in the original program */
-   int                   pricingprobnr;          /**< number of the pricing problem */
+   SCIP_Real*            coefs;                  /**< coefficiants in the linear constraints of the original program */
+   int                   ncoefs;                 /**< number of coefficiants */
 };
 typedef struct GCG_OrigVarData GCG_ORIGVARDATA;
 
@@ -47,7 +48,6 @@ typedef struct GCG_OrigVarData GCG_ORIGVARDATA;
 struct GCG_PricingVarData
 {
    SCIP_VAR*             origvar;                /**< corresponding variable in the original program */
-   int                   pricingprobnr;          /**< number of the pricing problem */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
@@ -71,6 +71,7 @@ struct SCIP_VarData
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
    } data;
    GCG_VARTYPE        vartype;               /**< type of variable */
+   int                blocknr;               /**< number of the block and pricing problem, the variable belongs to */
 };
 
 
