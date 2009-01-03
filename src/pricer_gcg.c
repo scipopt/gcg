@@ -30,6 +30,8 @@
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
+#define VARNAMELEN 20
+
 /*
  * Data structures
  */
@@ -38,7 +40,14 @@
 /** variable pricer data */
 struct SCIP_PricerData
 {
-   int pricingprobnr;
+   int pricingprobnr;              /* number of the pricingproblem, that was used last time to find a new var */
+   int npricingprobs;              /* number of pricing problems */
+   SCIP** pricingprobs;            /* pointers to the pricing problems */
+   SCIP_Real* redcost;             /* array of reduced cost for the constraints of the master problem */
+   SCIP_Real* redcostconv;         /* array of reduced cost for the convexity constraints */
+   SCIP* origprob;                 /* the original program */
+   SCIP_Real* solvals;             /* solution values of variables in the pricing problems */
+   int* nvarsprob;                 /* number of variables created by the pricing probs */
 };
 
 
@@ -48,7 +57,7 @@ struct SCIP_PricerData
 
 /** problem reading method of reader */
 static
-SCIP_DECL_VARDELORIG(gcgdelvarorig)
+SCIP_DECL_VARDELORIG(gcgvardeltrans)
 {  
    if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
    {
@@ -65,6 +74,238 @@ SCIP_DECL_VARDELORIG(gcgdelvarorig)
 /*
  * Local methods
  */
+
+static
+SCIP_RETCODE performPricing(
+   SCIP*                 scip,               /* SCIP data structure */
+   SCIP_PRICER*          pricer,             /* the pricer */
+   SCIP_Bool             redcostpricing      /* true, if redcost pricing should be performed, 
+                                                false, for farkas pricing */
+   )
+{
+   SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+   SCIP_CONS** origconss;
+   int norigconss;
+   char* varname;
+
+   int i;
+   int j;
+   int k;
+   int l;
+   int prob;
+
+   SCIP_VAR** consvars;
+   int nconsvars;
+   SCIP_Real* consvals;
+   SCIP_VAR** probvars;
+   int nprobvars;
+
+   SCIP_VARDATA* vardata;
+   SCIP_VARDATA* newvardata;
+
+   int nsols;
+   SCIP_SOL** sols;
+
+   SCIP_VAR* newvar;
+
+   SCIP_Real objcoeff;
+   SCIP_Real conscoeff;
+
+   assert(scip != NULL);
+   assert(pricer != NULL);
+
+   /* get pricer data */
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   SCIP_CALL(SCIPallocBufferArray(scip, &varname, VARNAMELEN) );
+
+   /* set objective value of all variables in the pricing problems to 0 */
+   for ( i = 0; i < pricerdata->npricingprobs; i++)
+   {
+      probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
+      nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+
+      for ( j = 0; j < nprobvars; j++ )
+      {
+         if ( redcostpricing == FALSE )
+         {
+            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0) );
+         }
+         else 
+         {
+            vardata = SCIPvarGetData(probvars[j]);
+            assert(vardata->vartype == GCG_VARTYPE_PRICING);
+            assert(vardata->blocknr == i);
+            assert(vardata->data.pricingvardata.origvar != NULL);
+            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 
+                  SCIPvarGetObj(vardata->data.pricingvardata.origvar)) );
+         }  
+      }
+   }
+
+   /* get the constraints of the master problem */
+   GCGprobGetMasterConss(scip, &masterconss, &nmasterconss);
+
+   /* get the corresponding constraints in the original problem */
+   GCGprobGetOrigMasterConss(scip, &origconss, &norigconss);
+   
+
+   /* compute reduced cost and set objectives in the pricing problems */
+      /* farkas pricing */
+   for ( i = 0; i < nmasterconss; i++ )
+   {
+      if ( redcostpricing == FALSE )
+      {
+         pricerdata->redcost[i] = SCIPgetDualfarkasLinear(scip, masterconss[i]);
+      }
+      else
+      {      
+         pricerdata->redcost[i] = SCIPgetDualsolLinear(scip, masterconss[i]);
+      }
+      //printf("master[%d] = %f\n", i, pricerdata->redcost[i]);
+      if ( !SCIPisFeasZero(scip, pricerdata->redcost[i]) )
+      {
+         consvars = SCIPgetVarsLinear(pricerdata->origprob, origconss[i]);
+         nconsvars = SCIPgetNVarsLinear(pricerdata->origprob, origconss[i]);
+         consvals = SCIPgetValsLinear(pricerdata->origprob, origconss[i]);
+         for ( j = 0; j < nconsvars; j++ )
+         {
+            vardata = SCIPvarGetData(consvars[j]);
+            assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+            assert(vardata->blocknr != -1);
+            assert(vardata->data.origvardata.pricingvar != NULL);
+            /* modify the objective of the corresponding variable in the pricing problem */
+            SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[vardata->blocknr], 
+                  vardata->data.origvardata.pricingvar, -1.0 * pricerdata->redcost[i] * consvals[j]) );
+         }
+      }
+   }
+   for ( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
+      if ( redcostpricing == FALSE )
+      {
+         pricerdata->redcostconv[i] = SCIPgetDualfarkasLinear(scip, GCGprobGetConvCons(scip, i));
+      }
+      else
+      {
+         pricerdata->redcostconv[i] = SCIPgetDualsolLinear(scip, GCGprobGetConvCons(scip, i));
+      }
+      //printf("conv[%d] = %f\n", i, pricerdata->redcostconv[i]);
+   }
+
+
+   for ( i = 1; i <= pricerdata->npricingprobs; i++)
+   {
+      prob = (pricerdata->pricingprobnr + i) % pricerdata->npricingprobs;
+      //SCIP_CALL( SCIPprintOrigProblem(pricerdata->pricingprobs[prob], NULL, NULL, TRUE) );
+      SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
+
+      SCIP_CALL( SCIPsolve(pricerdata->pricingprobs[prob]) );
+      assert( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL);
+      nsols = SCIPgetNSols(pricerdata->pricingprobs[prob]);
+      sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
+      for ( j = 0; j < nsols; j++ )
+      {
+         /* solution value - dual value of associated convexity constraint < 0 
+            --> can make the LP feasible or improve the current solution */ 
+         if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]) )
+         {
+            /* get variables of the pricing problem and their values in the current solution */
+            probvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
+            nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
+            SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[j], nprobvars, probvars, pricerdata->solvals) );
+            
+            assert(scip != NULL);
+
+            /* create variable in the master problem */
+            SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+            newvardata->vartype = GCG_VARTYPE_MASTER;
+            newvardata->data.mastervardata.norigvars = nprobvars;
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
+
+            objcoeff = 0;
+            for ( k = 0; k < nprobvars; k++ )
+            {
+               if ( !SCIPisFeasZero(scip, pricerdata->solvals[k]) )
+               {
+                  vardata = SCIPvarGetData(probvars[k]);
+                  assert(vardata->vartype == GCG_VARTYPE_PRICING);
+                  assert(vardata->data.pricingvardata.origvar != NULL);
+                  objcoeff += pricerdata->solvals[k] * SCIPvarGetObj(vardata->data.pricingvardata.origvar);
+                  newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
+                  newvardata->data.mastervardata.vals[k] = pricerdata->solvals[k];
+               }
+            }
+
+
+            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
+            pricerdata->nvarsprob[prob]++;
+
+            SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
+                  0, SCIPinfinity(scip), objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+            SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
+
+            /*
+            printf("%s = (", SCIPvarGetName(newvar));
+            for ( k = 0; k < nprobvars; k++ )
+            {
+               printf("%s = %f,", SCIPvarGetName(probvars[k]), pricerdata->solvals[k]);
+            }
+            printf("), c = %f\n", objcoeff);
+            */
+            
+            for ( k = 0; k < norigconss; k++ )
+            {
+               conscoeff = 0;
+               for ( l = 0; l < nprobvars; l++ )
+               {
+                  if ( !SCIPisFeasZero(scip, pricerdata->solvals[l]) )
+                  {
+                     //printf("var = %s\n", SCIPvarPrintName(probvars[l]));
+                     vardata = SCIPvarGetData(probvars[l]);
+                     assert(vardata != NULL);
+                     assert(vardata->vartype == GCG_VARTYPE_PRICING);
+                     vardata = SCIPvarGetData(vardata->data.pricingvardata.origvar);
+                     assert(vardata != NULL);
+                     assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+                     assert(vardata->data.origvardata.coefs != NULL);
+                                          
+                     conscoeff += vardata->data.origvardata.coefs[k] * pricerdata->solvals[l];
+                  }
+               }
+               SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[k], newvar, conscoeff) );
+               //printf("new variable has coef = %f in constraint %d\n", conscoeff, k);
+            }
+            SCIP_CALL( SCIPaddCoefLinear(scip, GCGprobGetConvCons(scip, prob), newvar, 1) );
+            //printf("new variable has coef = %f in convexity constraint %d\n", 1.0, prob);
+
+            SCIPreleaseVar(scip, &newvar);
+
+            
+            //SCIP_CALL( SCIPprintTransProblem(scip, NULL, NULL, TRUE) );
+
+            SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
+
+            SCIPfreeBufferArray(scip, &varname);
+
+            return SCIP_OKAY;
+
+         }
+      }
+
+      SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
+   }
+
+   SCIPfreeBufferArray(scip, &varname);
+
+   return SCIP_OKAY;
+}
+
 
 
 
@@ -102,13 +343,38 @@ static
 SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 {  
    SCIP_PRICERDATA* pricerdata;
+   int i;
 
    assert(scip != NULL);
    assert(pricer != NULL);
 
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
+
+   /* set last used pricingprobnr to 0 */
+   pricerdata->pricingprobnr = 0;
+
+   /* get rhe original program */
+   pricerdata->origprob = GCGprobGetOrigprob(scip);
    
+   /* init array containing all pricing problems */
+   pricerdata->npricingprobs = GCGprobGetNPricingprobs(scip);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nvarsprob), pricerdata->npricingprobs) );
+
+   for ( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
+      pricerdata->pricingprobs[i] = GCGprobGetPricingprob(scip, i);
+      pricerdata->nvarsprob[i] = 0;
+   }
+   
+   /* alloc memory for arrays of reduced cost */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcost), GCGprobGetNMasterConss(scip)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostconv), GCGprobGetNPricingprobs(scip)) );
+
+   /* alloc memory for solution values of variables in pricing problems */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), SCIPgetNOrigVars(pricerdata->origprob)) );
+
    return SCIP_OKAY;
 }
 
@@ -125,7 +391,13 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
-
+   
+   SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
+   SCIPfreeMemoryArray(scip, &(pricerdata->redcost));
+   SCIPfreeMemoryArray(scip, &(pricerdata->redcostconv));
+   SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
+   SCIPfreeMemoryArray(scip, &(pricerdata->nvarsprob));
+   
    return SCIP_OKAY;
 }
 
@@ -136,212 +408,26 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 static
 SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 {  
-   SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-
-
    assert(scip != NULL);
    assert(pricer != NULL);
 
-   /* get pricer data */
-   pricerdata = SCIPpricerGetData(pricer);
-   assert(pricerdata != NULL);
-
-   printf("pricerredcost\n");
+   //printf("pricerredcost\n");
+   return performPricing(scip, pricer, TRUE);
 
    return SCIP_OKAY;
 }
 
 
+
+
 static
 SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {  
-   SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-   SCIP_CONS** masterconss;
-   int nmasterconss;
-   SCIP_CONS** origconss;
-   int norigconss;
-   SCIP* origprob;
-
-   SCIP_Real* farkas;
-   int i;
-   int j;
-   int k;
-   int l;
-
-   SCIP_VAR** consvars;
-   int nconsvars;
-   SCIP_Real* consvals;
-   SCIP_VAR** probvars;
-   int nprobvars;
-   SCIP_Real* solvals;
-
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* newvardata;
-   SCIP_VAR* pricingvar;
-
-   int nsols;
-   SCIP_SOL** sols;
-
-   SCIP_VAR* newvar;
-
-   SCIP_Real objcoeff;
-   SCIP_Real conscoeff;
-
    assert(scip != NULL);
    assert(pricer != NULL);
 
-   /* get pricer data */
-   pricerdata = SCIPpricerGetData(pricer);
-   assert(pricerdata != NULL);
-
-   /* get original problem */
-   origprob = GCGprobGetOrigprob(scip);
-   
-   /* set objective value of all variables in the pricing problems to 0 */
-   for ( i = 0; i < GCGprobGetNPricingprobs(scip); i++)
-   {
-      probvars = SCIPgetVars(GCGprobGetPricingprob(scip, i));
-      nprobvars = SCIPgetNVars(GCGprobGetPricingprob(scip, i));
-      printf("nprobvars = %d\n", nprobvars);
-
-      for ( j = 0; j < nprobvars; j++ )
-      {
-         SCIP_CALL( SCIPchgVarObj(GCGprobGetPricingprob(scip, i), probvars[j], 0) );
-      }
-   }
-
-   //SCIP_CALL( SCIPprintOrigProblem(GCGprobGetOrigprob(scip), NULL, NULL, TRUE) );
-
-   /* get the constraints of the master problem */
-   GCGprobGetMasterConss(scip, &masterconss, &nmasterconss);
-   SCIP_CALL( SCIPallocBufferArray(scip, &farkas, nmasterconss) );
-
-   /* get the corresponding constraints of the master problem */
-   GCGprobGetOrigMasterConss(scip, &origconss, &norigconss);
-   
-   for ( i = 0; i < nmasterconss; i++ )
-   {
-      farkas[i] = SCIPgetDualfarkasLinear(scip, masterconss[i]);
-      printf("%f\n", farkas[i]);
-      if ( !SCIPisFeasZero(scip, farkas[i]) )
-      {
-         consvars = SCIPgetVarsLinear(origprob, origconss[i]);
-         nconsvars = SCIPgetNVarsLinear(origprob, origconss[i]);
-         consvals = SCIPgetValsLinear(origprob, origconss[i]);
-         for ( j = 0; j < nconsvars; j++ )
-         {
-            vardata = SCIPvarGetData(consvars[j]);
-            assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-            assert(vardata->blocknr != -1);
-            assert(vardata->data.origvardata.pricingvar != NULL);
-            /* modify the objective of the corresponding variable in the pricing problem */
-            SCIP_CALL( SCIPaddVarObj(GCGprobGetPricingprob(scip, vardata->blocknr), 
-                  vardata->data.origvardata.pricingvar, -1.0 * farkas[i] * consvals[j]) );
-         }
-      }
-   }
-
-   /* set objective value of all variables in the pricing problems to 0 */
-   for ( i = 0; i < GCGprobGetNPricingprobs(scip); i++)
-   {
-      probvars = SCIPgetVars(GCGprobGetPricingprob(scip, i));
-      nprobvars = SCIPgetNVars(GCGprobGetPricingprob(scip, i));
-      printf("nprobvars = %d\n", nprobvars);
-
-      //printf("Pricingprob no. %d: nvars = %d\n", i, nprobvars);
-
-      for ( j = 0; j < nprobvars; j++ )
-      {
-         //printf( "var = %s, obj = %f\n", SCIPvarGetName(probvars[j]), SCIPvarGetObj(probvars[j]));
-      }
-   }
-
-   for ( i = 0; i < GCGprobGetNPricingprobs(scip); i++)
-   {
-      SCIP_CALL( SCIPprintOrigProblem(GCGprobGetPricingprob(scip, i), NULL, NULL, TRUE) );
-      SCIP_CALL( SCIPpresolve(GCGprobGetPricingprob(scip, i)) );
-
-      SCIP_CALL( SCIPsolve(GCGprobGetPricingprob(scip, i)) );
-      nsols = SCIPgetNSols(GCGprobGetPricingprob(scip, i));
-      sols = SCIPgetSols(GCGprobGetPricingprob(scip, i));
-      for ( j = 0; j < nsols; j++ )
-      {
-         /* solution value < 0 --> can make the LP feasible */
-         if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(GCGprobGetPricingprob(scip, i), sols[j])) )
-         {
-            /* get variables of the pricing problem and their values in the current solution */
-            probvars = SCIPgetVars(GCGprobGetPricingprob(scip, i));
-            nprobvars = SCIPgetNOrigVars(GCGprobGetPricingprob(scip, i));
-            printf("a) scip = %p\n", scip);
-            SCIP_CALL( SCIPgetSolVals(GCGprobGetPricingprob(scip, i), sols[j], nprobvars, probvars, solvals) );
-            
-            printf("b) scip = %p\n", scip);
-            assert(scip != NULL);
-
-            /* create variable in the master problem */
-            SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
-            newvardata->vartype = GCG_VARTYPE_MASTER;
-            newvardata->data.mastervardata.norigvars = nprobvars;
-            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
-            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
-
-            objcoeff = 0;
-            for ( k = 0; k < nprobvars; k++ )
-            {
-               if ( !SCIPisFeasZero(scip, solvals[k]) )
-               {
-                  vardata = SCIPvarGetData(probvars[k]);
-                  assert(vardata->vartype == GCG_VARTYPE_PRICING);
-                  assert(vardata->data.pricingvardata.origvar != NULL);
-                  objcoeff += solvals[k] * SCIPvarGetObj(vardata->data.pricingvardata.origvar);
-                  newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
-                  newvardata->data.mastervardata.vals[k] = solvals[k];
-               }
-            }
-
-
-            SCIP_CALL( SCIPcreateVar(scip, &newvar, "p", 
-                  0, SCIPinfinity(scip), objcoeff, SCIP_VARTYPE_CONTINUOUS, 
-                  TRUE, TRUE, gcgdelvarorig, NULL, NULL, newvardata) );
-            SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
-            printf("added new variable\n");
-
-            
-            for ( k = 0; k < norigconss; k++ )
-            {
-               conscoeff = 0;
-               printf("nprobvars = %d\n", nprobvars);
-               for ( l = 0; l < nprobvars; l++ )
-               {
-                  printf("solval = %f\n", solvals[l]);
-                  if ( !SCIPisFeasZero(scip, solvals[l]) )
-                  {
-                     vardata = SCIPvarGetData(probvars[j]);
-                     assert(vardata != NULL);
-                     assert(vardata->vartype == GCG_VARTYPE_PRICING);
-                     vardata = SCIPvarGetData(vardata->data.pricingvardata.origvar);
-                     assert(vardata != NULL);
-                     assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-                     assert(vardata->data.origvardata.coefs != NULL);
-                                          
-                     conscoeff += vardata->data.origvardata.coefs[k] * solvals[l];
-                  }
-               }
-               SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[k], newvar, conscoeff) );
-               printf("new variable has coef = %f in constraint %d\n", conscoeff, k);
-               assert(0);
-            }
-
-         }
-      }
-
-
-      SCIP_CALL( SCIPfreeTransform(GCGprobGetPricingprob(scip, i)) );
-   }
-   
-   SCIPfreeBufferArray(scip, &farkas);   
-
-   return SCIP_OKAY;
+   //printf("pricerfarkas\n");
+   return performPricing(scip, pricer, FALSE);
 }
 
 /* define not used callbacks as NULL */

@@ -1378,7 +1378,8 @@ SCIP_RETCODE readLPBFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   int npricingprobs = 7;
+   int npricingprobs;
+   SCIP_Real tmp;
    
    assert(lpbinput != NULL);
 
@@ -1391,8 +1392,17 @@ SCIP_RETCODE readLPBFile(
       return SCIP_NOFILE;
    }
 
+   tmp = -1.0;
+   getNextToken(lpbinput);
+   isValue(scip, lpbinput, &tmp);
+   npricingprobs = (int) tmp;
+   assert(npricingprobs >= 0);
+
    /* create problem */
    SCIP_CALL( SCIPcreateProbGcg(scip, filename, npricingprobs) );
+
+   /* create convexity constraints */
+   SCIP_CALL( GCGprobCreateConvConss(scip) );
 
    /* parse the file */
    lpbinput->section = LPB_START;

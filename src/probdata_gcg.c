@@ -44,6 +44,7 @@ struct SCIP_ProbData
    SCIP_CONS***     pricingconss;       /* array of arrays of cons in the original problem belonging to pricing problem nr. i*/
    int*             maxpricingconss;    /* length of pricingcons at position i*/
    int*             npricingconss;      /* number of constraints belonging to pricing problem i */
+   SCIP_CONS**      convconss;          /* array of convexity constraints, one for each block */
 };
 
 
@@ -134,11 +135,15 @@ SCIP_DECL_PROBTRANS(probtransGcg)
    (*targetdata)->npricingconss = sourcedata->npricingconss;
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &((*targetdata)->masterconss), sourcedata->maxmasterconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &((*targetdata)->convconss), sourcedata->npricingprobs) );
    (*targetdata)->maxmasterconss = sourcedata->maxmasterconss;
    (*targetdata)->nmasterconss = sourcedata->nmasterconss;
    
    SCIP_CALL( SCIPtransformConss(scip, sourcedata->nmasterconss, 
          sourcedata->masterconss, (*targetdata)->masterconss) );
+
+   SCIP_CALL( SCIPtransformConss(scip, sourcedata->npricingprobs, 
+         sourcedata->convconss, (*targetdata)->convconss) );
 
    vars = SCIPgetVars((*targetdata)->origprob);
    nvars = SCIPgetNVars((*targetdata)->origprob);
@@ -182,6 +187,9 @@ static
 SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 {
    int i;
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_VARDATA* vardata;
 
    assert(scip !=  NULL);
    assert(probdata != NULL);
@@ -191,8 +199,24 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->masterconss[i]) );
    }
+   for ( i = 0; i < (*probdata)->npricingprobs; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
+   }
+
+   vars = SCIPgetVars((*probdata)->origprob);
+   nvars = SCIPgetNVars((*probdata)->origprob);
+   for ( i = 0; i < nvars; i++ )
+   {
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+
+      SCIPfreeBlockMemoryArray(scip, &(vardata->data.origvardata.coefs), (*probdata)->nmasterconss);
+   }
 
    SCIPfreeMemoryArray(scip, &(*probdata)->masterconss);
+   SCIPfreeMemoryArray(scip, &(*probdata)->convconss);
 
    SCIPfreeMemory(scip, probdata);
 
@@ -228,6 +252,10 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->masterconss[i]) );
    }
+   for ( i = 0; i < (*probdata)->npricingprobs; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
+   }
 
    /* free pricing problems */
    for ( i = (*probdata)->npricingprobs - 1; i >= 0 ; i-- )
@@ -253,6 +281,8 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    SCIPfreeMemoryArray(scip, &((*probdata)->origmasterconss));
 
    SCIPfreeMemoryArray(scip, &((*probdata)->pricingprobs));
+
+   SCIPfreeMemoryArray(scip, &((*probdata)->convconss));
 
    SCIPfreeMemory(scip, probdata);
 
@@ -294,10 +324,11 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->masterconss), probdata->maxmasterconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->origmasterconss), probdata->maxorigmasterconss) );
    
-   /* array for saving of constraints belonging to one of the pricing problems */
+   /* array for saving constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingconss), npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->maxpricingconss), npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->npricingconss), npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->convconss), npricingprobs) );
    for ( i = 0; i < npricingprobs; i++ )
    {
       probdata->maxpricingconss[i] = 5;
@@ -317,14 +348,13 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usepseudo", FALSE) );
 
    SCIP_CALL( SCIPcreateProb(probdata->origprob, "origprob", NULL, NULL, NULL, NULL, NULL, NULL) );
-   
+
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &probname, 25) );   
    /* initialize the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingprobs), npricingprobs) );
    for ( i = 0; i < npricingprobs; i++ )
    {
-      //SCIP_CALL( SCIPallocBufferArray(scip, probname, MAX_LINELEN) );
-      //(void) SCIPsnprintf(probname, MAX_LINELEN, "pricing_block_%n", i);
-
       /* initializing the scip data structure for the original problem */  
       SCIP_CALL( SCIPcreate(&(probdata->pricingprobs[i])) );
       SCIP_CALL( SCIPincludeDefaultPlugins(probdata->pricingprobs[i]) );
@@ -338,9 +368,11 @@ SCIP_RETCODE SCIPcreateProbGcg(
       /* disable output to console */
       SCIP_CALL( SCIPsetIntParam(probdata->pricingprobs[i], "display/verblevel", 0) );
 
-
-      SCIP_CALL( SCIPcreateProb(probdata->pricingprobs[i], "pricingprob", NULL, NULL, NULL, NULL, NULL, NULL) );
+      (void) SCIPsnprintf(probname, 25, "pricing_block_%d", i);
+      SCIP_CALL( SCIPcreateProb(probdata->pricingprobs[i], probname, NULL, NULL, NULL, NULL, NULL, NULL) );
    }
+
+   SCIPfreeBufferArray(scip, &probname);
 
    /* create problem in SCIP */
    SCIP_CALL( SCIPcreateProb(scip, name, probdelorigGcg, probtransGcg, probdeltransGcg, 
@@ -348,15 +380,43 @@ SCIP_RETCODE SCIPcreateProbGcg(
 
    SCIP_CALL( SCIPactivatePricer(scip, SCIPfindPricer(scip, "gcg")) );
 
-
-
    return SCIP_OKAY;
 }
 
 
 /* ----------------------------------- external methods -------------------------- */
 
+/** create the convexity constraints belonging to the pricing blocks */
+SCIP_RETCODE GCGprobCreateConvConss(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   char* consname;
+   int i;
 
+   probdata = SCIPgetProbData(scip);
+
+   assert(probdata != NULL);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &consname, 25) );
+
+   /* create convexity constraint for the blocks in the master problem */
+   for ( i = 0; i < probdata->npricingprobs; i++ )
+   {
+
+      (void) SCIPsnprintf(consname, 25, "conv_block_%d", i);
+
+      SCIP_CALL( SCIPcreateConsLinear(scip, &(probdata->convconss[i]), consname, 0, NULL, NULL, 1, 1, TRUE, 
+            TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+      SCIP_CALL( SCIPaddCons(scip, probdata->convconss[i]) );
+   }
+
+   SCIPfreeBufferArray(scip, &consname);
+   
+   return SCIP_OKAY;
+   
+}
 /** creates and captures a linear constraint */
 SCIP_RETCODE GCGcreateConsLinear(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -461,7 +521,7 @@ SCIP_RETCODE GCGcreateConsLinear(
          SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, var, vals[i]) );
       }
 
-      SCIP_CALL( SCIPprintCons(probdata->pricingprobs[pricingprobnr], cons, NULL) );
+      //SCIP_CALL( SCIPprintCons(probdata->pricingprobs[pricingprobnr], cons, NULL) );
       
    }
 
@@ -686,8 +746,6 @@ SCIP* GCGprobGetPricingprob(
    
    assert(probdata != NULL);
 
-   printf("getpricingprob) scip = %p\n", scip);
-   
    return probdata->pricingprobs[pricingprobnr];
 }
 
@@ -723,6 +781,23 @@ void GCGprobGetMasterConss(
    *nconss = probdata->nmasterconss;
 }
 
+
+int GCGprobGetNMasterConss(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   assert(probdata->nmasterconss >= 0);
+
+   return probdata->nmasterconss;
+}
+
+
+
 void GCGprobGetOrigMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          conss,
@@ -742,3 +817,21 @@ void GCGprobGetOrigMasterConss(
    *nconss = probdata->norigmasterconss;
 
 }
+
+SCIP_CONS* GCGprobGetConvCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr
+   )
+{
+   SCIP_PROBDATA* probdata;
+   
+   probdata = SCIPgetProbData(scip);
+   
+   assert(probdata != NULL);
+   assert(probdata->convconss != NULL);
+   assert(pricingprobnr >= 0 && pricingprobnr < probdata->npricingprobs);
+
+
+   return probdata->convconss[pricingprobnr];
+}
+

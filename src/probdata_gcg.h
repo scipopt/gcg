@@ -37,6 +37,10 @@ SCIP_RETCODE SCIPcreateProbGcg(
    );
 
 
+/** create the convexity constraints belonging to the pricing blocks */
+SCIP_RETCODE GCGprobCreateConvConss(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 /** creates and captures a linear constraint */
 extern
@@ -151,10 +155,21 @@ void GCGprobGetMasterConss(
    );
 
 extern
+int GCGprobGetNMasterConss(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+extern
 void GCGprobGetOrigMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          conss,
    int*                  nconss
+   );
+
+extern
+SCIP_CONS* GCGprobGetConvCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr
    );
 
 #endif
