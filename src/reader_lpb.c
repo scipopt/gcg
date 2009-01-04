@@ -1401,9 +1401,6 @@ SCIP_RETCODE readLPBFile(
    /* create problem */
    SCIP_CALL( SCIPcreateProbGcg(scip, filename, npricingprobs) );
 
-   /* create convexity constraints */
-   SCIP_CALL( GCGprobCreateConvConss(scip) );
-
    /* parse the file */
    lpbinput->section = LPB_START;
    while( lpbinput->section != LPB_END && !hasError(lpbinput) )
@@ -1447,6 +1444,9 @@ SCIP_RETCODE readLPBFile(
 
    /* close file */
    SCIPfclose(lpbinput->file);
+
+   /* create convexity constraints */
+   SCIP_CALL( GCGprobCreateConvConss(scip) );
 
    return SCIP_OKAY;
 }
