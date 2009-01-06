@@ -26,6 +26,15 @@
 
 #include "scip/scip.h"
 
+enum GCG_Pricetype
+{
+   GCG_PRICETYPE_INIT      = 0,       /**< initial pricing */
+   GCG_PRICETYPE_FARKAS    = 1,       /**< farkas pricing */
+   GCG_PRICETYPE_REDCOST   = 2        /**< redcost pricing */
+};
+typedef enum GCG_Pricetype GCG_PRICETYPE;
+
+
 
 /** creates the healthcare variable pricer and includes it in SCIP */
 extern
