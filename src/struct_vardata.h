@@ -74,5 +74,13 @@ struct SCIP_VarData
    int                blocknr;               /**< number of the block and pricing problem, the variable belongs to */
 };
 
+struct GCG_Block
+{
+   int nvars;
+   int maxvars;
+   SCIP_VAR** vars;
+};
+typedef struct GCG_Block GCG_BLOCK;
+
 
 #endif
