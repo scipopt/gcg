@@ -46,6 +46,7 @@ MAINOBJ		=	reader_lpb.o \
 			probdata_gcg.o \
 			gcgplugins.o \
 			pricer_gcg.o \
+			cons_integralOrig.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))

@@ -65,7 +65,6 @@ struct SCIP_PricerData
  * Vardata methods
  */
 
-/** problem reading method of reader */
 static
 SCIP_DECL_VARDELORIG(gcgvardeltrans)
 {  
@@ -73,6 +72,12 @@ SCIP_DECL_VARDELORIG(gcgvardeltrans)
    {
       SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.vals), (*vardata)->data.mastervardata.norigvars);
       SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+
+   }
+   if ( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
+   {
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
    }
    
    SCIPfreeBlockMemory(scip, vardata);
@@ -84,6 +89,44 @@ SCIP_DECL_VARDELORIG(gcgvardeltrans)
 /*
  * Local methods
  */
+
+static
+SCIP_RETCODE addMasterVarToOrigVar(
+   SCIP*                 scip,
+   SCIP_VAR*             origvar,
+   SCIP_VAR*             var,
+   SCIP_Real             val
+   )
+{
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(origvar != NULL);
+   assert(var != NULL);
+   
+   vardata = SCIPvarGetData(origvar);
+
+   assert(vardata->type == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->data.origvardata.mastervars != NULL);
+   assert(vardata->data.origvardata.mastervals != NULL);
+   assert(vardata->data.origvardata.nmastervars >= 0);
+   assert(vardata->data.origvardata.maxmastervars >= vardata->data.origvardata.nmastervars);
+   if ( vardata->data.origvardata.maxmastervars == vardata->data.origvardata.nmastervars )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.mastervars),
+            2*vardata->data.origvardata.maxmastervars) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.mastervals),
+            2*vardata->data.origvardata.maxmastervars) );
+      SCIPdebugMessage("mastervars array resized from %d to %d\n", vardata->data.origvardata.maxmastervars,
+         2*vardata->data.origvardata.maxmastervars);
+      vardata->data.origvardata.maxmastervars = 2*vardata->data.origvardata.maxmastervars;
+   }
+   vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars] = var;
+   vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars] = val;
+   vardata->data.origvardata.nmastervars++;
+
+   return SCIP_OKAY;
+}
 
 static
 SCIP_RETCODE performPricing(
@@ -203,7 +246,7 @@ SCIP_RETCODE performPricing(
          }
       }
    }
-   //printf(".\n");
+
    for ( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       if ( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_INIT )
@@ -213,12 +256,7 @@ SCIP_RETCODE performPricing(
       else
       {
          pricerdata->redcostconv[i] = SCIPgetDualsolLinear(scip, GCGprobGetConvCons(scip, i));
-         if ( pricerdata->redcostconv[i] > 0 )
-         {
-            //printf("redcostconv[%d] = %f > 0\n", i, pricerdata->redcostconv[i]);
-         }
       }
-      //printf("conv[%d] = %f\n", i, pricerdata->redcostconv[i]);
    }
 
 
@@ -229,10 +267,8 @@ SCIP_RETCODE performPricing(
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
 
-      //SCIP_CALL( SCIPprintOrigProblem(pricerdata->pricingprobs[prob], NULL, NULL, TRUE) );
       SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
       SCIP_CALL( SCIPsolve(pricerdata->pricingprobs[prob]) );
-      //printf("presolving = %fs, solving = %fs\n", SCIPgetPresolvingTime(pricerdata->pricingprobs[prob]), SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 
       pricerdata->solvedsubmips++;
 
@@ -245,7 +281,7 @@ SCIP_RETCODE performPricing(
       for ( j = 0; j < nsols; j++ )
       {
          /* solution value - dual value of associated convexity constraint < 0 
-            --> can make the LP feasible or improve the current solution */ 
+            --> can make the LP feasible / improve the current solution */ 
          if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]) )
          {
 
@@ -264,6 +300,7 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
 
+            /* compute objective coefficient of the variable */
             objcoeff = 0;
             for ( k = 0; k < nprobvars; k++ )
             {
@@ -272,19 +309,34 @@ SCIP_RETCODE performPricing(
                   vardata = SCIPvarGetData(probvars[k]);
                   assert(vardata->vartype == GCG_VARTYPE_PRICING);
                   assert(vardata->data.pricingvardata.origvar != NULL);
+                  /* add quota of original variable's objcoef to the master variable's coef */
                   objcoeff += pricerdata->solvals[k] * SCIPvarGetObj(vardata->data.pricingvardata.origvar);
-                  newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
-                  newvardata->data.mastervardata.vals[k] = pricerdata->solvals[k];
                }
             }
-
-
-            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
-            pricerdata->nvarsprob[prob]++;
 
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
                   0, SCIPinfinity(scip), objcoeff, SCIP_VARTYPE_CONTINUOUS, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+
+            /* update variable datas */
+            for ( k = 0; k < nprobvars; k++ )
+            {
+               if ( !SCIPisFeasZero(scip, pricerdata->solvals[k]) )
+               {
+                  vardata = SCIPvarGetData(probvars[k]);
+                  assert(vardata->vartype == GCG_VARTYPE_PRICING);
+                  assert(vardata->data.pricingvardata.origvar != NULL);
+                  /* save in the master problem variable's data the quota of the corresponding original variable */
+                  newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
+                  newvardata->data.mastervardata.vals[k] = pricerdata->solvals[k];
+                  /* save the quota in the original variable's data */
+                  SCIP_CALL( addMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvar, newvar, pricerdata->solvals[k]) );
+               }
+            }
+
+            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
+            pricerdata->nvarsprob[prob]++;
+
             SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
 
             for ( k = 0; k < norigconss; k++ )

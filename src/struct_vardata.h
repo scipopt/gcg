@@ -41,6 +41,10 @@ struct GCG_OrigVarData
    SCIP_VAR*             pricingvar;             /**< corresponding variable in the original program */
    SCIP_Real*            coefs;                  /**< coefficiants in the linear constraints of the original program */
    int                   ncoefs;                 /**< number of coefficiants */
+   SCIP_VAR**            mastervars;             /**< variables in the master problem that contain the variable */
+   SCIP_Real*            mastervals;             /**< value of this variable in the master problem variables */
+   int                   nmastervars;            /**< number of corresponding master variables */
+   int                   maxmastervars;          /**< length of arrays mastervars and vals */
 };
 typedef struct GCG_OrigVarData GCG_ORIGVARDATA;
 
@@ -73,14 +77,6 @@ struct SCIP_VarData
    GCG_VARTYPE        vartype;               /**< type of variable */
    int                blocknr;               /**< number of the block and pricing problem, the variable belongs to */
 };
-
-struct GCG_Block
-{
-   int nvars;
-   int maxvars;
-   SCIP_VAR** vars;
-};
-typedef struct GCG_Block GCG_BLOCK;
 
 
 #endif

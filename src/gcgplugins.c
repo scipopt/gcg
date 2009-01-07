@@ -47,6 +47,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderCip(scip) );
    SCIP_CALL( SCIPincludeReaderLpb(scip) );
    SCIP_CALL( SCIPincludePricerGcg(scip) );
+   SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
 

@@ -28,6 +28,7 @@
 
 
 #define MAX_LINELEN       65536
+#define STARTMAXMASTERVARS 10
 
 
 struct SCIP_ProbData
@@ -557,6 +558,12 @@ SCIP_RETCODE GCGcreateOrigVar(
    vardata->blocknr = -1;
    vardata->data.origvardata.pricingvar = NULL;
    vardata->data.origvardata.ncoefs = 0;
+   vardata->data.origvardata.nmastervars = 0;
+   vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervars), 
+         vardata->data.origvardata.maxmastervars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals), 
+         vardata->data.origvardata.maxmastervars) );
 
    SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, vardata) );
 

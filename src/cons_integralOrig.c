@@ -12,56 +12,38 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#pragma ident "@(#) $Id$"
+
 /**@file   cons_integralOrig.c
- * @brief  constraint handler for storing the graph at each node of the tree
- * @author Gerald Gamrath
- *
+ * @ingroup CONSHDLRS 
+ * @brief  constraint handler for the integrality constraint
+ * @author Tobias Achterberg
  */
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
 #include <string.h>
+#include <limits.h>
 
-#include "scip/type_cons.h"
-#include "cons_integralOrig.h"
 #include "probdata_gcg.h"
 
 
-/* constraint handler properties */
 #define CONSHDLR_NAME          "integralOrig"
-#define CONSHDLR_DESC          "storing graph at nodes of the tree constraint handler"
+#define CONSHDLR_DESC          "integrality constraint"
 #define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
-#define CONSHDLR_CHECKPRIORITY  2000000 /**< priority of the constraint handler for checking feasibility */
+#define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
 #define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ             1 /**< frequency for propagating domains; zero means only preprocessing propagation */
-#define CONSHDLR_EAGERFREQ          100 /**< frequency for using all instead of only the useful constraints in separation,
-                                              * propagation and enforcement, -1 for no eager evaluations, 0 for first only */
+#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
+#define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
+                                              *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
 #define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
 #define CONSHDLR_DELAYSEPA        FALSE /**< should separation method be delayed, if other separators found cuts? */
 #define CONSHDLR_DELAYPROP        FALSE /**< should propagation method be delayed, if other propagators found reductions? */
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
-#define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
+#define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
-
-/** constraint data for storing graph constraints */
-struct SCIP_ConsData
-{
-   
-};
-
-
-
-/** constraint handler data */
-struct SCIP_ConshdlrData
-{
-   int nblocks;
-   
-};
-
-
-/*
- * Local methods
- */
 
 
 
@@ -69,95 +51,74 @@ struct SCIP_ConshdlrData
  * Callback methods
  */
 
-
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
-static
-SCIP_DECL_CONSFREE(consFreeIntegralOrig)
-{
-   SCIP_CONSHDLRDATA* conshdlrData;
+#define consFreeIntegralOrig NULL
 
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
+/** initialization method of constraint handler (called after problem was transformed) */
+#define consInitIntegralOrig NULL
 
-   SCIPdebugMessage("freeing store graph constraint handler\n");
 
-   return SCIP_OKAY;
-}
+/** deinitialization method of constraint handler (called before transformed problem is freed) */
+#define consExitIntegralOrig NULL
+
+
+/** presolving initialization method of constraint handler (called when presolving is about to begin) */
+#define consInitpreIntegralOrig NULL
+
+
+/** presolving deinitialization method of constraint handler (called after presolving has been finished) */
+#define consExitpreIntegralOrig NULL
 
 
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
-static
-SCIP_DECL_CONSINITSOL(consInitsolIntegralOrig)
-{
-   SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONS*         cons;
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
-
-   return SCIP_OKAY;
-}
+#define consInitsolIntegralOrig NULL
 
 
 /** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
-static
-SCIP_DECL_CONSEXITSOL(consExitsolIntegralOrig)
-{
-   SCIP_CONSHDLRDATA* conshdlrData;
-
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
-
-   return SCIP_OKAY;
-}
+#define consExitsolIntegralOrig NULL
 
 
 /** frees specific constraint data */
-static
-SCIP_DECL_CONSDELETE(consDeleteIntegralOrig)
-{
-   SCIP_CONSHDLRDATA* conshdlrData;
-   int i;
+#define consDeleteIntegralOrig NULL
 
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(cons != NULL);
-   assert(consdata != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(*consdata != NULL);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   
-   SCIPdebugMessage("Deleting integral orig constraint: <%s>.\n", SCIPconsGetName(cons));
+/** transforms constraint data into data belonging to the transformed problem */ 
+#define consTransIntegralOrig NULL
 
-   SCIPfreeBlockMemory(scip, consdata);
 
-   return SCIP_OKAY;
-}
+/** LP initialization method of constraint handler */
+#define consInitlpIntegralOrig NULL
+
+
+/** separation method of constraint handler for LP solutions */
+#define consSepalpIntegralOrig NULL
+
+
+/** separation method of constraint handler for arbitrary primal solutions */
+#define consSepasolIntegralOrig NULL
 
 
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
-{
-   assert(scip != NULL);
+{  /*lint --e{715}*/
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(scip != NULL);
+   assert(conss == NULL);
+   assert(nconss == 0);
    assert(result != NULL);
 
-   /* do nothing */
-   *result = SCIP_FEASIBLE;
+   SCIPdebugMessage("Enfolp method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+   printf("Enfolp method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+
+   /* call branching methods */
+   SCIP_CALL( SCIPbranchLP(scip, result) );
+
+   /* if no branching was done, the LP solution was not fractional */
+   if( *result == SCIP_DIDNOTRUN )
+      *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
 }
@@ -166,14 +127,23 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
-{
-   assert(scip != NULL);
+{  /*lint --e{715}*/
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(scip != NULL);
+   assert(conss == NULL);
+   assert(nconss == 0);
    assert(result != NULL);
 
-   /* do nothing */
-   *result = SCIP_FEASIBLE;
+   SCIPdebugMessage("Enfops method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+   printf("Enfops method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+
+   /* call branching methods */
+   SCIP_CALL( SCIPbranchLP(scip, result) );
+
+   /* if no branching was done, the LP solution was not fractional */
+   if( *result == SCIP_DIDNOTRUN )
+      *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
 }
@@ -182,144 +152,128 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 /** feasibility check method of constraint handler for integral solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
-{
-   assert(scip != NULL);
+{  /*lint --e{715}*/
+   SCIP_VAR** origvars;
+   int norigvars;
+   SCIP_VARDATA* vardata;
+   SCIP_Real solval;
+   int v;
+   int i;
+
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(result != NULL);
+   assert(scip != NULL);
 
-   /* do nothing */
+   SCIPdebugMessage("Check method of integrality constraint\n");
+   printf("Check method of integrality constraint\n");
+
+   origvars = SCIPgetOrigVars(GCGprobGetOrigprob(scip));
+   norigvars = SCIPgetNOrigVars(GCGprobGetOrigprob(scip));
+
    *result = SCIP_FEASIBLE;
+
+   if( checkintegrality )
+   {
+      //for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
+      for( v = 0; v < norigvars; v++ )
+      {
+         solval = 0;
+         vardata = SCIPvarGetData(origvars[v]);
+         assert(vardata->type = GCG_VARTYPE_ORIGINAL);
+         assert(vardata->data.origvardata.mastervars != NULL);
+         assert(vardata->data.origvardata.mastervals != NULL);
+         assert(vardata->data.origvardata.nmastervars >= 0);
+         for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+         {
+            solval += vardata->data.origvardata.mastervals[i] 
+               * SCIPgetSolVal(scip, sol, vardata->data.origvardata.mastervars[i]);
+         }
+         if( !SCIPisFeasIntegral(scip, solval) )
+         {
+            *result = SCIP_INFEASIBLE;
+
+            if( printreason )
+            {
+               SCIPinfoMessage(scip, NULL, "violation: integrality condition of variable <%s> = %.15g\n", 
+                  SCIPvarGetName(origvars[v]), solval);
+            }
+         }
+      }
+   }
 
    return SCIP_OKAY;
 }
+
+
+/** domain propagation method of constraint handler */
+#define consPropIntegralOrig NULL
+
+
+/** presolving method of constraint handler */
+#define consPresolIntegralOrig NULL
+
+
+/** propagation conflict resolving method of constraint handler */
+#define consRespropIntegralOrig NULL
 
 
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockIntegralOrig)
-{
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(cons != NULL);
-
-   SCIPdebugMessage("Locking method for integral orig constraint: <%s>.\n", SCIPconsGetName(cons));
-
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
 
 /** constraint activation notification method of constraint handler */
-static
-SCIP_DECL_CONSACTIVE(consActiveIntegralOrig)
-{
-   return SCIP_OKAY;
-}
-
+#define consActiveIntegralOrig NULL
 
 
 /** constraint deactivation notification method of constraint handler */
-static
-SCIP_DECL_CONSDEACTIVE(consDeactiveIntegralOrig)
-{
-   return SCIP_OKAY;
-}
+#define consDeactiveIntegralOrig NULL
 
 
-
-/** domain propagation method of constraint handler */
-static
-SCIP_DECL_CONSPROP(consPropIntegralOrig)
-{
-   return SCIP_OKAY;
-}
-
-/* define not used callbacks as NULL */
-#define consPresolIntegralOrig NULL
-#define consRespropIntegralOrig NULL
-#define consInitIntegralOrig NULL
-#define consExitIntegralOrig NULL
-#define consInitpreIntegralOrig NULL
-#define consExitpreIntegralOrig NULL
-#define consTransIntegralOrig NULL
-#define consInitlpIntegralOrig NULL
-#define consSepalpIntegralOrig NULL
-#define consSepasolIntegralOrig NULL
+/** constraint enabling notification method of constraint handler */
 #define consEnableIntegralOrig NULL
+
+
+/** constraint disabling notification method of constraint handler */
 #define consDisableIntegralOrig NULL
+
+/** constraint display method of constraint handler */
 #define consPrintIntegralOrig NULL
 
 
+
+
 /*
- * interface methods
+ * constraint specific interface methods
  */
 
-
-/** creates the handler for integralOrig constraints and includes it in SCIP */
-SCIP_RETCODE COLORincludeConshdlrIntegralOrig(
+/** creates the handler for integrality constraint and includes it in SCIP */
+SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
-   SCIPdebugMessage("Including graph storage constraint handler.\n");
-
-   SCIP_CALL( SCIPallocMemory(scip, &conshdlrData) );
+   /* create integral constraint handler data */
+   conshdlrdata = NULL;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
+         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS, 
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig,
+         consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig, 
          consInitpreIntegralOrig, consExitpreIntegralOrig, consInitsolIntegralOrig, consExitsolIntegralOrig,
          consDeleteIntegralOrig, consTransIntegralOrig, consInitlpIntegralOrig,
-         consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig,
+         consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, 
          consPropIntegralOrig, consPresolIntegralOrig, consRespropIntegralOrig, consLockIntegralOrig,
-         consActiveIntegralOrig, consDeactiveIntegralOrig,
+         consActiveIntegralOrig, consDeactiveIntegralOrig, 
          consEnableIntegralOrig, consDisableIntegralOrig,
          consPrintIntegralOrig,
-         conshdlrData) );
+         conshdlrdata) );
 
    return SCIP_OKAY;
 }
-
-
-/** creates and captures a integralOrig constraint, uses knowledge of the B&B-father*/
-SCIP_RETCODE COLORcreateConsIntegralOrig(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name                /**< name of constraint */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSDATA* consdata;
-
-   assert(scip != NULL);
-
-   /* find the integralOrig constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
-   {
-      SCIPerrorMessage("integralOrig constraint handler not found\n");
-      return SCIP_PLUGINNOTFOUND;
-   }
-
-   /* create constraint data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
-
-   SCIPdebugMessage("Creating store graph constraint: <%s(%d,%d)>. \n", name, (node1+1), (node2+1));
-
-   /* create constraint */
-   SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
-         TRUE, FALSE, TRUE, FALSE, TRUE) );
-   
-   return SCIP_OKAY;
-}
-
-
-
-
-/* ----------------------------------- external methods -------------------------- */
-

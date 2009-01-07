@@ -105,6 +105,7 @@
 #include "scip/scipshell.h"
 #include "reader_lpb.h"
 #include "pricer_gcg.h"
+#include "cons_integralOrig.h"
 
 
 
