@@ -32,7 +32,6 @@ enum GCG_ConsSense
 typedef enum GCG_ConsSense GCG_CONSSENSE;
 
 #include "scip/scip.h"
-#include "tclique/tclique.h"
 
 /** returns the store graph constraint of the current node, needs the pointer to the constraint handler */
 extern
@@ -56,22 +55,19 @@ int* GCGconsGetRepresentatives(
 
 
 /** creates the handler for graph storing constraints and includes it in SCIP */
+extern
 SCIP_RETCODE GCGincludeConshdlrBranchOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
-/** creates and captures a branchOrig constraint, uses knowledge of the B&B-father*/
+/** creates and captures a branchOrig constraint */
 extern
 SCIP_RETCODE GCGcreateConsBranchOrig(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name,               /**< name of constraint */
-   SCIP_CONS*            fatherconstraint,   /**< constraint in B&B-father */
-   int                   type,               /**< type of the constraint: ROOT for root-constraint, else SAME or DIFFER */
-   int                   node1,              /**< the first node of the constraint or -1 if root-constraint */
-   int                   node2,              /**< the second node of the constraint or -1 if root-constraint */
-   SCIP_NODE*            stickingnode        /**< the B&B-tree node at which the constraint will be sticking */     
+   SCIP_VAR*             origvar,
+   GCG_CONSSENSE         sense,
+   SCIP_Real             val
    );
 
 

@@ -38,7 +38,7 @@ typedef enum GCG_Vartype GCG_VARTYPE;
 /** data for variable fixing events */
 struct GCG_OrigVarData
 {
-   SCIP_VAR*             pricingvar;             /**< corresponding variable in the original program */
+   SCIP_VAR*             pricingvar;             /**< corresponding variable in the pricing program */
    SCIP_Real*            coefs;                  /**< coefficiants in the linear constraints of the original program */
    int                   ncoefs;                 /**< number of coefficiants */
    SCIP_VAR**            mastervars;             /**< variables in the master problem that contain the variable */

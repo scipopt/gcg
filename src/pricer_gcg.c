@@ -61,24 +61,17 @@ struct SCIP_PricerData
 };
 
 
+
 /*
  * Vardata methods
  */
 
 static
-SCIP_DECL_VARDELORIG(gcgvardeltrans)
-{  
-   if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
-   {
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.vals), (*vardata)->data.mastervardata.norigvars);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
-
-   }
-   if ( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
-   {
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
-   }
+SCIP_DECL_VARDELTRANS(gcgvardeltrans)
+{
+   assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.vals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
    
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -106,7 +99,7 @@ SCIP_RETCODE addMasterVarToOrigVar(
    
    vardata = SCIPvarGetData(origvar);
 
-   assert(vardata->type == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
    assert(vardata->data.origvardata.mastervars != NULL);
    assert(vardata->data.origvardata.mastervals != NULL);
    assert(vardata->data.origvardata.nmastervars >= 0);

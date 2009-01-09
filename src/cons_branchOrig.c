@@ -22,8 +22,9 @@
 #include <string.h>
 
 #include "scip/type_cons.h"
-#include "cons_branchOrig.h"
 #include "scip/cons_linear.h"
+#include "cons_branchOrig.h"
+#include "probdata_gcg.h"
 
 
 /* constraint handler properties */
@@ -42,6 +43,7 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
+#define CONSNAMELEN 50
 
 /** constraint data for storing graph constraints */
 struct SCIP_ConsData
@@ -51,6 +53,7 @@ struct SCIP_ConsData
    SCIP_VAR*          origvar;
    GCG_CONSSENSE      sense;
    SCIP_Real          val;
+   SCIP_CONS*         pricingcons;
 };
 
 
@@ -145,7 +148,6 @@ static
 SCIP_DECL_CONSDELETE(consDeleteBranchOrig)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-   int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -156,7 +158,7 @@ SCIP_DECL_CONSDELETE(consDeleteBranchOrig)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    
-   SCIPdebugMessage("Deleting branch orig constraint: <%s(%d,%d)>.\n", SCIPconsGetName(cons), (*consdata)->node1+1, (*consdata)->node2+1);
+   SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
@@ -234,8 +236,7 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA*     consdata;
-   int   i;
-   int   j;
+   SCIP_VARDATA* vardata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -248,10 +249,8 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert((consdata->type == COLOR_CONSTYPE_ROOT) || (consdata->fathercons != NULL));
 
-   SCIPdebugMessage("Activating branch orig constraint: <%s> [stack size: %d].\n", SCIPconsGetName(cons), 
-                         conshdlrData->nstack+1);
+   SCIPdebugMessage("Activating branch orig constraint: <%s> [stack size: %d].\n", SCIPconsGetName(cons), conshdlrData->nstack+1);
 
    /* put constraint on the stack */
    if ( conshdlrData->nstack >= conshdlrData->maxstacksize )
@@ -263,15 +262,15 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
    conshdlrData->stack[conshdlrData->nstack] = cons;
    ++(conshdlrData->nstack);
 
-   /* if new variables where created after the last propagation of this cons, repropagate it */
-   else
-   {
-      if ( (consdata->propagatedvars < COLORprobGetNStableSets(scip)) && (consdata->type != COLOR_CONSTYPE_ROOT) )
-      {
-         SCIPrepropagateNode(scip, consdata->stickingatnode);
-      }
-   }
-   
+   /* enable corresponding constraitn in the pricing problem */
+   vardata = SCIPvarGetData(consdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGprobGetNPricingprobs(scip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
+   SCIP_CALL( SCIPdisableCons(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons) );
+
    return SCIP_OKAY;
 }
 
@@ -282,9 +281,8 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveBranchOrig)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-#ifdef SCIP_DEBUG
    SCIP_CONSDATA*     consdata;
-#endif
+   SCIP_VARDATA* vardata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -297,11 +295,19 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveBranchOrig)
    assert(conshdlrData->nstack > 0);
    assert(cons == conshdlrData->stack[conshdlrData->nstack-1]);
 
-#ifdef SCIP_DEBUG
    consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
 
-   SCIPdebugMessage("Deactivating branch orig constraint: <%s(%d,%d)> [stack size: %d].\n", SCIPconsGetName(cons), (consdata->node1+1), (consdata->node2+1), conshdlrData->nstack-1);
-#endif
+   /* disable corresponding constraitn in the pricing problem */
+   vardata = SCIPvarGetData(consdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGprobGetNPricingprobs(scip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
+   SCIP_CALL( SCIPdisableCons(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons) );
+
+   SCIPdebugMessage("Deactivating branch orig constraint: <%s> [stack size: %d].\n", SCIPconsGetName(cons), conshdlrData->nstack-1);
 
    /* remove constraint from the stack */
    --conshdlrData->nstack;
@@ -319,9 +325,6 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
    SCIP_CONS*         cons;
    SCIP_CONSDATA*     consdata;
    SCIP_VAR*          var;
-   int**              sets;
-   int*               nsetelements;
-   int                nsets;
    int                i;
    int                propcount;
 
@@ -336,14 +339,15 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
    /* the constraint data of the cons related to the current node */
    cons = conshdlrData->stack[conshdlrData->nstack-1];
    consdata = SCIPconsGetData(cons);
+
    
-   SCIPdebugMessage( "Starting propagation of branch orig constraint <%s> .\n", SCIPconsGetName(cons));
+   
+   SCIPdebugMessage( "Starting propagation of branch orig constraint <%s> %d conss, %d useful.\n", SCIPconsGetName(cons), nconss, nusefulconss);
   
    SCIPdebugMessage( "Finished propagation of branch orig constraint <%s>, %d vars fixed.\n", SCIPconsGetName(cons), propcount);
 
-   consdata = SCIPconsGetData(COLORconsGetActiveBranchOrigCons(scip));
-   consdata->propagatedvars = COLORprobGetNStableSets(scip);
-   
+   consdata = SCIPconsGetData(GCGconsGetActiveBranchOrigCons(scip));
+
    return SCIP_OKAY;
 }
 
@@ -369,7 +373,7 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
 
 
 /** creates the handler for branchOrig constraints and includes it in SCIP */
-SCIP_RETCODE COLORincludeConshdlrBranchOrig(
+SCIP_RETCODE GCGincludeConshdlrBranchOrig(
    SCIP*                 scip                /**< SCIP data structure */
 		       )
 {
@@ -401,11 +405,10 @@ SCIP_RETCODE COLORincludeConshdlrBranchOrig(
 }
 
 
-/** creates and captures a branchOrig constraint, uses knowledge of the B&B-father*/
-SCIP_RETCODE COLORcreateConsBranchOrig(
+/** creates and captures a branchOrig constraint*/
+SCIP_RETCODE GCGcreateConsBranchOrig(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name,               /**< name of constraint */
    SCIP_VAR*             origvar,
    GCG_CONSSENSE         sense,
    SCIP_Real             val
@@ -413,7 +416,9 @@ SCIP_RETCODE COLORcreateConsBranchOrig(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
-   SCIP_CONS* lincons;
+   SCIP_VARDATA* vardata;
+   SCIP_VAR* pricingvar;
+   char* consname;
 
    assert(scip != NULL);
 
@@ -425,6 +430,11 @@ SCIP_RETCODE COLORcreateConsBranchOrig(
       return SCIP_PLUGINNOTFOUND;
    }
 
+   vardata = SCIPvarGetData(origvar);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGprobGetNPricingprobs(scip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
@@ -432,11 +442,23 @@ SCIP_RETCODE COLORcreateConsBranchOrig(
    consdata->sense = sense;
    consdata->val = val;
 
-   SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", name);
+   (void) SCIPsnprintf(consname, CONSNAMELEN, "%s %s %f", SCIPvarGetName(origvar), (sense == GCG_CONSSENSE_GE ? ">=" : "<="), val);
+
+
+   /* create constraint in the pricing problem */
+   SCIP_CALL( SCIPcreateConsLinear(GCGprobGetPricingprob(scip, vardata->blocknr), &(consdata->pricingcons), consname, 
+         0, NULL, NULL, (sense == GCG_CONSSENSE_GE ? val : SCIPinfinity(scip)), (sense == GCG_CONSSENSE_GE ? SCIPinfinity(scip) : val),
+         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+   SCIP_CALL( SCIPaddCoefLinear(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons, vardata->data.origvardata.pricingvar, 1) );
+   SCIP_CALL( SCIPaddCons(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons) );
+   SCIP_CALL( SCIPdisableCons(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons) );
+
+   SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", consname);
 
    /* create constraint */
-   SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
-         TRUE, FALSE, TRUE, FALSE, TRUE) );
+   SCIP_CALL( SCIPcreateCons(scip, cons, consname, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
+         TRUE, FALSE, FALSE, FALSE, TRUE) );
+
    
    return SCIP_OKAY;
 }

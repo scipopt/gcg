@@ -51,6 +51,25 @@ struct SCIP_ProbData
 
 
 /*
+ * Vardata methods
+ */
+
+static
+SCIP_DECL_VARDELORIG(gcgvardelorig)
+{
+   if ( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
+   {
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
+   }
+   SCIPfreeBlockMemory(scip, vardata);
+
+
+   return SCIP_OKAY;
+}  
+
+
+/*
  * Local methods
  */
 
@@ -154,7 +173,7 @@ SCIP_DECL_PROBTRANS(probtransGcg)
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
 
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.origvardata.coefs), (*targetdata)->nmasterconss) );
+      SCIP_CALL( SCIPallocBlockMemoryArray((*targetdata)->origprob, &(vardata->data.origvardata.coefs), (*targetdata)->nmasterconss) );
       vardata->data.origvardata.ncoefs = (*targetdata)->nmasterconss;
       for ( j = 0; j < vardata->data.origvardata.ncoefs; j++ )
       {
@@ -205,6 +224,7 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
       SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
    }
 
+   
    vars = SCIPgetVars((*probdata)->origprob);
    nvars = SCIPgetNVars((*probdata)->origprob);
    for ( i = 0; i < nvars; i++ )
@@ -213,9 +233,9 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
 
-      SCIPfreeBlockMemoryArray(scip, &(vardata->data.origvardata.coefs), (*probdata)->nmasterconss);
+      SCIPfreeBlockMemoryArray((*probdata)->origprob, &(vardata->data.origvardata.coefs), (*probdata)->nmasterconss);
    }
-
+   
    SCIPfreeMemoryArray(scip, &(*probdata)->masterconss);
    SCIPfreeMemoryArray(scip, &(*probdata)->convconss);
 
@@ -518,10 +538,11 @@ SCIP_RETCODE GCGcreateConsLinear(
          {
             SCIP_CALL( GCGcreatePricingVar(scip, &var, vars[i], pricingprobnr) );
          }
+         assert(vardata->data.origvardata.pricingvar != NULL);
+         SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, vardata->data.origvardata.pricingvar, vals[i]) );
 
-         SCIP_CALL( SCIPaddCoefLinear(probdata->pricingprobs[pricingprobnr], cons, var, vals[i]) );
       }
-
+      
       //SCIP_CALL( SCIPprintCons(probdata->pricingprobs[pricingprobnr], cons, NULL) );
       
    }
@@ -553,7 +574,7 @@ SCIP_RETCODE GCGcreateOrigVar(
    assert(var != NULL);
    assert(lb <= ub);
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
+   SCIP_CALL( SCIPallocBlockMemory(probdata->origprob, &vardata) );
    vardata->vartype = GCG_VARTYPE_ORIGINAL;
    vardata->blocknr = -1;
    vardata->data.origvardata.pricingvar = NULL;
@@ -565,7 +586,8 @@ SCIP_RETCODE GCGcreateOrigVar(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals), 
          vardata->data.origvardata.maxmastervars) );
 
-   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, NULL, NULL, NULL, vardata) );
+   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, 
+         gcgvardelorig, NULL, NULL, vardata) );
 
    return SCIP_OKAY;
 }
@@ -675,7 +697,7 @@ SCIP_RETCODE GCGcreatePricingVar(
    assert(origvardata->blocknr == -1);
 
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
+   SCIP_CALL( SCIPallocBlockMemory(probdata->pricingprobs[pricingprobnr], &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
    vardata->data.pricingvardata.origvar = origvar;
@@ -684,7 +706,7 @@ SCIP_RETCODE GCGcreatePricingVar(
 
    SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], var, SCIPvarGetName(origvar), 
          SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
-         TRUE, FALSE, NULL, NULL, NULL, vardata) );
+         TRUE, FALSE, gcgvardelorig, NULL, NULL, vardata) );
 
    origvardata->data.origvardata.pricingvar = *var;
    origvardata->blocknr = pricingprobnr;
@@ -694,8 +716,8 @@ SCIP_RETCODE GCGcreatePricingVar(
    /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
     * without making the returned *var invalid
     */
-   //SCIP_CALL( SCIPreleaseVar(probdata->pricingprobs[pricingprobnr], var) );
-
+   SCIP_CALL( SCIPreleaseVar(probdata->pricingprobs[pricingprobnr], var) );
+   
    return SCIP_OKAY;
 }
 
@@ -719,7 +741,7 @@ SCIP_RETCODE GCGaddOriginalVar(
    /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
     * without making the returned *var invalid
     */
-   //SCIP_CALL( SCIPreleaseVar(scip, &var) );
+   SCIP_CALL( SCIPreleaseVar(probdata->origprob, &var) );
 
    return SCIP_OKAY;
 }

@@ -27,6 +27,7 @@
 #include <limits.h>
 
 #include "probdata_gcg.h"
+#include "cons_integralOrig.h"
 
 
 #define CONSHDLR_NAME          "integralOrig"
@@ -179,7 +180,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       {
          solval = 0;
          vardata = SCIPvarGetData(origvars[v]);
-         assert(vardata->type = GCG_VARTYPE_ORIGINAL);
+         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
          assert(vardata->data.origvardata.mastervars != NULL);
          assert(vardata->data.origvardata.mastervals != NULL);
          assert(vardata->data.origvardata.nmastervars >= 0);
