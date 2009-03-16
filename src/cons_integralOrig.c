@@ -28,15 +28,16 @@
 
 #include "probdata_gcg.h"
 #include "cons_integralOrig.h"
+#include "cons_branchOrig.h"
 
 
 #define CONSHDLR_NAME          "integralOrig"
 #define CONSHDLR_DESC          "integrality constraint"
 #define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
-#define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
-#define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
+#define CONSHDLR_ENFOPRIORITY      1000 /**< priority of the constraint handler for constraint enforcing */
+#define CONSHDLR_CHECKPRIORITY     1000 /**< priority of the constraint handler for checking feasibility */
 #define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
+#define CONSHDLR_PROPFREQ             1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
                                               *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
 #define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
@@ -103,32 +104,112 @@
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
-{  /*lint --e{715}*/
+{  
+   SCIP_VAR** origvars;
+   SCIP_VARDATA* vardata;
+   int norigvars;
+   SCIP_Real solval;
+
+   /* the nodes in the branch&bound-tree which are created */
+   SCIP_NODE* childge;
+   SCIP_NODE* childle;
+   /* the constraints for the created b&b-nodes */
+   SCIP_CONS* consge;
+   SCIP_CONS* consle;
+
+   int v;
+   int i;
+
+#if 0
+   int sum;
+   sum = 0;
+   origvars = SCIPgetOrigVars(GCGprobGetOrigprob(scip));
+   norigvars = SCIPgetNOrigVars(GCGprobGetOrigprob(scip));
+
+   for( v = 0; v < norigvars; v++ )
+   {
+      solval = 0;
+      vardata = SCIPvarGetData(origvars[v]);
+      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      {
+         solval += vardata->data.origvardata.mastervals[i] 
+            * SCIPgetSolVal(scip, NULL, vardata->data.origvardata.mastervars[i]);
+      }
+      if( !SCIPisFeasIntegral(scip, solval) )
+         sum++;
+   }
+
+   printf("Enfolp method of integralty constraint: %d fractional variables\n", sum);
+#endif
+
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
    assert(conss == NULL);
    assert(nconss == 0);
    assert(result != NULL);
+   assert(conshdlr != NULL);
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(scip != NULL);
 
-   SCIPdebugMessage("Enfolp method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
-   printf("Enfolp method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+   origvars = SCIPgetOrigVars(GCGprobGetOrigprob(scip));
+   norigvars = SCIPgetNOrigVars(GCGprobGetOrigprob(scip));
 
-   /* call branching methods */
-   SCIP_CALL( SCIPbranchLP(scip, result) );
+   *result = SCIP_DIDNOTRUN;
 
-   /* if no branching was done, the LP solution was not fractional */
-   if( *result == SCIP_DIDNOTRUN )
-      *result = SCIP_FEASIBLE;
+   //for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
+   for( v = 0; v < norigvars; v++ )
+   {
+      solval = 0;
+      vardata = SCIPvarGetData(origvars[v]);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->data.origvardata.mastervars != NULL);
+      assert(vardata->data.origvardata.mastervals != NULL);
+      assert(vardata->data.origvardata.nmastervars >= 0);
+      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      {
+         solval += vardata->data.origvardata.mastervals[i] 
+            * SCIPgetSolVal(scip, NULL, vardata->data.origvardata.mastervars[i]);
+      }
+      if( !SCIPisFeasIntegral(scip, solval) )
+      {
+         //printf("var <%s> has value %f, branch on it!\n", SCIPvarGetName(origvars[v]), solval);
+
+         /* create the b&b-tree child-nodes of the current node */
+         SCIP_CALL( SCIPcreateChild(scip, &childge, 0.0, SCIPgetLocalOrigEstimate(scip)) );
+         SCIP_CALL( SCIPcreateChild(scip, &childle, 0.0, SCIPgetLocalOrigEstimate(scip)) );
+         
+         /* create corresponding constraints */
+         SCIP_CALL( GCGcreateConsBranchOrig(scip, &consge, origvars[v], GCG_CONSSENSE_GE, SCIPceil(scip, solval)) );
+         SCIP_CALL( GCGcreateConsBranchOrig(scip, &consle, origvars[v], GCG_CONSSENSE_LE, SCIPfloor(scip, solval)) );
+         
+         /* add constraints to nodes */
+         SCIP_CALL( SCIPaddConsNode(scip, childge, consge, NULL) );
+         SCIP_CALL( SCIPaddConsNode(scip, childle, consle, NULL) );
+         
+         /* release constraints */
+         SCIP_CALL( SCIPreleaseCons(scip, &consge) );
+         SCIP_CALL( SCIPreleaseCons(scip, &consle) );
+         
+         *result = SCIP_BRANCHED;
+
+         //printf("branched on %s\n", SCIPvarGetName(origvars[v]));
+
+         return SCIP_OKAY;
+      }
+   }
+
+   //printf("not branched\n");
 
    return SCIP_OKAY;
+
 }
 
 
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
-{  /*lint --e{715}*/
+{  
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
@@ -137,7 +218,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(result != NULL);
 
    SCIPdebugMessage("Enfops method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
-   printf("Enfops method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
+   //printf("Enfops method of integralty constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
 
    /* call branching methods */
    SCIP_CALL( SCIPbranchLP(scip, result) );
@@ -153,7 +234,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 /** feasibility check method of constraint handler for integral solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
-{  /*lint --e{715}*/
+{  
    SCIP_VAR** origvars;
    int norigvars;
    SCIP_VARDATA* vardata;
@@ -166,18 +247,18 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    assert(scip != NULL);
 
    SCIPdebugMessage("Check method of integrality constraint\n");
-   printf("Check method of integrality constraint\n");
+   //printf("Check method of integrality constraint\n");
 
    origvars = SCIPgetOrigVars(GCGprobGetOrigprob(scip));
    norigvars = SCIPgetNOrigVars(GCGprobGetOrigprob(scip));
 
    *result = SCIP_FEASIBLE;
 
-   if( checkintegrality )
+   //if( checkintegrality )
    {
-      //for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
-      for( v = 0; v < norigvars; v++ )
+      for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
       {
+         //for( v = 0; v < norigvars; v++ )
          solval = 0;
          vardata = SCIPvarGetData(origvars[v]);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
@@ -198,16 +279,28 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
                SCIPinfoMessage(scip, NULL, "violation: integrality condition of variable <%s> = %.15g\n", 
                   SCIPvarGetName(origvars[v]), solval);
             }
+            //printf("violation: integrality condition of variable <%s> = %.15g\n", SCIPvarGetName(origvars[v]), solval);
          }
       }
    }
+
+   //printf("Check method of integrality constraint: result = %s\n", ( *result == SCIP_INFEASIBLE ? "infeasible" : "feasible" ) );
 
    return SCIP_OKAY;
 }
 
 
 /** domain propagation method of constraint handler */
-#define consPropIntegralOrig NULL
+static
+SCIP_DECL_CONSPROP(consPropIntegralOrig)
+{
+   *result = SCIP_DIDNOTFIND;
+
+   if ( SCIPisObjIntegral(GCGprobGetOrigprob(scip)) && SCIPisFeasLT(scip, SCIPgetPrimalbound(scip), SCIPgetLocalDualbound(scip)+0.999) )
+      *result = SCIP_CUTOFF;
+
+   return SCIP_OKAY;
+}
 
 
 /** presolving method of constraint handler */

@@ -48,6 +48,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderLpb(scip) );
    SCIP_CALL( SCIPincludePricerGcg(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
+   SCIP_CALL( SCIPincludeConshdlrBranchOrig(scip) );
+   //SCIP_CALL( SCIPincludeSepaLowerbound(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
 
@@ -74,9 +76,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
-   SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
 #endif
+   SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
 
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );

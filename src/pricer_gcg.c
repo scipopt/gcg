@@ -51,6 +51,12 @@ struct SCIP_PricerData
    SCIP_Real* solvals;             /* solution values of variables in the pricing problems */
    int* nvarsprob;                 /* number of variables created by the pricing probs */
    SCIP_CLOCK* subsolveclock;
+   SCIP_CLOCK* redcostclock;
+   SCIP_CLOCK* redcostsolveclock;
+   SCIP_CLOCK* redcostpresolveclock;
+   SCIP_CLOCK* farkasclock;
+   SCIP_CLOCK* farkassolveclock;
+   SCIP_CLOCK* farkaspresolveclock;
    SCIP_CLOCK* owneffortclock;
    SCIP_CLOCK* initclock;
    int solvedsubmips;
@@ -260,15 +266,47 @@ SCIP_RETCODE performPricing(
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
 
+      if ( pricetype == GCG_PRICETYPE_REDCOST )
+      {
+         SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostpresolveclock) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPstartClock(scip, pricerdata->farkaspresolveclock) );
+      }
+
       SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
+
+      if ( pricetype == GCG_PRICETYPE_REDCOST )
+      {
+         SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostpresolveclock) );
+         SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostsolveclock) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPstopClock(scip, pricerdata->farkaspresolveclock) );
+         SCIP_CALL( SCIPstartClock(scip, pricerdata->farkassolveclock) );
+      }
+
       SCIP_CALL( SCIPsolve(pricerdata->pricingprobs[prob]) );
+
+      if ( pricetype == GCG_PRICETYPE_REDCOST )
+      {
+         SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostsolveclock) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPstopClock(scip, pricerdata->farkassolveclock) );
+      }
 
       pricerdata->solvedsubmips++;
 
       SCIP_CALL( SCIPstopClock(scip, pricerdata->subsolveclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->owneffortclock) );
 
-      assert( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL);
+      assert( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_USERINTERRUPT );
+      /** @todo handle userinterrupt: set result pointer (and lowerbound) */
       nsols = SCIPgetNSols(pricerdata->pricingprobs[prob]);
       sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
       for ( j = 0; j < nsols; j++ )
@@ -289,6 +327,7 @@ SCIP_RETCODE performPricing(
             /* create variable in the master problem */
             SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
             newvardata->vartype = GCG_VARTYPE_MASTER;
+            newvardata->blocknr = prob;
             newvardata->data.mastervardata.norigvars = nprobvars;
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
@@ -307,8 +346,11 @@ SCIP_RETCODE performPricing(
                }
             }
 
+            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
+            pricerdata->nvarsprob[prob]++;
+
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, SCIPinfinity(scip), objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             /* update variable datas */
@@ -325,12 +367,23 @@ SCIP_RETCODE performPricing(
                   /* save the quota in the original variable's data */
                   SCIP_CALL( addMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvar, newvar, pricerdata->solvals[k]) );
                }
+               else
+               {
+                  vardata = SCIPvarGetData(probvars[k]);
+                  assert(vardata->vartype == GCG_VARTYPE_PRICING);
+                  assert(vardata->data.pricingvardata.origvar != NULL);
+
+                  newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
+                  newvardata->data.mastervardata.vals[k] = 0.0;
+               }
             }
 
             (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
 
             SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
+
+            SCIPvarMarkLazyUb(newvar);
 
             for ( k = 0; k < norigconss; k++ )
             {
@@ -517,6 +570,7 @@ SCIP_RETCODE createInitialVars(
             /* create variable in the master problem */
             SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
             newvardata->vartype = GCG_VARTYPE_MASTER;
+            newvardata->blocknr = prob;
             newvardata->data.mastervardata.norigvars = nprobvars;
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
@@ -539,10 +593,13 @@ SCIP_RETCODE createInitialVars(
          
             (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
-         
+ 
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, SCIPinfinity(scip), objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+
+            SCIPvarMarkLazyUb(newvar);
+
             SCIP_CALL( SCIPaddVar(scip, newvar) );
          
             for ( k = 0; k < norigconss; k++ )
@@ -690,6 +747,12 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), SCIPgetNOrigVars(pricerdata->origprob)) );
 
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->subsolveclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->redcostclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->redcostsolveclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->redcostpresolveclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkasclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkassolveclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->owneffortclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->initclock)) );
 
@@ -730,9 +793,22 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    printf("time for solving sub-MIPs for pricing: %f\n", SCIPgetClockTime(scip, pricerdata->subsolveclock));
    printf("time for initial var creation: %f\n", SCIPgetClockTime(scip, pricerdata->initclock));
    printf("init calls = %d, farkas calls = %d, redcost calls = %d\n", pricerdata->initcalls, pricerdata->farkascalls, pricerdata->redcostcalls);
+   printf("time for farkas pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->farkaspresolveclock));
+   printf("time for farkas pricing (solving): %f\n", SCIPgetClockTime(scip, pricerdata->farkassolveclock));
+   printf("time for farkas pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
+   printf("time for redcost pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostpresolveclock));
+   printf("time for redcost pricing (solving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostsolveclock));
+   printf("time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+
 
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->subsolveclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostsolveclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostpresolveclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkasclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkassolveclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->owneffortclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->initclock)) );
 
@@ -747,13 +823,24 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 static
 SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 {  
+   SCIP_RETCODE result;
+   SCIP_PRICERDATA* pricerdata;
+
    assert(scip != NULL);
    assert(pricer != NULL);
 
-   //printf("pricerredcost\n");
-   return performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
+   pricerdata = SCIPpricerGetData(pricer);
 
-   return SCIP_OKAY;
+   assert(pricerdata != NULL);
+
+   SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
+
+   //printf("pricerredcost\n");
+   result = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
+
+   SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
+
+   return result;
 }
 
 
@@ -762,11 +849,24 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 static
 SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {  
+   SCIP_RETCODE result;
+   SCIP_PRICERDATA* pricerdata;
+   
    assert(scip != NULL);
    assert(pricer != NULL);
 
+   pricerdata = SCIPpricerGetData(pricer);
+
+   assert(pricerdata != NULL);
+
+   SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
+
    //printf("pricerfarkas\n");
-   return performPricing(scip, pricer, GCG_PRICETYPE_FARKAS);
+   result = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS);
+
+   SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
+
+   return result;
 }
 
 /* define not used callbacks as NULL */

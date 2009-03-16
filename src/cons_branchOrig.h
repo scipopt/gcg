@@ -23,7 +23,7 @@
 #define CONSBRANCHORIG_H
 
 
-/* type of branchOrig constraint: differ, same or root */
+/* sense of the branchOrig constraint: greater-equal or less-equal */
 enum GCG_ConsSense
 {
    GCG_CONSSENSE_GE = 0,  /* greater-equal constraint */
@@ -56,7 +56,7 @@ int* GCGconsGetRepresentatives(
 
 /** creates the handler for graph storing constraints and includes it in SCIP */
 extern
-SCIP_RETCODE GCGincludeConshdlrBranchOrig(
+SCIP_RETCODE SCIPincludeConshdlrBranchOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

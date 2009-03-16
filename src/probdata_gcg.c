@@ -197,7 +197,11 @@ SCIP_DECL_PROBTRANS(probtransGcg)
       }
 
    }
-      
+
+   SCIPpresolve((*targetdata)->origprob);
+   //if ( SCIPisObjIntegral((*targetdata)->origprob) )
+   //   SCIP_CALL( SCIPsetObjIntegral(scip) );
+         
    return SCIP_OKAY;
 }
 
@@ -224,7 +228,8 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
       SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
    }
 
-   
+
+   SCIPfreeTransform((*probdata)->origprob);
    vars = SCIPgetVars((*probdata)->origprob);
    nvars = SCIPgetNVars((*probdata)->origprob);
    for ( i = 0; i < nvars; i++ )
@@ -367,6 +372,7 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useboundlp", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usesb", FALSE) ); 
    SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usepseudo", FALSE) );
+   SCIP_CALL( SCIPsetIntParam(probdata->origprob, "presolving/probing/maxrounds", 0) );
 
    SCIP_CALL( SCIPcreateProb(probdata->origprob, "origprob", NULL, NULL, NULL, NULL, NULL, NULL) );
 
@@ -388,6 +394,8 @@ SCIP_RETCODE SCIPcreateProbGcg(
       SCIP_CALL( SCIPsetBoolParam(probdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
       /* disable output to console */
       SCIP_CALL( SCIPsetIntParam(probdata->pricingprobs[i], "display/verblevel", 0) );
+      /* do not abort subproblem on CTRL-C */
+      SCIP_CALL( SCIPsetBoolParam(probdata->pricingprobs[i], "misc/catchctrlc", FALSE) );
 
       (void) SCIPsnprintf(probname, 25, "pricing_block_%d", i);
       SCIP_CALL( SCIPcreateProb(probdata->pricingprobs[i], probname, NULL, NULL, NULL, NULL, NULL, NULL) );
