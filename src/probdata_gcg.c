@@ -199,8 +199,8 @@ SCIP_DECL_PROBTRANS(probtransGcg)
    }
 
    SCIPpresolve((*targetdata)->origprob);
-   //if ( SCIPisObjIntegral((*targetdata)->origprob) )
-   //   SCIP_CALL( SCIPsetObjIntegral(scip) );
+   if ( SCIPisObjIntegral((*targetdata)->origprob) )
+      SCIP_CALL( SCIPsetObjIntegral(scip) );
          
    return SCIP_OKAY;
 }

@@ -823,7 +823,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 static
 SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 {  
-   SCIP_RETCODE result;
+   SCIP_RETCODE retcode;
    SCIP_PRICERDATA* pricerdata;
 
    assert(scip != NULL);
@@ -836,11 +836,13 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
    //printf("pricerredcost\n");
-   result = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
+   retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
 
-   return result;
+   *result = SCIP_SUCCESS;
+
+   return retcode;
 }
 
 
@@ -849,7 +851,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 static
 SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {  
-   SCIP_RETCODE result;
+   SCIP_RETCODE recode;
    SCIP_PRICERDATA* pricerdata;
    
    assert(scip != NULL);
@@ -862,11 +864,11 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
 
    //printf("pricerfarkas\n");
-   result = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS);
+   recode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
 
-   return result;
+   return recode;
 }
 
 /* define not used callbacks as NULL */
