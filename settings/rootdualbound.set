@@ -1,0 +1,24 @@
+# should conflict analysis be enabled?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+conflict/enable = FALSE
+
+# should propagation conflict analysis be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+conflict/useprop = FALSE
+
+# should infeasible LP conflict analysis be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+conflict/useinflp = FALSE
+
+# should pseudo solution conflict analysis be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+conflict/usepseudo = FALSE
+
+# maximal number of nodes to process (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+limits/nodes = 1
+
+# maximal number of presolving rounds (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrounds = 0
+
