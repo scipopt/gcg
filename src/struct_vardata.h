@@ -34,8 +34,7 @@ enum GCG_Vartype
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
-
-/** data for variable fixing events */
+/** data for original variables */
 struct GCG_OrigVarData
 {
    SCIP_VAR*             pricingvar;             /**< corresponding variable in the pricing program */
@@ -48,14 +47,16 @@ struct GCG_OrigVarData
 };
 typedef struct GCG_OrigVarData GCG_ORIGVARDATA;
 
-/** data for variable addition events */
+/** data for pricing variables */
 struct GCG_PricingVarData
 {
    SCIP_VAR*             origvar;                /**< corresponding variable in the original program */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
-/** data for variable deletion events */
+
+/** @todo don't copy the pointers to the original vars for each master variable, store them in a central place */
+/** data for master variables */
 struct GCG_MasterVarData
 {
    int                    norigvars;             /**< number of variables in the original program corresponding to  the current variable */
@@ -65,7 +66,7 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
-/** event data structure */
+/** variable data structure */
 struct SCIP_VarData
 {
    union

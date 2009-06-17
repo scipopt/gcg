@@ -155,7 +155,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    origvars = SCIPgetOrigVars(GCGprobGetOrigprob(scip));
    norigvars = SCIPgetNOrigVars(GCGprobGetOrigprob(scip));
 
-   *result = SCIP_DIDNOTRUN;
+   *result = SCIP_FEASIBLE;
 
    //for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
    for( v = 0; v < norigvars; v++ )
@@ -337,7 +337,11 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
 /** constraint display method of constraint handler */
 #define consPrintIntegralOrig NULL
 
+/** constraint copying method of constraint handler */
+#define consCopyIntegralOrig NULL
 
+/** constraint parsing method of constraint handler */
+#define consParseIntegralOrig NULL
 
 
 /*
@@ -366,7 +370,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
          consPropIntegralOrig, consPresolIntegralOrig, consRespropIntegralOrig, consLockIntegralOrig,
          consActiveIntegralOrig, consDeactiveIntegralOrig, 
          consEnableIntegralOrig, consDisableIntegralOrig,
-         consPrintIntegralOrig,
+         consPrintIntegralOrig, consCopyIntegralOrig, consParseIntegralOrig,
          conshdlrdata) );
 
    return SCIP_OKAY;

@@ -483,6 +483,8 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
 #define consEnableBranchOrig NULL
 #define consDisableBranchOrig NULL
 #define consPrintBranchOrig NULL
+#define consCopyBranchOrig NULL
+#define consParseBranchOrig NULL
 
 
 /*
@@ -516,7 +518,7 @@ SCIP_RETCODE SCIPincludeConshdlrBranchOrig(
          consPropBranchOrig, consPresolBranchOrig, consRespropBranchOrig, consLockBranchOrig,
          consActiveBranchOrig, consDeactiveBranchOrig,
          consEnableBranchOrig, consDisableBranchOrig,
-         consPrintBranchOrig,
+         consPrintBranchOrig, consCopyBranchOrig, consParseBranchOrig, 
          conshdlrData) );
 
    return SCIP_OKAY;

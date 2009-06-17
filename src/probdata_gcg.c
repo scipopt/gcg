@@ -173,6 +173,7 @@ SCIP_DECL_PROBTRANS(probtransGcg)
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
 
+      /* create array for saving all the coefficiants of this variable for all the constraints */
       SCIP_CALL( SCIPallocBlockMemoryArray((*targetdata)->origprob, &(vardata->data.origvardata.coefs), (*targetdata)->nmasterconss) );
       vardata->data.origvardata.ncoefs = (*targetdata)->nmasterconss;
       for ( j = 0; j < vardata->data.origvardata.ncoefs; j++ )
@@ -198,6 +199,7 @@ SCIP_DECL_PROBTRANS(probtransGcg)
 
    }
 
+   /** @todo: use presolving information also in the master/pricing problems, update data structure!!! */
    SCIPpresolve((*targetdata)->origprob);
    if ( SCIPisObjIntegral((*targetdata)->origprob) )
       SCIP_CALL( SCIPsetObjIntegral(scip) );
@@ -250,7 +252,56 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 }
 
 
-#define probinitsolGcg NULL
+static
+SCIP_DECL_PROBINITSOL(probinitsolGcg)
+{
+   int i;
+   int j;
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(probdata != NULL);
+
+   vars = SCIPgetVars(probdata->origprob);
+   nvars = SCIPgetNVars(probdata->origprob);
+
+   /* add all variables to the master LP, that do not belong to any block */
+   for ( i = 0; i < nvars; i++ )
+   {
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+
+      if (vardata->blocknr == -1)
+      {
+         SCIP_VAR* newvar;
+
+         printf("var %s is in no block!\n", SCIPvarGetName(vars[i]));
+         assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
+         SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[i]), 
+               SCIPvarGetLbGlobal(vars[i]), SCIPvarGetUbGlobal(vars[i]), SCIPvarGetObj(vars[i]), SCIPvarGetType(vars[i]), 
+               TRUE, TRUE, NULL, NULL, NULL, NULL) );
+         printf("lb = %f, ub =%f\n", SCIPvarGetLbGlobal(newvar), SCIPvarGetUbGlobal(newvar));
+         for ( j = 0; j < vardata->data.origvardata.ncoefs; j++ )
+         {
+            if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[j]) )
+            {
+               printf("cons %s: coef %f\n", SCIPconsGetName(probdata->origmasterconss[j]), vardata->data.origvardata.coefs[j]);
+               SCIP_CALL( SCIPaddCoefLinear(scip, probdata->masterconss[j], newvar, vardata->data.origvardata.coefs[j]) );
+               printf("var %s added to cons %s with coef %f\n", SCIPvarGetName(newvar), 
+                  SCIPconsGetName(probdata->masterconss[j]), vardata->data.origvardata.coefs[j]);
+            }
+         }
+         SCIPreleaseVar(scip, &newvar);
+      }
+   }
+         
+   return SCIP_OKAY;
+}
+
+
 #define probexitsolGcg NULL
 
 
@@ -421,14 +472,12 @@ SCIP_RETCODE GCGprobCreateConvConss(
    )
 {
    SCIP_PROBDATA* probdata;
-   char* consname;
    int i;
+   char consname[25];
 
    probdata = SCIPgetProbData(scip);
 
    assert(probdata != NULL);
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &consname, 25) );
 
    /* create convexity constraint for the blocks in the master problem */
    for ( i = 0; i < probdata->npricingprobs; i++ )
@@ -440,8 +489,6 @@ SCIP_RETCODE GCGprobCreateConvConss(
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
       SCIP_CALL( SCIPaddCons(scip, probdata->convconss[i]) );
    }
-
-   SCIPfreeBufferArray(scip, &consname);
    
    return SCIP_OKAY;
    
@@ -496,8 +543,6 @@ SCIP_RETCODE GCGcreateConsLinear(
          separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
    SCIP_CALL( SCIPaddCons(probdata->origprob, cons) );
    SCIPdebugMessage("added constraint %s to the original problem\n", name);
-
-   //SCIP_CALL( SCIPreleaseCons(probdata->origprob, &cons) );
 
    /* if constraint belongs to the master problem, create it for the scip instance */
    if ( pricingprobnr == -1 )
