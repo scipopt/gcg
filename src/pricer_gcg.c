@@ -260,6 +260,7 @@ SCIP_RETCODE performPricing(
          }
       }
    }
+   //SCIP_CALL( SCIPwriteLP(scip, "test.lp") );
 
    /* get dual solutions / farkas values of the convexity constraints */
    for ( i = 0; i < pricerdata->npricingprobs; i++ )

@@ -45,7 +45,7 @@ struct SCIP_ProbData
    int              maxorigmasterconss; /* length of the array origmastercons */
    int              norigmasterconss;   /* number of constraints saved in origmastercons */
    SCIP_CONS**      convconss;          /* array of convexity constraints, one for each block */
-   SCIP_HASHMAP*    hashorig2pricingvar;/* hashmap mapping original variables to corresponding pricing variables */
+
 };
 
 
@@ -165,6 +165,118 @@ void getVarsFromCons(
          *rhs = SCIPinfinity(scip);
       }
    }
+
+}
+
+static 
+SCIP_RETCODE copyCons(
+   SCIP*                 sourcescip,
+   SCIP_CONS*            sourcecons,
+   SCIP_CONSHDLR*        conshdlr,
+   SCIP*                 targetscip,
+   SCIP_CONS**           targetcons,
+   int                   blocknr
+   )
+{
+   char name[SCIP_MAXSTRLEN];
+   int nvars;
+   SCIP_VAR** sourcevars;
+   SCIP_VAR** vars;
+   int v;
+
+   assert(sourcescip != NULL);
+   assert(sourcecons != NULL);
+   assert(conshdlr != NULL);
+   assert(targetscip != NULL);
+   assert(targetcons != NULL);
+   
+   if ( strcmp( SCIPconshdlrGetName(conshdlr), "knapsack") == 0 )
+   {
+      //printf("knapsack\n");
+      nvars = SCIPgetNVarsKnapsack(sourcescip, sourcecons);
+      sourcevars = SCIPgetVarsKnapsack(sourcescip, sourcecons);
+
+      SCIP_CALL( SCIPallocBufferArray(targetscip, &vars, nvars) );
+      for ( v = 0; v < nvars; v++ )
+      {
+         vars[v] = SCIPvarGetData(sourcevars[v])->data.origvardata.pricingvar;
+      }
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", blocknr, SCIPconsGetName(sourcecons));
+      SCIP_CALL( SCIPcreateConsKnapsack(targetscip, targetcons, name, nvars, vars, SCIPgetWeightsKnapsack(sourcescip, sourcecons),
+            SCIPgetCapacityKnapsack(sourcescip, sourcecons), TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+
+      SCIPfreeBufferArray(targetscip, &vars);
+   }
+   else if ( strcmp( SCIPconshdlrGetName(conshdlr), "logicor") == 0 )
+   {
+      //printf("logicor\n");
+      nvars = SCIPgetNVarsLogicor(sourcescip, sourcecons);
+      sourcevars = SCIPgetVarsLogicor(sourcescip, sourcecons);
+
+      SCIP_CALL( SCIPallocBufferArray(targetscip, &vars, nvars) );
+      for ( v = 0; v < nvars; v++ )
+      {
+         vars[v] = SCIPvarGetData(sourcevars[v])->data.origvardata.pricingvar;
+      }
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", blocknr, SCIPconsGetName(sourcecons));
+      SCIP_CALL( SCIPcreateConsLogicor(targetscip, targetcons, name, nvars, vars, 
+            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+
+      SCIPfreeBufferArray(targetscip, &vars);
+   }
+   else if ( strcmp( SCIPconshdlrGetName(conshdlr), "linear") == 0 )
+   {
+      //printf("linear\n");
+      nvars = SCIPgetNVarsLinear(sourcescip, sourcecons);
+      sourcevars = SCIPgetVarsLinear(sourcescip, sourcecons);
+
+      SCIP_CALL( SCIPallocBufferArray(targetscip, &vars, nvars) );
+      for ( v = 0; v < nvars; v++ )
+      {
+         vars[v] = SCIPvarGetData(sourcevars[v])->data.origvardata.pricingvar;
+      }
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", blocknr, SCIPconsGetName(sourcecons));
+      SCIP_CALL( SCIPcreateConsLinear(targetscip, targetcons, name, nvars, vars, SCIPgetValsLinear(sourcescip, sourcecons),
+            SCIPgetLhsLinear(sourcescip, sourcecons), SCIPgetRhsLinear(sourcescip, sourcecons),
+            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+
+      SCIPfreeBufferArray(targetscip, &vars);
+   }
+   else if ( strcmp( SCIPconshdlrGetName(conshdlr), "setppc") == 0 )
+   {
+      //printf("setppc\n");
+      nvars = SCIPgetNVarsSetppc(sourcescip, sourcecons);
+      sourcevars = SCIPgetVarsSetppc(sourcescip, sourcecons);
+
+      SCIP_CALL( SCIPallocBufferArray(targetscip, &vars, nvars) );
+      for ( v = 0; v < nvars; v++ )
+      {
+         vars[v] = SCIPvarGetData(sourcevars[v])->data.origvardata.pricingvar;
+      }
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", blocknr, SCIPconsGetName(sourcecons));
+
+      if ( SCIPgetTypeSetppc(sourcescip, sourcecons) == SCIP_SETPPCTYPE_PARTITIONING )
+      {
+         SCIP_CALL( SCIPcreateConsSetpart(targetscip, targetcons, name, nvars, vars, 
+               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+      }
+      else if ( SCIPgetTypeSetppc(sourcescip, sourcecons) == SCIP_SETPPCTYPE_PACKING )
+      {
+         SCIP_CALL( SCIPcreateConsSetpack(targetscip, targetcons, name, nvars, vars, 
+               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+      }
+      else if ( SCIPgetTypeSetppc(sourcescip, sourcecons) == SCIP_SETPPCTYPE_COVERING )
+      {
+         SCIP_CALL( SCIPcreateConsSetcover(targetscip, targetcons, name, nvars, vars, 
+               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE ) );
+      }
+   }
+   
+   return SCIP_OKAY;
 
 }
 
@@ -316,24 +428,25 @@ SCIP_DECL_PROBINITSOL(probinitsolGcg)
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
 
-      if (vardata->blocknr == -1)
+      if ( vardata->blocknr == -1 && FALSE )
       {
          SCIP_VAR* newvar;
 
-         printf("var %s is in no block!\n", SCIPvarGetName(vars[i]));
+         //printf("var %s is in no block!\n", SCIPvarGetName(vars[i]));
          assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
          SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[i]), 
                SCIPvarGetLbGlobal(vars[i]), SCIPvarGetUbGlobal(vars[i]), SCIPvarGetObj(vars[i]), SCIPvarGetType(vars[i]), 
                TRUE, TRUE, NULL, NULL, NULL, NULL) );
-         printf("lb = %f, ub =%f\n", SCIPvarGetLbGlobal(newvar), SCIPvarGetUbGlobal(newvar));
+         SCIPaddVar(scip, newvar);
+         //printf("lb = %f, ub =%f\n", SCIPvarGetLbGlobal(newvar), SCIPvarGetUbGlobal(newvar));
          for ( j = 0; j < vardata->data.origvardata.ncoefs; j++ )
          {
             if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[j]) )
             {
-               printf("cons %s: coef %f\n", SCIPconsGetName(probdata->origmasterconss[j]), vardata->data.origvardata.coefs[j]);
+               //printf("cons %s: coef %f\n", SCIPconsGetName(probdata->origmasterconss[j]), vardata->data.origvardata.coefs[j]);
                SCIP_CALL( SCIPaddCoefLinear(scip, probdata->masterconss[j], newvar, vardata->data.origvardata.coefs[j]) );
-               printf("var %s added to cons %s with coef %f\n", SCIPvarGetName(newvar), 
-                  SCIPconsGetName(probdata->masterconss[j]), vardata->data.origvardata.coefs[j]);
+               //printf("var %s added to cons %s with coef %f\n", SCIPvarGetName(newvar), 
+               //   SCIPconsGetName(probdata->masterconss[j]), vardata->data.origvardata.coefs[j]);
             }
          }
          SCIPreleaseVar(scip, &newvar);
@@ -380,11 +493,7 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    SCIP_CALL( SCIPfreeTransform((*probdata)->origprob) );
    SCIP_CALL( SCIPfree(&((*probdata)->origprob)) );
 
-   /* free hashmap */
-   if ( (*probdata)->hashorig2pricingvar != NULL )
-   {
-      SCIPhashmapFree(&(*probdata)->hashorig2pricingvar);
-   }
+
 
    /* free array for constraints */
    SCIPfreeMemoryArray(scip, &((*probdata)->masterconss));
@@ -494,7 +603,7 @@ SCIP_RETCODE GCGprobCreateFramework(
 {
    SCIP* origprob;
    SCIP_PROBDATA* probdata;
-   char* probname;
+   char name[SCIP_MAXSTRLEN];
    SCIP_CONS* cons;
    SCIP_VARDATA* vardata;
    SCIP_CONSHDLR** conshdlrs;
@@ -509,9 +618,13 @@ SCIP_RETCODE GCGprobCreateFramework(
    int nconss;
    int blocknr;
    SCIP_CONS* newcons;
+   SCIP_CONS* mastercons;
+   SCIP_Bool success;
    int i;
    int c;
    int v;
+   int b;
+   SCIP_HASHMAP**   hashorig2pricingvar; /* hashmap mapping original variables to corresponding pricing variables */
 
    assert(scip != NULL);
 
@@ -523,13 +636,13 @@ SCIP_RETCODE GCGprobCreateFramework(
 
    printf("Creating framework for problem: %s\n", SCIPgetProbName(origprob));
       
-   /* array for saving constraints belonging to one of the pricing problems */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->convconss), nblocks) );
       
    /* initialize the pricing problems */
    probdata->npricingprobs = nblocks;
-   SCIP_CALL( SCIPallocBufferArray(scip, &probname, 25) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->pricingprobs), nblocks) );
+   /* array for saving convexity constraints belonging to one of the pricing problems */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->convconss), nblocks) );
+
    for ( i = 0; i < nblocks; i++ )
    {
       /* initializing the scip data structure for the original problem */  
@@ -547,17 +660,47 @@ SCIP_RETCODE GCGprobCreateFramework(
       /* do not abort subproblem on CTRL-C */
       SCIP_CALL( SCIPsetBoolParam(probdata->pricingprobs[i], "misc/catchctrlc", FALSE) );
 
-      (void) SCIPsnprintf(probname, 25, "pricing_block_%d", i);
-      SCIP_CALL( SCIPcreateProb(probdata->pricingprobs[i], probname, NULL, NULL, NULL, NULL, NULL, NULL) );
-   }
-   SCIPfreeBufferArray(scip, &probname);
+      /* create the pricing submip */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
+      SCIP_CALL( SCIPcreateProb(probdata->pricingprobs[i], name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
+      /* create the corresponding convexity constraint */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
+      SCIP_CALL( SCIPcreateConsLinear(scip, &(probdata->convconss[i]), name, 0, NULL, NULL, 1, 1, TRUE, 
+            TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+      SCIP_CALL( SCIPaddCons(scip, probdata->convconss[i]) );
+   }
+
+   /* presolve original problem */
    SCIPpresolve(origprob);
    if ( SCIPisObjIntegral(origprob) )
       SCIP_CALL( SCIPsetObjIntegral(scip) );
 
-   SCIP_CALL( SCIPhashmapCreate(&(probdata->hashorig2pricingvar), SCIPblkmem(scip), 5*SCIPgetNVars(origprob)) );
-
+   /* create hashmaps for mapping from original to pricing variables */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &hashorig2pricingvar, nblocks+1) );
+   for ( i = 0; i < nblocks+1; i++ )
+   {
+      SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(origprob)) );
+   }
+   /* create pricing variables and map them to the original variables */
+   vars = SCIPgetVars(origprob);
+   nvars = SCIPgetNVars(origprob);
+   for ( v = 0; v < nvars; v++ )
+   {
+      vardata = SCIPvarGetData(vars[v]);
+      assert(vardata != NULL);
+      if ( vardata->data.origvardata.pricingvar == NULL )
+      {
+         SCIP_CALL( GCGcreatePricingVar(scip, vars[v], vardata->blocknr) );
+         assert(vardata->data.origvardata.pricingvar != NULL);
+         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[vardata->blocknr], 
+               (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
+         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[nblocks], 
+               (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
+         printf("var %s mapped to var %s\n", SCIPvarGetName(vars[v]), 
+            SCIPvarGetName((SCIP_VAR*)SCIPhashmapGetImage(hashorig2pricingvar[vardata->blocknr], (void*)vars[v])));
+      }
+   }
 
    /* copy constraints of the original problem into master/pricing problems */
    conshdlrs = SCIPgetConshdlrs(origprob);
@@ -575,107 +718,68 @@ SCIP_RETCODE GCGprobCreateFramework(
          conss = SCIPconshdlrGetConss(conshdlrs[i]);
          for ( c = 0; c < nactiveconss; c++ )
          {
-            getVarsFromCons(origprob, conss[c], conshdlrs[i], &vars, &vals, &nvars, &lhs, &rhs);
-
-            for ( v = 0; v < nvars; v++ )
+            success = FALSE;
+            for ( b = 0; b < nblocks && !success; b++ )
             {
-               vardata = SCIPvarGetData(vars[v]);
-               if ( vardata == NULL )
-               {
-                  /* create vardata */
-                  SCIP_CALL( SCIPallocBlockMemory(probdata->origprob, &vardata) );
-                  vardata->vartype = GCG_VARTYPE_ORIGINAL;
-                  vardata->blocknr = -1;
-                  vardata->data.origvardata.pricingvar = NULL;
-                  vardata->data.origvardata.ncoefs = 0;
-                  vardata->data.origvardata.nmastervars = 0;
-                  vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
-                  SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervars), 
-                        vardata->data.origvardata.maxmastervars) );
-                  SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals), 
-                        vardata->data.origvardata.maxmastervars) );
+               /* try to copy the constraint */
+               SCIP_CALL( SCIPcopyCons(probdata->pricingprobs[b], &newcons, conshdlrs[i],
+                     origprob, conss[c], hashorig2pricingvar[b], 
+                     TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
 
-                  /* var is a negated variable */
-                  if ( SCIPvarIsNegated(vars[v]) )
-                  {
-                     vardata->blocknr = (SCIPvarGetData(SCIPvarGetNegatedVar(vars[v])))->blocknr;
-                     //printf("blocknr of (negated) var %s set to %d\n", SCIPvarGetName(vars[v]), vardata->blocknr);
-                  }
-                  if ( SCIPvarGetStatus(vars[v]) == SCIP_VARSTATUS_AGGREGATED )
-                  {
-                     vardata->blocknr = (SCIPvarGetData(SCIPvarGetAggrVar(vars[v])))->blocknr;
-                     printf("blocknr of (aggregated) var %s set to %d\n", SCIPvarGetName(vars[v]), vardata->blocknr);
-                  }
-                  SCIPvarSetData(vars[v], vardata);
-               }
-               if ( v == 0 )
-                  blocknr = vardata->blocknr;
-               if ( blocknr != vardata->blocknr )
+               if ( success )
                {
-                  blocknr = -1;
-                  break;
+                  SCIP_CALL( SCIPaddCons(probdata->pricingprobs[b], newcons) );
+#if 0
+                  printf("cons %s added to pricing problem %d\n", SCIPconsGetName(newcons), b);
+                  SCIP_CALL( SCIPprintCons(origprob, conss[c], NULL) );
+                  printf("\n");
+                  SCIP_CALL( SCIPprintCons(probdata->pricingprobs[b], newcons, NULL) );
+                  printf("\n");
+                  SCIP_CALL( SCIPreleaseCons(probdata->pricingprobs[b], &newcons) );
+#endif
                }
-            }
-            printf("cons %s belongs to block %d\n", SCIPconsGetName(conss[c]), blocknr);
-
-            /* constraint belongs to one of the pricing problems */
-            if ( blocknr != -1 )
+            } 
+            if ( !success )
             {
-               SCIP_Bool success;
-
-               /* create corresponding pricing variables, if needed */
-               for ( v = 0; v < nvars; v++ )
-               {
-                  vardata = SCIPvarGetData(vars[v]);
-                  assert(vardata != NULL);
-                  if ( !SCIPhashmapExists(probdata->hashorig2pricingvar, (void*)(vars[v])) )
-                  {
-                     SCIP_CALL( GCGcreatePricingVar(scip, vars[v], blocknr) );
-                     assert(vardata->data.origvardata.pricingvar != NULL);
-                     SCIP_CALL( SCIPhashmapInsert(probdata->hashorig2pricingvar, 
-                           (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
-                     if ( SCIPvarIsNegated(vars[v]) )
-                     {
-                        SCIP_CALL( SCIPhashmapInsert(probdata->hashorig2pricingvar, 
-                              (void*)(SCIPvarGetNegatedVar(vars[v])), (void*)(vardata->data.origvardata.pricingvar)) );
-                     }
-
-                  }
-               }
-
-               /*
-                 printf("nvars = %d\n", nvars);
-                 for ( v = 0; v < nvars; v++ )
-                 {
-                 printf("%s, ", SCIPvarGetName(vars[v]));
-                 }
-                 printf("\n");
-               */
-
+               printf("Masterconss:\n");
                SCIP_CALL( SCIPprintCons(origprob, conss[c], NULL) );
                printf("\n");
 
-               /* copy the constraint */
-               SCIP_CALL( SCIPcopyCons(probdata->pricingprobs[blocknr], &newcons, conshdlrs[i],
-                     origprob, conss[c], probdata->hashorig2pricingvar, 
+               /* try to copy the constraint */
+               SCIP_CALL( SCIPcopyCons(scip, &newcons, conshdlrs[i],
+                     origprob, conss[c], hashorig2pricingvar[nblocks], 
                      TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
 
                assert(success);
 
-               SCIP_CALL( SCIPaddCons(probdata->pricingprobs[blocknr], newcons) );
+               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(conss[c]));
+               SCIP_CALL( SCIPcreateConsLinear(scip, &mastercons, name, 0, NULL, NULL, SCIPgetLhsLinear(scip, newcons), 
+                     SCIPgetRhsLinear(scip, newcons), TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
-               SCIP_CALL( SCIPprintCons(probdata->pricingprobs[blocknr], newcons, NULL) );
+               SCIP_CALL( SCIPaddCons(scip, mastercons) );
+
+               SCIP_CALL( SCIPreleaseCons(scip, &newcons) );
+
+               SCIP_CALL( SCIPprintCons(scip, mastercons, NULL) );
                printf("\n");
                
-               SCIP_CALL( SCIPreleaseCons(probdata->pricingprobs[blocknr], &newcons) );
-     
-   }
+            }
             
          }
       }
    }
 
+   printf("nconss = %d\n", SCIPgetNConss(scip));
 
+
+   /* free hashmaps for mapping from original to pricing variables */
+   for ( i = 0; i < nblocks; i++ )
+   {
+      SCIPhashmapFree(&(hashorig2pricingvar[i]));
+   }
+   SCIPfreeMemoryArray(scip, &hashorig2pricingvar);
+
+   /* activate pricer */
    SCIP_CALL( SCIPactivatePricer(scip, SCIPfindPricer(scip, "gcg")) );
 
    return SCIP_OKAY;
@@ -938,6 +1042,7 @@ SCIP_RETCODE GCGcreatePricingVar(
    SCIP_VARDATA* vardata;
    SCIP_VARDATA* origvardata;
    SCIP_VAR* var;
+   char name[SCIP_MAXSTRLEN];
 
    probdata = SCIPgetProbData(scip);
 
@@ -960,8 +1065,8 @@ SCIP_RETCODE GCGcreatePricingVar(
    vardata->data.pricingvardata.origvar = origvar;
 
    //printf("var = %s, ub = %f, type = %d\n", SCIPvarGetName(origvar), SCIPvarGetUbGlobal(origvar), SCIPvarGetType(origvar));
-
-   SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], &var, SCIPvarGetName(origvar), 
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
+   SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], &var, name, 
          SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
          TRUE, FALSE, gcgvardelorig, NULL, NULL, vardata) );
 

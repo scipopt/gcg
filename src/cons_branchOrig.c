@@ -416,7 +416,7 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
       {
          //printVar(vars[i]);
          
-         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) && SCIPvarGetData(vars[i]) != NULL)
          {
             vardata = SCIPvarGetData(vars[i]);
             assert(vardata->vartype == GCG_VARTYPE_MASTER);
