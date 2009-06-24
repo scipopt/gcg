@@ -756,7 +756,6 @@ SCIP_RETCODE readCoefficients(
    LPBINPUT*             lpbinput,           /**< LPB reading data */
    char*                 name,               /**< pointer to store the name of the line; must be at least of size
                                               *   LPB_MAX_LINELEN */
-   int*                  pricingprobnr,      /**< number of the pricing problem to which the constraint belongs */
    SCIP_VAR***           vars,               /**< pointer to store the array with variables (must be freed by caller) */
    SCIP_Real**           coefs,              /**< pointer to store the array with coefficients (must be freed by caller) */
    int*                  ncoefs,             /**< pointer to store the number of coefficients */
@@ -798,59 +797,18 @@ SCIP_RETCODE readCoefficients(
       /* get the next token and check, whether it is a brace or a colon */
       if( getNextToken(lpbinput) )
       {
-         if( strcmp(lpbinput->token, ")") == 0 )
+         if( strcmp(lpbinput->token, ":") == 0 )
          {
-            /* the second token was a brace: the first token is the pricing problem number */
-            *pricingprobnr = atoi(lpbinput->tokenbuf);
-            *pricingprobnr = (*pricingprobnr)--;
-            SCIPdebugMessage("(line %d) read pricing problem number: '%d'\n", lpbinput->linenumber, *pricingprobnr);
-            //printf("(line %d) read pricing problem number: '%d'\n", lpbinput->linenumber, *pricingprobnr);
-
-            /* read the third token, which may be the name of the line */
-            if( getNextToken(lpbinput) )
-            {
-               assert( !isNewSection(lpbinput) );
-               
-               /* remember the token in the token buffer */
-               swapTokenBuffer(lpbinput);
-               
-               /* get the next token and check, whether it is a colon */
-               if( getNextToken(lpbinput) )
-               {
-                  if( strcmp(lpbinput->token, ":") == 0 )
-                  {
-                     /* the second token was a colon: the first token is the line name */
-                     strncpy(name, lpbinput->tokenbuf, LPB_MAX_LINELEN);
-                     name[LPB_MAX_LINELEN - 1] = '\0';
-                     SCIPdebugMessage("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-                     //printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-                  }
-                  else
-                  {
-                     /* the second token was no colon: push the tokens back onto the token stack and parse them as coefficients */
-                     pushToken(lpbinput);
-                     pushBufferToken(lpbinput);
-                  }
-               }
-                  
-            }
+            /* the second token was a colon: the first token is the line name */
+            strncpy(name, lpbinput->tokenbuf, LPB_MAX_LINELEN);
+            name[LPB_MAX_LINELEN - 1] = '\0';
+            SCIPdebugMessage("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
          }
          else
          {
-            if( strcmp(lpbinput->token, ":") == 0 )
-            {
-               /* the second token was a colon: the first token is the line name */
-               strncpy(name, lpbinput->tokenbuf, LPB_MAX_LINELEN);
-               name[LPB_MAX_LINELEN - 1] = '\0';
-               SCIPdebugMessage("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-               //printf("(line %d) read constraint name: '%s'\n", lpbinput->linenumber, name);
-            }
-            else
-            {
-               /* the second token was no colon: push the tokens back onto the token stack and parse them as coefficients */
-               pushToken(lpbinput);
-               pushBufferToken(lpbinput);
-            }
+            /* the second token was no colon: push the tokens back onto the token stack and parse them as coefficients */
+            pushToken(lpbinput);
+            pushBufferToken(lpbinput);
          }
       }
       else
@@ -967,7 +925,7 @@ SCIP_RETCODE readObjective(
    assert(lpbinput != NULL);
 
    /* read the objective coefficients */
-   SCIP_CALL( readCoefficients(scip, lpbinput, name, NULL, &vars, &coefs, &ncoefs, &newsection) );
+   SCIP_CALL( readCoefficients(scip, lpbinput, name, &vars, &coefs, &ncoefs, &newsection) );
    if( !hasError(lpbinput) )
    {
       int i;
@@ -1014,12 +972,11 @@ SCIP_RETCODE readConstraints(
    SCIP_Bool removable;
    int ncoefs;
    int sidesign;
-   int pricingprobnr;
 
    assert(lpbinput != NULL);
 
    /* read the objective coefficients */
-   SCIP_CALL( readCoefficients(scip, lpbinput, name, &pricingprobnr, &vars, &coefs, &ncoefs, &newsection) );
+   SCIP_CALL( readCoefficients(scip, lpbinput, name, &vars, &coefs, &ncoefs, &newsection) );
    if( hasError(lpbinput) )
       goto TERMINATE;
    if( newsection )
@@ -1092,7 +1049,7 @@ SCIP_RETCODE readConstraints(
    dynamic = dynamicconss;
    removable = dynamicrows || lpbinput->inusercuts;
    SCIP_CALL( GCGcreateConsLinear(scip, name, ncoefs, vars, coefs, lhs, rhs,
-         initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, FALSE, pricingprobnr) );
+         initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, FALSE) );
 
  TERMINATE:
    /* free memory */
@@ -1378,9 +1335,6 @@ SCIP_RETCODE readLPBFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   int npricingprobs;
-   SCIP_Real tmp;
-   
    assert(lpbinput != NULL);
 
    /* open file */
@@ -1392,14 +1346,8 @@ SCIP_RETCODE readLPBFile(
       return SCIP_NOFILE;
    }
 
-   tmp = -1.0;
-   getNextToken(lpbinput);
-   isValue(scip, lpbinput, &tmp);
-   npricingprobs = (int) tmp;
-   assert(npricingprobs >= 0);
-
    /* create problem */
-   SCIP_CALL( SCIPcreateProbGcg(scip, filename, npricingprobs) );
+   SCIP_CALL( SCIPcreateProbGcg(scip, filename) );
 
    /* parse the file */
    lpbinput->section = LPB_START;
@@ -1445,8 +1393,10 @@ SCIP_RETCODE readLPBFile(
    /* close file */
    SCIPfclose(lpbinput->file);
 
+#if 0
    /* create convexity constraints */
    SCIP_CALL( GCGprobCreateConvConss(scip) );
+#endif
 
    return SCIP_OKAY;
 }
@@ -1463,8 +1413,7 @@ SCIP_RETCODE readLPBFile(
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadLpb)
-{  /*lint --e{715}*/
-
+{  
    SCIP_CALL( SCIPreadLpb(scip, reader, filename, result) );
 
    return SCIP_OKAY;

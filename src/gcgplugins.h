@@ -104,6 +104,7 @@
 #include "scip/sepa_strongcg.h"
 #include "scip/scipshell.h"
 #include "reader_lpb.h"
+#include "reader_blk.h"
 #include "pricer_gcg.h"
 #include "cons_integralOrig.h"
 #include "cons_branchOrig.h"

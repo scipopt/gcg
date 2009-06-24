@@ -32,12 +32,20 @@
 extern
 SCIP_RETCODE SCIPcreateProbGcg(
    SCIP*                 scip,               /**< SCIP data structure */
-   const char*           name,               /**< problem name */     
-   int                   npricingprobs       /**< number of pricing problems */      
+   const char*           name                /**< problem name */     
+   );
+
+
+/** sets up the problem data */
+extern
+SCIP_RETCODE GCGprobCreateFramework(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   nblocks             /**< number of blocks */
    );
 
 
 /** create the convexity constraints belonging to the pricing blocks */
+extern
 SCIP_RETCODE GCGprobCreateConvConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
@@ -72,11 +80,9 @@ SCIP_RETCODE GCGcreateConsLinear(
                                               *   are seperated as constraints. */
    SCIP_Bool             removable,          /**< should the relaxation be removed from the LP due to aging or cleanup?
                                               *   Usually set to FALSE. Set to TRUE for 'lazy constraints' and 'user cuts'. */
-   SCIP_Bool             stickingatnode,     /**< should the constraint always be kept at the node where it was added, even
+   SCIP_Bool             stickingatnode      /**< should the constraint always be kept at the node where it was added, even
                                               *   if it may be moved to a more global node?
                                               *   Usually set to FALSE. Set to TRUE to for constraints that represent node data. */
-   int                   pricingprobnr       /**< number of the pricing problem this constraint belongs to,
-                                              *   -1 if the constraint should appear in the master problem? */
    );
 
 
@@ -98,7 +104,6 @@ SCIP_RETCODE GCGcreateOrigVar(
 extern
 SCIP_RETCODE GCGcreatePricingVar(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR**            var,                /**< pointer to variable object */
    SCIP_VAR*             origvar,            /**< corresponding variable in the original program */
    int                   pricingprobnr       /**< number of the pricing problem to which the variable belongs */
    );
@@ -125,10 +130,18 @@ SCIP_RETCODE GCGchgOrigVarLb(
    SCIP_Real             newbound            /**< new value for bound */
    );
 
+extern
 SCIP_RETCODE GCGchgOrigVarType(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable to change the bound for */
    SCIP_VARTYPE          vartype             /**< new type of variable */
+   );
+
+extern
+SCIP_RETCODE GCGprobSetOriginalVarBlockNr(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to set the block number for */
+   int                   blocknr             /**< number of the block, the variable belongs to */
    );
 
 extern
