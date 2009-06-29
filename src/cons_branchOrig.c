@@ -43,21 +43,18 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
-#define CONSNAMELEN 50
-
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
 {
    int                propagatedvars;        /* number of Vars that existed, the last time, the related node was propagated,
-                                                used to determine whether the constraint should be repropagated*/
-   SCIP_VAR*          origvar;
-   GCG_CONSSENSE      sense;
-   SCIP_Real          val;
+                                                used to determine whether the constraint should be repropagated */
+   SCIP_VAR*          origvar;               /* original variable on which the branching is done */
+   GCG_CONSSENSE      sense;                 /* sense of the branching on the original variable: 
+                                                greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+   SCIP_Real          val;                   /* new lower/upper bound of the original variable */
    SCIP_CONS*         pricingcons;
    SCIP_Bool          created;
 };
-
-
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
@@ -83,25 +80,25 @@ void printVar(
    vardata = SCIPvarGetData(var);
 
    printf("name = %s, ", SCIPvarGetName(var));
-   if ( vardata->data.mastervardata.vals[0] > 10000 )
+   if ( vardata->data.mastervardata.origvals[0] > 10000 )
    {
       printf("vals = (%s: inf", SCIPvarGetName(vardata->data.mastervardata.origvars[0]));
    }
    else
    {
       printf("vals = (%s: %f", SCIPvarGetName(vardata->data.mastervardata.origvars[0]), 
-         vardata->data.mastervardata.vals[0]);
+         vardata->data.mastervardata.origvals[0]);
    }
    for ( i = 1; i < vardata->data.mastervardata.norigvars; i++ )
    {
-      if ( vardata->data.mastervardata.vals[i] > 10000 )
+      if ( vardata->data.mastervardata.origvals[i] > 10000 )
       {
          printf("; %s: inf", SCIPvarGetName(vardata->data.mastervardata.origvars[i]));
       }
       else
       {
          printf("; %s: %f", SCIPvarGetName(vardata->data.mastervardata.origvars[i]), 
-            vardata->data.mastervardata.vals[i]);
+            vardata->data.mastervardata.origvals[i]);
       }
    }
    if ( SCIPvarGetUbLocal(var) < 10000 )
@@ -276,8 +273,7 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA*     consdata;
    SCIP_VARDATA* vardata;
-   SCIP_VAR** vars;
-   int i;
+
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -320,9 +316,11 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
    SCIP_CALL( SCIPaddCoefLinear(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons, vardata->data.origvardata.pricingvar, 1) );
    SCIP_CALL( SCIPaddCons(GCGprobGetPricingprob(scip, vardata->blocknr), consdata->pricingcons) );
 
+#if 0
+   SCIP_VAR** vars;
    vars = SCIPgetVars(scip);
   
-   /*
+   
    if ( SCIPgetDepth(scip) == 1 )
    {
       for ( i = 0; i < SCIPgetNVars(scip); i++)
@@ -330,7 +328,7 @@ SCIP_DECL_CONSACTIVE(consActiveBranchOrig)
          printVar(vars[i]);
       }
    }
-   */
+#endif
 
    return SCIP_OKAY;
 }
@@ -359,7 +357,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveBranchOrig)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   /* disable corresponding constraitn in the pricing problem */
+   /* disable corresponding constraint in the pricing problem */
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
@@ -422,7 +420,7 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
             assert(vardata->vartype == GCG_VARTYPE_MASTER);
             assert(vardata->blocknr >= 0 && vardata->blocknr < GCGprobGetNPricingprobs(scip));
             assert(vardata->data.mastervardata.norigvars > 0);
-            assert(vardata->data.mastervardata.vals != NULL);
+            assert(vardata->data.mastervardata.origvals != NULL);
             assert(vardata->data.mastervardata.origvars != NULL);
             
             for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
@@ -430,7 +428,7 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
                if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
                {
                   if ( consdata->sense == GCG_CONSSENSE_GE && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.vals[j], consdata->val) )
+                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
@@ -438,7 +436,7 @@ SCIP_DECL_CONSPROP(consPropBranchOrig)
                      break;
                   }
                   if ( consdata->sense == GCG_CONSSENSE_LE && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.vals[j], consdata->val) )
+                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
@@ -531,15 +529,14 @@ SCIP_RETCODE GCGcreateConsBranchOrig(
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    SCIP_VAR*             origvar,            /**< original variable on which the branching is done */
    GCG_CONSSENSE         sense,              /**< sense of the branching on the original variable:
-                                                greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+                                                  greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
    SCIP_Real             val                 /**< current value of the original variable */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
    SCIP_VARDATA* vardata;
-   SCIP_VAR* pricingvar;
-   char* consname;
+   char consname[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
 
@@ -559,6 +556,7 @@ SCIP_RETCODE GCGcreateConsBranchOrig(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
+   /* round current value of the branching-variable */
    if ( sense == GCG_CONSSENSE_GE )
    {
       consdata->val = SCIPceil(scip, val);
@@ -571,9 +569,7 @@ SCIP_RETCODE GCGcreateConsBranchOrig(
    consdata->origvar = origvar;
    consdata->sense = sense;
 
-   SCIP_CALL(SCIPallocBufferArray(scip, &consname, CONSNAMELEN) );
-
-   (void) SCIPsnprintf(consname, CONSNAMELEN, "%s %s %f", SCIPvarGetName(origvar), (sense == GCG_CONSSENSE_GE ? ">=" : "<="), val);
+   (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(origvar), (sense == GCG_CONSSENSE_GE ? ">=" : "<="), val);
    
    SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", consname);
 

@@ -77,7 +77,7 @@ static
 SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.vals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
    
    SCIPfreeBlockMemory(scip, vardata);
@@ -347,7 +347,7 @@ SCIP_RETCODE performPricing(
             newvardata->blocknr = prob;
             newvardata->data.mastervardata.norigvars = nprobvars;
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
-            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), nprobvars) );
 
             /* compute objective coefficient of the variable */
             objcoeff = 0;
@@ -381,7 +381,7 @@ SCIP_RETCODE performPricing(
                   assert(vardata->data.pricingvardata.origvar != NULL);
                   /* save in the master problem variable's data the quota of the corresponding original variable */
                   newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
-                  newvardata->data.mastervardata.vals[k] = pricerdata->solvals[k];
+                  newvardata->data.mastervardata.origvals[k] = pricerdata->solvals[k];
                   /* save the quota in the original variable's data */
                   SCIP_CALL( addMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvar, newvar, pricerdata->solvals[k]) );
                }
@@ -392,7 +392,7 @@ SCIP_RETCODE performPricing(
                   assert(vardata->data.pricingvardata.origvar != NULL);
                   /** @todo really store variable not connected to the master variable? */
                   newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
-                  newvardata->data.mastervardata.vals[k] = 0.0;
+                  newvardata->data.mastervardata.origvals[k] = 0.0;
                }
             }
 
@@ -456,7 +456,7 @@ SCIP_RETCODE performPricing(
    return SCIP_OKAY;
 }
 
-
+#if 0
 static
 SCIP_RETCODE createInitialVars(
    SCIP*                 scip,               /* SCIP data structure */
@@ -592,7 +592,7 @@ SCIP_RETCODE createInitialVars(
             newvardata->blocknr = prob;
             newvardata->data.mastervardata.norigvars = nprobvars;
             SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), nprobvars) );
-            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.vals), nprobvars) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), nprobvars) );
             
             /* compute objective coefficient */
             objcoeff = 0;
@@ -605,7 +605,7 @@ SCIP_RETCODE createInitialVars(
                   assert(vardata->data.pricingvardata.origvar != NULL);
                   objcoeff += pricerdata->solvals[k] * SCIPvarGetObj(vardata->data.pricingvardata.origvar);
                   newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
-                  newvardata->data.mastervardata.vals[k] = pricerdata->solvals[k];
+                  newvardata->data.mastervardata.origvals[k] = pricerdata->solvals[k];
                }
             }
          
@@ -695,6 +695,7 @@ SCIP_RETCODE createInitialVars(
 
    return SCIP_OKAY;
 }
+#endif
 
 
 

@@ -61,7 +61,7 @@ struct GCG_MasterVarData
 {
    int                    norigvars;             /**< number of variables in the original program corresponding to  the current variable */
    SCIP_VAR**             origvars;              /**< variables in the original program corresponding to  the current variable */
-   SCIP_Real*             vals;                  /**< this variable represents vals[i] times the variable origvars[i] in the
+   SCIP_Real*             origvals;                  /**< this variable represents vals[i] times the variable origvars[i] in the
                                                   *   original program */
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;

@@ -63,6 +63,11 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
    }
+   if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
+   {
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvars));
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvals));
+   }
    SCIPfreeBlockMemory(scip, vardata);
 
 
@@ -110,13 +115,6 @@ SCIP_RETCODE ensureSizeMasterConss(
 static
 SCIP_DECL_PROBTRANS(probtransGcg)
 {
-   int i;
-   int j;
-   SCIP_VAR** vars;
-   int nvars;
-   SCIP_Real* vals;
-   SCIP_VARDATA* vardata;
-
    assert(scip != NULL);
    assert(sourcedata != NULL);
    assert(targetdata != NULL);
@@ -151,9 +149,6 @@ static
 SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 {
    int i;
-   SCIP_VAR** vars;
-   int nvars;
-   SCIP_VARDATA* vardata;
 
    assert(scip !=  NULL);
    assert(probdata != NULL);
@@ -168,19 +163,6 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
       SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
    }
 
-
-   SCIPfreeTransform((*probdata)->origprob);
-   vars = SCIPgetVars((*probdata)->origprob);
-   nvars = SCIPgetNVars((*probdata)->origprob);
-   for ( i = 0; i < nvars; i++ )
-   {
-      vardata = SCIPvarGetData(vars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-
-      SCIPfreeBlockMemoryArray((*probdata)->origprob, &(vardata->data.origvardata.coefs), (*probdata)->nmasterconss);
-   }
-   
    SCIPfreeMemoryArray(scip, &(*probdata)->masterconss);
    SCIPfreeMemoryArray(scip, &(*probdata)->convconss);
 
@@ -193,50 +175,9 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 static
 SCIP_DECL_PROBINITSOL(probinitsolGcg)
 {
-   int i;
-   int j;
-   SCIP_VAR** vars;
-   int nvars;
-   SCIP_VARDATA* vardata;
-
    assert(scip != NULL);
    assert(probdata != NULL);
 
-   vars = SCIPgetVars(probdata->origprob);
-   nvars = SCIPgetNVars(probdata->origprob);
-
-   /* add all variables to the master LP, that do not belong to any block */
-   for ( i = 0; i < nvars; i++ )
-   {
-      vardata = SCIPvarGetData(vars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-
-      if ( vardata->blocknr == -1 && FALSE )
-      {
-         SCIP_VAR* newvar;
-
-         //printf("var %s is in no block!\n", SCIPvarGetName(vars[i]));
-         assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
-         SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[i]), 
-               SCIPvarGetLbGlobal(vars[i]), SCIPvarGetUbGlobal(vars[i]), SCIPvarGetObj(vars[i]), SCIPvarGetType(vars[i]), 
-               TRUE, TRUE, NULL, NULL, NULL, NULL) );
-         SCIPaddVar(scip, newvar);
-         //printf("lb = %f, ub =%f\n", SCIPvarGetLbGlobal(newvar), SCIPvarGetUbGlobal(newvar));
-         for ( j = 0; j < vardata->data.origvardata.ncoefs; j++ )
-         {
-            if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[j]) )
-            {
-               //printf("cons %s: coef %f\n", SCIPconsGetName(probdata->origmasterconss[j]), vardata->data.origvardata.coefs[j]);
-               SCIP_CALL( SCIPaddCoefLinear(scip, probdata->masterconss[j], newvar, vardata->data.origvardata.coefs[j]) );
-               //printf("var %s added to cons %s with coef %f\n", SCIPvarGetName(newvar), 
-               //   SCIPconsGetName(probdata->masterconss[j]), vardata->data.origvardata.coefs[j]);
-            }
-         }
-         SCIPreleaseVar(scip, &newvar);
-      }
-   }
-         
    return SCIP_OKAY;
 }
 
@@ -248,7 +189,9 @@ static
 SCIP_DECL_PROBDELORIG(probdelorigGcg)
 {
    int i;
-   int j;
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_VARDATA* vardata;
 
    assert(probdata != NULL);
    assert(*probdata != NULL);
@@ -277,6 +220,20 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
       SCIP_CALL( SCIPfree(&((*probdata)->pricingprobs[i])) );
    }
 
+
+   vars = SCIPgetVars((*probdata)->origprob);
+   nvars = SCIPgetNVars((*probdata)->origprob);
+   for ( i = 0; i < nvars; i++ )
+   {
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      //printf("free vardata->data.origvardata.coefs with length");
+      SCIPfreeBlockMemoryArray((*probdata)->origprob, &(vardata->data.origvardata.coefs), (*probdata)->norigmasterconss);
+   }
+   
+   SCIPfreeTransform((*probdata)->origprob);
+
    /* free original problem */
    SCIP_CALL( SCIPfreeTransform((*probdata)->origprob) );
    SCIP_CALL( SCIPfree(&((*probdata)->origprob)) );
@@ -286,6 +243,7 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    /* free array for constraints */
    SCIPfreeMemoryArray(scip, &((*probdata)->masterconss));
    SCIPfreeMemoryArray(scip, &((*probdata)->origmasterconss));
+   SCIPfreeMemoryArray(scip, &((*probdata)->linearmasterconss));
 
    SCIPfreeMemoryArray(scip, &((*probdata)->pricingprobs));
 
@@ -309,9 +267,8 @@ SCIP_RETCODE SCIPcreateProbGcg(
    const char*           name                /**< problem name */
    )
 {
-   char* probname;
+   char probname[SCIP_MAXSTRLEN];
    SCIP_PROBDATA* probdata;
-   int i;
    
    printf("Creating problem: %s\n", name);
    
@@ -342,7 +299,9 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usepseudo", FALSE) );
    SCIP_CALL( SCIPsetIntParam(probdata->origprob, "presolving/probing/maxrounds", 0) );
 
-   SCIP_CALL( SCIPcreateProb(probdata->origprob, "origprob", NULL, NULL, NULL, NULL, NULL, NULL) );
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "origprob_%s", name);
+
+   SCIP_CALL( SCIPcreateProb(probdata->origprob, probname, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* create problem in SCIP */
    SCIP_CALL( SCIPcreateProb(scip, name, probdelorigGcg, probtransGcg, probdeltransGcg, 
@@ -393,7 +352,6 @@ SCIP_RETCODE GCGprobCreateFramework(
    SCIP* origprob;
    SCIP_PROBDATA* probdata;
    char name[SCIP_MAXSTRLEN];
-   SCIP_CONS* cons;
    SCIP_VARDATA* vardata;
    SCIP_CONSHDLR** conshdlrs;
    int nconshdlrs;
@@ -401,11 +359,7 @@ SCIP_RETCODE GCGprobCreateFramework(
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_Real* vals;
-   SCIP_Real lhs;
-   SCIP_Real rhs;
    int nvars;
-   int nconss;
-   int blocknr;
    SCIP_CONS* newcons;
    SCIP_CONS* mastercons;
    SCIP_Bool success;
@@ -478,12 +432,21 @@ SCIP_RETCODE GCGprobCreateFramework(
    {
       vardata = SCIPvarGetData(vars[v]);
       assert(vardata != NULL);
-      if ( vardata->data.origvardata.pricingvar == NULL )
+      if ( vardata->blocknr != -1 )
       {
-         SCIP_CALL( GCGcreatePricingVar(scip, vars[v], vardata->blocknr) );
-         assert(vardata->data.origvardata.pricingvar != NULL);
-         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[vardata->blocknr], 
-               (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
+         if ( vardata->data.origvardata.pricingvar == NULL )
+         {
+            SCIP_CALL( GCGcreatePricingVar(scip, vars[v], vardata->blocknr) );
+            assert(vardata->data.origvardata.pricingvar != NULL);
+            SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[vardata->blocknr], 
+                  (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
+            SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[nblocks], 
+                  (void*)(vars[v]), (void*)(vars[v])) );
+         }
+      }
+      else
+      {
+         assert(vardata->data.origvardata.pricingvar == NULL);
          SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[nblocks], 
                (void*)(vars[v]), (void*)(vars[v])) );
       }
@@ -604,6 +567,53 @@ SCIP_RETCODE GCGprobCreateFramework(
       }
 
    }
+
+   /* for variables that do not belong to any block, create teh corresponding variable in the master problem */
+   vars = SCIPgetVars(origprob);
+   nvars = SCIPgetNVars(origprob);
+   for ( v = 0; v < nvars; v++ )
+   {
+      vardata = SCIPvarGetData(vars[v]);
+      assert(vardata != NULL);
+      if ( vardata->blocknr == -1 )
+      {
+         SCIP_VAR* newvar;
+         SCIP_VARDATA* newvardata;
+
+         assert(vardata->data.origvardata.pricingvar == NULL);
+
+         printf("var %s is in no block!\n", SCIPvarGetName(vars[i]));
+         assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
+
+         /* create vardata */
+         SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+         newvardata->vartype = GCG_VARTYPE_MASTER;
+         newvardata->blocknr = -1;
+         newvardata->data.mastervardata.norigvars = 1;
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 
+               vardata->data.mastervardata.norigvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 
+               vardata->data.mastervardata.norigvars) );
+         newvardata->data.mastervardata.origvars[0] = vars[v];
+         newvardata->data.mastervardata.origvals[0] = 1.0;
+
+         SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[i]), 
+               SCIPvarGetLbGlobal(vars[i]), SCIPvarGetUbGlobal(vars[i]), SCIPvarGetObj(vars[i]), SCIPvarGetType(vars[i]), 
+               TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
+         SCIPaddVar(scip, newvar);
+
+         for ( i = 0; i < vardata->data.origvardata.ncoefs; i++ )
+         {
+            if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[i]) )
+            {
+               SCIP_CALL( SCIPaddCoefLinear(scip, probdata->masterconss[i], newvar, vardata->data.origvardata.coefs[i]) );
+            }
+         }
+         SCIPreleaseVar(scip, &newvar);
+
+      }
+   }
+
 
 
    printf("nconss = %d\n", SCIPgetNConss(scip));
