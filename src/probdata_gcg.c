@@ -418,6 +418,13 @@ SCIP_RETCODE GCGprobCreateFramework(
    SCIPpresolve(origprob);
    if ( SCIPisObjIntegral(origprob) )
       SCIP_CALL( SCIPsetObjIntegral(scip) );
+   
+   {
+      SCIP_Bool cutoff;
+      SCIP_CALL( SCIPconstructLP(origprob, &cutoff) );
+   }
+
+   printf("nlprows = %d\n", SCIPgetNLPRows(origprob));
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &hashorig2pricingvar, nblocks+1) );
