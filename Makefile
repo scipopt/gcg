@@ -50,6 +50,7 @@ MAINOBJ		=	reader_lpb.o \
 			cons_integralOrig.o \
 			cons_branchOrig.o \
 			sepa_lowerbound.o \
+			sepa_clique.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))

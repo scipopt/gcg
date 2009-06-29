@@ -192,4 +192,14 @@ SCIP_CONS* GCGprobGetConvCons(
    int                   pricingprobnr
    );
 
+/** gets values of multiple original variables w.r.t. primal master solution */
+extern
+SCIP_RETCODE GCGgetSolVals(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             sol,                /**< primal solution, or NULL for current LP/pseudo solution */
+   int                   nvars,              /**< number of variables to get solution value for */
+   SCIP_VAR**            vars,               /**< array with variables to get value for */
+   SCIP_Real*            vals                /**< array to store solution values of variables */
+   );
+
 #endif

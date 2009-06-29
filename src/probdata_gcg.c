@@ -420,11 +420,11 @@ SCIP_RETCODE GCGprobCreateFramework(
       SCIP_CALL( SCIPsetObjIntegral(scip) );
    
    {
-      SCIP_Bool cutoff;
-      SCIP_CALL( SCIPconstructLP(origprob, &cutoff) );
+      //SCIP_Bool cutoff;
+      //SCIP_CALL( SCIPconstructLP(origprob, &cutoff) );
    }
 
-   printf("nlprows = %d\n", SCIPgetNLPRows(origprob));
+   //printf("nlprows = %d\n", SCIPgetNLPRows(origprob));
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &hashorig2pricingvar, nblocks+1) );
@@ -1049,3 +1049,40 @@ SCIP_CONS* GCGprobGetConvCons(
    return probdata->convconss[pricingprobnr];
 }
 
+/** gets values of multiple original variables w.r.t. primal master solution */
+SCIP_RETCODE GCGgetSolVals(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             sol,                /**< primal solution, or NULL for current LP/pseudo solution */
+   int                   nvars,              /**< number of variables to get solution value for */
+   SCIP_VAR**            vars,               /**< array with variables to get value for */
+   SCIP_Real*            vals                /**< array to store solution values of variables */
+   )
+{
+   SCIP_VARDATA* vardata;
+   int v;
+   int i;
+   
+   assert(nvars == 0 || vars != NULL);
+   assert(nvars == 0 || vals != NULL);
+
+   for ( v = 0; v < nvars; v++ )
+   {
+      vals[v] = 0.0;
+      if ( !SCIPvarIsNegated(vars[v]) )
+         vardata = SCIPvarGetData(vars[v]);
+      else
+         vardata = SCIPvarGetData(SCIPvarGetNegatedVar(vars[v]));
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      {
+         vals[v] += vardata->data.origvardata.mastervals[i] * 
+            SCIPgetSolVal(scip, sol, vardata->data.origvardata.mastervars[i]);
+      }
+      if ( SCIPvarIsNegated(vars[v]) )
+      {
+         vals[v] = 1.0 - vals[v];
+      }
+   }
+
+   return SCIP_OKAY;
+}

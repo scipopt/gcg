@@ -577,8 +577,6 @@ SCIP_RETCODE GCGcreateConsBranchOrig(
    SCIP_CALL( SCIPcreateCons(scip, cons, consname, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
          TRUE, FALSE, FALSE, FALSE, TRUE) );
 
-   SCIPfreeBufferArray(scip, &consname);
-   
    return SCIP_OKAY;
 }
 

@@ -109,6 +109,7 @@
 #include "cons_integralOrig.h"
 #include "cons_branchOrig.h"
 #include "sepa_lowerbound.h"
+#include "sepa_clique.h"
 
 
 
