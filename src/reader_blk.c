@@ -72,19 +72,12 @@ enum BlkExpType
 };
 typedef enum BlkExpType BLKEXPTYPE;
 
-enum BlkSense
-{
-   BLK_SENSE_NOTHING, BLK_SENSE_LE, BLK_SENSE_GE, BLK_SENSE_EQ
-};
-typedef enum BlkSense BLKSENSE;
 
 /** BLK reading data */
 struct BlkInput
 {
    SCIP_FILE*           file;
    char                 linebuf[BLK_MAX_LINELEN];
-   char                 probname[BLK_MAX_LINELEN];
-   char                 objname[BLK_MAX_LINELEN];
    char*                token;
    char*                tokenbuf;
    char*                pushedtokens[BLK_MAX_PUSHEDTOKENS];
@@ -173,7 +166,7 @@ SCIP_Bool isValueChar(
    char                  nextc,              /**< next input character */
    SCIP_Bool             firstchar,          /**< is the given character the first char of the token? */
    SCIP_Bool*            hasdot,             /**< pointer to update the dot flag */
-   BLKEXPTYPE*            exptype             /**< pointer to update the exponent type */
+   BLKEXPTYPE*           exptype             /**< pointer to update the exponent type */
    )
 {
    assert(hasdot != NULL);
@@ -377,19 +370,6 @@ void pushToken(
    assert(blkinput->npushedtokens < BLK_MAX_PUSHEDTOKENS);
 
    swapPointers(&blkinput->pushedtokens[blkinput->npushedtokens], &blkinput->token);
-   blkinput->npushedtokens++;
-}
-
-/** puts the buffered token on the token stack, such that it is read at the next call to getNextToken() */
-static
-void pushBufferToken(
-   BLKINPUT*              blkinput             /**< BLK reading data */
-   )
-{
-   assert(blkinput != NULL);
-   assert(blkinput->npushedtokens < BLK_MAX_PUSHEDTOKENS);
-
-   swapPointers(&blkinput->pushedtokens[blkinput->npushedtokens], &blkinput->tokenbuf);
    blkinput->npushedtokens++;
 }
 
@@ -718,7 +698,16 @@ SCIP_DECL_READERREAD(readerReadBlk)
 
 
 /** problem writing method of reader */
-#define readerWriteBlk NULL
+static
+SCIP_DECL_READERWRITE(readerWriteBlk)
+{
+   SCIP_CALL( SCIPwriteOrigProblem(GCGprobGetOrigprob(scip), NULL, "lp", FALSE) );
+
+   SCIP_CALL( SCIPwriteTransProblem(GCGprobGetOrigprob(scip), NULL, "lp", FALSE) );
+
+
+   return SCIP_OKAY;
+}
 
 /*
  * reader specific interface methods
@@ -767,8 +756,6 @@ SCIP_RETCODE SCIPreadBlk(
    /* initialize BLK input data */
    blkinput.file = NULL;
    blkinput.linebuf[0] = '\0';
-   blkinput.probname[0] = '\0';
-   blkinput.objname[0] = '\0';
    SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.token, BLK_MAX_LINELEN) );
    blkinput.token[0] = '\0';
    SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.tokenbuf, BLK_MAX_LINELEN) );

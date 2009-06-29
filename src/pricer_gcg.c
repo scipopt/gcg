@@ -222,7 +222,7 @@ SCIP_RETCODE performPricing(
    GCGprobGetMasterConss(scip, &masterconss, &nmasterconss);
 
    /* get the corresponding constraints in the original problem */
-   GCGprobGetOrigMasterConss(scip, &origconss, &norigconss);
+   GCGprobGetLinearOrigMasterConss(scip, &origconss, &norigconss);
    
 
    /* compute reduced cost and update objectives in the pricing problems */
@@ -522,7 +522,7 @@ SCIP_RETCODE createInitialVars(
    GCGprobGetMasterConss(scip, &masterconss, &nmasterconss);
 
    /* get the corresponding constraints in the original problem */
-   GCGprobGetOrigMasterConss(scip, &origconss, &norigconss);
+   GCGprobGetLinearOrigMasterConss(scip, &origconss, &norigconss);
    
    assert(nmasterconss == norigconss);
 

@@ -180,6 +180,13 @@ void GCGprobGetOrigMasterConss(
    );
 
 extern
+void GCGprobGetLinearOrigMasterConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          conss,
+   int*                  nconss
+   );
+
+extern
 SCIP_CONS* GCGprobGetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr
