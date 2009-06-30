@@ -51,7 +51,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
    SCIP_CALL( SCIPincludeConshdlrBranchOrig(scip) );
    //SCIP_CALL( SCIPincludeSepaLowerbound(scip) );
-   SCIP_CALL( SCIPincludeSepaCliqueGCG(scip) );
+   //SCIP_CALL( SCIPincludeSepaCliqueGCG(scip) );
+   SCIP_CALL( SCIPincludeSepaOrig(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
 

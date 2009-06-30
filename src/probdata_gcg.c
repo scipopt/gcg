@@ -418,13 +418,11 @@ SCIP_RETCODE GCGprobCreateFramework(
    SCIPpresolve(origprob);
    if ( SCIPisObjIntegral(origprob) )
       SCIP_CALL( SCIPsetObjIntegral(scip) );
-   
-   {
-      //SCIP_Bool cutoff;
-      //SCIP_CALL( SCIPconstructLP(origprob, &cutoff) );
-   }
-
-   //printf("nlprows = %d\n", SCIPgetNLPRows(origprob));
+   SCIP_CALL( SCIPsetLongintParam(origprob, "limits/nodes", 1) );
+   SCIP_CALL( SCIPsetIntParam(origprob, "separating/maxroundsroot", 0) );
+   SCIPsolve(origprob);
+   //SCIP_CALL( SCIPprintStatistics(origprob, NULL) );
+   SCIP_CALL( SCIPsetIntParam(origprob, "separating/maxroundsroot", -1) );
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &hashorig2pricingvar, nblocks+1) );
@@ -623,7 +621,7 @@ SCIP_RETCODE GCGprobCreateFramework(
 
 
 
-   printf("nconss = %d\n", SCIPgetNConss(scip));
+   //printf("nconss = %d\n", SCIPgetNConss(scip));
 
    /* free hashmaps for mapping from original to pricing variables */
    for ( i = 0; i < nblocks+1; i++ )
