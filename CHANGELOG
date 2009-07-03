@@ -1,0 +1,17 @@
+v010:
+- read lpb-file only
+- constraints are given the block, they belong to
+- create constraints in original and master simultaniously
+- working scip represents the master problem, original and pricer-MIPs as sub-SCIPs
+v020:
+- read lpb and blk file
+- lpb equialent to lp files; blk defines, which variable belongs to which block
+- working scip represents the master problem, original and pricer-MIPs as sub-SCIPs
+- presolve original problem, create constraints and vars in master and pricing problems 
+  after that and use the presolving information
+- solve root-node of original program
+- tried to separate by calling SCIPseparateSol() on the original program 
+  (problem here: SCIPisStopped() returns TRUE, has to be changed somehow...)
+> v020:
+- working scip represents the original problem
+- the master problem is represented by a relaxator, which replaces the lp-solving

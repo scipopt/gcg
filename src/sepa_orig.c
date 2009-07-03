@@ -120,7 +120,7 @@ SCIP_RETCODE separateCuts(
    assert(origsol != NULL);
    SCIP_CALL( SCIPseparateSol(origprob, origsol, TRUE, FALSE, &delayed, &cutoff) );
 
-   printf("%d cuts found!\n", SCIPgetNCuts(origprob));
+   //printf("%d cuts found!\n", SCIPgetNCuts(origprob));
 
    //SCIP_CALL( SCIPprintStatistics(origprob, NULL) );
 
@@ -214,7 +214,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolOrig)
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpOrig)
 {  
-   printf("sepaexeclporig\n");
+   //printf("sepaexeclporig\n");
    /* separate cuts on the LP solution */
    SCIP_CALL( separateCuts(scip, sepa, NULL, result) );
 
@@ -226,7 +226,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOrig)
 static
 SCIP_DECL_SEPAEXECSOL(sepaExecsolOrig)
 {  
-   printf("sepaexecsolorig\n");
+   //printf("sepaexecsolorig\n");
    /* separate cuts on the given primal solution */
    SCIP_CALL( separateCuts(scip, sepa, sol, result) );
 
