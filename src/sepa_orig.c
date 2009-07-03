@@ -96,6 +96,7 @@ SCIP_RETCODE separateCuts(
 
    /* create solution for the original problem and conververt current solution to this solution space */
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, NULL) );
+   assert(origsol != NULL);
 
    for ( v = 0; v < nmastervars; v++ )
    {
@@ -116,12 +117,12 @@ SCIP_RETCODE separateCuts(
    //SCIP_CALL( SCIPprintSol(origprob, origsol, NULL, FALSE) );
 
    assert(SCIPgetNCuts(origprob) == 0);
-
+   assert(origsol != NULL);
    SCIP_CALL( SCIPseparateSol(origprob, origsol, TRUE, FALSE, &delayed, &cutoff) );
 
    printf("%d cuts found!\n", SCIPgetNCuts(origprob));
 
-   SCIP_CALL( SCIPprintStatistics(origprob, NULL) );
+   //SCIP_CALL( SCIPprintStatistics(origprob, NULL) );
 
    return SCIP_OKAY;
 }

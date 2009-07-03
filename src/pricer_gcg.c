@@ -31,7 +31,6 @@
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define VARNAMELEN 20
 #define EPS 0.0001
 
 
@@ -93,8 +92,7 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 
 /* informs an original variable, that a variable in the master problem was created, that contains a part of the original variable,
  * saves this information int the original variable's data */
-static
-SCIP_RETCODE addMasterVarToOrigVar(
+SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
    SCIP*                 scip,
    SCIP_VAR*             origvar,
    SCIP_VAR*             var,
@@ -148,7 +146,7 @@ SCIP_RETCODE performPricing(
    int nmasterconss;
    SCIP_CONS** origconss;
    int norigconss;
-   char* varname;
+   char varname[SCIP_MAXSTRLEN];
 
    int i;
    int j;
@@ -190,8 +188,6 @@ SCIP_RETCODE performPricing(
    SCIP_CALL( SCIPstartClock(scip, pricerdata->owneffortclock) );
    pricerdata->calls++;
    nfoundvars = 0;
-
-   SCIP_CALL(SCIPallocBufferArray(scip, &varname, VARNAMELEN) );
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
       to the original objective of the variable (for redcost pricing) */
@@ -363,7 +359,7 @@ SCIP_RETCODE performPricing(
                }
             }
 
-            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
+            (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
 
             /* create variable in the master problem */
@@ -383,7 +379,7 @@ SCIP_RETCODE performPricing(
                   newvardata->data.mastervardata.origvars[k] = vardata->data.pricingvardata.origvar;
                   newvardata->data.mastervardata.origvals[k] = pricerdata->solvals[k];
                   /* save the quota in the original variable's data */
-                  SCIP_CALL( addMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvar, newvar, pricerdata->solvals[k]) );
+                  SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvar, newvar, pricerdata->solvals[k]) );
                }
                else
                {
@@ -432,8 +428,6 @@ SCIP_RETCODE performPricing(
             {
                SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
                
-               SCIPfreeBufferArray(scip, &varname);
-               
                SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 
                //printf("Farkas-Pricing: found %d new vars\n", nfoundvars);
@@ -446,8 +440,6 @@ SCIP_RETCODE performPricing(
 
       SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
    }
-
-   SCIPfreeBufferArray(scip, &varname);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 
@@ -468,7 +460,7 @@ SCIP_RETCODE createInitialVars(
    int nmasterconss;
    SCIP_CONS** origconss;
    int norigconss;
-   char* varname;
+   char varname[SCIP_MAXSTRLEN];
 
    int i;
    int j;
@@ -509,8 +501,6 @@ SCIP_RETCODE createInitialVars(
    SCIP_CALL( SCIPstartClock(scip, pricerdata->initclock) );
 
    nfoundvars = 0;
-
-   SCIP_CALL(SCIPallocBufferArray(scip, &varname, VARNAMELEN) );
 
    /* set objective value of all variables in the pricing problems to 0 */
    for ( i = 0; i < pricerdata->npricingprobs; i++)
@@ -610,7 +600,7 @@ SCIP_RETCODE createInitialVars(
             }
          
          
-            (void) SCIPsnprintf(varname, VARNAMELEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
+            (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
  
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
@@ -686,8 +676,6 @@ SCIP_RETCODE createInitialVars(
       }
 
    }
-
-   SCIPfreeBufferArray(scip, &varname);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->initclock) );
 

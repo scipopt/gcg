@@ -43,4 +43,15 @@ SCIP_RETCODE SCIPincludePricerGcg(
    );
 
 
+/* informs an original variable, that a variable in the master problem was created, that contains a part of the original variable,
+ * saves this information int the original variable's data */
+extern
+SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
+   SCIP*                 scip,
+   SCIP_VAR*             origvar,
+   SCIP_VAR*             var,
+   SCIP_Real             val
+   );
+
+
 #endif
