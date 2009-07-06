@@ -103,7 +103,6 @@
 #include "scip/sepa_redcost.h"
 #include "scip/sepa_strongcg.h"
 #include "scip/scipshell.h"
-#include "reader_lpb.h"
 #include "reader_blk.h"
 #include "pricer_gcg.h"
 #include "cons_integralOrig.h"
@@ -111,6 +110,7 @@
 #include "sepa_lowerbound.h"
 #include "sepa_clique.h"
 #include "sepa_orig.h"
+#include "relax_gcg.h"
 
 
 

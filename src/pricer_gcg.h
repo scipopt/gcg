@@ -25,6 +25,7 @@
 #define __SCIP_PRICER_GCG__
 
 #include "scip/scip.h"
+#include "relax_gcg.h"
 
 enum GCG_Pricetype
 {
@@ -39,7 +40,8 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 /** creates the healthcare variable pricer and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludePricerGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 origprob            /**< SCIP data structure of the original problem */
    );
 
 
@@ -47,7 +49,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
  * saves this information int the original variable's data */
 extern
 SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
-   SCIP*                 scip,
+   SCIP_PRICER*          pricer,
    SCIP_VAR*             origvar,
    SCIP_VAR*             var,
    SCIP_Real             val

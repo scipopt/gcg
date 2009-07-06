@@ -45,14 +45,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
    SCIP_CALL( SCIPincludeReaderCip(scip) );
-   SCIP_CALL( SCIPincludeReaderLpb(scip) );
+   SCIP_CALL( SCIPincludeReaderLp(scip) );
+
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( SCIPincludePricerGcg(scip) );
-   SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
-   SCIP_CALL( SCIPincludeConshdlrBranchOrig(scip) );
-   //SCIP_CALL( SCIPincludeSepaLowerbound(scip) );
-   //SCIP_CALL( SCIPincludeSepaCliqueGCG(scip) );
-   SCIP_CALL( SCIPincludeSepaOrig(scip) );
+   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
 
@@ -86,6 +82,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
+
+   SCIP_CALL( SCIPincludeSepaClique(scip) );
+   SCIP_CALL( SCIPincludeSepaCmir(scip) );
+   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
+   SCIP_CALL( SCIPincludeSepaGomory(scip) );
+   SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
+   SCIP_CALL( SCIPincludeSepaIntobj(scip) );
+   SCIP_CALL( SCIPincludeSepaMcf(scip) );
+   SCIP_CALL( SCIPincludeSepaRedcost(scip) );
+   SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
+   SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );

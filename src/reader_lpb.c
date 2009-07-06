@@ -700,7 +700,7 @@ SCIP_RETCODE getVariable(
    assert(name != NULL);
    assert(var != NULL);
 
-   *var = SCIPfindVar(GCGprobGetOrigprob(scip), name);
+   *var = SCIPfindVar(scip, name);
    if( *var == NULL )
    {
       SCIP_VAR* newvar;

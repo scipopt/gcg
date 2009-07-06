@@ -30,82 +30,25 @@
 #include <string.h>
 
 
-#define STARTMAXMASTERVARS 10
+
 
 
 struct SCIP_ProbData
 {
-   SCIP*            origprob;           /* the original problem */
-   SCIP**           pricingprobs;       /* the array of pricing problems */
-   int              npricingprobs;      /* the number of pricing problems */
-   SCIP_CONS**      masterconss;        /* array of cons in the master problem */
-   int              maxmasterconss;     /* length of the array mastercons */
-   int              nmasterconss;       /* number of constraints saved in mastercons */
-   SCIP_CONS**      origmasterconss;    /* array of cons in the original problem that belong to the master problem */
-   SCIP_CONS**      linearmasterconss;  /* array of linear constraints equivalent to the cons in the original problem 
-                                           that belong to the master problem */
-   int              maxorigmasterconss; /* length of the array origmastercons */
-   int              norigmasterconss;   /* number of constraints saved in origmastercons */
-   SCIP_CONS**      convconss;          /* array of convexity constraints, one for each block */
+
+
 
 };
 
 
 
-/*
- * Vardata methods
- */
 
-static
-SCIP_DECL_VARDELORIG(gcgvardelorig)
-{
-   if ( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
-   {
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
-      SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
-   }
-   if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
-   {
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
-   }
-   SCIPfreeBlockMemory(scip, vardata);
-
-
-   return SCIP_OKAY;
-}  
 
 
 /*
  * Local methods
  */
 
-static
-SCIP_RETCODE ensureSizeMasterConss(
-   SCIP*                 scip,
-   SCIP_PROBDATA*        probdata,
-   int                   size
-   )
-{
-   assert(scip != NULL);
-   assert(probdata != NULL);
-   assert(probdata->masterconss != NULL);
-   assert(probdata->maxmasterconss == probdata->maxorigmasterconss);
-   assert(probdata->nmasterconss == probdata->norigmasterconss);
-
-   if ( probdata->maxmasterconss < size )
-   {
-      probdata->maxmasterconss = MAX(probdata->maxmasterconss + 5, size);
-      probdata->maxorigmasterconss = probdata->maxmasterconss;
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(probdata->masterconss), probdata->maxmasterconss) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(probdata->origmasterconss), probdata->maxorigmasterconss) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(probdata->linearmasterconss), probdata->maxorigmasterconss) );
-   }
-   assert(probdata->maxmasterconss >= size);
-   assert(probdata->maxorigmasterconss >= size);
-
-   return SCIP_OKAY;
-}
 
 
 /*
@@ -122,7 +65,7 @@ SCIP_DECL_PROBTRANS(probtransGcg)
 
    SCIP_CALL( SCIPallocMemory(scip, targetdata) );
 
-   (*targetdata)->origprob = sourcedata->origprob;
+   (*targetdata)->masterprob = sourcedata->masterprob;
    (*targetdata)->pricingprobs = sourcedata->pricingprobs;
    (*targetdata)->npricingprobs = sourcedata->npricingprobs;
    (*targetdata)->origmasterconss = sourcedata->origmasterconss;
@@ -173,16 +116,7 @@ SCIP_DECL_PROBDELTRANS(probdeltransGcg)
 }
 
 
-static
-SCIP_DECL_PROBINITSOL(probinitsolGcg)
-{
-   assert(scip != NULL);
-   assert(probdata != NULL);
-
-   return SCIP_OKAY;
-}
-
-
+#define probinitsolGcg NULL
 #define probexitsolGcg NULL
 
 
@@ -199,19 +133,19 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
 
    for ( i = 0; i < (*probdata)->norigmasterconss; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons((*probdata)->origprob, &(*probdata)->origmasterconss[i]) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->origmasterconss[i]) );
    }
    for ( i = 0; i < (*probdata)->norigmasterconss; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons((*probdata)->origprob, &(*probdata)->linearmasterconss[i]) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->linearmasterconss[i]) );
    }
    for ( i = 0; i < (*probdata)->nmasterconss; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->masterconss[i]) );
+      SCIP_CALL( SCIPreleaseCons((*probdata)->masterprob, &(*probdata)->masterconss[i]) );
    }
    for ( i = 0; i < (*probdata)->npricingprobs; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->convconss[i]) );
+      SCIP_CALL( SCIPreleaseCons((*probdata)->masterprob, &(*probdata)->convconss[i]) );
    }
 
    /* free pricing problems */
@@ -222,22 +156,20 @@ SCIP_DECL_PROBDELORIG(probdelorigGcg)
    }
 
 
-   vars = SCIPgetVars((*probdata)->origprob);
-   nvars = SCIPgetNVars((*probdata)->origprob);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
    for ( i = 0; i < nvars; i++ )
    {
       vardata = SCIPvarGetData(vars[i]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
       //printf("free vardata->data.origvardata.coefs with length");
-      SCIPfreeBlockMemoryArray((*probdata)->origprob, &(vardata->data.origvardata.coefs), (*probdata)->norigmasterconss);
+      SCIPfreeBlockMemoryArray(scip, &(vardata->data.origvardata.coefs), (*probdata)->norigmasterconss);
    }
    
-   SCIPfreeTransform((*probdata)->origprob);
-
-   /* free original problem */
-   SCIP_CALL( SCIPfreeTransform((*probdata)->origprob) );
-   SCIP_CALL( SCIPfree(&((*probdata)->origprob)) );
+   /* free master problem */
+   SCIP_CALL( SCIPfreeTransform((*probdata)->masterprob) );
+   SCIP_CALL( SCIPfree(&((*probdata)->masterprob)) );
 
 
 
@@ -288,27 +220,21 @@ SCIP_RETCODE SCIPcreateProbGcg(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->origmasterconss), probdata->maxorigmasterconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(probdata->linearmasterconss), probdata->maxorigmasterconss) );
 
-   /* initializing the scip data structure for the original problem */  
-   SCIP_CALL( SCIPcreate(&(probdata->origprob)) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(probdata->origprob) );
+   /* initializing the scip data structure for the master problem */  
+   SCIP_CALL( SCIPcreate(&(probdata->masterprob)) );
+   SCIP_CALL( SCIPincludeDefaultPlugins(probdata->masterprob) );
  
-   /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useprop", FALSE) ); 
-   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useinflp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/useboundlp", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usesb", FALSE) ); 
-   SCIP_CALL( SCIPsetBoolParam(probdata->origprob, "conflict/usepseudo", FALSE) );
-   SCIP_CALL( SCIPsetIntParam(probdata->origprob, "presolving/probing/maxrounds", 0) );
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "master_%s", name);
 
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "origprob_%s", name);
+   SCIP_CALL( SCIPcreateProb(probdata->masterprob, probname, NULL, NULL, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPactivatePricer(probdata->masterprob, SCIPfindPricer(scip, "gcg")) );
 
-   SCIP_CALL( SCIPcreateProb(probdata->origprob, probname, NULL, NULL, NULL, NULL, NULL, NULL) );
 
-   /* create problem in SCIP */
+   /* create original problem in SCIP */
    SCIP_CALL( SCIPcreateProb(scip, name, probdelorigGcg, probtransGcg, probdeltransGcg, 
          probinitsolGcg, probexitsolGcg, probdata) );
 
-   SCIP_CALL( SCIPactivatePricer(scip, SCIPfindPricer(scip, "gcg")) );
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) ); 
 
    return SCIP_OKAY;
 }
@@ -316,34 +242,8 @@ SCIP_RETCODE SCIPcreateProbGcg(
 
 /* ----------------------------------- external methods -------------------------- */
 
-/** create the convexity constraints belonging to the pricing blocks */
-SCIP_RETCODE GCGprobCreateConvConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   int i;
-   char consname[SCIP_MAXSTRLEN];
 
-   probdata = SCIPgetProbData(scip);
-
-   assert(probdata != NULL);
-
-   /* create convexity constraint for the blocks in the master problem */
-   for ( i = 0; i < probdata->npricingprobs; i++ )
-   {
-
-      (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "conv_block_%d", i);
-
-      SCIP_CALL( SCIPcreateConsLinear(scip, &(probdata->convconss[i]), consname, 0, NULL, NULL, 1, 1, TRUE, 
-            TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-      SCIP_CALL( SCIPaddCons(scip, probdata->convconss[i]) );
-   }
-   
-   return SCIP_OKAY;
-   
-}
-
+#if 0
 /** sets up the problem data */
 SCIP_RETCODE GCGprobCreateFramework(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -742,417 +642,17 @@ SCIP_RETCODE GCGprobCreateFramework(
 
    return SCIP_OKAY;
 }
+#endif
 
-/** creates and captures a linear constraint */
-SCIP_RETCODE GCGcreateConsLinear(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           name,               /**< name of constraint */
-   int                   nvars,              /**< number of nonzeros in the constraint */
-   SCIP_VAR**            vars,               /**< array with variables of constraint entries */
-   SCIP_Real*            vals,               /**< array with coefficients of constraint entries */
-   SCIP_Real             lhs,                /**< left hand side of constraint */
-   SCIP_Real             rhs,                /**< right hand side of constraint */
-   SCIP_Bool             initial,            /**< should the LP relaxation of constraint be in the initial LP?
-                                              *   Usually set to TRUE. Set to FALSE for 'lazy constraints'. */
-   SCIP_Bool             separate,           /**< should the constraint be separated during LP processing?
-                                              *   Usually set to TRUE. */
-   SCIP_Bool             enforce,            /**< should the constraint be enforced during node processing?
-                                              *   TRUE for model constraints, FALSE for additional, redundant constraints. */
-   SCIP_Bool             check,              /**< should the constraint be checked for feasibility?
-                                              *   TRUE for model constraints, FALSE for additional, redundant constraints. */
-   SCIP_Bool             propagate,          /**< should the constraint be propagated during node processing?
-                                              *   Usually set to TRUE. */
-   SCIP_Bool             local,              /**< is constraint only valid locally?
-                                              *   Usually set to FALSE. Has to be set to TRUE, e.g., for branching constraints. */
-   SCIP_Bool             modifiable,         /**< is constraint modifiable (subject to column generation)?
-                                              *   Usually set to FALSE. In column generation applications, set to TRUE if pricing
-                                              *   adds coefficients to this constraint. */
-   SCIP_Bool             dynamic,            /**< Is constraint subject to aging?
-                                              *   Usually set to FALSE. Set to TRUE for own cuts which 
-                                              *   are seperated as constraints. */
-   SCIP_Bool             removable,          /**< should the relaxation be removed from the LP due to aging or cleanup?
-                                              *   Usually set to FALSE. Set to TRUE for 'lazy constraints' and 'user cuts'. */
-   SCIP_Bool             stickingatnode      /**< should the constraint always be kept at the node where it was added, even
-                                              *   if it may be moved to a more global node?
-                                              *   Usually set to FALSE. Set to TRUE to for constraints that represent node data. */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_CONS* cons;
 
-   probdata = SCIPgetProbData(scip);
 
-   assert(probdata != NULL);
 
-   /* add constraint to the original program */
-   SCIP_CALL( SCIPcreateConsLinear(probdata->origprob, &cons, name, nvars, vars, vals, lhs, rhs, initial, 
-         separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode) );
-   SCIP_CALL( SCIPaddCons(probdata->origprob, cons) );
-   
-   SCIP_CALL( SCIPreleaseCons(probdata->origprob, &cons) );
 
-   SCIPdebugMessage("added constraint %s to the original problem\n", name);
 
-   return SCIP_OKAY;
 
-}
 
 
-/** creates a variable of the original program */
-SCIP_RETCODE GCGcreateOrigVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR**            var,                /**< pointer to variable object */
-   const char*           name,               /**< name of variable, or NULL for automatic name creation */
-   SCIP_Real             lb,                 /**< lower bound of variable */
-   SCIP_Real             ub,                 /**< upper bound of variable */
-   SCIP_Real             obj,                /**< objective function value */
-   SCIP_VARTYPE          vartype,            /**< type of variable */
-   SCIP_Bool             initial,            /**< should var's column be present in the initial root LP? */
-   SCIP_Bool             removable           /**< is var's column removable from the LP (due to aging or cleanup)? */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_VARDATA* vardata;
 
-   probdata = SCIPgetProbData(scip);
-
-   assert(probdata != NULL);
-   assert(var != NULL);
-   assert(lb <= ub);
-
-   SCIP_CALL( SCIPallocBlockMemory(probdata->origprob, &vardata) );
-   vardata->vartype = GCG_VARTYPE_ORIGINAL;
-   vardata->blocknr = -1;
-   vardata->data.origvardata.pricingvar = NULL;
-   vardata->data.origvardata.ncoefs = 0;
-   vardata->data.origvardata.nmastervars = 0;
-   vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervars), 
-         vardata->data.origvardata.maxmastervars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals), 
-         vardata->data.origvardata.maxmastervars) );
-
-   SCIP_CALL( SCIPcreateVar(probdata->origprob, var, name, lb, ub, obj, vartype, initial, removable, 
-         gcgvardelorig, NULL, NULL, vardata) );
-
-   return SCIP_OKAY;
-}
-
-SCIP_RETCODE GCGchgOrigVarUb(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to change the bound for */
-   SCIP_Real             newbound            /**< new value for bound */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_VARDATA* vardata;
-
-   probdata = SCIPgetProbData(scip);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   
-   if ( vardata->data.origvardata.pricingvar != NULL )
-   {
-      SCIP_CALL( SCIPchgVarUb(probdata->pricingprobs[vardata->blocknr], 
-            vardata->data.origvardata.pricingvar, newbound) );
-   }
-
-   SCIP_CALL( SCIPchgVarUb(probdata->origprob, var, newbound) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGchgOrigVarLb(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to change the bound for */
-   SCIP_Real             newbound            /**< new value for bound */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_VARDATA* vardata;
-
-   probdata = SCIPgetProbData(scip);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-
-   if ( vardata->data.origvardata.pricingvar != NULL )
-   {
-      SCIP_CALL( SCIPchgVarLb(probdata->pricingprobs[vardata->blocknr], 
-            vardata->data.origvardata.pricingvar, newbound) );
-   }
-
-   SCIP_CALL( SCIPchgVarLb(probdata->origprob, var, newbound) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGchgOrigVarType(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to change the type for */
-   SCIP_VARTYPE          vartype             /**< new type of variable */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_VARDATA* vardata;
-
-   probdata = SCIPgetProbData(scip);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-
-   if ( vardata->data.origvardata.pricingvar != NULL )
-   {
-      SCIP_CALL( SCIPchgVarType(probdata->pricingprobs[vardata->blocknr], 
-            vardata->data.origvardata.pricingvar, vartype) );
-   }
-
-   SCIP_CALL( SCIPchgVarType(probdata->origprob, var, vartype) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP_RETCODE GCGprobSetOriginalVarBlockNr(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to set the block number for */
-   int                   blocknr             /**< number of the block, the variable belongs to */
-   )
-{
-   SCIP_VARDATA* vardata;
-
-   assert(scip != NULL);
-   assert(SCIPvarIsOriginal(var) && SCIPvarGetTransVar(var) == NULL);
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
-   assert(vardata->blocknr == -1);
-
-   vardata->blocknr = blocknr;
-
-   return SCIP_OKAY;
-}
-
-
-
-
-/** creates a variable of a pricing problem program */
-SCIP_RETCODE GCGcreatePricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar,            /**< corresponding variable in the original program */
-   int                   pricingprobnr       /**< number of the pricing problem to which the variable belongs */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* origvardata;
-   SCIP_VAR* var;
-   char name[SCIP_MAXSTRLEN];
-
-   probdata = SCIPgetProbData(scip);
-
-   assert(probdata != NULL);
-   assert(origvar != NULL);
-   assert(pricingprobnr >= 0 && pricingprobnr < probdata->npricingprobs);
-   
-   origvardata = SCIPvarGetData(origvar);
-   
-   assert(origvardata != NULL);
-   assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(origvardata->data.origvardata.pricingvar == NULL);
-   assert(origvardata->blocknr != -1);
-   assert(origvardata->blocknr == pricingprobnr);
-
-
-   SCIP_CALL( SCIPallocBlockMemory(probdata->pricingprobs[pricingprobnr], &vardata) );
-   vardata->vartype = GCG_VARTYPE_PRICING;
-   vardata->blocknr = pricingprobnr;
-   vardata->data.pricingvardata.origvar = origvar;
-
-   //printf("var = %s, ub = %f, type = %d\n", SCIPvarGetName(origvar), SCIPvarGetUbGlobal(origvar), SCIPvarGetType(origvar));
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
-   SCIP_CALL( SCIPcreateVar(probdata->pricingprobs[pricingprobnr], &var, name, 
-         SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
-         TRUE, FALSE, gcgvardelorig, NULL, NULL, vardata) );
-
-   origvardata->data.origvardata.pricingvar = var;
-   origvardata->blocknr = pricingprobnr;
-
-   SCIP_CALL( SCIPaddVar(probdata->pricingprobs[pricingprobnr], var) );
-
-   /* because the variable was added to the problem, 
-    * it is captured by SCIP and we can safely release it right now
-    */
-   SCIP_CALL( SCIPreleaseVar(probdata->pricingprobs[pricingprobnr], &var) );
-   
-   return SCIP_OKAY;
-}
-
-
-
-/** adds variable to the original problem */
-SCIP_RETCODE GCGaddOriginalVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var                 /**< variable to add */
-   )
-{
-   SCIP_PROBDATA* probdata;
-
-   probdata = SCIPgetProbData(scip);
-
-   assert(probdata != NULL);
-   assert(var != NULL);
-
-   SCIP_CALL( SCIPaddVar(probdata->origprob, var) );
-
-   /* because the variable was added to the problem, it is captured by SCIP and we can safely release it right now
-    * without making the returned *var invalid
-    */
-   SCIP_CALL( SCIPreleaseVar(probdata->origprob, &var) );
-
-   return SCIP_OKAY;
-}
-
-
-SCIP* GCGprobGetOrigprob(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_PROBDATA* probdata;
-
-   assert(scip != NULL);
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   
-   return probdata->origprob;
-}
-
-SCIP* GCGprobGetPricingprob(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr       /**< number of the pricing problem */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   assert(scip != NULL);
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-
-   return probdata->pricingprobs[pricingprobnr];
-}
-
-int GCGprobGetNPricingprobs(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   
-   return probdata->npricingprobs;
-}
-
-void GCGprobGetMasterConss(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          conss,
-   int*                  nconss
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   assert(nconss != NULL);
-   assert(probdata->masterconss != NULL);
-   assert(probdata->nmasterconss >= 0);
-
-   *conss = probdata->masterconss;   
-   *nconss = probdata->nmasterconss;
-}
-
-
-int GCGprobGetNMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   assert(probdata->nmasterconss >= 0);
-
-   return probdata->nmasterconss;
-}
-
-
-
-void GCGprobGetOrigMasterConss(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          conss,
-   int*                  nconss
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   assert(nconss != NULL);
-   assert(probdata->origmasterconss != NULL);
-   assert(probdata->norigmasterconss >= 0);
-
-   *conss = probdata->origmasterconss;   
-   *nconss = probdata->norigmasterconss;
-
-}
-
-void GCGprobGetLinearOrigMasterConss(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          conss,
-   int*                  nconss
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   assert(nconss != NULL);
-   assert(probdata->linearmasterconss != NULL);
-   assert(probdata->norigmasterconss >= 0);
-
-   *conss = probdata->linearmasterconss;   
-   *nconss = probdata->norigmasterconss;
-
-}
-
-SCIP_CONS* GCGprobGetConvCons(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr
-   )
-{
-   SCIP_PROBDATA* probdata;
-   
-   probdata = SCIPgetProbData(scip);
-   
-   assert(probdata != NULL);
-   assert(probdata->convconss != NULL);
-   assert(pricingprobnr >= 0 && pricingprobnr < probdata->npricingprobs);
-
-
-   return probdata->convconss[pricingprobnr];
-}
 
 /** gets values of multiple original variables w.r.t. primal master solution */
 SCIP_RETCODE GCGgetSolVals(

@@ -33,7 +33,7 @@
 #include <ctype.h>
 
 #include "reader_blk.h"
-#include "probdata_gcg.h"
+#include "relax_gcg.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
@@ -497,36 +497,20 @@ SCIP_RETCODE getVariable(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 name,               /**< name of the variable */
    SCIP_VAR**            var,                /**< pointer to store the variable */
-   SCIP_Bool*            created             /**< pointer to store whether a new variable was created, or NULL */
+   SCIP_Bool*            found             /**< pointer to store whether a new variable was created, or NULL */
    )
 {
    assert(name != NULL);
    assert(var != NULL);
 
-   *var = SCIPfindVar(GCGprobGetOrigprob(scip), name);
+   *var = SCIPfindVar(scip, name);
    if( *var == NULL )
    {
-      SCIP_VAR* newvar;
-      SCIP_Bool dynamiccols;
-      SCIP_Bool initial;
-      SCIP_Bool removable;
-
-      SCIP_CALL( SCIPgetBoolParam(scip, "reading/blkreader/dynamiccols", &dynamiccols) );
-      initial = !dynamiccols;
-      removable = dynamiccols;
-
-      /* create new variable of the given name */
-      SCIPdebugMessage("creating new variable: <%s>\n", name);
-      SCIP_CALL( GCGcreateOrigVar(scip, &newvar, name, 0.0, SCIPinfinity(scip), 0.0, SCIP_VARTYPE_CONTINUOUS,
-            initial, removable) );
-      SCIP_CALL( GCGaddOriginalVar(scip, newvar) );
-      *var = newvar;
-
-      if( created != NULL )
-         *created = TRUE;
+      if( found != NULL )
+         *found = FALSE;
    }
-   else if( created != NULL )
-      *created = FALSE;
+   else if( found != NULL )
+      *found = TRUE;
 
    return SCIP_OKAY;
 }
@@ -572,10 +556,14 @@ SCIP_RETCODE readNBlocks(
       /* read number of blocks */
       if ( isInt(scip, blkinput, &nblocks) )
       {
-         assert(nblocks > 0);
+         //assert(nblocks > 0);
+
 
          if ( blkinput->nblocks == -1 )
+         {
             blkinput->nblocks = nblocks;
+            GCGrelaxSetNPricingprobs(scip, nblocks);
+         }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
          SCIPdebugMessage("Number of blocks = %d\n", blkinput->nblocks);
@@ -598,22 +586,22 @@ SCIP_RETCODE readBlock(
    while( getNextToken(blkinput) )
    {
       SCIP_VAR* var;
-      SCIP_Bool created;
+      SCIP_Bool found;
 
       /* check if we reached a new section */
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
 
       /* the token must be the name of an existing variable */
-      SCIP_CALL( getVariable(scip, blkinput->token, &var, &created) );
-      if( created )
+      SCIP_CALL( getVariable(scip, blkinput->token, &var, &found) );
+      if( !found )
       {
          syntaxError(scip, blkinput, "unknown variable in block section");
          return SCIP_OKAY;
       }
 
       /* set the block number of the variable to the number of the current block */
-      SCIP_CALL( GCGprobSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
+      SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(var, blkinput->blocknr) );
    }
 
    return SCIP_OKAY;
@@ -630,6 +618,8 @@ SCIP_RETCODE readBLKFile(
    )
 {
    assert(blkinput != NULL);
+
+   SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
 
    /* open file */
    blkinput->file = SCIPfopen(filename, "r");
@@ -668,13 +658,6 @@ SCIP_RETCODE readBLKFile(
    /* close file */
    SCIPfclose(blkinput->file);
 
-#if 0
-   /* create convexity constraints */
-   SCIP_CALL( GCGprobCreateConvConss(scip) );
-#endif
-
-   SCIP_CALL( GCGprobCreateFramework(scip, blkinput->nblocks) );
-
    return SCIP_OKAY;
 }
 
@@ -701,11 +684,6 @@ SCIP_DECL_READERREAD(readerReadBlk)
 static
 SCIP_DECL_READERWRITE(readerWriteBlk)
 {
-   SCIP_CALL( SCIPwriteOrigProblem(GCGprobGetOrigprob(scip), NULL, "lp", FALSE) );
-
-   SCIP_CALL( SCIPwriteTransProblem(GCGprobGetOrigprob(scip), NULL, "lp", FALSE) );
-
-
    return SCIP_OKAY;
 }
 
@@ -726,17 +704,6 @@ SCIP_RETCODE SCIPincludeReaderBlk(
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
          readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
-
-   /* add blk reader parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/blkreader/dynamicconss", "should model constraints be subject to aging?",
-         NULL, FALSE, TRUE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/blkreader/dynamiccols", "should columns be added and removed dynamically to the BLK?",
-         NULL, FALSE, FALSE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip,
-         "reading/blkreader/dynamicrows", "should rows be added and removed dynamically to the LP?",
-         NULL, FALSE, FALSE, NULL, NULL) );
 
    return SCIP_OKAY;
 }

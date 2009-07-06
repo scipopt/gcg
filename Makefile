@@ -42,16 +42,10 @@ include $(SCIPDIR)/make/make.project
 #-----------------------------------------------------------------------------
 
 MAINNAME	=	gcg
-MAINOBJ		=	reader_lpb.o \
-			reader_blk.o \
-			probdata_gcg.o \
+MAINOBJ		=	reader_blk.o \
 			gcgplugins.o \
+			relax_gcg.o \
 			pricer_gcg.o \
-			cons_integralOrig.o \
-			cons_branchOrig.o \
-			sepa_lowerbound.o \
-			sepa_clique.o \
-			sepa_orig.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
