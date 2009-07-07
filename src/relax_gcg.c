@@ -214,6 +214,7 @@ SCIP_RETCODE createMaster(
    int nconshdlrs;
    int nactiveconss;
    SCIP_CONS** conss;
+   SCIP_CONS** bufconss;
    SCIP_VAR** vars;
    SCIP_Real* vals;
    int nvars;
@@ -348,15 +349,25 @@ SCIP_RETCODE createMaster(
       if ( nactiveconss > 0 )
       {
          conss = SCIPconshdlrGetConss(conshdlrs[i]);
+
+         /* copy conss array */
+         SCIP_CALL( SCIPallocBufferArray(scip, &bufconss, nactiveconss) );
+         for ( c = 0; c < nactiveconss; c++ )
+         {
+            bufconss[c] = conss[c];
+         }
          for ( c = 0; c < nactiveconss; c++ )
          {
             success = FALSE;
+            assert(bufconss[0] == SCIPconshdlrGetConss(conshdlrs[i])[0]);
+            assert(bufconss[1] == SCIPconshdlrGetConss(conshdlrs[i])[1]);
+            assert(bufconss[c] == SCIPconshdlrGetConss(conshdlrs[i])[c]);
             for ( b = 0; b < npricingprobs && !success; b++ )
             {
                /* try to copy the constraint */
-               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(conss[c]));
+               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(bufconss[c]));
                SCIP_CALL( SCIPcopyCons(relaxdata->pricingprobs[b], &newcons, name, conshdlrs[i],
-                     scip, conss[c], relaxdata->hashorig2pricingvar[b], 
+                     scip, bufconss[c], relaxdata->hashorig2pricingvar[b], 
                      TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, &success) );
 
                if ( success )
@@ -369,14 +380,15 @@ SCIP_RETCODE createMaster(
             if ( !success )
             {
                /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
-               SCIP_CALL( SCIPcopyCons(scip, &newcons, NULL, conshdlrs[i],
-                     scip, conss[c], relaxdata->hashorig2origvar, 
+               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(bufconss[c]));
+               SCIP_CALL( SCIPcopyCons(scip, &newcons, name, conshdlrs[i],
+                     scip, bufconss[c], relaxdata->hashorig2origvar, 
                      FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
 
                assert(success);
 
                /* create and add corresponding linear constraint in the master problem */
-               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(conss[c]));
+               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIPconsGetName(bufconss[c]));
                SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &mastercons, name, 0, NULL, NULL, 
                      SCIPgetLhsLinear(scip, newcons), SCIPgetRhsLinear(scip, newcons), 
                      TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
@@ -385,14 +397,15 @@ SCIP_RETCODE createMaster(
 
                /* store the constraints in the arrays origmasterconss and masterconss in the problem data */
                SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
-               SCIP_CALL( SCIPcaptureCons(scip, conss[c]) );
-               relaxdata->origmasterconss[relaxdata->nmasterconss] = conss[c];
+               SCIP_CALL( SCIPcaptureCons(scip, bufconss[c]) );
+               relaxdata->origmasterconss[relaxdata->nmasterconss] = bufconss[c];
                relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
                relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
                relaxdata->nmasterconss++;
             }
             
          }
+         SCIPfreeBufferArray(scip, &bufconss);
       }
    }
 
