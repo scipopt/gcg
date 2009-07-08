@@ -156,7 +156,7 @@ SCIP_RETCODE updateCurrentSol(
    /* free previous solution */
    if ( relaxdata->currentorigsol != NULL )
    {
-      SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
+      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
    }
 
    /* create new solution */
@@ -511,13 +511,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* free solution */
-   if ( relaxdata->currentorigsol != NULL )
-   {
-      SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
-   }
-
-
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -597,6 +590,11 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free master problem */
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
+   /* free solution */
+   if ( relaxdata->currentorigsol != NULL )
+   {
+      SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
+   }
 
    return SCIP_OKAY;
 }
@@ -699,6 +697,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    printf("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(scip));
 
+   //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
+
 
    return SCIP_OKAY;
 }
@@ -723,6 +723,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    
    relaxdata->lastnrows = 0;
    relaxdata->npricingprobs = -1;
+   relaxdata->currentorigsol = NULL;
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxFreeGcg, relaxInitGcg, 
