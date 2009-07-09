@@ -99,7 +99,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
-   SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
+   //SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
 
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );

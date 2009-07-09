@@ -91,8 +91,9 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
    }
    if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
    {
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
+      assert((*vardata)->data.mastervardata.norigvars == 1);
+      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), 2);
+      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), 2);
    }
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -332,7 +333,7 @@ SCIP_RETCODE createMaster(
       else
       {
          assert(vardata->data.origvardata.pricingvar == NULL);
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[npricingprobs], 
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, 
                (void*)(vars[v]), (void*)(vars[v])) );
       }
    }
@@ -467,13 +468,14 @@ SCIP_RETCODE createMaster(
          newvardata->vartype = GCG_VARTYPE_MASTER;
          newvardata->blocknr = -1;
          newvardata->data.mastervardata.norigvars = 1;
+#if 0
          SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
-               &(newvardata->data.mastervardata.origvars), vardata->data.mastervardata.norigvars) );
+               &(newvardata->data.mastervardata.origvars), 2) );
          SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
-               &(newvardata->data.mastervardata.origvals), vardata->data.mastervardata.norigvars) );
+               &(newvardata->data.mastervardata.origvals), 2) );
          newvardata->data.mastervardata.origvars[0] = vars[v];
          newvardata->data.mastervardata.origvals[0] = 1.0;
-
+#endif
          SCIP_CALL( SCIPcreateVar(relaxdata->masterprob, &newvar, SCIPvarGetName(vars[v]), 
                SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIP_VARTYPE_CONTINUOUS,//SCIPvarGetType(vars[v]), 
                TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
