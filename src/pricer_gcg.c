@@ -368,7 +368,7 @@ SCIP_RETCODE performPricing(
 
             /* create variable in the master problem */
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_INTEGER, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             /* update variable datas */
@@ -608,7 +608,7 @@ SCIP_RETCODE createInitialVars(
             pricerdata->nvarsprob[prob]++;
  
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_INTEGER, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             SCIPchgVarUbLazy(scip, newvar, 1.0);
@@ -844,7 +844,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
-   //printf("pricerredcost\n");
+   printf("pricerredcost\n");
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );

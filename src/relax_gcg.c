@@ -228,8 +228,6 @@ SCIP_RETCODE createMaster(
    int b;
 
 
-
-
    assert(scip != NULL);
    assert(relax != NULL);
 
@@ -249,17 +247,15 @@ SCIP_RETCODE createMaster(
 
    /* initializing the scip data structure for the master problem */  
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->masterprob) );
+   SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
  
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
 
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
+
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
-
-   /* inform scip, that no LPs should be solved */
-   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) ); 
-
+   GCGnodeselMasterSetOrigscip(relaxdata->masterprob, scip);
 
 
    /* ----- initialize the pricing problems ----- */
@@ -477,7 +473,7 @@ SCIP_RETCODE createMaster(
          newvardata->data.mastervardata.origvals[0] = 1.0;
 #endif
          SCIP_CALL( SCIPcreateVar(relaxdata->masterprob, &newvar, SCIPvarGetName(vars[v]), 
-               SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIP_VARTYPE_CONTINUOUS,//SCIPvarGetType(vars[v]), 
+               SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIPvarGetType(vars[v]), 
                TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
          SCIPaddVar(relaxdata->masterprob, newvar);
 
@@ -493,6 +489,7 @@ SCIP_RETCODE createMaster(
 
       }
    }
+
 
    return SCIP_OKAY;
 }
@@ -654,6 +651,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_RELAXDATA* relaxdata;
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
+   SCIP_Longint oldnnodes;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -676,7 +674,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
 #endif
 
+   printf("solving node %d relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
+   SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
+
+   SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", 
+         ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
    SCIP_CALL( SCIPsolve(masterprob) );
    //SCIP_CALL( SCIPprintStatistics(masterprob, NULL) );
    
@@ -730,6 +733,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxFreeGcg, relaxInitGcg, 
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
+
+   /* inform scip, that no LPs should be solved */
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) ); 
 
    /* add gcg relaxator parameters */
 
@@ -1047,5 +1053,21 @@ SCIP_CONS* GCGrelaxGetConvCons(
    return relaxdata->convconss[blocknr];
 }
 
+/* returns the current solution for the original problem */
+SCIP_SOL* GCGrelaxGetCurrentOrigSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   
+   assert(scip != NULL);
 
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
 
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->currentorigsol;
+}

@@ -30,6 +30,8 @@
 #include "gcgplugins.h"
 #include "struct_vardata.h"
 #include "pricer_gcg.h"
+#include "masterplugins.h"
+#include "nodesel_master.h"
 
 
 
@@ -126,6 +128,10 @@ SCIP_CONS* GCGrelaxGetConvCons(
                                               *   need the convexity constraint */   
    );
 
-
+/* returns the current solution for the original problem */
+extern
+SCIP_SOL* GCGrelaxGetCurrentOrigSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
 #endif

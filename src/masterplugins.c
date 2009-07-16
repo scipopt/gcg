@@ -14,21 +14,21 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   gcgplugins.c
+/**@file   masterplugins.c
  * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcgplugins.h"
+#include "masterplugins.h"
 #include "scip/debug.h"
 
 #define USEHEURS 0
 
 
 /** includes default plugins for generic column generation into SCIP */
-SCIP_RETCODE SCIPincludeGcgPlugins(
+SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -44,9 +44,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
    SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
-   SCIP_CALL( SCIPincludeReaderCip(scip) );
-   SCIP_CALL( SCIPincludeReaderLp(scip) );
-
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
@@ -54,12 +51,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
-   SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
-   SCIP_CALL( SCIPincludeBranchruleGcg(scip) );
-   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
-
-   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
+   SCIP_CALL( SCIPincludeNodeselMaster(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
@@ -101,7 +94,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
-   //SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
 
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );
