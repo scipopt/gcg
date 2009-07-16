@@ -143,6 +143,7 @@ SCIP_RETCODE updateCurrentSol(
    int v;
    int i;
    SCIP_Real val;
+   SCIP_Bool stored;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -174,7 +175,7 @@ SCIP_RETCODE updateCurrentSol(
       for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
       {
          val += vardata->data.origvardata.mastervals[i] * 
-            SCIPgetSolVal(relaxdata->masterprob, SCIPgetBestSol(relaxdata->masterprob), 
+            SCIPgetSolVal(relaxdata->masterprob, NULL, 
                vardata->data.origvardata.mastervars[i]);
       }
       if ( SCIPvarIsNegated(vars[v]) )
@@ -183,6 +184,8 @@ SCIP_RETCODE updateCurrentSol(
       }
       SCIP_CALL( SCIPsetSolVal(scip, relaxdata->currentorigsol, vars[v], val) );
    }
+
+   SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, FALSE, &stored) );
 
    return SCIP_OKAY;
 }               
@@ -252,6 +255,10 @@ SCIP_RETCODE createMaster(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
 
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+   /* disable output to console */
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
@@ -578,6 +585,9 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
+   /* free master problem */
+   SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+
    /* free pricing problems */
    for ( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
    {
@@ -585,9 +595,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
    }
    SCIPfreeMemoryArray(scip, &(relaxdata->pricingprobs));
-
-   /* free master problem */
-   SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free solution */
    if ( relaxdata->currentorigsol != NULL )
@@ -674,7 +681,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
 #endif
 
-   printf("solving node %d relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+   printf("solving node %d's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
 
@@ -683,7 +690,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_CALL( SCIPsolve(masterprob) );
    //SCIP_CALL( SCIPprintStatistics(masterprob, NULL) );
    
-   SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob))) );
+   SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, NULL)) );
 
    SCIP_CALL( updateCurrentSol(scip, relax) );
 
@@ -691,14 +698,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    /* separate the optimal LP-solution */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
-   printf("SCIPconstructLP: cutoff = %d\n", cutoff);
+   //printf("SCIPconstructLP: cutoff = %d\n", cutoff);
    assert(!cutoff);
 
    SCIP_CALL( SCIPflushLP(scip) );
 
    SCIP_CALL( SCIPseparateSol(scip, relaxdata->currentorigsol, FALSE, FALSE, &delayed, &cutoff) );
 
-   printf("delayed: %d, cutoff: %d\n", delayed, cutoff);
+   //printf("delayed: %d, cutoff: %d\n", delayed, cutoff);
 
    printf("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(scip));
 

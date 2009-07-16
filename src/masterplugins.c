@@ -53,6 +53,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
+   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );

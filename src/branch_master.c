@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   branch_master.c
  * @ingroup BRANCHINGRULES
  * @brief  most infeasible LP branching rule
@@ -27,6 +27,7 @@
 
 #include "branch_master.h"
 #include "cons_origbranch.h"
+#include "cons_masterbranch.h"
 
 
 #define BRANCHRULE_NAME          "master"
@@ -66,14 +67,26 @@
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 {  
-   SCIP_NODE* childup;
-   SCIP_NODE* childdown;
+   SCIP_NODE* child1;
+   SCIP_NODE* child2;
+   SCIP_CONS* cons1;
+   SCIP_CONS* cons2;
 
    SCIPdebugMessage("Execlp method of master branching\n");
 
    /* create the b&b-tree child-nodes of the current node */
-   SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
+   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2) );
+
+   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+
+   /* release constraints */
+   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
 
    *result = SCIP_BRANCHED;
 

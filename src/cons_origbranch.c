@@ -12,7 +12,7 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   cons_origbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
@@ -49,6 +49,11 @@ struct SCIP_ConsData
 {
    SCIP_CONS*         branchcons;            /* constraint in the original problem that forces the 
                                               * branching decision */
+   SCIP_VAR*          origvar;               /* original variable on which the branching is done */
+   GCG_CONSSENSE      conssense;             /* sense of the branching on the original variable: 
+                                                greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+   SCIP_Real          val;                   /* new lower/upper bound of the original variable */
+
 };
 
 /** constraint handler data */
@@ -151,7 +156,8 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    
-   SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
+   SCIPdebugMessage("Deleting branch orig constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), SCIPvarGetName((*consdata)->origvar), 
+      ( (*consdata)->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), (*consdata)->val);
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
@@ -180,6 +186,7 @@ static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -190,7 +197,11 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
-   SCIPdebugMessage("Activating branch orig constraint: <%s> [stack size: %d].\n", SCIPconsGetName(cons), conshdlrData->nstack+1);
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   SCIPdebugMessage("Activating branch orig constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), SCIPvarGetName(consdata->origvar), 
+      ( consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), consdata->val, conshdlrData->nstack+1);
 
    /* put constraint on the stack */
    if ( conshdlrData->nstack >= conshdlrData->maxstacksize )
@@ -213,6 +224,7 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -225,7 +237,11 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    assert(conshdlrData->nstack > 0);
    assert(cons == conshdlrData->stack[conshdlrData->nstack-1]);
 
-   SCIPdebugMessage("Deactivating branch orig constraint: <%s> [stack size: %d].\n", SCIPconsGetName(cons), conshdlrData->nstack+1);
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   SCIPdebugMessage("Deactivating branch orig constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), SCIPvarGetName(consdata->origvar), 
+      ( consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), consdata->val, conshdlrData->nstack-1);
 
    /* remove constraint from the stack */
    --conshdlrData->nstack;
@@ -303,7 +319,10 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */          
-   SCIP_CONS*            branchcons          /**< linear constraint in the original problem */
+   SCIP_CONS*            branchcons,         /**< linear constraint in the original problem */
+   SCIP_VAR*             origvar,
+   GCG_CONSSENSE         conssense,
+   SCIP_Real             val
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -324,7 +343,12 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    consdata->branchcons = branchcons;
 
-   SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", name);
+   consdata->origvar = origvar;
+   consdata->conssense = conssense;
+   consdata->val = val;
+
+   SCIPdebugMessage("Creating branch orig constraint: <%s>: %s %s %f.\n", name, SCIPvarGetName(origvar), 
+      ( conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), val);
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -339,7 +363,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 /* ----------------------------------- external methods -------------------------- */
 
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
-SCIP_CONS* GCGconsGetActiveOrigbranchCons(
+SCIP_CONS* GCGconsOrigbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -363,7 +387,7 @@ SCIP_CONS* GCGconsGetActiveOrigbranchCons(
 
 
 /** returns the stack and the number of elements on it */
-void GCGconsGetStack(
+void GCGconsOrigbranchGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
@@ -387,4 +411,38 @@ void GCGconsGetStack(
    *nstackelements = conshdlrData->nstack;   
 }
 
+/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+SCIP_VAR* GCGconsOrigbranchGetOrigvar(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
 
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->origvar;
+}
+
+/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+GCG_CONSSENSE GCGconsOrigbranchGetConssense(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->conssense;
+}
+
+/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+SCIP_Real GCGconsOrigbranchGetVal(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->val;
+}

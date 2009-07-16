@@ -844,7 +844,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
-   printf("pricerredcost\n");
+   //printf("pricerredcost\n");
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
@@ -907,4 +907,22 @@ SCIP_RETCODE SCIPincludePricerGcg(
          pricerdata) );
 
    return SCIP_OKAY;
+}
+
+/** returns the pointer to the scip instance representing the original problem */
+SCIP* GCGpricerGetOrigprob(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+   
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+
+   return pricerdata->origprob;
 }

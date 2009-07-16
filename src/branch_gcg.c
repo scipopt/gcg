@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   branch_gcg.c
  * @ingroup BRANCHINGRULES
  * @brief  most infeasible LP branching rule
@@ -138,8 +138,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGcg)
    SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
    SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
 
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", consup) );
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", consdown) );
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", consup, vars[i], GCG_CONSSENSE_GE, 
+         SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i]))) );
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", consdown, vars[i], GCG_CONSSENSE_LE, 
+         SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i]))) );
 
    /* add constraints to nodes */
    SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );

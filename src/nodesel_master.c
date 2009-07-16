@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   nodesel_master.c
  * @ingroup NODESELECTORS
  * @brief  node selector for coordination of master and original formulation
@@ -154,8 +154,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
       }
 
-
-
       if ( *selnode == NULL )
       {
          printf("nodesel_master could not find a node with node number %d!\n", orignodenumber);
@@ -195,7 +193,7 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
    assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
    assert(scip != NULL);
 
-   printf("nodeselcomp master!\n");
+   SCIPdebugMessage("nodeselcomp master!\n");
 
    if( SCIPnodeGetNumber(node1) < SCIPnodeGetNumber(node2) )
       return 1;

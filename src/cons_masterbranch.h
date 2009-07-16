@@ -14,67 +14,66 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   cons_origbranch.h
+/**@file   cons_masterbranch.h
  * @brief  constraint handler for storing the graph at each node of the tree
  * @author Gerald Gamrath
  */
 
-#ifndef CONSORIGBRANCH_H
-#define CONSORIGBRANCH_H
+#ifndef CONSMASTERBRANCH_H
+#define CONSMASTERBRANCH_H
+
+
+/* sense of the masterbranch constraint: greater-equal or less-equal */
+enum GCG_ConsSense
+{
+   GCG_CONSSENSE_GE = 0,  /* greater-equal constraint */
+   GCG_CONSSENSE_LE = 1,  /* less-equal constraint */
+};
+typedef enum GCG_ConsSense GCG_CONSSENSE;
 
 #include "scip/scip.h"
-#include "cons_masterbranch.h"
+
+/** returns the store graph constraint of the current node, needs the pointer to the constraint handler */
+extern
+SCIP_CONS* GCGconsGetActiveMasterbranchConsFromHandler(
+   SCIP_CONSHDLR*        conshdlr            /**< constaint handler for store-graph constraints */
+   );
 
 
 /** returns the store graph constraint of the current node, needs only the pointer to scip */
 extern
-SCIP_CONS* GCGconsOrigbranchGetActiveCons(
+SCIP_CONS* GCGconsGetActiveMasterbranchCons(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
+/** returns array of representatives of all nodes */
+extern
+int* GCGconsGetRepresentatives(
+   SCIP*                 scip                 /**< SCIP data structure */
    );
 
 
 /** creates the handler for graph storing constraints and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
+SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** creates and captures a origbranch constraint*/
+/** creates and captures a masterbranch constraint */
 extern
-SCIP_RETCODE GCGcreateConsOrigbranch(
+SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name,               /**< name of constraint */          
-   SCIP_CONS*            branchcons,         /**< linear constraint in the original problem */
-   SCIP_VAR*             origvar,
-   GCG_CONSSENSE         conssense,
-   SCIP_Real             val
+   SCIP_CONS**           cons                /**< pointer to hold the created constraint */
    );
+
 
 /** returns the stack and the number of elements on it */
 extern
-void GCGconsOrigbranchGetStack(
+void GCGconsGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
-   );
-
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
-extern
-SCIP_VAR* GCGconsOrigbranchGetOrigvar(
-   SCIP_CONS*            cons
-   );
-
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
-extern
-GCG_CONSSENSE GCGconsOrigbranchGetConssense(
-   SCIP_CONS*            cons
-   );
-
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
-extern
-SCIP_Real GCGconsOrigbranchGetVal(
-   SCIP_CONS*            cons
    );
 
 

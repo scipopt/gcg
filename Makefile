@@ -27,6 +27,7 @@
 #-----------------------------------------------------------------------------
 
 SCIPDIR         =       ../cleanscip
+#SCIPDIR         =       ../scip-07-09
 
 
 #-----------------------------------------------------------------------------
@@ -48,6 +49,7 @@ MAINOBJ		=	reader_blk.o \
 			pricer_gcg.o \
 			branch_gcg.o \
 			cons_origbranch.o \
+			cons_masterbranch.o \
 			masterplugins.o \
 			branch_master.o \
 			nodesel_master.o \

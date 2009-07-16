@@ -55,5 +55,11 @@ SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
    SCIP_Real             val
    );
 
+/** returns the pointer to the scip instance representing the original problem */
+extern
+SCIP* GCGpricerGetOrigprob(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 #endif
