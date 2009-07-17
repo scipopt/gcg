@@ -72,6 +72,7 @@ struct SCIP_ConshdlrData
  * Local methods
  */
 
+#if 0
 static
 void printVar(
    SCIP_VAR*             var
@@ -110,7 +111,7 @@ void printVar(
       printf("), ub = inf");
    printf("\n");
 }
-
+#endif
 
 /*
  * Callback methods
@@ -130,7 +131,7 @@ SCIP_DECL_CONSFREE(consFreeMasterbranch)
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
 
-   SCIPdebugMessage("freeing branch orig constraint handler\n");
+   SCIPdebugMessage("freeing masterbranch constraint handler\n");
 
    /* free constraint handler storage */
    assert(conshdlrData->stack == NULL);
@@ -173,7 +174,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolMasterbranch)
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->nstack == 0);
-   SCIPdebugMessage("exiting branch orig constraint handler\n");
+   SCIPdebugMessage("exiting masterbranch constraint handler\n");
 
    /* free stack */
    SCIPfreeMemoryArray(scip, &conshdlrData->stack);
@@ -197,73 +198,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    
-   SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
+   SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
-
-   return SCIP_OKAY;
-}
-
-
-/** constraint enforcing method of constraint handler for LP solutions */
-static
-SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
-{
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(result != NULL);
-
-   /* do nothing */
-   *result = SCIP_FEASIBLE;
-
-   return SCIP_OKAY;
-}
-
-
-/** constraint enforcing method of constraint handler for pseudo solutions */
-static
-SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
-{
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(result != NULL);
-
-   /* do nothing */
-   *result = SCIP_FEASIBLE;
-
-   return SCIP_OKAY;
-}
-
-
-/** feasibility check method of constraint handler for integral solutions */
-static
-SCIP_DECL_CONSCHECK(consCheckMasterbranch)
-{
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(result != NULL);
-
-   /* do nothing */
-   *result = SCIP_FEASIBLE;
-
-   return SCIP_OKAY;
-}
-
-
-/** variable rounding lock method of constraint handler */
-static
-SCIP_DECL_CONSLOCK(consLockMasterbranch)
-{
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(cons != NULL);
-
-   SCIPdebugMessage("Locking method for branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
    return SCIP_OKAY;
 }
@@ -331,7 +269,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
    }
    conshdlrData->stack[conshdlrData->nstack] = cons;
-   ++(conshdlrData->nstack);
+   (conshdlrData->nstack)++;
 
    /* create corresponding constraint in the pricing problem */
    vardata = SCIPvarGetData(consdata->origvar);
@@ -409,7 +347,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
 
    /* remove constraint from the stack */
-   --conshdlrData->nstack;
+   (conshdlrData->nstack)--;
 
    return SCIP_OKAY;
 }
@@ -515,6 +453,10 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 }
 
 /* define not used callbacks as NULL */
+#define consEnfolpMasterbranch NULL
+#define consEnfopsMasterbranch NULL
+#define consCheckMasterbranch NULL
+#define consLockMasterbranch NULL
 #define consPresolMasterbranch NULL
 #define consRespropMasterbranch NULL
 #define consInitMasterbranch NULL
@@ -544,7 +486,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 {
    SCIP_CONSHDLRDATA* conshdlrData;
 
-   SCIPdebugMessage("Including branch orig constraint handler.\n");
+   SCIPdebugMessage("Including masterbranch constraint handler.\n");
 
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrData) );
    conshdlrData->stack = NULL;
@@ -578,7 +520,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
-   SCIP_VARDATA* vardata;
 
    assert(scip != NULL);
 
@@ -609,25 +550,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 /* ----------------------------------- external methods -------------------------- */
 
-/** returns the branch orig constraint of the current node, needs the pointer to the constraint handler */
-SCIP_CONS* GCGconsGetActiveMasterbranchConsFromHandler(
-   SCIP_CONSHDLR*        conshdlr            /**< constaint handler for masterbranch constraints */
-   )
-{
-   SCIP_CONSHDLRDATA* conshdlrData;
-
-   assert(conshdlr != NULL);
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
-   assert(conshdlrData->stack != NULL);
-   assert(conshdlrData->nstack > 0);
-
-   return conshdlrData->stack[conshdlrData->nstack-1];
-}
-
-
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
-SCIP_CONS* GCGconsGetActiveMasterbranchCons(
+/** returns the masterbranch constraint of the current node */
+SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -651,7 +575,7 @@ SCIP_CONS* GCGconsGetActiveMasterbranchCons(
 
 
 /** returns the stack and the number of elements on it */
-void GCGconsGetStack(
+void GCGconsMasterbranchGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
@@ -676,3 +600,38 @@ void GCGconsGetStack(
 }
 
 
+/** returns the original variable for a given masterbranch constraint */
+SCIP_VAR* GCGconsMasterbranchGetOrigvar(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->origvar;
+}
+
+/** returns the conssense for a given masterbranch constraint */
+GCG_CONSSENSE GCGconsMasterbranchGetConssense(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->conssense;
+}
+
+/** returns the new bound for a given masterbranch constraint */
+SCIP_Real GCGconsMasterbranchGetVal(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   return consdata->val;
+}

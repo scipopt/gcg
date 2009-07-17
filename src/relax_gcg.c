@@ -129,11 +129,12 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
-
+/** transformes the current solution of the master problem into the original problem's space 
+ *  and saves this solution as currentsol in the relaxator's data */
 static
 SCIP_RETCODE updateCurrentSol(
-   SCIP*                 scip,
-   SCIP_RELAX*           relax
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
    )
 {
    SCIP_RELAXDATA* relaxdata;
@@ -191,22 +192,11 @@ SCIP_RETCODE updateCurrentSol(
 }               
 
 
-static
-SCIP_RETCODE flushMaster(
-   SCIP*                 scip,
-   SCIP*                 masterscip
-   )
-{
-   printf("flushMaster()\n");
-
-   return SCIP_OKAY;
-}
-
-
+/** creates the master problem and the pricing problems and copies the constraints into them */
 static
 SCIP_RETCODE createMaster(
-   SCIP*                 scip,
-   SCIP_RELAX*           relax
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
    )
 {
    SCIP_RELAXDATA* relaxdata;
@@ -509,6 +499,47 @@ SCIP_RETCODE createMaster(
 }
 
 
+/* checks the consistency between original scip and master scip */
+static
+SCIP_RETCODE checkConsistency(
+   SCIP*                 scip,               /**< SCIP data structure of the original scip */
+   SCIP*                 masterprob          /**< SCIP data structure of the master scip */
+   )
+{
+   SCIP_CONS** origconss;
+   SCIP_CONS** masterconss;
+   int norigconss;
+   int nmasterconss;
+   int i;
+   SCIP_Bool feasible;
+
+   assert(scip != NULL);
+   assert(masterprob != NULL);
+
+   assert(SCIPgetStage(scip) == SCIP_STAGE_SOLVING);
+   assert(SCIPgetNSols(masterprob) == 0);
+   assert(SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) == SCIPnodeGetNumber(SCIPgetCurrentNode(masterprob)));
+
+   GCGconsOrigbranchGetStack(scip, &origconss, &norigconss);
+   GCGconsMasterbranchGetStack(masterprob, &masterconss, &nmasterconss);
+
+   assert(norigconss == nmasterconss);
+
+   for ( i = 0; i < norigconss; i++ )
+   {
+      assert(GCGconsOrigbranchGetOrigvar(origconss[i]) == GCGconsMasterbranchGetOrigvar(masterconss[i]));
+      assert(GCGconsOrigbranchGetVal(origconss[i]) == GCGconsMasterbranchGetVal(masterconss[i]));
+      assert(GCGconsOrigbranchGetConssense(origconss[i]) == GCGconsMasterbranchGetConssense(masterconss[i]));
+   }
+
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, FALSE, TRUE, &feasible) );
+   assert(feasible);
+
+   return SCIP_OKAY;
+   
+}
+
+
 
 
 /*
@@ -593,6 +624,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
    /* free master problem */
+   SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free pricing problems */
@@ -679,35 +711,29 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    *result = SCIP_DIDNOTRUN;
    
-   //printf("relaxexec()\n");
-
-#if 0
-   if ( relaxdata->lastnrows < SCIPgetNLPRows(scip) )
-   {
-      SCIP_CALL( flushMaster(scip, masterprob) );
-   }
-#endif
-
    //printf("solving node %d's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
+   /* increase the node limit for the master problem by 1 */
    SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
-
    SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", 
          ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
+
+   /* solve the next node in the master problem */
    SCIP_CALL( SCIPsolve(masterprob) );
-   //SCIP_CALL( SCIPprintStatistics(masterprob, NULL) );
    
+   /* update the lower bound of the current node */
    SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, NULL)) );
 
+   /* transform the current solution of the master problem to the original space and save it */
    SCIP_CALL( updateCurrentSol(scip, relax) );
+
+   SCIP_CALL( checkConsistency(scip, masterprob) );
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
    /* separate the optimal LP-solution */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
-   //printf("SCIPconstructLP: cutoff = %d\n", cutoff);
    assert(!cutoff);
-
    SCIP_CALL( SCIPflushLP(scip) );
 
    SCIP_CALL( SCIPseparateSol(scip, relaxdata->currentorigsol, FALSE, FALSE, &delayed, &cutoff) );

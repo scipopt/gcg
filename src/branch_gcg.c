@@ -68,6 +68,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpGcg)
 {  
    SCIPdebugMessage("Execlp method of gcg branching\n");
+   printf("Execlp method of gcg branching\n");
 
    return SCIP_OKAY;
 }
@@ -82,13 +83,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGcg)
    int nvars;
    int nbinvars;
    int nintvars;
-
-   SCIP_Real infeasibility;
-   SCIP_Real score;
-   SCIP_Real obj;
-   SCIP_Real bestscore;
-   SCIP_Real bestobj;
-   int bestcand;
    int i;
 
    SCIP_NODE* childup;

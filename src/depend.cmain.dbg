@@ -107,7 +107,8 @@ $(OBJDIR)/reader_blk.o: src/reader_blk.c src/reader_blk.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/pricer_gcg.h src/sepa_orig.h src/branch_gcg.h \
   src/cons_origbranch.h src/cons_masterbranch.h src/struct_vardata.h \
-  src/masterplugins.h src/branch_master.h src/nodesel_master.h
+  src/masterplugins.h src/branch_master.h src/nodesel_master.h \
+  src/cons_infeas.h
 $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -219,8 +220,8 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h \
   ../cleanscip/src/scip/sepa_oddcycle.h \
   ../cleanscip/src/scip/sepa_zerohalf.h src/struct_vardata.h \
   src/masterplugins.h src/sepa_orig.h src/branch_master.h \
-  src/nodesel_master.h src/cons_masterbranch.h src/branch_gcg.h \
-  src/cons_origbranch.h ../cleanscip/src/scip/debug.h
+  src/nodesel_master.h src/cons_masterbranch.h src/cons_infeas.h \
+  src/branch_gcg.h src/cons_origbranch.h ../cleanscip/src/scip/debug.h
 $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
   ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
@@ -330,7 +331,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/sci
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/sepa_orig.h \
   src/branch_gcg.h src/cons_origbranch.h src/cons_masterbranch.h \
   src/struct_vardata.h src/masterplugins.h src/branch_master.h \
-  src/nodesel_master.h
+  src/nodesel_master.h src/cons_infeas.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -441,7 +442,7 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   src/gcgplugins.h src/reader_blk.h src/sepa_orig.h src/branch_gcg.h \
   src/cons_origbranch.h src/cons_masterbranch.h src/struct_vardata.h \
   src/masterplugins.h src/branch_master.h src/nodesel_master.h \
-  src/probdata_gcg.h ../cleanscip/src/tclique/tclique.h
+  src/cons_infeas.h src/probdata_gcg.h ../cleanscip/src/tclique/tclique.h
 $(OBJDIR)/branch_gcg.o: src/branch_gcg.c src/branch_gcg.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -551,7 +552,8 @@ $(OBJDIR)/branch_gcg.o: src/branch_gcg.c src/branch_gcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/sepa_orig.h \
   src/cons_origbranch.h src/cons_masterbranch.h src/struct_vardata.h \
-  src/masterplugins.h src/branch_master.h src/nodesel_master.h
+  src/masterplugins.h src/branch_master.h src/nodesel_master.h \
+  src/cons_infeas.h
 $(OBJDIR)/cons_origbranch.o: src/cons_origbranch.c \
   ../cleanscip/src/scip/type_cons.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -699,7 +701,44 @@ $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/sepa_orig.h \
   src/branch_gcg.h src/cons_origbranch.h src/struct_vardata.h \
-  src/masterplugins.h src/branch_master.h src/nodesel_master.h
+  src/masterplugins.h src/branch_master.h src/nodesel_master.h \
+  src/cons_infeas.h
+$(OBJDIR)/cons_infeas.o: src/cons_infeas.c ../cleanscip/src/scip/type_cons.h \
+  ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
+  ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
+  ../cleanscip/src/scip/struct_message.h \
+  ../cleanscip/src/scip/pub_message.h ../cleanscip/src/scip/type_result.h \
+  ../cleanscip/src/scip/type_var.h ../cleanscip/src/scip/type_sol.h \
+  ../cleanscip/src/scip/type_scip.h src/cons_infeas.h \
+  ../cleanscip/src/scip/scip.h ../cleanscip/src/blockmemshell/memory.h \
+  ../cleanscip/src/scip/type_clock.h ../cleanscip/src/scip/type_misc.h \
+  ../cleanscip/src/scip/type_paramset.h \
+  ../cleanscip/src/scip/type_event.h ../cleanscip/src/scip/type_lp.h \
+  ../cleanscip/src/scip/type_prob.h ../cleanscip/src/scip/type_tree.h \
+  ../cleanscip/src/scip/type_branch.h \
+  ../cleanscip/src/scip/type_conflict.h \
+  ../cleanscip/src/scip/type_dialog.h ../cleanscip/src/scip/type_disp.h \
+  ../cleanscip/src/scip/type_heur.h ../cleanscip/src/scip/type_nodesel.h \
+  ../cleanscip/src/scip/type_presol.h ../cleanscip/src/scip/type_pricer.h \
+  ../cleanscip/src/scip/type_reader.h ../cleanscip/src/scip/type_relax.h \
+  ../cleanscip/src/scip/type_sepa.h ../cleanscip/src/scip/type_prop.h \
+  ../cleanscip/src/scip/pub_branch.h ../cleanscip/src/scip/pub_conflict.h \
+  ../cleanscip/src/scip/pub_cons.h ../cleanscip/src/scip/pub_cutpool.h \
+  ../cleanscip/src/scip/type_cutpool.h ../cleanscip/src/scip/pub_dialog.h \
+  ../cleanscip/src/scip/pub_disp.h ../cleanscip/src/scip/pub_event.h \
+  ../cleanscip/src/scip/pub_fileio.h ../cleanscip/src/scip/pub_heur.h \
+  ../cleanscip/src/scip/pub_implics.h \
+  ../cleanscip/src/scip/type_implics.h ../cleanscip/src/scip/pub_lp.h \
+  ../cleanscip/src/scip/type_set.h ../cleanscip/src/scip/type_stat.h \
+  ../cleanscip/src/scip/type_lpi.h ../cleanscip/src/scip/pub_misc.h \
+  ../cleanscip/src/scip/pub_nodesel.h \
+  ../cleanscip/src/scip/pub_paramset.h ../cleanscip/src/scip/pub_presol.h \
+  ../cleanscip/src/scip/pub_pricer.h ../cleanscip/src/scip/pub_reader.h \
+  ../cleanscip/src/scip/pub_relax.h ../cleanscip/src/scip/pub_sepa.h \
+  ../cleanscip/src/scip/pub_prop.h ../cleanscip/src/scip/pub_sol.h \
+  ../cleanscip/src/scip/pub_tree.h ../cleanscip/src/scip/pub_var.h \
+  ../cleanscip/src/scip/type_history.h ../cleanscip/src/scip/lpi.h \
+  src/cons_masterbranch.h
 $(OBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -811,7 +850,7 @@ $(OBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
   ../cleanscip/src/scip/sepa_zerohalf.h src/gcgplugins.h src/reader_blk.h \
   src/sepa_orig.h src/branch_gcg.h src/cons_origbranch.h \
   src/cons_masterbranch.h src/struct_vardata.h src/nodesel_master.h \
-  src/branch_master.h ../cleanscip/src/scip/debug.h
+  src/branch_master.h src/cons_infeas.h ../cleanscip/src/scip/debug.h
 $(OBJDIR)/branch_master.o: src/branch_master.c src/branch_master.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -994,4 +1033,4 @@ $(OBJDIR)/main.o: src/main.c ../cleanscip/src/scip/scip.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/relax_gcg.h \
   src/struct_vardata.h src/masterplugins.h src/sepa_orig.h \
   src/branch_master.h src/nodesel_master.h src/cons_masterbranch.h \
-  src/branch_gcg.h src/cons_origbranch.h
+  src/cons_infeas.h src/branch_gcg.h src/cons_origbranch.h

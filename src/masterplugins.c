@@ -25,6 +25,7 @@
 #include "scip/debug.h"
 
 #define USEHEURS 0
+#define USESEPA 0
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -54,6 +55,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
+   SCIP_CALL( SCIPincludeConshdlrInfeas(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
@@ -78,13 +80,16 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
-#endif
+
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
+#endif
 
-
+#if 0
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
+#endif
 
+#if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaCmir(scip) );
    SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
@@ -95,7 +100,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
-
+#endif
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );

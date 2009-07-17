@@ -324,6 +324,8 @@ SCIP_RETCODE GCGprobCreateFramework(
    SCIPsolve(origprob);
    //SCIP_CALL( SCIPprintStatistics(origprob, NULL) );
    SCIP_CALL( SCIPsetIntParam(origprob, "separating/maxroundsroot", -1) );
+   //   SCIP_CALL( SCIPsetBoolParam(origprob, "misc/forcesepa", TRUE) );
+   
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &hashorig2pricingvar, nblocks+1) );

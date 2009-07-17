@@ -33,26 +33,11 @@ typedef enum GCG_ConsSense GCG_CONSSENSE;
 
 #include "scip/scip.h"
 
-/** returns the store graph constraint of the current node, needs the pointer to the constraint handler */
+/** returns the store graph constraint of the current node */
 extern
-SCIP_CONS* GCGconsGetActiveMasterbranchConsFromHandler(
-   SCIP_CONSHDLR*        conshdlr            /**< constaint handler for store-graph constraints */
-   );
-
-
-/** returns the store graph constraint of the current node, needs only the pointer to scip */
-extern
-SCIP_CONS* GCGconsGetActiveMasterbranchCons(
+SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
-
-
-/** returns array of representatives of all nodes */
-extern
-int* GCGconsGetRepresentatives(
-   SCIP*                 scip                 /**< SCIP data structure */
-   );
-
 
 /** creates the handler for graph storing constraints and includes it in SCIP */
 extern
@@ -70,11 +55,28 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 /** returns the stack and the number of elements on it */
 extern
-void GCGconsGetStack(
+void GCGconsMasterbranchGetStack(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
+/** returns the original variable for a given masterbranch constraint */
+extern
+SCIP_VAR* GCGconsMasterbranchGetOrigvar(
+   SCIP_CONS*            cons
+   );
+
+/** returns the conssense for a given masterbranch constraint */
+extern
+GCG_CONSSENSE GCGconsMasterbranchGetConssense(
+   SCIP_CONS*            cons
+   );
+
+/** returns the new bound for a given masterbranch constraint */
+extern
+SCIP_Real GCGconsMasterbranchGetVal(
+   SCIP_CONS*            cons
+   );
 
 #endif

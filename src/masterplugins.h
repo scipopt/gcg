@@ -88,6 +88,7 @@
 #include "branch_master.h"
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
+#include "cons_infeas.h"
 
 
 

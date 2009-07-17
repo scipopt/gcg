@@ -244,7 +244,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
       ( consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), consdata->val, conshdlrData->nstack-1);
 
    /* remove constraint from the stack */
-   --conshdlrData->nstack;
+   --(conshdlrData->nstack);
 
    return SCIP_OKAY;
 }
@@ -411,7 +411,7 @@ void GCGconsOrigbranchGetStack(
    *nstackelements = conshdlrData->nstack;   
 }
 
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+/** returns the original variable for a given origbranch constraint */
 SCIP_VAR* GCGconsOrigbranchGetOrigvar(
    SCIP_CONS*            cons
    )
@@ -423,7 +423,7 @@ SCIP_VAR* GCGconsOrigbranchGetOrigvar(
    return consdata->origvar;
 }
 
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+/** returns the conssense for a given origbranch constraint */
 GCG_CONSSENSE GCGconsOrigbranchGetConssense(
    SCIP_CONS*            cons
    )
@@ -435,7 +435,7 @@ GCG_CONSSENSE GCGconsOrigbranchGetConssense(
    return consdata->conssense;
 }
 
-/** returns the branch orig constraint of the current node, only needs the pointer to scip */
+/** returns the new bound for a given origbranch constraint */
 SCIP_Real GCGconsOrigbranchGetVal(
    SCIP_CONS*            cons
    )
