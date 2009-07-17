@@ -284,13 +284,20 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) ); 
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
+      /* disable expensive presolving */
+      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
+      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );
+      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolpairwise", FALSE) );
+      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolpairwise", FALSE) );
+      //SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "constraints/linear/maxaggrnormscale", 0.0) );
+
       /* disable output to console */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", 0) );
       /* do not abort subproblem on CTRL-C */
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/catchctrlc", FALSE) );
 
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxrounds", 0) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxroundsroot", 0) );
+      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxrounds", 0) );
+      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxroundsroot", 0) );
 
       /* create the pricing submip */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
@@ -672,7 +679,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    *result = SCIP_DIDNOTRUN;
    
-   printf("relaxexec()\n");
+   //printf("relaxexec()\n");
 
 #if 0
    if ( relaxdata->lastnrows < SCIPgetNLPRows(scip) )
@@ -681,7 +688,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
 #endif
 
-   printf("solving node %d's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
+   //printf("solving node %d's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
 
@@ -706,8 +713,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_CALL( SCIPseparateSol(scip, relaxdata->currentorigsol, FALSE, FALSE, &delayed, &cutoff) );
 
    //printf("delayed: %d, cutoff: %d\n", delayed, cutoff);
-
-   printf("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(scip));
+   
+   if ( SCIPgetNCuts(scip) > 0 )
+      printf("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(scip));
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
