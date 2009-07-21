@@ -68,8 +68,8 @@ SCIP_DECL_CONSENFOLP(consEnfolpInfeas)
    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1) );
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
 
    SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );

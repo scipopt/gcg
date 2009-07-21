@@ -14,23 +14,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   branch_master.h
- * @brief  most infeasible LP branching rule
- * @author Tobias Achterberg
+/**@file   sepa_master.h
+ * @brief  master separator
+ * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_BRANCH_MASTER_H__
-#define __SCIP_BRANCH_MASTER_H__
+#ifndef __SCIP_SEPA_MASTER_H__
+#define __SCIP_SEPA_MASTER_H__
 
 
 #include "scip/scip.h"
 
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the master separator and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeBranchruleMaster(
+SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

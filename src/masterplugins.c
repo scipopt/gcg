@@ -52,7 +52,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
-   SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
    SCIP_CALL( SCIPincludeConshdlrInfeas(scip) );
@@ -101,10 +100,11 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
+   SCIP_CALL( SCIPincludeSepaMaster(scip) );
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );
-   SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
+   SCIP_CALL( SCIPdebugIncludeProp(scip) );
 
    return SCIP_OKAY;
 }

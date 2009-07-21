@@ -105,9 +105,8 @@
 #include "scip/scipshell.h"
 #include "reader_blk.h"
 #include "pricer_gcg.h"
-#include "sepa_orig.h"
 #include "relax_gcg.h"
-#include "branch_gcg.h"
+#include "branch_orig.h"
 #include "cons_origbranch.h"
 
 

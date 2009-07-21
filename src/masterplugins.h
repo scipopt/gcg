@@ -84,11 +84,10 @@
 #include "scip/sepa_strongcg.h"
 #include "scip/scipshell.h"
 #include "pricer_gcg.h"
-#include "sepa_orig.h"
-#include "branch_master.h"
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
 #include "cons_infeas.h"
+#include "sepa_master.h"
 
 
 

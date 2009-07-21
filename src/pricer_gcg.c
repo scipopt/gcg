@@ -19,7 +19,6 @@
 #include <assert.h>
 
 #include "pricer_gcg.h"
-#include "probdata_gcg.h"
 #include "scip/cons_linear.h"
 #include "scip/scip.h"
 #include <stdio.h>

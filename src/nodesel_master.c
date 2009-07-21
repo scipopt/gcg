@@ -26,10 +26,13 @@
 #include <string.h>
 
 #include "nodesel_master.h"
+#include "cons_origbranch.h"
+#include "cons_masterbranch.h"
+#include "pricer_gcg.h"
 
 
 #define NODESEL_NAME             "master"
-#define NODESEL_DESC             "depth first search"
+#define NODESEL_DESC             "orig master coordination"
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
 
@@ -84,8 +87,11 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 {  
    SCIP_NODESELDATA* nodeseldata;
    SCIP_NODE** nodes;
+   SCIP_CONS* origcons;
+   SCIP_CONS* parentorigcons;
+   SCIP_CONS* parentmastercons;
+   SCIP* origscip;
    int nnodes;
-   int i;
    int orignodenumber;
 
    assert(nodesel != NULL);
@@ -96,67 +102,71 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    nodeseldata = SCIPnodeselGetData(nodesel);
    assert(nodeseldata != NULL);
 
+   origscip = GCGpricerGetOrigprob(scip);
+
    *selnode = NULL;
 
-   orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(nodeseldata->origscip));
+   orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
    
    if ( orignodenumber != nodeseldata->lastorignodenumber )
    {
       nodeseldata->lastorignodenumber = orignodenumber;
 
-      SCIPdebugMessage("nleaves = %d, nsibling = %d, nchildren = %d\n", SCIPgetNLeaves(scip), SCIPgetNSiblings(scip), SCIPgetNChildren(scip));
+      origcons = GCGconsOrigbranchGetActiveCons(origscip);
+      parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
 
-      if ( SCIPgetNChildren(scip) > 0 )
+      /* check if the current node is the root node and has no parent */
+      if ( parentorigcons == NULL )
       {
-         SCIP_CALL( SCIPgetChildren(scip, &nodes, &nnodes) );
-
-         for ( i = 0; i < nnodes; i++ )
-         {
-            if ( SCIPnodeGetNumber(nodes[i]) == orignodenumber )
-            {
-               *selnode = nodes[i];
-               SCIPdebugMessage("select node (child) with number %d\n", orignodenumber);
-               break;
-            }
-         }
-
+         assert(GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip));
+         assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
+         assert(GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip));
+         
+         *selnode = SCIPgetRootNode(scip);
+         SCIPdebugMessage("selected root node in the master program\n");
       }
-
-      if ( *selnode == NULL && SCIPgetNSiblings(scip) > 0 )
+      else
       {
-         SCIP_CALL( SCIPgetSiblings(scip, &nodes, &nnodes) );
+         parentmastercons = GCGconsOrigbranchGetMastercons(parentorigcons);
+         assert(parentmastercons != NULL);
 
-         for ( i = 0; i < nnodes; i++ )
+         assert( (GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons)
+            != (GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons));
+
+         /* the original cons is the left child of its parentcons, 
+            select the left child of the corresponding parentcons in the master*/
+         if ( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
          {
-            if ( SCIPnodeGetNumber(nodes[i]) == orignodenumber )
-            {
-               *selnode = nodes[i];
-               SCIPdebugMessage("select node (sibling) with number %d\n", orignodenumber);
-               break;
-            }
+            assert(GCGconsMasterbranchGetChild1cons(parentmastercons) != NULL);
+            assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild1cons(parentmastercons)) != NULL);
+
+            *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild1cons(parentmastercons));
+            SCIPdebugMessage("Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
+               SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
+               SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
+               SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
          }
 
-      }
-
-      if ( *selnode == NULL && SCIPgetNLeaves(scip) > 0 )
-      {
-         SCIP_CALL( SCIPgetLeaves(scip, &nodes, &nnodes) );
-
-         for ( i = 0; i < nnodes; i++ )
+         /* the original cons is the right child of its parentcons, 
+            select the right child of the corresponding parentcons in the master */
+         else
          {
-            if ( SCIPnodeGetNumber(nodes[i]) == orignodenumber )
-            {
-               *selnode = nodes[i];
-               SCIPdebugMessage("select node (leaf) with number %d\n", orignodenumber);
-               break;
-            }
-         }
+            assert(GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons);
+            assert(GCGconsMasterbranchGetChild2cons(parentmastercons) != NULL);
+            assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild2cons(parentmastercons)) != NULL);
 
+            *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild2cons(parentmastercons));
+            SCIPdebugMessage("Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
+               SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
+               SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
+               SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
+         }
+         
       }
 
       if ( *selnode == NULL )
       {
-         printf("nodesel_master could not find a node with node number %d!\n", orignodenumber);
+         SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
       }
       assert(*selnode != NULL);
    }
@@ -181,6 +191,10 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       }
    }
 
+   GCGconsOrigbranchCheckConsistency(origscip);
+   GCGconsMasterbranchCheckConsistency(scip);
+
+
    return SCIP_OKAY;
 }
 
@@ -193,7 +207,7 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
    assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
    assert(scip != NULL);
 
-   SCIPdebugMessage("nodeselcomp master!\n");
+   //SCIPdebugMessage("nodeselcomp master!\n");
 
    if( SCIPnodeGetNumber(node1) < SCIPnodeGetNumber(node2) )
       return 1;
@@ -219,6 +233,9 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
 
    /* create master node selector data */
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
+
+   nodeseldata->lastorignodenumber = -1;
+   nodeseldata->origscip = NULL;
 
    /* include node selector */
    SCIP_CALL( SCIPincludeNodesel(scip, NODESEL_NAME, NODESEL_DESC, NODESEL_STDPRIORITY, NODESEL_MEMSAVEPRIORITY,

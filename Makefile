@@ -47,13 +47,13 @@ MAINOBJ		=	reader_blk.o \
 			gcgplugins.o \
 			relax_gcg.o \
 			pricer_gcg.o \
-			branch_gcg.o \
+			branch_orig.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_infeas.o \
 			masterplugins.o \
-			branch_master.o \
 			nodesel_master.o \
+			sepa_master.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))

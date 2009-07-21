@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-
+//#define SCIP_DEBUG
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -23,7 +23,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
-
+#include <string.h>
 #include "relax_gcg.h"
 
 
@@ -129,67 +129,6 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
-/** transformes the current solution of the master problem into the original problem's space 
- *  and saves this solution as currentsol in the relaxator's data */
-static
-SCIP_RETCODE updateCurrentSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAX*           relax               /**< the relaxator */
-   )
-{
-   SCIP_RELAXDATA* relaxdata;
-   SCIP_VARDATA* vardata;
-   SCIP_VAR** vars;
-   int nvars;
-   int v;
-   int i;
-   SCIP_Real val;
-   SCIP_Bool stored;
-
-   assert(scip != NULL);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-   assert(vars != NULL);
-
-   /* free previous solution */
-   if ( relaxdata->currentorigsol != NULL )
-   {
-      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
-   }
-
-   /* create new solution */
-   SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
-
-   for ( v = 0; v < nvars; v++ )
-   {
-      val = 0.0;
-      if ( !SCIPvarIsNegated(vars[v]) )
-         vardata = SCIPvarGetData(vars[v]);
-      else
-         vardata = SCIPvarGetData(SCIPvarGetNegatedVar(vars[v]));
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
-      {
-         val += vardata->data.origvardata.mastervals[i] * 
-            SCIPgetSolVal(relaxdata->masterprob, NULL, 
-               vardata->data.origvardata.mastervars[i]);
-      }
-      if ( SCIPvarIsNegated(vars[v]) )
-      {
-         val = 1.0 - val;
-      }
-      SCIP_CALL( SCIPsetSolVal(scip, relaxdata->currentorigsol, vars[v], val) );
-   }
-
-   SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, FALSE, &stored) );
-
-   return SCIP_OKAY;
-}               
 
 
 /** creates the master problem and the pricing problems and copies the constraints into them */
@@ -227,7 +166,7 @@ SCIP_RETCODE createMaster(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   printf("createMaster()\n");
+   SCIPdebugMessage("Creating Master Problem...\n");
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 5;
@@ -252,7 +191,7 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
-   GCGnodeselMasterSetOrigscip(relaxdata->masterprob, scip);
+   //GCGnodeselMasterSetOrigscip(relaxdata->masterprob, scip);
 
 
    /* ----- initialize the pricing problems ----- */
@@ -345,6 +284,11 @@ SCIP_RETCODE createMaster(
    /* iterate over all constraint handlers */
    for ( i = 0; i < nconshdlrs; i++ )
    {
+      if ( strcmp(SCIPconshdlrGetName(conshdlrs[i]), "origbranch") == 0)
+      {
+         continue;
+      }
+
       /* if there are constraints managed by this constraint handler, iterate over these constraints */
       nactiveconss = SCIPconshdlrGetNConss(conshdlrs[i]);
       if ( nactiveconss > 0 )
@@ -460,7 +404,7 @@ SCIP_RETCODE createMaster(
 
          assert(vardata->data.origvardata.pricingvar == NULL);
 
-         printf("var %s is in no block!\n", SCIPvarGetName(vars[v]));
+         SCIPdebugMessage("var %s is in no block!\n", SCIPvarGetName(vars[v]));
          //assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
 
          /* create vardata */
@@ -468,19 +412,22 @@ SCIP_RETCODE createMaster(
          newvardata->vartype = GCG_VARTYPE_MASTER;
          newvardata->blocknr = -1;
          newvardata->data.mastervardata.norigvars = 1;
-#if 0
+
+         /* save corresoponding origvar */
          SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
                &(newvardata->data.mastervardata.origvars), 2) );
          SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
                &(newvardata->data.mastervardata.origvals), 2) );
          newvardata->data.mastervardata.origvars[0] = vars[v];
          newvardata->data.mastervardata.origvals[0] = 1.0;
-#endif
+
+         /* create variable in the master problem */
          SCIP_CALL( SCIPcreateVar(relaxdata->masterprob, &newvar, SCIPvarGetName(vars[v]), 
                SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIPvarGetType(vars[v]), 
                TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
          SCIPaddVar(relaxdata->masterprob, newvar);
 
+         /* add variable in the master to the master constraints it belongs to */
          for ( i = 0; i < vardata->data.origvardata.ncoefs; i++ )
          {
             if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[i]) )
@@ -502,18 +449,20 @@ SCIP_RETCODE createMaster(
 /* checks the consistency between original scip and master scip */
 static
 SCIP_RETCODE checkConsistency(
-   SCIP*                 scip,               /**< SCIP data structure of the original scip */
-   SCIP*                 masterprob          /**< SCIP data structure of the master scip */
+   SCIP*                 scip                /**< SCIP data structure of the original scip */
    )
 {
    SCIP_CONS** origconss;
    SCIP_CONS** masterconss;
+   SCIP* masterprob;
    int norigconss;
    int nmasterconss;
    int i;
-   SCIP_Bool feasible;
+   //SCIP_Bool feasible;
 
    assert(scip != NULL);
+
+   masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
    assert(SCIPgetStage(scip) == SCIP_STAGE_SOLVING);
@@ -527,13 +476,18 @@ SCIP_RETCODE checkConsistency(
 
    for ( i = 0; i < norigconss; i++ )
    {
+      assert(origconss[i] == GCGconsMasterbranchGetOrigcons(masterconss[i]));
       assert(GCGconsOrigbranchGetOrigvar(origconss[i]) == GCGconsMasterbranchGetOrigvar(masterconss[i]));
       assert(GCGconsOrigbranchGetVal(origconss[i]) == GCGconsMasterbranchGetVal(masterconss[i]));
       assert(GCGconsOrigbranchGetConssense(origconss[i]) == GCGconsMasterbranchGetConssense(masterconss[i]));
    }
 
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, FALSE, TRUE, &feasible) );
-   assert(feasible);
+   GCGconsOrigbranchCheckConsistency(scip);
+   GCGconsMasterbranchCheckConsistency(masterprob);
+
+
+   //SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, FALSE, TRUE, &feasible) );
+   //assert(feasible);
 
    return SCIP_OKAY;
    
@@ -695,7 +649,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 {  
    SCIP* masterprob;
    SCIP_RELAXDATA* relaxdata;
-   SCIP_Bool delayed;
    SCIP_Bool cutoff;
    SCIP_Longint oldnnodes;
 
@@ -718,30 +671,26 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", 
          ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
 
-   /* solve the next node in the master problem */
-   SCIP_CALL( SCIPsolve(masterprob) );
-   
-   /* update the lower bound of the current node */
-   SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, NULL)) );
-
-   /* transform the current solution of the master problem to the original space and save it */
-   SCIP_CALL( updateCurrentSol(scip, relax) );
-
-   SCIP_CALL( checkConsistency(scip, masterprob) );
-
-   //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
-
    /* separate the optimal LP-solution */
    SCIP_CALL( SCIPconstructLP(scip, &cutoff) );
    assert(!cutoff);
    SCIP_CALL( SCIPflushLP(scip) );
 
-   SCIP_CALL( SCIPseparateSol(scip, relaxdata->currentorigsol, FALSE, FALSE, &delayed, &cutoff) );
+   SCIPdebugMessage("Solve master LP.\n");
+   /* solve the next node in the master problem */
+   SCIP_CALL( SCIPsolve(masterprob) );
 
-   //printf("delayed: %d, cutoff: %d\n", delayed, cutoff);
-   
-   if ( SCIPgetNCuts(scip) > 0 )
-      printf("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(scip));
+   SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", SCIPgetSolOrigObj(masterprob, NULL));
+   /* update the lower bound of the current node */
+   SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, NULL)) );
+
+   SCIPdebugMessage("Update current sol.\n");
+   /* transform the current solution of the master problem to the original space and save it */
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
+
+   SCIP_CALL( checkConsistency(scip) );
+
+   //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
@@ -1112,3 +1061,74 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
 
    return relaxdata->currentorigsol;
 }
+
+
+/** transformes the current solution of the master problem into the original problem's space 
+ *  and saves this solution as currentsol in the relaxator's data */
+SCIP_RETCODE GCGrelaxUpdateCurrentSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VARDATA* vardata;
+   SCIP_VAR** vars;
+   int nvars;
+   int v;
+   int i;
+   SCIP_Real val;
+   SCIP_Bool stored;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+   assert(vars != NULL);
+
+   /* free previous solution */
+   if ( relaxdata->currentorigsol != NULL )
+   {
+      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
+   }
+
+   /* create new solution */
+   SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
+
+   for ( v = 0; v < nvars; v++ )
+   {
+      val = 0.0;
+      if ( !SCIPvarIsNegated(vars[v]) )
+         vardata = SCIPvarGetData(vars[v]);
+      else
+         vardata = SCIPvarGetData(SCIPvarGetNegatedVar(vars[v]));
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      {
+         val += vardata->data.origvardata.mastervals[i] * 
+            SCIPgetSolVal(relaxdata->masterprob, NULL, 
+               vardata->data.origvardata.mastervars[i]);
+      }
+      if ( SCIPvarIsNegated(vars[v]) )
+      {
+         val = 1.0 - val;
+      }
+      SCIP_CALL( SCIPsetSolVal(scip, relaxdata->currentorigsol, vars[v], val) );
+   }
+
+   SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, &stored) );
+
+   SCIPdebugMessage("updated current original solution, %s feasible in the original problem!\n",
+      (stored ? "" : "not"));
+
+   //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
+
+   //SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, TRUE, FALSE) );
+
+   return SCIP_OKAY;
+}               

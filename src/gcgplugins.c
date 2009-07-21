@@ -56,7 +56,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
-   SCIP_CALL( SCIPincludeBranchruleGcg(scip) );
+   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );

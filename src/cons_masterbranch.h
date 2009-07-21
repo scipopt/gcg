@@ -26,8 +26,9 @@
 /* sense of the masterbranch constraint: greater-equal or less-equal */
 enum GCG_ConsSense
 {
-   GCG_CONSSENSE_GE = 0,  /* greater-equal constraint */
-   GCG_CONSSENSE_LE = 1,  /* less-equal constraint */
+   GCG_CONSSENSE_GE   = 0,  /* greater-equal constraint */
+   GCG_CONSSENSE_LE   = 1,  /* less-equal constraint */
+   GCG_CONSSENSE_NONE = 2,  /* less-equal constraint */
 };
 typedef enum GCG_ConsSense GCG_CONSSENSE;
 
@@ -49,7 +50,9 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 extern
 SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons                /**< pointer to hold the created constraint */
+   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
+   SCIP_NODE*            node,
+   SCIP_CONS*            parentcons
    );
 
 
@@ -77,6 +80,46 @@ GCG_CONSSENSE GCGconsMasterbranchGetConssense(
 extern
 SCIP_Real GCGconsMasterbranchGetVal(
    SCIP_CONS*            cons
+   );
+
+/** returns the node in the B&B tree at which the given masterbranch constraint is sticking */
+extern
+SCIP_NODE* GCGconsMasterbranchGetNode(
+   SCIP_CONS*            cons
+   );
+
+/** returns the masterbranch constraint of the B&B father of the node at which the 
+    given masterbranch constraint is sticking */
+extern
+SCIP_CONS* GCGconsMasterbranchGetParentcons(
+   SCIP_CONS*            cons
+   );
+
+/** returns the masterbranch constraint of the first child of the node at which the 
+    given masterbranch constraint is sticking */
+extern
+SCIP_CONS* GCGconsMasterbranchGetChild1cons(
+   SCIP_CONS*            cons
+   );
+
+/** returns the masterbranch constraint of the second child of the node at which the 
+    given masterbranch constraint is sticking */
+extern
+SCIP_CONS* GCGconsMasterbranchGetChild2cons(
+   SCIP_CONS*            cons
+   );
+
+/** returns the origbranch constraint of the node in the original program corresponding to the node 
+    at which the given masterbranch constraint is sticking */
+extern
+SCIP_CONS* GCGconsMasterbranchGetOrigcons(
+   SCIP_CONS*            cons
+   );
+
+/** checks the consistency of the masterbranch constraints in the problem */
+extern
+void GCGconsMasterbranchCheckConsistency(
+   SCIP*                 scip
    );
 
 #endif

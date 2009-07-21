@@ -134,4 +134,11 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** transformes the current solution of the master problem into the original problem's space 
+ *  and saves this solution as currentsol in the relaxator's data */
+extern
+SCIP_RETCODE GCGrelaxUpdateCurrentSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #endif
