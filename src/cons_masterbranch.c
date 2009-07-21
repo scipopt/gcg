@@ -791,6 +791,7 @@ void GCGconsMasterbranchCheckConsistency(
    if ( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
+      assert(0);
       return;
    }   
 

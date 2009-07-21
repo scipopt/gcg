@@ -141,4 +141,15 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/* transforms given values of the given original variables into values of the given master variables */
+extern
+void GCGrelaxTransformOrigvalsToMastervals(
+   SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
+   SCIP_Real*            origvals,           /** array with values for the given original variables */
+   int                   norigvars,          /** number of given original variables */
+   SCIP_VAR**            mastervars,         /** array of (all present) master variables */
+   SCIP_Real*            mastervals,         /** return value: values of the master variables */
+   int                   nmastervars         /** number of master variables */
+   );
+
 #endif

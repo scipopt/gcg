@@ -1131,4 +1131,56 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    //SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, TRUE, FALSE) );
 
    return SCIP_OKAY;
-}               
+}        
+
+
+/* transforms given values of the given original variables into values of the given master variables */
+void GCGrelaxTransformOrigvalsToMastervals(
+   SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
+   SCIP_Real*            origvals,           /** array with values for the given original variables */
+   int                   norigvars,          /** number of given original variables */
+   SCIP_VAR**            mastervars,         /** array of (all present) master variables */
+   SCIP_Real*            mastervals,         /** return value: values of the master variables */
+   int                   nmastervars         /** number of master variables */
+   )
+{
+   SCIP_VARDATA* vardata;
+   int i;
+   int j;
+   int k;
+
+   assert(origvars != NULL);
+   assert(origvals != NULL);
+   assert(mastervars != NULL);
+   assert(mastervals != NULL);
+
+   for ( i = 0; i < nmastervars; i++ )
+   {
+      mastervals[i] = 0.0;
+   }
+
+   for ( i = 0; i < norigvars; i++ )
+   {
+      vardata = SCIPvarGetData(origvars[i]);
+
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->data.origvardata.nmastervars > 0);
+      assert(vardata->data.origvardata.mastervars != NULL);
+      assert(vardata->data.origvardata.mastervals != NULL);
+
+      for ( j = 0; j < vardata->data.origvardata.nmastervars; j++ )
+      {
+         for ( k = 0; k < nmastervars; k++ )
+         {
+            if ( mastervars[k] == vardata->data.origvardata.mastervars[j] )
+            {
+               mastervals[k] += vardata->data.origvardata.mastervals[j] * origvals[i];
+               break;
+            }
+         }
+         assert(k < nmastervars);
+      }
+   }
+
+}       

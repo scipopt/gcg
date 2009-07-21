@@ -132,8 +132,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    SCIP_CALL( SCIPreleaseCons(scip, &cons) );
 
    GCGconsOrigbranchCheckConsistency(scip);
-   GCGconsMasterbranchCheckConsistency(GCGrelaxGetMasterprob(scip));
-
+   
    return SCIP_OKAY;
 }
 

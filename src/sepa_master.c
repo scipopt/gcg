@@ -24,6 +24,8 @@
 
 #include <assert.h>
 
+#include "scip/scip.h"
+#include "scip/lp.h"
 #include "sepa_master.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
@@ -151,7 +153,22 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
    SCIP_ROW** cuts;
-   int i;   
+   SCIP_ROW** cutscopy;
+   SCIP_ROW* mastercut;
+   SCIP_COL** cols;
+   SCIP_VAR** rowvars;
+   int ncols;
+   SCIP_Real* vals;
+
+   SCIP_VAR** mastervars;
+   SCIP_Real* mastervals;
+   int nmastervars;
+
+   char name[SCIP_MAXSTRLEN];
+
+   int ncuts;
+   int i;
+   int j;
    int sum;
 
    assert(scip != NULL);
@@ -173,15 +190,65 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    sum = 0;
    
    cuts = SCIPgetCuts(origscip);
-   
-   for ( i = 0; i < SCIPgetNCuts(origscip); i++ )
+   ncuts = SCIPgetNCuts(origscip);
+   SCIP_CALL( SCIPduplicateMemoryArray(scip, &cutscopy, cuts, ncuts) );
+   for ( i = 0; i < ncuts; i++ )
    {
-      SCIP_CALL( SCIPaddCut(origscip, GCGrelaxGetCurrentOrigSol(origscip), cuts[i], TRUE) );
+      SCIProwCapture(cutscopy[i]);
    }
 
-   SCIPdebugMessage("%d cuts are in the LP!\n", SCIPgetNCutsApplied(origscip));
+
 
    SCIP_CALL( SCIPclearCuts(origscip) );
+
+   mastervars = SCIPgetVars(scip);
+   nmastervars = SCIPgetNVars(scip);
+   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+   
+   
+   for ( i = 0; i < ncuts; i++ )
+   {
+      SCIP_CALL( SCIPaddCut(origscip, GCGrelaxGetCurrentOrigSol(origscip), cutscopy[i], TRUE) );
+
+      ncols = SCIProwGetNNonz(cutscopy[i]);
+      cols = SCIProwGetCols(cutscopy[i]);
+      vals = SCIProwGetVals(cutscopy[i]);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &rowvars, ncols) );
+      for ( j = 0; j < ncols; j++ )
+      {
+         rowvars[j] = SCIPcolGetVar(cols[j]);
+      }
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIProwGetName(cutscopy[i]));
+
+      assert(SCIPisFeasZero(scip, SCIProwGetConstant(cutscopy[i])));
+      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name, SCIProwGetLhs(cutscopy[i]), SCIProwGetRhs(cutscopy[i]), 
+            SCIProwIsLocal(cutscopy[i]), TRUE, FALSE) );
+
+      GCGrelaxTransformOrigvalsToMastervals(rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+
+      for ( j = 0; j < nmastervars; j++ )
+      {
+         SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
+      }
+
+      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, TRUE) );
+
+      SCIPdebugMessage("Cut %d:\n", i);
+      SCIP_CALL( SCIPprintRow(origscip, cutscopy[i], NULL) );
+      SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
+      SCIPdebugMessage("\n\n");
+
+      SCIPfreeBufferArray(scip, &rowvars);
+      
+   }
+
+   SCIPdebugMessage("%d cuts are in the sepastore!\n", SCIPgetNCuts(origscip));
+   SCIPdebugMessage("%d cuts are in the LP!\n", SCIPgetNCutsApplied(origscip));
+
+   SCIPfreeBufferArray(scip, &mastervals);
+   SCIPfreeMemoryArray(scip, &cutscopy);
 
    return SCIP_OKAY;
 }
