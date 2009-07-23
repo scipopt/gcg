@@ -222,16 +222,16 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIProwGetName(cutscopy[i]));
 
-      assert(SCIPisFeasZero(scip, SCIProwGetConstant(cutscopy[i])));
-      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name, SCIProwGetLhs(cutscopy[i]), SCIProwGetRhs(cutscopy[i]), 
+      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name, 
+            ( SCIPisInfinity(scip, -SCIProwGetLhs(cutscopy[i])) ? 
+               SCIProwGetLhs(cutscopy[i]) : SCIProwGetLhs(cutscopy[i]) - SCIProwGetConstant(cutscopy[i])), 
+            ( SCIPisInfinity(scip, SCIProwGetRhs(cutscopy[i])) ? 
+               SCIProwGetRhs(cutscopy[i]) : SCIProwGetRhs(cutscopy[i]) - SCIProwGetConstant(cutscopy[i])), 
             SCIProwIsLocal(cutscopy[i]), TRUE, FALSE) );
 
       GCGrelaxTransformOrigvalsToMastervals(rowvars, vals, ncols, mastervars, mastervals, nmastervars);
 
-      for ( j = 0; j < nmastervars; j++ )
-      {
-         SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
-      }
+      SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, TRUE) );
 

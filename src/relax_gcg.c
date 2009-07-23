@@ -186,7 +186,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
@@ -1159,28 +1159,38 @@ void GCGrelaxTransformOrigvalsToMastervals(
       mastervals[i] = 0.0;
    }
 
+   printf("Origvals:\n");
+   for ( i = 0; i < norigvars; i++ )
+   {
+      printf("%f, ", origvals[i]);
+   }
+   printf("\n");
+
    for ( i = 0; i < norigvars; i++ )
    {
       vardata = SCIPvarGetData(origvars[i]);
 
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.nmastervars > 0);
+      assert(vardata->data.origvardata.nmastervars >= 0);
       assert(vardata->data.origvardata.mastervars != NULL);
       assert(vardata->data.origvardata.mastervals != NULL);
 
+      printf("Mastervals for var %s:\n", SCIPvarGetName(origvars[i]));
       for ( j = 0; j < vardata->data.origvardata.nmastervars; j++ )
       {
+         printf("%f, ", vardata->data.origvardata.mastervals[j]);
          for ( k = 0; k < nmastervars; k++ )
          {
             if ( mastervars[k] == vardata->data.origvardata.mastervars[j] )
             {
-               mastervals[k] += vardata->data.origvardata.mastervals[j] * origvals[i];
+               mastervals[k] += (vardata->data.origvardata.mastervals[j] * origvals[i]);
                break;
             }
          }
          assert(k < nmastervars);
       }
+      printf("\n");
    }
 
 }       
