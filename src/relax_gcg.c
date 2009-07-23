@@ -1159,12 +1159,14 @@ void GCGrelaxTransformOrigvalsToMastervals(
       mastervals[i] = 0.0;
    }
 
+#if 0
    printf("Origvals:\n");
    for ( i = 0; i < norigvars; i++ )
    {
       printf("%f, ", origvals[i]);
    }
    printf("\n");
+#endif
 
    for ( i = 0; i < norigvars; i++ )
    {
@@ -1176,10 +1178,10 @@ void GCGrelaxTransformOrigvalsToMastervals(
       assert(vardata->data.origvardata.mastervars != NULL);
       assert(vardata->data.origvardata.mastervals != NULL);
 
-      printf("Mastervals for var %s:\n", SCIPvarGetName(origvars[i]));
+      //printf("Mastervals for var %s:\n", SCIPvarGetName(origvars[i]));
       for ( j = 0; j < vardata->data.origvardata.nmastervars; j++ )
       {
-         printf("%f, ", vardata->data.origvardata.mastervals[j]);
+         //printf("%f, ", vardata->data.origvardata.mastervals[j]);
          for ( k = 0; k < nmastervars; k++ )
          {
             if ( mastervars[k] == vardata->data.origvardata.mastervars[j] )
@@ -1190,7 +1192,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
          }
          assert(k < nmastervars);
       }
-      printf("\n");
+      //printf("\n");
    }
 
 }       

@@ -21,6 +21,7 @@
 #include "pricer_gcg.h"
 #include "scip/cons_linear.h"
 #include "scip/scip.h"
+#include "sepa_master.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -176,6 +177,13 @@ SCIP_RETCODE performPricing(
    SCIP_Real objcoeff;
    SCIP_Real conscoeff;
 
+   SCIP_ROW** mastercuts;
+   int nmastercuts;
+   SCIP_ROW** origcuts;
+   int norigcuts;
+   SCIP_Real redcost;
+   SCIP_COL** cols;
+
    assert(scip != NULL);
    assert(pricer != NULL);
 
@@ -221,7 +229,6 @@ SCIP_RETCODE performPricing(
    nmasterconss = GCGrelaxGetNMasterConss(pricerdata->origprob);
    masterconss = GCGrelaxGetMasterConss(pricerdata->origprob);
    origconss = GCGrelaxGetLinearOrigMasterConss(pricerdata->origprob);
-   
 
    /* compute reduced cost and update objectives in the pricing problems */
    for ( i = 0; i < nmasterconss; i++ )
@@ -259,6 +266,66 @@ SCIP_RETCODE performPricing(
          }
       }
    }
+
+   /* get the cuts of the master problem and the corresponding cuts in the original problem */
+   mastercuts = GCGsepaGetMastercuts(scip);
+   nmastercuts = GCGsepaGetNMastercuts(scip);
+   origcuts = GCGsepaGetOrigcuts(scip);
+   norigcuts = GCGsepaGetNOrigcuts(scip);
+   
+   assert(mastercuts != NULL);
+   assert(origcuts != NULL);
+   assert(norigcuts == nmastercuts);
+
+   /* compute reduced cost and update objectives in the pricing problems */
+   for ( i = 0; i < nmastercuts; i++ )
+   {
+      /* farkas pricing */
+      if ( pricetype == GCG_PRICETYPE_FARKAS )
+      {
+         redcost = SCIProwGetDualfarkas(mastercuts[i]);
+         //printf("farkas value of row %s = %f\n", SCIProwGetName(mastercuts[i]), redcost);
+      }
+      /* redcost pricing */
+      else
+      {    
+         assert(pricetype == GCG_PRICETYPE_REDCOST);
+         redcost = SCIProwGetDualsol(mastercuts[i]);
+         //printf("dualsol of row %s = %f\n", SCIProwGetName(mastercuts[i]), redcost);
+      }
+      if ( !SCIPisFeasZero(scip, redcost) )
+      {
+         /* get columns and vals of the cut */
+         nconsvars = SCIProwGetNNonz(origcuts[i]);
+         cols = SCIProwGetCols(origcuts[i]);
+         consvals = SCIProwGetVals(origcuts[i]);
+
+         /* get the variables corresponding to the columns in the cut */
+         SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nconsvars) );
+         for ( j = 0; j < nconsvars; j++ )
+         {
+            consvars[j] = SCIPcolGetVar(cols[j]);
+         }
+
+         /* for all variables in the cut, modify the objective of the corresponding variable in a pricing problem */
+         for ( j = 0; j < nconsvars; j++ )
+         {
+            vardata = SCIPvarGetData(consvars[j]);
+            assert(vardata != NULL);
+            assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+            if ( vardata->blocknr != -1 )
+            {
+               assert(vardata->data.origvardata.pricingvar != NULL);
+               /* modify the objective of the corresponding variable in the pricing problem */
+               SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[vardata->blocknr], 
+                     vardata->data.origvardata.pricingvar, -1.0 * redcost * consvals[j]) );
+            }
+         }
+         SCIPfreeBufferArray(scip, &consvars);
+      }
+   }
+
+
    //SCIP_CALL( SCIPwriteLP(scip, "test.lp") );
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -335,6 +402,7 @@ SCIP_RETCODE performPricing(
          if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]) )
          {
             nfoundvars++;
+            
             /* get variables of the pricing problem and their values in the current solution */
             probvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
             nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
@@ -369,6 +437,10 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
                   0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+
+            printf("found var %s with redcost %f:\n", SCIPvarGetName(newvar), 
+               SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]);
+            SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], sols[j], NULL, FALSE ) );
 
             /* update variable datas */
             for ( k = 0; k < nprobvars; k++ )
@@ -843,7 +915,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
-   //printf("pricerredcost\n");
+   printf("pricerredcost\n");
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
