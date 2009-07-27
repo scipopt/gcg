@@ -3,7 +3,7 @@
 /*                  This file is part of the program and library             */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*    Copyright (C) 2002-2008 Konrad-Zuse-Zentrum                            */
+/*    Copyright (C) 2002-2009 Konrad-Zuse-Zentrum                            */
 /*                            fuer Informationstechnik Berlin                */
 /*                                                                           */
 /*  SCIP is distributed under the terms of the ZIB Academic License.         */
@@ -14,52 +14,25 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   pricer_gcg.h
- * @brief  gcg variable pricer
+/**@file   disp_gcg.h
+ * @brief  gcg display columns
  * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_PRICER_GCG__
-#define __SCIP_PRICER_GCG__
+#ifndef __SCIP_DISP_GCG_H__
+#define __SCIP_DISP_GCG_H__
+
 
 #include "scip/scip.h"
 #include "relax_gcg.h"
 
-enum GCG_Pricetype
-{
-   GCG_PRICETYPE_INIT      = 0,       /**< initial pricing */
-   GCG_PRICETYPE_FARKAS    = 1,       /**< farkas pricing */
-   GCG_PRICETYPE_REDCOST   = 2        /**< redcost pricing */
-};
-typedef enum GCG_Pricetype GCG_PRICETYPE;
 
-
-
-/** creates the healthcare variable pricer and includes it in SCIP */
+/** includes the gcg display columns in SCIP */
 extern
-SCIP_RETCODE SCIPincludePricerGcg(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origprob            /**< SCIP data structure of the original problem */
-   );
-
-
-/* informs an original variable, that a variable in the master problem was created, that contains a part of the original variable,
- * saves this information int the original variable's data */
-extern
-SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
-   SCIP*                 scip,
-   SCIP_VAR*             origvar,
-   SCIP_VAR*             var,
-   SCIP_Real             val
-   );
-
-/** returns the pointer to the scip instance representing the original problem */
-extern
-SCIP* GCGpricerGetOrigprob(
+SCIP_RETCODE SCIPincludeDispGcg(
    SCIP*                 scip                /**< SCIP data structure */
    );
-
 
 #endif

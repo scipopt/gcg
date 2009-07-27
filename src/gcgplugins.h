@@ -50,7 +50,6 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
 #include "scip/dialog_default.h"
-#include "scip/disp_default.h"
 #include "scip/heur_actconsdiving.h"
 #include "scip/heur_coefdiving.h"
 #include "scip/heur_crossover.h"
@@ -108,7 +107,9 @@
 #include "relax_gcg.h"
 #include "branch_orig.h"
 #include "cons_origbranch.h"
-
+#include "disp_gcg.h"
+#include "heur_gcgfeaspump.h"
+#include "heur_gcgrounding.h"
 
 
 

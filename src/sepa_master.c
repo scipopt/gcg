@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   sepa_master.c
  * @ingroup SEPARATORS
  * @brief  master separator
@@ -23,6 +23,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "scip/scip.h"
 #include "scip/lp.h"
@@ -70,7 +71,7 @@ static
 SCIP_RETCODE ensureSizeCuts(
    SCIP*                 scip,
    SCIP_SEPADATA*        sepadata,
-   int                   nadditionalcuts
+   int                   size
    )
 {
    assert(scip != NULL);
@@ -82,16 +83,16 @@ SCIP_RETCODE ensureSizeCuts(
    assert(sepadata->nmastercuts <= sepadata->maxcuts);
    assert(sepadata->nmastercuts >= 0);
 
-   if ( sepadata->maxcuts < nadditionalcuts )
+   if ( sepadata->maxcuts < size )
    {
-      while ( sepadata->maxcuts < nadditionalcuts )
+      while ( sepadata->maxcuts < size )
       {
          sepadata->maxcuts += MAXCUTSINC;
       }
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) );
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) );
    }
-   assert(sepadata->maxcuts >= nadditionalcuts);
+   assert(sepadata->maxcuts >= size);
 
    return SCIP_OKAY;
 }
@@ -196,6 +197,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int ncols;
    SCIP_Real* vals;
    SCIP_SEPADATA* sepadata;
+   FILE* origcutsfile;
 
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -218,6 +220,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    assert(sepadata != NULL);
 
    SCIPdebugMessage("sepaExeclpMaster\n");
+   SCIPdebugMessage("%d cuts are in the original LP!\n", SCIPgetNCutsApplied(origscip));
+   SCIPdebugMessage("%d cuts are in the master LP!\n", SCIPgetNCutsApplied(scip));
 
    *result = SCIP_DIDNOTRUN;
 
@@ -232,8 +236,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
 
+   origcutsfile = fopen("origcuts.txt", "w");
+   //printf("origcutsfile %s NULL\n", (origcutsfile == NULL ? "==" : "!="));
+   
+
    /* save cuts in the origcuts array in the separator data */
-   SCIP_CALL( ensureSizeCuts(scip, sepadata, ncuts) );
+   assert(sepadata->norigcuts == sepadata->nmastercuts);
+   SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->norigcuts + ncuts) );
    for ( i = 0; i < ncuts; i++ )
    {
       sepadata->origcuts[sepadata->norigcuts] = cuts[i];
@@ -252,7 +261,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    {
       origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i];
       /* add orig cut to the original scip */
-      SCIP_CALL( SCIPaddCut(origscip, GCGrelaxGetCurrentOrigSol(origscip), origcut, TRUE) );
+      //SCIP_CALL( SCIPaddCut(origscip, GCGrelaxGetCurrentOrigSol(origscip), origcut, FALSE) );
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
@@ -280,24 +289,26 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
-      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, TRUE) );
+      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE) );
       sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
       SCIProwCapture(sepadata->mastercuts[sepadata->nmastercuts]);
       sepadata->nmastercuts++;
 
-#if 0
-      SCIPdebugMessage("Cut %d:\n", i);
-      SCIP_CALL( SCIPprintRow(origscip, origcut, NULL) );
-      SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
-      SCIPdebugMessage("\n\n");
+#ifdef SCIP_DEBUG
+      //SCIPdebugMessage("Cut %d:\n", i);
+      SCIP_CALL( SCIPprintRow(origscip, origcut, origcutsfile) );
+      //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
+      //SCIPdebugMessage("\n\n");
 #endif 
 
       SCIPfreeBufferArray(scip, &rowvars);
       
    }
+   
+   fclose(origcutsfile);
 
-   SCIPdebugMessage("%d cuts are in the sepastore!\n", SCIPgetNCuts(origscip));
-   SCIPdebugMessage("%d cuts are in the LP!\n", SCIPgetNCutsApplied(origscip));
+   SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
+   SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
    SCIPfreeBufferArray(scip, &mastervals);
 

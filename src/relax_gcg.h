@@ -141,6 +141,37 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the number of fractional variables in the relaxator's current solution */
+extern
+int GCGrelaxGetNBranchCands(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the fractional variables in the relaxator's current solution */
+extern
+SCIP_RETCODE GCGrelaxGetBranchCands(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR***           branchcands,        /**< pointer to store the array of branching candidates, or NULL */
+   SCIP_Real**           branchcandssol,     /**< pointer to store the array of candidate solution values, or NULL */
+   SCIP_Real**           branchcandsfrac,    /**< pointer to store the array of candidate fractionalities, or NULL */
+   int*                  nbranchcands,       /**< pointer to store the number of branching candidates, or NULL */
+   int*                  npriobranchcands    /**< pointer to store the number of candidates with maximal priority, or NULL */
+   );
+
+/** returns solution value of the given variable in the relaxator's current solution */
+extern
+SCIP_Real GCGrelaxGetVarSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var
+   );
+
+/** returns solution value of the given variable in the relaxator's current solution */
+extern
+SCIP_RETCODE GCGrelaxLinkSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             sol
+   );
+
 /* transforms given values of the given original variables into values of the given master variables */
 extern
 void GCGrelaxTransformOrigvalsToMastervals(

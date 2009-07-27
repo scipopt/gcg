@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <string.h>
 #include "relax_gcg.h"
+#include "scip/scip.h"
 
 
 
@@ -65,6 +66,11 @@ struct SCIP_RelaxData
    int              nmasterconss;        /* number of constraints saved in mastercons */
    
    SCIP_SOL*        currentorigsol;
+
+   SCIP_VAR**       branchcands;
+   SCIP_Real*       branchcandssol;
+   SCIP_Real*       branchcandsfrac;
+   int              nbranchcands;
 
    int lastnrows;
 };
@@ -186,7 +192,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* disable output to console */
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
@@ -427,6 +433,8 @@ SCIP_RETCODE createMaster(
                TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
          SCIPaddVar(relaxdata->masterprob, newvar);
 
+         SCIP_CALL( GCGpricerAddMasterVarToOrigVar(relaxdata->masterprob, vars[v], newvar, 1.0) );
+
          /* add variable in the master to the master constraints it belongs to */
          for ( i = 0; i < vardata->data.origvardata.ncoefs; i++ )
          {
@@ -595,6 +603,11 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
    }
 
+   SCIPfreeMemoryArray(scip, &(relaxdata->branchcands));
+   SCIPfreeMemoryArray(scip, &(relaxdata->branchcandssol));
+   SCIPfreeMemoryArray(scip, &(relaxdata->branchcandsfrac));
+
+
    return SCIP_OKAY;
 }
 
@@ -623,6 +636,11 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
          relaxdata->masterconss, relaxdata->masterconss) );
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->npricingprobs, 
          relaxdata->convconss, relaxdata->convconss) );
+   
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcands), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcandssol), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcandsfrac), SCIPgetNVars(scip)) );
+   relaxdata->nbranchcands = 0;
 
    return SCIP_OKAY;
 }
@@ -694,6 +712,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
+   *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
 }
@@ -1134,6 +1153,188 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 }        
 
 
+/** returns the number of fractional variables in the relaxator's current solution */
+int GCGrelaxGetNBranchCands(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VAR** vars;
+   int nvars;
+   int v;
+   int nbranchcands;
+   SCIP_Real* vals;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* return if no current solution exists */
+   if ( relaxdata->currentorigsol == NULL )
+   {
+      return -1;
+   }
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+   assert(vars != NULL);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+   SCIP_CALL( SCIPgetSolVals(scip, relaxdata->currentorigsol, nvars, vars, vals) );
+
+   nbranchcands = 0;
+   for ( v = 0; v < nvars; v++ )
+   {
+      if ( !SCIPisFeasIntegral(scip, vals[v]) )
+      {
+         nbranchcands++;
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &vals);
+
+   return nbranchcands;
+}        
+
+/** returns the fractional variables in the relaxator's current solution */
+SCIP_RETCODE GCGrelaxGetBranchCands(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR***           branchcands,        /**< pointer to store the array of branching candidates, or NULL */
+   SCIP_Real**           branchcandssol,     /**< pointer to store the array of candidate solution values, or NULL */
+   SCIP_Real**           branchcandsfrac,    /**< pointer to store the array of candidate fractionalities, or NULL */
+   int*                  nbranchcands,       /**< pointer to store the number of branching candidates, or NULL */
+   int*                  npriobranchcands    /**< pointer to store the number of candidates with maximal priority, or NULL */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VAR** vars;
+   int nvars;
+   int v;
+   int ncands;
+   SCIP_Real* vals;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* return if no current solution exists */
+   if ( relaxdata->currentorigsol == NULL )
+   {
+      return -1;
+   }
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+   assert(vars != NULL);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+   SCIP_CALL( SCIPgetSolVals(scip, relaxdata->currentorigsol, nvars, vars, vals) );
+
+   ncands = 0;
+   for ( v = 0; v < nvars; v++ )
+   {
+      if ( !SCIPisFeasIntegral(scip, vals[v]) )
+      {
+         relaxdata->branchcands[*nbranchcands] = vars[v];
+         relaxdata->branchcandssol[*nbranchcands] = vals[v];
+         relaxdata->branchcandsfrac[*nbranchcands] = SCIPfrac(scip, vals[v]);
+         ncands++;
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &vals);
+
+   if ( nbranchcands != NULL )
+      *nbranchcands = ncands;
+   if ( npriobranchcands != NULL )
+      *npriobranchcands = ncands;
+   if ( branchcandsfrac != NULL )
+      *branchcandsfrac = relaxdata->branchcandsfrac;
+   if ( branchcandssol != NULL )
+      *branchcandssol = relaxdata->branchcandssol;
+   if ( branchcands != NULL )
+      *branchcands = relaxdata->branchcands;
+
+   return SCIP_OKAY;
+}        
+
+/** returns solution value of the given variable in the relaxator's current solution */
+SCIP_Real GCGrelaxGetVarSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* return if no current solution exists */
+   if ( relaxdata->currentorigsol == NULL )
+   {
+      return 0.0;
+   }
+
+   return SCIPgetSolVal(scip, relaxdata->currentorigsol, var);
+}        
+
+/** returns solution value of the given variable in the relaxator's current solution */
+SCIP_RETCODE GCGrelaxLinkSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             sol
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_Real* vals;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* return if no current solution exists */
+   if ( relaxdata->currentorigsol == NULL )
+   {
+      SCIP_CALL( SCIPclearSol(scip, sol) );
+      printf("sol cleared!\n");
+   }
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+   assert(vars != NULL);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+   SCIP_CALL( SCIPgetSolVals(scip, relaxdata->currentorigsol, nvars, vars, vals) );
+   SCIP_CALL( SCIPsetSolVals(scip, sol, nvars, vars, vals) );
+
+   SCIPfreeBufferArray(scip, &vals);
+
+   return SCIP_OKAY;
+}
+
+
 /* transforms given values of the given original variables into values of the given master variables */
 void GCGrelaxTransformOrigvalsToMastervals(
    SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
@@ -1177,6 +1378,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
       assert(vardata->data.origvardata.nmastervars >= 0);
       assert(vardata->data.origvardata.mastervars != NULL);
       assert(vardata->data.origvardata.mastervals != NULL);
+      assert(vardata->data.origvardata.nmastervars == 1 || vardata->blocknr != -1);
 
       //printf("Mastervals for var %s:\n", SCIPvarGetName(origvars[i]));
       for ( j = 0; j < vardata->data.origvardata.nmastervars; j++ )

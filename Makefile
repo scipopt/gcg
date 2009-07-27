@@ -54,6 +54,8 @@ MAINOBJ		=	reader_blk.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
+			disp_gcg.o \
+			heur_gcgrounding.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
