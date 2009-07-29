@@ -188,8 +188,6 @@ SCIP_RETCODE performPricing(
    SCIP_Real redcost;
    SCIP_COL** cols;
    SCIP_VAR* var;
-   SCIP_ROW** rows;
-   int nrows;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -361,29 +359,6 @@ SCIP_RETCODE performPricing(
             //printf("dualsol of cons %s = %f\n", SCIPconsGetName(GCGrelaxGetConvCons(pricerdata->origprob, i)), pricerdata->redcostconv[i]);
       }
    }
-
-#if 0
-   rows = SCIPgetLPRows(scip);
-   nrows = SCIPgetNLPRows(scip);
-   for ( i = 0; i < nrows; i++ )
-   {
-      /* farkas pricing */
-      if ( pricetype == GCG_PRICETYPE_FARKAS )
-      {
-         redcost = SCIProwGetDualfarkas(rows[i]);
-         if ( !SCIPisFeasZero(scip, redcost) )
-            //printf("farkas value of row %s = %f\n", SCIProwGetName(rows[i]), redcost);
-      }
-      /* redcost pricing */
-      else
-      {    
-         assert(pricetype == GCG_PRICETYPE_REDCOST);
-         redcost = SCIProwGetDualsol(rows[i]);
-         if ( !SCIPisFeasZero(scip, redcost) )
-            //printf("dualsol of row %s = %f\n", SCIProwGetName(rows[i]), redcost);
-      }
-   }
-#endif
 
 #if 0
    for ( i = 0; i < pricerdata->npricingprobs; i++)

@@ -3,6 +3,7 @@ v010:
 - constraints are given the block, they belong to
 - create constraints in original and master simultaniously
 - working scip represents the master problem, original and pricer-MIPs as sub-SCIPs
+
 v020:
 - read lpb and blk file
 - lpb equialent to lp files; blk defines, which variable belongs to which block
@@ -12,6 +13,18 @@ v020:
 - solve root-node of original program
 - tried to separate by calling SCIPseparateSol() on the original program 
   (problem here: SCIPisStopped() returns TRUE, has to be changed somehow...)
-> v020:
+
+v030:
 - working scip represents the original problem
 - the master problem is represented by a relaxator, which replaces the lp-solving
+- separation is done by a separator included in the master scip, which calls the 
+  SCIPseparateSol() method in the original scip
+- branching is done simultaneously in the master and in the original scip
+- variables in the master are still extreme points (and rays, but functionality currently not implemented)
+  of conv(X) -> convexification approach
+- many identical pricing problems -> fat too much effort for pricing, especially farkas pricing!
+
+> v030:
+- tried discretization approach, variables in the master now represent integer points in X,
+  integrality in the master is demanded
+- try to identify identical blocks -> hope: break symmetrie
