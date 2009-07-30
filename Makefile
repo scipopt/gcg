@@ -50,7 +50,7 @@ MAINOBJ		=	reader_blk.o \
 			branch_orig.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
-			cons_infeas.o \
+			branch_master.o \
 			masterplugins.o \
 			nodesel_master.o \
 			sepa_master.o \

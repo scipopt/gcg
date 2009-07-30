@@ -460,7 +460,7 @@ SCIP_RETCODE performPricing(
 
             /* create variable in the master problem */
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_INTEGER, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             //printf("found var %s with redcost %f:\n", SCIPvarGetName(newvar), 
@@ -749,7 +749,7 @@ SCIP_RETCODE createInitialVars(
             pricerdata->nvarsprob[prob]++;
  
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
-                  0, 1, objcoeff, SCIP_VARTYPE_CONTINUOUS, 
+                  0, 1, objcoeff, SCIP_VARTYPE_INTEGER, 
                   TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             SCIPchgVarUbLazy(scip, newvar, 1.0);

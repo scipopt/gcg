@@ -35,7 +35,7 @@
 #define SEPA_NAME              "master"
 #define SEPA_DESC              "separator for separating cuts in the original problem, called in the master"
 #define SEPA_PRIORITY                 0
-#define SEPA_FREQ                     1
+#define SEPA_FREQ                    -1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
 
@@ -285,7 +285,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
       /* transform the original variables to master variables and add them to the cut */
-      GCGrelaxTransformOrigvalsToMastervals(rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+      GCGrelaxTransformOrigvalsToMastervals(scip, rowvars, vals, ncols, mastervars, mastervals, nmastervars);
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */

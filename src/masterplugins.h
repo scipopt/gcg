@@ -88,6 +88,7 @@
 #include "cons_masterbranch.h"
 #include "cons_infeas.h"
 #include "sepa_master.h"
+#include "branch_master.h"
 
 
 
