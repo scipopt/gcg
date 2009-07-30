@@ -138,18 +138,21 @@ SCIP_DECL_SEPAINIT(sepaInitMaster)
 
 
 /** deinitialization method of separator (called before transformed problem is freed) */
-#if 0
 static
 SCIP_DECL_SEPAEXIT(sepaExitMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+{  
+   SCIP_SEPADATA* sepadata;
+
+   sepadata = SCIPsepaGetData(sepa);
+
+   SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
+   SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
+
+   SCIPfreeMemory(scip, &sepadata);
 
    return SCIP_OKAY;
 }
-#else
-#define sepaExitMaster NULL
-#endif
+
 
 
 /** solving process initialization method of separator (called when branch and bound process is about to begin) */
