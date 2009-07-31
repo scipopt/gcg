@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -193,7 +193,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* disable output to console */
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );

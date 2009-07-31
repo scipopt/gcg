@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file   branch_master.c
  * @ingroup BRANCHINGRULES
  * @brief  branching rule for master problem
