@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -26,6 +26,7 @@
 #include <string.h>
 #include "relax_gcg.h"
 #include "scip/scip.h"
+#include "struct_vardata.h"
 
 
 
@@ -48,9 +49,10 @@ struct SCIP_RelaxData
    SCIP*            masterprob;          /* the master problem */
    SCIP**           pricingprobs;        /* the array of pricing problems */
    int              npricingprobs;       /* the number of pricing problems */
+   int*             blockrepresentative; 
+   int*             nblocksidentical;
 
    SCIP_CONS**      convconss;           /* array of convexity constraints, one for each block */
-
 
    SCIP_HASHMAP**   hashorig2pricingvar; /* hashmap mapping original variables to corresponding 
                                           * pricing variables */
@@ -96,12 +98,12 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
       }
       
    }
-   if ( (*vardata)->vartype == GCG_VARTYPE_MASTER )
+   if ( (*vardata)->vartype == GCG_VARTYPE_PRICING )
    {
-      assert((*vardata)->data.mastervardata.norigvars == 1);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), 2);
-      SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), 2);
+      assert((*vardata)->data.pricingvardata.norigvars >= 1);
+      SCIPfreeMemoryArray(scip, &((*vardata)->data.pricingvardata.origvars));
    }
+   assert((*vardata)->vartype != GCG_VARTYPE_MASTER);
    SCIPfreeBlockMemory(scip, vardata);
 
 
@@ -132,6 +134,247 @@ SCIP_RETCODE ensureSizeMasterConss(
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
    }
    assert(relaxdata->maxmasterconss >= size);
+
+   return SCIP_OKAY;
+}
+
+static 
+SCIP_Bool intArraysAreEqual(
+   int*                  array1,
+   int                   array1length,
+   int*                  array2,
+   int                   array2length
+   )
+{
+   int i;
+
+   assert(array1 != NULL && array2 != NULL); 
+   if ( array1length != array2length )
+      return FALSE;
+
+   for ( i = 0; i < array1length; i++ )
+   {
+      if ( array1[i] != array2[i] )
+         return FALSE;
+   }
+
+   return TRUE;
+
+}
+
+static 
+SCIP_Bool realArraysAreEqual(
+   SCIP_Real*            array1,
+   int                   array1length,
+   SCIP_Real*            array2,
+   int                   array2length
+   )
+{
+   int i;
+
+   assert(array1 != NULL && array2 != NULL); 
+   if ( array1length != array2length )
+      return FALSE;
+
+   for ( i = 0; i < array1length; i++ )
+   {
+      if ( array1[i] != array2[i] )
+         return FALSE;
+   }
+
+   return TRUE;
+
+}
+
+static
+SCIP_Bool scipEqualsScip(
+   SCIP*                 scip1,              /**< SCIP data structure */
+   SCIP*                 scip2,              /**< SCIP data structure */
+   SCIP_HASHMAP*         varmap
+   )
+{
+   SCIP_VAR** vars1;
+   SCIP_VAR** vars2;
+   int nvars1;
+   int nvars2;
+   
+   SCIP_VARDATA* vardata1;
+   SCIP_VARDATA* vardata2;
+
+   SCIP_CONS** conss1;
+   SCIP_CONS** conss2;
+   int nconss;
+
+   int i;
+   int j;
+
+   if ( SCIPgetNVars(scip1) != SCIPgetNVars(scip2))
+      return FALSE;
+   
+   if ( SCIPgetNConss(scip1) != SCIPgetNConss(scip1))
+      return FALSE;
+   
+   /* get variables */
+   SCIP_CALL( SCIPgetVarsData(scip1, &vars1, &nvars1, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(scip2, &vars2, &nvars2, NULL, NULL, NULL, NULL) );
+   
+   for ( i = 0; i < nvars1; i++ )
+   {
+      if ( SCIPvarGetObj(vars1[i]) != SCIPvarGetObj(vars2[i]) )
+         return FALSE;
+      if ( SCIPvarGetLbOriginal(vars1[i]) != SCIPvarGetLbOriginal(vars2[i]) )
+         return FALSE;
+      if ( SCIPvarGetUbOriginal(vars1[i]) != SCIPvarGetUbOriginal(vars2[i]) )
+         return FALSE;
+      if ( SCIPvarGetType(vars1[i]) != SCIPvarGetType(vars2[i]) )
+         return FALSE;
+      
+      vardata1 = SCIPvarGetData(vars1[i]);
+      vardata2 = SCIPvarGetData(vars2[i]);
+      assert(vardata1 != NULL && vardata2 != NULL);
+      assert(vardata1->vartype == GCG_VARTYPE_PRICING);
+      assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+      //assert(vardata1->data.pricingvardata.norigvars >= 1);
+      //assert(vardata2->data.pricingvardata.norigvars >= 1);
+      assert(vardata1->data.pricingvardata.origvars != NULL);
+      assert(vardata2->data.pricingvardata.origvars != NULL);
+
+      if ( SCIPvarGetObj(vardata1->data.pricingvardata.origvars[0]) 
+         != SCIPvarGetObj(vardata2->data.pricingvardata.origvars[0]) )
+         return FALSE;
+
+      vardata1 = SCIPvarGetData(vardata1->data.pricingvardata.origvars[0]);
+      vardata2 = SCIPvarGetData(vardata2->data.pricingvardata.origvars[0]);
+      assert(vardata1 != NULL && vardata2 != NULL);
+      assert(vardata1->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata1->data.origvardata.coefs != NULL);
+      assert(vardata2->data.origvardata.coefs != NULL);
+
+      if ( !realArraysAreEqual(vardata1->data.origvardata.coefs, vardata1->data.origvardata.ncoefs,
+            vardata2->data.origvardata.coefs, vardata2->data.origvardata.ncoefs) )
+         return FALSE;
+
+      SCIP_CALL_ABORT( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
+
+   }
+
+   /* check whether the conss are the same */
+   conss1 = SCIPgetConss(scip1);
+   conss2 = SCIPgetConss(scip2);
+   nconss = SCIPgetNConss(scip1);
+   assert(nconss == SCIPgetNConss(scip2));
+   for ( i = 0; i < nconss; i++ )
+   {
+      if ( SCIPgetNVarsLinear(scip1, conss1[i]) != SCIPgetNVarsLinear(scip2, conss2[i]) )
+         return FALSE;
+      if ( SCIPgetLhsLinear(scip1, conss1[i]) != SCIPgetLhsLinear(scip2, conss2[i]) )
+         return FALSE;
+      if ( SCIPgetRhsLinear(scip1, conss1[i]) != SCIPgetRhsLinear(scip2, conss2[i]) )
+         return FALSE;
+      if ( !realArraysAreEqual(SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
+            SCIPgetValsLinear(scip2, conss2[i]), SCIPgetNVarsLinear(scip2, conss2[i])) )
+         return FALSE;
+      
+      vars1 = SCIPgetVarsLinear(scip1, conss1[i]);
+      vars2 = SCIPgetVarsLinear(scip2, conss2[i]);
+      for ( j = 0; j < SCIPgetNVarsLinear(scip1, conss1[i]); j++ )
+      {
+         if ( (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars1[j]) != vars2[j] )
+            return FALSE;
+      }
+
+   }
+
+   return TRUE;
+}
+
+/** checks whether there are identical pricing blocks */
+static
+SCIP_RETCODE checkIdenticalBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+
+   SCIP_HASHMAP* varmap;
+   SCIP_VARDATA* vardata;
+   SCIP_VARDATA* vardata2;
+   SCIP_VAR** vars;
+   SCIP_VAR* origvar;
+   SCIP_VAR* pricingvar;
+   int nvars;
+
+   int i;
+   int j;
+   int k;
+   
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      relaxdata->blockrepresentative[i] = i;
+      relaxdata->nblocksidentical[i] = 1;
+
+      for ( j = 0; j < i && relaxdata->blockrepresentative[i] == i; j++ )
+      {
+         if ( relaxdata->blockrepresentative[j] != j )
+            continue;
+
+         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])) );
+
+         if ( scipEqualsScip(relaxdata->pricingprobs[i], relaxdata->pricingprobs[j], varmap) )
+         {
+            SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
+            
+            /* block i is now represented by block j */
+            relaxdata->blockrepresentative[i] = j;
+            relaxdata->nblocksidentical[i] = 0;
+            relaxdata->nblocksidentical[j]++;
+            /* save variables in pricing problem variable's vardata */
+            vars = SCIPgetVars(relaxdata->pricingprobs[i]);
+            nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
+            for ( k = 0; k < nvars; k++ )
+            {
+               vardata = SCIPvarGetData(vars[k]);
+               assert(vardata->vartype == GCG_VARTYPE_PRICING);
+               assert(vardata->data.pricingvardata.origvars != NULL);
+               assert(vardata->data.pricingvardata.norigvars == 1);
+               assert(vardata->data.pricingvardata.origvars[0] != NULL);
+               origvar = vardata->data.pricingvardata.origvars[0];
+               pricingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars[k]);
+               vardata = SCIPvarGetData(pricingvar);
+               assert(vardata->vartype == GCG_VARTYPE_PRICING);
+               assert(vardata->data.pricingvardata.origvars != NULL);
+               assert(vardata->data.pricingvardata.norigvars >= 1);
+               vardata2 = SCIPvarGetData(origvar);
+               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(vardata2->data.origvardata.pricingvar != NULL);
+               vardata2->data.origvardata.pricingvar = pricingvar;
+               if ( vardata->data.pricingvardata.norigvars >= 2 )
+               {
+                  SCIP_CALL( SCIPreallocMemoryArray(relaxdata->pricingprobs[vardata->blocknr], 
+                        &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.norigvars+1) );
+               }
+               vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
+               vardata->data.pricingvardata.norigvars++;
+            }
+
+         }
+         SCIPhashmapFree(&varmap);
+         
+      }
+      if ( relaxdata->blockrepresentative[i] == i )
+      {
+         SCIPdebugMessage("Block %d is relevant!\n", i);
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -193,18 +436,20 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
-
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
-   //GCGnodeselMasterSetOrigscip(relaxdata->masterprob, scip);
 
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
    assert(npricingprobs >= 0);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
    /* array for saving convexity constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
 
@@ -220,6 +465,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) ); 
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
+
       /* disable expensive presolving */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
       //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );
@@ -239,11 +485,6 @@ SCIP_RETCODE createMaster(
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
       SCIP_CALL( SCIPcreateProb(relaxdata->pricingprobs[i], name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
-      /* create the corresponding convexity constraint */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL, 
-            1, 1, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
    }
 
    /* create hashmaps for mapping from original to pricing variables */
@@ -397,57 +638,18 @@ SCIP_RETCODE createMaster(
       }
    }
 
-   /* for variables that do not belong to any block, create the corresponding variable in the master problem */
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-   for ( v = 0; v < nvars; v++ )
+   SCIP_CALL( checkIdenticalBlocks(scip, relax) );
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
    {
-      vardata = SCIPvarGetData(vars[v]);
-      assert(vardata != NULL);
-      if ( vardata->blocknr == -1 )
-      {
-         SCIP_VAR* newvar;
-         SCIP_VARDATA* newvardata;
-
-         assert(vardata->data.origvardata.pricingvar == NULL);
-
-         SCIPdebugMessage("var %s is in no block!\n", SCIPvarGetName(vars[v]));
-         //assert(SCIPvarGetType(vars[i]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(vars[i]) == SCIP_VARTYPE_IMPLINT);
-
-         /* create vardata */
-         SCIP_CALL( SCIPallocBlockMemory(relaxdata->masterprob, &newvardata) );
-         newvardata->vartype = GCG_VARTYPE_MASTER;
-         newvardata->blocknr = -1;
-         newvardata->data.mastervardata.norigvars = 1;
-
-         /* save corresoponding origvar */
-         SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
-               &(newvardata->data.mastervardata.origvars), 2) );
-         SCIP_CALL( SCIPallocBlockMemoryArray(relaxdata->masterprob, 
-               &(newvardata->data.mastervardata.origvals), 2) );
-         newvardata->data.mastervardata.origvars[0] = vars[v];
-         newvardata->data.mastervardata.origvals[0] = 1.0;
-
-         /* create variable in the master problem */
-         SCIP_CALL( SCIPcreateVar(relaxdata->masterprob, &newvar, SCIPvarGetName(vars[v]), 
-               SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIPvarGetType(vars[v]), 
-               TRUE, TRUE, gcgvardelorig, NULL, NULL, newvardata) );
-         SCIPaddVar(relaxdata->masterprob, newvar);
-
-         SCIP_CALL( GCGpricerAddMasterVarToOrigVar(relaxdata->masterprob, vars[v], newvar, 1.0) );
-
-         /* add variable in the master to the master constraints it belongs to */
-         for ( i = 0; i < vardata->data.origvardata.ncoefs; i++ )
-         {
-            if ( !SCIPisFeasZero(scip, vardata->data.origvardata.coefs[i]) )
-            {
-               SCIP_CALL( SCIPaddCoefLinear(relaxdata->masterprob, relaxdata->masterconss[i], 
-                     newvar, vardata->data.origvardata.coefs[i]) );
-            }
-         }
-         SCIPreleaseVar(relaxdata->masterprob, &newvar);
-
-      }
+      if ( relaxdata->blockrepresentative[i] != i )
+         continue;
+      /* create the corresponding convexity constraint */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
+      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL, 
+            relaxdata->nblocksidentical[i], relaxdata->nblocksidentical[i], 
+            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
    }
 
 
@@ -565,7 +767,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       relaxdata->hashorig2origvar = NULL;
    }
 
-   /* free array for constraints */
+   /* free arrays for constraints */
    for ( i = 0; i < relaxdata->nmasterconss; i++ )
    {
       SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->origmasterconss[i]) );
@@ -580,8 +782,10 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    }
    for ( i = 0; i < relaxdata->npricingprobs; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
+      if ( relaxdata->convconss[i] != NULL )
+         SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
    }
+
    SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
@@ -598,6 +802,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
    }
    SCIPfreeMemoryArray(scip, &(relaxdata->pricingprobs));
+   SCIPfreeMemoryArray(scip, &(relaxdata->blockrepresentative));
+   SCIPfreeMemoryArray(scip, &(relaxdata->nblocksidentical));
 
    /* free solution */
    if ( relaxdata->currentorigsol != NULL )
@@ -620,6 +826,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {  
    SCIP* masterprob;
    SCIP_RELAXDATA* relaxdata;
+   int i;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -636,9 +843,15 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss, 
          relaxdata->masterconss, relaxdata->masterconss) );
-   SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->npricingprobs, 
-         relaxdata->convconss, relaxdata->convconss) );
-   
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      if ( relaxdata->convconss[i] != NULL) 
+      {
+         SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
+      }
+   }
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcands), SCIPgetNVars(scip)) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcandssol), SCIPgetNVars(scip)) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchcandsfrac), SCIPgetNVars(scip)) );
@@ -722,8 +935,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
-   //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
-
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -765,7 +976,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    return SCIP_OKAY;
 }
 
-
 /** creates a variable in a pricing problem corresponding to the given original variable */
 SCIP_RETCODE GCGrelaxCreatePricingVar(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -804,7 +1014,10 @@ SCIP_RETCODE GCGrelaxCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(relaxdata->pricingprobs[pricingprobnr], &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   vardata->data.pricingvardata.origvar = origvar;
+   SCIP_CALL( SCIPallocMemoryArray(relaxdata->pricingprobs[pricingprobnr], 
+         &(vardata->data.pricingvardata.origvars), 2) );
+   vardata->data.pricingvardata.origvars[0] = origvar;
+   vardata->data.pricingvardata.norigvars = 1;
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(relaxdata->pricingprobs[pricingprobnr], &var, name, 
@@ -822,7 +1035,6 @@ SCIP_RETCODE GCGrelaxCreatePricingVar(
    
    return SCIP_OKAY;
 }
-
 
 /** creates the data for a variable of the original program */
 SCIP_RETCODE GCGrelaxCreateOrigVardata(
@@ -954,6 +1166,55 @@ int GCGrelaxGetNPricingprobs(
    return relaxdata->npricingprobs;
 }
 
+/** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
+ *  another and represented by it */
+SCIP_Bool GCGrelaxIsPricingprobRelevant(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return (relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr);
+
+}
+
+/** returns the number of blocks in the original formulation, that are represented by 
+ *  the pricingprob with the given number */
+int GCGrelaxGetNIdenticalBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   assert((relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr) 
+      == (relaxdata->nblocksidentical[pricingprobnr] > 0));
+
+   return relaxdata->nblocksidentical[pricingprobnr];
+
+}
+
+
+
 /* sets the number of pricing problems */
 void GCGrelaxSetNPricingprobs(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1011,9 +1272,6 @@ SCIP_CONS** GCGrelaxGetMasterConss(
 
    return relaxdata->masterconss;
 }
-
-
-
 
 /* returns the contraints in the original problem that correspond to the constraints in the master problem */
 SCIP_CONS** GCGrelaxGetOrigMasterConss(
@@ -1103,7 +1361,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP_VARDATA* vardata;
 
    SCIP_VAR** origvars;
    SCIP_Real* origvals;
@@ -1113,9 +1370,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP_Real* mastervals;
    int nmastervars;
 
-   int v;
-   int i;
-   SCIP_Real val;
    SCIP_Bool stored;
    SCIP_SOL* mastersol;
 
@@ -1140,7 +1394,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
 
    /* nothing has to be done, if no LP was solved after the last update */
-   if ( relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )
+   if ( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )
    {
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
@@ -1169,17 +1423,19 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       
       SCIP_CALL( SCIPgetSolVals(relaxdata->masterprob, mastersol, nmastervars, mastervars, mastervals) );
 
-      //SCIP_CALL( SCIPprintSol(relaxdata->masterprob, mastersol, NULL, FALSE) );
-
-      GCGrelaxTransformMastervalsToOrigvals(scip, mastervars, mastervals, nmastervars, 
-         origvars, origvals, norigvars);
+      SCIP_CALL( GCGrelaxTransformMastervalsToOrigvals(scip, mastervars, mastervals, nmastervars, 
+            origvars, origvals, norigvars) );
 
       SCIP_CALL( SCIPsetSolVals(scip, relaxdata->currentorigsol, norigvars, origvars, origvals) );
 
       SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, &stored) );
 
+      //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
+
       SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
          (stored ? "" : "not"));
+
+      //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
    }
    if ( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
    {
@@ -1188,16 +1444,17 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
       SCIP_CALL( SCIPcreateSol(scip, &newsol, NULL) );
+      assert(newsol != NULL);
 
       SCIP_CALL( SCIPgetSolVals(relaxdata->masterprob, SCIPgetBestSol(relaxdata->masterprob), 
             nmastervars, mastervars, mastervals) );
 
-      //SCIP_CALL( SCIPprintSol(relaxdata->masterprob, mastersol, NULL, FALSE) );
-
-      GCGrelaxTransformMastervalsToOrigvals(scip, mastervars, mastervals, nmastervars, 
-         origvars, origvals, norigvars);
+      SCIP_CALL( GCGrelaxTransformMastervalsToOrigvals(scip, mastervars, mastervals, nmastervars, 
+            origvars, origvals, norigvars) );
 
       SCIP_CALL( SCIPsetSolVals(scip, newsol, norigvars, origvars, origvals) );
+
+      //SCIP_CALL( SCIPprintSol(scip, newsol, NULL, FALSE) );
 
       SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, &stored) );
       assert(stored);
@@ -1393,7 +1650,6 @@ SCIP_RETCODE GCGrelaxLinkSol(
    return SCIP_OKAY;
 }
 
-
 /* transforms given values of the given original variables into values of the given master variables */
 void GCGrelaxTransformOrigvalsToMastervals(
    SCIP*                 scip,               /** SCIP data structure */
@@ -1406,14 +1662,25 @@ void GCGrelaxTransformOrigvalsToMastervals(
    )
 {
    SCIP_VARDATA* vardata;
+   SCIP_VARDATA* vardata2;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
    int i;
    int j;
    int k;
 
+   assert(scip != NULL);
    assert(origvars != NULL);
    assert(origvals != NULL);
    assert(mastervars != NULL);
    assert(mastervals != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
 
    for ( i = 0; i < nmastervars; i++ )
    {
@@ -1431,27 +1698,57 @@ void GCGrelaxTransformOrigvalsToMastervals(
       assert(vardata->data.origvardata.mastervals != NULL);
       assert(vardata->data.origvardata.nmastervars == 1 || vardata->blocknr != -1);
 
-      //printf("Mastervals for var %s:\n", SCIPvarGetName(origvars[i]));
-      for ( j = 0; j < vardata->data.origvardata.nmastervars; j++ )
+      if ( vardata->blocknr == -1 )
       {
          //printf("%f, ", vardata->data.origvardata.mastervals[j]);
          for ( k = 0; k < nmastervars; k++ )
          {
-            if ( mastervars[k] == vardata->data.origvardata.mastervars[j] )
+            assert(!SCIPvarIsTransformedOrigvar(mastervars[k]));
+            if ( mastervars[k] == vardata->data.origvardata.mastervars[0])
             {
-               mastervals[k] += (vardata->data.origvardata.mastervals[j] * origvals[i]);
+               assert(!SCIPvarIsTransformedOrigvar(vardata->data.origvardata.mastervars[0]));
+               mastervals[k] += (vardata->data.origvardata.mastervals[0] * origvals[i]);
                break;
             }
          }
          assert(k < nmastervars);
+         //printf("\n");
       }
-      //printf("\n");
-   }
+      else
+      {
+         vardata2 = SCIPvarGetData(vardata->data.origvardata.pricingvar);
+         assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+         assert(vardata2->data.pricingvardata.norigvars >= 0);
+         assert(vardata2->data.pricingvardata.origvars != NULL);
+         assert(vardata2->data.pricingvardata.origvars[0] != NULL);
 
+         vardata2 = SCIPvarGetData(vardata2->data.pricingvardata.origvars[0]);
+         assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+         assert(vardata2->data.origvardata.nmastervars >= 0);
+         assert(vardata2->data.origvardata.mastervars != NULL);
+         assert(vardata2->data.origvardata.mastervals != NULL);
+
+         for ( j = 0; j < vardata2->data.origvardata.nmastervars; j++ )
+         {
+            //printf("%f, ", vardata->data.origvardata.mastervals[j]);
+            for ( k = 0; k < nmastervars; k++ )
+            {
+               if ( mastervars[k] == vardata2->data.origvardata.mastervars[j] )
+               {
+                  mastervals[k] += (vardata2->data.origvardata.mastervals[j] * origvals[i]);
+                  break;
+               }
+            }
+            assert(k < nmastervars);
+            //printf("\n");
+         }
+      }
+
+   }
 }       
 
 /* transforms given values of the given master variables into values of the given original variables */
-void GCGrelaxTransformMastervalsToOrigvals(
+SCIP_RETCODE GCGrelaxTransformMastervalsToOrigvals(
    SCIP*                 scip,               /** SCIP data structure */
    SCIP_VAR**            mastervars,         /** array of (subset of the) master variables */
    SCIP_Real*            mastervals,         /** values of the given master variables */
@@ -1462,14 +1759,28 @@ void GCGrelaxTransformMastervalsToOrigvals(
    )
 {
    SCIP_VARDATA* vardata;
+   SCIP_VARDATA* vardata2;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_Real* blockvalue;
+   SCIP_Real increaseval;
+   SCIP_Real* copymastervals;
+   int* blocknr;
    int i;
    int j;
    int k;
 
+   assert(scip != NULL);
    assert(origvars != NULL);
    assert(origvals != NULL);
    assert(mastervars != NULL);
    assert(mastervals != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
 
    /* set all values in the given array to 0 */
    for ( i = 0; i < norigvars; i++ )
@@ -1478,35 +1789,183 @@ void GCGrelaxTransformMastervalsToOrigvals(
       origvals[i] = 0.0;
    }
 
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, relaxdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, relaxdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &copymastervals, nmastervars) );
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      blockvalue[i] = 0.0;
+      blocknr[i] = 0;
+   }
+
+   for ( i = 0; i < nmastervars; i++ )
+   {
+      copymastervals[i] = mastervals[i];
+   }
+
+
    /* loop over all given master variables */
    for ( i = 0; i < nmastervars; i++ )
    {
-      if ( SCIPisFeasZero(scip, mastervals[i]) )
-         continue;
-      
-      vardata = SCIPvarGetData(mastervars[i]);
-
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(vardata->data.mastervardata.norigvars > 0);
-      assert(vardata->data.mastervardata.origvars != NULL);
-      assert(vardata->data.mastervardata.origvals != NULL);
-
-      /* loop over all original variables contained in the current master variable */
-      for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+      /* first of all, handle the variables with integral values */
+      while ( SCIPisFeasGE(scip, copymastervals[i], 1) )
       {
-         /* search the variable in the given array and increase the corresponding value */
-         for ( k = 0; k < norigvars; k++ )
+         vardata = SCIPvarGetData(mastervars[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(vardata->data.mastervardata.norigvars > 0);
+         assert(vardata->data.mastervardata.origvars != NULL);
+         assert(vardata->data.mastervardata.origvals != NULL);
+
+         if ( vardata->blocknr == -1 )
          {
-            if ( origvars[k] == vardata->data.mastervardata.origvars[j] )
+            assert(vardata->data.mastervardata.norigvars == 2);
+            assert(vardata->data.mastervardata.origvals[0] == 1.0);
+            assert(vardata->data.mastervardata.origvals[1] == 0.0);
+
+            /* search the variable in the given array and increase the corresponding value */
+            for ( k = 0; k < norigvars; k++ )
             {
-               origvals[k] += (vardata->data.mastervardata.origvals[j] * mastervals[i]);
-               break;
+               if ( origvars[k] == vardata->data.mastervardata.origvars[0] )
+               {
+                  origvals[k] += (vardata->data.mastervardata.origvals[0] * copymastervals[i]);
+                  copymastervals[i] = 0.0;
+                  break;
+               }
             }
+            assert(k < norigvars);
          }
-         assert(k < norigvars);
+         else
+         {
+            /* loop over all original variables contained in the current master variable */
+            for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            {
+               /* get the right original variable */
+               vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
+               assert(vardata2 != NULL);
+               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(vardata2->data.origvardata.pricingvar != NULL);
+               vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
+               assert(vardata2 != NULL);
+               assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+               assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
+
+
+               /* search the variable in the given array and increase the corresponding value */
+               for ( k = 0; k < norigvars; k++ )
+               {
+                  if ( origvars[k] == vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]] )
+                  {
+                     origvals[k] += (vardata->data.mastervardata.origvals[j]);
+                     break;
+                  }
+               }
+               assert(k < norigvars);
+            }
+
+            copymastervals[i] = copymastervals[i] - 1.0;
+            blocknr[vardata->blocknr]++;
+         }
       }
-      //printf("\n");
    }
+
+   /* loop over all given master variables */
+   for ( i = 0; i < nmastervars; i++ )
+   {
+      if ( SCIPisFeasZero(scip, copymastervals[i]) || SCIPisFeasIntegral(scip, copymastervals[i]) )
+      {
+         continue;
+      }
+
+      assert(SCIPisFeasGE(scip, copymastervals[i], 0.0) && SCIPisFeasLT(scip, copymastervals[i], 1.0));
+
+      while ( SCIPisFeasPositive(scip, copymastervals[i]) )
+      {
+         vardata = SCIPvarGetData(mastervars[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(vardata->data.mastervardata.norigvars > 0);
+         assert(vardata->data.mastervardata.origvars != NULL);
+         assert(vardata->data.mastervardata.origvals != NULL);
+         
+         if ( vardata->blocknr == -1 )
+         {
+            assert(vardata->data.mastervardata.norigvars == 2);
+            assert(vardata->data.mastervardata.origvals[0] == 1.0);
+            assert(vardata->data.mastervardata.origvals[1] == 0.0);
+            
+            /* search the variable in the given array and increase the corresponding value */
+            for ( k = 0; k < norigvars; k++ )
+            {
+               if ( origvars[k] == vardata->data.mastervardata.origvars[0] )
+               {
+                  origvals[k] += (vardata->data.mastervardata.origvals[0] * copymastervals[i]);
+                  copymastervals[i] = 0.0;
+                  break;
+               }
+            }
+            assert(k < norigvars);
+         }
+         else
+         {
+            increaseval = MIN(copymastervals[i], 1.0 - blockvalue[vardata->blocknr]);
+            /* loop over all original variables contained in the current master variable */
+            for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            {
+               /* get the right original variable */
+               vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
+               assert(vardata2 != NULL);
+               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(vardata2->data.origvardata.pricingvar != NULL);
+               vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
+               assert(vardata2 != NULL);
+               assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+               assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
+
+
+               /* search the variable in the given array and increase the corresponding value */
+               for ( k = 0; k < norigvars; k++ )
+               {
+                  if ( origvars[k] == vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]] )
+                  {
+                     origvals[k] += (vardata->data.mastervardata.origvals[j] * increaseval );
+                     break;
+                  }
+               }
+               assert(k < norigvars);
+            }
+
+            copymastervals[i] = copymastervals[i] - increaseval;
+            if ( SCIPisFeasZero(scip, copymastervals[i]) )
+            {
+               copymastervals[i] = 0.0;
+            }
+            blockvalue[vardata->blocknr] += increaseval;
+            assert(SCIPisFeasLE(scip, blockvalue[vardata->blocknr], 1.0));
+            if ( SCIPisFeasEQ(scip, blockvalue[vardata->blocknr], 1.0) )
+            {
+               blockvalue[vardata->blocknr] = 0.0;
+               blocknr[vardata->blocknr]++;
+            }
+
+         }
+      }
+
+   }
+
+   SCIPfreeBufferArray(scip, &copymastervals);
+   SCIPfreeBufferArray(scip, &blocknr);
+   SCIPfreeBufferArray(scip, &blockvalue);
+
+   for ( i = 0; i < norigvars; i++ )
+   {
+      if ( SCIPisFeasIntegral(scip, origvals[i]) )
+      {
+         origvals[i] = SCIPfeasCeil(scip, origvals[i]);
+      }
+   }
+
+   return SCIP_OKAY;
 
 }       

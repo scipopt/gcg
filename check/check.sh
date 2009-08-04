@@ -128,10 +128,12 @@ do
 
     if test "$LASTPROB" == ""
     then
+	blkfile=`echo $i | sed 's/lp/blk/g'`
 	LASTPROB=""
 	if test -f $i
 	then
 	    echo @01 $i ===========
+	    echo @01 $blkfile ===========
 	    echo @01 $i ===========      >> $ERRFILE
 	    echo set load $SETTINGS                >  $TMPFILE
 	    if test $FEASTOL != "default"
@@ -147,12 +149,11 @@ do
 	    echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
 	    echo set save $SETFILE                 >> $TMPFILE
 	    echo read $i                           >> $TMPFILE
-#	    echo read solutions/$i.csol            >> $TMPFILE
+	    echo read $blkfile                     >> $TMPFILE
 	    echo optimize                          >> $TMPFILE
 	    echo display statistics                >> $TMPFILE
 #	    echo display solution                  >> $TMPFILE
 	    echo checksol                          >> $TMPFILE
-#	    echo write problem newsols/$i.csol     >> $TMPFILE
 	    echo quit                              >> $TMPFILE
 
 #	    waitcplex.sh # ??????????????????

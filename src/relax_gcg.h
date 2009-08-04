@@ -94,6 +94,22 @@ void GCGrelaxSetNPricingprobs(
    int                   npricingprobs       /**< the number of pricing problems */
    );
 
+/** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
+ *  another and represented by it */
+extern
+SCIP_Bool GCGrelaxIsPricingprobRelevant(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
+/** returns the number of blocks in the original formulation, that are represented by 
+ *  the pricingprob with the given number */
+extern
+int GCGrelaxGetNIdenticalBlocks(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
 /* returns the number of constraints in the master problem */
 extern
 int GCGrelaxGetNMasterConss(
@@ -186,7 +202,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
 
 /* transforms given values of the given master variables into values of the given original variables */
 extern
-void GCGrelaxTransformMastervalsToOrigvals(
+SCIP_RETCODE GCGrelaxTransformMastervalsToOrigvals(
    SCIP*                 scip,               /** SCIP data structure */
    SCIP_VAR**            mastervars,         /** array of (subset of the) master variables */
    SCIP_Real*            mastervals,         /** values of the given master variables */

@@ -443,7 +443,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          {
             vardata = SCIPvarGetData(vars[i]);
             assert(vardata->vartype == GCG_VARTYPE_MASTER);
-            assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+            assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
             assert(vardata->data.mastervardata.norigvars > 0);
             assert(vardata->data.mastervardata.origvals != NULL);
             assert(vardata->data.mastervardata.origvars != NULL);

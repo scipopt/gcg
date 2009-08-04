@@ -97,6 +97,100 @@ SCIP_RETCODE ensureSizeCuts(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE checkCutConsistency(
+   SCIP*                 scip
+   )
+{
+   SCIP_SEPA* sepa;
+   SCIP_SEPADATA* sepadata;
+   int i;
+   int j;
+   int k;
+   int l;
+   int v;
+   SCIP_COL** origcols;
+   SCIP_COL** mastercols;
+   SCIP_Real* origvals;
+   SCIP_Real* mastervals;
+   int norigcols;
+   int nmastercols;
+   
+   SCIP_Real sum;
+   SCIP_Real masterval;
+
+   SCIP_VAR** mastervars;
+   int nmastervars;
+   SCIP_VARDATA* vardata;
+
+   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   assert(sepa != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   mastervars = SCIPgetVars(scip);
+   nmastervars = SCIPgetNVars(scip);
+
+   assert(sepadata->norigcuts == sepadata->nmastercuts);
+   
+   for ( i = 0; i < sepadata->norigcuts; i++ )
+   {
+      /* check lhs and rhs */
+      assert(SCIPisInfinity(scip, SCIProwGetRhs(sepadata->origcuts[i])) == SCIPisInfinity(scip, SCIProwGetRhs(sepadata->mastercuts[i])));
+      assert(SCIPisInfinity(scip, -1 * SCIProwGetLhs(sepadata->origcuts[i])) == SCIPisInfinity(scip, -1 * SCIProwGetLhs(sepadata->mastercuts[i])));
+      assert(SCIPisInfinity(scip, SCIProwGetRhs(sepadata->origcuts[i]))
+         || (SCIProwGetRhs(sepadata->origcuts[i]) - SCIProwGetConstant(sepadata->origcuts[i])
+            == SCIProwGetRhs(sepadata->mastercuts[i]) - SCIProwGetConstant(sepadata->mastercuts[i])));
+      assert(SCIPisInfinity(scip, -1 * SCIProwGetRhs(sepadata->origcuts[i]))
+         || (SCIProwGetLhs(sepadata->origcuts[i]) - SCIProwGetConstant(sepadata->origcuts[i])
+            == SCIProwGetLhs(sepadata->mastercuts[i]) - SCIProwGetConstant(sepadata->mastercuts[i])));
+
+      /* check the variables */
+      norigcols = SCIProwGetNNonz(sepadata->origcuts[i]);
+      origcols = SCIProwGetCols(sepadata->origcuts[i]);
+      origvals = SCIProwGetVals(sepadata->origcuts[i]);
+      nmastercols = SCIProwGetNNonz(sepadata->mastercuts[i]);
+      mastercols = SCIProwGetCols(sepadata->mastercuts[i]);
+      mastervals = SCIProwGetVals(sepadata->mastercuts[i]);
+
+      for ( v = 0; v < nmastervars; v++ )
+      {
+         /* get value of the variable in the master cut */
+         masterval = 0.0;
+         for ( j = 0; j < nmastercols; j++ )
+         {
+            if ( SCIPcolGetVar(mastercols[j]) == mastervars[v] )
+            {
+               masterval = mastervals[j];
+               break;
+            }
+         }
+         
+         vardata = SCIPvarGetData(mastervars[v]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         
+         /* sum up values of corresponding original variables and compare it to the mastervalue */
+         sum = 0.0;
+         for ( k = 0; k < vardata->data.mastervardata.norigvars; k++ )
+         {
+            for ( l = 0; l < norigcols; l++ )
+            {
+               if ( SCIPcolGetVar(origcols[l]) == vardata->data.mastervardata.origvars[k] )
+               {
+                  sum += origvals[l] * vardata->data.mastervardata.origvals[k];
+               }
+            }
+         }
+         assert(SCIPisFeasEQ(scip, masterval, sum));
+         
+      }
+   }
+   
+   return SCIP_OKAY;
+}
+
 
 
 
@@ -279,7 +373,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       }
 
       /* create new cut in the master problem */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "m_%s", SCIProwGetName(origcut));
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
       SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name, 
             ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ? 
                SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)), 
@@ -288,7 +382,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
       /* transform the original variables to master variables and add them to the cut */
-      GCGrelaxTransformOrigvalsToMastervals(scip, rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+      GCGrelaxTransformOrigvalsToMastervals(GCGpricerGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
@@ -316,6 +410,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIPfreeBufferArray(scip, &mastervals);
 
    assert(sepadata->norigcuts == sepadata->nmastercuts );
+
+   SCIP_CALL( checkCutConsistency(scip) );
 
    return SCIP_OKAY;
 }
