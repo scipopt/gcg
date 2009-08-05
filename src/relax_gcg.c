@@ -1454,10 +1454,16 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       SCIP_CALL( SCIPsetSolVals(scip, newsol, norigvars, origvars, origvals) );
 
-      //SCIP_CALL( SCIPprintSol(scip, newsol, NULL, FALSE) );
+      SCIP_CALL( SCIPprintSol(scip, newsol, NULL, FALSE) );
 
-      SCIP_CALL( SCIPtrySolFree(scip, &newsol, TRUE, TRUE, TRUE, &stored) );
+      SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, &stored) );
+      if ( !stored )
+      {
+         SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+         assert(!stored);
+      }
       assert(stored);
+      SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
       SCIPdebugMessage("updated current best primal feasible solution!\n");
    }

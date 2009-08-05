@@ -116,6 +116,14 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
    SCIP_CONS*            cons
    );
 
+/** sets the origbranch constraint of the node in the master program corresponding to the node 
+    at which the given masterbranchbranch constraint is sticking */
+extern
+void GCGconsMasterbranchSetOrigcons(
+   SCIP_CONS*            cons,
+   SCIP_CONS*            origcons
+   );
+
 /** checks the consistency of the masterbranch constraints in the problem */
 extern
 void GCGconsMasterbranchCheckConsistency(

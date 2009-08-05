@@ -485,6 +485,17 @@ SCIP_RETCODE performPricing(
             (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
 
+            if ( pricerdata->nvarsprob[prob] == 53 && prob == 15)
+            {
+               SCIP_Bool feasible;
+               SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], sols[j], NULL, TRUE) );
+               SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], "pricingprob16orig.lp", "lp", FALSE) );
+               SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], "pricingprob16trans.lp", "lp", FALSE) );
+               SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, TRUE, TRUE) );
+               printf("p_15_52 created, feasible = %d\n", feasible);
+               assert(0);
+            }
+
             /* create variable in the master problem */
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
                   0, GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob), 

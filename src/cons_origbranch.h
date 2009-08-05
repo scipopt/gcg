@@ -111,7 +111,6 @@ SCIP_CONS* GCGconsOrigbranchGetChild2cons(
 extern
 void GCGconsOrigbranchSetMastercons(
    SCIP_CONS*            cons,
-   SCIP*                 masterscip, 
    SCIP_CONS*            mastercons
    );
 
