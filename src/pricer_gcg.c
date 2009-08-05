@@ -189,6 +189,9 @@ SCIP_RETCODE performPricing(
    SCIP_COL** cols;
    SCIP_VAR* var;
 
+   SCIP_Real* tmpconvredcost;
+   int* permu;
+
    assert(scip != NULL);
    assert(pricer != NULL);
 
@@ -342,7 +345,6 @@ SCIP_RETCODE performPricing(
       }
    }
 
-
    //SCIP_CALL( SCIPwriteLP(scip, "master.lp") );
 
 #if 1
@@ -371,11 +373,28 @@ SCIP_RETCODE performPricing(
    }
 #endif
 
+   SCIP_CALL( SCIPallocBufferArray(scip, &tmpconvredcost, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &permu, pricerdata->npricingprobs) );
+   for ( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
+      permu[i] = i;
+      if ( GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) )
+      {
+         tmpconvredcost[i] = pricerdata->redcostconv[i];
+      }
+      else
+      {
+         tmpconvredcost[i] = -1.0 * SCIPinfinity(scip);
+      }
+   }
+   SCIPsortDownRealInt(tmpconvredcost, permu, pricerdata->npricingprobs);
+   
+
    /* solve the pricing MIPs and check whether solutions corresponding to variables with negative reduced costs where found */
    for ( i = 0; i < pricerdata->npricingprobs && (nfoundvars == 0 || pricetype == GCG_PRICETYPE_REDCOST); i++)
    {
       //prob = (pricerdata->pricingprobnr + i) % pricerdata->npricingprobs;
-      prob = i;
+      prob = permu[i];
 
       if ( pricerdata->pricingprobs[prob] == NULL )
          continue;
@@ -597,6 +616,9 @@ SCIP_RETCODE performPricing(
 
       SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
    }
+
+   SCIPfreeBufferArray(scip, &tmpconvredcost);
+   SCIPfreeBufferArray(scip, &permu);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 

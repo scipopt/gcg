@@ -329,7 +329,7 @@ SCIP_RETCODE checkIdenticalBlocks(
 
          SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])) );
 
-         if ( scipEqualsScip(relaxdata->pricingprobs[i], relaxdata->pricingprobs[j], varmap) )
+         if ( FALSE && scipEqualsScip(relaxdata->pricingprobs[i], relaxdata->pricingprobs[j], varmap) )
          {
             SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
             
