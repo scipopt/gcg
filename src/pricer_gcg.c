@@ -451,7 +451,20 @@ SCIP_RETCODE performPricing(
       sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
       for ( j = 0; j < nsols; j++ )
       {
-         //SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], NULL, NULL, FALSE) );
+         SCIP_Bool feasible;
+         SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, FALSE, FALSE) );
+         if ( !feasible )
+         {
+            printf("Solution of the pricing problem not feasible: heur = %s\n", (SCIPsolGetHeur(sols[j]) != NULL ? SCIPheurGetName(SCIPsolGetHeur(sols[j])) : "lp-sol"));
+            SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], NULL, NULL, FALSE) );
+
+            SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, TRUE, TRUE) );
+
+            SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], "priceorig.lp", "lp", FALSE) );
+            SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], "pricetrans.lp", "lp", FALSE) );
+            assert(feasible);
+            abort();
+         }
          /* solution value - dual value of associated convexity constraint < 0 
             --> can make the LP feasible / improve the current solution */ 
          if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]) )

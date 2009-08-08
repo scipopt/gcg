@@ -202,18 +202,20 @@ SCIP_RETCODE checkCutConsistency(
 /* TODO: Implement all necessary separator methods. The methods with an #if 0 ... #else #define ... are optional */
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
-#if 0
 static
 SCIP_DECL_SEPAFREE(sepaFreeMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+{  
+   SCIP_SEPADATA* sepadata;
+
+   sepadata = SCIPsepaGetData(sepa);
+
+   SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
+   SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
+
+   SCIPfreeMemory(scip, &sepadata);
 
    return SCIP_OKAY;
 }
-#else
-#define sepaFreeMaster NULL
-#endif
 
 
 /** initialization method of separator (called after problem was transformed) */
@@ -235,15 +237,6 @@ SCIP_DECL_SEPAINIT(sepaInitMaster)
 static
 SCIP_DECL_SEPAEXIT(sepaExitMaster)
 {  
-   SCIP_SEPADATA* sepadata;
-
-   sepadata = SCIPsepaGetData(sepa);
-
-   SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
-   SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
-
-   SCIPfreeMemory(scip, &sepadata);
-
    return SCIP_OKAY;
 }
 

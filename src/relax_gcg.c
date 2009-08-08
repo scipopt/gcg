@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -37,6 +37,7 @@
 #define RELAX_FREQ             1
 
 #define STARTMAXMASTERVARS 10
+#define DEFAULT_DISCRETIZATION TRUE
 
 
 /*
@@ -49,8 +50,8 @@ struct SCIP_RelaxData
    SCIP*            masterprob;          /* the master problem */
    SCIP**           pricingprobs;        /* the array of pricing problems */
    int              npricingprobs;       /* the number of pricing problems */
-   int*             blockrepresentative; 
-   int*             nblocksidentical;
+   int*             blockrepresentative; /* number of the pricing problem, that represents the i-th problem */
+   int*             nblocksidentical;    /* number of pricing blocks represented by the i-th pricing problem */
 
    SCIP_CONS**      convconss;           /* array of convexity constraints, one for each block */
 
@@ -58,7 +59,7 @@ struct SCIP_RelaxData
                                           * pricing variables */
    SCIP_HASHMAP*    hashorig2origvar;    /* hashmap mapping original variables to corresponding 
                                           * themselves */
-
+   /* constraint data */
    SCIP_CONS**      masterconss;         /* array of cons in the master problem */
    SCIP_CONS**      origmasterconss;     /* array of cons in the original problem that belong to the 
                                           * master problem */
@@ -67,14 +68,19 @@ struct SCIP_RelaxData
    int              maxmasterconss;      /* length of the array mastercons */
    int              nmasterconss;        /* number of constraints saved in mastercons */
    
-   SCIP_SOL*        currentorigsol;
-   SCIP_Longint     lastmasterlpiters;
-   SCIP_SOL*        lastmastersol;
+   SCIP_SOL*        currentorigsol;      /* current lp solution transformed into the original space */
+   SCIP_Longint     lastmasterlpiters;   /* number of lp iterations when currentorigsol was updated the last time */
+   SCIP_SOL*        lastmastersol;       /* last feasible master solution that was added to the original problem */
 
-   SCIP_VAR**       branchcands;
-   SCIP_Real*       branchcandssol;
-   SCIP_Real*       branchcandsfrac;
-   int              nbranchcands;
+   /* branching data */
+   SCIP_VAR**       branchcands;         /* array of branching candidates, i.e. fractional variables in the 
+                                          * original problem w.r.t. the last master lp solution */
+   SCIP_Real*       branchcandssol;      /* array of solution values of the branching candidates */
+   SCIP_Real*       branchcandsfrac;     /* array of fractionalities of the branching candidates */
+   int              nbranchcands;        /* number of branching candidates */
+
+   /* parameter data */
+   SCIP_Bool        discretization;      /* TRUE: use discretization approach; FALSE: use convexification approach */
 
 };
 
@@ -94,7 +100,6 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
       if ((*vardata)->data.origvardata.coefs != NULL)
       {
          SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.coefs));
-         /* ,(*vardata)->data.origvardata.ncoefs);*/
       }
       
    }
@@ -427,22 +432,13 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
 
-   /* initializing the scip data structure for the master problem */  
-   SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
-   SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
- 
+   /* create the problem in the master scip instance */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
 
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
-   /* disable output to console */
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
-
-   SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
+   /* activate the pricer */
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
-
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
@@ -465,6 +461,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) ); 
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", 0) );
 
       /* disable expensive presolving */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
@@ -721,6 +718,10 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   /* free master problem */
+   if ( relaxdata->masterprob != NULL )
+      SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+   
    SCIPfreeMemory(scip, &relaxdata);
 
    return SCIP_OKAY;
@@ -792,7 +793,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
    /* free master problem */
-   SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
+   //SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free pricing problems */
@@ -921,8 +922,16 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
    else
    {
-      assert(SCIPgetBestSol(masterprob) != NULL);
-      SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob))) );
+      assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
+      if ( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+      {
+         SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob))) );
+      }
+      else if ( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+      {
+         SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPinfinity(scip)) );
+      }
+         
    }
    SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", SCIPgetLocalLowerbound(scip));
 
@@ -970,7 +979,21 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* inform scip, that no LPs should be solved */
    SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) ); 
 
+   /* initialize the scip data structure for the master problem */  
+   SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
+   SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
+ 
+   /* disable output to console */
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
+
+   SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
+
    /* add gcg relaxator parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/discretization",
+         "should discretization (TRUE) or convexification (FALSE) approach be used?",
+         &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
 
 
    return SCIP_OKAY;
@@ -1414,6 +1437,13 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       else if ( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED )
       {
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
+         if ( mastersol == NULL )
+         {
+            SCIPfreeBufferArray(scip, &origvals);
+            SCIPfreeBufferArray(scip, &mastervals);
+
+            return SCIP_OKAY;
+         }
       }
       else 
       {
