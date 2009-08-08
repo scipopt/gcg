@@ -33,6 +33,9 @@
 
 #define EPS 0.0001
 
+#define DEFAULT_MAXVARSROUNDFARKAS 1
+#define DEFAULT_MAXVARSROUNDREDCOST INT_MAX
+
 
 /*
  * Data structures
@@ -64,6 +67,11 @@ struct SCIP_PricerData
    int farkascalls;
    int redcostcalls;
    int initcalls;
+   
+   /* vartype of created master variables */
+   SCIP_VARTYPE vartype;
+   int maxvarsroundfarkas;
+   int maxvarsroundredcost;
 };
 
 
@@ -345,9 +353,6 @@ SCIP_RETCODE performPricing(
       }
    }
 
-   //SCIP_CALL( SCIPwriteLP(scip, "master.lp") );
-
-#if 1
    /* get dual solutions / farkas values of the convexity constraints */
    for ( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -355,8 +360,10 @@ SCIP_RETCODE performPricing(
       assert( GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) 
          == (GCGrelaxGetConvCons(pricerdata->origprob, i) != NULL) );
       if ( !GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) )
+      {
+         pricerdata->redcostconv[i] = -1.0 * SCIPinfinity(scip);
          continue;
-         
+      }  
       if ( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_INIT )
       {
          assert(SCIPconsIsTransformed(GCGrelaxGetConvCons(pricerdata->origprob, i)));
@@ -371,27 +378,24 @@ SCIP_RETCODE performPricing(
             //printf("dualsol of cons %s = %f\n", SCIPconsGetName(GCGrelaxGetConvCons(pricerdata->origprob, i)), pricerdata->redcostconv[i]);
       }
    }
-#endif
 
    SCIP_CALL( SCIPallocBufferArray(scip, &tmpconvredcost, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &permu, pricerdata->npricingprobs) );
    for ( i = 0; i < pricerdata->npricingprobs; i++ )
    {
+      assert(GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) 
+         == (pricerdata->redcostconv[i] != -1.0 * SCIPinfinity(scip)));
+
       permu[i] = i;
-      if ( GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) )
-      {
-         tmpconvredcost[i] = pricerdata->redcostconv[i];
-      }
-      else
-      {
-         tmpconvredcost[i] = -1.0 * SCIPinfinity(scip);
-      }
+      tmpconvredcost[i] = pricerdata->redcostconv[i];
    }
    SCIPsortDownRealInt(tmpconvredcost, permu, pricerdata->npricingprobs);
    
 
    /* solve the pricing MIPs and check whether solutions corresponding to variables with negative reduced costs where found */
-   for ( i = 0; i < pricerdata->npricingprobs && (nfoundvars == 0 || pricetype == GCG_PRICETYPE_REDCOST); i++)
+   for ( i = 0; i < pricerdata->npricingprobs && 
+            (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
+            && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost); i++)
    {
       //prob = (pricerdata->pricingprobnr + i) % pricerdata->npricingprobs;
       prob = permu[i];
@@ -485,21 +489,10 @@ SCIP_RETCODE performPricing(
             (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "p_%d_%d", prob, pricerdata->nvarsprob[prob]);
             pricerdata->nvarsprob[prob]++;
 
-            if ( pricerdata->nvarsprob[prob] == 53 && prob == 15)
-            {
-               SCIP_Bool feasible;
-               SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], sols[j], NULL, TRUE) );
-               SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], "pricingprob16orig.lp", "lp", FALSE) );
-               SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], "pricingprob16trans.lp", "lp", FALSE) );
-               SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, TRUE, TRUE) );
-               printf("p_15_52 created, feasible = %d\n", feasible);
-               assert(0);
-            }
-
             /* create variable in the master problem */
             SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 
                   0, GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob), 
-                  objcoeff, SCIP_VARTYPE_INTEGER, TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+                  objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
             //printf("found var %s with redcost %f:\n", SCIPvarGetName(newvar), 
             //   SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]);
@@ -681,6 +674,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    int v;
    SCIP_VARDATA* vardata;
    SCIP_CONS** masterconss;
+   SCIP_Bool discretization;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -736,7 +730,16 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    pricerdata->farkascalls = 0;
    pricerdata->initcalls = 0;
 
-   //SCIP_CALL( createInitialVars(scip, pricer) );
+   /* set variable type for master variables */
+   SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/discretization", &discretization) );
+   if ( discretization )
+   {
+      pricerdata->vartype = SCIP_VARTYPE_INTEGER;
+   }
+   else
+   {
+      pricerdata->vartype = SCIP_VARTYPE_CONTINUOUS;
+   }
 
    /* for variables in the original problem that do not belong to any block, 
     * create the corresponding variable in the master problem */
@@ -931,6 +934,15 @@ SCIP_RETCODE SCIPincludePricerGcg(
          pricerFreeGcg, pricerInitGcg, pricerExitGcg, 
          pricerInitsolGcg, pricerExitsolGcg, pricerRedcostGcg, pricerFarkasGcg,
          pricerdata) );
+
+   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcost",
+         "maximal number of variables created in one redcost pricing round",
+         &pricerdata->maxvarsroundredcost, TRUE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
+         "maximal number of variables created in one farkas pricing round",
+         &pricerdata->maxvarsroundfarkas, TRUE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
