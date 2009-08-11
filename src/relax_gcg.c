@@ -456,18 +456,21 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->pricingprobs[i]) );
  
       /* disable conflict analysis */
-      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useprop", FALSE) ); 
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useprop", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useinflp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) ); 
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", 0) );
 
       /* disable expensive presolving */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
-      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );
-      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolpairwise", FALSE) );
-      //SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolusehashing", FALSE) );
       //SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "constraints/linear/maxaggrnormscale", 0.0) );
 
       /* disable output to console */
@@ -984,7 +987,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
  
    /* disable output to console */
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
 
@@ -1484,15 +1487,15 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       SCIP_CALL( SCIPsetSolVals(scip, newsol, norigvars, origvars, origvals) );
 
-      SCIP_CALL( SCIPprintSol(scip, newsol, NULL, FALSE) );
+      //SCIP_CALL( SCIPprintSol(scip, newsol, NULL, FALSE) );
 
       SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, &stored) );
       if ( !stored )
       {
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
-         assert(!stored);
+         //assert(!stored);
       }
-      assert(stored);
+      //assert(stored);
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
       SCIPdebugMessage("updated current best primal feasible solution!\n");

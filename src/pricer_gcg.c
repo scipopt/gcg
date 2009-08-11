@@ -61,7 +61,7 @@ struct SCIP_PricerData
    SCIP_CLOCK* farkassolveclock;
    SCIP_CLOCK* farkaspresolveclock;
    SCIP_CLOCK* owneffortclock;
-   SCIP_CLOCK* initclock;
+   SCIP_CLOCK* freeclock;
    int solvedsubmips;
    int calls;
    int farkascalls;
@@ -619,8 +619,9 @@ SCIP_RETCODE performPricing(
             /* ??? */
             if ( pricetype == GCG_PRICETYPE_FARKAS && FALSE )
             {
+               SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
                SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
-               
+               SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
                SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 
                //printf("Farkas-Pricing: found %d new vars\n", nfoundvars);
@@ -631,7 +632,9 @@ SCIP_RETCODE performPricing(
          }
       }
 
+      SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
       SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
+      SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
    }
 
    SCIPfreeBufferArray(scip, &tmpconvredcost);
@@ -735,7 +738,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkassolveclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->owneffortclock)) );
-   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->initclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->freeclock)) );
 
    pricerdata->solvedsubmips = 0;
    pricerdata->calls = 0;
@@ -842,7 +845,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    printf("time for pricing without sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->owneffortclock));
    printf("solved sub-MIPs = %d\n", pricerdata->solvedsubmips);
    printf("time for solving sub-MIPs for pricing: %f\n", SCIPgetClockTime(scip, pricerdata->subsolveclock));
-   printf("time for initial var creation: %f\n", SCIPgetClockTime(scip, pricerdata->initclock));
    printf("init calls = %d, farkas calls = %d, redcost calls = %d\n", pricerdata->initcalls, pricerdata->farkascalls, pricerdata->redcostcalls);
    printf("time for farkas pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->farkaspresolveclock));
    printf("time for farkas pricing (solving): %f\n", SCIPgetClockTime(scip, pricerdata->farkassolveclock));
@@ -850,6 +852,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    printf("time for redcost pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostpresolveclock));
    printf("time for redcost pricing (solving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostsolveclock));
    printf("time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   printf("time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
 
 
@@ -861,7 +864,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkassolveclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->owneffortclock)) );
-   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->initclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
 
    
    return SCIP_OKAY;
