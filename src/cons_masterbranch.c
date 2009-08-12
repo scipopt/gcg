@@ -56,7 +56,9 @@ struct SCIP_ConsData
                                                 greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
    SCIP_Real          val;                   /* new lower/upper bound of the original variable */
    SCIP_Real          oldbound;              /* old lower/upper bound of the pricing variable */
+#if 0
    SCIP_CONS*         pricingcons;
+#endif
    SCIP_Bool          created;
    SCIP_NODE*         node;                  /* the node at which the cons is sticking */
    SCIP_CONS*         parentcons;            /* the masterbranch constraint of the parent node */
@@ -326,8 +328,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
       SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
 
-
-
+   /* get vardata*/
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
@@ -403,8 +404,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
    }
 
-
-   /* disable corresponding constraint in the pricing problem */
+   /* get vardata*/
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
@@ -418,6 +418,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack-1);
 #endif
 
+   /* reset corresponding bound in the pricing problem */
    /* lower bound was changed */
    if ( consdata->conssense == GCG_CONSSENSE_GE )
    {

@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -83,6 +83,8 @@ struct SCIP_RelaxData
    /* parameter data */
    SCIP_Bool        discretization;      /* TRUE: use discretization approach; FALSE: use convexification approach */
    SCIP_Bool        mergeidenticalblocks;/* should identical blocks be merged (only for discretization approach)? */
+   SCIP_Bool        masterissetpart;     /* is the master a set partitioning problem? */
+   SCIP_Bool        masterissetcover;    /* is the master a set covering problem? */
 
 };
 
@@ -393,6 +395,54 @@ SCIP_RETCODE checkIdenticalBlocks(
 }
 
 
+/** check out the master problem's structure */
+static
+SCIP_RETCODE checkMasterStructure(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< the relaxator */
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   relaxdata->masterissetpart = TRUE;
+   relaxdata->masterissetcover = TRUE;
+
+   for ( i = 0; i < relaxdata->nmasterconss; i++ )
+   {
+      if ( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(relaxdata->origmasterconss[i])), "setppc") != 0 )
+      {
+         relaxdata->masterissetpart = FALSE;
+         if ( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(relaxdata->origmasterconss[i])), "logicor") != 0 )
+         {
+            relaxdata->masterissetcover = FALSE;
+         }
+      }
+      else
+      {
+         if ( SCIPgetTypeSetppc(scip, relaxdata->origmasterconss[i]) != SCIP_SETPPCTYPE_PARTITIONING )
+         {
+            relaxdata->masterissetpart = FALSE;
+         }
+         if ( SCIPgetTypeSetppc(scip, relaxdata->origmasterconss[i]) != SCIP_SETPPCTYPE_COVERING )
+         {
+            relaxdata->masterissetcover = FALSE;
+         }
+      }
+   }
+
+   printf("master is a set partitioning problem: %d\n", relaxdata->masterissetpart);
+   printf("master is a set covering problem: %d\n", relaxdata->masterissetcover);
+
+   return SCIP_OKAY;
+}
+
 
 /** creates the master problem and the pricing problems and copies the constraints into them */
 static
@@ -459,6 +509,8 @@ SCIP_RETCODE createMaster(
 
    for ( i = 0; i < npricingprobs; i++ )
    {
+      relaxdata->convconss[i] = NULL;
+
       /* initializing the scip data structure for the original problem */  
       SCIP_CALL( SCIPcreate(&(relaxdata->pricingprobs[i])) );
       SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->pricingprobs[i]) );
@@ -550,6 +602,19 @@ SCIP_RETCODE createMaster(
 
       /* if there are constraints managed by this constraint handler, iterate over these constraints */
       nactiveconss = SCIPconshdlrGetNConss(conshdlrs[i]);
+
+      if ( strcmp(SCIPconshdlrGetName(conshdlrs[i]), "linear") == 0)
+      {
+         nactiveconss -= relaxdata->nmasterconss;
+#ifndef NDEBUG
+         conss = SCIPconshdlrGetConss(conshdlrs[i]);
+         for ( c = 0; c < relaxdata->nmasterconss; c++ )
+         {
+            assert(conss[nactiveconss+c] == relaxdata->linearmasterconss[c]);
+         }
+#endif
+      }
+
       if ( nactiveconss > 0 )
       {
          conss = SCIPconshdlrGetConss(conshdlrs[i]);
@@ -563,9 +628,7 @@ SCIP_RETCODE createMaster(
          for ( c = 0; c < nactiveconss; c++ )
          {
             success = FALSE;
-            assert(bufconss[0] == SCIPconshdlrGetConss(conshdlrs[i])[0]);
-            assert(bufconss[1] == SCIPconshdlrGetConss(conshdlrs[i])[1]);
-            assert(bufconss[c] == SCIPconshdlrGetConss(conshdlrs[i])[c]);
+
             for ( b = 0; b < npricingprobs && !success; b++ )
             {
                /* try to copy the constraint */
@@ -663,6 +726,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
    }
 
+   SCIP_CALL( checkMasterStructure(scip, relax) );
 
    return SCIP_OKAY;
 }

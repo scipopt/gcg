@@ -39,7 +39,7 @@
 
 
 
-/*http://www.2minman.com/select.php?select=stisch
+/*
  * Callback methods
  */
 
@@ -93,6 +93,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CONS* origbranchup;
    SCIP_CONS* origbranchdown;
 
+   SCIP_VARDATA* vardata;
+
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -100,6 +102,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of orig branching\n");
+
+   *result = SCIP_DIDNOTRUN;
 
    /* get current sol */
    currentsol = GCGrelaxGetCurrentOrigSol(scip);
@@ -111,11 +115,28 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    for ( i = 0; i < nbinvars + nintvars; i++ )
    {
       assert(SCIPvarGetType(vars[i]) == (i < nbinvars ? SCIP_VARTYPE_BINARY : SCIP_VARTYPE_INTEGER));
+
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+      
+      if ( GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+      {
+         continue;
+      }
+      
       if ( !SCIPisFeasIntegral(scip, SCIPgetSolVal(scip, currentsol, vars[i])))
       {
          SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(vars[i]), SCIPgetSolVal(scip, currentsol, vars[i]));
          break;
       }
+   }
+
+   if ( i == nbinvars + nintvars )
+   {
+      printf("Original branching rule could not find a variable to branch on!\n");
+      return SCIP_OKAY;
    }
 
    assert(i < nbinvars + nintvars);

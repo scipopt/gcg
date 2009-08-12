@@ -28,7 +28,7 @@
 #include "gcgplugins.h"
 
 static
-SCIP_RETCODE SCIPrunColoringShell(
+SCIP_RETCODE SCIPrunGCGShell(
    int                        argc,               /**< number of shell parameters */
    char**                     argv,               /**< array with shell parameters */
    const char*                defaultsetname      /**< name of default settings file */
@@ -73,7 +73,7 @@ main(
 {
   SCIP_RETCODE retcode;
 
-  retcode = SCIPrunColoringShell(argc, argv, "scip.set");
+  retcode = SCIPrunGCGShell(argc, argv, "scip.set");
   
   if( retcode != SCIP_OKAY )
   {
