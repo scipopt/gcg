@@ -341,20 +341,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIP_CALL( SCIPaddCoefLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons, vardata->data.origvardata.pricingvar, 1) );
    SCIP_CALL( SCIPaddCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
 
-#if 0
-   SCIP_VAR** vars;
-   vars = SCIPgetVars(scip);
-  
-   
-   if ( SCIPgetDepth(scip) == 1 )
-   {
-      for ( i = 0; i < SCIPgetNVars(scip); i++)
-      {
-         printVar(vars[i]);
-      }
-   }
-#endif
-
    return SCIP_OKAY;
 }
 

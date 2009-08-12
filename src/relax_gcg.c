@@ -38,6 +38,7 @@
 
 #define STARTMAXMASTERVARS 10
 #define DEFAULT_DISCRETIZATION TRUE
+#define DEFAULT_MERGEIDENTICALBLOCS TRUE
 
 
 /*
@@ -81,6 +82,7 @@ struct SCIP_RelaxData
 
    /* parameter data */
    SCIP_Bool        discretization;      /* TRUE: use discretization approach; FALSE: use convexification approach */
+   SCIP_Bool        mergeidenticalblocks;/* should identical blocks be merged (only for discretization approach)? */
 
 };
 
@@ -143,30 +145,7 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
-static 
-SCIP_Bool intArraysAreEqual(
-   int*                  array1,
-   int                   array1length,
-   int*                  array2,
-   int                   array2length
-   )
-{
-   int i;
-
-   assert(array1 != NULL && array2 != NULL); 
-   if ( array1length != array2length )
-      return FALSE;
-
-   for ( i = 0; i < array1length; i++ )
-   {
-      if ( array1[i] != array2[i] )
-         return FALSE;
-   }
-
-   return TRUE;
-
-}
-
+/* checks whether two arrays of SCIP_Real's are identical */
 static 
 SCIP_Bool realArraysAreEqual(
    SCIP_Real*            array1,
@@ -191,13 +170,19 @@ SCIP_Bool realArraysAreEqual(
 
 }
 
+/* checks whether two pricingproblems represent identical blocks */
 static
-SCIP_Bool scipEqualsScip(
-   SCIP*                 scip1,              /**< SCIP data structure */
-   SCIP*                 scip2,              /**< SCIP data structure */
-   SCIP_HASHMAP*         varmap
+SCIP_RETCODE pricingprobsAreIdentical(
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
    )
 {
+   SCIP* scip1;
+   SCIP* scip2;
    SCIP_VAR** vars1;
    SCIP_VAR** vars2;
    int nvars1;
@@ -213,11 +198,25 @@ SCIP_Bool scipEqualsScip(
    int i;
    int j;
 
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
    if ( SCIPgetNVars(scip1) != SCIPgetNVars(scip2))
-      return FALSE;
-   
+   {
+      return SCIP_OKAY;
+   }
    if ( SCIPgetNConss(scip1) != SCIPgetNConss(scip1))
-      return FALSE;
+      return SCIP_OKAY;
    
    /* get variables */
    SCIP_CALL( SCIPgetVarsData(scip1, &vars1, &nvars1, NULL, NULL, NULL, NULL) );
@@ -226,13 +225,13 @@ SCIP_Bool scipEqualsScip(
    for ( i = 0; i < nvars1; i++ )
    {
       if ( SCIPvarGetObj(vars1[i]) != SCIPvarGetObj(vars2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( SCIPvarGetLbOriginal(vars1[i]) != SCIPvarGetLbOriginal(vars2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( SCIPvarGetUbOriginal(vars1[i]) != SCIPvarGetUbOriginal(vars2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( SCIPvarGetType(vars1[i]) != SCIPvarGetType(vars2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       
       vardata1 = SCIPvarGetData(vars1[i]);
       vardata2 = SCIPvarGetData(vars2[i]);
@@ -246,7 +245,7 @@ SCIP_Bool scipEqualsScip(
 
       if ( SCIPvarGetObj(vardata1->data.pricingvardata.origvars[0]) 
          != SCIPvarGetObj(vardata2->data.pricingvardata.origvars[0]) )
-         return FALSE;
+         return SCIP_OKAY;
 
       vardata1 = SCIPvarGetData(vardata1->data.pricingvardata.origvars[0]);
       vardata2 = SCIPvarGetData(vardata2->data.pricingvardata.origvars[0]);
@@ -258,9 +257,9 @@ SCIP_Bool scipEqualsScip(
 
       if ( !realArraysAreEqual(vardata1->data.origvardata.coefs, vardata1->data.origvardata.ncoefs,
             vardata2->data.origvardata.coefs, vardata2->data.origvardata.ncoefs) )
-         return FALSE;
+         return SCIP_OKAY;
 
-      SCIP_CALL_ABORT( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
+      SCIP_CALL( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
 
    }
 
@@ -272,26 +271,27 @@ SCIP_Bool scipEqualsScip(
    for ( i = 0; i < nconss; i++ )
    {
       if ( SCIPgetNVarsLinear(scip1, conss1[i]) != SCIPgetNVarsLinear(scip2, conss2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( SCIPgetLhsLinear(scip1, conss1[i]) != SCIPgetLhsLinear(scip2, conss2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( SCIPgetRhsLinear(scip1, conss1[i]) != SCIPgetRhsLinear(scip2, conss2[i]) )
-         return FALSE;
+         return SCIP_OKAY;
       if ( !realArraysAreEqual(SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
             SCIPgetValsLinear(scip2, conss2[i]), SCIPgetNVarsLinear(scip2, conss2[i])) )
-         return FALSE;
+         return SCIP_OKAY;
       
       vars1 = SCIPgetVarsLinear(scip1, conss1[i]);
       vars2 = SCIPgetVarsLinear(scip2, conss2[i]);
       for ( j = 0; j < SCIPgetNVarsLinear(scip1, conss1[i]); j++ )
       {
          if ( (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars1[j]) != vars2[j] )
-            return FALSE;
+            return SCIP_OKAY;
       }
 
    }
 
-   return TRUE;
+   *identical = TRUE;
+   return SCIP_OKAY;
 }
 
 /** checks whether there are identical pricing blocks */
@@ -310,6 +310,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    SCIP_VAR* origvar;
    SCIP_VAR* pricingvar;
    int nvars;
+   SCIP_Bool identical;
 
    int i;
    int j;
@@ -326,15 +327,22 @@ SCIP_RETCODE checkIdenticalBlocks(
    {
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
+   }
 
+   if ( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
+      return SCIP_OKAY;
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
       for ( j = 0; j < i && relaxdata->blockrepresentative[i] == i; j++ )
       {
          if ( relaxdata->blockrepresentative[j] != j )
             continue;
 
          SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])) );
-
-         if ( FALSE && scipEqualsScip(relaxdata->pricingprobs[i], relaxdata->pricingprobs[j], varmap) )
+         SCIP_CALL( pricingprobsAreIdentical(relaxdata, i, j, varmap, &identical) );
+         
+         if ( identical )
          {
             SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
             
@@ -681,8 +689,6 @@ SCIP_RETCODE checkConsistency(
 
    assert(SCIPgetStage(scip) == SCIP_STAGE_SOLVING);
    assert(SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING || SCIPgetStage(masterprob) == SCIP_STAGE_SOLVED); 
-   //assert(SCIPgetNSols(masterprob) == 0);
-   //assert(SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) == SCIPnodeGetNumber(SCIPgetCurrentNode(masterprob)));
 
    GCGconsOrigbranchGetStack(scip, &origconss, &norigconss);
    GCGconsMasterbranchGetStack(masterprob, &masterconss, &nmasterconss);
@@ -700,12 +706,7 @@ SCIP_RETCODE checkConsistency(
    GCGconsOrigbranchCheckConsistency(scip);
    GCGconsMasterbranchCheckConsistency(masterprob);
 
-
-   //SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, FALSE, TRUE, &feasible) );
-   //assert(feasible);
-
    return SCIP_OKAY;
-   
 }
 
 
@@ -985,7 +986,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform scip, that no LPs should be solved */
-   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) ); 
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) );
 
    /* initialize the scip data structure for the master problem */  
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
@@ -999,9 +1000,12 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
 
    /* add gcg relaxator parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/discretization",
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mergeidenticalblocks",
+         "should identical blocks be merged (only for discretization approach)?",
+         &(relaxdata->mergeidenticalblocks), FALSE, DEFAULT_MERGEIDENTICALBLOCS, NULL, NULL) );
 
 
    return SCIP_OKAY;
