@@ -55,6 +55,7 @@ struct SCIP_ConsData
    GCG_CONSSENSE      conssense;             /* sense of the branching on the original variable: 
                                                 greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
    SCIP_Real          val;                   /* new lower/upper bound of the original variable */
+   SCIP_Real          oldbound;              /* old lower/upper bound of the pricing variable */
    SCIP_CONS*         pricingcons;
    SCIP_Bool          created;
    SCIP_NODE*         node;                  /* the node at which the cons is sticking */
@@ -325,6 +326,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
       SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
 
+#if 0
    /* create corresponding constraint in the pricing problem */
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
@@ -332,7 +334,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
    assert(vardata->data.origvardata.pricingvar != NULL);
 
-   /* create constraint in the pricing problem */
    SCIP_CALL( SCIPcreateConsLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), &(consdata->pricingcons), 
          SCIPconsGetName(cons), 0, NULL, NULL, 
          (consdata->conssense == GCG_CONSSENSE_GE ? consdata->val : -1.0 * SCIPinfinity(scip)), 
@@ -340,6 +341,27 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
    SCIP_CALL( SCIPaddCoefLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons, vardata->data.origvardata.pricingvar, 1) );
    SCIP_CALL( SCIPaddCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
+#endif
+
+   /* set corresponding bound in the pricing problem */
+   vardata = SCIPvarGetData(consdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
+   /* lower bound was changed */
+   if ( consdata->conssense == GCG_CONSSENSE_GE )
+   {
+      consdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
+      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->val) );
+   }
+   /* upper bound was changed */
+   else
+   {
+      consdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
+      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->val) );
+   }
 
    return SCIP_OKAY;
 }
@@ -373,28 +395,43 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   if ( consdata->conssense != GCG_CONSSENSE_NONE )
-   {
-      /* disable corresponding constraint in the pricing problem */
-      vardata = SCIPvarGetData(consdata->origvar);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-      assert(vardata->data.origvardata.pricingvar != NULL);
-      
-      SCIP_CALL( SCIPdelCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
-
-      SCIPdebugMessage("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
-         SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack-1);
-   }
-   else
-   {
-      SCIPdebugMessage("Deactivating masterbranch constraint at root: <%s> [stack size: %d].\n", SCIPconsGetName(cons), 
-         conshdlrData->nstack-1);
-   }
-
    /* remove constraint from the stack */
    (conshdlrData->nstack)--;
+
+   if ( consdata->conssense == GCG_CONSSENSE_NONE )
+   {
+      SCIPdebugMessage("Deactivating masterbranch constraint at root: <%s> [stack size: %d].\n", SCIPconsGetName(cons), 
+         conshdlrData->nstack);
+
+      return SCIP_OKAY;
+
+   }
+
+#if 0
+   /* disable corresponding constraint in the pricing problem */
+   vardata = SCIPvarGetData(consdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+   
+   SCIP_CALL( SCIPdelCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
+   
+   SCIPdebugMessage("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack-1);
+#endif
+
+   /* lower bound was changed */
+   if ( consdata->conssense == GCG_CONSSENSE_GE )
+   {
+      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->oldbound) );
+   }
+   /* upper bound was changed */
+   else
+   {
+      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->oldbound) );
+   }
+
 
    return SCIP_OKAY;
 }
