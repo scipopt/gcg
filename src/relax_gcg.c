@@ -993,7 +993,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
  
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
 
