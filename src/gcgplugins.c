@@ -25,6 +25,7 @@
 #include "scip/debug.h"
 
 #define USEHEURS 0
+#define USESEPA 0
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -95,10 +96,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaCmir(scip) );
-   //SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
-#if 0
-   SCIP_CALL( SCIPincludeSepaGomory(scip) );
+   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
+#if USESEPA
+   SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );

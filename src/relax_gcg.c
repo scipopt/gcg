@@ -471,6 +471,8 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolusehashing", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolusehashing", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/rens/freq", -1) );
+
       //SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "constraints/linear/maxaggrnormscale", 0.0) );
 
       /* disable output to console */
@@ -480,6 +482,7 @@ SCIP_RETCODE createMaster(
 
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxrounds", 0) );
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/cmir/maxroundsroot", 0) );
 
       /* create the pricing submip */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
@@ -796,7 +799,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
    /* free master problem */
-   //SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
+   SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free pricing problems */
@@ -916,6 +919,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIPdebugMessage("Solve master LP.\n");
    /* solve the next node in the master problem */
    SCIP_CALL( SCIPsolve(masterprob) );
+
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
 
    /* update the lower bound of the current node */
