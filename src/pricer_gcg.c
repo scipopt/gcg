@@ -724,7 +724,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    
    /* alloc memory for arrays of reduced cost */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcost), GCGrelaxGetNMasterConss(origprob)) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostconv), GCGrelaxGetNPricingprobs(pricerdata->origprob)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostconv), pricerdata->npricingprobs) );
 
 
    /* alloc memory for solution values of variables in pricing problems */

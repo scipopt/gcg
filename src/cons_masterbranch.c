@@ -326,14 +326,16 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
       SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
 
-#if 0
-   /* create corresponding constraint in the pricing problem */
+
+
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
    assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
    assert(vardata->data.origvardata.pricingvar != NULL);
 
+#if 0
+   /* create corresponding constraint in the pricing problem */
    SCIP_CALL( SCIPcreateConsLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), &(consdata->pricingcons), 
          SCIPconsGetName(cons), 0, NULL, NULL, 
          (consdata->conssense == GCG_CONSSENSE_GE ? consdata->val : -1.0 * SCIPinfinity(scip)), 
@@ -344,12 +346,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 #endif
 
    /* set corresponding bound in the pricing problem */
-   vardata = SCIPvarGetData(consdata->origvar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-   assert(vardata->data.origvardata.pricingvar != NULL);
-
    /* lower bound was changed */
    if ( consdata->conssense == GCG_CONSSENSE_GE )
    {
@@ -407,14 +403,15 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
    }
 
-#if 0
+
    /* disable corresponding constraint in the pricing problem */
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
    assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
    assert(vardata->data.origvardata.pricingvar != NULL);
-   
+
+#if 0   
    SCIP_CALL( SCIPdelCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
    
    SCIPdebugMessage("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
