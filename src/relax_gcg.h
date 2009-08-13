@@ -200,16 +200,11 @@ void GCGrelaxTransformOrigvalsToMastervals(
    int                   nmastervars         /** number of master variables */
    );
 
-/* transforms given values of the given master variables into values of the given original variables */
+/* transforms given solution of the master problem into solution of the original problem */
 extern
-SCIP_RETCODE GCGrelaxTransformMastervalsToOrigvals(
+SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /** SCIP data structure */
-   SCIP_VAR**            mastervars,         /** array of (subset of the) master variables */
-   SCIP_Real*            mastervals,         /** values of the given master variables */
-   int                   nmastervars,        /** number of master variables */
-   SCIP_VAR**            origvars,           /** array with (all present) original variables */
-   SCIP_Real*            origvals,           /** return value: array with values of the original variables */
-   int                   norigvars           /** number of given original variables */
+   SCIP_SOL*             mastersol,          /** solution of the master problem */
+   SCIP_SOL**            origsol             /** pointer to store the new created original problem's solution */
    );
-
 #endif

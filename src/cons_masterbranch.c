@@ -49,22 +49,23 @@
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
 {
-   int                propagatedvars;        /* number of Vars that existed, the last time, the related node was propagated,
+   int                propagatedvars;        /**< number of Vars that existed, the last time, the related node was propagated,
                                                 used to determine whether the constraint should be repropagated */
-   SCIP_VAR*          origvar;               /* original variable on which the branching is done */
-   GCG_CONSSENSE      conssense;             /* sense of the branching on the original variable: 
-                                                greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
-   SCIP_Real          val;                   /* new lower/upper bound of the original variable */
-   SCIP_Real          oldbound;              /* old lower/upper bound of the pricing variable */
+   SCIP_Bool          needprop;              /**< should the constraint be propagated? */
+   SCIP_VAR*          origvar;               /**< original variable on which the branching is done */
+   GCG_CONSSENSE      conssense;             /**< sense of the branching on the original variable: 
+                                              *   greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+   SCIP_Real          val;                   /**< new lower/upper bound of the original variable */
+   SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
 #if 0
    SCIP_CONS*         pricingcons;
 #endif
    SCIP_Bool          created;
-   SCIP_NODE*         node;                  /* the node at which the cons is sticking */
-   SCIP_CONS*         parentcons;            /* the masterbranch constraint of the parent node */
-   SCIP_CONS*         child1cons;            /* the masterbranch constraint of the first child node */
-   SCIP_CONS*         child2cons;            /* the masterbranch constraint of the second child node */
-   SCIP_CONS*         origcons;              /* the corresponding origbranch cons in the original program */
+   SCIP_NODE*         node;                  /**< the node at which the cons is sticking */
+   SCIP_CONS*         parentcons;            /**< the masterbranch constraint of the parent node */
+   SCIP_CONS*         child1cons;            /**< the masterbranch constraint of the first child node */
+   SCIP_CONS*         child2cons;            /**< the masterbranch constraint of the second child node */
+   SCIP_CONS*         origcons;              /**< the corresponding origbranch cons in the original program */
 };
 
 /** constraint handler data */
@@ -80,46 +81,7 @@ struct SCIP_ConshdlrData
  * Local methods
  */
 
-#if 0
-static
-void printVar(
-   SCIP_VAR*             var
-   )
-{
-   SCIP_VARDATA* vardata;
-   int i;
 
-   vardata = SCIPvarGetData(var);
-
-   printf("name = %s, ", SCIPvarGetName(var));
-   if ( vardata->data.mastervardata.origvals[0] > 10000 )
-   {
-      printf("vals = (%s: inf", SCIPvarGetName(vardata->data.mastervardata.origvars[0]));
-   }
-   else
-   {
-      printf("vals = (%s: %f", SCIPvarGetName(vardata->data.mastervardata.origvars[0]), 
-         vardata->data.mastervardata.origvals[0]);
-   }
-   for ( i = 1; i < vardata->data.mastervardata.norigvars; i++ )
-   {
-      if ( vardata->data.mastervardata.origvals[i] > 10000 )
-      {
-         printf("; %s: inf", SCIPvarGetName(vardata->data.mastervardata.origvars[i]));
-      }
-      else
-      {
-         printf("; %s: %f", SCIPvarGetName(vardata->data.mastervardata.origvars[i]), 
-            vardata->data.mastervardata.origvals[i]);
-      }
-   }
-   if ( SCIPvarGetUbLocal(var) < 10000 )
-      printf("), ub = %f", SCIPvarGetUbLocal(var));
-   else
-      printf("), ub = inf");
-   printf("\n");
-}
-#endif
 
 /*
  * Callback methods
@@ -275,6 +237,12 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   assert(SCIPgetNVars(scip) >= consdata->propagatedvars);
+   if ( SCIPgetNVars(scip) > consdata->propagatedvars )
+   {
+      consdata->needprop = TRUE;
+   }
+
    if ( !consdata->created )
    {
       origcons = GCGconsOrigbranchGetActiveCons(origscip);
@@ -325,8 +293,8 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
+   SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d], needprop = %d.\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack, consdata->needprop);
 
    /* get vardata*/
    vardata = SCIPvarGetData(consdata->origvar);
@@ -388,6 +356,9 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    assert(consdata->created);
+
+   if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING && !consdata->needprop)
+      consdata->propagatedvars = SCIPgetNVars(scip);
 
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
@@ -469,19 +440,23 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       cons = conshdlrData->stack[c];
       consdata = SCIPconsGetData(cons);
 
-      if ( consdata->conssense == GCG_CONSSENSE_NONE )
+      if ( consdata->conssense == GCG_CONSSENSE_NONE /*|| !consdata->needprop*/ )
          continue;
+
+      if ( !consdata->needprop && consdata->propagatedvars != SCIPgetNVars(scip) )
+         printf("consdata->needprop = FALSE && consdata->propagatedvars = %d != %d = SCIPgetNVars(scip)!\n", consdata->propagatedvars, SCIPgetNVars(scip) );
    
       SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), 
          SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val);
 
       vars = SCIPgetVars(scip);
-      
+           
       for ( i = 0; i < SCIPgetNVars(scip); i++)
       {
          //printVar(vars[i]);
+         assert(SCIPvarGetData(vars[i]) != NULL);
          
-         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) && SCIPvarGetData(vars[i]) != NULL)
+         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
          {
             vardata = SCIPvarGetData(vars[i]);
             assert(vardata->vartype == GCG_VARTYPE_MASTER);
@@ -499,6 +474,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      propcount++;
+                     if ( !consdata->needprop )
+                        printf("var %s: upper bound set to 0 (ge) because of cons %s [c=%d], consdata->needprop = FALSE\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
                      //printVar(vars[i]);
                      break;
@@ -508,6 +485,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      propcount++;
+                     if ( !consdata->needprop )
+                        printf("var %s: upper bound set to 0 (le) because of cons %s [c=%d], consdata->needprop = FALSE\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
                      //printVar(vars[i]);
                      break;
@@ -516,23 +495,14 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                }
                
             }
-            /*
-            if ( j == vardata->data.mastervardata.norigvars && consdata->conssense == GCG_CONSSENSE_GE )
-            {
-               SCIPchgVarUb(scip, vars[i], 0.0);
-               //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
-               //printVar(vars[i]);
-               
-            }
-            */
          }
       }
       
       SCIPdebugMessage("Finished propagation of masterbranch constraint: <%s> %s %s %f, %d vars fixed.\n", SCIPconsGetName(cons), 
          SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, propcount);
-
+      consdata->needprop = FALSE;
+      consdata->propagatedvars = SCIPgetNVars(scip);
    }
-   //consdata = SCIPconsGetData(GCGconsGetActiveMasterbranchCons(scip));
 
    return SCIP_OKAY;
 }
@@ -624,12 +594,16 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
+   consdata->propagatedvars = 0;
+   consdata->needprop = TRUE;
+
    consdata->node = node;
    consdata->parentcons = parentcons;
    consdata->child1cons = NULL;
    consdata->child2cons = NULL;
    consdata->created = FALSE;
    consdata->origcons = NULL;
+   consdata->oldbound = -1;
 
    SCIPdebugMessage("Creating masterbranch constraint.\n");
 
@@ -871,7 +845,7 @@ void GCGconsMasterbranchCheckConsistency(
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
-      assert((consdata->origcons == NULL) == !consdata->created);
+      assert(consdata->origcons == NULL || consdata->created);
       assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
          || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]);
       assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);

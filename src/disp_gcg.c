@@ -412,7 +412,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemused)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MEMUSED) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetMemUsed(scip), DISP_WIDT_MEMUSED);
+   SCIPdispLongint(file, SCIPgetMemUsed(scip) + SCIPgetMemUsed(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MEMUSED);
 
    return SCIP_OKAY;
 }
