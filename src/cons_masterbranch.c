@@ -46,6 +46,8 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
+#define CHECKPROPAGATEDVARS        0
+
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
 {
@@ -80,6 +82,94 @@ struct SCIP_ConshdlrData
 /*
  * Local methods
  */
+static
+SCIP_Bool checkVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLR*        conshdlr,           /**< data structure of the masterbranch constraint handler */
+   SCIP_Bool             printall            /**< should all violations be printed or only the first one? */
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrData;  
+   SCIP_CONS*         cons;
+   SCIP_CONSDATA*     consdata;
+   SCIP_VAR**         vars;
+   int                nvars;
+   SCIP_VARDATA*      vardata;
+   SCIP*              origscip;
+   int                i;
+   int                j;
+   int                c;
+
+   assert(conshdlr != NULL); 
+   conshdlrData = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrData != NULL);
+   assert(conshdlrData->stack != NULL);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   vars = SCIPgetVars(scip);
+   assert(vars != NULL);
+   nvars = SCIPgetNVars(scip);
+
+   printf("checkVars()\n");
+
+   /* first of all, check whether variables not fixed to 0 are really valid for the current node */
+   /* iterate over all constraints */
+   for ( c = 0; c < conshdlrData->nstack; c++ )
+   {
+      cons = conshdlrData->stack[c];
+      consdata = SCIPconsGetData(cons);
+
+      if ( consdata->conssense == GCG_CONSSENSE_NONE )
+         continue;
+           
+      /* iterate over all vars and check whether they violate the current cons */
+      for ( i = 0; i < nvars; i++)
+      {
+         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+         {
+            vardata = SCIPvarGetData(vars[i]);
+            assert(vardata != NULL);
+            assert(vardata->vartype == GCG_VARTYPE_MASTER);
+            assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+            assert(vardata->data.mastervardata.norigvars > 0);
+            assert(vardata->data.mastervardata.origvals != NULL);
+            assert(vardata->data.mastervardata.origvars != NULL);
+            
+            for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            {
+               if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
+               {
+                  if ( consdata->conssense == GCG_CONSSENSE_GE && 
+                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                  {
+                     printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+                     printf("--> Reason: origvars[j] = %s >= origvals[j] = %g violated!\n",
+                        SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
+                     if ( !printall )
+                        return FALSE;
+                  }
+                  if ( consdata->conssense == GCG_CONSSENSE_LE && 
+                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                  {
+                     printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+                     printf("--> Reason: origvars[j] = %s <= origvals[j] = %g violated!\n",
+                        SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
+                     if ( !printall )
+                        return FALSE;
+                  }
+                  
+               }
+               
+            }
+         }
+      }
+   }
+   /* now check for all variables fixed to 0, whether there is a reason for this fixing active at the current node */
+
+   return TRUE;   
+}
 
 
 
@@ -241,6 +331,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    if ( SCIPgetNVars(scip) > consdata->propagatedvars )
    {
       consdata->needprop = TRUE;
+      SCIP_CALL( SCIPrepropagateNode(scip, consdata->node) );
    }
 
    if ( !consdata->created )
@@ -295,7 +386,11 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d], needprop = %d.\n", SCIPconsGetName(cons), 
       SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack, consdata->needprop);
-
+#if 0
+   printf("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d], needprop = %d, nvars = %d.\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack, consdata->needprop,
+      SCIPgetNVars(scip));
+#endif
    /* get vardata*/
    vardata = SCIPvarGetData(consdata->origvar);
    assert(vardata != NULL);
@@ -357,7 +452,8 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    assert(consdata != NULL);
    assert(consdata->created);
 
-   if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING && !consdata->needprop)
+   assert(!consdata->needprop);
+   if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
       consdata->propagatedvars = SCIPgetNVars(scip);
 
    origscip = GCGpricerGetOrigprob(scip);
@@ -384,9 +480,13 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
 #if 0   
    SCIP_CALL( SCIPdelCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
-   
+#endif   
    SCIPdebugMessage("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack-1);
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
+#if 0
+   printf("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d], propagatedvars = %d, needprop = %d.\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack,
+      consdata->propagatedvars, consdata->needprop);
 #endif
 
    /* reset corresponding bound in the pricing problem */
@@ -415,11 +515,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_CONS*         cons;
    SCIP_CONSDATA*     consdata;
    SCIP_VAR**         vars;
+   int                nvars;
    SCIP_VARDATA*      vardata;
-   SCIP* origscip;
+   SCIP*              origscip;
    int                i;
    int                j;
-   int                c;
    int                propcount;
    
 
@@ -434,18 +534,89 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    *result = SCIP_DIDNOTFIND;
    propcount = 0;
 
+   /* the constraint data of the cons related to the current node */
+   cons = conshdlrData->stack[conshdlrData->nstack-1];
+   consdata = SCIPconsGetData(cons);
+
+   if ( !consdata->needprop )
+   {
+#if CHECKPROPAGATEDVARS == 1
+      SCIP_Bool consistent;
+      consistent = checkVars(scip, conshdlr, TRUE);
+      assert(consistent);
+#endif
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+   if ( consdata->conssense == GCG_CONSSENSE_NONE )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+
+   SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val);
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+           
+   for ( i = 0; i < nvars; i++)
+   {
+      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+      {
+         vardata = SCIPvarGetData(vars[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+         assert(vardata->data.mastervardata.norigvars > 0);
+         assert(vardata->data.mastervardata.origvals != NULL);
+         assert(vardata->data.mastervardata.origvars != NULL);
+            
+         for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+         {
+               if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
+               {
+                  if ( consdata->conssense == GCG_CONSSENSE_GE && 
+                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
+                     //printVar(vars[i]);
+                     break;
+                  }
+                  if ( consdata->conssense == GCG_CONSSENSE_LE && 
+                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
+                     //printVar(vars[i]);
+                     break;
+                  }
+                  
+               }
+               
+         }
+      }
+   }
+      
+   SCIPdebugMessage("Finished propagation of masterbranch constraint: <%s> %s %s %f, %d vars fixed.\n", SCIPconsGetName(cons), 
+      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, propcount);
+   consdata->needprop = FALSE;
+   consdata->propagatedvars = SCIPgetNVars(scip);
+
+#if 0
    for ( c = 0; c < conshdlrData->nstack; c++ )
    {
       /* the constraint data of the cons related to the current node */
-      cons = conshdlrData->stack[c];
+      cons = conshdlrData->stack[conshdlrData->nstack-1];
       consdata = SCIPconsGetData(cons);
 
-      if ( consdata->conssense == GCG_CONSSENSE_NONE /*|| !consdata->needprop*/ )
+      if ( consdata->conssense == GCG_CONSSENSE_NONE )
          continue;
 
-      if ( !consdata->needprop && consdata->propagatedvars != SCIPgetNVars(scip) )
-         printf("consdata->needprop = FALSE && consdata->propagatedvars = %d != %d = SCIPgetNVars(scip)!\n", consdata->propagatedvars, SCIPgetNVars(scip) );
-   
       SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), 
          SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val);
 
@@ -474,8 +645,16 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      propcount++;
-                     if ( !consdata->needprop )
-                        printf("var %s: upper bound set to 0 (ge) because of cons %s [c=%d], consdata->needprop = FALSE\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+#if 1
+                     if ( c !=  conshdlrData->nstack-1 )
+                     {
+                        printf("var %s: upper bound set to 0 (ge) because of cons %s [c=%d], consdata->needprop = %d\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c, consdata->needprop);
+                        SCIP_CALL( SCIPprintVar(scip, vars[i], NULL) );
+                        printf("Reason: origvars[j] = %s, origvals[j] = %g\n",
+                           SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
+
+                     }
+#endif
                      //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
                      //printVar(vars[i]);
                      break;
@@ -485,8 +664,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   {
                      SCIPchgVarUb(scip, vars[i], 0.0);
                      propcount++;
-                     if ( !consdata->needprop )
-                        printf("var %s: upper bound set to 0 (le) because of cons %s [c=%d], consdata->needprop = FALSE\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+#if 1
+                     if ( c !=  conshdlrData->nstack-1 )
+                     {
+                        printf("var %s: upper bound set to 0 (le) because of cons %s [c=%d], consdata->needprop = %d\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c, consdata->needprop);
+                        SCIP_CALL( SCIPprintVar(scip, vars[i], NULL) );
+                        printf("Reason: origvars[j] = %s, origvals[j] = %g\n",
+                           SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
+                     }
+#endif
                      //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
                      //printVar(vars[i]);
                      break;
@@ -502,6 +688,20 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, propcount);
       consdata->needprop = FALSE;
       consdata->propagatedvars = SCIPgetNVars(scip);
+   }
+#endif
+
+#if CHECKPROPAGATEDVARS == 1
+   {
+      SCIP_Bool consistent;
+      consistent = checkVars(scip, conshdlr, TRUE);
+      assert(consistent);
+   }
+#endif
+
+   if ( propcount > 0 )
+   {
+      *result = SCIP_REDUCEDDOM;
    }
 
    return SCIP_OKAY;
