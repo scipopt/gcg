@@ -59,15 +59,16 @@ struct SCIP_ConsData
                                               *   greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
    SCIP_Real          val;                   /**< new lower/upper bound of the original variable */
    SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
-#if 0
-   SCIP_CONS*         pricingcons;
-#endif
+
    SCIP_Bool          created;
    SCIP_NODE*         node;                  /**< the node at which the cons is sticking */
    SCIP_CONS*         parentcons;            /**< the masterbranch constraint of the parent node */
    SCIP_CONS*         child1cons;            /**< the masterbranch constraint of the first child node */
    SCIP_CONS*         child2cons;            /**< the masterbranch constraint of the second child node */
    SCIP_CONS*         origcons;              /**< the corresponding origbranch cons in the original program */
+
+   GCG_BRANCHDATA*    branchdata;
+   SCIP_BRANCHRULE*   branchrule;
 };
 
 /** constraint handler data */
@@ -307,7 +308,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA*     consdata;
-   SCIP_VARDATA* vardata;
    SCIP_CONS* origcons;
    SCIP* origscip;
 
@@ -339,30 +339,17 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       origcons = GCGconsOrigbranchGetActiveCons(origscip);
       assert(origcons != NULL);
 
-      consdata->origvar = GCGconsOrigbranchGetOrigvar(origcons);
-      consdata->val = GCGconsOrigbranchGetVal(origcons);
-      consdata->conssense = GCGconsOrigbranchGetConssense(origcons);
       consdata->origcons = origcons;
+      consdata->branchrule = GCGconsOrigbranchGetBranchrule(origcons);
       GCGconsOrigbranchSetMastercons(origcons, cons);
 
       assert(SCIPgetCurrentNode(scip) == consdata->node || consdata->node == SCIPgetRootNode(scip));
       assert((SCIPgetNNodesLeft(scip)+SCIPgetNNodes(scip) == 1) == (consdata->node == SCIPgetRootNode(scip)));
       assert(SCIPnodeGetDepth(GCGconsOrigbranchGetNode(consdata->origcons)) == SCIPnodeGetDepth(consdata->node));
-      assert((consdata->node == SCIPgetRootNode(scip)) == (SCIPnodeGetDepth(consdata->node) == 0));
       assert(consdata->parentcons != NULL || SCIPnodeGetDepth(consdata->node) == 0);
       assert(consdata->parentcons == NULL || 
          SCIPconsGetData(consdata->parentcons)->origcons == GCGconsOrigbranchGetParentcons(consdata->origcons));
       
-      /* round current value of the branching-variable */
-      if ( consdata->conssense == GCG_CONSSENSE_GE )
-      {
-         consdata->val = SCIPceil(scip, consdata->val);
-      }
-      else
-      {
-         consdata->val = SCIPfloor(scip, consdata->val);
-      }
-
       consdata->created = TRUE;
    }
 
@@ -376,7 +363,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    conshdlrData->stack[conshdlrData->nstack] = cons;
    (conshdlrData->nstack)++;
 
-   if ( consdata->conssense == GCG_CONSSENSE_NONE )
+   if ( consdata->branchrule == NULL )
    {
       SCIPdebugMessage("Activating masterbranch constraint at root: <%s> [stack size: %d].\n", 
          SCIPconsGetName(cons), conshdlrData->nstack);
@@ -384,44 +371,11 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d], needprop = %d.\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack, consdata->needprop);
-#if 0
-   printf("Activating masterbranch constraint: <%s> %s %s %f [stack size: %d], needprop = %d, nvars = %d.\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack, consdata->needprop,
-      SCIPgetNVars(scip));
-#endif
-   /* get vardata*/
-   vardata = SCIPvarGetData(consdata->origvar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-   assert(vardata->data.origvardata.pricingvar != NULL);
+   SCIPdebugMessage("Activating masterbranch constraint: <%s> [stack size: %d], needprop = %d.\n", 
+      SCIPconsGetName(cons), conshdlrData->nstack, consdata->needprop);
 
-#if 0
-   /* create corresponding constraint in the pricing problem */
-   SCIP_CALL( SCIPcreateConsLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), &(consdata->pricingcons), 
-         SCIPconsGetName(cons), 0, NULL, NULL, 
-         (consdata->conssense == GCG_CONSSENSE_GE ? consdata->val : -1.0 * SCIPinfinity(scip)), 
-         (consdata->conssense == GCG_CONSSENSE_GE ? SCIPinfinity(scip) : consdata->val), 
-         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-   SCIP_CALL( SCIPaddCoefLinear(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons, vardata->data.origvardata.pricingvar, 1) );
-   SCIP_CALL( SCIPaddCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
-#endif
-
-   /* set corresponding bound in the pricing problem */
-   /* lower bound was changed */
-   if ( consdata->conssense == GCG_CONSSENSE_GE )
-   {
-      consdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
-      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->val) );
-   }
-   /* upper bound was changed */
-   else
-   {
-      consdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
-      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->val) );
-   }
+   SCIP_CALL( GCGrelaxBranchActiveMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
+         GCGconsOrigbranchGetBranchdata(cons)) );
 
    return SCIP_OKAY;
 }
@@ -434,8 +388,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA*     consdata;
-   SCIP_VARDATA* vardata;
-   SCIP* origscip;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -452,55 +404,25 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    assert(consdata != NULL);
    assert(consdata->created);
 
-   assert(!consdata->needprop);
    if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
       consdata->propagatedvars = SCIPgetNVars(scip);
-
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
 
    /* remove constraint from the stack */
    (conshdlrData->nstack)--;
 
-   if ( consdata->conssense == GCG_CONSSENSE_NONE )
+   if ( consdata->branchrule == NULL )
    {
       SCIPdebugMessage("Deactivating masterbranch constraint at root: <%s> [stack size: %d].\n", SCIPconsGetName(cons), 
          conshdlrData->nstack);
 
       return SCIP_OKAY;
-
    }
 
-   /* get vardata*/
-   vardata = SCIPvarGetData(consdata->origvar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-   assert(vardata->data.origvardata.pricingvar != NULL);
+   SCIPdebugMessage("Deactivating masterbranch constraint: <%s> [stack size: %d].\n", 
+      SCIPconsGetName(cons), conshdlrData->nstack);
 
-#if 0   
-   SCIP_CALL( SCIPdelCons(GCGrelaxGetPricingprob(origscip, vardata->blocknr), consdata->pricingcons) );
-#endif   
-   SCIPdebugMessage("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack);
-#if 0
-   printf("Deactivating masterbranch constraint: <%s> %s %s %f [stack size: %d], propagatedvars = %d, needprop = %d.\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, conshdlrData->nstack,
-      consdata->propagatedvars, consdata->needprop);
-#endif
-
-   /* reset corresponding bound in the pricing problem */
-   /* lower bound was changed */
-   if ( consdata->conssense == GCG_CONSSENSE_GE )
-   {
-      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->oldbound) );
-   }
-   /* upper bound was changed */
-   else
-   {
-      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, consdata->oldbound) );
-   }
-
+   SCIP_CALL( GCGrelaxBranchDeactiveMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
+         GCGconsOrigbranchGetBranchdata(cons)) );
 
    return SCIP_OKAY;
 }
@@ -514,25 +436,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_CONSHDLRDATA* conshdlrData;  
    SCIP_CONS*         cons;
    SCIP_CONSDATA*     consdata;
-   SCIP_VAR**         vars;
-   int                nvars;
-   SCIP_VARDATA*      vardata;
-   SCIP*              origscip;
-   int                i;
-   int                j;
-   int                propcount;
-   
 
    assert(conshdlr != NULL); 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   *result = SCIP_DIDNOTFIND;
-   propcount = 0;
+   *result = SCIP_DIDNOTRUN;
 
    /* the constraint data of the cons related to the current node */
    cons = conshdlrData->stack[conshdlrData->nstack-1];
@@ -548,148 +458,20 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
-   if ( consdata->conssense == GCG_CONSSENSE_NONE )
+   if ( consdata->branchrule == NULL )
    {
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
 
-   SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val);
+   SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
 
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-           
-   for ( i = 0; i < nvars; i++)
-   {
-      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
-      {
-         vardata = SCIPvarGetData(vars[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-         assert(vardata->data.mastervardata.norigvars > 0);
-         assert(vardata->data.mastervardata.origvals != NULL);
-         assert(vardata->data.mastervardata.origvars != NULL);
-            
-         for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
-         {
-               if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
-               {
-                  if ( consdata->conssense == GCG_CONSSENSE_GE && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
-                     //printVar(vars[i]);
-                     break;
-                  }
-                  if ( consdata->conssense == GCG_CONSSENSE_LE && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
-                     //printVar(vars[i]);
-                     break;
-                  }
-                  
-               }
-               
-         }
-      }
-   }
-      
-   SCIPdebugMessage("Finished propagation of masterbranch constraint: <%s> %s %s %f, %d vars fixed.\n", SCIPconsGetName(cons), 
-      SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, propcount);
+   SCIP_CALL( GCGrelaxBranchPropMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
+         GCGconsOrigbranchGetBranchdata(cons), result) );
+
    consdata->needprop = FALSE;
    consdata->propagatedvars = SCIPgetNVars(scip);
-
-#if 0
-   for ( c = 0; c < conshdlrData->nstack; c++ )
-   {
-      /* the constraint data of the cons related to the current node */
-      cons = conshdlrData->stack[conshdlrData->nstack-1];
-      consdata = SCIPconsGetData(cons);
-
-      if ( consdata->conssense == GCG_CONSSENSE_NONE )
-         continue;
-
-      SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), 
-         SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val);
-
-      vars = SCIPgetVars(scip);
-           
-      for ( i = 0; i < SCIPgetNVars(scip); i++)
-      {
-         //printVar(vars[i]);
-         assert(SCIPvarGetData(vars[i]) != NULL);
-         
-         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
-         {
-            vardata = SCIPvarGetData(vars[i]);
-            assert(vardata->vartype == GCG_VARTYPE_MASTER);
-            assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-            assert(vardata->data.mastervardata.norigvars > 0);
-            assert(vardata->data.mastervardata.origvals != NULL);
-            assert(vardata->data.mastervardata.origvars != NULL);
-            
-            for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
-            {
-               if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
-               {
-                  if ( consdata->conssense == GCG_CONSSENSE_GE && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-#if 1
-                     if ( c !=  conshdlrData->nstack-1 )
-                     {
-                        printf("var %s: upper bound set to 0 (ge) because of cons %s [c=%d], consdata->needprop = %d\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c, consdata->needprop);
-                        SCIP_CALL( SCIPprintVar(scip, vars[i], NULL) );
-                        printf("Reason: origvars[j] = %s, origvals[j] = %g\n",
-                           SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
-
-                     }
-#endif
-                     //printf("var %s: upper bound set to 0 (ge)\n", SCIPvarGetName(vars[i]));
-                     //printVar(vars[i]);
-                     break;
-                  }
-                  if ( consdata->conssense == GCG_CONSSENSE_LE && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-#if 1
-                     if ( c !=  conshdlrData->nstack-1 )
-                     {
-                        printf("var %s: upper bound set to 0 (le) because of cons %s [c=%d], consdata->needprop = %d\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c, consdata->needprop);
-                        SCIP_CALL( SCIPprintVar(scip, vars[i], NULL) );
-                        printf("Reason: origvars[j] = %s, origvals[j] = %g\n",
-                           SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
-                     }
-#endif
-                     //printf("var %s: upper bound set to 0 (le)\n", SCIPvarGetName(vars[i]));
-                     //printVar(vars[i]);
-                     break;
-                  }
-                  
-               }
-               
-            }
-         }
-      }
-      
-      SCIPdebugMessage("Finished propagation of masterbranch constraint: <%s> %s %s %f, %d vars fixed.\n", SCIPconsGetName(cons), 
-         SCIPvarGetName(consdata->origvar), (consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), consdata->val, propcount);
-      consdata->needprop = FALSE;
-      consdata->propagatedvars = SCIPgetNVars(scip);
-   }
-#endif
 
 #if CHECKPROPAGATEDVARS == 1
    {
@@ -698,11 +480,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       assert(consistent);
    }
 #endif
-
-   if ( propcount > 0 )
-   {
-      *result = SCIP_REDUCEDDOM;
-   }
 
    return SCIP_OKAY;
 }

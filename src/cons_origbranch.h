@@ -24,6 +24,7 @@
 
 #include "scip/scip.h"
 #include "cons_masterbranch.h"
+#include "struct_branchgcg.h"
 
 
 /** returns the store graph constraint of the current node, needs only the pointer to scip */
@@ -50,7 +51,9 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    GCG_CONSSENSE         conssense,
    SCIP_Real             val,
    SCIP_NODE*            node,
-   SCIP_CONS*            parentcons
+   SCIP_CONS*            parentcons,
+   SCIP_BRANCHRULE*      branchrule,
+   GCG_BRANCHDATA*       branchdata
    );
 
 /** returns the stack and the number of elements on it */
@@ -76,6 +79,18 @@ GCG_CONSSENSE GCGconsOrigbranchGetConssense(
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 extern
 SCIP_Real GCGconsOrigbranchGetVal(
+   SCIP_CONS*            cons
+   );
+
+/** returns the branching data for a given origbranch constraint */
+extern
+GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
+   SCIP_CONS*            cons
+   );
+
+/** returns the branchrule for a given origbranch constraint */
+extern
+SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
    SCIP_CONS*            cons
    );
 

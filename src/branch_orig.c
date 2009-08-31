@@ -28,7 +28,7 @@
 #include "branch_orig.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
-
+#include "type_branchgcg.h"
 
 #define BRANCHRULE_NAME          "orig"
 #define BRANCHRULE_DESC          "branching for the original program in generic column generation"
@@ -37,31 +37,173 @@
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
 
+/** branching data for branching decisions */
+struct GCG_BranchData
+{
+   SCIP_VAR*          origvar;               /**< original variable on which the branching is done */
+   GCG_CONSSENSE      conssense;             /**< sense of the branching on the original variable: 
+                                              *   greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+   SCIP_Real          val;                   /**< new lower/upper bound of the original variable */
+   SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
+};
+
+
+/*
+ * Callback methods for enforcing branching constraints
+ */
+
+static
+GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
+{
+   SCIP* origscip;
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(branchdata != NULL);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   printf("branchActiveMasterOrig\n");
+
+   /* get vardata*/
+   vardata = SCIPvarGetData(branchdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
+   /* set corresponding bound in the pricing problem */
+   /* lower bound was changed */
+   if ( branchdata->conssense == GCG_CONSSENSE_GE )
+   {
+      branchdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
+      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+            vardata->data.origvardata.pricingvar, branchdata->val) );
+   }
+   /* upper bound was changed */
+   else
+   {
+      branchdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
+      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+            vardata->data.origvardata.pricingvar, branchdata->val) );
+   }
+   
+   return SCIP_OKAY;
+}
+
+static
+GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
+{
+   SCIP* origscip;
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(branchdata != NULL);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   /* get vardata*/
+   vardata = SCIPvarGetData(branchdata->origvar);
+   assert(vardata != NULL);
+   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+   assert(vardata->data.origvardata.pricingvar != NULL);
+
+   /* reset corresponding bound in the pricing problem */
+   /* lower bound was changed */
+   if ( branchdata->conssense == GCG_CONSSENSE_GE )
+   {
+      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
+   }
+   /* upper bound was changed */
+   else
+   {
+      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
+   }
+   
+   return SCIP_OKAY;
+}
+
+static
+GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
+{
+   SCIP* origscip;
+   SCIP_VARDATA* vardata;
+   SCIP_VAR** vars;
+   int nvars;
+   int propcount;
+   int i;
+   int j;
+
+   assert(scip != NULL);
+   assert(branchdata != NULL);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   *result = SCIP_DIDNOTFIND;
+
+   propcount = 0;
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+          
+   for ( i = 0; i < nvars; i++)
+   {
+      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+      {
+         vardata = SCIPvarGetData(vars[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+         assert(vardata->data.mastervardata.norigvars > 0);
+         assert(vardata->data.mastervardata.origvals != NULL);
+         assert(vardata->data.mastervardata.origvars != NULL);
+            
+         for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+         {
+               if ( vardata->data.mastervardata.origvars[j] == branchdata->origvar )
+               {
+                  if ( branchdata->conssense == GCG_CONSSENSE_GE && 
+                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     break;
+                  }
+                  if ( branchdata->conssense == GCG_CONSSENSE_LE && 
+                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     break;
+                  }
+                  
+               }
+               
+         }
+      }
+   }
+      
+   SCIPdebugMessage("Finished propagation of masterbranch constraint: %s %s %f, %d vars fixed.\n",
+      SCIPvarGetName(branchdata->origvar), (branchdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), branchdata->val, propcount);
+
+   if ( propcount > 0 )
+   {
+      *result = SCIP_REDUCEDDOM;
+   }
+
+   return SCIP_OKAY;
+}
+
+#define branchDataDeleteOrig NULL
 
 
 /*
  * Callback methods
  */
-
-/** destructor of branching rule to free user data (called when SCIP is exiting) */
-#define branchFreeOrig NULL
-
-
-/** initialization method of branching rule (called after problem was transformed) */
-#define branchInitOrig NULL
-
-
-/** deinitialization method of branching rule (called before transformed problem is freed) */
-#define branchExitOrig NULL
-
-
-/** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
-#define branchInitsolOrig NULL
-
-
-/** solving process deinitialization method of branching rule (called before branch and bound process data is freed) */
-#define branchExitsolOrig NULL
-
 
 /** branching execution method for fractional LP solutions */
 static
@@ -92,6 +234,9 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    SCIP_CONS* origbranchup;
    SCIP_CONS* origbranchdown;
+
+   GCG_BRANCHDATA* branchupdata;
+   GCG_BRANCHDATA* branchdowndata;
 
    SCIP_VARDATA* vardata;
 
@@ -155,12 +300,25 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
    SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
 
+   SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
+   SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
+
+   branchupdata->origvar = vars[i];
+   branchupdata->conssense = GCG_CONSSENSE_GE;
+   branchupdata->val = SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
+   branchupdata->oldbound = 0.0;
+
+   branchdowndata->origvar = vars[i];
+   branchdowndata->conssense = GCG_CONSSENSE_GE;
+   branchdowndata->val = SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
+   branchdowndata->oldbound = 0.0;
+
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", consup, vars[i], GCG_CONSSENSE_GE, 
          SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i])), childup, 
-         GCGconsOrigbranchGetActiveCons(scip)) );
+         GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", consdown, vars[i], GCG_CONSSENSE_LE, 
          SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i])), childdown, 
-         GCGconsOrigbranchGetActiveCons(scip)) );
+         GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
    SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
@@ -181,7 +339,25 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    return SCIP_OKAY;
 }
 
+/** initialization method of branching rule (called after problem was transformed) */
+static
+SCIP_DECL_BRANCHINIT(branchInitOrig)
+{  
+   assert(branchrule != NULL);
 
+   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig, 
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchDataDeleteOrig) );
+   
+   return SCIP_OKAY;
+}
+
+
+
+/* define not used callback as NULL*/
+#define branchFreeOrig NULL
+#define branchExitOrig NULL
+#define branchInitsolOrig NULL
+#define branchExitsolOrig NULL
 
 
 /*

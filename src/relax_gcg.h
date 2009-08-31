@@ -32,7 +32,7 @@
 #include "pricer_gcg.h"
 #include "masterplugins.h"
 #include "nodesel_master.h"
-
+#include "type_branchgcg.h"
 
 
 
@@ -40,6 +40,50 @@
 extern
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** includes a branching rule into the relaxator data */
+extern
+SCIP_RETCODE GCGrelaxIncludeBranchrule(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   GCG_DECL_BRANCHACTIVEMASTER    ((*branchactivemaster)),    /**<  activation method for branchrule */
+   GCG_DECL_BRANCHDEACTIVEMASTER  ((*branchdeactivemaster)),  /**<  deactivation method for branchrule */
+   GCG_DECL_BRANCHPROPMASTER      ((*branchpropmaster)),      /**<  propagation method for branchrule */
+   GCG_DECL_BRANCHDATADELETE      ((*branchdatadelete))       /**<  branchdata deletion method for branchrule */
+   );
+
+/** perform activation method of the given branchrule for the given branchdata */
+extern
+SCIP_RETCODE GCGrelaxBranchActiveMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
+   );
+
+/** perform deactivation method of the given branchrule for the given branchdata */
+extern
+SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
+   );
+
+/** perform popagation method of the given branchrule for the given branchdata */
+extern
+SCIP_RETCODE GCGrelaxBranchPropMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
+   );
+
+/** frees branching data created by the given branchrule */
+extern
+SCIP_RETCODE GCGrelaxBranchDataDelete(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
    );
 
 /** creates a variable in a pricing problem corresponding to the given original variable */

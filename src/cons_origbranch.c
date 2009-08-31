@@ -58,6 +58,8 @@ struct SCIP_ConsData
    SCIP_CONS*         child2cons;            /* the origbranch constraint of the second child node */
    SCIP_CONS*         mastercons;            /* the masterbranch constraint of the corresponding node 
                                               * in the master program */
+   GCG_BRANCHDATA*    branchdata;
+   SCIP_BRANCHRULE*   branchrule;
 };
 
 /** constraint handler data */
@@ -124,7 +126,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    assert(SCIPgetRootNode(scip) != NULL);
 
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, GCG_CONSSENSE_NONE, 
-         0.0, SCIPgetRootNode(scip), NULL) );
+         0.0, SCIPgetRootNode(scip), NULL, NULL, NULL) );
 
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
 
@@ -386,7 +388,9 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    GCG_CONSSENSE         conssense,
    SCIP_Real             val,
    SCIP_NODE*            node,
-   SCIP_CONS*            parentcons
+   SCIP_CONS*            parentcons,
+   SCIP_BRANCHRULE*      branchrule,
+   GCG_BRANCHDATA*       branchdata
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -417,6 +421,8 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->child1cons = NULL;
    consdata->child2cons = NULL;
    consdata->mastercons = NULL;
+   consdata->branchrule = branchrule;
+   consdata->branchdata = branchdata;
 
    if ( conssense != GCG_CONSSENSE_NONE )
    {
@@ -547,6 +553,32 @@ SCIP_Real GCGconsOrigbranchGetVal(
    assert(consdata != NULL);
 
    return consdata->val;
+}
+
+/** returns the branching data for a given origbranch constraint */
+GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   return consdata->branchdata;
+}
+
+/** returns the branchrule for a given origbranch constraint */
+SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
+   SCIP_CONS*            cons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   return consdata->branchrule;
 }
 
 /** returns the node in the B&B tree at which the given origbranch constraint is sticking */
