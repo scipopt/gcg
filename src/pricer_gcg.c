@@ -452,8 +452,6 @@ SCIP_RETCODE performPricing(
       for ( j = 0; j < nsols; j++ )
       {
          SCIP_Bool feasible;
-         SCIP_CONS** stackconss;
-         int nstackconss;
          SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, FALSE, FALSE) );
          if ( !feasible )
          {
@@ -466,37 +464,6 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], "pricetrans.lp", "lp", FALSE) );
             assert(feasible);
             abort();
-         }
-         GCGconsMasterbranchGetStack(scip, &stackconss, &nstackconss);
-         for ( k = 0; k < nstackconss; k++ )
-         {
-            if ( GCGconsMasterbranchGetConssense(stackconss[k]) == GCG_CONSSENSE_GE )
-            {
-               SCIP_VAR* origvar;
-               SCIP_VARDATA* origvardata;
-               origvar = GCGconsMasterbranchGetOrigvar(stackconss[k]);
-               origvardata = SCIPvarGetData(origvar);
-               assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
-               assert(origvardata->data.origvardata.pricingvar != NULL);
-
-               assert(origvardata->blocknr != prob || 
-                  SCIPisGE(scip, SCIPgetSolVal(pricerdata->pricingprobs[prob], sols[j], origvardata->data.origvardata.pricingvar), 
-                     GCGconsMasterbranchGetVal(stackconss[k])));
-            }
-            if ( GCGconsMasterbranchGetConssense(stackconss[k]) == GCG_CONSSENSE_LE )
-            {
-               SCIP_VAR* origvar;
-               SCIP_VARDATA* origvardata;
-               origvar = GCGconsMasterbranchGetOrigvar(stackconss[k]);
-               origvardata = SCIPvarGetData(origvar);
-               assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
-               assert(origvardata->data.origvardata.pricingvar != NULL);
-
-               assert(origvardata->blocknr != prob || 
-                  SCIPisLE(scip, SCIPgetSolVal(pricerdata->pricingprobs[prob], sols[j], origvardata->data.origvardata.pricingvar), 
-                     GCGconsMasterbranchGetVal(stackconss[k])));
-            }
-            
          }
          /* solution value - dual value of associated convexity constraint < 0 
             --> can make the LP feasible / improve the current solution */ 

@@ -32,7 +32,6 @@
 
 
 
-
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         1
@@ -551,7 +550,8 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", 0) );
+      
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
 
       /* disable expensive presolving */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
@@ -1180,7 +1180,7 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
       {
          /* call branchactivation method */
          if ( relaxdata->branchrules[i]->branchactivemaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchactivemaster(scip, branchdata) );
+            SCIP_CALL( relaxdata->branchrules[i]->branchactivemaster(relaxdata->masterprob, branchdata) );
 
          break;
       }
@@ -1217,7 +1217,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
       {
          /* call branchactivation method */
          if ( relaxdata->branchrules[i]->branchdeactivemaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchdeactivemaster(scip, branchdata) );
+            SCIP_CALL( relaxdata->branchrules[i]->branchdeactivemaster(relaxdata->masterprob, branchdata) );
 
          break;
       }
@@ -1258,7 +1258,7 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
       {
          /* call branchactivation method */
          if ( relaxdata->branchrules[i]->branchpropmaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchpropmaster(scip, branchdata, result) );
+            SCIP_CALL( relaxdata->branchrules[i]->branchpropmaster(relaxdata->masterprob, branchdata, result) );
 
          break;
       }
@@ -2181,10 +2181,19 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
                assert(vardata2 != NULL);
                assert(vardata2->vartype == GCG_VARTYPE_PRICING);
-               assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
+               //assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
 
-               /* increase the corresponding value */
-               SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
+               if ( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
+               {
+                  /* increase the corresponding value */
+                  SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], mastervals[i] * vardata->data.mastervardata.origvals[j]) );
+                  mastervals[i] = 1.0;
+               }
+               else
+               {              
+                  /* increase the corresponding value */
+                  SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
+               }
             }
 
 
@@ -2240,10 +2249,22 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
                assert(vardata2 != NULL);
                assert(vardata2->vartype == GCG_VARTYPE_PRICING);
-               assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
+               //assert(vardata2->data.pricingvardata.norigvars > blocknr[vardata->blocknr]);
+               
+               if ( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
+               {
+                  increaseval = mastervals[i];
+                  
+                  /* increase the corresponding value */
+                  SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j] * increaseval) );
 
-               /* increase the corresponding value */
-               SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j] * increaseval) );
+               }
+               else
+               {
+                  /* increase the corresponding value */
+                  SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j] * increaseval) );
+               }
+
             }
 
             mastervals[i] = mastervals[i] - increaseval;
@@ -2252,8 +2273,8 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                mastervals[i] = 0.0;
             }
             blockvalue[vardata->blocknr] += increaseval;
-            assert(SCIPisFeasLE(scip, blockvalue[vardata->blocknr], 1.0));
-            if ( SCIPisFeasEQ(scip, blockvalue[vardata->blocknr], 1.0) )
+            //assert(SCIPisFeasLE(scip, blockvalue[vardata->blocknr], 1.0));
+            if ( SCIPisFeasGE(scip, blockvalue[vardata->blocknr], 1.0) )
             {
                blockvalue[vardata->blocknr] = 0.0;
                blocknr[vardata->blocknr]++;

@@ -341,6 +341,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
       consdata->origcons = origcons;
       consdata->branchrule = GCGconsOrigbranchGetBranchrule(origcons);
+      consdata->branchdata = GCGconsOrigbranchGetBranchdata(origcons);
       GCGconsOrigbranchSetMastercons(origcons, cons);
 
       assert(SCIPgetCurrentNode(scip) == consdata->node || consdata->node == SCIPgetRootNode(scip));
@@ -374,8 +375,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIPdebugMessage("Activating masterbranch constraint: <%s> [stack size: %d], needprop = %d.\n", 
       SCIPconsGetName(cons), conshdlrData->nstack, consdata->needprop);
 
-   SCIP_CALL( GCGrelaxBranchActiveMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
-         GCGconsOrigbranchGetBranchdata(cons)) );
+   SCIP_CALL( GCGrelaxBranchActiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
 
    return SCIP_OKAY;
 }
@@ -421,8 +421,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    SCIPdebugMessage("Deactivating masterbranch constraint: <%s> [stack size: %d].\n", 
       SCIPconsGetName(cons), conshdlrData->nstack);
 
-   SCIP_CALL( GCGrelaxBranchDeactiveMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
-         GCGconsOrigbranchGetBranchdata(cons)) );
+   SCIP_CALL( GCGrelaxBranchDeactiveMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata) );
 
    return SCIP_OKAY;
 }
@@ -460,15 +459,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
    if ( consdata->branchrule == NULL )
    {
-      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
 
-   SCIP_CALL( GCGrelaxBranchPropMaster(scip, GCGconsOrigbranchGetBranchrule(cons), 
-         GCGconsOrigbranchGetBranchdata(cons), result) );
+   SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
 
    consdata->needprop = FALSE;
    consdata->propagatedvars = SCIPgetNVars(scip);

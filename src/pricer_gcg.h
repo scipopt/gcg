@@ -37,7 +37,7 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 
 
 
-/** creates the healthcare variable pricer and includes it in SCIP */
+/** creates the gcg variable pricer and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */

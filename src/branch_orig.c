@@ -64,7 +64,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   printf("branchActiveMasterOrig\n");
+   //printf("branchActiveMasterOrig\n");
 
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
@@ -104,6 +104,8 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   //printf("branchDeactiveMasterOrig\n");
+
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
@@ -142,6 +144,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
 
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
+
+   //printf("branchPropMasterOrig\n");
 
    *result = SCIP_DIDNOTFIND;
 
@@ -309,7 +313,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    branchupdata->oldbound = 0.0;
 
    branchdowndata->origvar = vars[i];
-   branchdowndata->conssense = GCG_CONSSENSE_GE;
+   branchdowndata->conssense = GCG_CONSSENSE_LE;
    branchdowndata->val = SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
    branchdowndata->oldbound = 0.0;
 
