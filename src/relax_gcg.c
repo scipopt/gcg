@@ -888,17 +888,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
          SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
    }
 
-   /* free array for branchrules*/
-   printf("nbranchrules = %d\n", relaxdata->nbranchrules);
-   if ( relaxdata->nbranchrules > 0 )
-   {
-      for ( i = 0; i < relaxdata->nbranchrules; i++ )
-      {
-         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
-   }
-
    SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
@@ -928,6 +917,16 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->branchcandssol));
    SCIPfreeMemoryArray(scip, &(relaxdata->branchcandsfrac));
 
+   /* free array for branchrules*/
+   printf("nbranchrules = %d\n", relaxdata->nbranchrules);
+   if ( relaxdata->nbranchrules > 0 )
+   {
+      for ( i = 0; i < relaxdata->nbranchrules; i++ )
+      {
+         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
+   }
 
    return SCIP_OKAY;
 }
