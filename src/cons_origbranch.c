@@ -193,10 +193,12 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    assert((*consdata)->child1cons == NULL);
    assert((*consdata)->child2cons == NULL);
 
-   if ( (*consdata)->branchrule != NULL )
+   /* delete branchdata, if no mastercons is linked, which would still need the branchdata */
+   if ( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
    }
+
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
 
