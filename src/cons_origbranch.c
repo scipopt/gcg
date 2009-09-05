@@ -177,15 +177,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
 
-   if ( (*consdata)->conssense != GCG_CONSSENSE_NONE )
-   {
-      SCIPdebugMessage("Deleting branch orig constraint: <%s> %s %s %f.\n", SCIPconsGetName(cons), SCIPvarGetName((*consdata)->origvar), 
-         ( (*consdata)->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), (*consdata)->val);
-   }
-   else
-   {
-      SCIPdebugMessage("Deleting branch orig constraint at root: <%s>.\n", SCIPconsGetName(cons));
-   }
+   SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if ( (*consdata)->mastercons != NULL )
@@ -207,7 +199,10 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    assert((*consdata)->child1cons == NULL);
    assert((*consdata)->child2cons == NULL);
 
-
+   if ( (*consdata)->branchrule != NULL )
+   {
+      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+   }
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
 
