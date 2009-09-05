@@ -405,18 +405,14 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    /* remove constraint from the stack */
    (conshdlrData->nstack)--;
 
-   if ( consdata->branchrule == NULL )
-   {
-      SCIPdebugMessage("Deactivating masterbranch constraint at root: <%s> [stack size: %d].\n", SCIPconsGetName(cons), 
-         conshdlrData->nstack);
-
-      return SCIP_OKAY;
-   }
 
    SCIPdebugMessage("Deactivating masterbranch constraint: <%s> [stack size: %d].\n", 
       SCIPconsGetName(cons), conshdlrData->nstack);
 
-   SCIP_CALL( GCGrelaxBranchDeactiveMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata) );
+   if ( consdata->branchrule != NULL )
+   {
+      SCIP_CALL( GCGrelaxBranchDeactiveMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata) );
+   }
 
    return SCIP_OKAY;
 }
