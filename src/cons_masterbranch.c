@@ -577,6 +577,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->created = FALSE;
    consdata->origcons = NULL;
 
+   consdata->branchrule = NULL;
+   consdata->branchdata = NULL;
+
    SCIPdebugMessage("Creating masterbranch constraint.\n");
 
    /* create constraint */

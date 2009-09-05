@@ -264,9 +264,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    SCIP_NODE* childup;
    SCIP_NODE* childdown;
+#if 0
    SCIP_CONS* consup;
    SCIP_CONS* consdown;
-
+#endif
    SCIP_CONS* origbranchup;
    SCIP_CONS* origbranchdown;
 
@@ -325,6 +326,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
+#if 0
    /* create corresponding constraints */
    SCIP_CALL( SCIPcreateConsLinear(scip, &consup, "branch_up", 0, NULL, NULL, 
          SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i])), SCIPinfinity(scip), 
@@ -334,6 +336,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
    SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
    SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
+#endif
+
+   SCIP_CALL( SCIPchgVarUbNode(scip, childdown, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
+   SCIP_CALL( SCIPchgVarLbNode(scip, childup, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
 
    SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
@@ -354,14 +360,18 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
+#if 0
    SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
+#endif
    SCIP_CALL( SCIPaddConsNode(scip, childup, origbranchup, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
 
    /* release constraints */
+#if 0
    SCIP_CALL( SCIPreleaseCons(scip, &consup) );
    SCIP_CALL( SCIPreleaseCons(scip, &consdown) );
+#endif
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchdown) );
       

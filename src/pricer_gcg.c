@@ -14,6 +14,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
+/**@file   pricer_gcg.c
+ * @ingroup PRICERS
+ * @brief  pricer for generic column generation, solves the pricing problem as a MIP
+ * @author Gerald Gamrath
+ */
+
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
@@ -62,6 +68,7 @@ struct SCIP_PricerData
    SCIP_CLOCK* farkaspresolveclock;
    SCIP_CLOCK* owneffortclock;
    SCIP_CLOCK* freeclock;
+   SCIP_CLOCK* transformclock;
    int solvedsubmips;
    int calls;
    int farkascalls;
@@ -306,20 +313,12 @@ SCIP_RETCODE performPricing(
       if ( pricetype == GCG_PRICETYPE_FARKAS )
       {
          redcost = SCIProwGetDualfarkas(mastercuts[i]);
-         //if ( !SCIPisFeasZero(scip, redcost) )
-         {
-            //printf("farkas value of row %s = %f\n", SCIProwGetName(mastercuts[i]), redcost);
-            //SCIPprintRow(scip, mastercuts[i], NULL);
-            //SCIPprintRow(pricerdata->origprob, origcuts[i], NULL);
-         }
       }
       /* redcost pricing */
       else
       {    
          assert(pricetype == GCG_PRICETYPE_REDCOST);
          redcost = SCIProwGetDualsol(mastercuts[i]);
-         //if ( !SCIPisFeasZero(scip, redcost) )
-            //printf("dualsol of row %s = %f\n", SCIProwGetName(mastercuts[i]), redcost);
       }
       if ( !SCIPisFeasZero(scip, redcost) )
       {
@@ -368,14 +367,10 @@ SCIP_RETCODE performPricing(
       {
          assert(SCIPconsIsTransformed(GCGrelaxGetConvCons(pricerdata->origprob, i)));
          pricerdata->redcostconv[i] = SCIPgetDualfarkasLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, i));
-         //if ( !SCIPisFeasZero(scip, pricerdata->redcostconv[i]) )
-            //printf("farkas value of cons %s = %f\n", SCIPconsGetName(GCGrelaxGetConvCons(pricerdata->origprob, i)), pricerdata->redcostconv[i]);
       }
       else
       {
          pricerdata->redcostconv[i] = SCIPgetDualsolLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, i));
-         //if ( !SCIPisFeasZero(scip, pricerdata->redcostconv[i]) )
-            //printf("dualsol of cons %s = %f\n", SCIPconsGetName(GCGrelaxGetConvCons(pricerdata->origprob, i)), pricerdata->redcostconv[i]);
       }
    }
 
@@ -405,6 +400,11 @@ SCIP_RETCODE performPricing(
 
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
+
+      /* start clock measuring the transformation effort */
+      SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
+      SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
+      SCIP_CALL( SCIPstopClock(scip, pricerdata->transformclock) );
 
       /* start clock measuring the presolving effort */
       if ( pricetype == GCG_PRICETYPE_REDCOST )
@@ -739,6 +739,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->owneffortclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->freeclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->transformclock)) );
 
    pricerdata->solvedsubmips = 0;
    pricerdata->calls = 0;
@@ -852,6 +853,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    printf("time for redcost pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostpresolveclock));
    printf("time for redcost pricing (solving): %f\n", SCIPgetClockTime(scip, pricerdata->redcostsolveclock));
    printf("time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   printf("time for transformation: %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
    printf("time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
 
@@ -865,6 +867,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkaspresolveclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->owneffortclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
+   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );
 
    
    return SCIP_OKAY;
