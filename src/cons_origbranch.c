@@ -46,12 +46,6 @@
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
 {
-   SCIP_CONS*         branchcons;            /* constraint in the original problem that forces the 
-                                              * branching decision */
-   SCIP_VAR*          origvar;               /* original variable on which the branching is done */
-   GCG_CONSSENSE      conssense;             /* sense of the branching on the original variable: 
-                                                greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
-   SCIP_Real          val;                   /* new lower/upper bound of the original variable */
    SCIP_NODE*         node;                  /* the node at which the cons is sticking */
    SCIP_CONS*         parentcons;            /* the origbranch constraint of the parent node */
    SCIP_CONS*         child1cons;            /* the origbranch constraint of the first child node */
@@ -125,8 +119,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 
    assert(SCIPgetRootNode(scip) != NULL);
 
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, GCG_CONSSENSE_NONE, 
-         0.0, SCIPgetRootNode(scip), NULL, NULL, NULL) );
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", SCIPgetRootNode(scip), NULL, NULL, NULL) );
 
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
 
@@ -244,16 +237,9 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if ( consdata->conssense != GCG_CONSSENSE_NONE )
-   {
-      SCIPdebugMessage("Activating branch orig constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), SCIPvarGetName(consdata->origvar), 
-         ( consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), consdata->val, conshdlrData->nstack+1);
-   }
-   else
-   {
-      SCIPdebugMessage("Activating branch orig constraint at root: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
-         conshdlrData->nstack+1);
-   }
+   SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
+      conshdlrData->nstack+1);
+
 
    /* put constraint on the stack */
    if ( conshdlrData->nstack >= conshdlrData->maxstacksize )
@@ -291,16 +277,9 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if ( consdata->conssense != GCG_CONSSENSE_NONE )
-   {
-      SCIPdebugMessage("Deactivating branch orig constraint: <%s> %s %s %f [stack size: %d].\n", SCIPconsGetName(cons), SCIPvarGetName(consdata->origvar), 
-         ( consdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), consdata->val, conshdlrData->nstack-1);
-   }
-   else
-   {
-      SCIPdebugMessage("Deactivating branch orig constraint at root: <%s> [stack size: %d].\n", 
-         SCIPconsGetName(cons), conshdlrData->nstack-1);
-   }
+   SCIPdebugMessage("Deactivating branch orig constraint: <%s> [stack size: %d].\n", 
+      SCIPconsGetName(cons), conshdlrData->nstack-1);
+
 
    /* remove constraint from the stack */
    --(conshdlrData->nstack);
@@ -378,10 +357,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */          
-   SCIP_CONS*            branchcons,         /**< linear constraint in the original problem */
-   SCIP_VAR*             origvar,
-   GCG_CONSSENSE         conssense,
-   SCIP_Real             val,
    SCIP_NODE*            node,
    SCIP_CONS*            parentcons,
    SCIP_BRANCHRULE*      branchrule,
@@ -393,7 +368,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    assert(scip != NULL);
    assert((parentcons == NULL) == (SCIPnodeGetDepth(node) == 0));
-   assert(conssense == GCG_CONSSENSE_NONE || origvar != NULL);
 
    /* find the origbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -406,11 +380,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
-   consdata->branchcons = branchcons;
-
-   consdata->origvar = origvar;
-   consdata->conssense = conssense;
-   consdata->val = val;
    consdata->parentcons = parentcons;
    consdata->node = node;
    consdata->child1cons = NULL;
@@ -419,16 +388,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->branchrule = branchrule;
    consdata->branchdata = branchdata;
 
-   if ( conssense != GCG_CONSSENSE_NONE )
-   {
-      SCIPdebugMessage("Creating branch orig constraint: <%s>: %s %s %f.\n", name, SCIPvarGetName(origvar), 
-         ( conssense == GCG_CONSSENSE_GE ? ">=" : "<=" ), val);
-   }
-   else
-   {
-      SCIPdebugMessage("Creating branch orig constraint at root: <%s>.\n", name);
-
-   }
+   SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", name);
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -509,45 +469,6 @@ void GCGconsOrigbranchGetStack(
    *stack = conshdlrData->stack;
    *nstackelements = conshdlrData->nstack;   
 
-}
-
-/** returns the original variable for a given origbranch constraint */
-SCIP_VAR* GCGconsOrigbranchGetOrigvar(
-   SCIP_CONS*            cons
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->origvar;
-}
-
-/** returns the conssense for a given origbranch constraint */
-GCG_CONSSENSE GCGconsOrigbranchGetConssense(
-   SCIP_CONS*            cons
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->conssense;
-}
-
-/** returns the new bound for a given origbranch constraint */
-SCIP_Real GCGconsOrigbranchGetVal(
-   SCIP_CONS*            cons
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->val;
 }
 
 /** returns the branching data for a given origbranch constraint */

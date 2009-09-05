@@ -792,9 +792,7 @@ SCIP_RETCODE checkConsistency(
    for ( i = 0; i < norigconss; i++ )
    {
       assert(origconss[i] == GCGconsMasterbranchGetOrigcons(masterconss[i]));
-      assert(GCGconsOrigbranchGetOrigvar(origconss[i]) == GCGconsMasterbranchGetOrigvar(masterconss[i]));
-      assert(GCGconsOrigbranchGetVal(origconss[i]) == GCGconsMasterbranchGetVal(masterconss[i]));
-      assert(GCGconsOrigbranchGetConssense(origconss[i]) == GCGconsMasterbranchGetConssense(masterconss[i]));
+      assert(GCGconsOrigbranchGetBranchdata(origconss[i]) == GCGconsMasterbranchGetBranchdata(masterconss[i]));
    }
 
    GCGconsOrigbranchCheckConsistency(scip);
@@ -918,7 +916,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->branchcandsfrac));
 
    /* free array for branchrules*/
-   printf("nbranchrules = %d\n", relaxdata->nbranchrules);
    if ( relaxdata->nbranchrules > 0 )
    {
       for ( i = 0; i < relaxdata->nbranchrules; i++ )

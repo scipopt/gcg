@@ -22,17 +22,8 @@
 #ifndef CONSMASTERBRANCH_H
 #define CONSMASTERBRANCH_H
 
-
-/* sense of the masterbranch constraint: greater-equal or less-equal */
-enum GCG_ConsSense
-{
-   GCG_CONSSENSE_GE   = 0,  /* greater-equal constraint */
-   GCG_CONSSENSE_LE   = 1,  /* less-equal constraint */
-   GCG_CONSSENSE_NONE = 2,  /* less-equal constraint */
-};
-typedef enum GCG_ConsSense GCG_CONSSENSE;
-
 #include "scip/scip.h"
+#include "struct_branchgcg.h"
 
 /** returns the store graph constraint of the current node */
 extern
@@ -64,21 +55,9 @@ void GCGconsMasterbranchGetStack(
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
-/** returns the original variable for a given masterbranch constraint */
+/** returns the branching data for a given origbranch constraint */
 extern
-SCIP_VAR* GCGconsMasterbranchGetOrigvar(
-   SCIP_CONS*            cons
-   );
-
-/** returns the conssense for a given masterbranch constraint */
-extern
-GCG_CONSSENSE GCGconsMasterbranchGetConssense(
-   SCIP_CONS*            cons
-   );
-
-/** returns the new bound for a given masterbranch constraint */
-extern
-SCIP_Real GCGconsMasterbranchGetVal(
+GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    SCIP_CONS*            cons
    );
 

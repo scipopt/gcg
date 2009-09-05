@@ -54,12 +54,6 @@ struct SCIP_ConsData
    int                propagatedvars;        /**< number of Vars that existed, the last time, the related node was propagated,
                                                 used to determine whether the constraint should be repropagated */
    SCIP_Bool          needprop;              /**< should the constraint be propagated? */
-   SCIP_VAR*          origvar;               /**< original variable on which the branching is done */
-   GCG_CONSSENSE      conssense;             /**< sense of the branching on the original variable: 
-                                              *   greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
-   SCIP_Real          val;                   /**< new lower/upper bound of the original variable */
-   SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
-
    SCIP_Bool          created;
    SCIP_NODE*         node;                  /**< the node at which the cons is sticking */
    SCIP_CONS*         parentcons;            /**< the masterbranch constraint of the parent node */
@@ -80,6 +74,7 @@ struct SCIP_ConshdlrData
 };
 
 
+#if 0
 /*
  * Local methods
  */
@@ -122,7 +117,7 @@ SCIP_Bool checkVars(
       cons = conshdlrData->stack[c];
       consdata = SCIPconsGetData(cons);
 
-      if ( consdata->conssense == GCG_CONSSENSE_NONE )
+      if ( consdata->branchrule == NULL )
          continue;
            
       /* iterate over all vars and check whether they violate the current cons */
@@ -171,7 +166,7 @@ SCIP_Bool checkVars(
 
    return TRUE;   
 }
-
+#endif
 
 
 /*
@@ -577,7 +572,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->child2cons = NULL;
    consdata->created = FALSE;
    consdata->origcons = NULL;
-   consdata->oldbound = -1;
 
    SCIPdebugMessage("Creating masterbranch constraint.\n");
 
@@ -658,12 +652,10 @@ void GCGconsMasterbranchGetStack(
 
    *stack = conshdlrData->stack;
    *nstackelements = conshdlrData->nstack;
-
 }
 
-
-/** returns the original variable for a given masterbranch constraint */
-SCIP_VAR* GCGconsMasterbranchGetOrigvar(
+/** returns the branching data for a given masterbranch constraint */
+GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    SCIP_CONS*            cons
    )
 {
@@ -672,33 +664,7 @@ SCIP_VAR* GCGconsMasterbranchGetOrigvar(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   return consdata->origvar;
-}
-
-/** returns the conssense for a given masterbranch constraint */
-GCG_CONSSENSE GCGconsMasterbranchGetConssense(
-   SCIP_CONS*            cons
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->conssense;
-}
-
-/** returns the new bound for a given masterbranch constraint */
-SCIP_Real GCGconsMasterbranchGetVal(
-   SCIP_CONS*            cons
-   )
-{
-   SCIP_CONSDATA* consdata;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
-
-   return consdata->val;
+   return consdata->branchdata;
 }
 
 /** returns the node in the B&B tree at which the given masterbranch constraint is sticking */

@@ -29,6 +29,7 @@
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
 #include "type_branchgcg.h"
+#include "scip/type_lp.h"
 
 #define BRANCHRULE_NAME          "orig"
 #define BRANCHRULE_DESC          "branching for the original program in generic column generation"
@@ -41,8 +42,7 @@
 struct GCG_BranchData
 {
    SCIP_VAR*          origvar;               /**< original variable on which the branching is done */
-   GCG_CONSSENSE      conssense;             /**< sense of the branching on the original variable: 
-                                              *   greater-equal (GCG_CONSSENSE_GE) or smaller-equal (GCG_CONSSENSE_LE) */
+   SCIP_BOUNDTYPE     boundtype;             /**< type of the new bound of original variable */
    SCIP_Real          val;                   /**< new lower/upper bound of the original variable */
    SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
 };
@@ -64,6 +64,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   assert(branchdata->origvar != NULL);
+
    //printf("branchActiveMasterOrig\n");
 
    /* get vardata*/
@@ -75,7 +77,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    /* set corresponding bound in the pricing problem */
    /* lower bound was changed */
-   if ( branchdata->conssense == GCG_CONSSENSE_GE )
+   if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
    {
       branchdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
       SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
@@ -104,6 +106,8 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   assert(branchdata->origvar != NULL);
+
    //printf("branchDeactiveMasterOrig\n");
 
    /* get vardata*/
@@ -115,7 +119,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
 
    /* reset corresponding bound in the pricing problem */
    /* lower bound was changed */
-   if ( branchdata->conssense == GCG_CONSSENSE_GE )
+   if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
    {
       SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
    }
@@ -145,6 +149,8 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   assert(branchdata->origvar != NULL);
+
    //printf("branchPropMasterOrig\n");
 
    *result = SCIP_DIDNOTFIND;
@@ -154,8 +160,10 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
           
+   /* iterate over all master variables */
    for ( i = 0; i < nvars; i++)
    {
+      /* only look at variables not fixed to 0 */
       if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
       {
          vardata = SCIPvarGetData(vars[i]);
@@ -165,34 +173,41 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
          assert(vardata->data.mastervardata.norigvars > 0);
          assert(vardata->data.mastervardata.origvals != NULL);
          assert(vardata->data.mastervardata.origvars != NULL);
-            
+
+         /* iterate over all original variables contained in the current master variable */
          for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
          {
-               if ( vardata->data.mastervardata.origvars[j] == branchdata->origvar )
+            /* check whether the original variable contained in the master variable equals the variable 
+             * on which the current branching was performed and if so, fix the master variable to 0,
+             * if the master variable contains a part of the branching variable that violates the bound */
+            if ( vardata->data.mastervardata.origvars[j] == branchdata->origvar )
+            {
+               /* branching imposes new lower bound */
+               if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER && 
+                  SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
                {
-                  if ( branchdata->conssense == GCG_CONSSENSE_GE && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     break;
-                  }
-                  if ( branchdata->conssense == GCG_CONSSENSE_LE && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
-                  {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     break;
-                  }
-                  
+                  SCIPchgVarUb(scip, vars[i], 0.0);
+                  propcount++;
+                  break;
                }
+               /* branching imposes new upper bound */
+               if ( branchdata->boundtype == SCIP_BOUNDTYPE_UPPER && 
+                  SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], branchdata->val) )
+               {
+                  SCIPchgVarUb(scip, vars[i], 0.0);
+                  propcount++;
+                  break;
+               }
+               
+            }
                
          }
       }
    }
       
-   SCIPdebugMessage("Finished propagation of masterbranch constraint: %s %s %f, %d vars fixed.\n",
-      SCIPvarGetName(branchdata->origvar), (branchdata->conssense == GCG_CONSSENSE_GE ? ">=" : "<="), branchdata->val, propcount);
+   SCIPdebugMessage("Finished propagation of branching decision constraint: %s %s %f, %d vars fixed.\n",
+      SCIPvarGetName(branchdata->origvar), (branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<="), 
+      branchdata->val, propcount);
 
    if ( propcount > 0 )
    {
@@ -308,20 +323,18 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
 
    branchupdata->origvar = vars[i];
-   branchupdata->conssense = GCG_CONSSENSE_GE;
+   branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->val = SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
    branchupdata->oldbound = 0.0;
 
    branchdowndata->origvar = vars[i];
-   branchdowndata->conssense = GCG_CONSSENSE_LE;
+   branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->val = SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
    branchdowndata->oldbound = 0.0;
 
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", consup, vars[i], GCG_CONSSENSE_GE, 
-         SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i])), childup, 
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", childup, 
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", consdown, vars[i], GCG_CONSSENSE_LE, 
-         SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i])), childdown, 
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", childdown, 
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
@@ -335,10 +348,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CALL( SCIPreleaseCons(scip, &consdown) );
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchdown) );
-
       
    *result = SCIP_BRANCHED;
-
 
    return SCIP_OKAY;
 }
