@@ -12,6 +12,7 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   cons_masterbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
