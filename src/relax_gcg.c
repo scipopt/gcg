@@ -1110,6 +1110,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
+   SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
 
    /* add gcg relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",

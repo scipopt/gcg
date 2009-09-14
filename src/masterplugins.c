@@ -56,7 +56,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
+   //SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
    //SCIP_CALL( SCIPincludeConshdlrInfeas(scip) );
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
 

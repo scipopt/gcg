@@ -64,12 +64,13 @@ struct SCIP_ConsData
 
    GCG_BRANCHDATA*    branchdata;
    SCIP_BRANCHRULE*   branchrule;
-
+   
    SCIP_VAR**         boundchgvars;
    SCIP_Real*         newbounds;
    SCIP_Real*         oldbounds;
    SCIP_BOUNDTYPE*    boundtypes;
    int                nboundchanges;
+   int                nbranchingchanges;
 };
 
 /** constraint handler data */
@@ -78,6 +79,7 @@ struct SCIP_ConshdlrData
    SCIP_CONS**        stack;                 /**< stack for storing active constraints */
    int                nstack;                /**< number of elements on the stack */
    int                maxstacksize;          /**< maximum size of the stack */
+   SCIP_Bool          usepropbounds;
 };
 
 
@@ -379,6 +381,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       domchg = SCIPnodeGetDomchg(GCGconsOrigbranchGetNode(origcons));
       nboundchgs = SCIPdomchgGetNBoundchgs(domchg);
       consdata->nboundchanges = nboundchgs;
+      consdata->nbranchingchanges = 0;
 
       if ( nboundchgs > 0 )
       {
@@ -395,6 +398,11 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          consdata->boundchgvars[i] = SCIPboundchgGetVar(boundchg);
          consdata->newbounds[i] = SCIPboundchgGetNewbound(boundchg);
          consdata->boundtypes[i] = SCIPboundchgGetBoundtype(boundchg);
+         if ( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
+         {
+            consdata->nbranchingchanges++;
+            assert(consdata->nbranchingchanges == i+1);
+         }
       }
 
       consdata->created = TRUE;
@@ -574,20 +582,36 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 static
 SCIP_DECL_CONSPROP(consPropMasterbranch)
 {
+   SCIP* origscip;
    SCIP_CONSHDLRDATA* conshdlrData;  
-   SCIP_CONS*         cons;
-   SCIP_CONSDATA*     consdata;
+   SCIP_CONS* cons;
+   SCIP_CONSDATA* consdata;
+   SCIP_VARDATA* vardata;
+   SCIP_VAR** vars;
+   int nvars;
+   int propcount;
+   int i;
+   int j;
+   int k;
+   int nboundchanges;
+   SCIP_Bool fixed;
 
    assert(conshdlr != NULL); 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
    *result = SCIP_DIDNOTRUN;
 
    /* the constraint data of the cons related to the current node */
    cons = conshdlrData->stack[conshdlrData->nstack-1];
+   assert(cons != NULL);
+
    consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
 
    if ( !consdata->needprop )
    {
@@ -607,7 +631,75 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
 
+   *result = SCIP_DIDNOTFIND;
+
+   propcount = 0;
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+
+   nboundchanges = (conshdlrData->usepropbounds ? consdata->nboundchanges : consdata->nbranchingchanges);
+          
+   /* iterate over all master variables */
+   for ( i = 0; i < nvars; i++)
+   {
+      /* only look at variables not fixed to 0 */
+      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+      {
+         fixed = FALSE;
+
+         vardata = SCIPvarGetData(vars[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+         assert(vardata->data.mastervardata.norigvars > 0);
+         assert(vardata->data.mastervardata.origvals != NULL);
+         assert(vardata->data.mastervardata.origvars != NULL);
+
+         /* iterate over all original variables contained in the current master variable */
+         for ( j = 0; j < vardata->data.mastervardata.norigvars && !fixed; j++ )
+         {
+            /* iterate over bound changes performed at the current node's equivalent in the original tree */
+            for ( k = 0; k < nboundchanges; k++ )
+            {
+               /* check whether the original variable contained in the master variable equals the variable 
+                * on which the current branching was performed and if so, fix the master variable to 0,
+                * if the master variable contains a part of the branching variable that violates the bound */
+               if ( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
+               {
+                  /* branching imposes new lower bound */
+                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && 
+                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     fixed = TRUE;
+                     break;
+                  }
+                  /* branching imposes new upper bound */
+                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && 
+                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                  {
+                     SCIPchgVarUb(scip, vars[i], 0.0);
+                     propcount++;
+                     fixed = TRUE;
+                     break;
+                  }
+               
+               }
+            }
+               
+         }
+      }
+   }
+      
+   SCIPdebugMessage("Finished propagation of masterbranch constraint: %d vars fixed.\n", propcount);
+
    SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
+
+   if ( *result != SCIP_CUTOFF )
+      if ( propcount > 0 )
+         *result = SCIP_REDUCEDDOM;
 
    consdata->needprop = FALSE;
    consdata->propagatedvars = SCIPgetNVars(scip);
@@ -678,6 +770,10 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
          consEnableMasterbranch, consDisableMasterbranch,
          consPrintMasterbranch, consCopyMasterbranch, consParseMasterbranch, 
          conshdlrData) );
+
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "relaxing/gcg/usepropbounds",
+         "should propagated bound changes in the original be enforced in the master?",
+         &conshdlrData->usepropbounds, FALSE, TRUE, NULL, NULL) );
 
    return SCIP_OKAY;
 }

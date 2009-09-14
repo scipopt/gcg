@@ -167,7 +167,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
    *result = SCIP_DIDNOTFIND;
-
+#if 0
    propcount = 0;
 
    vars = SCIPgetVars(scip);
@@ -226,6 +226,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
    {
       *result = SCIP_REDUCEDDOM;
    }
+#endif
 
    return SCIP_OKAY;
 }
