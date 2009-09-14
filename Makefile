@@ -47,6 +47,7 @@ MAINOBJ		=	reader_blk.o \
 			relax_gcg.o \
 			pricer_gcg.o \
 			branch_orig.o \
+			branch_ryanfoster.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			branch_master.o \
@@ -109,6 +110,10 @@ test:
 .PHONY: clean
 clean:
 		-rm -rf $(OBJDIR)/* $(MAINFILE)
+
+.PHONY: tags
+tags:
+		cd src/; rm -f TAGS; etags *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h;
 
 .PHONY: depend
 depend:		$(SCIPDIR)

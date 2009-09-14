@@ -383,7 +383,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/sci
   src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
   src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
   src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
-  src/sepa_master.h src/branch_master.h src/event_origvarbound.h
+  src/sepa_master.h src/branch_master.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \

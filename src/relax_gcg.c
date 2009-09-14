@@ -29,8 +29,6 @@
 #include "struct_vardata.h"
 #include "type_branchgcg.h"
 #include "struct_branchgcg.h"
-#include "event_origvarbound.h"
-
 
 
 #define RELAX_NAME             "gcg"

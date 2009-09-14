@@ -306,10 +306,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* delete array with bound changes */
    if ( (*consdata)->nboundchanges > 0 )
    {
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
-      SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
       SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
+      SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
+      SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
+      SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
    }
 
 
