@@ -71,9 +71,8 @@ struct SCIP_ConshdlrData
  */
 
 
-
 /*
- * Callback methods
+ * Callback methods of constraint handler
  */
 
 
@@ -128,7 +127,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    SCIP_CALL( SCIPreleaseCons(scip, &cons) );
 
    GCGconsOrigbranchCheckConsistency(scip);
-   
+
    return SCIP_OKAY;
 }
 
@@ -204,21 +203,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
    return SCIP_OKAY;
 }
-
-
-/** constraint enforcing method of constraint handler for LP solutions */
-#define consEnfolpOrigbranch NULL
-
-
-/** constraint enforcing method of constraint handler for pseudo solutions */
-#define consEnfopsOrigbranch NULL
-
-/** feasibility check method of constraint handler for integral solutions */
-#define consCheckOrigbranch NULL
-
-/** variable rounding lock method of constraint handler */
-#define consLockOrigbranch NULL
-
 
 
 /** constraint activation notification method of constraint handler */
@@ -300,6 +284,10 @@ SCIP_DECL_CONSPROP(consPropOrigbranch)
 }
 
 /* define not used callbacks as NULL */
+#define consEnfolpOrigbranch NULL
+#define consEnfopsOrigbranch NULL
+#define consCheckOrigbranch NULL
+#define consLockOrigbranch NULL
 #define consPresolOrigbranch NULL
 #define consRespropOrigbranch NULL
 #define consInitOrigbranch NULL
@@ -315,7 +303,6 @@ SCIP_DECL_CONSPROP(consPropOrigbranch)
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
-
 
 /*
  * interface methods

@@ -24,7 +24,7 @@
 #include "gcgplugins.h"
 #include "scip/debug.h"
 
-#define USEHEURS 0
+#define USEHEURS 1
 #define USESEPA 0
 
 
@@ -58,9 +58,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
 
@@ -106,7 +107,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
-
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );

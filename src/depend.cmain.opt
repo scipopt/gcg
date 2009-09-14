@@ -91,6 +91,7 @@ $(OBJDIR)/reader_blk.o: src/reader_blk.c src/reader_blk.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -120,11 +121,11 @@ $(OBJDIR)/reader_blk.o: src/reader_blk.c src/reader_blk.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
-  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h
 $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -243,6 +244,7 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h \
   ../cleanscip/src/scip/cons_sos2.h ../cleanscip/src/scip/disp_default.h \
   ../cleanscip/src/scip/heur_dins.h ../cleanscip/src/scip/heur_nlp.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/presol_boundshift.h \
   ../cleanscip/src/scip/reader_ccg.h ../cleanscip/src/scip/reader_fzn.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/reader_gms.h \
@@ -250,10 +252,11 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h \
   ../cleanscip/src/scip/reader_rlp.h \
   ../cleanscip/src/scip/sepa_zerohalf.h src/struct_vardata.h \
   src/masterplugins.h src/nodesel_master.h src/cons_masterbranch.h \
-  src/cons_infeas.h src/sepa_master.h src/branch_master.h \
-  src/type_branchgcg.h src/branch_orig.h src/cons_origbranch.h \
-  src/struct_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/heur_gcgrounding.h ../cleanscip/src/scip/debug.h
+  src/struct_branchgcg.h src/type_branchgcg.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h src/branch_orig.h \
+  src/branch_ryanfoster.h src/cons_origbranch.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h \
+  ../cleanscip/src/scip/debug.h
 $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
   ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
@@ -346,6 +349,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/sci
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -375,11 +379,11 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c src/relax_gcg.h ../cleanscip/src/scip/sci
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
-  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h src/event_origvarbound.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -473,6 +477,7 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -502,11 +507,11 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
-  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h
 $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -600,6 +605,7 @@ $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -629,6 +635,134 @@ $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h \
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h
+$(OBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.h \
+  ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
+  ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
+  ../cleanscip/src/scip/type_message.h \
+  ../cleanscip/src/scip/struct_message.h \
+  ../cleanscip/src/scip/pub_message.h \
+  ../cleanscip/src/blockmemshell/memory.h \
+  ../cleanscip/src/scip/type_result.h ../cleanscip/src/scip/type_clock.h \
+  ../cleanscip/src/scip/type_misc.h ../cleanscip/src/scip/type_paramset.h \
+  ../cleanscip/src/scip/type_scip.h ../cleanscip/src/scip/type_event.h \
+  ../cleanscip/src/scip/type_lp.h ../cleanscip/src/scip/type_var.h \
+  ../cleanscip/src/scip/type_prob.h ../cleanscip/src/scip/type_tree.h \
+  ../cleanscip/src/scip/type_branch.h \
+  ../cleanscip/src/scip/type_conflict.h ../cleanscip/src/scip/type_cons.h \
+  ../cleanscip/src/scip/type_sol.h ../cleanscip/src/scip/type_dialog.h \
+  ../cleanscip/src/scip/type_disp.h ../cleanscip/src/scip/type_heur.h \
+  ../cleanscip/src/scip/type_nodesel.h \
+  ../cleanscip/src/scip/type_presol.h ../cleanscip/src/scip/type_pricer.h \
+  ../cleanscip/src/scip/type_reader.h ../cleanscip/src/scip/type_relax.h \
+  ../cleanscip/src/scip/type_sepa.h ../cleanscip/src/scip/type_prop.h \
+  ../cleanscip/src/scip/pub_branch.h ../cleanscip/src/scip/pub_conflict.h \
+  ../cleanscip/src/scip/pub_cons.h ../cleanscip/src/scip/struct_cons.h \
+  ../cleanscip/src/scip/pub_cutpool.h \
+  ../cleanscip/src/scip/type_cutpool.h ../cleanscip/src/scip/pub_dialog.h \
+  ../cleanscip/src/scip/pub_disp.h ../cleanscip/src/scip/pub_event.h \
+  ../cleanscip/src/scip/pub_fileio.h ../cleanscip/src/scip/pub_heur.h \
+  ../cleanscip/src/scip/pub_implics.h \
+  ../cleanscip/src/scip/type_implics.h \
+  ../cleanscip/src/scip/struct_implics.h ../cleanscip/src/scip/pub_lp.h \
+  ../cleanscip/src/scip/type_set.h ../cleanscip/src/scip/type_stat.h \
+  ../cleanscip/src/scip/type_lpi.h ../cleanscip/src/scip/struct_lp.h \
+  ../cleanscip/src/scip/pub_misc.h ../cleanscip/src/scip/pub_nodesel.h \
+  ../cleanscip/src/scip/pub_paramset.h ../cleanscip/src/scip/pub_presol.h \
+  ../cleanscip/src/scip/pub_pricer.h ../cleanscip/src/scip/pub_reader.h \
+  ../cleanscip/src/scip/pub_relax.h ../cleanscip/src/scip/pub_sepa.h \
+  ../cleanscip/src/scip/pub_prop.h ../cleanscip/src/scip/pub_sol.h \
+  ../cleanscip/src/scip/struct_sol.h ../cleanscip/src/scip/pub_tree.h \
+  ../cleanscip/src/scip/struct_tree.h ../cleanscip/src/scip/pub_var.h \
+  ../cleanscip/src/scip/type_history.h ../cleanscip/src/scip/struct_var.h \
+  ../cleanscip/src/scip/implics.h ../cleanscip/src/scip/history.h \
+  ../cleanscip/src/scip/struct_history.h ../cleanscip/src/scip/lpi.h \
+  ../cleanscip/src/scip/struct_scip.h \
+  ../cleanscip/src/scip/type_interrupt.h ../cleanscip/src/scip/type_mem.h \
+  ../cleanscip/src/scip/type_primal.h \
+  ../cleanscip/src/scip/type_pricestore.h \
+  ../cleanscip/src/scip/type_sepastore.h ../cleanscip/src/scip/set.h \
+  ../cleanscip/src/scip/buffer.h ../cleanscip/src/scip/type_buffer.h \
+  ../cleanscip/src/scip/struct_set.h ../cleanscip/src/scip/tree.h \
+  src/relax_gcg.h ../cleanscip/src/scip/scipdefplugins.h \
+  ../cleanscip/src/scip/branch_allfullstrong.h \
+  ../cleanscip/src/scip/branch_fullstrong.h \
+  ../cleanscip/src/scip/branch_inference.h \
+  ../cleanscip/src/scip/branch_mostinf.h \
+  ../cleanscip/src/scip/branch_leastinf.h \
+  ../cleanscip/src/scip/branch_pscost.h \
+  ../cleanscip/src/scip/branch_random.h \
+  ../cleanscip/src/scip/branch_relpscost.h \
+  ../cleanscip/src/scip/cons_and.h \
+  ../cleanscip/src/scip/cons_bounddisjunction.h \
+  ../cleanscip/src/scip/cons_conjunction.h \
+  ../cleanscip/src/scip/cons_countsols.h \
+  ../cleanscip/src/scip/cons_indicator.h \
+  ../cleanscip/src/scip/cons_integral.h \
+  ../cleanscip/src/scip/cons_knapsack.h \
+  ../cleanscip/src/scip/cons_linear.h \
+  ../cleanscip/src/scip/cons_logicor.h ../cleanscip/src/scip/cons_or.h \
+  ../cleanscip/src/scip/cons_quadratic.h \
+  ../cleanscip/src/scip/type_nlpi.h ../cleanscip/src/scip/cons_setppc.h \
+  ../cleanscip/src/scip/cons_sos1.h ../cleanscip/src/scip/cons_sos2.h \
+  ../cleanscip/src/scip/cons_varbound.h ../cleanscip/src/scip/cons_xor.h \
+  ../cleanscip/src/scip/dialog_default.h \
+  ../cleanscip/src/scip/disp_default.h \
+  ../cleanscip/src/scip/heur_actconsdiving.h \
+  ../cleanscip/src/scip/heur_coefdiving.h \
+  ../cleanscip/src/scip/heur_crossover.h \
+  ../cleanscip/src/scip/heur_dins.h ../cleanscip/src/scip/heur_feaspump.h \
+  ../cleanscip/src/scip/heur_fixandinfer.h \
+  ../cleanscip/src/scip/heur_fracdiving.h \
+  ../cleanscip/src/scip/heur_guideddiving.h \
+  ../cleanscip/src/scip/heur_intdiving.h \
+  ../cleanscip/src/scip/heur_intshifting.h \
+  ../cleanscip/src/scip/heur_linesearchdiving.h \
+  ../cleanscip/src/scip/heur_localbranching.h \
+  ../cleanscip/src/scip/heur_mutation.h ../cleanscip/src/scip/heur_nlp.h \
+  ../cleanscip/src/scip/heur_objpscostdiving.h \
+  ../cleanscip/src/scip/heur_octane.h ../cleanscip/src/scip/heur_oneopt.h \
+  ../cleanscip/src/scip/heur_pscostdiving.h \
+  ../cleanscip/src/scip/heur_rens.h ../cleanscip/src/scip/heur_rins.h \
+  ../cleanscip/src/scip/heur_rootsoldiving.h \
+  ../cleanscip/src/scip/heur_rounding.h \
+  ../cleanscip/src/scip/heur_shifting.h \
+  ../cleanscip/src/scip/heur_simplerounding.h \
+  ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
+  ../cleanscip/src/scip/heur_veclendiving.h \
+  ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
+  ../cleanscip/src/scip/nodesel_estimate.h \
+  ../cleanscip/src/scip/nodesel_hybridestim.h \
+  ../cleanscip/src/scip/nodesel_restartdfs.h \
+  ../cleanscip/src/scip/presol_boundshift.h \
+  ../cleanscip/src/scip/presol_dualfix.h \
+  ../cleanscip/src/scip/presol_implics.h \
+  ../cleanscip/src/scip/presol_inttobinary.h \
+  ../cleanscip/src/scip/presol_probing.h \
+  ../cleanscip/src/scip/presol_trivial.h \
+  ../cleanscip/src/scip/prop_pseudoobj.h \
+  ../cleanscip/src/scip/prop_rootredcost.h \
+  ../cleanscip/src/scip/reader_ccg.h ../cleanscip/src/scip/reader_cip.h \
+  ../cleanscip/src/scip/reader_cnf.h ../cleanscip/src/scip/reader_fix.h \
+  ../cleanscip/src/scip/reader_fzn.h ../cleanscip/src/scip/def.h \
+  ../cleanscip/src/scip/reader_gms.h ../cleanscip/src/scip/reader_lp.h \
+  ../cleanscip/src/scip/reader_mps.h ../cleanscip/src/scip/reader_opb.h \
+  ../cleanscip/src/scip/reader_ppm.h ../cleanscip/src/scip/reader_rlp.h \
+  ../cleanscip/src/scip/reader_sol.h ../cleanscip/src/scip/reader_zpl.h \
+  ../cleanscip/src/scip/sepa_clique.h ../cleanscip/src/scip/sepa_cmir.h \
+  ../cleanscip/src/scip/sepa_flowcover.h \
+  ../cleanscip/src/scip/sepa_gomory.h \
+  ../cleanscip/src/scip/sepa_impliedbounds.h \
+  ../cleanscip/src/scip/sepa_intobj.h ../cleanscip/src/scip/sepa_mcf.h \
+  ../cleanscip/src/scip/sepa_redcost.h \
+  ../cleanscip/src/scip/sepa_strongcg.h \
+  ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
+  src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
   src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
   src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
   src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
@@ -728,6 +862,7 @@ $(OBJDIR)/cons_origbranch.o: src/cons_origbranch.c \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -757,9 +892,10 @@ $(OBJDIR)/cons_origbranch.o: src/cons_origbranch.c \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/disp_gcg.h src/heur_gcgfeaspump.h src/heur_gcgrounding.h \
-  src/struct_vardata.h src/masterplugins.h src/nodesel_master.h \
-  src/cons_infeas.h src/sepa_master.h src/branch_master.h
+  src/branch_ryanfoster.h src/disp_gcg.h src/heur_gcgfeaspump.h \
+  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
+  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
+  src/branch_master.h
 $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c \
   ../cleanscip/src/scip/type_cons.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -808,8 +944,8 @@ $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c \
   ../cleanscip/src/scip/type_sepastore.h ../cleanscip/src/scip/set.h \
   ../cleanscip/src/scip/buffer.h ../cleanscip/src/scip/type_buffer.h \
   ../cleanscip/src/scip/struct_set.h ../cleanscip/src/scip/tree.h \
-  src/cons_masterbranch.h src/relax_gcg.h \
-  ../cleanscip/src/scip/scipdefplugins.h \
+  src/cons_masterbranch.h src/struct_branchgcg.h src/type_branchgcg.h \
+  src/relax_gcg.h ../cleanscip/src/scip/scipdefplugins.h \
   ../cleanscip/src/scip/branch_allfullstrong.h \
   ../cleanscip/src/scip/branch_fullstrong.h \
   ../cleanscip/src/scip/branch_inference.h \
@@ -853,6 +989,7 @@ $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -882,10 +1019,10 @@ $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/struct_branchgcg.h src/type_branchgcg.h \
-  src/disp_gcg.h src/heur_gcgfeaspump.h src/heur_gcgrounding.h \
-  src/struct_vardata.h src/masterplugins.h src/nodesel_master.h \
-  src/cons_infeas.h src/sepa_master.h src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h
 $(OBJDIR)/branch_master.o: src/branch_master.c src/branch_master.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -1045,7 +1182,8 @@ $(OBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
   ../cleanscip/src/scip/type_nlpi.h ../cleanscip/src/scip/cons_sos1.h \
   ../cleanscip/src/scip/cons_sos2.h ../cleanscip/src/scip/heur_dins.h \
   ../cleanscip/src/scip/heur_nlp.h ../cleanscip/src/scip/heur_trivial.h \
-  ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
+  ../cleanscip/src/scip/heur_trysol.h ../cleanscip/src/scip/nodesel_bfs.h \
+  ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
   ../cleanscip/src/scip/nodesel_hybridestim.h \
   ../cleanscip/src/scip/nodesel_restartdfs.h \
@@ -1058,11 +1196,11 @@ $(OBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
   ../cleanscip/src/scip/reader_ppm.h ../cleanscip/src/scip/reader_rlp.h \
   ../cleanscip/src/scip/reader_sol.h ../cleanscip/src/scip/reader_zpl.h \
   ../cleanscip/src/scip/sepa_zerohalf.h src/gcgplugins.h src/reader_blk.h \
-  src/branch_orig.h src/cons_origbranch.h src/cons_masterbranch.h \
-  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
-  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
-  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h ../cleanscip/src/scip/debug.h
+  src/branch_orig.h src/branch_ryanfoster.h src/cons_origbranch.h \
+  src/cons_masterbranch.h src/struct_branchgcg.h src/type_branchgcg.h \
+  src/disp_gcg.h src/heur_gcgfeaspump.h src/heur_gcgrounding.h \
+  src/struct_vardata.h src/nodesel_master.h src/cons_infeas.h \
+  src/sepa_master.h src/branch_master.h ../cleanscip/src/scip/debug.h
 $(OBJDIR)/nodesel_master.o: src/nodesel_master.c src/nodesel_master.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -1158,6 +1296,7 @@ $(OBJDIR)/nodesel_master.o: src/nodesel_master.c src/nodesel_master.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -1186,10 +1325,10 @@ $(OBJDIR)/nodesel_master.o: src/nodesel_master.c src/nodesel_master.h \
   ../cleanscip/src/scip/sepa_redcost.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
-  src/gcgplugins.h src/reader_blk.h src/branch_orig.h src/disp_gcg.h \
-  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
-  src/masterplugins.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h
+  src/gcgplugins.h src/reader_blk.h src/branch_orig.h \
+  src/branch_ryanfoster.h src/disp_gcg.h src/heur_gcgfeaspump.h \
+  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
+  src/cons_infeas.h src/sepa_master.h src/branch_master.h
 $(OBJDIR)/sepa_master.o: src/sepa_master.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
   ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
@@ -1283,6 +1422,7 @@ $(OBJDIR)/sepa_master.o: src/sepa_master.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -1312,10 +1452,11 @@ $(OBJDIR)/sepa_master.o: src/sepa_master.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
-  src/nodesel_master.h src/cons_infeas.h src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/heur_gcgrounding.h src/struct_vardata.h \
+  src/masterplugins.h src/nodesel_master.h src/cons_infeas.h \
+  src/branch_master.h
 $(OBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
   ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
@@ -1408,6 +1549,7 @@ $(OBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h ../cleanscip/src/scip/scip.h
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -1437,10 +1579,11 @@ $(OBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h ../cleanscip/src/scip/scip.h
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/heur_gcgfeaspump.h src/heur_gcgrounding.h \
-  src/struct_vardata.h src/masterplugins.h src/nodesel_master.h \
-  src/cons_infeas.h src/sepa_master.h src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/heur_gcgfeaspump.h \
+  src/heur_gcgrounding.h src/struct_vardata.h src/masterplugins.h \
+  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
+  src/branch_master.h
 $(OBJDIR)/heur_gcgrounding.o: src/heur_gcgrounding.c src/heur_gcgrounding.h \
   ../cleanscip/src/scip/scip.h ../cleanscip/src/scip/def.h \
   ../cleanscip/src/scip/type_retcode.h ../cleanscip/src/scip/message.h \
@@ -1534,6 +1677,7 @@ $(OBJDIR)/heur_gcgrounding.o: src/heur_gcgrounding.c src/heur_gcgrounding.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -1563,10 +1707,11 @@ $(OBJDIR)/heur_gcgrounding.o: src/heur_gcgrounding.c src/heur_gcgrounding.h \
   ../cleanscip/src/scip/sepa_strongcg.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
-  src/type_branchgcg.h src/disp_gcg.h src/heur_gcgfeaspump.h \
-  src/struct_vardata.h src/masterplugins.h src/nodesel_master.h \
-  src/cons_infeas.h src/sepa_master.h src/branch_master.h
+  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
+  src/struct_branchgcg.h src/type_branchgcg.h src/disp_gcg.h \
+  src/heur_gcgfeaspump.h src/struct_vardata.h src/masterplugins.h \
+  src/nodesel_master.h src/cons_infeas.h src/sepa_master.h \
+  src/branch_master.h
 $(OBJDIR)/main.o: src/main.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/def.h ../cleanscip/src/scip/type_retcode.h \
   ../cleanscip/src/scip/message.h ../cleanscip/src/scip/type_message.h \
@@ -1659,6 +1804,7 @@ $(OBJDIR)/main.o: src/main.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/heur_shifting.h \
   ../cleanscip/src/scip/heur_simplerounding.h \
   ../cleanscip/src/scip/heur_trivial.h \
+  ../cleanscip/src/scip/heur_trysol.h \
   ../cleanscip/src/scip/heur_veclendiving.h \
   ../cleanscip/src/scip/nodesel_bfs.h ../cleanscip/src/scip/nodesel_dfs.h \
   ../cleanscip/src/scip/nodesel_estimate.h \
@@ -1689,7 +1835,7 @@ $(OBJDIR)/main.o: src/main.c ../cleanscip/src/scip/scip.h \
   ../cleanscip/src/scip/sepa_zerohalf.h ../cleanscip/src/scip/scipshell.h \
   src/gcgplugins.h src/reader_blk.h src/pricer_gcg.h src/relax_gcg.h \
   src/struct_vardata.h src/masterplugins.h src/nodesel_master.h \
-  src/cons_masterbranch.h src/cons_infeas.h src/sepa_master.h \
-  src/branch_master.h src/type_branchgcg.h src/branch_orig.h \
-  src/cons_origbranch.h src/struct_branchgcg.h src/disp_gcg.h \
-  src/heur_gcgfeaspump.h src/heur_gcgrounding.h
+  src/cons_masterbranch.h src/struct_branchgcg.h src/type_branchgcg.h \
+  src/cons_infeas.h src/sepa_master.h src/branch_master.h \
+  src/branch_orig.h src/branch_ryanfoster.h src/cons_origbranch.h \
+  src/disp_gcg.h src/heur_gcgfeaspump.h src/heur_gcgrounding.h

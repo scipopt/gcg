@@ -104,6 +104,123 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
  * Local methods
  */
 
+static
+SCIP_RETCODE checkNewVar(
+   SCIP*                 scip,
+   SCIP_VAR*             newvar,
+   SCIP_Real             redcost,
+   SCIP_Real             redcostconv
+   )
+{
+   SCIP_VAR** vars;
+   int nvars;
+   int v;
+   int i;
+
+   SCIP_VARDATA* newvardata;
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(newvar != NULL);
+
+   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+
+   /* compare newvar with all existing variables */
+   for ( v = 0; v < nvars; v++ )
+   {
+      assert(vars[v] != NULL);
+
+      /* vars[v] is the new variable itself */
+      if ( vars[v] == newvar )
+         continue;
+
+      /* vars[v] has a different objective function value, may not be equal to newvar */
+      if ( !SCIPisEQ(scip, SCIPvarGetObj(vars[v]), SCIPvarGetObj(newvar)) )
+         continue;
+
+      vardata = SCIPvarGetData(vars[v]);
+      newvardata = SCIPvarGetData(newvar);
+      assert(vardata != NULL);
+      assert(newvardata != NULL);
+
+      /* vars[v] belongs to a different block, may not be equal to newvar */
+      if ( vardata->blocknr != newvardata->blocknr )
+         continue;
+
+      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(newvardata->vartype == GCG_VARTYPE_MASTER);
+      assert(vardata->data.mastervardata.norigvars = newvardata->data.mastervardata.norigvars);
+
+      /* compare the parts of the original variables contained in vars[i] and newvar */
+      for ( i = 0; i < vardata->data.mastervardata.norigvars; i++ )
+      {
+         assert(vardata->data.mastervardata.origvars[i] == newvardata->data.mastervardata.origvars[i]);
+
+         if ( !SCIPisEQ(scip, vardata->data.mastervardata.origvals[i], newvardata->data.mastervardata.origvals[i]) )
+            break;
+      }
+
+      if ( i == vardata->data.mastervardata.norigvars )
+      {
+         printf("var %s is equal to var %s! solval = %f, redcost = %f, lpsolstat = %d, redcostcons = %f\n", 
+            SCIPvarGetName(newvar), SCIPvarGetName(vars[v]), SCIPgetSolVal(scip, NULL, vars[v]), 
+            redcost, SCIPgetLPSolstat(scip), redcostconv);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+#ifndef NDEBUG
+static
+SCIP_RETCODE checkVarBounds(
+   SCIP*                 scip
+   )
+{
+   SCIP_VAR** vars;
+   int nvars;
+   int v;
+   SCIP_VARDATA* vardata;
+   SCIP* origscip;
+
+   assert(scip != NULL);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   SCIP_CALL( SCIPgetVarsData(origscip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+
+   /* check whether the corresponding pricing MIP has the same bound for the variable */
+   for ( v = 0; v < nvars; v++ )
+   {
+      assert(vars[v] != NULL);
+
+      vardata = SCIPvarGetData(vars[v]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->data.origvardata.pricingvar != NULL);
+
+      if ( !GCGrelaxIsPricingprobRelevant(origscip, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origscip, vardata->blocknr) != 1 ) 
+         continue;
+
+      if ( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
+      {
+         printf("var %s: orig upper bound = %f, pricing upper bound = %f!\n", SCIPvarGetName(vars[v]),
+            SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) );
+      }
+      if ( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) )
+      {
+         printf("var %s: orig lower bound = %f, pricing lower bound = %f!\n", SCIPvarGetName(vars[v]),
+            SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) );
+      }
+
+      assert(SCIPvarGetUbLocal(vars[v]) == SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar));
+      assert(SCIPvarGetLbLocal(vars[v]) == SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar));
+   }
+
+   return SCIP_OKAY;
+}
+#endif
 
 /* informs an original variable, that a variable in the master problem was created, 
  * that contains a part of the original variable.
@@ -222,6 +339,10 @@ SCIP_RETCODE performPricing(
    SCIP_CALL( SCIPstartClock(scip, pricerdata->owneffortclock) );
    pricerdata->calls++;
    nfoundvars = 0;
+
+#ifndef NDEBUG
+   SCIP_CALL( checkVarBounds(scip) );
+#endif
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing) */
@@ -398,6 +519,9 @@ SCIP_RETCODE performPricing(
       if ( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
+      /* set objective limit, such that only solutions with negative reduced costs are accepted */
+      //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->redcostconv[prob]) );
+
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
 
@@ -444,13 +568,17 @@ SCIP_RETCODE performPricing(
       /* so far, the pricing problem should be solved to optimality */
       assert( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL
          || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_GAPLIMIT
-         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_USERINTERRUPT );
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_USERINTERRUPT 
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE );
       /** @todo handle userinterrupt: set result pointer (and lowerbound), handle other solution states */
-
+   
       nsols = SCIPgetNSols(pricerdata->pricingprobs[prob]);
       sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
+      //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
+
       for ( j = 0; j < nsols; j++ )
       {
+#ifndef NDEBUG
          SCIP_Bool feasible;
          SCIP_CALL( SCIPcheckSolOrig(pricerdata->pricingprobs[prob], sols[j], &feasible, FALSE, FALSE) );
          if ( !feasible )
@@ -465,6 +593,7 @@ SCIP_RETCODE performPricing(
             assert(feasible);
             abort();
          }
+#endif
          /* solution value - dual value of associated convexity constraint < 0 
             --> can make the LP feasible / improve the current solution */ 
          if ( SCIPisFeasNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob]) )
@@ -614,6 +743,11 @@ SCIP_RETCODE performPricing(
             /* add variable to convexity constraint */
             SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, prob), newvar, 1) );
 
+            //printf("created Var %s\n", SCIPvarGetName(newvar));
+#if 0            
+            /* check whether the created variable already existed */
+            SCIP_CALL( checkNewVar(scip, newvar, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->redcostconv[prob], pricerdata->redcostconv[prob]) );
+#endif
             SCIPreleaseVar(scip, &newvar);
 
             /* ??? */
@@ -628,7 +762,6 @@ SCIP_RETCODE performPricing(
 
                return SCIP_OKAY;
             }
-
          }
       }
 

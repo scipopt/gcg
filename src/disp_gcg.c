@@ -408,11 +408,21 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputDepth)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemused)
 {  /*lint --e{715}*/
+   SCIP_Longint memused;
+   int i;
+
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MEMUSED) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetMemUsed(scip) + SCIPgetMemUsed(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MEMUSED);
+   memused = SCIPgetMemUsed(scip);
+   memused += SCIPgetMemUsed(GCGrelaxGetMasterprob(scip));
+   for ( i = 0; i < GCGrelaxGetNPricingprobs(scip); i++ )
+   {
+      memused += SCIPgetMemUsed(GCGrelaxGetPricingprob(scip, i));
+   }
+
+   SCIPdispLongint(file, memused, DISP_WIDT_MEMUSED);
 
    return SCIP_OKAY;
 }

@@ -106,12 +106,11 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "branch_orig.h"
+#include "branch_ryanfoster.h"
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "heur_gcgfeaspump.h"
 #include "heur_gcgrounding.h"
-
-
 
 
 

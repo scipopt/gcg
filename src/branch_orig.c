@@ -37,6 +37,8 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
+#define DEFAULT_ENFORCEBYCONS FALSE
+
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -68,7 +70,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-
+#if 0
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
@@ -80,18 +82,24 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    /* lower bound was changed */
    if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
    {
-      branchdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
-      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
-            vardata->data.origvardata.pricingvar, branchdata->newbound) );
+      //branchdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
+      assert(branchdata->oldbound < branchdata->newbound);
+      assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound);
+      if ( SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound )
+         SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+               vardata->data.origvardata.pricingvar, branchdata->newbound) );
    }
    /* upper bound was changed */
    else
    {
-      branchdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
-      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
-            vardata->data.origvardata.pricingvar, branchdata->newbound) );
+      //branchdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
+      assert(branchdata->oldbound > branchdata->newbound);
+      assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound);
+      if ( SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) != branchdata->newbound )
+         SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+               vardata->data.origvardata.pricingvar, branchdata->newbound) );
    }
-   
+#endif   
    return SCIP_OKAY;
 }
 
@@ -111,7 +119,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
 
    SCIPdebugMessage("branchDeactiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-
+#if 0
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
@@ -123,14 +131,16 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
    /* lower bound was changed */
    if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
    {
-      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
+      assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->oldbound);
+      //SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
    }
    /* upper bound was changed */
    else
    {
-      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
+      assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == branchdata->oldbound);
+      //SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
    }
-   
+#endif
    return SCIP_OKAY;
 }
 
@@ -262,12 +272,11 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    int nintvars;
    int i;
 
+   SCIP_Bool enforcebycons;
+
    SCIP_NODE* childup;
    SCIP_NODE* childdown;
-#if 0
-   SCIP_CONS* consup;
-   SCIP_CONS* consdown;
-#endif
+
    SCIP_CONS* origbranchup;
    SCIP_CONS* origbranchdown;
 
@@ -275,6 +284,9 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    GCG_BRANCHDATA* branchdowndata;
 
    SCIP_VARDATA* vardata;
+
+   char upname[SCIP_MAXSTRLEN];
+   char downname[SCIP_MAXSTRLEN];
 
 
    assert(branchrule != NULL);
@@ -285,6 +297,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIPdebugMessage("Execps method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
+
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
 
    /* get current sol */
    currentsol = GCGrelaxGetCurrentOrigSol(scip);
@@ -326,52 +340,65 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-#if 0
-   /* create corresponding constraints */
-   SCIP_CALL( SCIPcreateConsLinear(scip, &consup, "branch_up", 0, NULL, NULL, 
-         SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i])), SCIPinfinity(scip), 
-         TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-   SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, "branch_down", 0, NULL, NULL, 
-         -1.0 * SCIPinfinity(scip), SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i])),  
-         TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-   SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
-   SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
-#endif
-
-   SCIP_CALL( SCIPchgVarUbNode(scip, childdown, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
-   SCIP_CALL( SCIPchgVarLbNode(scip, childup, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
-
    SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
+
+   if ( enforcebycons )
+   {
+      /* enforce new bounds by linear constraints */
+      SCIP_CONS* consup;
+      SCIP_CONS* consdown;
+
+      /* create corresponding constraints */
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consup, "branch_up", 0, NULL, NULL, 
+            SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i])), SCIPinfinity(scip), 
+            TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, "branch_down", 0, NULL, NULL, 
+            -1.0 * SCIPinfinity(scip), SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i])),  
+            TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
+
+      /* add constraints to nodes */
+      SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
+      SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
+
+      /* release constraints */
+      SCIP_CALL( SCIPreleaseCons(scip, &consup) );
+      SCIP_CALL( SCIPreleaseCons(scip, &consdown) );
+   }
+   else
+   {
+      /* enforce new bounds by setting variable bounds */
+      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
+      SCIP_CALL( SCIPchgVarLbNode(scip, childup, vars[i], SCIPgetSolVal(scip, currentsol, vars[i])) );
+   }
 
    branchupdata->origvar = vars[i];
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
-   branchupdata->oldbound = 0.0;
+   branchupdata->oldbound = SCIPvarGetLbLocal(vars[i]);
 
    branchdowndata->origvar = vars[i];
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, SCIPgetSolVal(scip, currentsol, vars[i]));
-   branchdowndata->oldbound = 0.0;
+   branchdowndata->oldbound = SCIPvarGetUbLocal(vars[i]);
 
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, "branchup", childup, 
+   (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar), 
+      ">=", branchupdata->newbound);
+   (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar), 
+      "<=", branchdowndata->newbound);
+
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup, 
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, "branchdown", childdown, 
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, downname, childdown, 
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
-#if 0
-   SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
-#endif
    SCIP_CALL( SCIPaddConsNode(scip, childup, origbranchup, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
 
    /* release constraints */
-#if 0
-   SCIP_CALL( SCIPreleaseCons(scip, &consup) );
-   SCIP_CALL( SCIPreleaseCons(scip, &consdown) );
-#endif
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchdown) );
       
@@ -409,18 +436,18 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
-{
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   /* create inference branching rule data */
-   branchruledata = NULL;
-
+{   
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig, 
          branchExeclpOrig, branchExecpsOrig,
-         branchruledata) );
+         NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/enforcebycons",
+         "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
+         NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

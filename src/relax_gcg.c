@@ -29,6 +29,7 @@
 #include "struct_vardata.h"
 #include "type_branchgcg.h"
 #include "struct_branchgcg.h"
+#include "event_origvarbound.h"
 
 
 
@@ -346,6 +347,8 @@ SCIP_RETCODE checkIdenticalBlocks(
    int i;
    int j;
    int k;
+
+   int nrelevant;
    
 
    assert(scip != NULL);
@@ -359,6 +362,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       relaxdata->blockrepresentative[i] = i;
       relaxdata->nblocksidentical[i] = 1;
    }
+   nrelevant = 0;
 
    if ( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
       return SCIP_OKAY;
@@ -417,8 +421,12 @@ SCIP_RETCODE checkIdenticalBlocks(
       if ( relaxdata->blockrepresentative[i] == i )
       {
          SCIPdebugMessage("Block %d is relevant!\n", i);
+         nrelevant++;
       }
    }
+
+   printf("Matrix has %d blocks, %d %s relevant!\n", relaxdata->npricingprobs, nrelevant, 
+      (nrelevant == 1 ? "is" : "are"));
 
    return SCIP_OKAY;
 }
@@ -551,7 +559,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
       
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
+      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
 
       /* disable expensive presolving */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
@@ -1024,10 +1032,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
+   //printf("Debug solution is Feasible in current node %d: %d\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)), cutoff);
 
    /* update the lower bound of the current node */
    if ( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
    {
+      //printf("node's lower bound: %f\n", SCIPgetSolOrigObj(masterprob, NULL));
       SCIP_CALL( SCIPupdateLocalLowerbound(scip, SCIPgetSolOrigObj(masterprob, NULL)) );
    }
    else
@@ -2118,6 +2128,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) );
 
+   //SCIP_CALL( SCIPcreateSol(scip, origsol, (mastersol == NULL ? NULL : SCIPgetSolHeur(relaxdata->masterprob, mastersol))) );
    SCIP_CALL( SCIPcreateSol(scip, origsol, NULL) );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, relaxdata->npricingprobs) );
