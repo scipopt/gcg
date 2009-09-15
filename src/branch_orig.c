@@ -331,7 +331,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    if ( i == nbinvars + nintvars )
    {
-      printf("Original branching rule could not find a variable to branch on!\n");
+      SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 
