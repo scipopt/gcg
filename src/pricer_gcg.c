@@ -41,6 +41,8 @@
 
 #define DEFAULT_MAXVARSROUNDFARKAS 1
 #define DEFAULT_MAXVARSROUNDREDCOST INT_MAX
+#define DEFAULT_USESTABILIZATION TRUE
+#define DEFAULT_FACTORNEWREDCOST 0.2
 
 
 /*
@@ -56,6 +58,8 @@ struct SCIP_PricerData
    SCIP** pricingprobs;            /* pointers to the pricing problems */
    SCIP_Real* redcost;             /* array of reduced cost for the constraints of the master problem */
    SCIP_Real* redcostconv;         /* array of reduced cost for the convexity constraints */
+   SCIP_Real* oldredcost;          /* array of reduced cost for the constraints of the master problem */
+   SCIP_Real* oldredcostconv;      /* array of reduced cost for the convexity constraints */
    SCIP* origprob;                 /* the original program */
    SCIP_Real* solvals;             /* solution values of variables in the pricing problems */
    int* nvarsprob;                 /* number of variables created by the pricing probs */
@@ -79,6 +83,10 @@ struct SCIP_PricerData
    SCIP_VARTYPE vartype;
    int maxvarsroundfarkas;
    int maxvarsroundredcost;
+
+   /* stabilization parameters */
+   SCIP_Bool usestabilization;
+   SCIP_Real factornewredcost;
 };
 
 
@@ -773,6 +781,28 @@ SCIP_RETCODE performPricing(
    SCIPfreeBufferArray(scip, &tmpconvredcost);
    SCIPfreeBufferArray(scip, &permu);
 
+   /* save dual solutions of the master constraints in the oldredcost array for stabilization */
+   for ( i = 0; i < nmasterconss; i++ )
+   {
+      /* farkas pricing */
+      if ( pricetype == GCG_PRICETYPE_FARKAS )
+         pricerdata->oldredcost[i] = SCIPgetDualfarkasLinear(scip, masterconss[i]);
+      /* redcost pricing */
+      if ( pricetype == GCG_PRICETYPE_REDCOST )
+         pricerdata->oldredcost[i] = SCIPgetDualsolLinear(scip, masterconss[i]);
+   }
+
+   /* save dual solutions of the convexity constraints in the oldredcosconv array for stabilization */
+   for ( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
+      assert( GCGrelaxIsPricingprobRelevant(pricerdata->origprob, i) 
+         == (GCGrelaxGetConvCons(pricerdata->origprob, i) != NULL) );
+      if ( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_INIT )
+         pricerdata->oldredcostconv[i] = SCIPgetDualfarkasLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, i));
+      else
+         pricerdata->oldredcostconv[i] = SCIPgetDualsolLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, i));
+   }
+
    SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 
    //printf("Pricing: found %d new vars\n", nfoundvars);
@@ -858,6 +888,9 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    /* alloc memory for arrays of reduced cost */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcost), GCGrelaxGetNMasterConss(origprob)) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostconv), pricerdata->npricingprobs) );
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->oldredcost), GCGrelaxGetNMasterConss(origprob)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->oldredcostconv), pricerdata->npricingprobs) );
 
 
    /* alloc memory for solution values of variables in pricing problems */
@@ -972,6 +1005,8 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
    SCIPfreeMemoryArray(scip, &(pricerdata->redcost));
    SCIPfreeMemoryArray(scip, &(pricerdata->redcostconv));
+   SCIPfreeMemoryArray(scip, &(pricerdata->oldredcost));
+   SCIPfreeMemoryArray(scip, &(pricerdata->oldredcostconv));
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
    SCIPfreeMemoryArray(scip, &(pricerdata->nvarsprob));
 
@@ -1094,6 +1129,14 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
          &pricerdata->maxvarsroundfarkas, TRUE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/usestabilization",
+         "should the pricing procedure be stabilized?",
+         &pricerdata->usestabilization, FALSE, DEFAULT_USESTABILIZATION, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/factornewredcost",
+         "which factor should the new redcost values be multiplied with?",
+         &pricerdata->factornewredcost, TRUE, DEFAULT_FACTORNEWREDCOST, 0, 1, NULL, NULL) );
 
 
    return SCIP_OKAY;
