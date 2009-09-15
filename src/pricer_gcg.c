@@ -1183,7 +1183,7 @@ SCIP_RETCODE performPricing(
    {
       /* save dual solutions of the master constraints in the oldredcost array for stabilization */
       for ( i = 0; i < nmasterconss; i++ )
-         pricerdata->oldredcost[i] = SCIPgetDualsolLinear(scip, masterconss[i]);
+         pricerdata->oldredcost[i] = pricerdata->redcost[i];
       
       /* save dual solutions of the convexity constraints in the oldredcosconv array for stabilization */
       for ( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -1191,7 +1191,7 @@ SCIP_RETCODE performPricing(
          assert(GCGrelaxIsPricingprobRelevant(origprob, i) == (GCGrelaxGetConvCons(origprob, i) != NULL));
 
          if ( GCGrelaxIsPricingprobRelevant(origprob, i) )
-            pricerdata->oldredcostconv[i] = SCIPgetDualsolLinear(scip, GCGrelaxGetConvCons(origprob, i));
+            pricerdata->oldredcostconv[i] = pricerdata->redcostconv[i];
       }
    }
 
