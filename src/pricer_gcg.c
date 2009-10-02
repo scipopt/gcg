@@ -332,8 +332,6 @@ SCIP_RETCODE performPricing(
    assert(scip != NULL);
    assert(pricer != NULL);
 
-   SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
-
    /* get pricer data */
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
