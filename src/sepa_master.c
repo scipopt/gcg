@@ -48,8 +48,6 @@
  * Data structures
  */
 
-/* TODO: fill in the necessary separator data */
-
 /** separator data */
 struct SCIP_SepaData
 {
@@ -313,7 +311,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIPdebugMessage("%d cuts are in the original LP!\n", SCIPgetNCutsApplied(origscip));
    SCIPdebugMessage("%d cuts are in the master LP!\n", SCIPgetNCutsApplied(scip));
 
-   *result = SCIP_DIDNOTRUN;
+   *result = SCIP_DIDNOTFIND;
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
@@ -326,7 +324,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
 
-   origcutsfile = fopen("origcuts.txt", "w");
+   //origcutsfile = fopen("origcuts.txt", "w");
    //printf("origcutsfile %s NULL\n", (origcutsfile == NULL ? "==" : "!="));
    
 
@@ -379,23 +377,25 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
-      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE) );
+      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, TRUE) );
       sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
       SCIProwCapture(sepadata->mastercuts[sepadata->nmastercuts]);
       sepadata->nmastercuts++;
 
 #ifdef SCIP_DEBUG
       //SCIPdebugMessage("Cut %d:\n", i);
-      SCIP_CALL( SCIPprintRow(origscip, origcut, origcutsfile) );
+      //SCIP_CALL( SCIPprintRow(origscip, origcut, origcutsfile) );
       //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
       //SCIPdebugMessage("\n\n");
 #endif 
 
       SCIPfreeBufferArray(scip, &rowvars);
-      
    }
+
+   if ( ncuts > 0 )
+      *result = SCIP_SEPARATED;
    
-   fclose(origcutsfile);
+   //fclose(origcutsfile);
 
    SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
    SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
@@ -404,7 +404,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    assert(sepadata->norigcuts == sepadata->nmastercuts );
 
+#if 0
    SCIP_CALL( checkCutConsistency(scip) );
+#endif
 
    return SCIP_OKAY;
 }

@@ -96,7 +96,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
 
    SCIP_CALL( SCIPincludeSepaClique(scip) );
-   SCIP_CALL( SCIPincludeSepaCmir(scip) );
    SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
 #if USESEPA
@@ -107,6 +106,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
+   SCIP_CALL( SCIPincludeSepaCmirgcg(scip) );
+   SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );

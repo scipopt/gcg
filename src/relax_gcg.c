@@ -106,9 +106,12 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
    {
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
-      if ((*vardata)->data.origvardata.coefs != NULL)
+      if ((*vardata)->data.origvardata.ncoefs > 0)
       {
+         assert((*vardata)->data.origvardata.coefs != NULL);
+         assert((*vardata)->data.origvardata.linkconss != NULL);
          SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.coefs));
+         SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.linkconss));
       }
       
    }
@@ -128,6 +131,29 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
 /*
  * Local methods
  */
+
+static
+const char decpowerchar[] = {' ', 'k', 'M', 'G', 'T', 'P', 'E'};
+#define MAXDECPOWER 6
+
+/** displays a long integer in decimal form fitting in a given width */
+static
+void dispLongint(
+   SCIP_Longint          val,                /**< value to display */
+   char*                 format
+   )
+{
+   int decpower;
+
+   decpower = 0;
+   while( val >= 1000 && decpower < MAXDECPOWER )
+   {
+      decpower++;
+      val /= 1000;
+   }
+   (void) SCIPsnprintf(format, SCIP_MAXSTRLEN, "%"SCIP_LONGINT_FORMAT"%c", val, decpowerchar[decpower]);
+}
+
 
 static
 SCIP_RETCODE ensureSizeMasterConss(
@@ -506,7 +532,7 @@ SCIP_RETCODE createMaster(
    int c;
    int v;
    int b;
-
+   char format[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -515,6 +541,9 @@ SCIP_RETCODE createMaster(
    assert(relaxdata != NULL);
 
    SCIPdebugMessage("Creating Master Problem...\n");
+
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: begin, origmem = %s\n", format);
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 5;
@@ -529,6 +558,10 @@ SCIP_RETCODE createMaster(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
 
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: created prob, origmem = %s\n", format);
+   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
+   printf("createMaster: created prob, mastermem = %s\n", format);
 
    /* activate the pricer */
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
@@ -541,6 +574,9 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
    /* array for saving convexity constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
+
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: created arrays, origmem = %s\n", format);
 
    for ( i = 0; i < npricingprobs; i++ )
    {
@@ -595,6 +631,9 @@ SCIP_RETCODE createMaster(
    }
    SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), 
          SCIPblkmem(scip), 10*SCIPgetNVars(scip)) );
+
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: created hashmaps, origmem = %s\n", format);
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
@@ -712,6 +751,12 @@ SCIP_RETCODE createMaster(
       }
    }
 
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: copied conss, origmem = %s\n", format);
+   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
+   printf("createMaster: copied conss, mastermem = %s\n", format);
+
+
    /* for original variables, save the coefficiants in the master problem in their vardata */
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
@@ -722,6 +767,8 @@ SCIP_RETCODE createMaster(
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
       assert(vardata->data.origvardata.coefs == NULL);
 
+      vardata->data.origvardata.ncoefs = 0;
+#if 0
       /* create array for saving all the coefficiants of this variable for all the constraints */
       SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 
             relaxdata->nmasterconss) );
@@ -730,6 +777,7 @@ SCIP_RETCODE createMaster(
       {
          vardata->data.origvardata.coefs[i] = 0;
       }
+#endif
    }
 
    /* save coefs in the vardata */   
@@ -740,13 +788,33 @@ SCIP_RETCODE createMaster(
       vals = SCIPgetValsLinear(scip, relaxdata->linearmasterconss[i]);
       for ( v = 0; v < nvars; v++ )
       {
+         assert(!SCIPisZero(scip, vals[v]));
          vardata = SCIPvarGetData(vars[v]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         if ( vardata->data.origvardata.ncoefs == 0 ) 
+         {
+            SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.linkconss), 1) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), vardata->data.origvardata.ncoefs+1) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.linkconss), vardata->data.origvardata.ncoefs+1) );
+         }
          assert(vardata->data.origvardata.coefs != NULL);
-         vardata->data.origvardata.coefs[i] = vals[v];
+         assert(vardata->data.origvardata.linkconss != NULL);
+         vardata->data.origvardata.coefs[vardata->data.origvardata.ncoefs] = vals[v];
+         vardata->data.origvardata.linkconss[vardata->data.origvardata.ncoefs] = relaxdata->masterconss[i];
+         vardata->data.origvardata.ncoefs++;
       }
    }
+
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: saved coefs, origmem = %s\n", format);
+   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
+   printf("createMaster: saved coefs, mastermem = %s\n", format);
+
 
    SCIP_CALL( checkIdenticalBlocks(scip, relax) );
 
@@ -763,6 +831,11 @@ SCIP_RETCODE createMaster(
    }
 
    SCIP_CALL( checkMasterStructure(scip, relax) );
+
+   dispLongint(SCIPgetMemUsed(scip), format);
+   printf("createMaster: finished, origmem = %s\n", format);
+   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
+   printf("createMaster: finished, mastermem = %s\n", format);
 
    return SCIP_OKAY;
 }
@@ -1394,6 +1467,7 @@ SCIP_RETCODE GCGrelaxCreateOrigVardata(
    vardata->blocknr = -1;
    vardata->data.origvardata.pricingvar = NULL;
    vardata->data.origvardata.coefs = NULL;
+   vardata->data.origvardata.linkconss = NULL;
    vardata->data.origvardata.ncoefs = 0;
    vardata->data.origvardata.nmastervars = 0;
    vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
@@ -2157,9 +2231,9 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
          vardata = SCIPvarGetData(mastervars[i]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->data.mastervardata.norigvars > 0);
-         assert(vardata->data.mastervardata.origvars != NULL);
-         assert(vardata->data.mastervardata.origvals != NULL);
+         assert(vardata->data.mastervardata.norigvars >= 0);
+         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
 
          if ( vardata->blocknr == -1 )
          {
@@ -2224,9 +2298,10 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
          vardata = SCIPvarGetData(mastervars[i]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->data.mastervardata.norigvars > 0);
-         assert(vardata->data.mastervardata.origvars != NULL);
-         assert(vardata->data.mastervardata.origvals != NULL);
+         assert(vardata->data.mastervardata.norigvars >= 0);
+         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+
          
          if ( vardata->blocknr == -1 )
          {
