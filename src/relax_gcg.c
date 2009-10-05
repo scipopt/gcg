@@ -281,13 +281,25 @@ SCIP_RETCODE pricingprobsAreIdentical(
    for ( i = 0; i < nvars1; i++ )
    {
       if ( SCIPvarGetObj(vars1[i]) != SCIPvarGetObj(vars2[i]) )
+      {
+         //printf("obj different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
+      }
       if ( SCIPvarGetLbOriginal(vars1[i]) != SCIPvarGetLbOriginal(vars2[i]) )
+      {
+         //printf("lb different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
+      }
       if ( SCIPvarGetUbOriginal(vars1[i]) != SCIPvarGetUbOriginal(vars2[i]) )
+      {
+         //printf("ub different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
+      }
       if ( SCIPvarGetType(vars1[i]) != SCIPvarGetType(vars2[i]) )
+      {
+         //printf("type different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
+      }
       
       vardata1 = SCIPvarGetData(vars1[i]);
       vardata2 = SCIPvarGetData(vars2[i]);
@@ -301,7 +313,10 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
       if ( SCIPvarGetObj(vardata1->data.pricingvardata.origvars[0]) 
          != SCIPvarGetObj(vardata2->data.pricingvardata.origvars[0]) )
+      {
+         //printf("orig obj different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
+      }
 
       vardata1 = SCIPvarGetData(vardata1->data.pricingvardata.origvars[0]);
       vardata2 = SCIPvarGetData(vardata2->data.pricingvardata.origvars[0]);
@@ -313,8 +328,10 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
       if ( !realArraysAreEqual(vardata1->data.origvardata.coefs, vardata1->data.origvardata.ncoefs,
             vardata2->data.origvardata.coefs, vardata2->data.origvardata.ncoefs) )
+      {
+         //printf("coefs different between var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
-
+      }
       SCIP_CALL( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
 
    }
@@ -327,21 +344,35 @@ SCIP_RETCODE pricingprobsAreIdentical(
    for ( i = 0; i < nconss; i++ )
    {
       if ( SCIPgetNVarsLinear(scip1, conss1[i]) != SCIPgetNVarsLinear(scip2, conss2[i]) )
+      {
+         //printf("nvars different between cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
+      }
       if ( SCIPgetLhsLinear(scip1, conss1[i]) != SCIPgetLhsLinear(scip2, conss2[i]) )
+      {
+         //printf("lhs different between cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
+      }
       if ( SCIPgetRhsLinear(scip1, conss1[i]) != SCIPgetRhsLinear(scip2, conss2[i]) )
+      {
+         //printf("rhs different between cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
+      }
       if ( !realArraysAreEqual(SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
             SCIPgetValsLinear(scip2, conss2[i]), SCIPgetNVarsLinear(scip2, conss2[i])) )
+      {
+         //printf("coefs different between cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
-      
+      }
       vars1 = SCIPgetVarsLinear(scip1, conss1[i]);
       vars2 = SCIPgetVarsLinear(scip2, conss2[i]);
       for ( j = 0; j < SCIPgetNVarsLinear(scip1, conss1[i]); j++ )
       {
          if ( (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars1[j]) != vars2[j] )
+         {
+            //printf("vars different between cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
             return SCIP_OKAY;
+         }
       }
 
    }
@@ -390,6 +421,19 @@ SCIP_RETCODE checkIdenticalBlocks(
 
    if ( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
       return SCIP_OKAY;
+
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      SCIP_VAR** pricingvars;
+      int npricingvars;
+
+      SCIP_CALL( SCIPgetVarsData(relaxdata->pricingprobs[i], &pricingvars, &npricingvars, NULL, NULL, NULL, NULL) );
+      //printf("\nVariables in block %d:\n", i);
+      for ( j = 0; j < npricingvars; j++ )
+      {
+         //printf("%s, ", SCIPvarGetName(pricingvars[j]));
+      }
+   }
 
    for ( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -1178,7 +1222,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
  
    /* disable output to console */
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", SCIP_VERBLEVEL_FULL) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/curdualbound/active", 2) );
 

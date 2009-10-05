@@ -43,8 +43,6 @@ struct GCG_BranchData
 {
    SCIP_VAR*          var1;                  /**< first original variable on which the branching is done */
    SCIP_VAR*          var2;                  /**< second original variable on which the branching is done */
-   int                var1idx;               /**< the index of the first variable in mastervars' vardata */
-   int                var2idx;               /**< the index of the second variable in mastervars' vardata */
    SCIP_Bool          same;                  /**< should each master var contain either both or none of the vars? */
    int                blocknr;
    SCIP_CONS*         pricecons;
@@ -127,7 +125,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    SCIP* pricingscip;
 
    assert(scip != NULL);
-   assert(branchdata != NULL);
+    assert(branchdata != NULL);
    assert(branchdata->var1 != NULL);
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
@@ -141,8 +139,9 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
-   SCIP_CALL( SCIPdelCons(pricingscip, branchdata->pricecons) );
    assert(branchdata->pricecons != NULL);
+   SCIP_CALL( SCIPdelCons(pricingscip, branchdata->pricecons) );
+   assert(branchdata->pricecons == NULL);
    
    return SCIP_OKAY;
 }
@@ -153,9 +152,12 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    SCIP* origscip;
    SCIP_VARDATA* vardata;
    SCIP_VAR** vars;
+   SCIP_Real val1;
+   SCIP_Real val2;
    int nvars;
    int propcount;
    int i;
+   int j;
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -193,26 +195,33 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
          if( branchdata->blocknr != vardata->blocknr )
             continue;
 
-         assert(vardata->data.mastervardata.origvars[branchdata->var1idx] == branchdata->var1);
-         assert(vardata->data.mastervardata.origvars[branchdata->var2idx] == branchdata->var2);
-         assert(SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var1idx], 1.0)
-            || SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var1idx], 0.0));
-         assert(SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var2idx], 1.0)
-            || SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var2idx], 0.0));
+         val1 = 0.0;
+         val2 = 0.0;
+         for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+         {
+            if( vardata->data.mastervardata.origvars[j] == branchdata->var1 )
+            {
+               assert(SCIPisEQ(scip, vardata->data.mastervardata.origvals[j], 1.0));
+               val1 = vardata->data.mastervardata.origvals[j];
+               continue;
+            }
+            if( vardata->data.mastervardata.origvars[j] == branchdata->var2 )
+            {
+               assert(SCIPisEQ(scip, vardata->data.mastervardata.origvals[j], 1.0));
+               val2 = vardata->data.mastervardata.origvals[j];
+            }
+         }
 
-         /* if branching enforces that both original vars are either both contained or none of the is contained
+         /* if branching enforces that both original vars are either both contained or none of them is contained
           * and the current master variable has different values for both of them, fix the variable to 0 */
-         if( branchdata->same && !SCIPisEQ(scip, 
-               vardata->data.mastervardata.origvals[branchdata->var1idx],
-               vardata->data.mastervardata.origvals[branchdata->var2idx]) )
+         if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
          {
             SCIPchgVarUb(scip, vars[i], 0.0);
             propcount++;
          }
          /* if branching enforces that both original vars must be in different mastervars, fix all 
           * master variables to 0 that contain both */
-         if( !branchdata->same && SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var1idx], 1.0)
-            && SCIPisEQ(scip, vardata->data.mastervardata.origvals[branchdata->var2idx], 1.0) )
+         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val1, 1.0) )
          {
             SCIPchgVarUb(scip, vars[i], 0.0);
             propcount++;
@@ -290,6 +299,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    GCG_BRANCHDATA* branchdifferdata;
 
    SCIP_Bool feasible;
+   SCIP_Bool contained;
 
    SCIP_VAR** branchcands;
    SCIP_Real* branchcandsfrac;
@@ -310,6 +320,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    int o1;
    int o2;
    int i;
+   int j;
+
+   SCIP_VAR* mvar1;
+   SCIP_VAR* mvar2;
+   SCIP_VAR* ovar1;
+   SCIP_VAR* ovar2;
 
    char samename[SCIP_MAXSTRLEN];
    char differname[SCIP_MAXSTRLEN];
@@ -345,61 +361,92 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    v2 = 0;
    o1 = 0;
    o2 = 0;
+   ovar1 = NULL;
+   ovar2 = NULL;
 
    feasible = FALSE;
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
    {
-      vardata1 = SCIPvarGetData(branchcands[v1]);
+      mvar1 = branchcands[v1];
+      vardata1 = SCIPvarGetData(mvar1);
       assert(vardata1 != NULL);
       assert(vardata1->vartype == GCG_VARTYPE_MASTER);
       for( o1 = 0; o1 < vardata1->data.mastervardata.norigvars && !feasible; o1++ )
       {
-         if( SCIPisZero(scip, vardata1->data.mastervardata.origvals[o1]) )
-         {
-            continue;
-         }
+         ovar1 = vardata1->data.mastervardata.origvars[o1];
          //SCIPdebugMessage("var v1 = %s contains %f of var o1 = %s!\n", SCIPvarGetName(branchcands[v1]),
          //   vardata1->data.mastervardata.origvals[o1], SCIPvarGetName(vardata1->data.mastervardata.origvars[o1]));
          /* v1 contains o1, look for v2 */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
-            vardata2 = SCIPvarGetData(branchcands[v2]);
+            mvar2 = branchcands[v2];
+            vardata2 = SCIPvarGetData(mvar2);
             assert(vardata2 != NULL);
             assert(vardata2->vartype == GCG_VARTYPE_MASTER);
-            assert(vardata1->data.mastervardata.norigvars == vardata2->data.mastervardata.norigvars);
-            assert(vardata1->data.mastervardata.origvars[o1] == vardata2->data.mastervardata.origvars[o1]);
-            if( SCIPisZero(scip, vardata2->data.mastervardata.origvals[o1]) )
+            contained = FALSE;
+            for ( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
             {
-               continue;
+               if( vardata2->data.mastervardata.origvars[j] == ovar1 )
+               {
+                  contained = TRUE;
+                  //SCIPdebugMessage("var v2 = %s contains %f of var o1 = %s!\n", SCIPvarGetName(branchcands[v2]),
+                  //   vardata2->data.mastervardata.origvals[j], SCIPvarGetName(vardata2->data.mastervardata.origvars[j]));
+                  break;
+               }
             }
-            //SCIPdebugMessage("var v2 = %s contains %f of var o1 = %s!\n", SCIPvarGetName(branchcands[v2]),
-            //   vardata2->data.mastervardata.origvals[o1], SCIPvarGetName(vardata2->data.mastervardata.origvars[o1]));
+
+            if (!contained)
+               continue;
 
             /* v2 also contains o1, now look for o2 */
             for( o2 = 0; o2 < vardata1->data.mastervardata.norigvars && !feasible; o2++ )
             {
-               assert(vardata1->data.mastervardata.origvars[o2] == vardata2->data.mastervardata.origvars[o2]);
-               /* if o1 == o2 or v1 and v2 contain both o2 or none of v1, v2 contains o2, continue */
-               if( o1 == o2 || (SCIPisZero(scip, vardata1->data.mastervardata.origvals[o2]) 
-                     == SCIPisZero(scip, vardata2->data.mastervardata.origvals[o2])))
-               {
+               ovar2 = vardata1->data.mastervardata.origvars[o2];
+               if ( ovar2 == ovar1 ) 
                   continue;
-               }
-               //SCIPdebugMessage("var v1 = %s contains %f of var o2 = %s!\n", SCIPvarGetName(branchcands[v1]),
-               //   vardata1->data.mastervardata.origvals[o2], SCIPvarGetName(vardata1->data.mastervardata.origvars[o2]));
-               //SCIPdebugMessage("var v2 = %s contains %f of var o2 = %s!\n", SCIPvarGetName(branchcands[v2]),
-               //   vardata2->data.mastervardata.origvals[o2], SCIPvarGetName(vardata2->data.mastervardata.origvars[o2]));
 
-               /* we actually found v1, v2, o1, o2 such as described above!! */
-               assert(SCIPisZero(scip, vardata1->data.mastervardata.origvals[o2])
-                  || SCIPisZero(scip, vardata2->data.mastervardata.origvals[o2]));
-               assert(SCIPisZero(scip, vardata1->data.mastervardata.origvals[o2]-1)
-                  || SCIPisZero(scip, vardata2->data.mastervardata.origvals[o2]-1));
-               assert(SCIPisZero(scip, vardata1->data.mastervardata.origvals[o1]-1)
-                  && SCIPisZero(scip, vardata2->data.mastervardata.origvals[o1]-1));
-               
+               contained = FALSE;
+               for ( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
+               {
+                  if( vardata2->data.mastervardata.origvars[j] == ovar2 )
+                  {
+                     contained = TRUE;
+                     break;
+                  }
+               }
+
+               if ( contained )
+                  continue;
+
                feasible = TRUE;
             }
+
+
+            if ( !feasible )
+            {
+               for( o2 = 0; o2 < vardata2->data.mastervardata.norigvars && !feasible; o2++ )
+               {
+                  ovar2 = vardata2->data.mastervardata.origvars[o2];
+                  if ( ovar2 == ovar1 ) 
+                     continue;
+
+                  contained = FALSE;
+                  for ( j = 0; j < vardata1->data.mastervardata.norigvars; j++ )
+                  {
+                     if( vardata1->data.mastervardata.origvars[j] == ovar2 )
+                     {
+                        contained = TRUE;
+                        break;
+                     }
+                  }
+                  
+                  if ( contained )
+                     continue;
+                  
+                  feasible = TRUE;
+               }
+            }
+
                
                
          }
@@ -418,14 +465,17 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    else
    {
       SCIPdebugMessage("Ryanfoster branching rule: branch on original variables %s and %s!\n",
-         SCIPvarGetName(vardata1->data.mastervardata.origvars[o1]),
-         SCIPvarGetName(vardata1->data.mastervardata.origvars[o2]));
+         SCIPvarGetName(ovar1),
+         SCIPvarGetName(ovar2));
 
       /*printf("Master variables: %s (%f/%f) and %s (%f/%f).\n", SCIPvarGetName(branchcands[v1]),
          vardata1->data.mastervardata.origvals[o1], vardata1->data.mastervardata.origvals[o2],
          SCIPvarGetName(branchcands[v2]), vardata2->data.mastervardata.origvals[o1], 
          vardata2->data.mastervardata.origvals[o2]);*/
    }
+
+   assert(ovar1 != NULL);
+   assert(ovar2 != NULL);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childsame, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -434,18 +484,14 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    SCIP_CALL( SCIPallocMemory(scip, &branchsamedata) );
    SCIP_CALL( SCIPallocMemory(scip, &branchdifferdata) );
 
-   branchsamedata->var1 = vardata1->data.mastervardata.origvars[o1];
-   branchsamedata->var2 = vardata1->data.mastervardata.origvars[o2];
-   branchsamedata->var1idx = o1;
-   branchsamedata->var2idx = o2;
+   branchsamedata->var1 = ovar1;
+   branchsamedata->var2 = ovar2;
    branchsamedata->same = TRUE;
    branchsamedata->blocknr = vardata1->blocknr;
    branchsamedata->pricecons = NULL;
 
-   branchdifferdata->var1 = vardata1->data.mastervardata.origvars[o1];
-   branchdifferdata->var2 = vardata1->data.mastervardata.origvars[o2];
-   branchdifferdata->var1idx = o1;
-   branchdifferdata->var2idx = o2;
+   branchdifferdata->var1 = ovar1;
+   branchdifferdata->var2 = ovar2;
    branchdifferdata->same = FALSE;
    branchdifferdata->blocknr = vardata1->blocknr;
    branchdifferdata->pricecons = NULL;
