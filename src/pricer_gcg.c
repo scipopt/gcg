@@ -352,9 +352,10 @@ SCIP_RETCODE performPricing(
    SCIP_CALL( checkVarBounds(scip) );
 #endif
 
+#if 1
    if ( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
       printf("nvars = %d, current lowerbound = %g\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip));
-
+#endif
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);

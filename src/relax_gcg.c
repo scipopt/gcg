@@ -133,29 +133,6 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
  */
 
 static
-const char decpowerchar[] = {' ', 'k', 'M', 'G', 'T', 'P', 'E'};
-#define MAXDECPOWER 6
-
-/** displays a long integer in decimal form fitting in a given width */
-static
-void dispLongint(
-   SCIP_Longint          val,                /**< value to display */
-   char*                 format
-   )
-{
-   int decpower;
-
-   decpower = 0;
-   while( val >= 1000 && decpower < MAXDECPOWER )
-   {
-      decpower++;
-      val /= 1000;
-   }
-   (void) SCIPsnprintf(format, SCIP_MAXSTRLEN, "%"SCIP_LONGINT_FORMAT"%c", val, decpowerchar[decpower]);
-}
-
-
-static
 SCIP_RETCODE ensureSizeMasterConss(
    SCIP*                 scip,
    SCIP_RELAXDATA*       relaxdata,
@@ -576,7 +553,6 @@ SCIP_RETCODE createMaster(
    int c;
    int v;
    int b;
-   char format[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -585,9 +561,6 @@ SCIP_RETCODE createMaster(
    assert(relaxdata != NULL);
 
    SCIPdebugMessage("Creating Master Problem...\n");
-
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: begin, origmem = %s\n", format);
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 5;
@@ -602,10 +575,6 @@ SCIP_RETCODE createMaster(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
 
    SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL) );
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: created prob, origmem = %s\n", format);
-   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
-   printf("createMaster: created prob, mastermem = %s\n", format);
 
    /* activate the pricer */
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
@@ -618,9 +587,6 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
    /* array for saving convexity constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
-
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: created arrays, origmem = %s\n", format);
 
    for ( i = 0; i < npricingprobs; i++ )
    {
@@ -675,9 +641,6 @@ SCIP_RETCODE createMaster(
    }
    SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), 
          SCIPblkmem(scip), 10*SCIPgetNVars(scip)) );
-
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: created hashmaps, origmem = %s\n", format);
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
@@ -795,12 +758,6 @@ SCIP_RETCODE createMaster(
       }
    }
 
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: copied conss, origmem = %s\n", format);
-   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
-   printf("createMaster: copied conss, mastermem = %s\n", format);
-
-
    /* for original variables, save the coefficiants in the master problem in their vardata */
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
@@ -854,12 +811,6 @@ SCIP_RETCODE createMaster(
       }
    }
 
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: saved coefs, origmem = %s\n", format);
-   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
-   printf("createMaster: saved coefs, mastermem = %s\n", format);
-
-
    SCIP_CALL( checkIdenticalBlocks(scip, relax) );
 
    for ( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -876,10 +827,8 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( checkMasterStructure(scip, relax) );
 
-   dispLongint(SCIPgetMemUsed(scip), format);
-   printf("createMaster: finished, origmem = %s\n", format);
-   dispLongint(SCIPgetMemUsed(relaxdata->masterprob), format);
-   printf("createMaster: finished, mastermem = %s\n", format);
+   if ( SCIPisObjIntegral(scip) )
+      SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
 
    return SCIP_OKAY;
 }
@@ -1015,7 +964,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
    /* free master problem */
-   SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
+   //SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free pricing problems */
