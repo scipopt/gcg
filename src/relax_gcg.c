@@ -717,7 +717,7 @@ SCIP_RETCODE createMaster(
                (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(bufconss[c]));
                SCIP_CALL( SCIPcopyCons(relaxdata->pricingprobs[b], &newcons, name, conshdlrs[i],
                      scip, bufconss[c], relaxdata->hashorig2pricingvar[b], 
-                     TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, &success) );
+                     TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, &success) );
 
                if ( success )
                {

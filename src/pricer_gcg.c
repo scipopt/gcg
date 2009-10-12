@@ -544,6 +544,8 @@ SCIP_RETCODE performPricing(
          SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], varname, NULL, FALSE) );
 
          SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+
+         SCIP_CALL( SCIPwriteParams(pricerdata->pricingprobs[prob], "pricing.set", TRUE, TRUE) );
       }
 #endif
 
