@@ -285,7 +285,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int ncols;
    SCIP_Real* vals;
    SCIP_SEPADATA* sepadata;
-   FILE* origcutsfile;
 
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -323,10 +322,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
-
-   //origcutsfile = fopen("origcuts.txt", "w");
-   //printf("origcutsfile %s NULL\n", (origcutsfile == NULL ? "==" : "!="));
-   
 
    /* save cuts in the origcuts array in the separator data */
    assert(sepadata->norigcuts == sepadata->nmastercuts);
@@ -384,7 +379,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
 #ifdef SCIP_DEBUG
       //SCIPdebugMessage("Cut %d:\n", i);
-      //SCIP_CALL( SCIPprintRow(origscip, origcut, origcutsfile) );
       //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
       //SCIPdebugMessage("\n\n");
 #endif 
@@ -395,8 +389,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    if ( ncuts > 0 )
       *result = SCIP_SEPARATED;
    
-   //fclose(origcutsfile);
-
    SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
    SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 

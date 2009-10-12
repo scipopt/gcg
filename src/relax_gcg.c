@@ -1065,6 +1065,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_RELAXDATA* relaxdata;
    SCIP_Bool cutoff;
    SCIP_Longint oldnnodes;
+   SCIP_Real timelimit;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1092,6 +1093,13 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    SCIPdebugMessage("Solve master LP.\n");
    /* solve the next node in the master problem */
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+   if ( !SCIPisInfinity(scip, timelimit) )
+   {
+      SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "limits/time", 
+            timelimit - SCIPgetTotalTime(scip)) );
+      SCIPdebugMessage("timelimit for master set to %f!\n", timelimit - SCIPgetTotalTime(scip));
+   }
    SCIP_CALL( SCIPsolve(masterprob) );
 
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );

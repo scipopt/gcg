@@ -15,6 +15,7 @@
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 #define DEBUG_PRICING
+//#define DEBUG_PRICING_ALL_OUTPUT
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
  * @brief  pricer for generic column generation, solves the pricing problem as a MIP
@@ -283,7 +284,8 @@ static
 SCIP_RETCODE performPricing(
    SCIP*                 scip,               /* SCIP data structure */
    SCIP_PRICER*          pricer,             /* the pricer */
-   GCG_PRICETYPE         pricetype           /* type of the pricing */
+   GCG_PRICETYPE         pricetype,          /* type of the pricing */
+   SCIP_RESULT*          result              /* result pointer */
    )
 {
    SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
@@ -318,7 +320,7 @@ SCIP_RETCODE performPricing(
 
    SCIP_Real objcoeff;
    SCIP_Real conscoeff;
-
+   SCIP_Real timelimit;
 
    SCIP_ROW** mastercuts;
    int nmastercuts;
@@ -342,6 +344,8 @@ SCIP_RETCODE performPricing(
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
 
+   assert(result != NULL || pricetype == GCG_PRICETYPE_FARKAS);
+
    if ( pricetype == GCG_PRICETYPE_REDCOST )
       pricerdata->redcostcalls++;
    if ( pricetype == GCG_PRICETYPE_FARKAS )
@@ -358,7 +362,7 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING
    if ( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
    {
-      printf("nvars = %d, current lowerbound = %g\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip));
+      printf("nvars = %d, current lowerbound = %g, time = %f\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip));
    }
 #endif
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
@@ -537,7 +541,7 @@ SCIP_RETCODE performPricing(
       /* set objective limit, such that only solutions with negative reduced costs are accepted */
       //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->redcostconv[prob]) );
 
-#ifdef DEBUG_PRICING
+#ifdef DEBUG_PRICING_ALL_OUTPUT
       if ( pricetype == GCG_PRICETYPE_REDCOST )
       {
          (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
@@ -551,6 +555,14 @@ SCIP_RETCODE performPricing(
 
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
+
+      /* set time limit */
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+      if ( !SCIPisInfinity(scip, timelimit) )
+      {
+         SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
+               timelimit - SCIPgetTotalTime(scip)) );
+      }
 
       /* start clock measuring the transformation effort */
       SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
@@ -592,7 +604,7 @@ SCIP_RETCODE performPricing(
       SCIP_CALL( SCIPstopClock(scip, pricerdata->subsolveclock) );
       SCIP_CALL( SCIPstartClock(scip, pricerdata->owneffortclock) );
 
-#ifdef DEBUG_PRICING
+#ifdef DEBUG_PRICING_ALL_OUTPUT
       if ( pricetype == GCG_PRICETYPE_REDCOST )
       {
          SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "display/verblevel", 0) );
@@ -604,12 +616,23 @@ SCIP_RETCODE performPricing(
       assert( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL
          || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_GAPLIMIT
          || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_USERINTERRUPT 
-         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE );
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_TIMELIMIT );
       /** @todo handle userinterrupt: set result pointer (and lowerbound), handle other solution states */
-   
-      nsols = SCIPgetNSols(pricerdata->pricingprobs[prob]);
-      sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
-      //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
+
+      if ( SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_USERINTERRUPT
+         || SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_TIMELIMIT )
+      {
+         if ( result != NULL ) 
+            *result = SCIP_DIDNOTRUN;
+         nsols = 0;
+      } 
+      else
+      {
+         nsols = SCIPgetNSols(pricerdata->pricingprobs[prob]);
+         sols = SCIPgetSols(pricerdata->pricingprobs[prob]);
+         //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
+      }
 
       for ( j = 0; j < nsols && 
                (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
@@ -867,7 +890,7 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING
    if ( pricetype == GCG_PRICETYPE_REDCOST )
    {
-      printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + pricerdata->npricingprobs * bestredcost, bestredcost);
+      //printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + pricerdata->npricingprobs * bestredcost, bestredcost);
    }
 #endif
 
@@ -1143,7 +1166,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
    //printf("pricerredcost\n");
-   retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST);
+   retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST, result);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
 
@@ -1171,7 +1194,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
 
    //printf("pricerfarkas\n");
-   retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS);
+   retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
 
