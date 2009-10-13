@@ -54,6 +54,7 @@ struct GCG_BranchData
  * Callback methods for enforcing branching constraints
  */
 
+#if 0
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
@@ -70,7 +71,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-#if 0
+
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
@@ -99,10 +100,14 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
          SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
                vardata->data.origvardata.pricingvar, branchdata->newbound) );
    }
-#endif   
+
    return SCIP_OKAY;
 }
+#else
+#define branchActiveMasterOrig NULL
+#endif
 
+#if 0
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
 {
@@ -119,7 +124,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
 
    SCIPdebugMessage("branchDeactiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-#if 0
+
    /* get vardata*/
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
@@ -140,10 +145,14 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
       assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == branchdata->oldbound);
       //SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
    }
-#endif
+
    return SCIP_OKAY;
 }
+#else
+#define branchDeactiveMasterOrig NULL
+#endif
 
+#if 0
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
 {
@@ -167,7 +176,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
    *result = SCIP_DIDNOTFIND;
-#if 0
+
    propcount = 0;
 
    vars = SCIPgetVars(scip);
@@ -227,10 +236,12 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
    {
       *result = SCIP_REDUCEDDOM;
    }
-#endif
 
    return SCIP_OKAY;
 }
+#else
+#define branchPropMasterOrig NULL
+#endif
 
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)

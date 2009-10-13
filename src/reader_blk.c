@@ -674,6 +674,13 @@ SCIP_RETCODE readBLKFile(
 static
 SCIP_DECL_READERREAD(readerReadBlk)
 {  
+   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
+   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
+   SCIP_CALL( SCIPincludeDispGcg(scip) );
+   SCIP_CALL( SCIPautoselectDisps(scip) );
+
    SCIP_CALL( SCIPreadBlk(scip, reader, filename, result) );
 
    return SCIP_OKAY;

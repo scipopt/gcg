@@ -1078,6 +1078,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
+   *sol = NULL;
    
    //printf("solving node %d's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
@@ -1135,6 +1136,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    //SCIP_CALL( checkConsistency(scip) );
 
    //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
+
+   SCIP_CALL( SCIPcreateSolCopy(scip, sol, relaxdata->currentorigsol) );
 
    *result = SCIP_SUCCESS;
 

@@ -56,10 +56,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
-   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
-   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 
@@ -98,18 +94,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
-#if USESEPA
    SCIP_CALL( SCIPincludeSepaGomory(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
-#endif
-   SCIP_CALL( SCIPincludeSepaCmirgcg(scip) );
-   SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
 
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
+   //SCIP_CALL( SCIPincludeSepaCmirgcg(scip) );
+   //SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
+
+   SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
 

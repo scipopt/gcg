@@ -362,7 +362,7 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING
    if ( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
    {
-      printf("nvars = %d, current lowerbound = %g, time = %f, node =%d\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
+      printf("nvars = %d, current lowerbound = %g, time = %f, node = %d\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
    }
 #endif
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
@@ -890,7 +890,7 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING
    if ( pricetype == GCG_PRICETYPE_REDCOST )
    {
-      //printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + pricerdata->npricingprobs * bestredcost, bestredcost);
+      printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + pricerdata->npricingprobs * bestredcost, bestredcost);
    }
 #endif
 
