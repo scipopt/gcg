@@ -60,6 +60,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
@@ -103,6 +104,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    //SCIP_CALL( SCIPincludeSepaCmirgcg(scip) );
    //SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
+
+   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
+   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
+   SCIP_CALL( SCIPincludeDispGcg(scip) );
 
    SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );

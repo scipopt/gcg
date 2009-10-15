@@ -141,7 +141,6 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
 
    assert(branchdata->pricecons != NULL);
    SCIP_CALL( SCIPdelCons(pricingscip, branchdata->pricecons) );
-   assert(branchdata->pricecons == NULL);
    
    return SCIP_OKAY;
 }

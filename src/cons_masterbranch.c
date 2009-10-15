@@ -436,7 +436,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             assert(vardata->data.origvardata.mastervars[0] != NULL);
             assert(vardata->data.origvardata.mastervals[0] == 1.0);
             assert(vardata->data.origvardata.mastervals[1] == 0.0);
-            assert(vardata->data.origvardata.nmastervars == 2);
+            assert(vardata->data.origvardata.nmastervars == 1);
             
             if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
@@ -643,47 +643,66 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    /* iterate over all master variables */
    for ( i = 0; i < nvars; i++)
    {
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+      assert(vardata->data.mastervardata.norigvars >= 0);
+      assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+      assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+      assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 2 );
+
       /* only look at variables not fixed to 0 */
-      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) || vardata->blocknr == -1 )
       {
          fixed = FALSE;
 
-         vardata = SCIPvarGetData(vars[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-         assert(vardata->data.mastervardata.norigvars >= 0);
-         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-
          /* iterate over all original variables contained in the current master variable */
-         for ( j = 0; j < vardata->data.mastervardata.norigvars && !fixed; j++ )
+         for ( j = 0; j < vardata->data.mastervardata.norigvars && !fixed && !vardata->blocknr == -1; j++ )
          {
             /* iterate over bound changes performed at the current node's equivalent in the original tree */
             for ( k = 0; k < nboundchanges; k++ )
             {
                /* check whether the original variable contained in the master variable equals the variable 
-                * on which the current branching was performed and if so, fix the master variable to 0,
-                * if the master variable contains a part of the branching variable that violates the bound */
+                * on which the current branching was performed */
                if ( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
                {
-                  /* branching imposes new lower bound */
-                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                  /* if the variable belongs to a block and contains a part of the branching variable 
+                   * that violates the bound, fix the master variable to 0 */
+                  if ( vardata->blocknr != -1 )
                   {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     fixed = TRUE;
-                     break;
+                     /* branching imposes new lower bound */
+                     if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && 
+                        SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                     {
+                        SCIPchgVarUb(scip, vars[i], 0.0);
+                        propcount++;
+                        fixed = TRUE;
+                        break;
+                     }
+                     /* branching imposes new upper bound */
+                     if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && 
+                        SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                     {
+                        SCIPchgVarUb(scip, vars[i], 0.0);
+                        propcount++;
+                     }
                   }
-                  /* branching imposes new upper bound */
-                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->newbounds[k]) )
+                  /* if the variable was copied from original to master, set the new bound for the variable */
+                  else
                   {
-                     SCIPchgVarUb(scip, vars[i], 0.0);
-                     propcount++;
-                     fixed = TRUE;
-                     break;
+                     if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER )
+                     {
+                        SCIPchgVarUb(scip, vars[i], consdata->newbounds[k]);
+                        propcount++;
+                     }
+                     /* branching imposes new upper bound */
+                     if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER )
+                     {
+                        SCIPchgVarUb(scip, vars[i], consdata->newbounds[k]);
+                        propcount++;
+                     }
+
                   }
                
                }

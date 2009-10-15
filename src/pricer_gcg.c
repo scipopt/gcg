@@ -43,6 +43,7 @@
 
 #define DEFAULT_MAXVARSROUNDFARKAS 1
 #define DEFAULT_MAXVARSROUNDREDCOST INT_MAX
+#define DEFAULT_MAXROUNDSREDCOST INT_MAX
 
 
 /*
@@ -81,6 +82,9 @@ struct SCIP_PricerData
    SCIP_VARTYPE vartype;
    int maxvarsroundfarkas;
    int maxvarsroundredcost;
+   int maxroundsredcost;
+   int nroundsredcost;
+   SCIP_Longint currnodenr;
 
    SCIP_HASHMAP* mapcons2idx;
 
@@ -203,7 +207,10 @@ SCIP_RETCODE checkVarBounds(
       vardata = SCIPvarGetData(vars[v]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.pricingvar != NULL);
+      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr == -1);
+
+      if ( vardata->blocknr == -1 )
+         continue;
 
       if ( !GCGrelaxIsPricingprobRelevant(origscip, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origscip, vardata->blocknr) != 1 ) 
          continue;
@@ -362,7 +369,8 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING
    if ( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
    {
-      printf("nvars = %d, current lowerbound = %g, time = %f, node = %d\n", SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
+      printf("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
+         SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
    }
 #endif
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
@@ -734,7 +742,6 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
             SCIPchgVarUbLazy(scip, newvar, GCGrelaxGetNIdenticalBlocks(origprob, prob));
 
-#if 1
             BMSclearMemoryArray(mastercoefs, nmasterconss);
 
             /* compute coef of the variable in the master constraints and add it to the master constraints */
@@ -754,7 +761,7 @@ SCIP_RETCODE performPricing(
                   vardata = SCIPvarGetData(vardata->data.pricingvardata.origvars[0]);
                   assert(vardata != NULL);
                   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-                  assert(vardata->data.origvardata.coefs != NULL);
+                  assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0);
                   
                   //printf("ncoefs = %d\n", vardata->data.origvardata.ncoefs);
                   for ( c = 0; c < vardata->data.origvardata.ncoefs; c++ )
@@ -779,53 +786,6 @@ SCIP_RETCODE performPricing(
                   SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[k], newvar, mastercoefs[k]) );
                }
             }
-#else
-            /* compute coef of the variable in the master constraints and add it to the master constraints */
-            for ( k = 0; k < nmasterconss; k++ )
-            {
-               conscoeff = 0;
-               for ( l = 0; l < nprobvars; l++ )
-               {
-                  if ( !SCIPisZero(scip, pricerdata->solvals[l]) )
-                  {
-                     SCIP_CONS* linkcons;
-                     int c;
-                     //printf("var = %s\n", SCIPvarPrintName(probvars[l]));
-                     vardata = SCIPvarGetData(probvars[l]);
-                     assert(vardata != NULL);
-                     assert(vardata->vartype == GCG_VARTYPE_PRICING);
-                     assert(vardata->data.pricingvardata.origvars != NULL);
-                     assert(vardata->data.pricingvardata.origvars[0] != NULL);
-                     vardata = SCIPvarGetData(vardata->data.pricingvardata.origvars[0]);
-                     assert(vardata != NULL);
-                     assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-                     assert(vardata->data.origvardata.coefs != NULL);
-                        
-                     //printf("ncoefs = %d\n", vardata->data.origvardata.ncoefs);
-                     for ( c = 0; c < vardata->data.origvardata.ncoefs; c++ )
-                     {
-                        assert(!SCIPisZero(scip, vardata->data.origvardata.coefs[c]));
-                        //printf("linkconns[c] = %s, masterconss[k] = %s\n", SCIPconsGetName(vardata->data.origvardata.linkconss[c]), SCIPconsGetName(masterconss[k]));
-                        //printf("linkconns[c] = %p, masterconss[k] = %p\n", vardata->data.origvardata.linkconss[c], masterconss[k]);
-                        SCIP_CALL( SCIPgetTransformedCons(scip, vardata->data.origvardata.linkconss[c], 
-                              &linkcons) );
-                        if ( linkcons == masterconss[k] )
-                        {
-                           conscoeff += vardata->data.origvardata.coefs[c] * pricerdata->solvals[l];
-                           //printf("coeff = %f\n", conscoeff);
-                           break;
-                        }
-                           
-                     }
-
-                  }
-               }
-
-               /* add variable to the correponding master constraints */
-               SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[k], newvar, conscoeff) );
-
-            }
-#endif
 
             /* compute coef of the variable in the cuts and add it to the cuts */
             for ( k = 0; k < nmastercuts; k++ )
@@ -964,6 +924,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    /* set last used pricingprobnr to 0 */
    pricerdata->pricingprobnr = 0;
+   pricerdata->currnodenr = -1;
 
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
@@ -1163,14 +1124,29 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    assert(pricerdata != NULL);
 
+   if ( SCIPgetNTotalNodes(scip) == pricerdata->currnodenr )
+   {
+      pricerdata->nroundsredcost++;
+   }
+   else
+   {
+      pricerdata->currnodenr = SCIPgetNTotalNodes(scip);
+      pricerdata->nroundsredcost = 0;
+   }
+
+   if ( pricerdata->nroundsredcost >= pricerdata->maxroundsredcost && pricerdata->currnodenr != 1)
+   {
+      SCIPdebugMessage("pricing aborted at node %lld\n", pricerdata->currnodenr);
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
 
    //printf("pricerredcost\n");
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST, result);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
-
-   *result = SCIP_SUCCESS;
 
    return retcode;
 }
@@ -1229,11 +1205,16 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcost",
          "maximal number of variables created in one redcost pricing round",
-         &pricerdata->maxvarsroundredcost, TRUE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, NULL, NULL) );
+         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
-         &pricerdata->maxvarsroundfarkas, TRUE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
+         &pricerdata->maxvarsroundfarkas, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxroundsredcost",
+         "maximal number of pricing rounds per node after the root node ",
+         &pricerdata->maxroundsredcost, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

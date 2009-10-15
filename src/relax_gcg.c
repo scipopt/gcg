@@ -189,7 +189,8 @@ SCIP_Bool realArraysAreEqual(
 {
    int i;
 
-   assert(array1 != NULL && array2 != NULL); 
+   assert(array1 != NULL || array1length == 0);
+   assert(array2 != NULL || array2length == 0); 
    if ( array1length != array2length )
       return FALSE;
 
@@ -300,8 +301,6 @@ SCIP_RETCODE pricingprobsAreIdentical(
       assert(vardata1 != NULL && vardata2 != NULL);
       assert(vardata1->vartype == GCG_VARTYPE_ORIGINAL);
       assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata1->data.origvardata.coefs != NULL);
-      assert(vardata2->data.origvardata.coefs != NULL);
 
       if ( !realArraysAreEqual(vardata1->data.origvardata.coefs, vardata1->data.origvardata.ncoefs,
             vardata2->data.origvardata.coefs, vardata2->data.origvardata.ncoefs) )
