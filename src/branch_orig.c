@@ -284,6 +284,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    int nbinvars;
    int nintvars;
    int i;
+
+   SCIP_VAR* branchvar;
    SCIP_Real solval;
 
    SCIP_Bool enforcebycons;
@@ -302,11 +304,20 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    char upname[SCIP_MAXSTRLEN];
    char downname[SCIP_MAXSTRLEN];
 
+   SCIP_VAR** branchcands;
+   SCIP_Real* branchcandsscore;
+   SCIP_Real* branchcandssol;
+   int nbranchcands;
+   int npriobranchcands;
+
+
+
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
+   assert(SCIPisRelaxSolValid(scip));
 
    SCIPdebugMessage("Execps method of orig branching\n");
 
@@ -320,8 +331,13 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    /* get the variables of the original problem and the numbers of variable types */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
 
+   SCIP_CALL( SCIPgetRelaxBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
+         &npriobranchcands, NULL, NULL, NULL) );
+
+   branchvar = NULL;
    solval = 0.0;
 
+#if 0
    /* search for an integer variable with fractional value */
    for ( i = 0; i < nbinvars + nintvars; i++ )
    {
@@ -341,17 +357,48 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       {
          continue;
       }
+
+      //solval = SCIPgetSolVal(scip, currentsol, vars[i]);
+      solval = SCIPgetRelaxSolVal(scip, vars[i]);
+      assert(solval == SCIPgetSolVal(scip, currentsol, vars[i]));
       
-      if ( !SCIPisIntegral(scip, SCIPgetSolVal(scip, currentsol, vars[i])))
+      if ( !SCIPisIntegral(scip, solval) )
       {
-         SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(vars[i]), SCIPgetSolVal(scip, currentsol, vars[i]));
-         solval = SCIPgetSolVal(scip, currentsol, vars[i]);
+         SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(vars[i]), solval);
+         branchvar = vars[i];
          break;
       }
    }
-
-   if ( i == nbinvars + nintvars )
+#else
+   for ( i = 0; i < npriobranchcands; i++ )
    {
+      vardata = SCIPvarGetData(branchcands[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+      
+      if ( GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+         continue;
+
+      solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
+      assert(solval == SCIPgetSolVal(scip, currentsol, branchcands[i]));
+      assert(solval == branchcandssol[i]);
+      
+      if ( !SCIPisIntegral(scip, branchcandssol[i]) )
+      {
+         SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(vars[i]), branchcandssol[i]);
+         branchvar = branchcands[i];
+         break;
+      }
+   }
+#endif
+
+#if 0
+   if ( branchvar == NULL )
+   {
+      SCIPdebugMessage("All vars have integral value in current solution, branch on a non-fixed var\n");
+
+
       /* search for an integer variable which is not fixed */
       for ( i = 0; i < nbinvars + nintvars; i++ )
       {
@@ -368,35 +415,38 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
       
          if ( GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
-         {
             continue;
-         }
 
-         assert(SCIPisIntegral(scip, SCIPgetSolVal(scip, currentsol, vars[i])));
+         //solval = SCIPgetSolVal(scip, currentsol, vars[i]);
+         solval = SCIPgetRelaxSolVal(scip, vars[i]);
+         assert(SCIPisIntegral(scip, solval));
+         
+         branchvar = vars[i];
 
-         if ( SCIPvarGetUbLocal(vars[i]) - SCIPgetSolVal(scip, currentsol, vars[i]) < 0.5 )
+         if ( SCIPvarGetUbLocal(vars[i]) - solval < 0.5 )
          {
-            solval = SCIPgetSolVal(scip, currentsol, vars[i]) - 0.5;
+            solval = solval - 0.5;
          }
          else
          {
-            solval = SCIPgetSolVal(scip, currentsol, vars[i]) + 0.5;
+            solval = solval + 0.5;
          }
          break;
       
       }
 
    }
-
-   if ( i == nbinvars + nintvars )
+#endif
+   if ( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
+      printf("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 
-   assert(solval != 0.0);
+   assert(branchvar != NULL);
 
-   assert(i < nbinvars + nintvars);
+   SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(vars[i]), solval);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -418,8 +468,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, "branch_down", 0, NULL, NULL, 
             -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),  
             TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-      SCIP_CALL( SCIPaddCoefLinear(scip, consup, vars[i], 1.0) );
-      SCIP_CALL( SCIPaddCoefLinear(scip, consdown, vars[i], 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
 
       /* add constraints to nodes */
       SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
@@ -432,19 +482,19 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    else
    {
       /* enforce new bounds by setting variable bounds */
-      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, vars[i], solval) );
-      SCIP_CALL( SCIPchgVarLbNode(scip, childup, vars[i], solval) );
+      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, branchvar, solval) );
+      SCIP_CALL( SCIPchgVarLbNode(scip, childup, branchvar, solval) );
    }
 
-   branchupdata->origvar = vars[i];
+   branchupdata->origvar = branchvar;
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
-   branchupdata->oldbound = SCIPvarGetLbLocal(vars[i]);
+   branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
 
-   branchdowndata->origvar = vars[i];
+   branchdowndata->origvar = branchvar;
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
-   branchdowndata->oldbound = SCIPvarGetUbLocal(vars[i]);
+   branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
 
    (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar), 
       ">=", branchupdata->newbound);

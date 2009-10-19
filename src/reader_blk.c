@@ -674,8 +674,6 @@ SCIP_RETCODE readBLKFile(
 static
 SCIP_DECL_READERREAD(readerReadBlk)
 {  
-   //SCIP_CALL( SCIPautoselectDisps(scip) );
-
    SCIP_CALL( SCIPreadBlk(scip, reader, filename, result) );
 
    return SCIP_OKAY;

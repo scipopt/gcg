@@ -652,16 +652,16 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
       assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 2 );
 
-      /* only look at variables not fixed to 0 */
-      if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) || vardata->blocknr == -1 )
+      /* only look at variables not already fixed to 0 */
+      if ( (!SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) || vardata->blocknr == -1 )
       {
          fixed = FALSE;
 
          /* iterate over all original variables contained in the current master variable */
-         for ( j = 0; j < vardata->data.mastervardata.norigvars && !fixed && !vardata->blocknr == -1; j++ )
+         for ( j = 0; j < vardata->data.mastervardata.norigvars && !fixed && vardata->blocknr != -1; j++ )
          {
             /* iterate over bound changes performed at the current node's equivalent in the original tree */
-            for ( k = 0; k < nboundchanges; k++ )
+            for ( k = 0; k < nboundchanges && !fixed; k++ )
             {
                /* check whether the original variable contained in the master variable equals the variable 
                 * on which the current branching was performed */
@@ -686,6 +686,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                      {
                         SCIPchgVarUb(scip, vars[i], 0.0);
                         propcount++;
+                        fixed = TRUE;
+                        break;
                      }
                   }
                   /* if the variable was copied from original to master, set the new bound for the variable */

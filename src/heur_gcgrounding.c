@@ -519,7 +519,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
       return SCIP_OKAY;
 
    /* get fractional variables, that should be integral */
-   SCIP_CALL( GCGrelaxGetBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL) );
+   SCIP_CALL( SCIPgetRelaxBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    nfrac = nlpcands;
 
    /* only call heuristic, if LP solution is fractional */
@@ -569,7 +569,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    assert(sol != NULL);
 
    /* copy the current LP solution to the working solution */
-   SCIP_CALL( GCGrelaxLinkSol(scip, sol) );
+   SCIP_CALL( SCIPlinkRelaxSol(scip, sol) );
 
    /* calculate the minimal objective value possible after rounding fractional variables */
    minobj = SCIPgetSolTransObj(scip, sol);
