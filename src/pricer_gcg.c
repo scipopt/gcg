@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-#define DEBUG_PRICING
+//#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
@@ -178,9 +178,9 @@ SCIP_RETCODE checkNewVar(
 
       if( i == vardata->data.mastervardata.norigvars )
       {
-         //printf("var %s is equal to var %s! solval = %f, redcost = %f, lpsolstat = %d, dualsolconv = %f\n", 
-         //   SCIPvarGetName(newvar), SCIPvarGetName(vars[v]), SCIPgetSolVal(scip, NULL, vars[v]), 
-         //   redcost, SCIPgetLPSolstat(scip), dualsolconv);
+         printf("var %s is equal to var %s! solval = %f, redcost = %f, lpsolstat = %d, dualsolconv = %f\n", 
+            SCIPvarGetName(newvar), SCIPvarGetName(vars[v]), SCIPgetSolVal(scip, NULL, vars[v]), 
+            redcost, SCIPgetLPSolstat(scip), dualsolconv);
       }
    }
 
@@ -308,7 +308,6 @@ SCIP_RETCODE checkSolNew(
    SCIP_VAR** probvars;
    int nprobvars;
    SCIP_Real* newvals;
-   SCIP_Real* oldvals;
 
    int s;
    int i;
@@ -336,7 +335,6 @@ SCIP_RETCODE checkSolNew(
 
    *isnew = TRUE;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &oldvals, nprobvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &newvals, nprobvars) );
 
    SCIP_CALL( SCIPgetSolVals(pricingprob, sols[idx], nprobvars, probvars, newvals) );
@@ -348,24 +346,25 @@ SCIP_RETCODE checkSolNew(
       if( !SCIPisEQ(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
          continue;
 
-      SCIP_CALL( SCIPgetSolVals(pricingprob, sols[s], nprobvars, probvars, oldvals) );
+      if( SCIPsolGetOrigin(sols[s]) != SCIP_SOLORIGIN_ORIGINAL && SCIPsolGetOrigin(sols[idx]) != SCIP_SOLORIGIN_ORIGINAL )
+         continue;
+
 
       for( i = 0; i < nprobvars; i++ )
       {
-         if( !SCIPisEQ(scip, oldvals[i], newvals[i]) )
+         if( !SCIPisEQ(scip, SCIPgetSolVal(pricingprob, sols[s], probvars[i]), newvals[i]) )
             break;
       }
       if( i == nprobvars )
       {
-         //printf("sol %d equals sol %d:\n", idx, s);
+         //printf("sol %d (origin %d) equals sol %d (origin %d):\n", idx, SCIPsolGetOrigin(sols[idx]), s, SCIPsolGetOrigin(sols[s]));
          //SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], sols[idx], NULL, FALSE ) );
          //SCIP_CALL( SCIPprintSol(pricerdata->pricingprobs[prob], sols[s], NULL, FALSE ) );
          *isnew = FALSE;
       }
    }
 
-   SCIPfreeBufferArray(scip, &newvals); 
-   SCIPfreeBufferArray(scip, &oldvals);
+   SCIPfreeBufferArray(scip, &newvals);
 
    return SCIP_OKAY;
 }
@@ -787,7 +786,7 @@ SCIP_RETCODE createNewMasterVar(
    SCIPfreeBufferArray(scip, &mastercoefs);
    SCIPfreeBufferArray(scip, &solvals);
 
-#if 1
+#if 0
    /* check whether the created variable already existed */
    SCIP_CALL( checkNewVar(scip, newvar, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sol) - pricerdata->dualsolconv[prob], pricerdata->dualsolconv[prob]) );
 #endif
@@ -850,6 +849,14 @@ SCIP_RETCODE performPricing(
    if( pricetype == GCG_PRICETYPE_FARKAS )
       pricerdata->farkascalls++;
 
+#ifdef DEBUG_PRICING
+   if( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
+   {
+      printf("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
+         SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
+   }
+#endif
+
    /* check whether pricing can be aborted: if objective value is always integral
     * and the current node's current lowerbound rounded up equals the 
     * current lp objective value rounded up we don't need to continue pricing
@@ -859,8 +866,10 @@ SCIP_RETCODE performPricing(
       SCIPceil(scip, SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip))) 
       == SCIPceil(scip, SCIPgetLPObjval(scip)) )
    {
+#ifdef DEBUG_PRICING
       printf("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
          SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+#endif
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
@@ -871,14 +880,6 @@ SCIP_RETCODE performPricing(
 
 #ifndef NDEBUG
    SCIP_CALL( checkVarBounds(scip) );
-#endif
-
-#ifdef DEBUG_PRICING
-   if( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
-   {
-      printf("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
-         SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
-   }
 #endif
 
    SCIP_CALL( setPricingObjs(scip, pricetype) );
@@ -1061,8 +1062,7 @@ SCIP_RETCODE performPricing(
    if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
-      printf("lower bound = %g, bestredcost = %g, lpsolstat = %d, pricetype = %d\n", 
-         SCIPgetLPObjval(scip) + bestredcost, bestredcost, SCIPgetLPSolstat(scip), pricetype);
+      printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
       *lowerbound = SCIPgetLPObjval(scip) + bestredcost;
    }
 #endif
