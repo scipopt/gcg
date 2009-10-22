@@ -1081,7 +1081,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "limits/time", 
             timelimit - SCIPgetTotalTime(scip) + SCIPgetTotalTime(masterprob)) );
-      printf("timelimit for master set to %f!\n", 
+      SCIPdebugMessage("timelimit for master set to %f!\n", 
          timelimit - SCIPgetTotalTime(scip) + SCIPgetTotalTime(masterprob));
    }
    SCIP_CALL( SCIPsolve(masterprob) );
