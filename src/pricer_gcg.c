@@ -46,6 +46,7 @@
 #define DEFAULT_MAXVARSROUNDREDCOST INT_MAX
 #define DEFAULT_MAXROUNDSREDCOST INT_MAX
 #define DEFAULT_MAXSOLSPROB INT_MAX
+#define DEFAULT_CHECKSOLS TRUE
 
 
 /*
@@ -90,6 +91,7 @@ struct SCIP_PricerData
    int maxroundsredcost;
    int maxsolsprob;
    int nroundsredcost;
+   SCIP_Bool checksols;
 
 };
 
@@ -916,8 +918,20 @@ SCIP_RETCODE performPricing(
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
       if( !SCIPisInfinity(scip, timelimit) )
       {
-         SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
+         if( timelimit - SCIPgetTotalTime(scip) > 0 )
+         {
+            SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
                timelimit - SCIPgetTotalTime(scip)) );
+         }
+         else
+         {
+            *result = SCIP_DIDNOTRUN;
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
+            SCIPfreeBufferArray(scip, &permu);
+            SCIPfreeBufferArray(scip, &tmpconvdualsol);
+            
+            return SCIP_OKAY;
+         }
       }
 
       SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
@@ -1022,12 +1036,14 @@ SCIP_RETCODE performPricing(
             --> can make the LP feasible / improve the current solution */ 
          if( SCIPisNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->dualsolconv[prob]) )
          {
-#if 1
-            SCIP_CALL( checkSolNew(scip, sols, j, prob, &newsol) );
+            if( pricerdata->checksols )
+            {
+               SCIP_CALL( checkSolNew(scip, sols, j, prob, &newsol) );
 
-            if( !newsol )
-               continue;
-#endif
+               if( !newsol )
+                  continue;
+            }
+
             nfoundvars++;
             nfoundvarsprob++;
 
@@ -1057,8 +1073,8 @@ SCIP_RETCODE performPricing(
    }
 #endif
 
-   SCIPfreeBufferArray(scip, &tmpconvdualsol);
    SCIPfreeBufferArray(scip, &permu);
+   SCIPfreeBufferArray(scip, &tmpconvdualsol);
 
    SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
 
@@ -1420,6 +1436,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsolsprob",
          "maximal number of variables added for each block in a pricinground",
          &pricerdata->maxsolsprob, FALSE, DEFAULT_MAXSOLSPROB, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/checksols",
+         "should solutions of the pricing MIPs be checked for duplicity?",
+         &pricerdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
