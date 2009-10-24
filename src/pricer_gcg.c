@@ -1126,9 +1126,9 @@ SCIP_RETCODE performPricing(
          SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
 
          /* start clock measuring the transformation effort */
-         SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
-         SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
-         SCIP_CALL( SCIPstopClock(scip, pricerdata->transformclock) );
+         //SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
+         //SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
+         //SCIP_CALL( SCIPstopClock(scip, pricerdata->transformclock) );
 
          /* start clock measuring the presolving effort */
          if( pricetype == GCG_PRICETYPE_REDCOST )
