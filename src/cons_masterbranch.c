@@ -543,6 +543,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
             continue;
 
          assert(vardata->data.origvardata.pricingvar != NULL);
+         assert(GCGrelaxGetPricingprob(origscip, vardata->blocknr) != NULL);
 
          /* reset corresponding bound in the pricing problem */
          /* lower bound was changed */

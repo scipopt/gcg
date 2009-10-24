@@ -55,7 +55,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
-   SCIP_CALL( SCIPincludeReaderBlk(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 
@@ -106,6 +105,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    //SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
+   SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );

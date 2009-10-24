@@ -928,9 +928,21 @@ SCIP_RETCODE performPricing(
             else
             {
                *result = SCIP_DIDNOTRUN;
-               SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
+
+               /* free transformed pricing MIPs */
+               for( j = 0; j < pricerdata->npricingprobs; j++ )
+               {
+                  if( pricerdata->pricingprobs[j] != NULL )
+                  {
+                     SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
+                     SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
+                     SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
+                  }
+               }
                SCIPfreeBufferArray(scip, &permu);
                SCIPfreeBufferArray(scip, &tmpconvdualsol);
+
+               SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
             
                return SCIP_OKAY;
             }
@@ -1090,9 +1102,21 @@ SCIP_RETCODE performPricing(
             else
             {
                *result = SCIP_DIDNOTRUN;
-               SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
+
+               /* free transformed pricing MIPs */
+               for( j = 0; j < pricerdata->npricingprobs; j++ )
+               {
+                  if( pricerdata->pricingprobs[j] != NULL )
+                  {
+                     SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
+                     SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
+                     SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
+                  }
+               }
                SCIPfreeBufferArray(scip, &permu);
                SCIPfreeBufferArray(scip, &tmpconvdualsol);
+
+               SCIP_CALL( SCIPstopClock(scip, pricerdata->owneffortclock) );
             
                return SCIP_OKAY;
             }
