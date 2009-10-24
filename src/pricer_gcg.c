@@ -1126,9 +1126,12 @@ SCIP_RETCODE performPricing(
          SCIP_CALL( SCIPstartClock(scip, pricerdata->subsolveclock) );
 
          /* start clock measuring the transformation effort */
-         //SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
-         //SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
-         //SCIP_CALL( SCIPstopClock(scip, pricerdata->transformclock) );
+         SCIP_CALL( SCIPstartClock(scip, pricerdata->transformclock) );
+         if( !pricerdata->useheurpricing )
+         {
+            SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
+         }
+         SCIP_CALL( SCIPstopClock(scip, pricerdata->transformclock) );
 
          /* start clock measuring the presolving effort */
          if( pricetype == GCG_PRICETYPE_REDCOST )
@@ -1137,7 +1140,10 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPstartClock(scip, pricerdata->farkaspresolveclock) );
 
          /* presolve the pricing submip */
-         //SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
+         if( !pricerdata->useheurpricing )
+         {
+            SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
+         }
 
          /* stop clock measuring the presolving effort, start clock measuring the solving effort */
          if( pricetype == GCG_PRICETYPE_REDCOST )
