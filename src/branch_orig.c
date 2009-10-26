@@ -440,7 +440,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    if ( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
-      printf("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 

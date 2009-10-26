@@ -881,7 +881,7 @@ SCIP_RETCODE performPricing(
    SCIP_CALL( SCIPallocBufferArray(scip, &permu, pricerdata->npricingprobs) );
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      assert(GCGrelaxIsPricingprobRelevant(origprob, i) 
+      assert(GCGrelaxIsPricingprobRelevant(origprob, i)
          == (pricerdata->dualsolconv[i] != -1.0 * SCIPinfinity(scip)));
 
       permu[i] = i;
@@ -1502,7 +1502,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    printf("time for pricing without sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->owneffortclock));
    printf("solved sub-MIPs heur = %d\n", pricerdata->solvedsubmipsheur);
    printf("solved sub-MIPs optimal = %d\n", pricerdata->solvedsubmipsoptimal);
-   printf("time for solving sub-MIPs for pricing: %f\n", SCIPgetClockTime(scip, pricerdata->subsolveclock));
+   printf("time for solving sub-MIPs for pricing to optimality: %f\n", SCIPgetClockTime(scip, pricerdata->subsolveclock));
    printf("time for solving sub-MIPs for pricing heuristically: %f\n", SCIPgetClockTime(scip, pricerdata->heursolveclock));
    printf("farkas calls = %d, redcost calls = %d\n", pricerdata->farkascalls, pricerdata->redcostcalls);
    printf("time for farkas pricing (presolving): %f\n", SCIPgetClockTime(scip, pricerdata->farkaspresolveclock));
@@ -1653,7 +1653,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useheurpricing",
          "should pricing be performed heuristically befor solving the MIPs to optimality?",
-         &pricerdata->useheurpricing, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+         &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
    return SCIP_OKAY;
 }
