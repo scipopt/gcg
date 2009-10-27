@@ -594,6 +594,9 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useboundlp", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usesb", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/usepseudo", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usevartable", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/useconstable", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usesmalltables", TRUE) );
       
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
 
@@ -956,7 +959,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
 
    /* free master problem */
-   SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
+   //SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
 
    /* free pricing problems */
