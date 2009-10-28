@@ -1768,7 +1768,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
    SCIP_Bool stored;
    SCIP_SOL* mastersol;
-   SCIP_SOL* relaxsol;
 
    int i;
 
@@ -1832,24 +1831,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       
          SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
-#if 1
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
-#else
-         SCIP_CALL( SCIPgetSolVals(scip, relaxdata->currentorigsol, norigvars, origvars, origvals) );
-#if 0
-         SCIP_CALL( SCIPsetRelaxSolVals(scip, norigvars, origvars, origvals) );
-#else
-         for ( i = 0; i < norigvars; i++ )
-         {
-            if ( !SCIPisZero(scip, origvals[i]) )
-            {
-               SCIP_CALL( SCIPsetRelaxSolVal(scip, origvars[i], origvals[i]) );
-            }
-            //SCIPsetRelaxSolIsValid(scip);
-         }
-#endif
-#endif
-
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
          
          SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, &stored) );
@@ -1863,12 +1845,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          /* store branching candidates */
          SCIPclearRelaxBranchCands(scip);
-         SCIP_CALL( SCIPgetSolVals(scip, relaxdata->currentorigsol, norigvars, origvars, origvals) );
-         SCIP_CALL( SCIPcreateRelaxSol(scip, &relaxsol, NULL));
          for ( i = 0; i < norigvars; i++ )
          {
-            assert(SCIPgetSolVal(scip, relaxdata->currentorigsol, origvars[i]) == SCIPgetRelaxSolVal(scip, origvars[i]));
-            assert(SCIPgetSolVal(scip, relaxsol, origvars[i]) == SCIPgetRelaxSolVal(scip, origvars[i]));
             if ( !SCIPisIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
                SCIP_CALL( SCIPaddRelaxBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, origvars[i]) - SCIPfloor(scip, origvals[i]), 
@@ -1894,9 +1872,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       if ( !stored )
       {
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
-         //assert(!stored);
       }
-      //assert(stored);
+      assert(stored);
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
       SCIPdebugMessage("updated current best primal feasible solution!\n");

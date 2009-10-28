@@ -83,7 +83,7 @@ struct SCIP_ConshdlrData
 };
 
 
-#if 0
+#if CHECKPROPAGATEDVARS
 /*
  * Local methods
  */
@@ -624,11 +624,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
-   if ( consdata->branchrule == NULL )
-   {
-      return SCIP_OKAY;
-   }
-
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>.\n", SCIPconsGetName(cons));
 
@@ -715,9 +710,12 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       }
    }
       
-   SCIPdebugMessage("Finished propagation of masterbranch constraint: %d vars fixed.\n", propcount);
+   if ( consdata->branchrule != NULL )
+   {
+      SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
+   }
 
-   SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
+   SCIPdebugMessage("Finished propagation of masterbranch constraint: %d vars fixed.\n", propcount);
 
    if ( *result != SCIP_CUTOFF )
       if ( propcount > 0 )
