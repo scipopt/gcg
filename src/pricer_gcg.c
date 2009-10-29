@@ -62,6 +62,8 @@ struct SCIP_PricerData
    SCIP** pricingprobs;            /* pointers to the pricing problems */
    SCIP_Real* dualsol;             /* array of dual solutions for the constraints of the master problem */
    SCIP_Real* dualsolconv;         /* array of dual solutions for the convexity constraints */
+   SCIP_Real* objsums;             /* sum of objective coefficients for the pricing problems */
+   SCIP_Real* objfactors;
    SCIP* origprob;                 /* the original program */
    SCIP_Real* solvals;             /* solution values of variables in the pricing problems */
    int* nvarsprob;                 /* number of variables created by the pricing probs */
@@ -301,6 +303,29 @@ SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
 }
 
 static
+void updateObjFactor(
+   SCIP*                 scip,
+   int                   probnr,
+   SCIP_Real             objvalue
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+   assert(0 <= probnr && probnr <= pricerdata->npricingprobs);
+   
+   if( !SCIPisZero(scip, pricerdata->objsums[probnr]) )
+      pricerdata->objfactors[probnr] = 0.9 * pricerdata->objfactors[probnr] + 0.1 * (objvalue / pricerdata->objsums[probnr]);
+}
+
+static
 SCIP_RETCODE checkSolNew(
    SCIP*                 scip,
    SCIP_SOL**            sols,
@@ -430,6 +455,8 @@ SCIP_RETCODE setPricingObjs(
          continue;
       probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
       nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+
+      pricerdata->objsums[i] = 0.0;
       
       for( j = 0; j < nprobvars; j++ )
       {
@@ -446,6 +473,7 @@ SCIP_RETCODE setPricingObjs(
             assert(vardata->data.pricingvardata.origvars[0] != NULL);
             SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 
                   SCIPvarGetObj(vardata->data.pricingvardata.origvars[0])) );
+            pricerdata->objsums[i] += SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]);
          }  
       }
    }
@@ -478,6 +506,7 @@ SCIP_RETCODE setPricingObjs(
                /* modify the objective of the corresponding variable in the pricing problem */
                SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[vardata->blocknr], 
                      vardata->data.origvardata.pricingvar, -1.0 * pricerdata->dualsol[i] * consvals[j]) );
+               pricerdata->objsums[vardata->blocknr] -= pricerdata->dualsol[i] * consvals[j];
             }
          }
       }
@@ -529,6 +558,7 @@ SCIP_RETCODE setPricingObjs(
                /* modify the objective of the corresponding variable in the pricing problem */
                SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[vardata->blocknr], 
                      vardata->data.origvardata.pricingvar, -1.0 * dualsol * consvals[j]) );
+               pricerdata->objsums[vardata->blocknr] -= dualsol * consvals[j];
             }
          }
          SCIPfreeBufferArray(scip, &consvars);
@@ -886,6 +916,8 @@ SCIP_RETCODE performPricing(
 
       permu[i] = i;
       tmpconvdualsol[i] = pricerdata->dualsolconv[i];
+      if( pricetype == GCG_PRICETYPE_REDCOST )
+         tmpconvdualsol[i] += pricerdata->objfactors[i] * pricerdata->objsums[i];
    }
    SCIPsortDownRealInt(tmpconvdualsol, permu, pricerdata->npricingprobs);
    
@@ -1203,7 +1235,12 @@ SCIP_RETCODE performPricing(
             //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
          }
 
-         if( nsols > 0 && SCIPisNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[0]) - pricerdata->dualsolconv[prob]) )
+         if( nsols > 0 && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
+         {
+            //printf("objfactor[%d] = %g\n", prob, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[0])/pricerdata->objsums[prob]);
+            updateObjFactor(scip, prob, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[0]));
+         }
+         if( nsols > 0 && SCIPisSumNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[0]) - pricerdata->dualsolconv[prob]) )
          {
             bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * 
                (SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[0]) - pricerdata->dualsolconv[prob]);
@@ -1228,7 +1265,7 @@ SCIP_RETCODE performPricing(
 #endif
             /* solution value - dual value of associated convexity constraint < 0 
                --> can make the LP feasible / improve the current solution */ 
-            if( SCIPisNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->dualsolconv[prob]) )
+            if( SCIPisSumNegative(scip, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sols[j]) - pricerdata->dualsolconv[prob]) )
             {
                if( pricerdata->checksols )
                {
@@ -1370,6 +1407,10 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    /* alloc memory for arrays of reduced cost */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsol), nmasterconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->objsums), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->objfactors), pricerdata->npricingprobs) );
+
+   BMSclearMemoryArray(pricerdata->objfactors, pricerdata->npricingprobs);
 
    /* alloc memory for solution values of variables in pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), SCIPgetNOrigVars(origprob)) );
@@ -1495,6 +1536,8 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
    SCIPfreeMemoryArray(scip, &(pricerdata->dualsol));
    SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
+   SCIPfreeMemoryArray(scip, &(pricerdata->objsums));
+   SCIPfreeMemoryArray(scip, &(pricerdata->objfactors));
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
    SCIPfreeMemoryArray(scip, &(pricerdata->nvarsprob));
 
