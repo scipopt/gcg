@@ -1288,6 +1288,13 @@ SCIP_RETCODE performPricing(
          //SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
       }
    }
+
+   if( bestredcostvalid && i < pricerdata->npricingprobs )
+     for( j = i; j < pricerdata->npricingprobs; j++ )
+       if( pricerdata->pricingprobs[permu[j]] != NULL )
+         {
+	   bestredcostvalid = FALSE;
+         }
    
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -1299,21 +1306,14 @@ SCIP_RETCODE performPricing(
       }
    }
 
-   if( bestredcostvalid && i < pricerdata->npricingprobs )
-      for( j = i; j < pricerdata->npricingprobs; j++ )
-         if( pricerdata->pricingprobs[permu[j]] != NULL )
-         {
-            bestredcostvalid = FALSE;
-         }
-
-#ifdef DEBUG_PRICING
    if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
+#ifdef DEBUG_PRICING
       printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
+#endif
       *lowerbound = SCIPgetLPObjval(scip) + bestredcost;
    }
-#endif
 
    SCIPfreeBufferArray(scip, &permu);
    SCIPfreeBufferArray(scip, &tmpconvdualsol);
