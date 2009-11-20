@@ -49,6 +49,7 @@
 #define DEFAULT_MAXSOLSPROB INT_MAX
 #define DEFAULT_CHECKSOLS TRUE
 #define DEFAULT_USEHEURPRICING FALSE
+#define DEFAULT_ONLYPOSCONV FALSE
 
 
 /*
@@ -100,6 +101,7 @@ struct SCIP_PricerData
    int nroundsredcost;
    SCIP_Bool checksols;
    SCIP_Bool useheurpricing;
+   SCIP_Bool onlyposconv;
 };
 
 
@@ -1112,6 +1114,7 @@ SCIP_RETCODE performPricing(
 
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS ||
             (nfoundvars < pricerdata->maxvarsroundredcost && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+              && (nfoundvars == 0 || pricerdata->dualsolconv[permu[i]] > 0 || !pricerdata->onlyposconv)
               && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
          prob = permu[i];
@@ -1717,6 +1720,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useheurpricing",
          "should pricing be performed heuristically befor solving the MIPs to optimality?",
          &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlyposconv",
+         "should only pricing problems be solved with a positive dualsol of the convexity constraint, if possible?",
+         &pricerdata->onlyposconv, TRUE, DEFAULT_ONLYPOSCONV, NULL, NULL) );
 
    return SCIP_OKAY;
 }
