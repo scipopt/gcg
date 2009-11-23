@@ -459,6 +459,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    if( !feasible )
    {
       printf("Ryanfoster branching rule could not find variables to branch on!\n");
+      //SCIP_CALL( SCIPprintSol(scip, GCGrelaxGetCurrentOrigSol(scip), NULL, FALSE) );
+      //SCIP_CALL( SCIPprintSol(masterscip, NULL, NULL, FALSE) );
       return SCIP_OKAY;
    }
    else
@@ -572,7 +574,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
    assert(branchrule != NULL);
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterRyanfoster, 
-         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, branchDataDeleteRyanfoster) );
+         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster) );
    
    return SCIP_OKAY;
 }

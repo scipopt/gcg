@@ -1094,9 +1094,9 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", 0) );
 
    //printf("Debug solution is Feasible in current node %d: %d\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)), cutoff);
-#if 1
+
    /* set the lower bound pointer */
-   if ( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
       *lowerbound = SCIPgetSolOrigObj(masterprob, NULL);
    else
    {
@@ -1107,11 +1107,16 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          *lowerbound = SCIPinfinity(scip);
    }
    SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", *lowerbound);
-#endif
 
    SCIPdebugMessage("Update current sol.\n");
    /* transform the current solution of the master problem to the original space and save it */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
+
+   if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
+   {
+      SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)), 
+            GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+   }
 
    //SCIP_CALL( checkConsistency(scip) );
 
@@ -1186,6 +1191,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHACTIVEMASTER    ((*branchactivemaster)),    /**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER  ((*branchdeactivemaster)),  /**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER      ((*branchpropmaster)),      /**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED    ((*branchmastersolved)),    /**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE      ((*branchdatadelete))       /**<  branchdata deletion method for branchrule */
    )
 {
@@ -1208,6 +1214,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    relaxdata->branchrules[relaxdata->nbranchrules]->branchactivemaster = branchactivemaster;
    relaxdata->branchrules[relaxdata->nbranchrules]->branchdeactivemaster = branchdeactivemaster;
    relaxdata->branchrules[relaxdata->nbranchrules]->branchpropmaster = branchpropmaster;
+   relaxdata->branchrules[relaxdata->nbranchrules]->branchmastersolved = branchmastersolved;
    relaxdata->branchrules[relaxdata->nbranchrules]->branchdatadelete = branchdatadelete;
    relaxdata->nbranchrules++;
 
@@ -1372,6 +1379,45 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
 
    return SCIP_OKAY;
 }
+
+/** perform method of the given branchrule that is called after the master LP is solved */
+SCIP_RETCODE GCGrelaxBranchMasterSolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_Real             newlowerbound       /**< the new local lowerbound */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+   
+   assert(scip != NULL);
+   assert(branchrule != NULL);
+   
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   for ( i = 0; i < relaxdata->nbranchrules; i++ )
+   {
+      if ( branchrule == relaxdata->branchrules[i]->branchrule )
+      {
+         /* call branchactivation method */
+         if ( relaxdata->branchrules[i]->branchmastersolved != NULL )
+            SCIP_CALL( relaxdata->branchrules[i]->branchmastersolved(scip, branchdata, newlowerbound) );
+
+         break;
+      }
+   }
+
+   assert(i < relaxdata->nbranchrules);
+
+   return SCIP_OKAY;
+}
+
 
 /** creates a variable in a pricing problem corresponding to the given original variable */
 SCIP_RETCODE GCGrelaxCreatePricingVar(
@@ -1761,12 +1807,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP_RELAXDATA* relaxdata;
 
    SCIP_VAR** origvars;
-   SCIP_Real* origvals;
    int norigvars;
-
-   SCIP_VAR** mastervars;
-   SCIP_Real* mastervals;
-   int nmastervars;
 
    SCIP_Bool stored;
    SCIP_SOL* mastersol;
@@ -1785,14 +1826,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
    
-   mastervars = SCIPgetVars(relaxdata->masterprob);
-   nmastervars = SCIPgetNVars(relaxdata->masterprob);
-   assert(mastervars != NULL);
-   
-   SCIP_CALL( SCIPallocBufferArray(scip, &origvals, norigvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-
-
    /* nothing has to be done, if no LP was solved after the last update */
    if ( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )
    {
@@ -1816,9 +1849,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
          if ( mastersol == NULL )
          {
-            SCIPfreeBufferArray(scip, &origvals);
-            SCIPfreeBufferArray(scip, &mastervals);
-
             return SCIP_OKAY;
          }
       }
@@ -1851,7 +1881,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          {
             if ( !SCIPisIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
-               SCIP_CALL( SCIPaddRelaxBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, origvars[i]) - SCIPfloor(scip, origvals[i]), 
+               SCIP_CALL( SCIPaddRelaxBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, 
+                        origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])), 
                      SCIPgetRelaxSolVal(scip, origvars[i])) );
             }
          }
@@ -1880,9 +1911,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       SCIPdebugMessage("updated current best primal feasible solution!\n");
    }
-
-   SCIPfreeBufferArray(scip, &origvals);
-   SCIPfreeBufferArray(scip, &mastervals);
 
    return SCIP_OKAY;
 }        

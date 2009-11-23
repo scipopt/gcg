@@ -50,6 +50,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHACTIVEMASTER    ((*branchactivemaster)),    /**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER  ((*branchdeactivemaster)),  /**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER      ((*branchpropmaster)),      /**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED    ((*branchmastersolved)),    /**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE      ((*branchdatadelete))       /**<  branchdata deletion method for branchrule */
    );
 
@@ -76,6 +77,15 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
+   );
+
+/** perform method of the given branchrule that is called after the master LP is solved */
+extern
+SCIP_RETCODE GCGrelaxBranchMasterSolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
+   SCIP_Real             newlowerbound       /**< the new local lowerbound */
    );
 
 /** frees branching data created by the given branchrule */

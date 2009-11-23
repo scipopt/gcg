@@ -17,6 +17,7 @@
 //#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
+//#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
  * @brief  pricer for generic column generation, solves the pricing problem as a MIP
@@ -201,7 +202,7 @@ SCIP_RETCODE checkNewVar(
 }
 #endif
 
-#ifndef NDEBUG
+#ifndef CHECKVARBOUNDS
 static
 SCIP_RETCODE checkVarBounds(
    SCIP*                 scip
@@ -907,7 +908,7 @@ SCIP_RETCODE performPricing(
    nfoundvars = 0;
    successfulmips = 0;
 
-#ifndef NDEBUG
+#ifndef CHECKVARBOUNDS
    SCIP_CALL( checkVarBounds(scip) );
 #endif
    /* set objectives of the variables in the pricing sub-MIPs */

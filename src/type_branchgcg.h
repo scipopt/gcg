@@ -42,7 +42,6 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *  input:
  *  - scip            : SCIP main data structure of the master problem
  *  - branchdata      : the branching data 
- *  - node            : the activated node
  */
 #define GCG_DECL_BRANCHACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
 
@@ -52,7 +51,6 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *  input:
  *  - scip            : SCIP main data structure of the master problem
  *  - branchdata      : the branching data 
- *  - node            : the deactivated node
  */
 #define GCG_DECL_BRANCHDEACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
 
@@ -74,6 +72,17 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
 
  */
 #define GCG_DECL_BRANCHPROPMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_RESULT* result)
+
+/** method for branchrule, called when the master LP is solved at one node,
+ *  can store pseudocosts for the branching decisions
+ *
+ *  input:
+ *  - scip            : SCIP main data structure of the original problem
+ *  - branchdata      : the branching data 
+ *  - newlowerbound   : the new local lower bound
+ *
+ */
+#define GCG_DECL_BRANCHMASTERSOLVED(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_Real newlowerbound)
 
 /** frees branching data of an origbranch constraint (called when the origbranch constraint is deleted)
  *

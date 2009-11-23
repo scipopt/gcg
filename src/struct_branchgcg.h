@@ -37,6 +37,7 @@ struct GCG_Branchrule
    GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));
    GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster));
    GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));
+   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));
    GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));
 };
 
