@@ -96,6 +96,14 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
    return SCIP_OKAY;
 }
 
+/** branching execution method relaxation solutions */
+static
+SCIP_DECL_BRANCHEXECPS(branchExecrelMaster)
+{
+   SCIPdebugMessage("Execrel method of master branching\n");
+
+   return SCIP_OKAY;
+}
 
 /** branching execution method for not completely fixed pseudo solutions */
 static
@@ -127,7 +135,7 @@ SCIP_RETCODE SCIPincludeBranchruleMaster(
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
          branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster, branchExitsolMaster, 
-         branchExeclpMaster, branchExecpsMaster,
+         branchExeclpMaster, branchExecrelMaster, branchExecpsMaster,
          branchruledata) );
 
    return SCIP_OKAY;

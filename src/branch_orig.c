@@ -306,10 +306,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
    return SCIP_OKAY;
 }
 
-
-/** branching execution method for not completely fixed pseudo solutions */
+/** branching execution method for relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
+SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
 {
    SCIP_SOL* currentsol;
    SCIP_VAR** vars;
@@ -555,7 +554,15 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    return SCIP_OKAY;
 }
 
+/** branching execution method for not completely fixed pseudo solutions */
+static
+SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
+{  
+   SCIPdebugMessage("Execps method of orig branching\n");
+   assert(0);
 
+   return SCIP_OKAY;
+}
 
 /* define not used callback as NULL*/
 #define branchFreeOrig NULL
@@ -577,7 +584,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig, 
-         branchExeclpOrig, branchExecpsOrig,
+         branchExeclpOrig, branchExecrelOrig, branchExecpsOrig,
          NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/enforcebycons",

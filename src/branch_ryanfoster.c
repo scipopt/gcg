@@ -275,10 +275,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    return SCIP_OKAY;
 }
 
-
-/** branching execution method for not completely fixed pseudo solutions */
+/** branching execution method for relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
+SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
 {
    SCIP* masterscip;
    SCIP_VAR** mastervars;
@@ -567,6 +566,16 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    return SCIP_OKAY;
 }
 
+/** branching execution method for not completely fixed pseudo solutions */
+static
+SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
+{  
+   SCIPdebugMessage("Execps method of ryanfoster branching\n");
+   assert(0);
+
+   return SCIP_OKAY;
+}
+
 /** initialization method of branching rule (called after problem was transformed) */
 static
 SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
@@ -606,7 +615,7 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
          branchFreeRyanfoster, branchInitRyanfoster, branchExitRyanfoster, branchInitsolRyanfoster, 
-         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecpsRyanfoster,
+         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecrelRyanfoster, branchExecpsRyanfoster,
          branchruledata) );
 
    return SCIP_OKAY;
