@@ -123,6 +123,13 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
    int                   blocknr             /**< number of the block, the variable belongs to */
    );
 
+/* marks the constraint to be a master constraint */
+extern
+SCIP_RETCODE GCGrelaxMarkConsMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
+   );
+
 /* returns the master problem */
 extern
 SCIP* GCGrelaxGetMasterprob(

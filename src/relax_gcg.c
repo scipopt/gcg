@@ -55,7 +55,8 @@ struct SCIP_RelaxData
    int*             nblocksidentical;    /* number of pricing blocks represented by the i-th pricing problem */
 
    SCIP_CONS**      convconss;           /* array of convexity constraints, one for each block */
-
+   SCIP_HASHMAP*    hashorig2mastercons; /* hashmap mapping original constraints to corresponding 
+                                          * master constraints */
    SCIP_HASHMAP**   hashorig2pricingvar; /* hashmap mapping original variables to corresponding 
                                           * pricing variables */
    SCIP_HASHMAP*    hashorig2origvar;    /* hashmap mapping original variables to corresponding 
@@ -708,21 +709,25 @@ SCIP_RETCODE createMaster(
          {
             success = FALSE;
 
-            for ( b = 0; b < npricingprobs && !success; b++ )
+
+            if( !SCIPhashmapExists(relaxdata->hashorig2mastercons, (void*)bufconss[c]) )
             {
-               /* try to copy the constraint */
-               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(bufconss[c]));
-               SCIP_CALL( SCIPcopyCons(relaxdata->pricingprobs[b], &newcons, name, conshdlrs[i],
-                     scip, bufconss[c], relaxdata->hashorig2pricingvar[b], 
-                     TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, &success) );
-
-               if ( success )
+               for ( b = 0; b < npricingprobs && !success; b++ )
                {
-                  SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
-
-                  SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
-               }
-            } 
+                  /* try to copy the constraint */
+                  (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(bufconss[c]));
+                  SCIP_CALL( SCIPcopyCons(relaxdata->pricingprobs[b], &newcons, name, conshdlrs[i],
+                        scip, bufconss[c], relaxdata->hashorig2pricingvar[b], 
+                        TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, &success) );
+                  
+                  if ( success )
+                  {
+                     SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
+                     
+                     SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
+                  }
+               } 
+            }
             if ( !success )
             {
                /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
@@ -740,6 +745,8 @@ SCIP_RETCODE createMaster(
                      TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
                SCIP_CALL( SCIPaddCons(relaxdata->masterprob, mastercons) );
+
+               SCIP_CALL( SCIPhashmapSetImage(relaxdata->hashorig2mastercons, (void*)bufconss[c], (void*)mastercons) );
 
                /* store the constraints in the arrays origmasterconss and masterconss in the problem data */
                SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
@@ -901,6 +908,13 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 static
 SCIP_DECL_RELAXINIT(relaxInitGcg)
 {  
+   SCIP_RELAXDATA* relaxdata;
+   
+   assert(scip != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
    return SCIP_OKAY;
 }
 
@@ -934,6 +948,11 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    {
       SCIPhashmapFree(&(relaxdata->hashorig2origvar));
       relaxdata->hashorig2origvar = NULL;
+   }
+   if ( relaxdata->hashorig2mastercons != NULL )
+   {
+      SCIPhashmapFree(&(relaxdata->hashorig2mastercons));
+      relaxdata->hashorig2mastercons = NULL;
    }
 
    /* free arrays for constraints */
@@ -1007,6 +1026,12 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if( relaxdata->hashorig2mastercons == NULL )
+   {
+      SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2mastercons), 
+            SCIPblkmem(scip), 10*SCIPgetNConss(scip)) );
+   }
 
    SCIP_CALL( createMaster(scip, relax) );
 
@@ -1551,6 +1576,37 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
 
    return SCIP_OKAY;
 }
+
+/* marks the constraint to be a master constraint */
+SCIP_RETCODE GCGrelaxMarkConsMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( relaxdata->hashorig2mastercons == NULL )
+   {
+      SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2mastercons), 
+            SCIPblkmem(scip), 10*SCIPgetNConss(scip)) );
+   }
+
+   assert(!SCIPhashmapExists(relaxdata->hashorig2mastercons, (void*)cons));
+
+   SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2mastercons, (void*)cons, NULL) );
+
+   return SCIP_OKAY;
+}
+
 
 /* returns the master problem */
 SCIP* GCGrelaxGetMasterprob(

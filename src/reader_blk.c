@@ -18,7 +18,6 @@
  * @brief  BLK file reader
  * @author Gerald Gamrath
  *
- * @todo Test for uniqueness of variable names (after cutting down).
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -62,7 +61,7 @@
 /** Section in BLK File */
 enum BlkSection
 {
-   BLK_START, BLK_NBLOCKS, BLK_BLOCK, BLK_END
+   BLK_START, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END
 };
 typedef enum BlkSection BLKSECTION;
 
@@ -480,6 +479,15 @@ SCIP_Bool isNewSection(
 
    }
 
+   if( strcasecmp(blkinput->token, "MASTERCONSS") == 0 )
+   {
+      blkinput->section = BLK_MASTERCONSS;
+      
+      SCIPdebugMessage("new section: MASTERCONSS\n");
+
+      return TRUE;
+   }
+
    if( strcasecmp(blkinput->token, "END") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: END\n", blkinput->linenumber);
@@ -488,31 +496,6 @@ SCIP_Bool isNewSection(
    }
 
    return FALSE;
-}
-
-
-/** returns the variable with the given name, or creates a new variable if it does not exist */
-static
-SCIP_RETCODE getVariable(
-   SCIP*                 scip,               /**< SCIP data structure */
-   char*                 name,               /**< name of the variable */
-   SCIP_VAR**            var,                /**< pointer to store the variable */
-   SCIP_Bool*            found             /**< pointer to store whether a new variable was created, or NULL */
-   )
-{
-   assert(name != NULL);
-   assert(var != NULL);
-
-   *var = SCIPfindVar(scip, name);
-   if( *var == NULL )
-   {
-      if( found != NULL )
-         *found = FALSE;
-   }
-   else if( found != NULL )
-      *found = TRUE;
-
-   return SCIP_OKAY;
 }
 
 /** reads the header of the file */
@@ -586,15 +569,16 @@ SCIP_RETCODE readBlock(
    while( getNextToken(blkinput) )
    {
       SCIP_VAR* var;
-      SCIP_Bool found;
 
       /* check if we reached a new section */
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
 
+      var = NULL;
+
       /* the token must be the name of an existing variable */
-      SCIP_CALL( getVariable(scip, blkinput->token, &var, &found) );
-      if( !found )
+      var = SCIPfindVar(scip, blkinput->token);
+      if( var == NULL )
       {
          syntaxError(scip, blkinput, "unknown variable in block section");
          return SCIP_OKAY;
@@ -602,6 +586,42 @@ SCIP_RETCODE readBlock(
 
       /* set the block number of the variable to the number of the current block */
       SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(var, blkinput->blocknr) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** reads the masterconss section */
+static
+SCIP_RETCODE readMasterconss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   BLKINPUT*             blkinput            /**< BLK reading data */
+   )
+{
+   assert(blkinput != NULL);
+
+   while( getNextToken(blkinput) )
+   {
+      SCIP_CONS* cons;
+
+      /* check if we reached a new section */
+      if( isNewSection(scip, blkinput) )
+         return SCIP_OKAY;
+
+      cons = NULL;
+
+      /* the token must be the name of an existing constraint */
+      cons = SCIPfindCons(scip, blkinput->token);
+      if( cons == NULL )
+      {
+         syntaxError(scip, blkinput, "unknown constraint in masterconss section");
+         return SCIP_OKAY;
+      }
+      else
+      {
+         /* set the block number of the variable to the number of the current block */
+         SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
+      }
    }
 
    return SCIP_OKAY;
@@ -647,6 +667,9 @@ SCIP_RETCODE readBLKFile(
       case BLK_BLOCK:
          SCIP_CALL( readBlock(scip, blkinput) );
          break;
+
+      case BLK_MASTERCONSS:
+         SCIP_CALL( readMasterconss(scip, blkinput) );
 
       case BLK_END: /* this is already handled in the while() loop */
       default:
