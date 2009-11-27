@@ -1122,7 +1122,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
       *lowerbound = SCIPgetLocalLowerbound(masterprob);
    else
-   {q
+   {
       assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
       if ( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
          *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
