@@ -55,8 +55,6 @@ struct SCIP_RelaxData
    int*             nblocksidentical;    /* number of pricing blocks represented by the i-th pricing problem */
 
    SCIP_CONS**      convconss;           /* array of convexity constraints, one for each block */
-   SCIP_HASHMAP*    hashorig2mastercons; /* hashmap mapping original constraints to corresponding 
-                                          * master constraints */
    SCIP_HASHMAP**   hashorig2pricingvar; /* hashmap mapping original variables to corresponding 
                                           * pricing variables */
    SCIP_HASHMAP*    hashorig2origvar;    /* hashmap mapping original variables to corresponding 
@@ -73,7 +71,8 @@ struct SCIP_RelaxData
    SCIP_SOL*        currentorigsol;      /* current lp solution transformed into the original space */
    SCIP_Longint     lastmasterlpiters;   /* number of lp iterations when currentorigsol was updated the last time */
    SCIP_SOL*        lastmastersol;       /* last feasible master solution that was added to the original problem */
-
+   SCIP_CONS**      markedmasterconss;   /* array of conss that are marked to be in the master */
+   int              nmarkedmasterconss;  /* number of elements in array of conss that are marked to be in the master */
    /* branchrule data */
    GCG_BRANCHRULE** branchrules;
    int              nbranchrules;
@@ -542,6 +541,7 @@ SCIP_RETCODE createMaster(
    SCIP_CONS* newcons;
    SCIP_CONS* mastercons;
    SCIP_Bool success;
+   SCIP_Bool marked;
    int i;
    int c;
    int v;
@@ -629,6 +629,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPcreateProb(relaxdata->pricingprobs[i], name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    }
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[0], "display/verblevel", 4) );
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->hashorig2pricingvar), npricingprobs) );
@@ -707,10 +708,21 @@ SCIP_RETCODE createMaster(
          }
          for ( c = 0; c < nactiveconss; c++ )
          {
+            marked = FALSE;
             success = FALSE;
 
-
-            if( !SCIPhashmapExists(relaxdata->hashorig2mastercons, (void*)bufconss[c]) )
+            if( relaxdata->markedmasterconss != NULL )
+            {
+               for ( b = 0; b < relaxdata->nmarkedmasterconss; b++ )
+               {
+                  if ( strcmp(SCIPconsGetName(relaxdata->markedmasterconss[b]), SCIPconsGetName(bufconss[c])) == 0 )
+                  {
+                     marked = TRUE;
+                     break;
+                  }
+               }
+            }
+            if ( !marked )
             {
                for ( b = 0; b < npricingprobs && !success; b++ )
                {
@@ -727,6 +739,10 @@ SCIP_RETCODE createMaster(
                      SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
                   }
                } 
+            }
+            else
+            {
+               SCIPdebugMessage("cons %s forced to be in the master problem!\n", SCIPconsGetName(bufconss[c]));
             }
             if ( !success )
             {
@@ -745,8 +761,6 @@ SCIP_RETCODE createMaster(
                      TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
                SCIP_CALL( SCIPaddCons(relaxdata->masterprob, mastercons) );
-
-               SCIP_CALL( SCIPhashmapSetImage(relaxdata->hashorig2mastercons, (void*)bufconss[c], (void*)mastercons) );
 
                /* store the constraints in the arrays origmasterconss and masterconss in the problem data */
                SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
@@ -773,16 +787,6 @@ SCIP_RETCODE createMaster(
       assert(vardata->data.origvardata.coefs == NULL);
 
       vardata->data.origvardata.ncoefs = 0;
-#if 0
-      /* create array for saving all the coefficiants of this variable for all the constraints */
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 
-            relaxdata->nmasterconss) );
-      vardata->data.origvardata.ncoefs = relaxdata->nmasterconss;
-      for ( i = 0; i < vardata->data.origvardata.ncoefs; i++ )
-      {
-         vardata->data.origvardata.coefs[i] = 0;
-      }
-#endif
    }
 
    /* save coefs in the vardata */   
@@ -949,10 +953,10 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPhashmapFree(&(relaxdata->hashorig2origvar));
       relaxdata->hashorig2origvar = NULL;
    }
-   if ( relaxdata->hashorig2mastercons != NULL )
+   if ( relaxdata->markedmasterconss != NULL )
    {
-      SCIPhashmapFree(&(relaxdata->hashorig2mastercons));
-      relaxdata->hashorig2mastercons = NULL;
+      SCIPfreeMemoryArray(scip, &(relaxdata->markedmasterconss));
+      relaxdata->markedmasterconss = NULL;
    }
 
    /* free arrays for constraints */
@@ -1026,12 +1030,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-
-   if( relaxdata->hashorig2mastercons == NULL )
-   {
-      SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2mastercons), 
-            SCIPblkmem(scip), 10*SCIPgetNConss(scip)) );
-   }
 
    SCIP_CALL( createMaster(scip, relax) );
 
@@ -1122,15 +1120,16 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    /* set the lower bound pointer */
    if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
-      *lowerbound = SCIPgetSolOrigObj(masterprob, NULL);
+      *lowerbound = SCIPgetLocalLowerbound(masterprob);
    else
-   {
+   {q
       assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
       if ( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
          *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
       else if ( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
          *lowerbound = SCIPinfinity(scip);
    }
+
    SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", *lowerbound);
 
    SCIPdebugMessage("Update current sol.\n");
@@ -1585,8 +1584,11 @@ SCIP_RETCODE GCGrelaxMarkConsMaster(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   
+#ifndef NDEBUG
+   int i;
+#endif   
    assert(scip != NULL);
+   assert(cons != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
@@ -1594,15 +1596,20 @@ SCIP_RETCODE GCGrelaxMarkConsMaster(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   if( relaxdata->hashorig2mastercons == NULL )
+   if( relaxdata->markedmasterconss == NULL )
    {
-      SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2mastercons), 
-            SCIPblkmem(scip), 10*SCIPgetNConss(scip)) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), SCIPgetNConss(scip)) );
+      relaxdata->nmarkedmasterconss = 0;
    }
 
-   assert(!SCIPhashmapExists(relaxdata->hashorig2mastercons, (void*)cons));
-
-   SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2mastercons, (void*)cons, NULL) );
+#ifndef NDEBUG
+   for( i = 0; i < relaxdata->nmarkedmasterconss; i++ )
+   {
+      assert(relaxdata->markedmasterconss[i] != cons);
+   }
+#endif
+   relaxdata->markedmasterconss[relaxdata->nmarkedmasterconss] = cons;
+   relaxdata->nmarkedmasterconss++;
 
    return SCIP_OKAY;
 }

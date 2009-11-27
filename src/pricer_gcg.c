@@ -652,6 +652,16 @@ SCIP_RETCODE createNewMasterVar(
 
    SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nprobvars) );
    SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sol, nprobvars, probvars, solvals) );
+
+   /* for integer variable, round the solvals */
+   for( i = 0; i < nprobvars; i++ )
+   {
+      if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
+      {
+         assert(SCIPisEQ(scip, solvals[i], SCIPfloor(scip, solvals[i])));
+         solvals[i] = SCIPfloor(scip, solvals[i]);
+      }
+   }
             
    /* create data for the new variable in the master problem */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );

@@ -670,6 +670,7 @@ SCIP_RETCODE readBLKFile(
 
       case BLK_MASTERCONSS:
          SCIP_CALL( readMasterconss(scip, blkinput) );
+         break;
 
       case BLK_END: /* this is already handled in the while() loop */
       default:
