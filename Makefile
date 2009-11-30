@@ -15,7 +15,7 @@
 # $Id$
 
 #@file    Makefile
-#@brief   Makefile for C generic column generation code using SCIP as a callable library
+#@brief   Makefile for generic column generation code using SCIP as a callable library
 #@author  Thorsten Koch
 #@author  Tobias Achterberg
 #@author  Marc Pfetsch
@@ -26,7 +26,7 @@
 # paths
 #-----------------------------------------------------------------------------
 
-SCIPDIR         =       ../cleanscip
+SCIPDIR         =       lib/scip
 
 
 #-----------------------------------------------------------------------------
