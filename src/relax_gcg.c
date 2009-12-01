@@ -841,7 +841,7 @@ SCIP_RETCODE createMaster(
    return SCIP_OKAY;
 }
 
-
+#if 0
 /* checks the consistency between original scip and master scip */
 static
 SCIP_RETCODE checkConsistency(
@@ -880,7 +880,7 @@ SCIP_RETCODE checkConsistency(
 
    return SCIP_OKAY;
 }
-
+#endif
 
 
 

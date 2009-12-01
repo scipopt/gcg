@@ -95,6 +95,7 @@ SCIP_RETCODE ensureSizeCuts(
    return SCIP_OKAY;
 }
 
+#if 0
 static
 SCIP_RETCODE checkCutConsistency(
    SCIP*                 scip
@@ -188,7 +189,7 @@ SCIP_RETCODE checkCutConsistency(
    
    return SCIP_OKAY;
 }
-
+#endif
 
 
 
