@@ -24,7 +24,18 @@ v030:
   of conv(X) -> convexification approach
 - many identical pricing problems -> fat too much effort for pricing, especially farkas pricing!
 
-> v030:
-- tried discretization approach, variables in the master now represent integer points in X,
+v040:
+- read in problem is standard format (e.g., .lp-file, .mps-file) and corresponding blk-file
+- in blk-file, we can indicate constraints that are forced to be in the master problem;
+  all other constraints are added to a block, if they only contain variables of this block
+- added possibility to use discretization approach, variables in the master then represent integer points in X,
   integrality in the master is demanded
-- try to identify identical blocks -> hope: break symmetrie
+- identification of identical blocks -> break symmetrie in the master
+- 2 constraint handler assure that nodes in the master scip are linked to nodes in the original scip and vice versa
+- branching rules are implemented as branching rules in the master that have to define the additional 
+  callbacks specified in "type_branchgcg.h"
+- 2 branching rules implemented so far: 
+  branching on original variables (not possible if variable belongs to a block that has similar blocks in the problem),
+  using pseudocost values to choose the variable to branch on
+  ryan-foster type of branching for identical blocks with set partitioning structure
+- own display plugin showing the number of LP iterations, of cosntraints, variables and cuts in the master
