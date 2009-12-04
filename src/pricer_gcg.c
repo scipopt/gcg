@@ -726,7 +726,7 @@ SCIP_RETCODE createNewMasterVar(
 
    /* add variable and set the lazy upper bound */
    SCIP_CALL( SCIPaddPricedVar(scip, newvar, 1.0) );
-   SCIPchgVarUbLazy(scip, newvar, GCGrelaxGetNIdenticalBlocks(origprob, prob));
+   //SCIPchgVarUbLazy(scip, newvar, GCGrelaxGetNIdenticalBlocks(origprob, prob));
 
    SCIP_CALL( SCIPallocBufferArray(scip, &mastercoefs, nmasterconss) );
    BMSclearMemoryArray(mastercoefs, nmasterconss);
@@ -1513,8 +1513,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
                TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
          SCIPaddVar(scip, newvar);
 
-         SCIPchgVarUbLazy(scip, newvar, SCIPvarGetUbGlobal(vars[v]));
-         SCIPchgVarLbLazy(scip, newvar, SCIPvarGetLbGlobal(vars[v]));
+         //SCIPchgVarUbLazy(scip, newvar, SCIPvarGetUbGlobal(vars[v]));
+         //SCIPchgVarLbLazy(scip, newvar, SCIPvarGetLbGlobal(vars[v]));
 
          SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vars[v], newvar, 1.0) );
 
