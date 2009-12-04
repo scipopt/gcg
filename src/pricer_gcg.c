@@ -14,8 +14,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-//#define DEBUG_PRICING
-//#define DEBUG_PRICING_ALL_OUTPUT
+#define DEBUG_PRICING
+#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
@@ -1139,7 +1139,7 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING_ALL_OUTPUT
          if( pricetype == GCG_PRICETYPE_REDCOST )
          {
-            char[SCIP_MAXSTRLEN] probname;
+            char probname[SCIP_MAXSTRLEN];
             (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
             SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
 
