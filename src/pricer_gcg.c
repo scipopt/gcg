@@ -1137,15 +1137,15 @@ SCIP_RETCODE performPricing(
          //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-         if( pricetype == GCG_PRICETYPE_REDCOST )
+         //if( pricetype == GCG_PRICETYPE_REDCOST )
          {
             char probname[SCIP_MAXSTRLEN];
             (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
-            SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
+            //SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
 
             SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 
-            SCIP_CALL( SCIPwriteParams(pricerdata->pricingprobs[prob], "pricing.set", TRUE, TRUE) );
+            //SCIP_CALL( SCIPwriteParams(pricerdata->pricingprobs[prob], "pricing.set", TRUE, TRUE) );
          }
 #endif
 
