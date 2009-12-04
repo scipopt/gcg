@@ -1139,8 +1139,9 @@ SCIP_RETCODE performPricing(
 #ifdef DEBUG_PRICING_ALL_OUTPUT
          if( pricetype == GCG_PRICETYPE_REDCOST )
          {
-            (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
-            SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], varname, NULL, FALSE) );
+            char[SCIP_MAXSTRLEN] probname;
+            (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
+            SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
 
             SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 
