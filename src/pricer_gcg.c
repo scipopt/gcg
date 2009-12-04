@@ -1731,7 +1731,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
          &pricerdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useheurpricing",
-         "should pricing be performed heuristically befor solving the MIPs to optimality?",
+         "should pricing be performed heuristically before solving the MIPs to optimality?",
          &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlyposconv",
