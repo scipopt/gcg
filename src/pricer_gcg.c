@@ -14,8 +14,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-#define DEBUG_PRICING
-#define DEBUG_PRICING_ALL_OUTPUT
+//#define DEBUG_PRICING
+//#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
@@ -954,9 +954,10 @@ SCIP_RETCODE performPricing(
       /* solve the pricing MIPs heuristically and check whether solutions 
        * corresponding to variables with negative reduced costs where found 
        */
-      for( i = 0; i < pricerdata->npricingprobs &&
-              (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
-              && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost); i++)
+      for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS ||
+            (nfoundvars < pricerdata->maxvarsroundredcost && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+              && (nfoundvars == 0 || pricerdata->dualsolconv[permu[i]] > 0 || !pricerdata->onlyposconv)
+              && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
          prob = permu[i];
 
@@ -1005,8 +1006,8 @@ SCIP_RETCODE performPricing(
             }
          }
 
-         //SCIP_CALL( SCIPsetLongintParam(pricerdata->pricingprobs[prob], "limits/stallnodes", 50) );
-         //SCIP_CALL( SCIPsetLongintParam(pricerdata->pricingprobs[prob], "limits/nodes", 200) ); 
+         SCIP_CALL( SCIPsetLongintParam(pricerdata->pricingprobs[prob], "limits/stallnodes", 100) );
+         SCIP_CALL( SCIPsetLongintParam(pricerdata->pricingprobs[prob], "limits/nodes", 1000) ); 
          SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/gap", 0.2) ); 
          //SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "limits/bestsol", 5) ); 
 
