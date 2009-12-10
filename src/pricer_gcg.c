@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-#define DEBUG_PRICING
+//#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
 #define CHECKVARBOUNDS
@@ -918,7 +918,7 @@ SCIP_RETCODE performPricing(
     */
    if( SCIPisObjIntegral(scip) && pricetype == GCG_PRICETYPE_REDCOST && 
       SCIPceil(scip, SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip))) 
-      == SCIPceil(scip, SCIPgetLPObjval(scip)) )
+      == SCIPceil(scip, SCIPgetLPObjval(scip)) && SCIPgetNNodes(scip) > 1 )
    {
 #ifdef DEBUG_PRICING
       printf("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 

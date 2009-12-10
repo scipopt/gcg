@@ -629,7 +629,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPcreateProb(relaxdata->pricingprobs[i], name, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    }
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[0], "display/verblevel", 4) );
+   SCIP_CALL( SCIPsetIntParam(scip, "separating/cmir/maxroundsroot", 25) );
 
    /* create hashmaps for mapping from original to pricing variables */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->hashorig2pricingvar), npricingprobs) );
