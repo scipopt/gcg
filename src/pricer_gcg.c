@@ -14,10 +14,10 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-//#define DEBUG_PRICING
+#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
-//#define CHECKVARBOUNDS
+#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
  * @brief  pricer for generic column generation, solves the pricing problem as a MIP
@@ -202,7 +202,7 @@ SCIP_RETCODE checkNewVar(
 }
 #endif
 
-#ifndef CHECKVARBOUNDS
+#ifdef CHECKVARBOUNDS
 static
 SCIP_RETCODE checkVarBounds(
    SCIP*                 scip
@@ -597,7 +597,8 @@ static
 SCIP_RETCODE createNewMasterVar(
    SCIP*                 scip,
    SCIP_SOL*             sol,
-   int                   prob
+   int                   prob,
+   SCIP_Bool*            added
    )
 {
    SCIP* origprob;
@@ -623,6 +624,8 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_Real* solvals;
    SCIP_Real objcoeff;
    SCIP_VAR* newvar;
+
+   SCIP_Real objvalue;
 
    SCIP_CONS* linkcons;
    int c;
@@ -653,6 +656,8 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nprobvars) );
    SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sol, nprobvars, probvars, solvals) );
 
+   objvalue = 0.0;
+
    /* for integer variable, round the solvals */
    for( i = 0; i < nprobvars; i++ )
    {
@@ -661,7 +666,24 @@ SCIP_RETCODE createNewMasterVar(
          assert(SCIPisEQ(scip, solvals[i], SCIPfloor(scip, solvals[i])));
          solvals[i] = SCIPfloor(scip, solvals[i]);
       }
+      objvalue += solvals[i] * SCIPvarGetObj(probvars[i]);
    }
+
+   if( SCIPretransformObj(pricerdata->pricingprobs[prob], objvalue) >= pricerdata->dualsolconv[prob] )
+   {
+      *added = FALSE;
+      SCIPfreeBufferArray(scip, &solvals);
+      return SCIP_OKAY;
+   }
+   else
+   {
+      *added = TRUE;
+   }
+
+   SCIPdebugMessage("found var with redcost %f (objvalue = %g, retransfomed = %g, dualsol =%g)\n", 
+      SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sol) - pricerdata->dualsolconv[prob], 
+      objvalue, SCIPretransformObj(pricerdata->pricingprobs[prob], objvalue), pricerdata->dualsolconv[prob]);
+
             
    /* create data for the new variable in the master problem */
    SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
@@ -690,7 +712,7 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 0, INT_MAX /*GCGrelaxGetNIdenticalBlocks(origprob, prob)*/, 
          objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
 
-   SCIPdebugMessage("found var %s with redcost %f:\n", SCIPvarGetName(newvar), 
+   SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), 
       SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sol) - pricerdata->dualsolconv[prob]);
 
    /* count number of non-zeros */
@@ -863,6 +885,7 @@ SCIP_RETCODE performPricing(
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool newsol;
+   SCIP_Bool added;
 
    SCIP_Real* tmpconvdualsol;
    int* permu;
@@ -918,7 +941,7 @@ SCIP_RETCODE performPricing(
    nfoundvars = 0;
    successfulmips = 0;
 
-#ifndef CHECKVARBOUNDS
+#ifdef CHECKVARBOUNDS
    SCIP_CALL( checkVarBounds(scip) );
 #endif
    /* set objectives of the variables in the pricing sub-MIPs */
@@ -1097,11 +1120,14 @@ SCIP_RETCODE performPricing(
                      continue;
                }
 
-               nfoundvars++;
-               nfoundvarsprob++;
-
                /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-               SCIP_CALL( createNewMasterVar(scip, sols[j], prob) );
+               SCIP_CALL( createNewMasterVar(scip, sols[j], prob, &added) );
+               
+               if ( added )
+               {
+                  nfoundvars++;
+                  nfoundvarsprob++;
+               }
             }
          }
 
@@ -1303,13 +1329,17 @@ SCIP_RETCODE performPricing(
                      continue;
                }
 
-               nfoundvars++;
-               nfoundvarsprob++;
-               if( nfoundvarsprob == 1 )
-                  successfulmips++;
-
                /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-               SCIP_CALL( createNewMasterVar(scip, sols[j], prob) );
+               SCIP_CALL( createNewMasterVar(scip, sols[j], prob, &added) );
+
+               if ( added )
+               {
+                  nfoundvars++;
+                  nfoundvarsprob++;
+
+                  if( nfoundvarsprob == 1 )
+                     successfulmips++;
+               }
             }
          }
 

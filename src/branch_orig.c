@@ -384,9 +384,9 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
       vardata = SCIPvarGetData(branchcands[i]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+      assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
       
-      if ( GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+      if ( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
          continue;
 
       frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
@@ -410,6 +410,44 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
             branchvar = branchcands[i];
             if ( !mostfrac )
                break;
+         }
+      }
+   }
+
+   if (branchvar == NULL)
+   {
+      for ( i = 0; i < npriobranchcands; i++ )
+      {
+         vardata = SCIPvarGetData(branchcands[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+         
+         if ( vardata->blocknr != -1 )
+            continue;
+         
+         frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
+         assert(frac > 0);
+         
+         if( usepseudocosts )
+         {
+            if( SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]) > maxpsscore )
+            {
+               branchvar = branchcands[i];
+               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
+               maxpsscore = SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]);
+            }
+         }
+         else
+         {
+            if( frac >= maxfrac  )
+            {
+               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(vars[i]), branchcandssol[i]);
+               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
+               branchvar = branchcands[i];
+               if ( !mostfrac )
+                  break;
+            }
          }
       }
    }
@@ -507,14 +545,14 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
 
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
-   branchupdata->olddualbound = SCIPgetLocalLowerbound(scip);
+   branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
    branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
 
    branchdowndata->origvar = branchvar;
    branchdowndata->oldvalue = solval;
-   branchdowndata->olddualbound = SCIPgetLocalLowerbound(scip);
+   branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);

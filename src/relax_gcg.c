@@ -1173,6 +1173,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->currentorigsol = NULL;
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
+   relaxdata->markedmasterconss = NULL;
 
    relaxdata->nbranchrules = 0;
    relaxdata->branchrules = NULL;
