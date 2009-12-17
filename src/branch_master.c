@@ -101,6 +101,7 @@ static
 SCIP_DECL_BRANCHEXECPS(branchExecrelMaster)
 {
    SCIPdebugMessage("Execrel method of master branching\n");
+   printf("Execrel method of master branching\n");
 
    return SCIP_OKAY;
 }
@@ -110,6 +111,7 @@ static
 SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
 {
    SCIPdebugMessage("Execps method of master branching\n");
+   printf("Execps method of master branching\n");
 
    return SCIP_OKAY;
 }

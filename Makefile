@@ -50,6 +50,7 @@ MAINOBJ		=	reader_blk.o \
 			branch_ryanfoster.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
+			cons_integralOrig.o \
 			branch_master.o \
 			masterplugins.o \
 			nodesel_master.o \
