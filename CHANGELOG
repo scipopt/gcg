@@ -38,4 +38,10 @@ v040:
   branching on original variables (not possible if variable belongs to a block that has similar blocks in the problem),
   using pseudocost values to choose the variable to branch on
   ryan-foster type of branching for identical blocks with set partitioning structure
-- own display plugin showing the number of LP iterations, of cosntraints, variables and cuts in the master
+- own display plugin showing the number of LP iterations, of constraints, variables and cuts in the master
+
+v050:
+- fixed problems with tranfering bounds from the original program to the master program: when propagating a node,
+  the bounds of all variables in the pricing problem and variables cpoied to the master are adjusted,
+  for all master variables created by the pricer, it is checked whether they fulfill the current bounds
+- fixed bug when disabling discretization approach
