@@ -25,11 +25,18 @@
 #include <assert.h>
 #include <string.h>
 
+#include "scip/type_lp.h"
+#include "scip/cons_varbound.h"
+
 #include "branch_ryanfoster.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
+#include "pricer_gcg.h"
+
 #include "type_branchgcg.h"
-#include "scip/type_lp.h"
+#include "struct_branchgcg.h"
+#include "struct_vardata.h"
+
 
 #define BRANCHRULE_NAME          "ryanfoster"
 #define BRANCHRULE_DESC          "ryan and foster branching in generic column generation"

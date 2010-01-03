@@ -29,6 +29,9 @@
 #include "cons_integralOrig.h"
 #include "pricer_gcg.h"
 
+#include "struct_vardata.h"
+#include "cons_masterbranch.h"
+
 
 #define CONSHDLR_NAME          "integralOrig"
 #define CONSHDLR_DESC          "integrality constraint"

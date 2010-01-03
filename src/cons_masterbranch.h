@@ -55,6 +55,12 @@ void GCGconsMasterbranchGetStack(
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
+/** returns the number of elements on the stack */
+extern
+int GCGconsMasterbranchGetNStackelements(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** returns the branching data for a given origbranch constraint */
 extern
 GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(

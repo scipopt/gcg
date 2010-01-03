@@ -17,7 +17,7 @@
 //#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
-#define CHECKVARBOUNDS
+//#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
  * @brief  pricer for generic column generation, solves the pricing problem as a MIP
@@ -32,6 +32,7 @@
 #include "scip/cons_linear.h"
 #include "scip/scip.h"
 #include "sepa_master.h"
+#include "struct_vardata.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -717,12 +718,21 @@ SCIP_RETCODE createNewMasterVar(
 
    /* count number of non-zeros */
    newvardata->data.mastervardata.norigvars = 0;
+
    for( i = 0; i < nprobvars; i++ )
       if( !SCIPisZero(scip, solvals[i]) )
          newvardata->data.mastervardata.norigvars++;
-   
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+
+   if( newvardata->data.mastervardata.norigvars > 0 )
+   {
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+   }
+   else
+   {
+      newvardata->data.mastervardata.origvars = NULL;
+      newvardata->data.mastervardata.origvals = NULL;
+   }
                
    /* number of original variables yet saved in mastervardata */
    j = 0;
@@ -1785,6 +1795,35 @@ SCIP* GCGpricerGetOrigprob(
    assert(pricer != NULL);
 
    pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
 
    return pricerdata->origprob;
+}
+
+/** adds the given constraint and the given position to the hashmap of the pricer */
+SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< the constraint that should be added */
+   int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(pos >= 0);
+   
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, cons, (void*)(size_t)pos) );
+   assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, cons) == pos);
+
+   SCIPdebugMessage("Added cons %s (%p) to hashmap with index %d\n", SCIPconsGetName(cons), cons, pos);
+   
+   return SCIP_OKAY;
 }

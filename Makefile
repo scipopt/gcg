@@ -58,7 +58,9 @@ MAINOBJ		=	reader_blk.o \
 			sepa_cmirgcg.o \
 			sepa_gcggomory.o \
 			disp_gcg.o \
+			disp_master.o \
 			heur_gcgrounding.o \
+			dialog_gcg.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))

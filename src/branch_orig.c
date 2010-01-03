@@ -25,11 +25,16 @@
 #include <assert.h>
 #include <string.h>
 
+#include "scip/type_lp.h"
+#include "scip/cons_linear.h"
+
 #include "branch_orig.h"
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
 #include "cons_origbranch.h"
 #include "type_branchgcg.h"
-#include "scip/type_lp.h"
+#include "struct_vardata.h"
+
 
 #define BRANCHRULE_NAME          "orig"
 #define BRANCHRULE_DESC          "branching for the original program in generic column generation"
@@ -51,6 +56,7 @@ struct GCG_BranchData
    SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
    SCIP_Real          oldvalue;              /**< old value of the original variable */
    SCIP_Real          olddualbound;          /**< dual bound before the branching was performed */
+   SCIP_CONS*         cons;
 };
 
 
@@ -58,12 +64,14 @@ struct GCG_BranchData
  * Callback methods for enforcing branching constraints
  */
 
-#if 0
+#define branchDeactiveMasterOrig NULL
+#define branchPropMasterOrig NULL
+
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
    SCIP* origscip;
-   SCIP_VARDATA* vardata;
+   SCIP_CONS* mastercons;
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -72,180 +80,25 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(origscip != NULL);
 
    assert(branchdata->origvar != NULL);
+
+   if( branchdata->cons == NULL )
+      return SCIP_OKAY;
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
-   /* get vardata*/
-   vardata = SCIPvarGetData(branchdata->origvar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-   assert(vardata->data.origvardata.pricingvar != NULL);
+   /* transform constraint to the master variable space */
+   SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
+   assert(mastercons != NULL);
 
-   /* set corresponding bound in the pricing problem */
-   /* lower bound was changed */
-   if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
-   {
-      //branchdata->oldbound = SCIPvarGetLbOriginal(vardata->data.origvardata.pricingvar);
-      assert(branchdata->oldbound < branchdata->newbound);
-      assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound);
-      if ( SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound )
-         SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
-               vardata->data.origvardata.pricingvar, branchdata->newbound) );
-   }
-   /* upper bound was changed */
-   else
-   {
-      //branchdata->oldbound = SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar);
-      assert(branchdata->oldbound > branchdata->newbound);
-      assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == branchdata->newbound);
-      if ( SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) != branchdata->newbound )
-         SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
-               vardata->data.origvardata.pricingvar, branchdata->newbound) );
-   }
+   /* add constraint to the master problem */
+   SCIP_CALL( SCIPaddConsNode(scip, SCIPgetCurrentNode(scip), mastercons, NULL) );
+
+   branchdata->cons = NULL;
 
    return SCIP_OKAY;
 }
-#else
-#define branchActiveMasterOrig NULL
-#endif
 
-#if 0
-static
-GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterOrig)
-{
-   SCIP* origscip;
-   SCIP_VARDATA* vardata;
-
-   assert(scip != NULL);
-   assert(branchdata != NULL);
-
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   assert(branchdata->origvar != NULL);
-
-   SCIPdebugMessage("branchDeactiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-
-   /* get vardata*/
-   vardata = SCIPvarGetData(branchdata->origvar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata->blocknr >= 0 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-   assert(vardata->data.origvardata.pricingvar != NULL);
-
-   /* reset corresponding bound in the pricing problem */
-   /* lower bound was changed */
-   if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER )
-   {
-      assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == branchdata->oldbound);
-      //SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
-   }
-   /* upper bound was changed */
-   else
-   {
-      assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == branchdata->oldbound);
-      //SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), vardata->data.origvardata.pricingvar, branchdata->oldbound) );
-   }
-
-   return SCIP_OKAY;
-}
-#else
-#define branchDeactiveMasterOrig NULL
-#endif
-
-#if 0
-static
-GCG_DECL_BRANCHPROPMASTER(branchPropMasterOrig)
-{
-   SCIP* origscip;
-   SCIP_VARDATA* vardata;
-   SCIP_VAR** vars;
-   int nvars;
-   int propcount;
-   int i;
-   int j;
-
-   assert(scip != NULL);
-   assert(branchdata != NULL);
-
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   assert(branchdata->origvar != NULL);
-
-   SCIPdebugMessage("branchPropMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-
-   *result = SCIP_DIDNOTFIND;
-
-   propcount = 0;
-
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-          
-   /* iterate over all master variables */
-   for ( i = 0; i < nvars; i++)
-   {
-      /* only look at variables not fixed to 0 */
-      if ( !SCIPisZero(scip, SCIPvarGetUbLocal(vars[i])) )
-      {
-         vardata = SCIPvarGetData(vars[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-         assert(vardata->data.mastervardata.norigvars >= 0);
-         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-
-
-         /* iterate over all original variables contained in the current master variable */
-         for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
-         {
-            /* check whether the original variable contained in the master variable equals the variable 
-             * on which the current branching was performed and if so, fix the master variable to 0,
-             * if the master variable contains a part of the branching variable that violates the bound */
-            if ( vardata->data.mastervardata.origvars[j] == branchdata->origvar )
-            {
-               /* branching imposes new lower bound */
-               if ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER && 
-                  SCIPisLT(scip, vardata->data.mastervardata.origvals[j], branchdata->newbound) )
-               {
-                  SCIPchgVarUb(scip, vars[i], 0.0);
-                  propcount++;
-                  break;
-               }
-               /* branching imposes new upper bound */
-               if ( branchdata->boundtype == SCIP_BOUNDTYPE_UPPER && 
-                  SCIPisGT(scip, vardata->data.mastervardata.origvals[j], branchdata->newbound) )
-               {
-                  SCIPchgVarUb(scip, vars[i], 0.0);
-                  propcount++;
-                  break;
-               }
-               
-            }
-               
-         }
-      }
-   }
-      
-   SCIPdebugMessage("Finished propagation of branching decision constraint: %s %s %f, %d vars fixed.\n",
-      SCIPvarGetName(branchdata->origvar), (branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<="), 
-      branchdata->newbound, propcount);
-
-   if ( propcount > 0 )
-   {
-      *result = SCIP_REDUCEDDOM;
-   }
-
-   return SCIP_OKAY;
-}
-#else
-#define branchPropMasterOrig NULL
-#endif
 
 static
 GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolved)
@@ -264,11 +117,6 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolved)
             newlowerbound - branchdata->olddualbound, 1.0) );
    }
 
-   //printf("Old lowerbound = %g, current lowerbound = %g, pseudocost of var %s = %g / %g\n",
-   //   branchdata->olddualbound, newlowerbound, SCIPvarGetName(branchdata->origvar),
-   //   SCIPgetVarPseudocost(scip, branchdata->origvar, 1.0), SCIPgetVarPseudocost(scip, branchdata->origvar, -1.0));
-
-      
    SCIPdebugMessage("Finished branchMasterSolved: %s %s %f.\n",
       SCIPvarGetName(branchdata->origvar), (branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<="), 
       branchdata->newbound);
@@ -284,6 +132,12 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
       ( (*branchdata)->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
+
+   if( (*branchdata)->cons != NULL )
+   {
+      /* release constraint */
+      SCIP_CALL( SCIPreleaseCons(scip, &(*branchdata)->cons) );
+   }
 
    SCIPfreeMemory(scip, branchdata);
 
@@ -356,7 +210,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    assert(result != NULL);
    assert(SCIPisRelaxSolValid(scip));
 
-   SCIPdebugMessage("Execps method of orig branching\n");
+   SCIPdebugMessage("Execrel method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
 
@@ -512,37 +366,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
 
-   if ( enforcebycons )
-   {
-      /* enforce new bounds by linear constraints */
-      SCIP_CONS* consup;
-      SCIP_CONS* consdown;
-
-      /* create corresponding constraints */
-      SCIP_CALL( SCIPcreateConsLinear(scip, &consup, "branch_up", 0, NULL, NULL, 
-            SCIPceil(scip, solval), SCIPinfinity(scip), 
-            TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-      SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, "branch_down", 0, NULL, NULL, 
-            -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),  
-            TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-      SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
-      SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
-
-      /* add constraints to nodes */
-      SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
-      SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
-
-      /* release constraints */
-      SCIP_CALL( SCIPreleaseCons(scip, &consup) );
-      SCIP_CALL( SCIPreleaseCons(scip, &consdown) );
-   }
-   else
-   {
-      /* enforce new bounds by setting variable bounds */
-      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, branchvar, solval) );
-      SCIP_CALL( SCIPchgVarLbNode(scip, childup, branchvar, solval) );
-   }
-
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
    branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
@@ -557,10 +380,45 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
 
+
    (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar), 
       ">=", branchupdata->newbound);
    (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar), 
       "<=", branchdowndata->newbound);
+
+   if ( enforcebycons )
+   {
+      /* enforce new bounds by linear constraints */
+      SCIP_CONS* consup;
+      SCIP_CONS* consdown;
+
+      /* create corresponding constraints */
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL, 
+            SCIPceil(scip, solval), SCIPinfinity(scip), 
+            TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, downname, 0, NULL, NULL, 
+            -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),  
+            TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
+
+      /* add constraints to nodes */
+      SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
+      SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
+
+      branchupdata->cons = consup;
+      branchdowndata->cons = consdown;
+   }
+   else
+   {
+      /* enforce new bounds by setting variable bounds */
+      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, branchvar, solval) );
+      SCIP_CALL( SCIPchgVarLbNode(scip, childup, branchvar, solval) );
+
+      branchupdata->cons = NULL;
+      branchdowndata->cons = NULL;
+
+   }
 
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup, 
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );

@@ -23,6 +23,7 @@
 
 #include "masterplugins.h"
 #include "scip/debug.h"
+#include "disp_master.h"
 
 #define USEHEURS 1
 #define USESEPA 0
@@ -106,8 +107,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
 
-   SCIP_CALL( SCIPincludeDispDefault(scip) );
-   SCIP_CALL( SCIPincludeDialogDefault(scip) );
+   SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) );
 
    return SCIP_OKAY;

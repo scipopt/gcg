@@ -61,5 +61,12 @@ SCIP* GCGpricerGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** adds the given constraint and the given position to the hashmap of the pricer */
+extern
+SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< the constraint that should be added */
+   int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
+   );
 
 #endif

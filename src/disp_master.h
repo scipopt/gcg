@@ -14,23 +14,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   disp_gcg.h
- * @brief  gcg display columns
+/**@file   disp_master.h
+ * @brief  master display columns
  * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_DISP_GCG_H__
-#define __SCIP_DISP_GCG_H__
+#ifndef __SCIP_DISP_MASTER_H__
+#define __SCIP_DISP_MASTER_H__
 
 
 #include "scip/scip.h"
 
 
-/** includes the gcg display columns in SCIP */
+/** includes the master display columns in SCIP */
 extern
-SCIP_RETCODE SCIPincludeDispGcg(
+SCIP_RETCODE SCIPincludeDispMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

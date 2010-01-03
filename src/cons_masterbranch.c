@@ -14,6 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
+//#define CHECKPROPAGATEDVARS
 /**@file   cons_masterbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
@@ -25,10 +26,13 @@
 
 #include "scip/type_cons.h"
 #include "scip/cons_linear.h"
+
 #include "cons_masterbranch.h"
+#include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-#include "cons_origbranch.h"
+
+#include "struct_vardata.h"
 
 
 /* constraint handler properties */
@@ -47,7 +51,7 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
-#define CHECKPROPAGATEDVARS        0
+
 
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
@@ -90,7 +94,7 @@ struct SCIP_ConshdlrData
    int                maxpendingbnds;
 };
 
-#if CHECKPROPAGATEDVARS
+#ifdef CHECKPROPAGATEDVARS
 /*
  * Local methods
  */
@@ -524,7 +528,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    if ( consdata->parentcons == NULL || !consdata->needprop )
    {
-#if CHECKPROPAGATEDVARS == 1
+#ifdef CHECKPROPAGATEDVARS
       SCIP_Bool consistent;
       consistent = checkVars(scip, conshdlr, TRUE);
       assert(consistent);
@@ -640,6 +644,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       }
    }
 
+   /* update bounds in the pricing problems */
    for ( i = 0; i < GCGrelaxGetNPricingprobs(origscip); i++ )
    {
       pricingvars = SCIPgetVars(GCGrelaxGetPricingprob(origscip, i));
@@ -688,7 +693,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata->needprop = FALSE;
    consdata->propagatedvars = SCIPgetNVars(scip);
 
-#if CHECKPROPAGATEDVARS == 1
+#ifdef CHECKPROPAGATEDVARS
    {
       SCIP_Bool consistent;
       consistent = checkVars(scip, conshdlr, TRUE);
@@ -888,6 +893,28 @@ void GCGconsMasterbranchGetStack(
 
    *stack = conshdlrData->stack;
    *nstackelements = conshdlrData->nstack;
+}
+
+/** returns the number of elements on the stack */
+int GCGconsMasterbranchGetNStackelements(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR*     conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrData;
+
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if ( conshdlr == NULL )
+   {
+      SCIPerrorMessage("masterbranch constraint handler not found\n");
+      return -1;
+   }   
+   conshdlrData = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrData != NULL);
+   assert(conshdlrData->stack != NULL);
+
+   return conshdlrData->nstack;
 }
 
 /** returns the branching data for a given masterbranch constraint */

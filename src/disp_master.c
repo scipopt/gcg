@@ -14,9 +14,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 
-/**@file   disp_gcg.c
+/**@file   disp_master.c
  * @ingroup DISPLAYS
- * @brief  gcg display columns
+ * @brief  master display columns
  * @author Gerald Gamrath
  */
 
@@ -25,8 +25,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "disp_gcg.h"
-#include "relax_gcg.h"
+#include "disp_master.h"
+#include "pricer_gcg.h"
 
 #define DISP_NAME_SOLFOUND      "solfound"
 #define DISP_DESC_SOLFOUND      "letter that indicates the heuristic, that found the solution"
@@ -313,7 +313,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
+   SCIPdispLongint(file, SCIPgetNLPIterations(scip), DISP_WIDT_MLPITERATIONS);
 
    return SCIP_OKAY;
 }
@@ -329,11 +329,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemused)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MEMUSED) == 0);
    assert(scip != NULL);
 
-   memused = SCIPgetMemUsed(scip);
-   memused += SCIPgetMemUsed(GCGrelaxGetMasterprob(scip));
-   for ( i = 0; i < GCGrelaxGetNPricingprobs(scip); i++ )
+   memused = SCIPgetMemUsed(GCGpricerGetOrigprob(scip));
+   memused += SCIPgetMemUsed(scip);
+   for ( i = 0; i < GCGrelaxGetNPricingprobs(GCGpricerGetOrigprob(scip)); i++ )
    {
-      memused += SCIPgetMemUsed(GCGrelaxGetPricingprob(scip, i));
+      memused += SCIPgetMemUsed(GCGrelaxGetPricingprob(GCGpricerGetOrigprob(scip), i));
    }
 
    SCIPdispLongint(file, memused, DISP_WIDT_MEMUSED);
@@ -349,7 +349,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MVARS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNVars(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MVARS);
+   SCIPdispInt(file, SCIPgetNVars(scip), DISP_WIDT_MVARS);
 
    return SCIP_OKAY;
 }
@@ -362,7 +362,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCONSS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNConss(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCONSS);
+   SCIPdispInt(file, SCIPgetNConss(scip), DISP_WIDT_MCONSS);
 
    return SCIP_OKAY;
 }
@@ -375,7 +375,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCUTS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNCutsApplied(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCUTS);
+   SCIPdispInt(file, SCIPgetNCutsApplied(scip), DISP_WIDT_MCUTS);
 
    return SCIP_OKAY;
 }
@@ -391,14 +391,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
    assert(scip != NULL);
 
-   sol = SCIPgetBestSol(GCGrelaxGetMasterprob(scip));
+   sol = SCIPgetBestSol(scip);
    if( sol == NULL )
       SCIPdispSetData(disp, NULL);
 
    dispdata = SCIPdispGetData(disp);
    if( sol != (SCIP_SOL*)dispdata )
    {
-      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), sol)));
+      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
       SCIPdispSetData(disp, (SCIP_DISPDATA*)sol);
    }
    else
@@ -415,7 +415,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputTime)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_TIME) == 0);
    assert(scip != NULL);
 
-   SCIPdispTime(file, SCIPgetSolvingTime(scip), DISP_WIDT_TIME);
+   SCIPdispTime(file, SCIPgetSolvingTime(GCGpricerGetOrigprob(scip)), DISP_WIDT_TIME);
 
    return SCIP_OKAY;
 }
@@ -443,6 +443,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNodesleft)
 
    SCIPdispInt(file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
 
+   if( SCIPgetNNodesLeft(scip) > 0 )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -454,7 +459,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLpiterations)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPITERATIONS) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetNLPIterations(scip), DISP_WIDT_LPITERATIONS);
+   SCIPdispLongint(file, SCIPgetNLPIterations(GCGpricerGetOrigprob(scip)), DISP_WIDT_LPITERATIONS);
 
    return SCIP_OKAY;
 }
@@ -471,8 +476,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLpavgiters)
       SCIPinfoMessage(scip, file, "     - ");
    else
       SCIPinfoMessage(scip, file, "%6.1f ", 
-         (SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)) - SCIPgetNRootLPIterations(GCGrelaxGetMasterprob(scip))) 
-         / (SCIP_Real)(SCIPgetNNodes(GCGrelaxGetMasterprob(scip)) - 1) );
+         (SCIPgetNLPIterations(scip) - SCIPgetNRootLPIterations(scip)) 
+         / (SCIP_Real)(SCIPgetNNodes(scip) - 1) );
    
    return SCIP_OKAY;
 }
@@ -540,7 +545,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputVars)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_VARS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNVars(scip), DISP_WIDT_VARS);
+   SCIPdispInt(file, SCIPgetNVars(GCGpricerGetOrigprob(scip)), DISP_WIDT_VARS);
 
    return SCIP_OKAY;
 }
@@ -553,7 +558,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputConss)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CONSS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNConss(scip), DISP_WIDT_CONSS);
+   SCIPdispInt(file, SCIPgetNConss(GCGpricerGetOrigprob(scip)), DISP_WIDT_CONSS);
 
    return SCIP_OKAY;
 }
@@ -566,7 +571,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCurconss)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CURCONSS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNEnabledConss(scip), DISP_WIDT_CURCONSS);
+   SCIPdispInt(file, SCIPgetNEnabledConss(GCGpricerGetOrigprob(scip)), DISP_WIDT_CURCONSS);
 
    return SCIP_OKAY;
 }
@@ -579,7 +584,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCurcols)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CURCOLS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNLPCols(scip), DISP_WIDT_CURCOLS);
+   SCIPdispInt(file, SCIPgetNLPCols(GCGpricerGetOrigprob(scip)), DISP_WIDT_CURCOLS);
 
    return SCIP_OKAY;
 }
@@ -592,7 +597,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCurrows)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CURROWS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNLPRows(scip), DISP_WIDT_CURROWS);
+   SCIPdispInt(file, SCIPgetNLPRows(GCGpricerGetOrigprob(scip)), DISP_WIDT_CURROWS);
 
    return SCIP_OKAY;
 }
@@ -605,7 +610,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCuts)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CUTS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNCutsApplied(scip), DISP_WIDT_CUTS);
+   SCIPdispInt(file, SCIPgetNCutsApplied(GCGpricerGetOrigprob(scip)), DISP_WIDT_CUTS);
 
    return SCIP_OKAY;
 }
@@ -618,7 +623,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSeparounds)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SEPAROUNDS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNSepaRounds(GCGrelaxGetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
+   SCIPdispInt(file, SCIPgetNSepaRounds(scip), DISP_WIDT_SEPAROUNDS);
 
    return SCIP_OKAY;
 }
@@ -631,7 +636,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPoolsize)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_POOLSIZE) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNPoolCuts(GCGrelaxGetMasterprob(scip)), DISP_WIDT_POOLSIZE);
+   SCIPdispInt(file, SCIPgetNPoolCuts(scip), DISP_WIDT_POOLSIZE);
 
    return SCIP_OKAY;
 }
@@ -644,7 +649,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputConflicts)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CONFLICTS) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetNConflictConssApplied(scip), DISP_WIDT_CONFLICTS);
+   SCIPdispLongint(file, SCIPgetNConflictConssApplied(GCGpricerGetOrigprob(scip)), DISP_WIDT_CONFLICTS);
 
    return SCIP_OKAY;
 }
@@ -657,7 +662,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputStrongbranchs)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_STRONGBRANCHS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNStrongbranchs(scip), DISP_WIDT_STRONGBRANCHS);
+   SCIPdispInt(file, SCIPgetNStrongbranchs(GCGpricerGetOrigprob(scip)), DISP_WIDT_STRONGBRANCHS);
 
    return SCIP_OKAY;
 }
@@ -672,7 +677,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLpobj)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPOBJ) == 0);
    assert(scip != NULL);
 
-   lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
+   lpobj = SCIPgetLPObjval(scip);
    if( SCIPisInfinity(scip, REALABS(lpobj)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
@@ -691,7 +696,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCurdualbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CURDUALBOUND) == 0);
    assert(scip != NULL);
 
-   curdualbound = SCIPgetLocalDualbound(scip);
+   curdualbound = SCIPgetLocalDualbound(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(curdualbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
@@ -710,7 +715,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputEstimate)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_ESTIMATE) == 0);
    assert(scip != NULL);
 
-   estimate = SCIPgetLocalOrigEstimate(scip);
+   estimate = SCIPgetLocalOrigEstimate(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(estimate)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
@@ -729,7 +734,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputAvgdualbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_AVGDUALBOUND) == 0);
    assert(scip != NULL);
 
-   avgdualbound = SCIPgetAvgDualbound(scip);
+   avgdualbound = SCIPgetAvgDualbound(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(avgdualbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
@@ -748,7 +753,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputDualbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DUALBOUND) == 0);
    assert(scip != NULL);
 
-   dualbound = SCIPgetDualbound(scip);
+   dualbound = SCIPgetDualbound(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(dualbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
@@ -767,11 +772,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_PRIMALBOUND) == 0);
    assert(scip != NULL);
 
-   primalbound = SCIPgetPrimalbound(scip);
+   primalbound = SCIPgetPrimalbound(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(primalbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
-      SCIPinfoMessage(scip, file, "%13.6e%c", primalbound, SCIPisPrimalboundSol(scip) ? ' ' : '*');
+      SCIPinfoMessage(scip, file, "%13.6e%c", primalbound, SCIPisPrimalboundSol(GCGpricerGetOrigprob(scip)) ? ' ' : '*');
 
    return SCIP_OKAY;
 }
@@ -786,11 +791,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCutoffbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CUTOFFBOUND) == 0);
    assert(scip != NULL);
 
-   cutoffbound = SCIPgetCutoffbound(scip);
+   cutoffbound = SCIPgetCutoffbound(GCGpricerGetOrigprob(scip));
    if( SCIPisInfinity(scip, REALABS(cutoffbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
-      SCIPinfoMessage(scip, file, "%13.6e ", SCIPretransformObj(scip, cutoffbound));
+      SCIPinfoMessage(scip, file, "%13.6e ", SCIPretransformObj(GCGpricerGetOrigprob(scip), cutoffbound));
 
    return SCIP_OKAY;
 }
@@ -805,7 +810,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
 
-   gap = SCIPgetGap(scip);
+   gap = SCIPgetGap(GCGpricerGetOrigprob(scip));
 
    if( SCIPisInfinity(scip, gap) )
       SCIPinfoMessage(scip, file, "    Inf ");
@@ -821,7 +826,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNsols)
 {  /*lint --e{715}*/
-   SCIPinfoMessage(scip, file, "%5"SCIP_LONGINT_FORMAT, SCIPgetNSolsFound(scip));
+   SCIPinfoMessage(scip, file, "%5"SCIP_LONGINT_FORMAT, SCIPgetNSolsFound(GCGpricerGetOrigprob(scip)));
 
    return SCIP_OKAY;
 }
@@ -831,7 +836,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNsols)
  */
 
 /** includes the default display columns in SCIP */
-SCIP_RETCODE SCIPincludeDispGcg(
+SCIP_RETCODE SCIPincludeDispMaster(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

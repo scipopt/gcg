@@ -25,13 +25,6 @@
 #define __SCIP_RELAX_GCG_H__
 
 
-#include "scip/scip.h"
-#include "scip/scipdefplugins.h"
-#include "gcgplugins.h"
-#include "struct_vardata.h"
-#include "pricer_gcg.h"
-#include "masterplugins.h"
-#include "nodesel_master.h"
 #include "type_branchgcg.h"
 
 
@@ -114,6 +107,15 @@ SCIP_RETCODE GCGrelaxCreateOrigVardata(
 extern
 SCIP_RETCODE GCGrelaxCreateOrigVarsData(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** transformes a constraint of the original problem into the master variable space and 
+ *  adds it to the master problem */
+extern
+SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< the constraint that should be transformed */
+   SCIP_CONS**           transcons           /**< pointer to the transformed constraint */
    );
 
 /* sets the number of the block, the given original variable belongs to */
@@ -237,4 +239,12 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP_SOL*             mastersol,          /** solution of the master problem */
    SCIP_SOL**            origsol             /** pointer to store the new created original problem's solution */
    );
+
+/* prints the given variable: name, type (original, master or pricing) block number,
+ * and the list of all variables related to the given variable */
+extern
+void GCGrelaxPrintVar(
+   SCIP_VAR*             var                 /**< variable that shpuld be printed */
+   );
+
 #endif

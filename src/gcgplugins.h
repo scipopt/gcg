@@ -49,7 +49,7 @@
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
-#include "scip/dialog_default.h"
+//#include "scip/dialog_default.h"
 #include "scip/heur_actconsdiving.h"
 #include "scip/heur_coefdiving.h"
 #include "scip/heur_crossover.h"
@@ -83,6 +83,7 @@
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_probing.h"
 #include "scip/presol_trivial.h"
+#include "scip/presol_boundshift.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
 #include "scip/reader_cnf.h"
@@ -101,7 +102,9 @@
 #include "scip/sepa_mcf.h"
 #include "scip/sepa_redcost.h"
 #include "scip/sepa_strongcg.h"
+#include "scip/sepa_zerohalf.h"
 #include "scip/scipshell.h"
+#include "scip/disp_default.h"
 #include "reader_blk.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
@@ -113,6 +116,7 @@
 #include "sepa_gcggomory.h"
 #include "heur_gcgfeaspump.h"
 #include "heur_gcgrounding.h"
+#include "dialog_gcg.h"
 
 
 
