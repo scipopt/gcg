@@ -64,7 +64,6 @@ struct SCIP_PricerData
 {
    int npricingprobs;              /* number of pricing problems */
    SCIP** pricingprobs;            /* pointers to the pricing problems */
-   SCIP_Real* dualsol;             /* array of dual solutions for the constraints of the master problem */
    SCIP_Real* dualsolconv;         /* array of dual solutions for the convexity constraints */
    SCIP_Real* objsums;             /* sum of objective coefficients for the pricing problems */
    SCIP_Real* objfactors;
@@ -489,14 +488,14 @@ SCIP_RETCODE setPricingObjs(
    {
       /* farkas pricing */
       if( pricetype == GCG_PRICETYPE_REDCOST )
-         pricerdata->dualsol[i] = SCIPgetDualsolLinear(scip, masterconss[i]);
+         dualsol = SCIPgetDualsolLinear(scip, masterconss[i]);
       /* redcost pricing */
       else 
       {
          assert(pricetype == GCG_PRICETYPE_FARKAS);
-         pricerdata->dualsol[i] = SCIPgetDualfarkasLinear(scip, masterconss[i]);
+         dualsol = SCIPgetDualfarkasLinear(scip, masterconss[i]);
       }
-      if( !SCIPisZero(scip, pricerdata->dualsol[i]) )
+      if( !SCIPisZero(scip, dualsol) )
       {
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
          consvars = SCIPgetVarsLinear(origprob, origconss[i]);
@@ -511,8 +510,8 @@ SCIP_RETCODE setPricingObjs(
                assert(vardata->data.origvardata.pricingvar != NULL);
                /* modify the objective of the corresponding variable in the pricing problem */
                SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[vardata->blocknr], 
-                     vardata->data.origvardata.pricingvar, -1.0 * pricerdata->dualsol[i] * consvals[j]) );
-               pricerdata->objsums[vardata->blocknr] -= pricerdata->dualsol[i] * consvals[j];
+                     vardata->data.origvardata.pricingvar, -1.0 * dualsol * consvals[j]) );
+               pricerdata->objsums[vardata->blocknr] -= dualsol * consvals[j];
             }
          }
       }
@@ -1475,7 +1474,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    }
    
    /* alloc memory for arrays of reduced cost */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsol), nmasterconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->objsums), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->objfactors), pricerdata->npricingprobs) );
@@ -1604,7 +1602,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
    
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
-   SCIPfreeMemoryArray(scip, &(pricerdata->dualsol));
    SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
    SCIPfreeMemoryArray(scip, &(pricerdata->objsums));
    SCIPfreeMemoryArray(scip, &(pricerdata->objfactors));

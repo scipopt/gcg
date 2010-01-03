@@ -1005,6 +1005,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    }
    for ( i = 0; i < relaxdata->nmasterconss; i++ )
    {
+      printf("release cons %s\n", SCIPconsGetName(relaxdata->masterconss[i]));
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->masterconss[i]) );
    }
    for ( i = 0; i < relaxdata->npricingprobs; i++ )
