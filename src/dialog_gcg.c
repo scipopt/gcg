@@ -796,10 +796,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIPdialogMessage(scip, NULL, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPdialogMessage(scip, NULL, "\nMaster Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), NULL) );
+   SCIPdialogMessage(scip, NULL, "\nOriginal Program statistics:\n");
+   SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
