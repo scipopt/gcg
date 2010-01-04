@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-//#define DEBUG_PRICING
+#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
@@ -669,7 +669,7 @@ SCIP_RETCODE createNewMasterVar(
       objvalue += solvals[i] * SCIPvarGetObj(probvars[i]);
    }
 
-   if( SCIPretransformObj(pricerdata->pricingprobs[prob], objvalue) >= pricerdata->dualsolconv[prob] )
+   if( objvalue >= pricerdata->dualsolconv[prob] )
    {
       *added = FALSE;
       SCIPfreeBufferArray(scip, &solvals);
@@ -1176,12 +1176,14 @@ SCIP_RETCODE performPricing(
          //if( pricetype == GCG_PRICETYPE_REDCOST )
          {
             char probname[SCIP_MAXSTRLEN];
-            (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_vars.lp", SCIPgetNVars(scip));
-            //SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
+            (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", prob, SCIPgetNVars(scip));
+            SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], probname, NULL, FALSE) );
 
             SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[prob], "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 
-            //SCIP_CALL( SCIPwriteParams(pricerdata->pricingprobs[prob], "pricing.set", TRUE, TRUE) );
+            SCIP_CALL( SCIPwriteParams(pricerdata->pricingprobs[prob], "pricing.set", TRUE, TRUE) );
+
+	    printf("prob %d dualsol = %g\n", prob, pricerdata->dualsolconv[prob]);
          }
 #endif
 
