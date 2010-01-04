@@ -14,7 +14,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
-#define DEBUG_PRICING
+//#define DEBUG_PRICING
 //#define DEBUG_PRICING_ALL_OUTPUT
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
