@@ -368,6 +368,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
    o2 = 0;
    ovar1 = NULL;
    ovar2 = NULL;
+   vardata1 = NULL;
 
    feasible = FALSE;
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
@@ -483,6 +484,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
 
    assert(ovar1 != NULL);
    assert(ovar2 != NULL);
+   assert(vardata1 != NULL);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childsame, 0.0, SCIPgetLocalTransEstimate(scip)) );
