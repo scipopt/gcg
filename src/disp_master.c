@@ -772,11 +772,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_PRIMALBOUND) == 0);
    assert(scip != NULL);
 
-   primalbound = SCIPgetPrimalbound(GCGpricerGetOrigprob(scip));
+   primalbound = SCIPgetPrimalbound(scip);
    if( SCIPisInfinity(scip, REALABS(primalbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
-      SCIPinfoMessage(scip, file, "%13.6e%c", primalbound, SCIPisPrimalboundSol(GCGpricerGetOrigprob(scip)) ? ' ' : '*');
+      SCIPinfoMessage(scip, file, "%13.6e%c", primalbound, SCIPisPrimalboundSol(scip) ? ' ' : '*');
 
    return SCIP_OKAY;
 }
