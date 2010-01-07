@@ -855,13 +855,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_CONS* cons;
    SCIP_CONSDATA* consdata;
    SCIP_VARDATA* vardata;
-   SCIP_VARDATA* pricingvardata;
    SCIP_Real val;
-
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   SCIP_VAR** pricingvars;
-   int npricingvars;
 
    int propcount;
    int i;
