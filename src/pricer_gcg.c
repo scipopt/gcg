@@ -239,13 +239,15 @@ SCIP_RETCODE checkVarBounds(
 
       if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
       {
-         printf("var %s: orig upper bound = %f, pricing upper bound = %f!\n", SCIPvarGetName(vars[v]),
-            SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) );
+         printf("var %s: orig upper bound = %g, pricing upper bound = %g, global orig upper bound = %g!\n", 
+            SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar),
+            SCIPvarGetUbGlobal(vars[v]));
       }
       if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) )
       {
-         printf("var %s: orig lower bound = %f, pricing lower bound = %f!\n", SCIPvarGetName(vars[v]),
-            SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) );
+         printf("var %s: orig lower bound = %g, pricing lower bound = %g, global orig lower bound = %g!\n", 
+            SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar),
+            SCIPvarGetLbGlobal(vars[v]) );
       }
 
       assert(SCIPvarGetUbLocal(vars[v]) == SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar));
