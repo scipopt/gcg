@@ -33,7 +33,7 @@
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "mip solver for pricing problems"
-#define SOLVER_PRIORITY      1000
+#define SOLVER_PRIORITY      0
 
 
 
@@ -137,7 +137,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       *sols = NULL;
       bestredcostvalid = FALSE;
       if( result != NULL ) 
-         *result = SCIP_DIDNOTRUN;
+         *result = SCIP_STATUS_UNKNOWN;
    } 
    else
    {
@@ -167,13 +167,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    {
       *nsols = 0;
       *sols = NULL;
-      *result = SCIP_DIDNOTRUN;
+      *result = SCIP_STATUS_UNKNOWN;
    } 
    else
    {
       *nsols = SCIPgetNSols(pricingprob);
       *sols = SCIPgetSols(pricingprob);
-      *result = SCIP_OKAY;
+      *result = SCIP_STATUS_OPTIMAL;
       //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
    }
 

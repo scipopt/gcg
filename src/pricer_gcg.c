@@ -1831,7 +1831,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
    /* solvers array is sorted decreasingly wrt. the priority, find right position and shift solvers with smaller priority */
    pos = pricerdata->nsolvers;
-   while( pos > 1 && pricerdata->solvers[pos-1]->priority < priority )
+   while( pos >= 1 && pricerdata->solvers[pos-1]->priority < priority )
    {
       pricerdata->solvers[pos] = pricerdata->solvers[pos-1];
       pos--;
