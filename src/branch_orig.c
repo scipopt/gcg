@@ -471,7 +471,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
  * branching specific interface methods
  */
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the most branching on original variables braching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )

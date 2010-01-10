@@ -26,6 +26,7 @@
 
 #include "scip/scip.h"
 #include "relax_gcg.h"
+#include "type_solver.h"
 
 enum GCG_Pricetype
 {
@@ -67,6 +68,17 @@ SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be added */
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
+   );
+
+/** includes a solver into the pricer data */
+extern
+SCIP_RETCODE GCGpricerIncludeSolver(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name,
+   const char*           description,
+   int                   priority,
+   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**<  activation method for branchrule */
+   GCG_SOLVERDATA*       solverdata
    );
 
 #endif

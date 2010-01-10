@@ -61,6 +61,8 @@ MAINOBJ		=	reader_blk.o \
 			disp_master.o \
 			heur_gcgrounding.o \
 			dialog_gcg.o \
+			solver_mip.o \
+			solver_knapsack.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))

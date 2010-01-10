@@ -24,6 +24,8 @@
 #include "masterplugins.h"
 #include "scip/debug.h"
 #include "disp_master.h"
+#include "solver_knapsack.h"
+#include "solver_mip.h"
 
 #define USEHEURS 1
 #define USESEPA 0
@@ -109,6 +111,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) );
+
+   SCIP_CALL( GCGincludeSolverKnapsack(scip) );
+   SCIP_CALL( GCGincludeSolverMip(scip) );
 
    return SCIP_OKAY;
 }

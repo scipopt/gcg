@@ -1234,13 +1234,13 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* initialize the scip data structure for the master problem */  
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
+   SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
  
    /* disable output to console */
    //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", SCIP_VERBLEVEL_FULL) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/freq", 1) );
 
-   SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
 
    /* add gcg relaxator parameters */
