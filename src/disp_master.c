@@ -776,7 +776,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
    if( SCIPisInfinity(scip, REALABS(primalbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
-      SCIPinfoMessage(scip, file, "%13.6e%c", primalbound, SCIPisPrimalboundSol(scip) ? ' ' : '*');
+      SCIPinfoMessage(scip, file, "%13.6e%c", SCIPretransformObj(GCGpricerGetOrigprob(scip), primalbound), 
+         SCIPisPrimalboundSol(scip) ? ' ' : '*');
 
    return SCIP_OKAY;
 }

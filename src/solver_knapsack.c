@@ -93,7 +93,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    nconss = SCIPgetNConss(pricingprob);
    if ( nconss != 1 )
    {
-      printf("%d conss in problem, abort!\n", nconss);
+      //printf("%d conss in problem, abort!\n", nconss);
 
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
@@ -115,7 +115,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) || 
       !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
-      printf("wrong structure, abort!\n");
+      //printf("wrong structure, abort!\n");
 
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
@@ -130,7 +130,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    {
       if( !SCIPisIntegral(scip, consvals[i]) )
       {
-         printf("wrong structure, abort!\n");
+         //printf("wrong structure, abort!\n");
          
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;

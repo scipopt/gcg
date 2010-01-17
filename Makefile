@@ -116,7 +116,10 @@ test:
 
 .PHONY: clean
 clean:
-		-rm -rf $(OBJDIR)/* $(MAINFILE)
+ifneq ($(OBJDIR),)
+		-rm -rf $(OBJDIR)/*
+endif
+		-rm -f $(MAINFILE)
 
 .PHONY: tags
 tags:
