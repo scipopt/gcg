@@ -753,11 +753,12 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputDualbound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DUALBOUND) == 0);
    assert(scip != NULL);
 
-   dualbound = SCIPgetDualbound(GCGpricerGetOrigprob(scip));
+   dualbound = SCIPgetDualbound(scip);
+   
    if( SCIPisInfinity(scip, REALABS(dualbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
    else
-      SCIPinfoMessage(scip, file, "%13.6e ", dualbound);
+      SCIPinfoMessage(scip, file, "%13.6e ", SCIPretransformObj(GCGpricerGetOrigprob(scip), dualbound));
 
    return SCIP_OKAY;
 }
