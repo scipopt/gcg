@@ -43,14 +43,25 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - scip            : SCIP main data structure of the master problem
  *  - pricingprob     : the pricing problem that should be solved
  *  - probnr          : number of the pricing problem
- *  - sols            : array to store solutions
- *  - nsols           : pointer to integer variable;
- *                      input: length of array sols, output: number of solutions stored in sols
  *  - result          : the result of the solving call: 
  *                      - SCIP_SUCCESS if problem was solved to optimality
  *                      - SCIP_DIDNOTRUN if not
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, SCIP* pricingprob, int probnr, SCIP_SOL*** sols, int* nsols,  SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, SCIP* pricingprob, int probnr, SCIP_STATUS* result)
+
+/** solving method for solver
+ *  
+ *
+ *  input:
+ *  - scip            : SCIP main data structure of the master problem
+ *  - pricingprob     : the pricing problem that should be solved
+ *  - probnr          : number of the pricing problem
+ *  - result          : the result of the solving call: 
+ *                      - SCIP_SUCCESS if problem was solved to optimality
+ *                      - SCIP_DIDNOTRUN if not
+ */
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, SCIP* pricingprob, int probnr, SCIP_STATUS* result)
+
 
 #ifdef __cplusplus
 }

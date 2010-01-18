@@ -33,11 +33,21 @@ extern "C" {
 /** branching rule */
 struct GCG_Solver
 {
-   char* name;
-   char* description;
-   int priority;
+   char*                 name;
+   char*                 description;
+   int                   priority;
+   GCG_SOLVERDATA*       solverdata;     
    GCG_DECL_SOLVERSOLVE((*solversolve));
-   GCG_SOLVERDATA* solverdata;     
+   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur));
+
+   SCIP_CLOCK*           optfarkasclock;
+   SCIP_CLOCK*           optredcostclock;
+   SCIP_CLOCK*           heurfarkasclock;
+   SCIP_CLOCK*           heurredcostclock;
+   int                   optfarkascalls;
+   int                   optredcostcalls;
+   int                   heurfarkascalls;
+   int                   heurredcostcalls;
 };
 
 

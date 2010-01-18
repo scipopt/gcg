@@ -32,6 +32,7 @@
 
 #include "dialog_gcg.h"
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
 
 
 
@@ -801,6 +802,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    SCIPdialogMessage(scip, NULL, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPdialogMessage(scip, NULL, "\n");
+   GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
+   SCIPdialogMessage(scip, NULL, "\n");
+
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 

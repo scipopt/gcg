@@ -77,8 +77,15 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           name,
    const char*           description,
    int                   priority,
-   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**<  activation method for branchrule */
+   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**<  solving method for solver */
+   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)),   /**<  heuristic solving method for solver */
    GCG_SOLVERDATA*       solverdata
+   );
+
+extern
+void GCGpricerPrintStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file */
    );
 
 #endif
