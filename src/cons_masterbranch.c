@@ -1263,7 +1263,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       }
    }
 
-   if ( vardata->blocknr == -1 )
+   if ( vardata->blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
       assert(vardata->data.origvardata.nmastervars == 1);
       assert(vardata->data.origvardata.mastervals[0] == 1);

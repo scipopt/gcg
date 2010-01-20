@@ -78,7 +78,25 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    const char*           description,
    int                   priority,
    GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**<  solving method for solver */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)),   /**<  heuristic solving method for solver */
+   GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**<  heuristic solving method for solver */
+   GCG_DECL_SOLVERFREE   ((*solverfree)),
+   GCG_DECL_SOLVERINIT   ((*solverinit)),
+   GCG_DECL_SOLVEREXIT   ((*solverexit)),
+   GCG_DECL_SOLVERINITSOL((*solverinitsol)),
+   GCG_DECL_SOLVEREXITSOL((*solverexitsol)),
+   GCG_SOLVERDATA*       solverdata
+   );
+
+extern
+GCG_SOLVERDATA* GCGpricerGetSolverdata(
+   SCIP*                 scip,
+   GCG_SOLVER*           solver
+   );
+
+extern
+void GCGpricerSetSolverdata(
+   SCIP*                 scip,
+   GCG_SOLVER*           solver,
    GCG_SOLVERDATA*       solverdata
    );
 

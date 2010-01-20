@@ -35,14 +35,115 @@
 #define SOLVER_DESC          "mip solver for pricing problems"
 #define SOLVER_PRIORITY      0
 
+#define DEFAULT_CHECKSOLS TRUE
 
 
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
+   SCIP* origprob;
+   SCIP_Real** solvals;
+   SCIP_VAR*** solvars;
+   SCIP_Real*  tmpsolvals;
+   int* nsolvars;
+   int nsols;
+   int maxvars;
 
-
+   SCIP_Bool checksols;
 };
+
+/* ensures size of solution arrays */
+static
+SCIP_RETCODE ensureSizeSolvers(
+   SCIP*                 scip,
+   GCG_SOLVERDATA*       solverdata,
+   int                   nsols
+   )
+{
+   int i;
+
+   assert(scip != NULL);
+   assert(solverdata != NULL);
+
+   if ( solverdata->nsols < nsols )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->nsolvars), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvars), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvals), nsols) );
+
+      for( i = solverdata->nsols; i < nsols; i++ )
+      {
+         solverdata->nsolvars[i] = 0;
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) );
+      }
+
+      solverdata->nsols = nsols;
+
+   }
+
+   return SCIP_OKAY;
+}
+
+/** checks whether the given solution is equal to one of the former solutions in the sols array */
+static
+SCIP_RETCODE checkSolNew(
+   SCIP*                 scip,
+   SCIP*                 pricingprob,
+   SCIP_SOL**            sols,
+   int                   idx,
+   SCIP_Bool*            isnew
+   )
+{
+   SCIP* origprob;
+   SCIP_VAR** probvars;
+   int nprobvars;
+   SCIP_Real* newvals;
+
+   int s;
+   int i;
+
+   assert(scip != NULL);
+   assert(pricingprob != NULL);
+   assert(sols != NULL);
+   assert(sols[idx] != NULL);
+   assert(isnew != NULL);
+
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(origprob != NULL);
+
+   probvars = SCIPgetVars(pricingprob);
+   nprobvars = SCIPgetNVars(pricingprob);
+
+   *isnew = TRUE;
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &newvals, nprobvars) );
+
+   SCIP_CALL( SCIPgetSolVals(pricingprob, sols[idx], nprobvars, probvars, newvals) );
+
+   for( s = 0; s < idx && *isnew == TRUE; s++ )
+   {
+      assert(sols[s] != NULL);
+      assert(SCIPisLE(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])));
+      if( !SCIPisEQ(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
+         continue;
+
+      if( SCIPsolGetOrigin(sols[s]) != SCIP_SOLORIGIN_ORIGINAL && SCIPsolGetOrigin(sols[idx]) != SCIP_SOLORIGIN_ORIGINAL )
+         continue;
+
+      for( i = 0; i < nprobvars; i++ )
+         if( !SCIPisEQ(scip, SCIPgetSolVal(pricingprob, sols[s], probvars[i]), newvals[i]) )
+            break;
+
+      if( i == nprobvars )
+         *isnew = FALSE;
+   }
+
+   SCIPfreeBufferArray(scip, &newvals);
+
+   return SCIP_OKAY;
+}
+
 
 
 /*
@@ -50,8 +151,106 @@ struct GCG_SolverData
  */
 
 static
+GCG_DECL_SOLVERFREE(solverFreeMip)
+{
+   GCG_SOLVERDATA* solverdata;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
+
+   SCIPfreeMemory(scip, &solverdata);
+
+   GCGpricerSetSolverdata(scip, solver, NULL);
+
+   return SCIP_OKAY;
+}
+
+static
+GCG_DECL_SOLVERINITSOL(solverInitsolMip)
+{
+   GCG_SOLVERDATA* solverdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
+
+   solverdata->maxvars = -1;
+   for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
+   {
+      if( SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i)) > solverdata->maxvars )
+         solverdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
+   }
+
+   solverdata->nsols = 10;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals), solverdata->nsols) );
+
+   for( i = 0; i < solverdata->nsols; i++ )
+   {
+      solverdata->nsolvars[i] = 0;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) );
+   }
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->tmpsolvals), solverdata->maxvars) );
+
+   return SCIP_OKAY;
+}
+
+static
+GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
+{
+   GCG_SOLVERDATA* solverdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
+
+   for( i = 0; i < solverdata->nsols; i++ )
+   {
+      SCIPfreeMemoryArray(scip, &(solverdata->solvars[i]));
+      SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
+   }
+
+   SCIPfreeMemoryArray(scip, &(solverdata->tmpsolvals));
+
+   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
+   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
+   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
+
+   return SCIP_OKAY;
+}
+
+#define solverInitMip NULL
+#define solverExitMip NULL
+
+
+static
 GCG_DECL_SOLVERSOLVE(solverSolveMip)
 {
+   GCG_SOLVERDATA* solverdata;
+   SCIP_SOL** probsols;
+   int nprobsols;
+
+   SCIP_VAR** probvars;
+   int nprobvars;
+
+   SCIP_Bool newsol;
+
+   int s;
+   int i;
+
+
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    //if( pricetype == GCG_PRICETYPE_REDCOST )
@@ -67,34 +266,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    }
 #endif
 
-#if 0
-
-   /* start clock measuring the presolving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-      SCIP_CALL( SCIPstartClock(scip, solverdata->redcostpresolveclock) );
-   else
-      SCIP_CALL( SCIPstartClock(scip, solverdata->farkaspresolveclock) );
-
-
-   /* stop clock measuring the presolving effort, start clock measuring the solving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-   {
-      SCIP_CALL( SCIPstopClock(scip, solverdata->redcostpresolveclock) );
-      SCIP_CALL( SCIPstartClock(scip, solverdata->redcostsolveclock) );
-   }
-   else
-   {
-      SCIP_CALL( SCIPstopClock(scip, solverdata->farkaspresolveclock) );
-      SCIP_CALL( SCIPstartClock(scip, solverdata->farkassolveclock) );
-   }
-
-   /* stop clock measuring the solving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-      SCIP_CALL( SCIPstopClock(scip, solverdata->redcostsolveclock) );
-   else
-      SCIP_CALL( SCIPstopClock(scip, solverdata->farkassolveclock) );
-
-#endif
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
 
    SCIP_CALL( SCIPtransformProb(pricingprob) );
 
@@ -118,10 +291,72 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
    {
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
    } 
    else
    {
+      /* get variables of the pricing problem */
+      probvars = SCIPgetOrigVars(pricingprob);
+      nprobvars = SCIPgetNOrigVars(pricingprob);
+
+      nprobsols = SCIPgetNSols(pricingprob);
+      probsols = SCIPgetSols(pricingprob);
+
+      *nsols = 0;
+
+      SCIP_CALL( ensureSizeSolvers(scip, solverdata, nprobsols) );
+
+      for( s = 0; s < nprobsols; s++ )
+      {
+#ifndef NDEBUG
+         SCIP_Bool feasible;
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         assert(feasible);
+#endif
+         
+         if( solverdata->checksols )
+         {
+            SCIP_CALL( checkSolNew(scip, pricingprob, probsols, s, &newsol) );
+            
+            if( !newsol )
+               continue;
+         }
+
+         solverdata->nsolvars[*nsols] = 0;
+
+         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
+         
+         /* for integer variable, round the solvals */
+         for( i = 0; i < nprobvars; i++ )
+         {
+            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
+               continue;
+
+            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
+
+            if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
+            {
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfloor(scip, solverdata->tmpsolvals[i])));
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] 
+                  = SCIPfloor(scip, solverdata->tmpsolvals[i]);
+            }
+            else
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
+
+            solverdata->nsolvars[*nsols]++;
+         }
+         
+         *nsols = *nsols + 1;
+      }
+         
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+
       *result = SCIP_STATUS_OPTIMAL;
       //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
    }
@@ -134,8 +369,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    }
 #endif
 
-   //SCIP_CALL( SCIPfreeTransform(pricingprob) );
-
    return SCIP_OKAY;
 }
 
@@ -143,6 +376,17 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 {
+   GCG_SOLVERDATA* solverdata;
+   SCIP_SOL** probsols;
+   int nprobsols;
+
+   SCIP_VAR** probvars;
+   int nprobvars;
+
+   SCIP_Bool newsol;
+
+   int s;
+   int i;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    //if( pricetype == GCG_PRICETYPE_REDCOST )
@@ -158,39 +402,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    }
 #endif
 
-#if 0
-
-   /* start clock measuring the presolving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-      SCIP_CALL( SCIPstartClock(scip, solverdata->redcostpresolveclock) );
-   else
-      SCIP_CALL( SCIPstartClock(scip, solverdata->farkaspresolveclock) );
-
-
-   /* stop clock measuring the presolving effort, start clock measuring the solving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-   {
-      SCIP_CALL( SCIPstopClock(scip, solverdata->redcostpresolveclock) );
-      SCIP_CALL( SCIPstartClock(scip, solverdata->redcostsolveclock) );
-   }
-   else
-   {
-      SCIP_CALL( SCIPstopClock(scip, solverdata->farkaspresolveclock) );
-      SCIP_CALL( SCIPstartClock(scip, solverdata->farkassolveclock) );
-   }
-
-   /* stop clock measuring the solving effort */
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-      SCIP_CALL( SCIPstopClock(scip, solverdata->redcostsolveclock) );
-   else
-      SCIP_CALL( SCIPstopClock(scip, solverdata->farkassolveclock) );
-
-#endif
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
 
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", 100) );
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", 1000) );
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.2) );
-   //SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) ); 
+   //SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );
 
 
    SCIP_CALL( SCIPtransformProb(pricingprob) );
@@ -215,10 +433,68 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
    {
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
    } 
    else
    {
+      /* get variables of the pricing problem */
+      probvars = SCIPgetOrigVars(pricingprob);
+      nprobvars = SCIPgetNOrigVars(pricingprob);
+
+      nprobsols = SCIPgetNSols(pricingprob);
+      probsols = SCIPgetSols(pricingprob);
+
+      *nsols = 0;
+
+      SCIP_CALL( ensureSizeSolvers(scip, solverdata, nprobsols) );
+
+      for( s = 0; s < nprobsols; s++ )
+      {
+#ifndef NDEBUG
+         SCIP_Bool feasible;
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         assert(feasible);
+#endif
+         
+         if( solverdata->checksols )
+         {
+            SCIP_CALL( checkSolNew(scip, pricingprob, probsols, s, &newsol) );
+            
+            if( !newsol )
+               continue;
+         }
+
+         solverdata->nsolvars[*nsols] = 0;
+
+         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
+         
+         /* for integer variable, round the solvals */
+         for( i = 0; i < nprobvars; i++ )
+         {
+            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
+               continue;
+
+            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
+
+            if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
+            {
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfloor(scip, solverdata->tmpsolvals[i])));
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] 
+                  = SCIPfloor(scip, solverdata->tmpsolvals[i]);
+            }
+            else
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
+
+            solverdata->nsolvars[*nsols]++;
+         }
+         
+         *nsols = *nsols + 1;
+      }
+         
       *result = SCIP_STATUS_OPTIMAL;
       //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
    }
@@ -236,12 +512,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.0) ); 
    SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", -1) ); 
 
-
-   //SCIP_CALL( SCIPfreeTransform(pricingprob) );
-
    return SCIP_OKAY;
 }
-
 
 /** creates the most infeasible LP braching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeSolverMip(
@@ -250,10 +522,21 @@ SCIP_RETCODE GCGincludeSolverMip(
 {   
    GCG_SOLVERDATA* data;
 
-   data = NULL;
-   
+   SCIP_CALL( SCIPallocMemory( scip, &data) );
+   data->nsols = 0;
+   data->nsolvars = 0;
+   data->solvars = NULL;
+   data->solvals = NULL;
+   data->origprob = GCGpricerGetOrigprob(scip);
+
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, 
-         solverSolveMip, solverSolveHeurMip, data) );
+         solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
+         solverInitsolMip, solverExitsolMip, data) );
+
+   SCIP_CALL( SCIPaddBoolParam(data->origprob, "pricingsolver/mip/checksols",
+         "should solutions of the pricing MIPs be checked for duplicity?",
+         &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }

@@ -39,7 +39,11 @@ struct GCG_Solver
    GCG_SOLVERDATA*       solverdata;     
    GCG_DECL_SOLVERSOLVE((*solversolve));
    GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur));
-
+   GCG_DECL_SOLVERFREE   ((*solverfree));
+   GCG_DECL_SOLVERINIT   ((*solverinit));
+   GCG_DECL_SOLVEREXIT   ((*solverexit));
+   GCG_DECL_SOLVERINITSOL((*solverinitsol));
+   GCG_DECL_SOLVEREXITSOL((*solverexitsol));
    SCIP_CLOCK*           optfarkasclock;
    SCIP_CLOCK*           optredcostclock;
    SCIP_CLOCK*           heurfarkasclock;
