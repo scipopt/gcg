@@ -49,6 +49,7 @@
 #define STARTMAXMASTERVARS 10
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_MERGEIDENTICALBLOCS TRUE
+#define DEFAULT_DISPINFOS FALSE
 
 
 /*
@@ -95,7 +96,7 @@ struct SCIP_RelaxData
    SCIP_Bool        mergeidenticalblocks;/* should identical blocks be merged (only for discretization approach)? */
    SCIP_Bool        masterissetpart;     /* is the master a set partitioning problem? */
    SCIP_Bool        masterissetcover;    /* is the master a set covering problem? */
-
+   SCIP_Bool        dispinfos;
 };
 
 
@@ -860,6 +861,22 @@ SCIP_RETCODE createMaster(
    if ( SCIPisObjIntegral(scip) )
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
 
+   for ( i = 0; i < relaxdata->npricingprobs && relaxdata->dispinfos; i++ )
+   {
+      int nbin;
+      int nint;
+      int nimpl;
+      int ncont;
+
+      if ( relaxdata->blockrepresentative[i] != i )
+         continue;
+
+      SCIP_CALL( SCIPgetVarsData(relaxdata->pricingprobs[i], NULL, NULL, &nbin, &nint, &nimpl, &ncont) );
+
+      printf("pricing problem %d: %d bins, %d ints, %d impls and %d cont\n", i, nbin, nint, nimpl, ncont);
+   }
+
+
    return SCIP_OKAY;
 }
 
@@ -1254,6 +1271,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mergeidenticalblocks",
          "should identical blocks be merged (only for discretization approach)?",
          &(relaxdata->mergeidenticalblocks), FALSE, DEFAULT_MERGEIDENTICALBLOCS, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
+         "should additional information about the blocks be displayed?",
+         &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
 
 
    return SCIP_OKAY;
