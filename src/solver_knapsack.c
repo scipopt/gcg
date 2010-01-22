@@ -33,7 +33,7 @@
 
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"
-#define SOLVER_PRIORITY      100
+#define SOLVER_PRIORITY      -100
 
 
 

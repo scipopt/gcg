@@ -98,7 +98,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 
 /** branching execution method relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECPS(branchExecrelMaster)
+SCIP_DECL_BRANCHEXECREL(branchExecrelMaster)
 {
    SCIPdebugMessage("Execrel method of master branching\n");
    printf("Execrel method of master branching\n");
@@ -110,8 +110,32 @@ SCIP_DECL_BRANCHEXECPS(branchExecrelMaster)
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
 {
+   SCIP_NODE* child1;
+   SCIP_NODE* child2;
+   SCIP_CONS* cons1;
+   SCIP_CONS* cons2;
+
+   assert(scip != NULL);
+   assert(result != NULL);
+
    SCIPdebugMessage("Execps method of master branching\n");
    printf("Execps method of master branching\n");
+
+   /* create the b&b-tree child-nodes of the current node */
+   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+
+   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+
+   /* release constraints */
+   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+
+   *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
 }

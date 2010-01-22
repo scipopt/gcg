@@ -56,6 +56,9 @@
 #define DEFAULT_USEHEURPRICING FALSE
 #define DEFAULT_ONLYPOSCONV FALSE
 #define DEFAULT_ABORTPRICING TRUE
+#define DEFAULT_ONLYBEST FALSE
+
+#define MAXBEST 1000
 
 
 /*
@@ -76,6 +79,16 @@ struct SCIP_PricerData
    SCIP_HASHMAP* mapcons2idx;
    SCIP_Real* tmpconvdualsol;
    int* permu;
+
+   SCIP_Real** bestsolvals;
+   SCIP_VAR*** bestsolvars;
+   int* nbestsolvars;
+   int* prob;
+   SCIP_Real* redcost;
+   int nbestsols;
+   int maxbestsols;
+   int maxvars;
+
 
    /** variables used for statistics */
    SCIP_CLOCK* redcostclock;
@@ -105,6 +118,7 @@ struct SCIP_PricerData
    SCIP_Bool useheurpricing;
    SCIP_Bool onlyposconv;
    SCIP_Bool abortpricing;
+   SCIP_Bool onlybest;
 };
 
 
@@ -124,6 +138,109 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 
    return SCIP_OKAY;
 }
+
+SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
+{
+   SCIP_PARAMDATA* paramdata;
+   SCIP_PRICERDATA* pricerdata;
+   int i;
+
+   paramdata = SCIPparamGetData(param);
+   assert(paramdata != NULL);
+   pricerdata = (SCIP_PRICERDATA*) paramdata;
+
+
+   if( SCIPgetStage(scip) <= SCIP_STAGE_PRESOLVED )
+      return SCIP_OKAY;
+
+   /* free array if not needed anymore */
+   if ( !pricerdata->onlybest && pricerdata->maxbestsols > 0 )
+   {
+      assert(pricerdata->bestsolvars != NULL);
+      assert(pricerdata->bestsolvals != NULL);
+      assert(pricerdata->nbestsolvars != NULL);
+      assert(pricerdata->redcost != NULL );
+      assert(pricerdata->prob != NULL );
+
+      for( i = 0; i < pricerdata->maxbestsols; i++ )
+      {
+         assert(pricerdata->bestsolvars[i] != NULL);
+         assert(pricerdata->bestsolvals[i] != NULL);
+         
+         SCIPfreeMemoryArray(scip, &(pricerdata->bestsolvars[i]));
+         SCIPfreeMemoryArray(scip, &(pricerdata->bestsolvals[i]));
+      }
+
+      SCIPfreeMemoryArray(scip, &pricerdata->bestsolvars);
+      SCIPfreeMemoryArray(scip, &pricerdata->bestsolvals);
+      SCIPfreeMemoryArray(scip, &pricerdata->nbestsolvars);
+      SCIPfreeMemoryArray(scip, &pricerdata->redcost);
+      SCIPfreeMemoryArray(scip, &pricerdata->prob);
+
+      pricerdata->bestsolvars = NULL;
+      pricerdata->bestsolvals = NULL;
+      pricerdata->nbestsolvars = NULL;
+      pricerdata->maxbestsols = 0;
+      pricerdata->nbestsols = 0;
+   }
+
+   /* create array */
+   if ( pricerdata->onlybest && pricerdata->maxbestsols == 0 && pricerdata->maxvarsroundredcost <= MAXBEST)
+   {
+      assert(pricerdata->bestsolvars == NULL);
+      assert(pricerdata->bestsolvals == NULL);
+      assert(pricerdata->nbestsolvars == NULL);
+      assert(pricerdata->redcost == NULL);
+      assert(pricerdata->prob == NULL);
+
+      pricerdata->maxbestsols = pricerdata->maxvarsroundredcost;
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->bestsolvars, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->bestsolvals, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->nbestsolvars, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->redcost, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->prob, pricerdata->maxbestsols) );
+
+      for( i = 0; i < pricerdata->maxbestsols; i++ )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         pricerdata->nbestsolvars[i] = 0;
+      }
+
+      pricerdata->nbestsols = 0;
+   }
+
+   /* change size of array */
+   if ( pricerdata->onlybest && pricerdata->maxbestsols != 0 )
+   {
+      assert(pricerdata->bestsolvars != NULL);
+      assert(pricerdata->bestsolvals != NULL);
+      assert(pricerdata->nbestsolvars != NULL);
+      assert(pricerdata->redcost != NULL);
+      assert(pricerdata->prob != NULL);
+
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricerdata->bestsolvars, pricerdata->maxvarsroundredcost) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricerdata->bestsolvals, pricerdata->maxvarsroundredcost) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricerdata->nbestsolvars, pricerdata->maxvarsroundredcost) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricerdata->redcost, pricerdata->maxvarsroundredcost) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &pricerdata->prob, pricerdata->maxvarsroundredcost) );
+
+      for( i = pricerdata->maxbestsols; i < pricerdata->maxvarsroundredcost; i++ )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         pricerdata->nbestsolvars[i] = 0;
+      }
+
+      pricerdata->maxbestsols = pricerdata->maxvarsroundredcost;
+   }
+
+   printf("paramchanged\n");
+
+   return SCIP_OKAY;
+}
+
 
 
 /*
@@ -789,6 +906,7 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_Real*            solvals,
    int                   nsolvars,
    int                   prob,
+   SCIP_Bool             checkonlybest,
    SCIP_Bool*            added
    )
 {
@@ -856,6 +974,7 @@ SCIP_RETCODE createNewMasterVar(
    if( SCIPisRelGE(scip, objvalue, pricerdata->dualsolconv[prob]) )
    {
       *added = FALSE;
+
       return SCIP_OKAY;
    }
    else
@@ -865,8 +984,50 @@ SCIP_RETCODE createNewMasterVar(
 
    SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", 
       objvalue - pricerdata->dualsolconv[prob], objvalue, pricerdata->dualsolconv[prob]);
-   //printf("found var with redcost %f (objvalue = %g, dualsol =%g)\n", 
-   //   objvalue - pricerdata->dualsolconv[prob], objvalue, pricerdata->dualsolconv[prob]);
+   //printf("found var with redcost %f (objvalue = %g, dualsol =%g), checkonlybest = %d\n", 
+   //   objvalue - pricerdata->dualsolconv[prob], objvalue, pricerdata->dualsolconv[prob], checkonlybest);
+
+   if( checkonlybest && pricerdata->onlybest && pricerdata->maxbestsols > 0 )
+   {
+      int pos;
+
+      for( pos = pricerdata->nbestsols - 1; pos >= 0 && pricerdata->redcost[pos] > 
+              objvalue - pricerdata->dualsolconv[prob]; pos-- )
+      {
+         if( pos < pricerdata->maxbestsols - 1 )
+         {
+            pricerdata->prob[pos+1] = pricerdata->prob[pos];
+            pricerdata->redcost[pos+1] = pricerdata->redcost[pos];
+            pricerdata->nbestsolvars[pos+1] = pricerdata->nbestsolvars[pos];
+            for( i = 0; i < pricerdata->nbestsolvars[pos]; i++ )
+            {
+               pricerdata->bestsolvars[pos+1][i] = pricerdata->bestsolvars[pos][i];
+               pricerdata->bestsolvals[pos+1][i] = pricerdata->bestsolvals[pos][i];
+            }
+         }
+         else
+         {
+            pricerdata->nbestsols--;
+         }
+      }
+      pos++;
+
+      if( pos != pricerdata->maxbestsols )
+      {
+         pricerdata->prob[pos] = prob;
+         pricerdata->redcost[pos] = objvalue - pricerdata->dualsolconv[prob];
+         pricerdata->nbestsolvars[pos] = nsolvars;
+         
+         for( i = 0; i < pricerdata->nbestsolvars[pos]; i++ )
+         {
+            pricerdata->bestsolvars[pos][i] = solvars[i];
+            pricerdata->bestsolvals[pos][i] = solvals[i];
+         }
+         pricerdata->nbestsols++;
+      }
+
+      return SCIP_OKAY;
+   }
 
             
    /* create data for the new variable in the master problem */
@@ -1155,9 +1316,9 @@ SCIP_RETCODE performPricing(
       /* solve the pricing MIPs heuristically and check whether solutions 
        * corresponding to variables with negative reduced costs where found 
        */
-      for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS ||
-            (nfoundvars < pricerdata->maxvarsroundredcost && successfulmips < pricerdata->maxsuccessfulmipsredcost))
-              && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
+      for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || ((pricerdata->onlybest ||
+                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+              && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv )
               && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
          prob = pricerdata->permu[i];
@@ -1196,10 +1357,12 @@ SCIP_RETCODE performPricing(
 
          for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
                  (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
-                 && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost); j++ )
+                 && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost 
+                    || pricerdata->onlybest); j++ )
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-            SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], prob, &added) );
+            SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], prob, 
+                  pricetype == GCG_PRICETYPE_REDCOST, &added) );
             
             if ( added )
             {
@@ -1220,8 +1383,8 @@ SCIP_RETCODE performPricing(
    {
       bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL ? TRUE : FALSE );
 
-      for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS ||
-            (nfoundvars < pricerdata->maxvarsroundredcost && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+      for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || (( pricerdata->onlybest || 
+                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
               && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
@@ -1281,10 +1444,12 @@ SCIP_RETCODE performPricing(
 
          for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
                  (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
-                 && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost); j++ )
+                 && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost
+                    || pricerdata->onlybest); j++ )
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-            SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], prob, &added) );
+            SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], prob, 
+                  pricetype == GCG_PRICETYPE_REDCOST, &added) );
             
             if ( added )
             {
@@ -1297,6 +1462,18 @@ SCIP_RETCODE performPricing(
          }
 
       }
+   }
+
+   if( pricerdata->onlybest && pricerdata->maxbestsols > 0 && pricerdata->nbestsols > 0 )
+   {
+      for( j = 0; j < pricerdata->nbestsols; j++ )
+      {
+         /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
+         SCIP_CALL( createNewMasterVar(scip, pricerdata->bestsolvars[j], pricerdata->bestsolvals[j], 
+               pricerdata->nbestsolvars[j], pricerdata->prob[j], FALSE, &added) );
+         assert(added);
+      }
+      pricerdata->nbestsols = 0;
    }
 
    for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
@@ -1509,6 +1686,46 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i);
    }
 
+   /* create onlybest array, if needed */
+   pricerdata->maxvars = -1;
+   for( i = 0; i < GCGrelaxGetNPricingprobs(origprob); i++ )
+   {
+      if( SCIPgetNVars(GCGrelaxGetPricingprob(origprob, i)) > pricerdata->maxvars )
+         pricerdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(origprob, i));
+   }
+
+   if ( pricerdata->onlybest && pricerdata->maxvarsroundredcost <= MAXBEST)
+   {
+      pricerdata->maxbestsols = pricerdata->maxvarsroundredcost;
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->bestsolvars, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->bestsolvals, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->nbestsolvars, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->redcost, pricerdata->maxbestsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->prob, pricerdata->maxbestsols) );
+
+      for( i = 0; i < pricerdata->maxbestsols; i++ )
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         pricerdata->nbestsolvars[i] = 0;
+      }
+
+      pricerdata->nbestsols = 0;
+   }
+   else
+   {
+      pricerdata->bestsolvars = NULL;
+      pricerdata->bestsolvals = NULL;
+      pricerdata->nbestsolvars = NULL;
+      pricerdata->redcost = NULL;
+      pricerdata->prob = NULL;
+      pricerdata->maxbestsols = 0;
+      pricerdata->nbestsols = 0;
+   }
+
+
+
    SCIP_CALL( solversInitsol(scip, pricerdata) );
 
    return SCIP_OKAY;
@@ -1521,6 +1738,7 @@ static
 SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 {  
    SCIP_PRICERDATA* pricerdata;
+   int i;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -1529,6 +1747,41 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    assert(pricerdata != NULL);
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
+
+   /* free bestvars array if not needed anymore */
+   if ( pricerdata->onlybest && pricerdata->maxbestsols > 0 )
+   {
+      assert(pricerdata->bestsolvars != NULL);
+      assert(pricerdata->bestsolvals != NULL);
+      assert(pricerdata->nbestsolvars != NULL);
+      assert(pricerdata->redcost != NULL);
+      assert(pricerdata->prob != NULL);
+
+      for( i = 0; i < pricerdata->maxbestsols; i++ )
+      {
+         assert(pricerdata->bestsolvars[i] != NULL);
+         assert(pricerdata->bestsolvals[i] != NULL);
+         
+         SCIPfreeMemoryArray(scip, &(pricerdata->bestsolvars[i]));
+         SCIPfreeMemoryArray(scip, &(pricerdata->bestsolvals[i]));
+      }
+
+      SCIPfreeMemoryArray(scip, &pricerdata->bestsolvars);
+      SCIPfreeMemoryArray(scip, &pricerdata->bestsolvals);
+      SCIPfreeMemoryArray(scip, &pricerdata->nbestsolvars);
+      SCIPfreeMemoryArray(scip, &pricerdata->redcost);
+      SCIPfreeMemoryArray(scip, &pricerdata->prob);
+
+
+      pricerdata->bestsolvars = NULL;
+      pricerdata->bestsolvals = NULL;
+      pricerdata->nbestsolvars = NULL;
+      pricerdata->redcost = NULL;
+      pricerdata->prob = NULL;
+      pricerdata->maxbestsols = 0;
+      pricerdata->nbestsols = 0;
+   }
+
    
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
    SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
@@ -1666,7 +1919,8 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcost",
          "maximal number of variables created in one redcost pricing round",
-         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, NULL, NULL) );
+         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, 
+         paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
@@ -1691,6 +1945,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/abortpricing",
          "should pricing be aborted due to integral objective function?",
          &pricerdata->abortpricing, TRUE, DEFAULT_ABORTPRICING, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlybest",
+         "should only the best variables (TRUE) be added in case of a maxvarsround limit or the first ones (FALSE)?",
+         &pricerdata->onlybest, TRUE, DEFAULT_ONLYBEST, paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
 
    return SCIP_OKAY;
 }

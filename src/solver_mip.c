@@ -54,7 +54,7 @@ struct GCG_SolverData
 
 /* ensures size of solution arrays */
 static
-SCIP_RETCODE ensureSizeSolvers(
+SCIP_RETCODE ensureSizeSolvars(
    SCIP*                 scip,
    GCG_SOLVERDATA*       solverdata,
    int                   nsols
@@ -308,7 +308,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
       *nsols = 0;
 
-      SCIP_CALL( ensureSizeSolvers(scip, solverdata, nprobsols) );
+      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
 
       for( s = 0; s < nprobsols; s++ )
       {
@@ -450,7 +450,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
       *nsols = 0;
 
-      SCIP_CALL( ensureSizeSolvers(scip, solverdata, nprobsols) );
+      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
 
       for( s = 0; s < nprobsols; s++ )
       {
