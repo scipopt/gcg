@@ -495,6 +495,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
          *nsols = *nsols + 1;
       }
          
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+
       *result = SCIP_STATUS_OPTIMAL;
       //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
    }
