@@ -253,10 +253,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   //if( pricetype == GCG_PRICETYPE_REDCOST )
+   if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       char probname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", prob, SCIPgetNVars(scip));
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
       SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
       
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -389,10 +389,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    int i;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   //if( pricetype == GCG_PRICETYPE_REDCOST )
+   if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       char probname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", prob, SCIPgetNVars(scip));
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
       SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
       
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -454,11 +454,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
       for( s = 0; s < nprobsols; s++ )
       {
-#ifndef NDEBUG
+         //#ifndef NDEBUG
          SCIP_Bool feasible;
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         if( !feasible )
+            printf("heur: %s\n", SCIPheurGetName(SCIPsolGetHeur(probsols[s])));
          assert(feasible);
-#endif
+         //#endif
          
          if( solverdata->checksols )
          {

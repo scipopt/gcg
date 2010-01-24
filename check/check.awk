@@ -38,6 +38,8 @@ function max(x,y)
 BEGIN {
    timegeomshift = 10.0;
    nodegeomshift = 100.0;
+   pricegeomshift = 5.0
+   lpgeomshift = 2.0
    sblpgeomshift = 0.0;
    pavshift = 1.0;
    onlyinsolufile = 0;  # should only instances be reported that are included in the .solu file?
@@ -59,9 +61,9 @@ BEGIN {
    printf("Name                &  Conss &   Vars &     Dual Bound &   Primal Bound &  Gap\\%% &     Nodes &     Time \\\\\n") > TEXFILE;
    printf("\\midrule\n")                                         >TEXFILE;
    
-   printf("------------------+------+--- Original --+-- Presolved --+----------------+----------------+------+--------+-------+-------+-------\n");
-   printf("Name              | Type | Conss |  Vars | Conss |  Vars |   Dual Bound   |  Primal Bound  | Gap%% |  Iters | Nodes |  Time |       \n");
-   printf("------------------+------+-------+-------+-------+-------+----------------+----------------+------+--------+-------+-------+-------\n");
+   printf("---------------+------+--- Original --+-- Presolved --+------+------+------+--------------+--------------+------+-------- Pricing ------+-------+--------+-------+-------+-------\n");
+   printf("Name           | Type | Conss |  Vars | Conss |  Vars |Blocks| Rel  |MConss|  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |       \n");
+   printf("---------------+------+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+-------\n");
 
    nprobs = 0;
    sbab = 0;
@@ -69,14 +71,20 @@ BEGIN {
    ssim = 0;
    ssblp = 0;
    stottime = 0.0;
+   spricetime = 0.0;
+   slptime = 0.0;
    nodegeom = 0.0;
    timegeom = 0.0;
+   pricegeom = 0.0;
+   lpgeom = 0.0;
    sblpgeom = 0.0;
    conftimegeom = 0.0;
    basictimegeom = 0.0;
    overheadtimegeom = 0.0;
    shiftednodegeom = nodegeomshift;
    shiftedtimegeom = timegeomshift;
+   shiftedpricegeom = pricegeomshift;
+   shiftedlpgeom = pricegeomshift;
    shiftedsblpgeom = sblpgeomshift;
    shiftedconftimegeom = timegeomshift;
    shiftedbasictimegeom = timegeomshift;
@@ -152,6 +160,8 @@ BEGIN {
    confclauses = 0;
    confliterals = 0.0;
    conftime = 0.0;
+   pricetime = 0.0;
+   lptime = 0.0;
    overheadtime = 0.0;
    aborted = 1;
    readerror = 0;
@@ -162,6 +172,7 @@ BEGIN {
    starttime = 0.0;
    endtime = 0.0;
    inoriginalprob = 1;
+   inmasterprob = 1;
 }
 /@03/ { starttime = $2; }
 /@04/ { endtime = $2; }
@@ -169,6 +180,10 @@ BEGIN {
 /^SCIP> / { $0 = substr($0, 7, length($0)-6); }
 /^loaded parameter file/ { settings = $4; sub(/<.*settings\//, "", settings); sub(/\.set>/, "", settings); }
 /^parameter <limits\/time> set to/ { timelimit = $5; }
+#
+# problem: master or original?
+#
+/^Original Program statistics:/ { inmasterprob = 0; inoriginalprob = 1; }
 #
 # conflict analysis
 #
@@ -209,6 +224,18 @@ BEGIN {
       confclauses += $7; confliterals += $7 * $8;
    }
 }
+#
+# pricing
+#
+/^  gcg              :/ {
+   if( inmasterprob )
+   {
+      pricetime = $3;
+      pricecall = $4;
+      pricevars = $5;
+   }
+}
+
 /^Separators         :/ { inconflict = 0; }
 /^Constraint Timings :/ { inconstime = 1; }
 #/^  logicor          :/ { if( inconstime == 1 ) { overheadtime += $3; } }
@@ -219,22 +246,37 @@ BEGIN {
 #
 /^Presolved Problem  :/ { inoriginalprob = 0; }
 /^  Variables        :/ {
-   if( inoriginalprob )
-      origvars = $3;
-   else
+   if( !inmasterprob )
    {
-      vars = $3;
-      intvars = $6;
-      implvars = $8;
-      contvars = $11;
-      binvars = vars - intvars - implvars - contvars;
+      if( inoriginalprob )
+         origvars = $3;
+      else
+      {
+         vars = $3;
+         intvars = $6;
+         implvars = $8;
+         contvars = $11;
+         binvars = vars - intvars - implvars - contvars;
+      }
    }
 }
 /^  Constraints      :/ {
-   if( inoriginalprob )
-      origcons = $3;
+   if( !inmasterprob )
+   {
+      if( inoriginalprob )
+         origcons = $3;
+      else
+         cons = $3;
+   }
    else
-      cons = $3;
+   {
+      if( inoriginalprob )
+         mcons = $3;
+   }
+}
+/^Matrix has / {
+   blocks = $3;
+   rel = $5;
 }
 #
 # solution
@@ -268,8 +310,8 @@ BEGIN {
 #
 # iterations
 #
-/^  primal LP        :/ { simpiters += $6; }
-/^  dual LP          :/ { simpiters += $6; }
+/^  primal LP        :/ { simpiters += $6; lptime += $4 }
+/^  dual LP          :/ { simpiters += $6; lptime += $4 }
 /^  barrier LP       :/ { simpiters += $6; }
 /^  nodes \(total\)    :/ { bbnodes = $4 }
 /^  primal LP        :/ { primlps = $5; primiter = $6; }
@@ -348,6 +390,8 @@ BEGIN {
       lps = primlps + duallps;
       simplex = primiter + dualiter;
       stottime += tottime;
+      spricetime += pricetime;
+      slptime += lptime;
       sbab += bbnodes;
       slp += lps;
       ssim += simplex;
@@ -359,6 +403,9 @@ BEGIN {
       nodegeom = nodegeom^((nprobs-1)/nprobs) * max(bbnodes, 1.0)^(1.0/nprobs);
       sblpgeom = sblpgeom^((nprobs-1)/nprobs) * max(sblps, 1.0)^(1.0/nprobs);
       timegeom = timegeom^((nprobs-1)/nprobs) * max(tottime, 1.0)^(1.0/nprobs);
+      pricegeom = pricegeom^((nprobs-1)/nprobs) * max(pricetime, 1.0)^(1.0/nprobs);
+      lpgeom = lpgeom^((nprobs-1)/nprobs) * max(lptime, 1.0)^(1.0/nprobs);
+
       conftimegeom = conftimegeom^((nprobs-1)/nprobs) * max(conftime, 1.0)^(1.0/nprobs);
       overheadtimegeom = overheadtimegeom^((nprobs-1)/nprobs) * max(overheadtime, 1.0)^(1.0/nprobs);
       basictimegeom = basictimegeom^((nprobs-1)/nprobs) * max(basictime, 1.0)^(1.0/nprobs);
@@ -366,6 +413,8 @@ BEGIN {
       shiftednodegeom = shiftednodegeom^((nprobs-1)/nprobs) * max(bbnodes+nodegeomshift, 1.0)^(1.0/nprobs);
       shiftedsblpgeom = shiftedsblpgeom^((nprobs-1)/nprobs) * max(sblps+sblpgeomshift, 1.0)^(1.0/nprobs);
       shiftedtimegeom = shiftedtimegeom^((nprobs-1)/nprobs) * max(tottime+timegeomshift, 1.0)^(1.0/nprobs);
+      shiftedpricegeom = shiftedpricegeom^((nprobs-1)/nprobs) * max(pricetime+pricegeomshift, 1.0)^(1.0/nprobs);
+      shiftedlpgeom = shiftedlpgeom^((nprobs-1)/nprobs) * max(lptime+lpgeomshift, 1.0)^(1.0/nprobs);
       shiftedconftimegeom = shiftedconftimegeom^((nprobs-1)/nprobs) * max(conftime+timegeomshift, 1.0)^(1.0/nprobs);
       shiftedoverheadtimegeom = shiftedoverheadtimegeom^((nprobs-1)/nprobs) * max(overheadtime+timegeomshift, 1.0)^(1.0/nprobs);
       shiftedbasictimegeom = shiftedbasictimegeom^((nprobs-1)/nprobs) * max(basictime+timegeomshift, 1.0)^(1.0/nprobs);
@@ -468,10 +517,11 @@ BEGIN {
 
       if( !onlypresolvereductions || origcons > cons || origvars > vars )
       {
-         printf("%-19s & %6d & %6d & %16.9g & %16.9g & %6s &%s%8d &%s%7.1f \\\\\n",
+         printf("%-16s & %6d & %6d & %16.9g & %16.9g & %6s &%s%8d &%s%7.1f \\\\\n",
                 pprob, cons, vars, db, pb, gapstr, markersym, bbnodes, markersym, tottime) >TEXFILE;
-         printf("%-19s %-5s %7d %7d %7d %7d %16.9g %16.9g %6s %8d %7d %7.1f %s\n",
-                shortprob, probtype, origcons, origvars, cons, vars, db, pb, gapstr, simpiters, bbnodes, tottime, status);
+         printf("%-16s %-5s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f %s\n",
+            shortprob, probtype, origcons, origvars, cons, vars, blocks, rel, mcons, db, pb, gapstr, 
+            pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime, status);
       }
 
       # PAVER output: see http://www.gamsworld.org/performance/paver/pprocess_submit.htm
@@ -510,16 +560,17 @@ END {
           "Geom. Mean", nodegeom, timegeom) >TEXFILE;
    printf("%-14s      &        &        &                &                &        & %9d & %8.1f \\\\\n",
           "Shifted Geom.", shiftednodegeom, shiftedtimegeom) >TEXFILE;
-   printf("------------------+------+-------+-------+-------+-------+----------------+----------------+------+--------+-------+-------+-------\n");
+   printf("---------------+------+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+-------\n");
    printf("\n");
-   printf("------------------------------[Nodes]---------------[Time]------\n");
-   printf("  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom. \n");
-   printf("----------------------------------------------------------------\n");
-   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f \n",
-          nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom);
-   printf(" shifted geom. [%5d/%5.1f]      %9.1f           %9.1f \n",
-          nodegeomshift, timegeomshift, shiftednodegeom, shiftedtimegeom);
-   printf("----------------------------------------------------------------\n");
+   printf("------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-----\n");
+   printf("  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom. \n");
+   printf("--------------------------------------------------------------------------------------------------------\n");
+   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f \n",
+      nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom, slptime, lpgeom);
+   printf(" shifted geom. [%4d/%4.1f/%3.1f/%3.1f]%9.1f           %9.1f           %9.1f           %9.1f \n",
+      nodegeomshift, timegeomshift, pricegeomshift, lpgeomshift, shiftednodegeom, shiftedtimegeom, 
+      shiftedpricegeom, shiftedlpgeom);
+   printf("--------------------------------------------------------------------------------------------------------\n");
    printf("\\bottomrule\n")                                              >TEXFILE;
    printf("\\noalign{\\vspace{6pt}}\n")                                  >TEXFILE;
    printf("\\end{tabular*}\n")                                           >TEXFILE;

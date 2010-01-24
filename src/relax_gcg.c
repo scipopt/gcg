@@ -589,9 +589,9 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
    //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "presolving/probing/maxrounds", 0) );
 
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", 2) );
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", 2) );
-   //SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 5000) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
+   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 5000) );
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
@@ -622,6 +622,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usesmalltables", TRUE) );
       
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/zirounding/freq", -1) );
 
       /* disable expensive presolving */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );

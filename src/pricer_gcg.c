@@ -49,7 +49,7 @@
 #define EPS 0.0001
 
 #define DEFAULT_MAXVARSROUNDFARKAS 1
-#define DEFAULT_MAXVARSROUNDREDCOST INT_MAX
+#define DEFAULT_MAXVARSROUNDREDCOST 100
 #define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX
 #define DEFAULT_MAXROUNDSREDCOST INT_MAX
 #define DEFAULT_MAXSOLSPROB INT_MAX
@@ -57,6 +57,7 @@
 #define DEFAULT_ONLYPOSCONV FALSE
 #define DEFAULT_ABORTPRICING TRUE
 #define DEFAULT_ONLYBEST FALSE
+#define DEFAULT_SUCCESSFULMIPSREL 1.0
 
 #define MAXBEST 1000
 
@@ -79,6 +80,7 @@ struct SCIP_PricerData
    SCIP_HASHMAP* mapcons2idx;
    SCIP_Real* tmpconvdualsol;
    int* permu;
+   int npricingprobsnotnull;
 
    SCIP_Real** bestsolvals;
    SCIP_VAR*** bestsolvars;
@@ -119,6 +121,7 @@ struct SCIP_PricerData
    SCIP_Bool onlyposconv;
    SCIP_Bool abortpricing;
    SCIP_Bool onlybest;
+   SCIP_Real successfulmipsrel;
 };
 
 
@@ -1261,6 +1264,7 @@ SCIP_RETCODE performPricing(
    if( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
       printf("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
          SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
+      printf("pricetype = %d, lp solstat = %d\n", pricetype, SCIPgetLPSolstat(scip));
 #endif
 
    /* check whether pricing can be aborted: if objective value is always integral
@@ -1313,11 +1317,14 @@ SCIP_RETCODE performPricing(
 
    if( pricerdata->useheurpricing )
    {
+      SCIPdebugMessage("heuristcal pricing\n");
+   
       /* solve the pricing MIPs heuristically and check whether solutions 
        * corresponding to variables with negative reduced costs where found 
        */
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || ((pricerdata->onlybest ||
-                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
+               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv )
               && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
@@ -1374,6 +1381,14 @@ SCIP_RETCODE performPricing(
             }
          }
       }
+      for( j = 0; j < pricerdata->npricingprobs; j++ )
+         if( pricerdata->pricingprobs[j] != NULL 
+            && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
+         {
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
+            SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
+         }
    }
 
    /* if no variables were found so far, solve the pricing MIPs to optimality and check whether
@@ -1381,10 +1396,13 @@ SCIP_RETCODE performPricing(
     */
    if( nfoundvars == 0 )
    {
+      SCIPdebugMessage("optimal pricing\n");
+
       bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL ? TRUE : FALSE );
 
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || (( pricerdata->onlybest || 
-                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost))
+                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
+               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
               && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
       {
@@ -1572,12 +1590,14 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    pricerdata->npricingprobs = GCGrelaxGetNPricingprobs(origprob);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nvarsprob), pricerdata->npricingprobs) );
+   pricerdata->npricingprobsnotnull = 0;
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       if( GCGrelaxIsPricingprobRelevant(origprob, i) )
       {
          pricerdata->pricingprobs[i] = GCGrelaxGetPricingprob(origprob, i);
+         pricerdata->npricingprobsnotnull++;
       }
       else
       {
@@ -1949,6 +1969,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlybest",
          "should only the best variables (TRUE) be added in case of a maxvarsround limit or the first ones (FALSE)?",
          &pricerdata->onlybest, TRUE, DEFAULT_ONLYBEST, paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/successfulsubmipsrel",
+         "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
+         &pricerdata->successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
 
    return SCIP_OKAY;
 }
