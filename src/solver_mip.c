@@ -279,6 +279,37 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
+
+   if( FALSE )
+   {
+      SCIP_Real obj;
+
+      obj = SCIPgetPrimalbound(pricingprob);
+      
+      SCIP_CALL( SCIPfreeTransform(pricingprob) );
+
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "separating/rapidlearning/freq", -1) );
+      SCIP_CALL( SCIPtransformProb(pricingprob) );
+      SCIP_CALL( SCIPpresolve(pricingprob) );
+
+      /* solve the pricing submip */
+      SCIP_CALL( SCIPsolve(pricingprob) );
+
+      if( !SCIPisEQ(scip, SCIPgetPrimalbound(pricingprob), obj)  )
+      {
+         char probname[SCIP_MAXSTRLEN];
+         (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
+         SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
+         
+         //SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+         
+         SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+
+         printf("Wrong solution due to rapidlearning: %g instead of %g", obj, SCIPgetPrimalbound(pricingprob));
+      }
+
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "separating/rapidlearning/freq", 0) );
+   }
    
    /* so far, the pricing problem should be solved to optimality */
    assert( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
@@ -312,11 +343,11 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
       for( s = 0; s < nprobsols; s++ )
       {
-#ifndef NDEBUG
+         //#ifndef NDEBUG
          SCIP_Bool feasible;
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
          assert(feasible);
-#endif
+         //#endif
          
          if( solverdata->checksols )
          {
@@ -325,6 +356,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
             if( !newsol )
                continue;
          }
+
+         //printf("foundsol:\n");
+         //SCIP_CALL( SCIPprintSol(pricingprob, probsols[s], NULL, FALSE) );
 
          solverdata->nsolvars[*nsols] = 0;
 

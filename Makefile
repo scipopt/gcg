@@ -53,6 +53,7 @@ MAINOBJ		=	reader_blk.o \
 			cons_integralOrig.o \
 			branch_master.o \
 			masterplugins.o \
+			pricingplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
 			sepa_cmirgcg.o \

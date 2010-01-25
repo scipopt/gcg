@@ -37,6 +37,7 @@
 #include "gcgplugins.h"
 #include "pricer_gcg.h"
 #include "masterplugins.h"
+#include "pricingplugins.h"
 #include "nodesel_master.h"
 
 
@@ -608,7 +609,7 @@ SCIP_RETCODE createMaster(
 
       /* initializing the scip data structure for the original problem */  
       SCIP_CALL( SCIPcreate(&(relaxdata->pricingprobs[i])) );
-      SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->pricingprobs[i]) );
+      SCIP_CALL( SCIPincludePricingPlugins(relaxdata->pricingprobs[i]) );
  
       /* disable conflict analysis */
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useprop", FALSE) );
@@ -623,6 +624,8 @@ SCIP_RETCODE createMaster(
       
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/zirounding/freq", -1) );
+
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/rapidlearning/freq", -1) );
 
       /* disable expensive presolving */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );

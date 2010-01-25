@@ -142,6 +142,7 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
    return SCIP_OKAY;
 }
 
+static
 SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
 {
    SCIP_PARAMDATA* paramdata;
