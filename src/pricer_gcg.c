@@ -1439,7 +1439,8 @@ SCIP_RETCODE performPricing(
             }
             else
             {
-               *result = SCIP_DIDNOTRUN;
+               if( pricetype == GCG_PRICETYPE_REDCOST )
+                  *result = SCIP_DIDNOTRUN;
 
                return SCIP_OKAY;
             }
@@ -1517,7 +1518,9 @@ SCIP_RETCODE performPricing(
             }
             else
             {
-               *result = SCIP_DIDNOTRUN;
+               if( pricetype == GCG_PRICETYPE_REDCOST )
+                  *result = SCIP_DIDNOTRUN;
+
                bestredcostvalid = FALSE;
                break;
             }
