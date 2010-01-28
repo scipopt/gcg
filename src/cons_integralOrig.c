@@ -203,13 +203,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(nconss == 0);
    assert(result != NULL);
 
-   SCIPdebugMessage("Enfops method of integralOrig constraint: %d fractional variables\n", SCIPgetNLPBranchCands(scip));
-   printf("Enfops method of integralOrig constraint!\n");
-
-   /* call branching methods */
-   SCIP_CALL( SCIPbranchLP(scip, result) );
-
-   assert(*result == SCIP_BRANCHED);
+   *result = SCIP_INFEASIBLE;
 
    return SCIP_OKAY;
 }
