@@ -37,9 +37,12 @@ function max(x,y)
 }
 BEGIN {
    timegeomshift = 10.0;
-   nodegeomshift = 100.0;
-   pricegeomshift = 5.0
-   lpgeomshift = 2.0
+   nodegeomshift = 10.0;
+   pricegeomshift = 5.0;
+   lpgeomshift = 2.0;
+   pricecallsgeomshift = 100;
+   priceprobsgeomshift = 100;
+   pricevarsgeomshift = 100;
    sblpgeomshift = 0.0;
    pavshift = 1.0;
    onlyinsolufile = 0;  # should only instances be reported that are included in the .solu file?
@@ -56,14 +59,14 @@ BEGIN {
    printf("\\begin{center}\n")                                      >TEXFILE;
    printf("\\setlength{\\tabcolsep}{2pt}\n")                        >TEXFILE;
    printf("\\newcommand{\\g}{\\raisebox{0.25ex}{\\tiny $>$}}\n")    >TEXFILE;
-   printf("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lrrrrrrr@{}}\n") >TEXFILE;
+   printf("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lrrrrrrrrrrrrrrr@{}}\n") >TEXFILE;
    printf("\\toprule\n")                                         >TEXFILE;
-   printf("Name                &  Conss &   Vars &     Dual Bound &   Primal Bound &  Gap\\%% &     Nodes &     Time \\\\\n") > TEXFILE;
+   printf("Name             &  Conss &   Vars &       Dual Bound &     Primal Bound &  Gap\\%% &   Calls &   Probs &    Vars &  P-Time & LP-Time &      Nodes &     Time \\\\\n") > TEXFILE;
    printf("\\midrule\n")                                         >TEXFILE;
    
-   printf("---------------+------+--- Original --+-- Presolved --+------+------+------+--------------+--------------+------+-------- Pricing ------+-------+--------+-------+-------+-------\n");
-   printf("Name           | Type | Conss |  Vars | Conss |  Vars |Blocks| Rel  |MConss|  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |       \n");
-   printf("---------------+------+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+-------\n");
+   printf("-----------+----+--- Original --+-- Presolved --+------+------+------+--------------+--------------+------+------------ Pricing ----------+-------+--------+-------+-------+-------\n");
+   printf("Name       |Type| Conss |  Vars | Conss |  Vars |Blocks| Rel  |MConss|  Dual Bound  | Primal Bound | Gap%% | Calls | Probs |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |       \n");
+   printf("-----------+----+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+-------+--------+-------+-------+-------\n");
 
    nprobs = 0;
    sbab = 0;
@@ -73,9 +76,15 @@ BEGIN {
    stottime = 0.0;
    spricetime = 0.0;
    slptime = 0.0;
+   spricecalls = 0.0;
+   spriceprobs = 0.0;
+   spricevars = 0.0;
    nodegeom = 0.0;
    timegeom = 0.0;
    pricegeom = 0.0;
+   pricecallsgeom = 0.0;
+   priceprobsgeom = 0.0;
+   pricevarsgeom = 0.0;
    lpgeom = 0.0;
    sblpgeom = 0.0;
    conftimegeom = 0.0;
@@ -84,6 +93,9 @@ BEGIN {
    shiftednodegeom = nodegeomshift;
    shiftedtimegeom = timegeomshift;
    shiftedpricegeom = pricegeomshift;
+   shiftedpricecallsgeom = pricecallsgeomshift;
+   shiftedpriceprobsgeom = priceprobsgeomshift;
+   shiftedpricevarsgeom = pricevarsgeomshift;
    shiftedlpgeom = pricegeomshift;
    shiftedsblpgeom = sblpgeomshift;
    shiftedconftimegeom = timegeomshift;
@@ -162,6 +174,7 @@ BEGIN {
    conftime = 0.0;
    pricetime = 0.0;
    lptime = 0.0;
+   npriceprobs = 0;
    overheadtime = 0.0;
    aborted = 1;
    readerror = 0;
@@ -278,6 +291,9 @@ BEGIN {
    blocks = $3;
    rel = $5;
 }
+/^  mip              :/ {
+   npriceprobs = $4 + $6;
+}
 #
 # solution
 #
@@ -391,6 +407,9 @@ BEGIN {
       simplex = primiter + dualiter;
       stottime += tottime;
       spricetime += pricetime;
+      spricecalls += pricecall;
+      spriceprobs += npriceprobs;
+      spricevars += pricevars;
       slptime += lptime;
       sbab += bbnodes;
       slp += lps;
@@ -404,6 +423,9 @@ BEGIN {
       sblpgeom = sblpgeom^((nprobs-1)/nprobs) * max(sblps, 1.0)^(1.0/nprobs);
       timegeom = timegeom^((nprobs-1)/nprobs) * max(tottime, 1.0)^(1.0/nprobs);
       pricegeom = pricegeom^((nprobs-1)/nprobs) * max(pricetime, 1.0)^(1.0/nprobs);
+      pricecallsgeom = pricecallsgeom^((nprobs-1)/nprobs) * max(pricecall, 1.0)^(1.0/nprobs);
+      priceprobsgeom = priceprobsgeom^((nprobs-1)/nprobs) * max(npriceprobs, 1.0)^(1.0/nprobs);
+      pricevarsgeom = pricevarsgeom^((nprobs-1)/nprobs) * max(pricevars, 1.0)^(1.0/nprobs);
       lpgeom = lpgeom^((nprobs-1)/nprobs) * max(lptime, 1.0)^(1.0/nprobs);
 
       conftimegeom = conftimegeom^((nprobs-1)/nprobs) * max(conftime, 1.0)^(1.0/nprobs);
@@ -414,6 +436,9 @@ BEGIN {
       shiftedsblpgeom = shiftedsblpgeom^((nprobs-1)/nprobs) * max(sblps+sblpgeomshift, 1.0)^(1.0/nprobs);
       shiftedtimegeom = shiftedtimegeom^((nprobs-1)/nprobs) * max(tottime+timegeomshift, 1.0)^(1.0/nprobs);
       shiftedpricegeom = shiftedpricegeom^((nprobs-1)/nprobs) * max(pricetime+pricegeomshift, 1.0)^(1.0/nprobs);
+      shiftedpricecallsgeom = shiftedpricecallsgeom^((nprobs-1)/nprobs) * max(pricecall+pricecallsgeomshift, 1.0)^(1.0/nprobs);
+      shiftedpriceprobsgeom = shiftedpriceprobsgeom^((nprobs-1)/nprobs) * max(npriceprobs+priceprobsgeomshift, 1.0)^(1.0/nprobs);
+      shiftedpricevarsgeom = shiftedpricevarsgeom^((nprobs-1)/nprobs) * max(pricevars+pricevarsgeomshift, 1.0)^(1.0/nprobs);
       shiftedlpgeom = shiftedlpgeom^((nprobs-1)/nprobs) * max(lptime+lpgeomshift, 1.0)^(1.0/nprobs);
       shiftedconftimegeom = shiftedconftimegeom^((nprobs-1)/nprobs) * max(conftime+timegeomshift, 1.0)^(1.0/nprobs);
       shiftedoverheadtimegeom = shiftedoverheadtimegeom^((nprobs-1)/nprobs) * max(overheadtime+timegeomshift, 1.0)^(1.0/nprobs);
@@ -517,11 +542,12 @@ BEGIN {
 
       if( !onlypresolvereductions || origcons > cons || origvars > vars )
       {
-         printf("%-16s & %6d & %6d & %16.9g & %16.9g & %6s &%s%8d &%s%7.1f \\\\\n",
-                pprob, cons, vars, db, pb, gapstr, markersym, bbnodes, markersym, tottime) >TEXFILE;
-         printf("%-16s %-5s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f %s\n",
-            shortprob, probtype, origcons, origvars, cons, vars, blocks, rel, mcons, db, pb, gapstr, 
-            pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime, status);
+         printf("%-16s & %6d & %6d & %16.9g & %16.9g & %6s &  %6d &  %6d &  %6d & %7.1f & %7.1f & %s%8d &%s%7.1f \\\\\n",
+                pprob, cons, vars, db, pb, gapstr, pricecall, npriceprobs, pricevars, pricetime, lptime,
+		markersym, bbnodes, markersym, tottime) >TEXFILE;
+         printf("%-12s %-3s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7d %7.1f %7.1f %8d %7d %7.1f %s\n",
+		shortprob, probtype, origcons, origvars, cons, vars, blocks, rel, mcons, db, pb, gapstr, 
+		pricecall, npriceprobs, pricevars, pricetime, lptime, simpiters, bbnodes, tottime, status);
       }
 
       # PAVER output: see http://www.gamsworld.org/performance/paver/pprocess_submit.htm
@@ -553,24 +579,27 @@ END {
    shiftedoverheadtimegeom -= timegeomshift;
    shiftedbasictimegeom -= timegeomshift;
 
+
    printf("\\midrule\n")                                                 >TEXFILE;
-   printf("%-14s (%2d) &        &        &                &                &        & %9d & %8.1f \\\\\n",
-          "Total", nprobs, sbab, stottime) >TEXFILE;
-   printf("%-14s      &        &        &                &                &        & %9d & %8.1f \\\\\n",
-          "Geom. Mean", nodegeom, timegeom) >TEXFILE;
-   printf("%-14s      &        &        &                &                &        & %9d & %8.1f \\\\\n",
-          "Shifted Geom.", shiftednodegeom, shiftedtimegeom) >TEXFILE;
-   printf("---------------+------+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+-------\n");
+   printf("%-11s (%2d) &        &        &                  &                  &        & %7d & %7d & %7d &%8.1f &%8.1f &  %9d & %8.1f \\\\\n",
+          "Total", nprobs, spricecalls, spriceprobs, spricevars, spricetime, slptime, sbab, stottime) >TEXFILE;
+   printf("%-11s      &        &        &                  &                  &        & %7d & %7d & %7d &%8.1f &%8.1f &  %9d & %8.1f \\\\\n",
+          "Geom. Mean", pricecallsgeom, priceprobsgeom, pricevarsgeom, pricegeom, lpgeom, nodegeom, timegeom) >TEXFILE;
+   printf("%-13s    &        &        &                  &                  &        & %7d & %7d & %7d &%8.1f &%8.1f &  %9d & %8.1f \\\\\n",
+          "Shifted Geom.", shiftedpricecallsgeom, shiftedpriceprobsgeom, shiftedpricevarsgeom, shiftedpricegeom, 
+	  shiftedlpgeom, shiftednodegeom, shiftedtimegeom) >TEXFILE;
+   printf("-----------+----+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+-------+--------+-------+-------+-------\n");
    printf("\n");
-   printf("------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-----\n");
-   printf("  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom. \n");
-   printf("--------------------------------------------------------------------------------------------------------\n");
-   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f \n",
-      nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom, slptime, lpgeom);
-   printf(" shifted geom. [%4d/%4.1f/%3.1f/%3.1f]%9.1f           %9.1f           %9.1f           %9.1f \n",
-      nodegeomshift, timegeomshift, pricegeomshift, lpgeomshift, shiftednodegeom, shiftedtimegeom, 
-      shiftedpricegeom, shiftedlpgeom);
-   printf("--------------------------------------------------------------------------------------------------------\n");
+   printf("------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]----------[Pricing-Probs]----\n");
+   printf("  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom.    total     geom. \n");
+   printf("---------------------------------------------------------------------------------------------------------------------------\n");
+   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f\n",
+	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom, 
+	  slptime, lpgeom, spriceprobs, priceprobsgeom);
+   printf(" shifted geom. [%4d/%4.1f/%3.1f/%3.1f]%9.1f           %9.1f           %9.1f           %9.1f           %9.1f \n",
+	  nodegeomshift, timegeomshift, pricegeomshift, lpgeomshift, shiftednodegeom, shiftedtimegeom, 
+	  shiftedpricegeom, shiftedlpgeom, shiftedpriceprobsgeom);
+   printf("---------------------------------------------------------------------------------------------------------------------------\n");
    printf("\\bottomrule\n")                                              >TEXFILE;
    printf("\\noalign{\\vspace{6pt}}\n")                                  >TEXFILE;
    printf("\\end{tabular*}\n")                                           >TEXFILE;
