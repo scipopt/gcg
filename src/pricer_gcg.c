@@ -475,7 +475,7 @@ SCIP_RETCODE solvePricingProblem(
       if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
       {
          *nsols = 0;
-         *status = SCIP_TIMELIMIT;
+         *status = SCIP_STATUS_TIMELIMIT;
       }
 
       if( pricerdata->solvers[i]->solversolve != NULL )
@@ -545,7 +545,7 @@ SCIP_RETCODE solvePricingProblemHeur(
       if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
       {
          *nsols = 0;
-         *status = SCIP_TIMELIMIT;
+         *status = SCIP_STATUS_TIMELIMIT;
       }
 
       if( pricerdata->solvers[i]->solversolve != NULL )
