@@ -472,7 +472,7 @@ SCIP_RETCODE solvePricingProblem(
 
       /*get time limit */
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
+      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 0.1 )
       {
          *nsols = 0;
          *status = SCIP_STATUS_TIMELIMIT;
