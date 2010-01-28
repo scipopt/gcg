@@ -78,6 +78,7 @@ struct SCIP_ConsData
    SCIP_BOUNDTYPE*    boundtypes;
    int*               nboundchangestreated;
    int                nboundchanges;
+   int                nbranchingchanges;
    int                nactivated;
    char*              name;
 };
@@ -95,6 +96,7 @@ struct SCIP_ConshdlrData
    int                npendingbnds;
    SCIP_Bool          pendingbndsactivated;
    int                maxpendingbnds;
+   SCIP_Bool          enforceproper;
 };
 
 
@@ -447,8 +449,8 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    consdata->nactivated++;
 
-   assert(SCIPgetNVars(scip) >= consdata->propagatedvars);
-   if ( SCIPgetNVars(scip) > consdata->propagatedvars )
+   assert(GCGpricerGetNPricedvars(scip) >= consdata->propagatedvars);
+   if ( GCGpricerGetNPricedvars(scip) > consdata->propagatedvars )
    {
       consdata->needprop = TRUE;
       SCIP_CALL( SCIPrepropagateNode(scip, consdata->node) );
@@ -488,6 +490,8 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges) );
       }
 
+      consdata->nbranchingchanges = 0;
+
       for ( i = 0; i < consdata->nboundchanges; i++ )
       {
          boundchg = SCIPdomchgGetBoundchg(domchg, i);
@@ -495,6 +499,12 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          consdata->boundchgvars[i] = SCIPboundchgGetVar(boundchg);
          consdata->newbounds[i] = SCIPboundchgGetNewbound(boundchg);
          consdata->boundtypes[i] = SCIPboundchgGetBoundtype(boundchg);
+
+         if ( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
+         {
+            consdata->nbranchingchanges++;
+            assert(consdata->nbranchingchanges == i+1);
+         }
       }
 
       consdata->created = TRUE;
@@ -775,7 +785,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    assert(origscip != NULL);
 
    if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
-      consdata->propagatedvars = SCIPgetNVars(scip);
+      consdata->propagatedvars = GCGpricerGetNPricedvars(scip);
 
    /* remove constraint from the stack */
    (conshdlrData->nstack)--;
@@ -906,13 +916,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    propcount = 0;
 
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
+   //vars = SCIPgetVars(scip);
+   //nvars = SCIPgetNVars(scip);
+   vars = GCGpricerGetPricedvars(scip);
+   nvars = GCGpricerGetNPricedvars(scip);
 
-   nboundchanges = consdata->nboundchanges;
+   nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
           
    /* iterate over all master variables */
-   for ( i = 0; i < nvars; i++)
+   for ( i = consdata->propagatedvars; i < nvars; i++)
    {
       vardata = SCIPvarGetData(vars[i]);
       assert(vardata != NULL);
@@ -1099,7 +1111,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          *result = SCIP_REDUCEDDOM;
 
    consdata->needprop = FALSE;
-   consdata->propagatedvars = SCIPgetNVars(scip);
+   consdata->propagatedvars = GCGpricerGetNPricedvars(scip);
 
 #ifdef CHECKPROPAGATEDVARS
    {
@@ -1333,6 +1345,11 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
          eventFreeOrigvarbound, eventInitOrigvarbound, eventExitOrigvarbound, 
          eventInitsolOrigvarbound, eventExitsolOrigvarbound, eventDeleteOrigvarbound, eventExecOrigvarbound,
          eventhdlrdata) );
+
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "relaxing/gcg/enforceproper",
+         "should propagated bound changes in the original be enforced in the master (only proper vars)?",
+         &conshdlrData->enforceproper, FALSE, TRUE, NULL, NULL) );
+
 
 
    return SCIP_OKAY;

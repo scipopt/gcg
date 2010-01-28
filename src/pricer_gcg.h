@@ -62,6 +62,18 @@ SCIP* GCGpricerGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the array of variables that were priced in during the solving process */
+extern
+SCIP_VAR** GCGpricerGetPricedvars(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of variables that were priced in during the solving process */
+extern
+int GCGpricerGetNPricedvars(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** adds the given constraint and the given position to the hashmap of the pricer */
 extern
 SCIP_RETCODE GCGpricerAddMasterconsToHashmap(

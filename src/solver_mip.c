@@ -13,6 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
+//#define DEBUG_PRICING_ALL_OUTPUT
 //#define SCIP_DEBUG
 /**@file   solver_mip.c
  * @brief  mip solver for pricing problems
@@ -253,15 +254,15 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   //if( pricetype == GCG_PRICETYPE_REDCOST )
    {
-      char probname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
-      SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
+      //char probname[SCIP_MAXSTRLEN];
+      //(void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
+      //SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
       
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
       
-      SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+      //SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
       
    }
 #endif
@@ -396,7 +397,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    }
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   //if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
       SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
@@ -423,15 +424,15 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    int i;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   //if( pricetype == GCG_PRICETYPE_REDCOST )
    {
-      char probname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
-      SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
+      //char probname[SCIP_MAXSTRLEN];
+      //(void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "pricingmip_%d_%d_vars.lp", probnr, SCIPgetNVars(scip));
+      //SCIP_CALL( SCIPwriteOrigProblem(pricingprob, probname, NULL, FALSE) );
       
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
       
-      SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+      //SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
       
    }
 #endif
@@ -540,7 +541,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    }
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   //if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
       SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
