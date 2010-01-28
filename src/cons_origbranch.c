@@ -283,11 +283,37 @@ SCIP_DECL_CONSPROP(consPropOrigbranch)
    return SCIP_OKAY;
 }
 
+static
+SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSCHECK(consCheckOrigbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSLOCK(consLockOrigbranch)
+{
+   return SCIP_OKAY;
+}
+
 /* define not used callbacks as NULL */
-#define consEnfolpOrigbranch NULL
-#define consEnfopsOrigbranch NULL
-#define consCheckOrigbranch NULL
-#define consLockOrigbranch NULL
 #define consPresolOrigbranch NULL
 #define consRespropOrigbranch NULL
 #define consInitOrigbranch NULL

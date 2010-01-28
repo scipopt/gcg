@@ -1124,11 +1124,39 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    return SCIP_OKAY;
 }
 
+
+static
+SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSCHECK(consCheckMasterbranch)
+{
+   *result = SCIP_FEASIBLE;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_CONSLOCK(consLockMasterbranch)
+{
+   return SCIP_OKAY;
+}
+
+
 /* define not used callbacks as NULL */
-#define consEnfolpMasterbranch NULL
-#define consEnfopsMasterbranch NULL
-#define consCheckMasterbranch NULL
-#define consLockMasterbranch NULL
 #define consPresolMasterbranch NULL
 #define consRespropMasterbranch NULL
 #define consInitMasterbranch NULL
