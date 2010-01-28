@@ -458,6 +458,7 @@ SCIP_RETCODE solvePricingProblem(
    )
 {
    int i;
+   SCIP_Real timelimit;
 
    assert(scip != NULL);
    assert(pricerdata != NULL);
@@ -468,6 +469,15 @@ SCIP_RETCODE solvePricingProblem(
 
    for( i = 0; i < pricerdata->nsolvers; i++ )
    {
+
+      /*get time limit */
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
+      {
+         *nsols = 0;
+         *status = SCIP_TIMELIMIT;
+      }
+
       if( pricerdata->solvers[i]->solversolve != NULL )
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
@@ -519,6 +529,7 @@ SCIP_RETCODE solvePricingProblemHeur(
    )
 {
    int i;
+   SCIP_Real timelimit;
 
    assert(scip != NULL);
    assert(pricerdata != NULL);
@@ -529,6 +540,14 @@ SCIP_RETCODE solvePricingProblemHeur(
 
    for( i = 0; i < pricerdata->nsolvers; i++ )
    {
+      /*get time limit */
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
+      {
+         *nsols = 0;
+         *status = SCIP_TIMELIMIT;
+      }
+
       if( pricerdata->solvers[i]->solversolve != NULL )
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
