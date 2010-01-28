@@ -59,7 +59,7 @@
 #define DEFAULT_ONLYBEST FALSE
 #define DEFAULT_SUCCESSFULMIPSREL 1.0
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_SORTING 0
+#define DEFAULT_SORTING 1
 
 #define MAXBEST 1000
 
@@ -1367,20 +1367,23 @@ SCIP_RETCODE performPricing(
       pricerdata->permu[i] = i;
       pricerdata->tmpconvdualsol[i] = pricerdata->dualsolconv[i];
 
-      if( pricerdata->sorting == 1 && pricetype == GCG_PRICETYPE_REDCOST )
+      if( pricerdata->sorting == 2 && pricetype == GCG_PRICETYPE_REDCOST )
       {
          pricerdata->tmpconvdualsol[i] = (1.5 * maxtmpconvdualsol + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
       }
-      if( pricerdata->sorting == 2 && pricetype == GCG_PRICETYPE_REDCOST )
+      if( pricerdata->sorting == 3 && pricetype == GCG_PRICETYPE_REDCOST )
       {
          pricerdata->tmpconvdualsol[i] = (0.5 * maxtmpconvdualsol + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
       }
-      if( pricerdata->sorting == 3 && pricetype == GCG_PRICETYPE_REDCOST )
+      if( pricerdata->sorting == 4 && pricetype == GCG_PRICETYPE_REDCOST )
       {
          pricerdata->tmpconvdualsol[i] = ( sumtmpconvdualsol/pricerdata->npricingprobsnotnull + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
       }
    }
-   SCIPsortDownRealInt(pricerdata->tmpconvdualsol, pricerdata->permu, pricerdata->npricingprobs);
+   if( pricerdata->sorting > 0 )
+   {
+      SCIPsortDownRealInt(pricerdata->tmpconvdualsol, pricerdata->permu, pricerdata->npricingprobs);
+   }
 
    bestredcost = 0.0;
    bestredcostvalid = FALSE;
@@ -2019,7 +2022,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcost",
          "maximal number of variables created in one redcost pricing round",
-         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 1, INT_MAX, 
+         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 0, INT_MAX, 
          paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
