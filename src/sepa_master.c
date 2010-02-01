@@ -297,6 +297,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int i;
    int j;
    int sum;
+   SCIP_Bool feasible;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -313,7 +314,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    *result = SCIP_DIDNOTFIND;
 
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, &delayed, &cutoff) );   

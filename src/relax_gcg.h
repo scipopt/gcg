@@ -217,7 +217,8 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
  *  and saves this solution as currentsol in the relaxator's data */
 extern
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool*            feasible
    );
 
 /* transforms given values of the given original variables into values of the given master variables */

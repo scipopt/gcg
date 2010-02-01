@@ -1139,6 +1139,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Bool cutoff;
    SCIP_Longint oldnnodes;
    SCIP_Real timelimit;
+   SCIP_Bool feasible;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1201,7 +1202,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    SCIPdebugMessage("Update current sol.\n");
    /* transform the current solution of the master problem to the original space and save it */
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
 
    if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL 
       && SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
@@ -1219,6 +1220,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    relaxdata->lastsolvednodenr = SCIPnodeGetNumber(SCIPgetCurrentNode(scip));
 
    *result = SCIP_SUCCESS;
+
+   if( feasible )
+   {
+      *result = SCIP_CUTOFF;
+      SCIPdebugMessage("solution was feasible, node can be cut off!");
+   }
 
    return SCIP_OKAY;
 }
@@ -2113,7 +2120,8 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
 /** transformes the current solution of the master problem into the original problem's space 
  *  and saves this solution as currentsol in the relaxator's data */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool*            feasible
    )
 {
    SCIP_RELAX* relax;
@@ -2138,6 +2146,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    origvars = SCIPgetVars(scip);
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
+
+   *feasible = FALSE;
    
    /* nothing has to be done, if no LP was solved after the last update */
    if ( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )
@@ -2180,11 +2190,18 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
          
          SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, &stored) );
+         if( !stored )
+         {
+            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, &stored) );
+         }
 
          //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
             (stored ? "" : "not"));
+
+         if( stored )
+            *feasible = TRUE;
 
          //SCIP_CALL( SCIPprintSol(scip, relaxdata->currentorigsol, NULL, FALSE) );
 
