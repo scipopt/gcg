@@ -58,6 +58,8 @@
 #define DEFAULT_ABORTPRICING TRUE
 #define DEFAULT_ONLYBEST FALSE
 #define DEFAULT_SUCCESSFULMIPSREL 1.0
+#define DEFAULT_MIPSRELREDCOST 1.0
+#define DEFAULT_MIPSRELFARKAS 1.0
 #define DEFAULT_DISPINFOS FALSE
 #define DEFAULT_SORTING 1
 
@@ -131,6 +133,8 @@ struct SCIP_PricerData
    SCIP_Bool onlybest;
    SCIP_Bool dispinfos;
    SCIP_Real successfulmipsrel;
+   SCIP_Real mipsrelredcost;
+   SCIP_Real mipsrelfarkas;
 };
 
 
@@ -1285,6 +1289,7 @@ SCIP_RETCODE performPricing(
    int i;
    int j;
    int prob;
+   int solvedmips;
 
    int nfoundvars;
    int nfoundvarsprob;
@@ -1355,6 +1360,7 @@ SCIP_RETCODE performPricing(
    pricerdata->calls++;
    nfoundvars = 0;
    successfulmips = 0;
+   solvedmips = 0;
 
 #ifdef CHECKVARBOUNDS
    SCIP_CALL( checkVarBounds(scip) );
@@ -1416,9 +1422,11 @@ SCIP_RETCODE performPricing(
        */
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || ((pricerdata->onlybest ||
                   nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
-               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull))
+               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
+               && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull )))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv )
-              && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
+              && (pricetype == GCG_PRICETYPE_REDCOST || (nfoundvars < pricerdata->maxvarsroundfarkas 
+                    && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull))); i++)
       {
          prob = pricerdata->permu[i];
 
@@ -1447,6 +1455,7 @@ SCIP_RETCODE performPricing(
          }
 
          pricerdata->solvedsubmipsheur++;
+         solvedmips++;
 
          SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &solvars, &solvals, 
                &nsolvars, &nsols, &status) );
@@ -1495,9 +1504,11 @@ SCIP_RETCODE performPricing(
 
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || (( pricerdata->onlybest || 
                   nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
-               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull))
+               && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
+               && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull )))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
-              && (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas); i++)
+              && (pricetype == GCG_PRICETYPE_REDCOST || (nfoundvars < pricerdata->maxvarsroundfarkas
+                    && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull))); i++)
       {
          prob = pricerdata->permu[i];
 
@@ -1530,6 +1541,7 @@ SCIP_RETCODE performPricing(
                &nsolvars, &nsols, &status) );
 
          pricerdata->solvedsubmipsoptimal++;
+         solvedmips++;
 
          if( nsols > 0 )
          {
@@ -2078,6 +2090,14 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/successfulsubmipsrel",
          "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
          &pricerdata->successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelredcost",
+         "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
+         &pricerdata->mipsrelredcost, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelfarkas",
+         "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
+         &pricerdata->mipsrelfarkas, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/dispinfos",
          "should additional informations concerning the pricing process be displayed?",
