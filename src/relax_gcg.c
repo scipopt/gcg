@@ -592,7 +592,7 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
-   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 5000) );
+   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1) );
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
@@ -2209,7 +2209,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPclearRelaxBranchCands(scip);
          for ( i = 0; i < norigvars; i++ )
          {
-            if ( !SCIPisIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+	   if ( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
                SCIP_CALL( SCIPaddRelaxBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, 
                         origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])), 
