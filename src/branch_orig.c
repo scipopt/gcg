@@ -72,6 +72,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
    SCIP* origscip;
    SCIP_CONS* mastercons;
+   SCIP_VARDATA* vardata;
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -81,19 +82,22 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    assert(branchdata->origvar != NULL);
 
+   vardata = SCIPvarGetData(branchdata->origvar);
+   assert(vardata != NULL);
+
    if( branchdata->cons == NULL )
       return SCIP_OKAY;
-
+   
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-
+   
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
    assert(mastercons != NULL);
-
+   
    /* add constraint to the master problem */
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetCurrentNode(scip), mastercons, NULL) );
-
+   
    branchdata->cons = NULL;
 
    return SCIP_OKAY;
@@ -428,6 +432,15 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    /* add constraints to nodes */
    SCIP_CALL( SCIPaddConsNode(scip, childup, origbranchup, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
+
+   /* store bound change of variables that were directly transferred to the master problem */
+   if( !enforcebycons && SCIPvarGetData(branchvar)->blocknr == -1 )
+   {
+      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchup, branchdowndata->origvar,
+            branchupdata->boundtype, branchupdata->newbound) );
+      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchdown, branchdowndata->origvar,
+            branchdowndata->boundtype, branchdowndata->newbound) );
+   }
 
    /* release constraints */
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );

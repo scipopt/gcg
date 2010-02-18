@@ -120,4 +120,23 @@ void GCGconsOrigbranchCheckConsistency(
    SCIP*                 scip
    );
 
+extern
+SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
+   SCIP*                 scip,
+   SCIP_CONS*            cons, 
+   SCIP_VAR*             var,
+   SCIP_BOUNDTYPE        boundtype,
+   SCIP_Real             newbound
+   );
+
+extern
+SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
+   SCIP*                 scip,
+   SCIP_CONS*            cons, 
+   SCIP_VAR***           vars,
+   SCIP_BOUNDTYPE**      boundtypes,
+   SCIP_Real**           newbounds,
+   int*                  npropbounds
+   );
+
 #endif

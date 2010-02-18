@@ -55,6 +55,13 @@ struct SCIP_ConsData
                                               * in the master program */
    GCG_BRANCHDATA*    branchdata;
    SCIP_BRANCHRULE*   branchrule;
+
+   SCIP_VAR**         propvars;              /**< original variable for which the propagation found domain reductions */
+   SCIP_BOUNDTYPE*    propboundtypes;        /**< type of the domain new bound found by propagation */
+   SCIP_Real*         propbounds;            /**< new lower/upper bound of the propagated original variable */
+   int                npropbounds;
+   int                maxpropbounds;
+
 };
 
 /** constraint handler data */
@@ -403,6 +410,12 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->mastercons = NULL;
    consdata->branchrule = branchrule;
    consdata->branchdata = branchdata;
+   consdata->npropbounds = 0;
+   consdata->maxpropbounds = 0;
+   consdata->propvars = NULL;
+   consdata->propboundtypes = NULL;
+   consdata->propbounds = NULL;
+
 
    SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", name);
 
@@ -637,3 +650,69 @@ void GCGconsOrigbranchCheckConsistency(
 
    //SCIPdebugMessage("checked consistency of %d origbranch constraints, all ok!\n", nconss);
 }
+
+
+SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
+   SCIP*                 scip,
+   SCIP_CONS*            cons, 
+   SCIP_VAR*             var,
+   SCIP_BOUNDTYPE        boundtype,
+   SCIP_Real             newbound
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(var != NULL);
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   if( consdata->npropbounds >= consdata->maxpropbounds )
+   {
+      consdata->maxpropbounds = consdata->npropbounds+5;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propvars), consdata->maxpropbounds) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propboundtypes), consdata->maxpropbounds) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(consdata->propbounds), consdata->maxpropbounds) );
+   }
+   
+   SCIPdebugMessage("Bound change stored at branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
+
+
+   consdata->propvars[consdata->npropbounds] = var;
+   consdata->propboundtypes[consdata->npropbounds] = boundtype;
+   consdata->propbounds[consdata->npropbounds] = newbound;
+   consdata->npropbounds++;
+ 
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
+   SCIP*                 scip,
+   SCIP_CONS*            cons, 
+   SCIP_VAR***           vars,
+   SCIP_BOUNDTYPE**      boundtypes,
+   SCIP_Real**           newbounds,
+   int*                  npropbounds
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   *vars = consdata->propvars;
+   *boundtypes = consdata->propboundtypes;
+   *newbounds = consdata->propbounds;
+   *npropbounds = consdata->npropbounds;
+
+   consdata->npropbounds = 0;
+ 
+   return SCIP_OKAY;
+}
+
+

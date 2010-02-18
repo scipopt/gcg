@@ -529,7 +529,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             {
                int diff;
 
-               SCIP_CALL( SCIPrepropagateNode(origscip, stackconsdata->node) );
+               //SCIP_CALL( SCIPrepropagateNode(origscip, stackconsdata->node) );
 
                //printf("stack at pos i = %d: domchgGetNBoundchanges = %d, nboundchangestreated = %d\n",
                //   i, SCIPdomchgGetNBoundchgs(domchg), parentdata->nboundchangestreated[i]);
@@ -878,6 +878,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    int nvars;
    int nboundchanges;
 
+   SCIP_VAR**         propvars;              /**< original variable for which the propagation found domain reductions */
+   SCIP_BOUNDTYPE*    propboundtypes;        /**< type of the domain new bound found by propagation */
+   SCIP_Real*         propbounds;            /**< new lower/upper bound of the propagated original variable */
+   int                npropbounds;
+   SCIP_VAR* mastervar;
+
+
    assert(conshdlr != NULL); 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
@@ -1098,6 +1105,41 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
    conshdlrData->pendingbndsactivated = FALSE;
    conshdlrData->npendingbnds = 0;
+
+   SCIP_CALL( GCGconsOrigbranchGetPropBoundChgs(origscip, consdata->origcons, &propvars, &propboundtypes,
+         &propbounds, &npropbounds) );
+   for( i = 0; i < npropbounds; i++ )
+   {
+      vardata = SCIPvarGetData(propvars[i]);
+      assert(vardata != NULL);
+      assert(vardata->blocknr == -1);
+
+      assert(vardata->data.origvardata.nmastervars == 1);
+      assert(vardata->data.origvardata.mastervals[0] == 1);
+      assert(vardata->data.origvardata.mastervars[0] != NULL);
+
+      mastervar = vardata->data.origvardata.mastervars[0];
+
+      if( propboundtypes[i] == SCIP_BOUNDTYPE_LOWER )
+      {
+         if( !SCIPisEQ(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
+         {
+            SCIP_CALL( SCIPchgVarLb(scip, mastervar, propbounds[i]) );
+            propcount++;
+            SCIPdebugMessage("changed lb of var %s locally to %g\n", SCIPvarGetName(propvars[i]), propbounds[i]);
+         }
+      }
+      else 
+      {
+         if( !SCIPisEQ(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
+         {
+            SCIP_CALL( SCIPchgVarUb(scip, mastervar, propbounds[i]) );
+            propcount++;
+            SCIPdebugMessage("changed ub of var %s locally to %g\n", SCIPvarGetName(propvars[i]), propbounds[i]);
+         }
+      }
+   }
+
       
    if ( consdata->branchrule != NULL )
    {
@@ -1226,7 +1268,7 @@ SCIP_DECL_EVENTINITSOL(eventInitsolOrigvarbound)
 
    for( i = 0; i < nvars; i++ )
    {
-      SCIP_CALL( SCIPcatchVarEvent(scip, vars[i], SCIP_EVENTTYPE_GBDCHANGED, 
+      SCIP_CALL( SCIPcatchVarEvent(scip, vars[i], SCIP_EVENTTYPE_GBDCHANGED | SCIP_EVENTTYPE_BOUNDCHANGED, 
             eventhdlr, NULL, NULL) );
    }
 
@@ -1277,7 +1319,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    oldbound = SCIPeventGetOldbound(event);
    newbound = SCIPeventGetNewbound(event);
 
-   //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
+   SCIPdebugMessage("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
 
    assert(!SCIPisEQ(scip, oldbound, newbound));
 
@@ -1297,7 +1339,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
          //assert(SCIPvarGetUbOriginal(vardata->data.origvardata.pricingvar) == oldbound);
-         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
+         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                vardata->data.origvardata.pricingvar, SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.pricingvar), newbound);
       }
@@ -1322,6 +1364,16 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
                vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+      }
+      if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+               SCIP_BOUNDTYPE_LOWER, newbound) );
+      }
+      if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+               SCIP_BOUNDTYPE_UPPER, newbound) );
       }
       
    }
