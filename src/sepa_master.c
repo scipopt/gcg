@@ -198,8 +198,6 @@ SCIP_RETCODE checkCutConsistency(
  * Callback methods of separator
  */
 
-/* TODO: Implement all necessary separator methods. The methods with an #if 0 ... #else #define ... are optional */
-
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_SEPAFREE(sepaFreeMaster)
@@ -233,11 +231,31 @@ SCIP_DECL_SEPAINIT(sepaInitMaster)
 
 
 /** deinitialization method of separator (called before transformed problem is freed) */
+#if 1
 static
 SCIP_DECL_SEPAEXIT(sepaExitMaster)
 {  
+   SCIP* origscip;
+   SCIP_SEPADATA* sepadata;
+   int i;
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+   assert(sepadata->nmastercuts == sepadata->norigcuts);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   for( i = 0; i < sepadata->norigcuts; i++ )
+   {
+      SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->origcuts[i])) );
+   }
+
    return SCIP_OKAY;
 }
+#else
+#define sepaExitMaster NULL
+#endif
 
 
 
@@ -257,18 +275,27 @@ SCIP_DECL_SEPAINITSOL(sepaInitsolMaster)
 
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
-#if 0
 static
 SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+{  
+   SCIP* origscip;
+   SCIP_SEPADATA* sepadata;
+   int i;
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+   assert(sepadata->nmastercuts == sepadata->norigcuts);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   for( i = 0; i < sepadata->nmastercuts; i++ )
+   {
+      SCIP_CALL( SCIPreleaseRow(scip, &(sepadata->mastercuts[i])) );
+   }
 
    return SCIP_OKAY;
 }
-#else
-#define sepaExitsolMaster NULL
-#endif
 
 
 /** LP solution separation method of separator */
@@ -331,7 +358,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    for ( i = 0; i < ncuts; i++ )
    {
       sepadata->origcuts[sepadata->norigcuts] = cuts[i];
-      SCIProwCapture(sepadata->origcuts[sepadata->norigcuts]);
+      SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]);
       sepadata->norigcuts++;
    }
 
@@ -376,7 +403,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE) );
       sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
-      SCIProwCapture(sepadata->mastercuts[sepadata->nmastercuts]);
+      //SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]);
       sepadata->nmastercuts++;
 
 #ifdef SCIP_DEBUG

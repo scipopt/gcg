@@ -205,6 +205,14 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
    }
 
+   if( (*consdata)->maxpropbounds > 0 )
+   {
+      SCIPfreeMemoryArray(scip, &((*consdata)->propvars));
+      SCIPfreeMemoryArray(scip, &((*consdata)->propboundtypes));
+      SCIPfreeMemoryArray(scip, &((*consdata)->propbounds));
+   }
+
+
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
 

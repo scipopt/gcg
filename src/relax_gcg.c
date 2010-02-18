@@ -998,71 +998,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* free hashmaps for mapping from original to pricing variables */
-   if ( relaxdata->hashorig2pricingvar != NULL )
-   {
-      for ( i = 0; i < relaxdata->npricingprobs; i++ )
-      {
-         SCIPhashmapFree(&(relaxdata->hashorig2pricingvar[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->hashorig2pricingvar));
-      relaxdata->hashorig2pricingvar = NULL;
-   }
-   if ( relaxdata->hashorig2origvar != NULL )
-   {
-      SCIPhashmapFree(&(relaxdata->hashorig2origvar));
-      relaxdata->hashorig2origvar = NULL;
-   }
-   if ( relaxdata->markedmasterconss != NULL )
-   {
-      SCIPfreeMemoryArray(scip, &(relaxdata->markedmasterconss));
-      relaxdata->markedmasterconss = NULL;
-   }
-
-   /* free arrays for constraints */
-   for ( i = 0; i < relaxdata->nmasterconss; i++ )
-   {
-      SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->origmasterconss[i]) );
-   }
-   for ( i = 0; i < relaxdata->nmasterconss; i++ )
-   {
-      SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->linearmasterconss[i]) );
-   }
-   for ( i = 0; i < relaxdata->nmasterconss; i++ )
-   {
-      SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->masterconss[i]) );
-   }
-   for ( i = 0; i < relaxdata->npricingprobs; i++ )
-   {
-      if ( relaxdata->convconss[i] != NULL )
-         SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
-   }
-
-   SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
-
-   /* free master problem */
-   //SCIP_CALL( SCIPprintStatistics(relaxdata->masterprob, NULL) );
-   SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
-
-   /* free pricing problems */
-   for ( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
-   {
-      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
-      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
-   }
-   SCIPfreeMemoryArray(scip, &(relaxdata->pricingprobs));
-   SCIPfreeMemoryArray(scip, &(relaxdata->blockrepresentative));
-   SCIPfreeMemoryArray(scip, &(relaxdata->nblocksidentical));
-
-   /* free solution */
-   if ( relaxdata->currentorigsol != NULL )
-   {
-      SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
-   }
-
    /* free array for branchrules*/
    if ( relaxdata->nbranchrules > 0 )
    {
@@ -1116,18 +1051,84 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
 
 /** solving process deinitialization method of relaxator (called before branch and bound process data is freed) */
-#if 0
 static
 SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gcg relaxator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+{  
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+   
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* free hashmaps for mapping from original to pricing variables */
+   if ( relaxdata->hashorig2pricingvar != NULL )
+   {
+      for ( i = 0; i < relaxdata->npricingprobs; i++ )
+      {
+         SCIPhashmapFree(&(relaxdata->hashorig2pricingvar[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->hashorig2pricingvar));
+      relaxdata->hashorig2pricingvar = NULL;
+   }
+   if ( relaxdata->hashorig2origvar != NULL )
+   {
+      SCIPhashmapFree(&(relaxdata->hashorig2origvar));
+      relaxdata->hashorig2origvar = NULL;
+   }
+   if ( relaxdata->markedmasterconss != NULL )
+   {
+      SCIPfreeMemoryArray(scip, &(relaxdata->markedmasterconss));
+      relaxdata->markedmasterconss = NULL;
+   }
+
+   /* free arrays for constraints */
+   for ( i = 0; i < relaxdata->nmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->origmasterconss[i]) );
+   }
+   for ( i = 0; i < relaxdata->nmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &relaxdata->linearmasterconss[i]) );
+   }
+   for ( i = 0; i < relaxdata->nmasterconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->masterconss[i]) );
+   }
+   for ( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      if ( relaxdata->convconss[i] != NULL )
+         SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
+   }
+
+   SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
+   SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
+   SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
+   SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
+
+   /* free master problem */
+   SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+
+   /* free pricing problems */
+   for ( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
+   {
+      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
+      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
+   }
+   SCIPfreeMemoryArray(scip, &(relaxdata->pricingprobs));
+   SCIPfreeMemoryArray(scip, &(relaxdata->blockrepresentative));
+   SCIPfreeMemoryArray(scip, &(relaxdata->nblocksidentical));
+
+   /* free solution */
+   if ( relaxdata->currentorigsol != NULL )
+   {
+      SCIP_CALL( SCIPfreeSol(scip, &relaxdata->currentorigsol) );
+   }
 
    return SCIP_OKAY;
 }
-#else
-#define relaxExitsolGcg NULL
-#endif
 
 
 /** execution method of relaxator */

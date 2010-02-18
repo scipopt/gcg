@@ -330,11 +330,11 @@ SCIP_DECL_CONSEXITSOL(consExitsolMasterbranch)
    SCIPdebugMessage("exiting masterbranch constraint handler\n");
 
    /* free stack */
-   SCIPfreeMemoryArray(scip, &conshdlrData->stack);
-   SCIPfreeMemoryArray(scip, &conshdlrData->pendingvars);
-   SCIPfreeMemoryArray(scip, &conshdlrData->pendingbndtypes);
-   SCIPfreeMemoryArray(scip, &conshdlrData->pendingoldbnds);
-   SCIPfreeMemoryArray(scip, &conshdlrData->pendingnewbnds);
+   SCIPfreeMemoryArray(scip, &(conshdlrData->stack));
+   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingvars));
+   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingbndtypes));
+   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingoldbnds));
+   SCIPfreeMemoryArray(scip, &(conshdlrData->pendingnewbnds));
 
    return SCIP_OKAY;
 }

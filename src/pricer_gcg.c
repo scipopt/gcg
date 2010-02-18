@@ -1662,6 +1662,41 @@ SCIP_DECL_PRICERFREE(pricerFreeGcg)
 }
 
 
+/** initialization method of variable pricer (called after problem was transformed) */
+static
+SCIP_DECL_PRICERINIT(pricerInitGcg)
+{  
+   SCIP_PRICERDATA* pricerdata;  
+
+   assert(scip != NULL);
+  
+   /* get pricerdata */
+   pricerdata = SCIPpricerGetData(pricer);
+
+   SCIP_CALL( solversInit(scip, pricerdata) );
+
+   return SCIP_OKAY;
+}
+
+
+/** deinitialization method of variable pricer (called before transformed problem is freed) */
+static
+SCIP_DECL_PRICEREXIT(pricerExitGcg)
+{  
+   SCIP_PRICERDATA* pricerdata;  
+
+   assert(scip != NULL);
+  
+   /* get pricerdata */
+   pricerdata = SCIPpricerGetData(pricer);
+
+   SCIP_CALL( solversExit(scip, pricerdata) );
+
+   return SCIP_OKAY;
+}
+
+
+
 
 /** solving process initialization method of variable pricer (called when branch and bound process is about to begin) */
 static
@@ -2018,11 +2053,6 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 
    return retcode;
 }
-
-/* define not used callbacks as NULL */
-#define pricerInitGcg NULL
-#define pricerExitGcg NULL
-
 
 /*
  * variable pricer specific interface methods

@@ -58,5 +58,4 @@ int GCGsepaGetNMastercuts(
    SCIP*                 scip
    );
 
-
 #endif
