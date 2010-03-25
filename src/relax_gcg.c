@@ -2210,7 +2210,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPclearRelaxBranchCands(scip);
          for ( i = 0; i < norigvars; i++ )
          {
-	   if ( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+	   if ( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
                SCIP_CALL( SCIPaddRelaxBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, 
                         origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])), 
@@ -2461,7 +2461,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    /* loop over all given master variables */
    for ( i = 0; i < nmastervars; i++ )
    {
-      if ( SCIPisFeasZero(scip, mastervals[i]) /*|| SCIPisFeasIntegral(scip, mastervals[i]) ??? */ )
+      if ( SCIPisFeasZero(scip, mastervals[i]) )
       {
          continue;
       }
