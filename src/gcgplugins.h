@@ -112,10 +112,6 @@
 #include "branch_ryanfoster.h"
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
-#include "sepa_cmirgcg.h"
-#include "sepa_gcggomory.h"
-#include "heur_gcgfeaspump.h"
-#include "heur_gcgrounding.h"
 #include "dialog_gcg.h"
 
 

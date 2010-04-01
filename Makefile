@@ -56,11 +56,8 @@ MAINOBJ		=	reader_blk.o \
 			pricingplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
-			sepa_cmirgcg.o \
-			sepa_gcggomory.o \
 			disp_gcg.o \
 			disp_master.o \
-			heur_gcgrounding.o \
 			dialog_gcg.o \
 			solver_mip.o \
 			solver_knapsack.o \

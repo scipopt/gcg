@@ -103,9 +103,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 
-   //SCIP_CALL( SCIPincludeSepaCmirgcg(scip) );
-   //SCIP_CALL( SCIPincludeSepaGcggomory(scip) );
-
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
@@ -116,7 +113,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
    //SCIP_CALL( SCIPincludeDialogDefault(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
-   SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
+   //SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
 
    return SCIP_OKAY;
 }

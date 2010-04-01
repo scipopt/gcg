@@ -56,7 +56,8 @@ struct GCG_BranchData
    SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
    SCIP_Real          oldvalue;              /**< old value of the original variable */
    SCIP_Real          olddualbound;          /**< dual bound before the branching was performed */
-   SCIP_CONS*         cons;
+   SCIP_CONS*         cons;                  /**< constraint that enforces the branching restriction in the original 
+                                              *   problem, or NULL if this is done by variable bounds */
 };
 
 
@@ -77,16 +78,17 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
+   /* branching restrictions are enforced by variable bounds, this is done automatically, so we can abort here */
+   if( branchdata->cons == NULL )
+      return SCIP_OKAY;
 
    assert(branchdata->origvar != NULL);
 
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
    vardata = SCIPvarGetData(branchdata->origvar);
    assert(vardata != NULL);
-
-   if( branchdata->cons == NULL )
-      return SCIP_OKAY;
    
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
@@ -97,7 +99,10 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    
    /* add constraint to the master problem */
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetCurrentNode(scip), mastercons, NULL) );
-   
+
+   /* constraint was added locally to the node where it is needed, so we do not need to care about this
+    * at the next activation of the node and can set the constraint pointer to NULL */
+   SCIP_CALL( SCIPreleaseCons(scip, &branchdata->cons) );
    branchdata->cons = NULL;
 
    return SCIP_OKAY;

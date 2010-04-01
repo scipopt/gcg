@@ -213,12 +213,13 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** transformes the current solution of the master problem into the original problem's space 
+/** transforms the current solution of the master problem into the original problem's space 
  *  and saves this solution as currentsol in the relaxator's data */
 extern
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool*            feasible
+   SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is 
+                                              *   primal feasible*/
    );
 
 /* transforms given values of the given original variables into values of the given master variables */
@@ -229,7 +230,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
    SCIP_Real*            origvals,           /** array with values for the given original variables */
    int                   norigvars,          /** number of given original variables */
    SCIP_VAR**            mastervars,         /** array of (all present) master variables */
-   SCIP_Real*            mastervals,         /** return value: values of the master variables */
+   SCIP_Real*            mastervals,         /** array to store the values of the master variables */
    int                   nmastervars         /** number of master variables */
    );
 
