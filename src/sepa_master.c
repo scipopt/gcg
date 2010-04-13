@@ -81,7 +81,7 @@ SCIP_RETCODE ensureSizeCuts(
    assert(sepadata->nmastercuts <= sepadata->maxcuts);
    assert(sepadata->nmastercuts >= 0);
 
-   if ( sepadata->maxcuts < size )
+   if( sepadata->maxcuts < size )
    {
       while ( sepadata->maxcuts < size )
       {
@@ -133,7 +133,7 @@ SCIP_RETCODE checkCutConsistency(
 
    assert(sepadata->norigcuts == sepadata->nmastercuts);
    
-   for ( i = 0; i < sepadata->norigcuts; i++ )
+   for( i = 0; i < sepadata->norigcuts; i++ )
    {
       /* check lhs and rhs */
       assert(SCIPisInfinity(scip, SCIProwGetRhs(sepadata->origcuts[i])) == SCIPisInfinity(scip, SCIProwGetRhs(sepadata->mastercuts[i])));
@@ -153,13 +153,13 @@ SCIP_RETCODE checkCutConsistency(
       mastercols = SCIProwGetCols(sepadata->mastercuts[i]);
       mastervals = SCIProwGetVals(sepadata->mastercuts[i]);
 
-      for ( v = 0; v < nmastervars; v++ )
+      for( v = 0; v < nmastervars; v++ )
       {
          /* get value of the variable in the master cut */
          masterval = 0.0;
-         for ( j = 0; j < nmastercols; j++ )
+         for( j = 0; j < nmastercols; j++ )
          {
-            if ( SCIPcolGetVar(mastercols[j]) == mastervars[v] )
+            if( SCIPcolGetVar(mastercols[j]) == mastervars[v] )
             {
                masterval = mastervals[j];
                break;
@@ -172,11 +172,11 @@ SCIP_RETCODE checkCutConsistency(
          
          /* sum up values of corresponding original variables and compare it to the mastervalue */
          sum = 0.0;
-         for ( k = 0; k < vardata->data.mastervardata.norigvars; k++ )
+         for( k = 0; k < vardata->data.mastervardata.norigvars; k++ )
          {
-            for ( l = 0; l < norigcols; l++ )
+            for( l = 0; l < norigcols; l++ )
             {
-               if ( SCIPcolGetVar(origcols[l]) == vardata->data.mastervardata.origvars[k] )
+               if( SCIPcolGetVar(origcols[l]) == vardata->data.mastervardata.origvars[k] )
                {
                   sum += origvals[l] * vardata->data.mastervardata.origvals[k];
                }
@@ -355,7 +355,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    /* save cuts in the origcuts array in the separator data */
    assert(sepadata->norigcuts == sepadata->nmastercuts);
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->norigcuts + ncuts) );
-   for ( i = 0; i < ncuts; i++ )
+   for( i = 0; i < ncuts; i++ )
    {
       sepadata->origcuts[sepadata->norigcuts] = cuts[i];
       SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]);
@@ -369,7 +369,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    nmastervars = SCIPgetNVars(scip);
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
       
-   for ( i = 0; i < ncuts; i++ )
+   for( i = 0; i < ncuts; i++ )
    {
       origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i];
       /* add orig cut to the original scip */
@@ -382,7 +382,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       /* get the variables corresponding to the columns in the cut */
       SCIP_CALL( SCIPallocBufferArray(scip, &rowvars, ncols) );
-      for ( j = 0; j < ncols; j++ )
+      for( j = 0; j < ncols; j++ )
       {
          rowvars[j] = SCIPcolGetVar(cols[j]);
       }
@@ -415,7 +415,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIPfreeBufferArray(scip, &rowvars);
    }
 
-   if ( ncuts > 0 )
+   if( ncuts > 0 )
       *result = SCIP_SEPARATED;
    
    SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));

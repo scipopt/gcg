@@ -227,7 +227,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    maxpsscore = -1.0;
 
    /* branch on an integer variable belonging to a unique block with fractional value */
-   for ( i = 0; i < npriobranchcands; i++ )
+   for( i = 0; i < npriobranchcands; i++ )
    {
       vardata = SCIPvarGetData(branchcands[i]);
       assert(vardata != NULL);
@@ -235,7 +235,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
       assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
       
       /* variable belongs to no block or the block is not unique */
-      if ( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+      if( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
          continue;
 
       /* use pseudocost variable selection rule */
@@ -264,7 +264,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
             branchvar = branchcands[i];
             /* if we do not look for the most fractional variable, but for the first fractional variable,
              * we can stop here since we found a variable to branch on */
-            if ( !mostfrac )
+            if( !mostfrac )
                break;
          }
       }
@@ -272,9 +272,9 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
 
    /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
     * but was directly transferred to the master problem and which has fractional value in the current solution */
-   if (branchvar == NULL)
+   if(branchvar == NULL)
    {
-      for ( i = 0; i < npriobranchcands; i++ )
+      for( i = 0; i < npriobranchcands; i++ )
       {
          vardata = SCIPvarGetData(branchcands[i]);
          assert(vardata != NULL);
@@ -282,7 +282,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
          assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
          
          /* continue if variable belongs to a block */
-         if ( vardata->blocknr != -1 )
+         if( vardata->blocknr != -1 )
             continue;
          
          /* use pseudocost variable selection rule */
@@ -310,14 +310,14 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
                branchvar = branchcands[i];
                /* if we do not look for the most fractional variable, but for the first fractional variable, 
                 * we stop here since we found a variable to branch on */
-               if ( !mostfrac )
+               if( !mostfrac )
                   break;
             }
          }
       }
    }
 
-   if ( branchvar == NULL )
+   if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
       //printf("Original branching rule could not find a variable to branch on!\n");
@@ -357,7 +357,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
       "<=", branchdowndata->newbound);
 
    /* enforce branching decision by a constraint rather than by bound changes */
-   if ( enforcebycons )
+   if( enforcebycons )
    {
       /* enforce new bounds by linear constraints */
       SCIP_CONS* consup;

@@ -331,7 +331,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemused)
 
    memused = SCIPgetMemUsed(scip);
    memused += SCIPgetMemUsed(GCGrelaxGetMasterprob(scip));
-   for ( i = 0; i < GCGrelaxGetNPricingprobs(scip); i++ )
+   for( i = 0; i < GCGrelaxGetNPricingprobs(scip); i++ )
    {
       memused += SCIPgetMemUsed(GCGrelaxGetPricingprob(scip, i));
    }

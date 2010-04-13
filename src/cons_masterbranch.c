@@ -128,7 +128,7 @@ SCIP_RETCODE GCGconsMasterbranchAddPendingBndChg(
    assert(scip != NULL);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       return SCIP_PLUGINNOTFOUND;
@@ -138,7 +138,7 @@ SCIP_RETCODE GCGconsMasterbranchAddPendingBndChg(
    assert(conshdlrData->pendingbndsactivated == FALSE);
 
    /* realloc memory if needed */
-   if ( conshdlrData->npendingbnds >= conshdlrData->maxpendingbnds )
+   if( conshdlrData->npendingbnds >= conshdlrData->maxpendingbnds )
    {
       conshdlrData->maxpendingbnds = conshdlrData->npendingbnds+5;
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
@@ -193,18 +193,18 @@ SCIP_Bool checkVars(
 
    /* first of all, check whether variables not fixed to 0 are really valid for the current node */
    /* iterate over all constraints */
-   for ( c = 0; c < conshdlrData->nstack; c++ )
+   for( c = 0; c < conshdlrData->nstack; c++ )
    {
       cons = conshdlrData->stack[c];
       consdata = SCIPconsGetData(cons);
 
-      if ( consdata->branchrule == NULL )
+      if( consdata->branchrule == NULL )
          continue;
            
       /* iterate over all vars and check whether they violate the current cons */
-      for ( i = 0; i < nvars; i++)
+      for( i = 0; i < nvars; i++)
       {
-         if ( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
+         if( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
          {
             vardata = SCIPvarGetData(vars[i]);
             assert(vardata != NULL);
@@ -214,26 +214,26 @@ SCIP_Bool checkVars(
             assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
             assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
             
-            for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
-               if ( vardata->data.mastervardata.origvars[j] == consdata->origvar )
+               if( vardata->data.mastervardata.origvars[j] == consdata->origvar )
                {
-                  if ( consdata->conssense == GCG_CONSSENSE_GE && 
+                  if( consdata->conssense == GCG_CONSSENSE_GE && 
                      SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
                      printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      printf("--> Reason: origvars[j] = %s >= origvals[j] = %g violated!\n",
                         SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
-                     if ( !printall )
+                     if( !printall )
                         return FALSE;
                   }
-                  if ( consdata->conssense == GCG_CONSSENSE_LE && 
+                  if( consdata->conssense == GCG_CONSSENSE_LE && 
                      SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
                      printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      printf("--> Reason: origvars[j] = %s <= origvals[j] = %g violated!\n",
                         SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
-                     if ( !printall )
+                     if( !printall )
                         return FALSE;
                   }
                   
@@ -364,13 +364,13 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
-   if ( (*consdata)->origcons != NULL )
+   if( (*consdata)->origcons != NULL )
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    /* set the pointer in the parent node to NULL */
-   if ( (*consdata)->parentcons != NULL )
+   if( (*consdata)->parentcons != NULL )
    {
       consdata2 = SCIPconsGetData((*consdata)->parentcons);
-      if ( consdata2->child1cons == cons )
+      if( consdata2->child1cons == cons )
       {
          consdata2->child1cons = NULL;
       }
@@ -386,13 +386,13 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the 
     * corresponding origbranch constraint */
-   if ( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
+   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
    }
 
    /* delete array with bound changes */
-   if ( (*consdata)->nboundchanges > 0 )
+   if( (*consdata)->nboundchanges > 0 )
    {
       SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
       SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
@@ -400,13 +400,13 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
    }
 
-   if ( (*consdata)->nboundchangestreated != NULL )
+   if( (*consdata)->nboundchangestreated != NULL )
    {
       SCIPfreeMemoryArray(scip, &(*consdata)->nboundchangestreated);
    }
 
    /* free constraint data */
-   if ( (*consdata)->name != NULL )
+   if( (*consdata)->name != NULL )
    {
       BMSfreeBlockMemoryArray(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
    }
@@ -456,14 +456,14 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    /* the node has to be repropagated if new variables were created after the node was left the last time */
    assert(GCGpricerGetNPricedvars(scip) >= consdata->propagatedvars);
-   if ( GCGpricerGetNPricedvars(scip) > consdata->propagatedvars )
+   if( GCGpricerGetNPricedvars(scip) > consdata->propagatedvars )
    {
       consdata->needprop = TRUE;
       SCIP_CALL( SCIPrepropagateNode(scip, consdata->node) );
    }
 
    /* if the node is activated the first time, we first have to setup the constraint data */
-   if ( !consdata->created )
+   if( !consdata->created )
    {
       origcons = GCGconsOrigbranchGetActiveCons(origscip);
       assert(origcons != NULL);
@@ -489,7 +489,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       consdata->nboundchanges = SCIPdomchgGetNBoundchgs(domchg);
       consdata->nboundchangestreated[conshdlrData->nstack] = consdata->nboundchanges;
 
-      if ( consdata->nboundchanges > 0 )
+      if( consdata->nboundchanges > 0 )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges) );
@@ -499,7 +499,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
       consdata->nbranchingchanges = 0;
 
-      for ( i = 0; i < consdata->nboundchanges; i++ )
+      for( i = 0; i < consdata->nboundchanges; i++ )
       {
          boundchg = SCIPdomchgGetBoundchg(domchg, i);
 
@@ -507,7 +507,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          consdata->newbounds[i] = SCIPboundchgGetNewbound(boundchg);
          consdata->boundtypes[i] = SCIPboundchgGetBoundtype(boundchg);
 
-         if ( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
+         if( SCIPboundchgGetBoundchgtype(boundchg) == SCIP_BOUNDCHGTYPE_BRANCHING )
          {
             consdata->nbranchingchanges++;
             assert(consdata->nbranchingchanges == i+1);
@@ -517,7 +517,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       consdata->created = TRUE;
 
       assert((consdata->parentcons == NULL) == (conshdlrData->nstack == 0));
-      if ( consdata->parentcons != NULL )
+      if( consdata->parentcons != NULL )
       {
          parentdata = SCIPconsGetData(consdata->parentcons);
       
@@ -572,11 +572,11 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    }
 
-   if ( consdata->nboundchanges - consdata->nboundchangestreated[conshdlrData->nstack] > 0 )
+   if( consdata->nboundchanges - consdata->nboundchangestreated[conshdlrData->nstack] > 0 )
       SCIPdebugMessage("added %d boundchanges from previous nodes!\n", consdata->nboundchanges - consdata->nboundchangestreated[conshdlrData->nstack]);
 
    /* put constraint on the stack */
-   if ( conshdlrData->nstack >= conshdlrData->maxstacksize )
+   if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
       SCIPreallocMemoryArray(scip, &(conshdlrData->stack), 2*(conshdlrData->maxstacksize));
       conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
@@ -596,7 +596,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_MASTER || vardata->vartype == GCG_VARTYPE_PRICING);
          
-         if ( vardata->vartype == GCG_VARTYPE_MASTER )
+         if( vardata->vartype == GCG_VARTYPE_MASTER )
          {
             if( conshdlrData->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
@@ -645,9 +645,9 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             assert(vardata->data.origvardata.nmastervars == 1);
 
             duplicate = FALSE;
-            for ( j = 0; j < consdata->nboundchanges; j++ )
+            for( j = 0; j < consdata->nboundchanges; j++ )
             {
-               if ( i != j && consdata->boundchgvars[i] == consdata->boundchgvars[j] 
+               if( i != j && consdata->boundchgvars[i] == consdata->boundchgvars[j] 
                   && consdata->boundtypes[i] == consdata->boundtypes[j]
                   && (consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER || 
                      consdata->newbounds[i] == consdata->newbounds[j]
@@ -657,7 +657,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
                   assert(consdata->newbounds[i] == consdata->newbounds[j]);
                }
             }
-            if ( duplicate )
+            if( duplicate )
                continue;
 
             printf("var %s, lb = %g, ub = %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]),
@@ -669,7 +669,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             
             if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
-               if ( !SCIPisEQ(scip, SCIPvarGetLbLocal(vardata->data.origvardata.mastervars[0]), consdata->newbounds[i]) )
+               if( !SCIPisEQ(scip, SCIPvarGetLbLocal(vardata->data.origvardata.mastervars[0]), consdata->newbounds[i]) )
                {
                   assert(consdata->nactivated == 1);
                   SCIP_CALL( SCIPchgVarLb(scip, vardata->data.origvardata.mastervars[0], consdata->newbounds[i]) );
@@ -677,7 +677,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             }
             else
             {
-               if ( !SCIPisEQ(scip, SCIPvarGetUbLocal(vardata->data.origvardata.mastervars[0]), consdata->newbounds[i]) )
+               if( !SCIPisEQ(scip, SCIPvarGetUbLocal(vardata->data.origvardata.mastervars[0]), consdata->newbounds[i]) )
                {
                   assert(consdata->nactivated == 1);
                   printf("change ub\n");
@@ -696,7 +696,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
          /* set corresponding bound in the pricing problem */
          /* lower bound was changed */
-         if ( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
+         if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
          {
             consdata->oldbounds[i] = SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar);
 
@@ -720,7 +720,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    }
 
    /* call branching specific activation method */
-   if ( consdata->branchrule != NULL )
+   if( consdata->branchrule != NULL )
    {
       SCIP_CALL( GCGrelaxBranchActiveMaster(origscip, consdata->branchrule, consdata->branchdata) );
    }
@@ -758,7 +758,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   if ( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
       consdata->propagatedvars = GCGpricerGetNPricedvars(scip);
 
    /* remove constraint from the stack */
@@ -786,7 +786,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
          /* reset corresponding bound in the pricing problem */
          /* lower bound was changed */
-         if ( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
+         if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
          {
             assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == consdata->newbounds[i]);
             if( SCIPvarGetLbGlobal(consdata->boundchgvars[i]) == consdata->newbounds[i] )
@@ -814,7 +814,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    }
 
    /* call branching specific deactivation method */
-   if ( consdata->branchrule != NULL )
+   if( consdata->branchrule != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDeactiveMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata) );
    }
@@ -870,7 +870,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if ( consdata->parentcons == NULL || !consdata->needprop )
+   if( consdata->parentcons == NULL || !consdata->needprop )
    {
 #ifdef CHECKPROPAGATEDVARS
       SCIP_Bool consistent;
@@ -895,9 +895,9 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
           
    /* iterate over all master variables and apply global bound changes */
-   if ( conshdlrData->npendingbnds > 0 )
+   if( conshdlrData->npendingbnds > 0 )
    {
-      for ( i = 0; i < nvars; i++)
+      for( i = 0; i < nvars; i++)
       {
          vardata = SCIPvarGetData(vars[i]);
          assert(vardata != NULL);
@@ -911,11 +911,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          fixed = FALSE;
 
          /* only look at master variables not globally fixed to zero that belong to a block */
-         if ( !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i])) && vardata->blocknr != -1 )
+         if( !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i])) && vardata->blocknr != -1 )
          {
             /* iterate over global bound changes that were not yet checked for the master variables */
             assert(conshdlrData->npendingbnds == 0 || conshdlrData->pendingbndsactivated);
-            for ( k = 0; k < conshdlrData->npendingbnds && !fixed; k++ )
+            for( k = 0; k < conshdlrData->npendingbnds && !fixed; k++ )
             {
                assert(conshdlrData->pendingvars[k] != NULL);
                boundchgvardata = SCIPvarGetData(conshdlrData->pendingvars[k]);
@@ -924,7 +924,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
 
                /* the boundchage was performed on a variable in another block, continue */
-               if ( boundchgvardata->blocknr != vardata->blocknr )
+               if( boundchgvardata->blocknr != vardata->blocknr )
                   continue;
 
                assert(boundchgvardata->blocknr != -1);
@@ -935,13 +935,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                 * if we do not find the branching variable in this array, it has value 0.0 */
                val = 0.0;
 
-               for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+               for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
                {
                   assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr);
                   
                   /* check whether the original variable contained in the master variable equals the variable 
                    * on which the current branching was performed */
-                  if ( vardata->data.mastervardata.origvars[j] == boundchgvardata->data.pricingvardata.origvars[0] )
+                  if( vardata->data.mastervardata.origvars[j] == boundchgvardata->data.pricingvardata.origvars[0] )
                   {
                      val = vardata->data.mastervardata.origvals[j];
                      break;
@@ -952,7 +952,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                 * fix the master variable to 0 */
                
                /* branching imposes new lower bound */
-               if ( conshdlrData->pendingbndtypes[k] == SCIP_BOUNDTYPE_LOWER && 
+               if( conshdlrData->pendingbndtypes[k] == SCIP_BOUNDTYPE_LOWER && 
                   SCIPisFeasLT(scip, val, conshdlrData->pendingnewbnds[k]) )
                {
                   SCIPchgVarUbGlobal(scip, vars[i], 0.0);
@@ -961,7 +961,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   break;
                }
                /* branching imposes new upper bound */
-               if ( conshdlrData->pendingbndtypes[k] == SCIP_BOUNDTYPE_UPPER && 
+               if( conshdlrData->pendingbndtypes[k] == SCIP_BOUNDTYPE_UPPER && 
                   SCIPisFeasGT(scip, val, conshdlrData->pendingnewbnds[k]) )
                {
                   SCIPchgVarUbGlobal(scip, vars[i], 0.0);
@@ -975,7 +975,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
 
    /* iterate over all master variables created after the current node was left the last time */
-   for ( i = consdata->propagatedvars; i < nvars; i++)
+   for( i = consdata->propagatedvars; i < nvars; i++)
    {
       vardata = SCIPvarGetData(vars[i]);
       assert(vardata != NULL);
@@ -989,28 +989,28 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       fixed = FALSE;
 
       /* only look at variables not already fixed to 0 or that belong to no block */
-      if ( (!SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) || vardata->blocknr == -1 )
+      if( (!SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) || vardata->blocknr == -1 )
       {
          /* the variable was copied from original to master */
-         if ( vardata->blocknr == -1 )
+         if( vardata->blocknr == -1 )
          {
             /* iterate over bound changes performed at the current node's equivalent in the original tree */
-            for ( k = 0; k < nboundchanges; k++ )
+            for( k = 0; k < nboundchanges; k++ )
             {
                assert(SCIPisFeasEQ(scip, vardata->data.mastervardata.origvals[0], 1.0));
                assert(SCIPisFeasEQ(scip, vardata->data.mastervardata.origvals[1], 0.0));
 
-               if ( vardata->data.mastervardata.origvars[0] == consdata->boundchgvars[k] )
+               if( vardata->data.mastervardata.origvars[0] == consdata->boundchgvars[k] )
                {
                   /* branching imposes new lower bound */
-                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER 
+                  if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER 
                      && SCIPisGT(scip, consdata->newbounds[k], SCIPvarGetLbLocal(vars[i])) )
                   {
                      SCIPchgVarLb(scip, vars[i], consdata->newbounds[k]);
                      propcount++;
                   }
                   /* branching imposes new upper bound */
-                  if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER
+                  if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER
                      && SCIPisLT(scip, consdata->newbounds[k], SCIPvarGetUbLocal(vars[i])) )
                   {
                      SCIPchgVarUb(scip, vars[i], consdata->newbounds[k]);
@@ -1023,7 +1023,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          else
          {
             /* iterate over bound changes performed at the current node's equivalent in the original tree */
-            for ( k = 0; k < nboundchanges && !fixed; k++ )
+            for( k = 0; k < nboundchanges && !fixed; k++ )
             {
                boundchgvardata = SCIPvarGetData(consdata->boundchgvars[k]);
                assert(boundchgvardata != NULL);
@@ -1031,7 +1031,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
 
                /* the boundchage was performed on a variable in another block, continue */
-               if ( boundchgvardata->blocknr != vardata->blocknr )
+               if( boundchgvardata->blocknr != vardata->blocknr )
                   continue;
 
                assert(boundchgvardata->blocknr != -1);
@@ -1042,13 +1042,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                val = 0.0;
 
                /* iterate over all original variables contained in the current master variable */
-               for ( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+               for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
                {
                   assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr);
                   
                   /* check whether the original variable contained in the master variable equals the variable 
                    * on which the current branching was performed */
-                  if ( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
+                  if( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
                   {
                      val = vardata->data.mastervardata.origvals[j];
                      break;
@@ -1059,7 +1059,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                 * fix the master variable to 0 */
                
                /* branching imposes new lower bound */
-               if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && 
+               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER && 
                   SCIPisFeasLT(scip, val, consdata->newbounds[k]) )
                {
                   SCIPchgVarUb(scip, vars[i], 0.0);
@@ -1068,7 +1068,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   break;
                }
                /* branching imposes new upper bound */
-               if ( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && 
+               if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_UPPER && 
                   SCIPisFeasGT(scip, val, consdata->newbounds[k]) )
                {
                   SCIPchgVarUb(scip, vars[i], 0.0);
@@ -1118,15 +1118,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
 
    /* call branching rule specific propagation method */     
-   if ( consdata->branchrule != NULL )
+   if( consdata->branchrule != NULL )
    {
       SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
    }
 
    SCIPdebugMessage("Finished propagation of masterbranch constraint: %d vars fixed.\n", propcount);
 
-   if ( *result != SCIP_CUTOFF )
-      if ( propcount > 0 )
+   if( *result != SCIP_CUTOFF )
+      if( propcount > 0 )
          *result = SCIP_REDUCEDDOM;
 
    consdata->needprop = FALSE;
@@ -1319,7 +1319,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       }
    }
 
-   if ( vardata->blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( vardata->blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
       assert(vardata->data.origvardata.nmastervars == 1);
       assert(vardata->data.origvardata.mastervals[0] == 1);
@@ -1428,7 +1428,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
    /* find the masterbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       return SCIP_PLUGINNOTFOUND;
@@ -1466,14 +1466,14 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    SCIP_CALL( SCIPcreateCons(scip, cons, "masterbranch", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
          TRUE, FALSE, FALSE, FALSE, TRUE) );
 
-   if ( parentcons != NULL )
+   if( parentcons != NULL )
    {      
       SCIP_CONSDATA* parentdata;
 
       parentdata = SCIPconsGetData(parentcons);
       assert(parentdata != NULL);
 
-      if ( parentdata->child1cons == NULL )
+      if( parentdata->child1cons == NULL )
       {
          parentdata->child1cons = *cons;
       }
@@ -1502,7 +1502,7 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       return NULL;
@@ -1528,7 +1528,7 @@ void GCGconsMasterbranchGetStack(
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       return;
@@ -1551,7 +1551,7 @@ int GCGconsMasterbranchGetNStackelements(
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       return -1;
@@ -1673,12 +1673,12 @@ void GCGconsMasterbranchCheckConsistency(
    int nconss;
    int i;
 
-   if ( scip == NULL )
+   if( scip == NULL )
       return;
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if ( conshdlr == NULL )
+   if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       assert(0);
@@ -1688,7 +1688,7 @@ void GCGconsMasterbranchCheckConsistency(
    conss = SCIPconshdlrGetConss(conshdlr);
    nconss = SCIPconshdlrGetNConss(conshdlr);
 
-   for ( i = 0; i < nconss; i++ )
+   for( i = 0; i < nconss; i++ )
    {
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);

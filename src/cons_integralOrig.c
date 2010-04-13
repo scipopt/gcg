@@ -208,7 +208,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       assert(vardata->data.origvardata.mastervals != NULL);
       assert(vardata->data.origvardata.nmastervars >= 0);
 
-      for ( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      for( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
       {
          solval += vardata->data.origvardata.mastervals[i] 
             * SCIPgetSolVal(scip, sol, vardata->data.origvardata.mastervars[i]);

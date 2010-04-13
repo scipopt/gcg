@@ -40,7 +40,6 @@
 /** node selector data */
 struct SCIP_NodeselData
 {
-   SCIP* origscip;
    int lastorignodenumber;
 };
 
@@ -108,15 +107,15 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
    orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
    
-   if ( orignodenumber != nodeseldata->lastorignodenumber )
+   if( orignodenumber != nodeseldata->lastorignodenumber )
    {
       nodeseldata->lastorignodenumber = orignodenumber;
 
       origcons = GCGconsOrigbranchGetActiveCons(origscip);
       parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
 
-      /* check if the current node is the root node and has no parent */
-      if ( parentorigcons == NULL )
+      /* check whether the current node is the root node and has no parent */
+      if( parentorigcons == NULL )
       {
          assert(GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip));
          assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
@@ -135,7 +134,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
          /* the original cons is the left child of its parentcons, 
             select the left child of the corresponding parentcons in the master*/
-         if ( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
+         if( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
          {
             assert(GCGconsMasterbranchGetChild1cons(parentmastercons) != NULL);
             assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild1cons(parentmastercons)) != NULL);
@@ -164,7 +163,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          
       }
 
-      if ( *selnode == NULL )
+      if( *selnode == NULL )
       {
          SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
       }
@@ -174,17 +173,17 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    {
       SCIPdebugMessage("select random node\n");
 
-      if ( SCIPgetNChildren(scip) > 0 )
+      if( SCIPgetNChildren(scip) > 0 )
       {
          SCIP_CALL( SCIPgetChildren(scip, &nodes, &nnodes) );
          *selnode = nodes[0];
       }
-      else if ( SCIPgetNSiblings(scip) > 0 )
+      else if( SCIPgetNSiblings(scip) > 0 )
       {
          SCIP_CALL( SCIPgetSiblings(scip, &nodes, &nnodes) );
          *selnode = nodes[0];
       }
-      else if ( SCIPgetNLeaves(scip) > 0 )
+      else if( SCIPgetNLeaves(scip) > 0 )
       {
          SCIP_CALL( SCIPgetLeaves(scip, &nodes, &nnodes) );
          *selnode = nodes[0];
@@ -206,13 +205,10 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
    assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
    assert(scip != NULL);
 
-   //SCIPdebugMessage("nodeselcomp master!\n");
-
    if( SCIPnodeGetNumber(node1) < SCIPnodeGetNumber(node2) )
       return 1;
    else 
       return -1;
-
 }
 
 
@@ -234,7 +230,6 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
 
    nodeseldata->lastorignodenumber = -1;
-   nodeseldata->origscip = NULL;
 
    /* include node selector */
    SCIP_CALL( SCIPincludeNodesel(scip, NODESEL_NAME, NODESEL_DESC, NODESEL_STDPRIORITY, NODESEL_MEMSAVEPRIORITY,
@@ -245,25 +240,3 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
    return SCIP_OKAY;
 }
 
-
-
-void GCGnodeselMasterSetOrigscip(
-   SCIP*                 scip,
-   SCIP*                 origscip
-   )
-{
-   SCIP_NODESEL* nodesel;
-   SCIP_NODESELDATA* nodeseldata;
-   
-   assert(scip != NULL);
-   assert(origscip != NULL);
-
-   nodesel = SCIPfindNodesel(scip, NODESEL_NAME);
-   assert(nodesel != NULL);
-
-   nodeseldata = SCIPnodeselGetData(nodesel);
-   assert(nodeseldata != NULL);
-
-   nodeseldata->origscip = origscip;
-   nodeseldata->lastorignodenumber = -1;
-}

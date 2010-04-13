@@ -66,7 +66,7 @@ SCIP_RETCODE ensureSizeSolvars(
    assert(scip != NULL);
    assert(solverdata != NULL);
 
-   if ( solverdata->nsols < nsols )
+   if( solverdata->nsols < nsols )
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->nsolvars), nsols) );
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvars), nsols) );

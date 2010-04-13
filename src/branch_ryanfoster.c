@@ -380,7 +380,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
             assert(vardata2 != NULL);
             assert(vardata2->vartype == GCG_VARTYPE_MASTER);
             contained = FALSE;
-            for ( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
             {
                if( vardata2->data.mastervardata.origvars[j] == ovar1 )
                {
@@ -389,18 +389,18 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
                }
             }
 
-            if (!contained)
+            if(!contained)
                continue;
 
             /* v2 also contains o1, now look for o2 */
             for( o2 = 0; o2 < vardata1->data.mastervardata.norigvars && !feasible; o2++ )
             {
                ovar2 = vardata1->data.mastervardata.origvars[o2];
-               if ( ovar2 == ovar1 ) 
+               if( ovar2 == ovar1 ) 
                   continue;
 
                contained = FALSE;
-               for ( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
+               for( j = 0; j < vardata2->data.mastervardata.norigvars; j++ )
                {
                   if( vardata2->data.mastervardata.origvars[j] == ovar2 )
                   {
@@ -409,23 +409,23 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
                   }
                }
 
-               if ( contained )
+               if( contained )
                   continue;
 
                feasible = TRUE;
             }
 
 
-            if ( !feasible )
+            if( !feasible )
             {
                for( o2 = 0; o2 < vardata2->data.mastervardata.norigvars && !feasible; o2++ )
                {
                   ovar2 = vardata2->data.mastervardata.origvars[o2];
-                  if ( ovar2 == ovar1 ) 
+                  if( ovar2 == ovar1 ) 
                      continue;
 
                   contained = FALSE;
-                  for ( j = 0; j < vardata1->data.mastervardata.norigvars; j++ )
+                  for( j = 0; j < vardata1->data.mastervardata.norigvars; j++ )
                   {
                      if( vardata1->data.mastervardata.origvars[j] == ovar2 )
                      {
@@ -434,7 +434,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
                      }
                   }
                   
-                  if ( contained )
+                  if( contained )
                      continue;
                   
                   feasible = TRUE;

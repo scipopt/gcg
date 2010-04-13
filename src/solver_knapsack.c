@@ -176,7 +176,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    npricingprobvars = SCIPgetNVars(pricingprob);
 
    nconss = SCIPgetNConss(pricingprob);
-   if ( nconss != 1 )
+   if( nconss != 1 )
    {
       //printf("%d conss in problem, abort!\n", nconss);
 
@@ -372,7 +372,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    npricingprobvars = SCIPgetNVars(pricingprob);
 
    nconss = SCIPgetNConss(pricingprob);
-   if ( nconss != 1 )
+   if( nconss != 1 )
    {
       //printf("%d conss in problem, abort!\n", nconss);
 

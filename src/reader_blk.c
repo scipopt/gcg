@@ -457,10 +457,10 @@ SCIP_Bool isNewSection(
 
       blkinput->section = BLK_BLOCK;
       
-      if ( getNextToken(blkinput) )
+      if( getNextToken(blkinput) )
       {
          /* read block number */
-         if ( isInt(scip, blkinput, &blocknr) )
+         if( isInt(scip, blkinput, &blocknr) )
          {
             assert(blocknr >= 0);
             assert(blocknr <= blkinput->nblocks);  
@@ -537,12 +537,12 @@ SCIP_RETCODE readNBlocks(
          return SCIP_OKAY;
 
       /* read number of blocks */
-      if ( isInt(scip, blkinput, &nblocks) )
+      if( isInt(scip, blkinput, &nblocks) )
       {
          //assert(nblocks > 0);
 
 
-         if ( blkinput->nblocks == -1 )
+         if( blkinput->nblocks == -1 )
          {
             blkinput->nblocks = nblocks;
             GCGrelaxSetNPricingprobs(scip, nblocks);
