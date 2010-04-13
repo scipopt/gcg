@@ -194,7 +194,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    GCGconsOrigbranchCheckConsistency(origscip);
    GCGconsMasterbranchCheckConsistency(scip);
 
-
    return SCIP_OKAY;
 }
 

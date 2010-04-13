@@ -16,7 +16,7 @@
 
 /**@file   cons_integralOrig.c
  * @ingroup CONSHDLRS 
- * @brief  constraint handler for the integrality constraint in the original problem
+ * @brief  constraint handler for enforcing integrality of the transferred master solution in the original problem
  * @author Gerald Gamrath
  */
 
@@ -28,10 +28,8 @@
 
 #include "cons_integralOrig.h"
 #include "pricer_gcg.h"
-
 #include "struct_vardata.h"
 #include "cons_masterbranch.h"
-
 
 #define CONSHDLR_NAME          "integralOrig"
 #define CONSHDLR_DESC          "integrality constraint"
@@ -48,60 +46,9 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
-
-
-
 /*
  * Callback methods
  */
-
-/** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
-#define consFreeIntegralOrig NULL
-
-
-/** initialization method of constraint handler (called after problem was transformed) */
-#define consInitIntegralOrig NULL
-
-
-/** deinitialization method of constraint handler (called before transformed problem is freed) */
-#define consExitIntegralOrig NULL
-
-
-/** presolving initialization method of constraint handler (called when presolving is about to begin) */
-#define consInitpreIntegralOrig NULL
-
-
-/** presolving deinitialization method of constraint handler (called after presolving has been finished) */
-#define consExitpreIntegralOrig NULL
-
-
-/** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
-#define consInitsolIntegralOrig NULL
-
-
-/** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
-#define consExitsolIntegralOrig NULL
-
-
-/** frees specific constraint data */
-#define consDeleteIntegralOrig NULL
-
-
-/** transforms constraint data into data belonging to the transformed problem */ 
-#define consTransIntegralOrig NULL
-
-
-/** LP initialization method of constraint handler */
-#define consInitlpIntegralOrig NULL
-
-
-/** separation method of constraint handler for LP solutions */
-#define consSepalpIntegralOrig NULL
-
-
-/** separation method of constraint handler for arbitrary primal solutions */
-#define consSepasolIntegralOrig NULL
-
 
 /** constraint enforcing method of constraint handler for LP solutions */
 static
@@ -138,6 +85,8 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
+   /* if we use the discretization approach, we do not have to check for integrality of the solution in the 
+    * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
    {
@@ -147,6 +96,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    origvars = SCIPgetOrigVars(origprob);
    norigvars = SCIPgetNOrigVars(origprob);
 
+   /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars; v++ )
    {
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
@@ -164,6 +114,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
          solval += vardata->data.origvardata.mastervals[i] 
             * SCIPgetSolVal(scip, NULL, vardata->data.origvardata.mastervars[i]);
       }
+      /* create two children if a variable with fractional value is found */
       if( !SCIPisFeasIntegral(scip, solval) )
       {
 
@@ -233,6 +184,8 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
+   /* if we use the discretization approach, we do not have to check for integrality of the solution in the 
+    * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
    {
@@ -242,6 +195,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    origvars = SCIPgetOrigVars(origprob);
    norigvars = SCIPgetNOrigVars(origprob);
 
+   /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
    {
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
@@ -275,17 +229,6 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 }
 
 
-/** domain propagation method of constraint handler */
-#define consPropIntegralOrig NULL
-
-/** presolving method of constraint handler */
-#define consPresolIntegralOrig NULL
-
-
-/** propagation conflict resolving method of constraint handler */
-#define consRespropIntegralOrig NULL
-
-
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockIntegralOrig)
@@ -293,29 +236,28 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
    return SCIP_OKAY;
 }
 
-
-/** constraint activation notification method of constraint handler */
+/* define not used callback as NULL */
+#define consFreeIntegralOrig NULL
+#define consInitIntegralOrig NULL
+#define consExitIntegralOrig NULL
+#define consInitpreIntegralOrig NULL
+#define consExitpreIntegralOrig NULL
+#define consInitsolIntegralOrig NULL
+#define consExitsolIntegralOrig NULL
+#define consDeleteIntegralOrig NULL
+#define consTransIntegralOrig NULL
+#define consInitlpIntegralOrig NULL
+#define consSepalpIntegralOrig NULL
+#define consSepasolIntegralOrig NULL
+#define consPropIntegralOrig NULL
+#define consPresolIntegralOrig NULL
+#define consRespropIntegralOrig NULL
 #define consActiveIntegralOrig NULL
-
-
-/** constraint deactivation notification method of constraint handler */
 #define consDeactiveIntegralOrig NULL
-
-
-/** constraint enabling notification method of constraint handler */
 #define consEnableIntegralOrig NULL
-
-
-/** constraint disabling notification method of constraint handler */
 #define consDisableIntegralOrig NULL
-
-/** constraint display method of constraint handler */
 #define consPrintIntegralOrig NULL
-
-/** constraint copying method of constraint handler */
 #define consCopyIntegralOrig NULL
-
-/** constraint parsing method of constraint handler */
 #define consParseIntegralOrig NULL
 
 

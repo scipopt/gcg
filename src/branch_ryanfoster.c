@@ -25,14 +25,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/type_lp.h"
-#include "scip/cons_varbound.h"
-
 #include "branch_ryanfoster.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
 #include "pricer_gcg.h"
-
+#include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
 #include "struct_branchgcg.h"
 #include "struct_vardata.h"
@@ -51,8 +48,8 @@ struct GCG_BranchData
    SCIP_VAR*          var1;                  /**< first original variable on which the branching is done */
    SCIP_VAR*          var2;                  /**< second original variable on which the branching is done */
    SCIP_Bool          same;                  /**< should each master var contain either both or none of the vars? */
-   int                blocknr;
-   SCIP_CONS*         pricecons;
+   int                blocknr;               /**< number of the block in which branching was performed */
+   SCIP_CONS*         pricecons;             /**< constraint enforcing the branching restriction in the pricing problem */
 };
 
 
@@ -96,7 +93,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    assert(vardata2->blocknr == branchdata->blocknr);
    assert(vardata2->data.origvardata.pricingvar != NULL);
 
-   /* create corresponding constraint in the pricing problem */
+   /* create corresponding constraint in the pricing problem, if not yet created */
    if( branchdata->pricecons == NULL )
    {
       if( branchdata->same )
@@ -120,6 +117,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
       }
    }
+   /* add constraint to the pricing problem that enforces the branching decision */
    SCIP_CALL( SCIPaddCons(pricingscip, branchdata->pricecons) );
    
    return SCIP_OKAY;
@@ -146,6 +144,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
+   /* remove constraint from the pricing problem that enforces the branching decision */
    assert(branchdata->pricecons != NULL);
    SCIP_CALL( SCIPdelCons(pricingscip, branchdata->pricecons) );
    
@@ -198,9 +197,11 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
          assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
 
+         /* if variable belongs to a different block than the branching restriction, we do not have to look at it */
          if( branchdata->blocknr != vardata->blocknr )
             continue;
-
+         
+         /* save the values of the original variables for the current master variable */
          val1 = 0.0;
          val2 = 0.0;
          for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
@@ -255,6 +256,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
       SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));
 
+   /* release constraint that enforces the branching decision */
    if( (*branchdata)->pricecons != NULL )
    {
       SCIP_CALL( SCIPreleaseCons(GCGrelaxGetPricingprob(scip, (*branchdata)->blocknr), 
@@ -262,7 +264,6 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    }
 
    SCIPfreeMemory(scip, branchdata);
-
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -294,14 +295,14 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
 
    SCIP_NODE* childsame;
    SCIP_NODE* childdiffer;
-
    SCIP_CONS* origbranchsame;
    SCIP_CONS* origbranchdiffer;
-
-   SCIP_CONS* origcons;
-
    GCG_BRANCHDATA* branchsamedata;
    GCG_BRANCHDATA* branchdifferdata;
+   char samename[SCIP_MAXSTRLEN];
+   char differname[SCIP_MAXSTRLEN];
+
+   SCIP_CONS* origcons;
 
    SCIP_Bool feasible;
    SCIP_Bool contained;
@@ -313,12 +314,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
 
    SCIP_VARDATA* vardata1;
    SCIP_VARDATA* vardata2;
-#if 0
-   SCIP_VARDATA* origvardata1;
-   SCIP_VARDATA* pricingvardata1;
-   SCIP_VARDATA* origvardata2;
-   SCIP_VARDATA* pricingvardata2;
-#endif
 
    int v1;
    int v2;
@@ -332,15 +327,12 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
    SCIP_VAR* ovar1;
    SCIP_VAR* ovar2;
 
-   char samename[SCIP_MAXSTRLEN];
-   char differname[SCIP_MAXSTRLEN];
-
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
 
-   SCIPdebugMessage("Execps method of ryanfoster branching\n");
+   SCIPdebugMessage("Execrel method of ryanfoster branching\n");
 
    *result = SCIP_DIDNOTRUN;
 
@@ -380,8 +372,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
       for( o1 = 0; o1 < vardata1->data.mastervardata.norigvars && !feasible; o1++ )
       {
          ovar1 = vardata1->data.mastervardata.origvars[o1];
-         //SCIPdebugMessage("var v1 = %s contains %f of var o1 = %s!\n", SCIPvarGetName(branchcands[v1]),
-         //   vardata1->data.mastervardata.origvals[o1], SCIPvarGetName(vardata1->data.mastervardata.origvars[o1]));
          /* v1 contains o1, look for v2 */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
@@ -395,8 +385,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
                if( vardata2->data.mastervardata.origvars[j] == ovar1 )
                {
                   contained = TRUE;
-                  //SCIPdebugMessage("var v2 = %s contains %f of var o1 = %s!\n", SCIPvarGetName(branchcands[v2]),
-                  //   vardata2->data.mastervardata.origvals[j], SCIPvarGetName(vardata2->data.mastervardata.origvars[j]));
                   break;
                }
             }
@@ -452,22 +440,13 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
                   feasible = TRUE;
                }
             }
-
-               
-               
          }
       }
    }
-   v1--;
-   v2--;
-   o1--;
-   o2--;
 
    if( !feasible )
    {
       printf("Ryanfoster branching rule could not find variables to branch on!\n");
-      //SCIP_CALL( SCIPprintSol(scip, GCGrelaxGetCurrentOrigSol(scip), NULL, FALSE) );
-      //SCIP_CALL( SCIPprintSol(masterscip, NULL, NULL, FALSE) );
       return SCIP_OKAY;
    }
    else
@@ -475,11 +454,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
       SCIPdebugMessage("Ryanfoster branching rule: branch on original variables %s and %s!\n",
          SCIPvarGetName(ovar1),
          SCIPvarGetName(ovar2));
-
-      /*printf("Master variables: %s (%f/%f) and %s (%f/%f).\n", SCIPvarGetName(branchcands[v1]),
-         vardata1->data.mastervardata.origvals[o1], vardata1->data.mastervardata.origvals[o2],
-         SCIPvarGetName(branchcands[v2]), vardata2->data.mastervardata.origvals[o1], 
-         vardata2->data.mastervardata.origvals[o2]);*/
    }
 
    assert(ovar1 != NULL);
@@ -519,7 +493,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
    /* add constraints to nodes */
    SCIP_CALL( SCIPaddConsNode(scip, childsame, origbranchsame, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, childdiffer, origbranchdiffer, NULL) );
-#if 1
+
    /* add branching decision as linear constraints to original problem */
    vardata1 = SCIPvarGetData(branchdifferdata->var1);
    vardata2 = SCIPvarGetData(branchdifferdata->var2);
@@ -552,8 +526,6 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
       SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
       assert(origcons == NULL);
 
-      //printf("created cons %s eq %s\n", SCIPvarGetName(vardata1->data.pricingvardata.origvars[i]), SCIPvarGetName(vardata2->data.pricingvardata.origvars[i]));
-
       /* create constraint for differ-child */
       SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, differname, 
             vardata1->data.pricingvardata.origvars[i], vardata2->data.pricingvardata.origvars[i],
@@ -562,10 +534,8 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
       SCIP_CALL( SCIPaddConsNode(scip, childdiffer, origcons, NULL) );
       SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
       assert(origcons == NULL);
-
-      //printf("created cons %s neq %s\n", SCIPvarGetName(vardata1->data.pricingvardata.origvars[i]), SCIPvarGetName(vardata2->data.pricingvardata.origvars[i]));
    }
-#endif
+
    /* release constraints */
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchsame) );
    SCIP_CALL( SCIPreleaseCons(scip, &origbranchdiffer) );

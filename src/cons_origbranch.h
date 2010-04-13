@@ -13,7 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-
+//#define CHECKCONSISTENCY
 /**@file   cons_origbranch.h
  * @brief  constraint handler for storing the graph at each node of the tree
  * @author Gerald Gamrath
@@ -63,80 +63,88 @@ void GCGconsOrigbranchGetStack(
 /** returns the branching data for a given origbranch constraint */
 extern
 GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the branching data is requested */
    );
 
 /** returns the branchrule for a given origbranch constraint */
 extern
 SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the branchrule is requested */
    );
 
 /** returns the node in the B&B tree at which the given origbranch constraint is sticking */
 extern
 SCIP_NODE* GCGconsOrigbranchGetNode(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the corresponding node is requested */
    );
 
 /** returns the origbranch constraint of the B&B father of the node at which the 
     given origbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetParentcons(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of 
+                                              *   the father node is requested */
    );
 
 /** returns the origbranch constraint of the first child of the node at which the 
     given origbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetChild1cons(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of 
+                                              *   the first child node is requested */
    );
 
 /** returns the origbranch constraint of the second child of the node at which the 
     given origbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetChild2cons(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of 
+                                              *   the second child node is requested */
    );
 
 /** sets the masterbranch constraint of the node in the master program corresponding to the node 
     at which the given origbranchbranch constraint is sticking */
 extern
 void GCGconsOrigbranchSetMastercons(
-   SCIP_CONS*            cons,
-   SCIP_CONS*            mastercons
+   SCIP_CONS*            cons,               /**< origbranch constraint for which the masterbranch constraint should be set */
+   SCIP_CONS*            mastercons          /**< masterbranch constraint corresponding to the given origbranch constraint */
    );
 
 /** returns the masterbranch constraint of the node in the master program corresponding to the node 
     at which the given origbranchbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetMastercons(
-   SCIP_CONS*            cons
+   SCIP_CONS*            cons                /**< origbranch constraint for which the corresponding masterbranch 
+                                              *   constraint is requested */
    );
 
 /** checks the consistency of the origbranch constraints in the problem */
 extern
 void GCGconsOrigbranchCheckConsistency(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** adds a bound change on an original variable found by propagation in the original problem
+ *  to the given origbranch constraint so that is will be transferred to the master problem */
 extern
 SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
-   SCIP*                 scip,
-   SCIP_CONS*            cons, 
-   SCIP_VAR*             var,
-   SCIP_BOUNDTYPE        boundtype,
-   SCIP_Real             newbound
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< origbranch constraint to which the bound change is added */
+   SCIP_VAR*             var,                /**< variable on which the bound change was performed */
+   SCIP_BOUNDTYPE        boundtype,          /**< bound type of the bound change */
+   SCIP_Real             newbound            /**< new bound of the variable after the bound change */
    );
 
+/** returns the array of bound changes on original variables found by propagation in the original problem
+ *  at the node corresponding to the given origbranch constraint and clears the arrays */
 extern
 SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
-   SCIP*                 scip,
-   SCIP_CONS*            cons, 
-   SCIP_VAR***           vars,
-   SCIP_BOUNDTYPE**      boundtypes,
-   SCIP_Real**           newbounds,
-   int*                  npropbounds
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< origbranch constraint for which the bound changes are requested */
+   SCIP_VAR***           vars,               /**< pointer to store array of variables corresponding to the bound changes */
+   SCIP_BOUNDTYPE**      boundtypes,         /**< pointer to store array of the types of the bound changes */
+   SCIP_Real**           newbounds,          /**< pointer to store array of the new bounds */
+   int*                  npropbounds         /**< pointer to store the number of bound changes stored at the constraint */
    );
 
 #endif
