@@ -828,7 +828,12 @@ SCIP_RETCODE createMaster(
 
       SCIP_CALL( SCIPgetVarsData(relaxdata->pricingprobs[i], NULL, NULL, &nbin, &nint, &nimpl, &ncont) );
 
-      printf("pricing problem %d: %d bins, %d ints, %d impls and %d cont\n", i, nbin, nint, nimpl, ncont);
+      printf("pricing problem %d: %d conss, %d vars (%d bins, %d ints, %d impls and %d cont)\n", i, 
+         SCIPgetNConss(relaxdata->pricingprobs[i]), SCIPgetNVars(relaxdata->pricingprobs[i]), nbin, nint, nimpl, ncont);
+
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricingprob_%d.lp", i);
+
+      SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, NULL, FALSE) );
    }
 
    return SCIP_OKAY;
