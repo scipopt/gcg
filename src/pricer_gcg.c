@@ -49,6 +49,7 @@
 #define EPS 0.0001
 
 #define DEFAULT_MAXVARSROUNDFARKAS 1
+#define DEFAULT_MAXVARSROUNDREDCOSTROOT 100
 #define DEFAULT_MAXVARSROUNDREDCOST 100
 #define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX
 #define DEFAULT_MAXROUNDSREDCOST INT_MAX
@@ -58,6 +59,7 @@
 #define DEFAULT_ABORTPRICING TRUE
 #define DEFAULT_ONLYBEST FALSE
 #define DEFAULT_SUCCESSFULMIPSREL 1.0
+#define DEFAULT_MIPSRELREDCOSTROOT 1.0
 #define DEFAULT_MIPSRELREDCOST 1.0
 #define DEFAULT_MIPSRELFARKAS 1.0
 #define DEFAULT_DISPINFOS FALSE
@@ -122,6 +124,7 @@ struct SCIP_PricerData
    SCIP_VARTYPE vartype;           /* vartype of created master variables */
    int maxvarsroundfarkas;
    int maxvarsroundredcost;
+   int maxvarsroundredcostroot;
    int maxsuccessfulmipsredcost;
    int maxroundsredcost;
    int maxsolsprob;
@@ -134,6 +137,7 @@ struct SCIP_PricerData
    SCIP_Bool dispinfos;
    SCIP_Real successfulmipsrel;
    SCIP_Real mipsrelredcost;
+   SCIP_Real mipsrelredcostroot;
    SCIP_Real mipsrelfarkas;
 };
 
@@ -1301,6 +1305,7 @@ SCIP_RETCODE performPricing(
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool added;
+   SCIP_Bool root;
 
    SCIP_STATUS status;
 
@@ -1324,6 +1329,8 @@ SCIP_RETCODE performPricing(
 
    assert(result != NULL || pricetype == GCG_PRICETYPE_FARKAS);
    assert(lowerbound != NULL || pricetype == GCG_PRICETYPE_FARKAS);
+
+   root = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
 
    if( pricerdata->dispinfos )
    {
@@ -1503,9 +1510,11 @@ SCIP_RETCODE performPricing(
       bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL ? TRUE : FALSE );
 
       for( i = 0; i < pricerdata->npricingprobs && (pricetype == GCG_PRICETYPE_FARKAS || (( pricerdata->onlybest || 
-                  nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
+              (((nfoundvars < pricerdata->maxvarsroundredcostroot) || !root ) && ((nfoundvars < pricerdata->maxvarsroundredcost) || root)))
+               && successfulmips < pricerdata->maxsuccessfulmipsredcost
                && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
-               && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull )))
+               && (nfoundvars == 0 || ( (root || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull) 
+                   && (!root || solvedmips < pricerdata->mipsrelredcostroot * pricerdata->npricingprobsnotnull) ) )))
               && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
               && (pricetype == GCG_PRICETYPE_REDCOST || (nfoundvars < pricerdata->maxvarsroundfarkas
                     && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull))); i++)
@@ -1569,7 +1578,7 @@ SCIP_RETCODE performPricing(
 
          for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
                  (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
-                 && (pricetype == GCG_PRICETYPE_FARKAS || nfoundvars < pricerdata->maxvarsroundredcost
+		&& (pricetype == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricerdata->maxvarsroundredcost || root ) && (nfoundvars < pricerdata->maxvarsroundredcostroot || !root))
                     || pricerdata->onlybest); j++ )
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
@@ -2089,6 +2098,12 @@ SCIP_RETCODE SCIPincludePricerGcg(
          &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 0, INT_MAX, 
          paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
 
+   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcostroot",
+         "maximal number of variables created in one redcost pricing round at the root node",
+         &pricerdata->maxvarsroundredcostroot, FALSE, DEFAULT_MAXVARSROUNDREDCOSTROOT, 0, INT_MAX,
+         paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
+
+
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
          &pricerdata->maxvarsroundfarkas, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
@@ -2120,6 +2135,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/successfulsubmipsrel",
          "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
          &pricerdata->successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelredcostroot",
+         "part of the submips that are solved before redcost pricing round is aborted at the root node, if variables have been found yed? (1.0 = solve all pricing MIPs)",
+         &pricerdata->mipsrelredcostroot, FALSE, DEFAULT_MIPSRELREDCOSTROOT, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelredcost",
          "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
