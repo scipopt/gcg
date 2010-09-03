@@ -1297,9 +1297,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    newbound = SCIPeventGetNewbound(event);
 
    SCIPdebugMessage("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
-   //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
-
-   assert(!SCIPisEQ(scip, oldbound, newbound));
+   //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f, diff = %g\n", eventtype, SCIPvarGetName(var), oldbound, newbound, oldbound-newbound);
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
