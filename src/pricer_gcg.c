@@ -1314,9 +1314,6 @@ SCIP_RETCODE performPricing(
    int* nsolvars;
    int nsols;
 
-   SCIP_Real maxtmpconvdualsol;
-   SCIP_Real sumtmpconvdualsol;
-
    assert(scip != NULL);
    assert(pricer != NULL);
 
@@ -1375,22 +1372,6 @@ SCIP_RETCODE performPricing(
    /* set objectives of the variables in the pricing sub-MIPs */
    SCIP_CALL( setPricingObjs(scip, pricetype) );
 
-   maxtmpconvdualsol = 0;
-   sumtmpconvdualsol = 0;
-
-   for( i = 0; i < pricerdata->npricingprobs; i++ )
-   {
-      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
-      {
-         if( maxtmpconvdualsol < pricerdata->tmpconvdualsol[i] )
-            maxtmpconvdualsol = pricerdata->tmpconvdualsol[i];
-         if( maxtmpconvdualsol < - pricerdata->tmpconvdualsol[i] )
-            maxtmpconvdualsol = - pricerdata->tmpconvdualsol[i];
-         sumtmpconvdualsol += pricerdata->tmpconvdualsol[i];
-      }
-   }
-
-
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       assert(GCGrelaxIsPricingprobRelevant(origprob, i)
@@ -1398,20 +1379,8 @@ SCIP_RETCODE performPricing(
 
       pricerdata->permu[i] = i;
       pricerdata->tmpconvdualsol[i] = pricerdata->dualsolconv[i];
-
-      if( pricerdata->sorting == 2 && pricetype == GCG_PRICETYPE_REDCOST )
-      {
-         pricerdata->tmpconvdualsol[i] = (1.5 * maxtmpconvdualsol + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
-      }
-      if( pricerdata->sorting == 3 && pricetype == GCG_PRICETYPE_REDCOST )
-      {
-         pricerdata->tmpconvdualsol[i] = (0.5 * maxtmpconvdualsol + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
-      }
-      if( pricerdata->sorting == 4 && pricetype == GCG_PRICETYPE_REDCOST )
-      {
-         pricerdata->tmpconvdualsol[i] = ( sumtmpconvdualsol/pricerdata->npricingprobsnotnull + pricerdata->tmpconvdualsol[i]) / sqrt(pricerdata->nvarsprob[i] + 1);
-      }
    }
+
    if( pricerdata->sorting > 0 )
    {
       SCIPsortDownRealInt(pricerdata->tmpconvdualsol, pricerdata->permu, pricerdata->npricingprobs);
