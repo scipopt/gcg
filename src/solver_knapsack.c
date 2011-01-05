@@ -157,6 +157,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    int                   nnonsolitems;          
    SCIP_Real             solval; 
    SCIP_Bool             applyable;      
+   SCIP_Bool success;
 
    int i;
    int k;
@@ -277,8 +278,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
    /* solve knapsack problem exactly, all result pointers are needed! */
    SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems, 
-         nonsolitems, &nsolitems, &nnonsolitems, &solval ));
+         nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
 
+   assert(success);
    //printf("knapsack solved, solval = %g\n", solval);
 
    solverdata->nsolvars[0] = 0;

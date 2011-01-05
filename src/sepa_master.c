@@ -37,6 +37,7 @@
 #define SEPA_PRIORITY                 0
 #define SEPA_FREQ                     1
 #define SEPA_MAXBOUNDDIST           1.0
+#define SEPA_USESSUBSCIP            FALSE
 #define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
 
 
@@ -197,6 +198,8 @@ SCIP_RETCODE checkCutConsistency(
 /*
  * Callback methods of separator
  */
+
+#define sepaCopyMaster NULL
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
@@ -473,8 +476,8 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 
 
    /* include separator */
-   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_DELAY,
-         sepaFreeMaster, sepaInitMaster, sepaExitMaster, 
+   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
+         sepaCopyMaster, sepaFreeMaster, sepaInitMaster, sepaExitMaster, 
          sepaInitsolMaster, sepaExitsolMaster,
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );

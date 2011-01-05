@@ -47,6 +47,8 @@ struct SCIP_NodeselData
  * Callback methods
  */
 
+#define nodeselCopyMaster NULL
+
 /** destructor of node selector to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_NODESELFREE(nodeselFreeMaster)
@@ -233,7 +235,7 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
 
    /* include node selector */
    SCIP_CALL( SCIPincludeNodesel(scip, NODESEL_NAME, NODESEL_DESC, NODESEL_STDPRIORITY, NODESEL_MEMSAVEPRIORITY,
-         nodeselFreeMaster, nodeselInitMaster, nodeselExitMaster, 
+         nodeselCopyMaster, nodeselFreeMaster, nodeselInitMaster, nodeselExitMaster, 
          nodeselInitsolMaster, nodeselExitsolMaster, nodeselSelectMaster, nodeselCompMaster,
          nodeseldata) );
 

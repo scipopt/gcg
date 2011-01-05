@@ -87,6 +87,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
 #endif
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
 
 
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );

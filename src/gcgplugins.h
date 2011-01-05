@@ -73,6 +73,9 @@
 #include "scip/heur_shifting.h"
 #include "scip/heur_simplerounding.h"
 #include "scip/heur_veclendiving.h"
+
+#include "heur_gcgfracdiving.h"
+
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"

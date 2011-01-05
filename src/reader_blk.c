@@ -726,7 +726,7 @@ SCIP_RETCODE SCIPincludeReaderBlk(
    readerdata = NULL;
 
    /* include lp reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
+   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL, 
          readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
    return SCIP_OKAY;
@@ -777,7 +777,7 @@ SCIP_RETCODE SCIPreadBlk(
 
    /* evaluate the result */
    if( blkinput.haserror )
-      return SCIP_PARSEERROR;
+      return SCIP_READERROR;
    else
    {
       *result = SCIP_SUCCESS;

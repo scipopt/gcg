@@ -285,7 +285,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
 /** branching execution method for relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
+SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 {
    SCIP* masterscip;
    SCIP_VAR** mastervars;
@@ -337,7 +337,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* check whether the current original solution is integral */
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, &feasible) );
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
    if( feasible )
    {
       printf("node cut off, since origsol was feasible, solval = %f\n", SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
@@ -570,6 +570,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 
 
 /* define not used callback as NULL*/
+#define branchCopyRyanfoster NULL
 #define branchFreeRyanfoster NULL
 #define branchExitRyanfoster NULL
 #define branchInitsolRyanfoster NULL
@@ -592,9 +593,9 @@ SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
 
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyRyanfoster,
          branchFreeRyanfoster, branchInitRyanfoster, branchExitRyanfoster, branchInitsolRyanfoster, 
-         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecrelRyanfoster, branchExecpsRyanfoster,
+         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecextRyanfoster, branchExecpsRyanfoster,
          branchruledata) );
 
    return SCIP_OKAY;

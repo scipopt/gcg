@@ -13,9 +13,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
-//#define DEBUG_PRICING
-//#define DEBUG_PRICING_ALL_OUTPUT
+
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
@@ -1034,7 +1032,7 @@ SCIP_RETCODE createNewMasterVar(
       objvalue += solvals[i] * SCIPvarGetObj(solvars[i]);
    }
 
-   if( SCIPisRelGE(scip, objvalue, pricerdata->dualsolconv[prob]) )
+   if( !SCIPisSumNegative(scip, objvalue - pricerdata->dualsolconv[prob]) )
    {
       *added = FALSE;
 
@@ -1118,7 +1116,7 @@ SCIP_RETCODE createNewMasterVar(
    
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 0, INT_MAX /*GCGrelaxGetNIdenticalBlocks(origprob, prob)*/, 
-         objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+         objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), 
       objvalue - pricerdata->dualsolconv[prob]);
@@ -1335,7 +1333,11 @@ SCIP_RETCODE performPricing(
          printf("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
             SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
    }
-
+   else
+   {
+      SCIPdebugMessage("nvars = %d, current lowerbound = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
+         SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
+   }
    /* check whether pricing can be aborted: if objective value is always integral
     * and the current node's current lowerbound rounded up equals the 
     * current lp objective value rounded up we don't need to continue pricing
@@ -1347,6 +1349,9 @@ SCIP_RETCODE performPricing(
    {
       if( pricerdata->dispinfos )
          printf("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
+            SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+      else
+         SCIPdebugMessage("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
             SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
 
       *result = SCIP_DIDNOTRUN;
@@ -1597,11 +1602,13 @@ SCIP_RETCODE performPricing(
       assert(lowerbound != NULL);
       if( pricerdata->dispinfos )
          printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
+      else
+         SCIPdebugMessage("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
 
       *lowerbound = SCIPgetLPObjval(scip) + bestredcost;
    }
 
-   SCIPdebugMessage("Pricing: found %d new vars\n", nfoundvars);
+   SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
    return SCIP_OKAY;
 }
@@ -1794,7 +1801,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          /* create variable in the master problem */
          SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[v]), 
                SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIPvarGetType(vars[v]), 
-               TRUE, TRUE, NULL, NULL, gcgvardeltrans, newvardata) );
+               TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
          SCIPaddVar(scip, newvar);
 
          //SCIPchgVarUbLazy(scip, newvar, SCIPvarGetUbGlobal(vars[v]));
@@ -2032,6 +2039,8 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    return retcode;
 }
 
+#define pricerCopyGcg NULL
+
 /*
  * variable pricer specific interface methods
  */
@@ -2054,7 +2063,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    /* include variable pricer */
    SCIP_CALL( SCIPincludePricer(scip, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY,
-         pricerFreeGcg, pricerInitGcg, pricerExitGcg, 
+         pricerCopyGcg, pricerFreeGcg, pricerInitGcg, pricerExitGcg, 
          pricerInitsolGcg, pricerExitsolGcg, pricerRedcostGcg, pricerFarkasGcg,
          pricerdata) );
 

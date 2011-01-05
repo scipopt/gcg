@@ -52,6 +52,7 @@ struct SCIP_ConsData
    SCIP_CONS*         parentcons;            /**< the origbranch constraint of the parent node */
    SCIP_CONS*         child1cons;            /**< the origbranch constraint of the first child node */
    SCIP_CONS*         child2cons;            /**< the origbranch constraint of the second child node */
+   SCIP_CONS*         probingtmpcons;        /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
    SCIP_CONS*         mastercons;            /**< the masterbranch constraint of the corresponding node 
                                               *   in the master program */
    GCG_BRANCHDATA*    branchdata;            /**< branching data stored by the branching rule containing information 
@@ -192,6 +193,12 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       {
          assert(consdata2->child2cons == cons);
          consdata2->child2cons = NULL;
+
+         if( SCIPinProbing(scip) )
+         {
+            consdata2->child2cons = consdata2->probingtmpcons;
+            consdata2->probingtmpcons = NULL;
+         }
       }
    }
    /* no child nodes may exist */
@@ -344,6 +351,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
+#define conshdlrCopyOrigbranch NULL
 
 /*
  * interface methods
@@ -369,7 +377,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
          CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         consFreeOrigbranch, consInitOrigbranch, consExitOrigbranch,
+         consCopyOrigbranch, consFreeOrigbranch, consInitOrigbranch, consExitOrigbranch,
          consInitpreOrigbranch, consExitpreOrigbranch, consInitsolOrigbranch, consExitsolOrigbranch,
          consDeleteOrigbranch, consTransOrigbranch, consInitlpOrigbranch,
          consSepalpOrigbranch, consSepasolOrigbranch, consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
@@ -417,6 +425,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->node = node;
    consdata->child1cons = NULL;
    consdata->child2cons = NULL;
+   consdata->probingtmpcons = NULL;
    consdata->mastercons = NULL;
    consdata->branchrule = branchrule;
    consdata->branchdata = branchdata;
@@ -446,7 +455,15 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
       }
       else
       {
-         assert(parentdata->child2cons == NULL);
+         assert(parentdata->child2cons == NULL || SCIPinProbing(scip));
+
+         /* store the second child in case we are in probing and have to overwrite it */
+         if( SCIPinProbing(scip) )
+         {
+            assert(parentdata->probingtmpcons == NULL);
+            parentdata->probingtmpcons = parentdata->child2cons;
+         }
+
          parentdata->child2cons = *cons;
       }
    }
@@ -656,9 +673,12 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
       assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
-         || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]);
+         || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
+         || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
       assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);
       assert(consdata->child2cons == NULL || SCIPconsGetData(consdata->child2cons)->parentcons == conss[i]);
+      assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
+      assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
       assert(consdata->mastercons == NULL || 
          GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
    }

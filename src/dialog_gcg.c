@@ -1088,7 +1088,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecRead)
          do
          {
             retcode = SCIPreadProb(scip, tmpfilename, extension);
-            if( retcode == SCIP_READERROR || retcode == SCIP_NOFILE || retcode == SCIP_PARSEERROR )
+            if( retcode == SCIP_READERROR || retcode == SCIP_NOFILE )
             {
                if( extension == NULL )
                   SCIPdialogMessage(scip, NULL, "error reading file <%s>\n", tmpfilename);
@@ -1283,7 +1283,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
 
       if( !error )
       {
-         SCIP_CALL( SCIPparamSetBool(param, scip, boolval) );
+         SCIP_CALL( SCIPparamSetBool(param, scip, boolval, FALSE) );
          SCIPdialogMessage(scip, NULL, "parameter <%s> set to %s\n", SCIPparamGetName(param), boolval ? "TRUE" : "FALSE");
          SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, boolval ? "TRUE" : "FALSE", TRUE) );
       }
@@ -1309,7 +1309,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
          SCIPdialogMessage(scip, NULL, "\ninvalid input <%s>\n\n", valuestr);
          return SCIP_OKAY;
       }
-      retcode = SCIPparamSetInt(param, scip, intval);
+      retcode = SCIPparamSetInt(param, scip, intval, FALSE);
       if( retcode != SCIP_PARAMETERWRONGVAL )
       {
          SCIP_CALL( retcode );
@@ -1336,7 +1336,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
          SCIPdialogMessage(scip, NULL, "\ninvalid input <%s>\n\n", valuestr);
          return SCIP_OKAY;
       }
-      retcode = SCIPparamSetLongint(param, scip, longintval);
+      retcode = SCIPparamSetLongint(param, scip, longintval, FALSE);
       if( retcode != SCIP_PARAMETERWRONGVAL )
       {
          SCIP_CALL( retcode );
@@ -1363,7 +1363,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
          SCIPdialogMessage(scip, NULL, "\ninvalid input <%s>\n\n", valuestr);
          return SCIP_OKAY;
       }
-      retcode = SCIPparamSetReal(param, scip, realval);
+      retcode = SCIPparamSetReal(param, scip, realval, FALSE);
       if( retcode != SCIP_PARAMETERWRONGVAL )
       {
          SCIP_CALL( retcode );
@@ -1389,7 +1389,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
          SCIPdialogMessage(scip, NULL, "\ninvalid input <%s>\n\n", valuestr);
          return SCIP_OKAY;
       }
-      retcode = SCIPparamSetChar(param, scip, charval);
+      retcode = SCIPparamSetChar(param, scip, charval, FALSE);
       if( retcode != SCIP_PARAMETERWRONGVAL )
       {
          SCIP_CALL( retcode );
@@ -1410,7 +1410,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetParam)
 
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, valuestr, TRUE) );
 
-      retcode = SCIPparamSetString(param, scip, valuestr);
+      retcode = SCIPparamSetString(param, scip, valuestr, FALSE);
       if( retcode != SCIP_PARAMETERWRONGVAL )
       {
          SCIP_CALL( retcode );
@@ -1988,7 +1988,7 @@ SCIP_RETCODE GCGcreateRootDialog(
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    )
 {
-   SCIP_CALL( SCIPcreateDialog(scip, root, GCGdialogExecMenuLazy, NULL, NULL,
+   SCIP_CALL( SCIPincludeDialog(scip, root, NULL, GCGdialogExecMenuLazy, NULL, NULL,
          "SCIP", "SCIP's main menu", TRUE, NULL) );
    
    SCIP_CALL( SCIPsetRootDialog(scip, *root) );
@@ -2018,7 +2018,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* checksol */
    if( !SCIPdialogHasEntry(root, "checksol") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecChecksol, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecChecksol, NULL, NULL,
             "checksol", "double checks best solution w.r.t. original problem", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2027,7 +2027,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* conflictgraph */
    if( !SCIPdialogHasEntry(root, "conflictgraph") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecConflictgraph, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecConflictgraph, NULL, NULL,
             "conflictgraph", "writes binary variable implications of transformed problem as conflict graph to file",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
@@ -2037,7 +2037,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display */
    if( !SCIPdialogHasEntry(root, "display") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "display", "display information", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2051,7 +2051,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display branching */
    if( !SCIPdialogHasEntry(submenu, "branching") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayBranching, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayBranching, NULL, NULL,
             "branching", "display branching rules", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2060,7 +2060,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display conflict */
    if( !SCIPdialogHasEntry(submenu, "conflict") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayConflict, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayConflict, NULL, NULL,
             "conflict", "display conflict handlers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2069,7 +2069,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display conshdlrs */
    if( !SCIPdialogHasEntry(submenu, "conshdlrs") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayConshdlrs, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayConshdlrs, NULL, NULL,
             "conshdlrs", "display constraint handlers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2078,7 +2078,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display displaycols */
    if( !SCIPdialogHasEntry(submenu, "displaycols") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayDisplaycols, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDisplaycols, NULL, NULL,
             "displaycols", "display display columns", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2087,7 +2087,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display heuristics */
    if( !SCIPdialogHasEntry(submenu, "heuristics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayHeuristics, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayHeuristics, NULL, NULL,
             "heuristics", "display primal heuristics", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2096,7 +2096,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display memory */
    if( !SCIPdialogHasEntry(submenu, "memory") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayMemory, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayMemory, NULL, NULL,
             "memory", "display memory diagnostics", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2105,7 +2105,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display nodeselectors */
    if( !SCIPdialogHasEntry(submenu, "nodeselectors") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayNodeselectors, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayNodeselectors, NULL, NULL,
             "nodeselectors", "display node selectors", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2114,7 +2114,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display parameters */
    if( !SCIPdialogHasEntry(submenu, "parameters") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayParameters, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayParameters, NULL, NULL,
             "parameters", "display non-default parameter settings", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2123,7 +2123,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display presolvers */
    if( !SCIPdialogHasEntry(submenu, "presolvers") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayPresolvers, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayPresolvers, NULL, NULL,
             "presolvers", "display presolvers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2132,7 +2132,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display problem */
    if( !SCIPdialogHasEntry(submenu, "problem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayProblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayProblem, NULL, NULL,
             "problem", "display original problem", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2141,7 +2141,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display propagators */
    if( !SCIPdialogHasEntry(submenu, "propagators") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayPropagators, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayPropagators, NULL, NULL,
             "propagators", "display propagators", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2150,7 +2150,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display readers */
    if( !SCIPdialogHasEntry(submenu, "readers") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayReaders, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayReaders, NULL, NULL,
             "readers", "display file readers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2159,7 +2159,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display separators */
    if( !SCIPdialogHasEntry(submenu, "separators") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplaySeparators, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplaySeparators, NULL, NULL,
             "separators", "display cut separators", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2168,7 +2168,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display solution */
    if( !SCIPdialogHasEntry(submenu, "solution") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplaySolution, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplaySolution, NULL, NULL,
             "solution", "display best primal solution", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2177,7 +2177,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display statistics */
    if( !SCIPdialogHasEntry(submenu, "statistics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayStatistics, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayStatistics, NULL, NULL,
             "statistics", "display problem and optimization statistics", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2186,7 +2186,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display transproblem */
    if( !SCIPdialogHasEntry(submenu, "transproblem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayTransproblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayTransproblem, NULL, NULL,
             "transproblem", "display current node transformed problem", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2195,7 +2195,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display value */
    if( !SCIPdialogHasEntry(submenu, "value") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayValue, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayValue, NULL, NULL,
             "value", "display value of single variable in best primal solution", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2204,7 +2204,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display varbranchstatistics */
    if( !SCIPdialogHasEntry(submenu, "varbranchstatistics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayVarbranchstatistics, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayVarbranchstatistics, NULL, NULL,
             "varbranchstatistics", "display statistics for branching on variables", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2213,7 +2213,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* display transsolution */
    if( !SCIPdialogHasEntry(submenu, "transsolution") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecDisplayTranssolution, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayTranssolution, NULL, NULL,
             "transsolution", "display best primal solution in transformed variables", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2222,7 +2222,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* free */
    if( !SCIPdialogHasEntry(root, "free") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecFree, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecFree, NULL, NULL,
             "free", "free current problem from memory", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2231,7 +2231,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* help */
    if( !SCIPdialogHasEntry(root, "help") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecHelp, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecHelp, NULL, NULL,
             "help", "display this help", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2240,7 +2240,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* newstart */
    if( !SCIPdialogHasEntry(root, "newstart") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecNewstart, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecNewstart, NULL, NULL,
             "newstart", "reset branch and bound tree to start again from root", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2249,7 +2249,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* optimize */
    if( !SCIPdialogHasEntry(root, "optimize") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecOptimize, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecOptimize, NULL, NULL,
             "optimize", "solve the problem", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2258,7 +2258,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* presolve */
    if( !SCIPdialogHasEntry(root, "presolve") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecPresolve, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecPresolve, NULL, NULL,
             "presolve", "solve the problem, but stop after presolving stage", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2267,7 +2267,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* quit */
    if( !SCIPdialogHasEntry(root, "quit") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecQuit, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecQuit, NULL, NULL,
             "quit", "leave SCIP", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2276,7 +2276,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* read */
    if( !SCIPdialogHasEntry(root, "read") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecRead, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecRead, NULL, NULL,
             "read", "read a problem", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2288,7 +2288,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write */
    if( !SCIPdialogHasEntry(root, "write") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "write", "write information to file", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2302,7 +2302,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write lp */
    if( !SCIPdialogHasEntry(submenu, "lp") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteLp, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteLp, NULL, NULL,
             "lp", "write current node LP relaxation in LP format to file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2311,7 +2311,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write mip */
    if( !SCIPdialogHasEntry(submenu, "mip") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteMip, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteMip, NULL, NULL,
             "mip", "write current node MIP relaxation in LP format to file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2320,7 +2320,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write problem */
    if( !SCIPdialogHasEntry(submenu, "problem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteProblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteProblem, NULL, NULL,
             "problem",
             "write original problem to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})",
             FALSE, NULL) );
@@ -2331,7 +2331,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write generic problem */
    if( !SCIPdialogHasEntry(submenu, "genproblem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteGenProblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteGenProblem, NULL, NULL,
             "genproblem",
             "write original problem with generic names to file (format is given by file extension, e.g., orig.{lp,rlp,cip,mps})",
             FALSE, NULL) );
@@ -2342,7 +2342,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write solution */
    if( !SCIPdialogHasEntry(submenu, "solution") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteSolution, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteSolution, NULL, NULL,
             "solution", "write best primal solution to file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2351,7 +2351,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write statistics */
    if( !SCIPdialogHasEntry(submenu, "statistics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteStatistics, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteStatistics, NULL, NULL,
             "statistics", "write statistics to file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2360,7 +2360,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write transproblem */
    if( !SCIPdialogHasEntry(submenu, "transproblem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteTransproblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteTransproblem, NULL, NULL,
             "transproblem",
             "write currend node transformed problem to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
             FALSE, NULL) );
@@ -2371,7 +2371,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    /* write transproblem */
    if( !SCIPdialogHasEntry(submenu, "gentransproblem") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecWriteGenTransproblem, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteGenTransproblem, NULL, NULL,
             "gentransproblem",
             "write currend node transformed problem with generic names to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
             FALSE, NULL) );
@@ -2419,7 +2419,7 @@ SCIP_RETCODE addParamDialog(
                char desc[SCIP_MAXSTRLEN];
 
                (void) SCIPsnprintf(desc, SCIP_MAXSTRLEN, "advanced parameters");
-               SCIP_CALL( SCIPcreateDialog(scip, &advmenu, GCGdialogExecMenu, NULL, NULL, "advanced", desc, TRUE, NULL) );
+               SCIP_CALL( SCIPincludeDialog(scip, &advmenu, NULL, GCGdialogExecMenu, NULL, NULL, "advanced", desc, TRUE, NULL) );
                SCIP_CALL( SCIPaddDialogEntry(scip, menu, advmenu) );
                SCIP_CALL( SCIPreleaseDialog(scip, &advmenu) );
             }
@@ -2435,7 +2435,7 @@ SCIP_RETCODE addParamDialog(
             if( !SCIPdialogHasEntry(advmenu, paramname) )
             {
                /* create a parameter change dialog */
-               SCIP_CALL( SCIPcreateDialog(scip, &paramdialog, GCGdialogExecSetParam, GCGdialogDescSetParam, NULL,
+               SCIP_CALL( SCIPincludeDialog(scip, &paramdialog, NULL, GCGdialogExecSetParam, GCGdialogDescSetParam, NULL,
                      paramname, SCIPparamGetDesc(param), FALSE, (SCIP_DIALOGDATA*)param) );
                SCIP_CALL( SCIPaddDialogEntry(scip, advmenu, paramdialog) );
                SCIP_CALL( SCIPreleaseDialog(scip, &paramdialog) );
@@ -2444,7 +2444,7 @@ SCIP_RETCODE addParamDialog(
          else
          {
             /* create a parameter change dialog */
-            SCIP_CALL( SCIPcreateDialog(scip, &paramdialog, GCGdialogExecSetParam, GCGdialogDescSetParam, NULL,
+            SCIP_CALL( SCIPincludeDialog(scip, &paramdialog, NULL, GCGdialogExecSetParam, GCGdialogDescSetParam, NULL,
                   paramname, SCIPparamGetDesc(param), FALSE, (SCIP_DIALOGDATA*)param) );
             SCIP_CALL( SCIPaddDialogEntry(scip, menu, paramdialog) );
             SCIP_CALL( SCIPreleaseDialog(scip, &paramdialog) );
@@ -2466,7 +2466,7 @@ SCIP_RETCODE addParamDialog(
          char desc[SCIP_MAXSTRLEN];
 
          (void) SCIPsnprintf(desc, SCIP_MAXSTRLEN, "parameters for <%s>", dirname);
-         SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL, dirname, desc, TRUE, NULL) );
+         SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL, dirname, desc, TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, menu, submenu) );
          SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
       }
@@ -2533,7 +2533,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* find (or create) the "set" menu of the root dialog */
    if( !SCIPdialogHasEntry(root, "set") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &setmenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &setmenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "set", "load/save/change parameters", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, setmenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &setmenu) );
@@ -2547,7 +2547,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set gcg */
    if( !SCIPdialogHasEntry(setmenu, "default") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetDefault, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetDefault, NULL, NULL,
             "default", "reset parameter settings to their default values", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2556,7 +2556,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set load */
    if( !SCIPdialogHasEntry(setmenu, "load") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetLoad, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetLoad, NULL, NULL,
             "load", "load parameter settings from a file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2565,7 +2565,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set save */
    if( !SCIPdialogHasEntry(setmenu, "save") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetSave, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetSave, NULL, NULL,
             "save", "save parameter settings to a file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2574,7 +2574,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set diffsave */
    if( !SCIPdialogHasEntry(setmenu, "diffsave") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetDiffsave, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetDiffsave, NULL, NULL,
             "diffsave", "save non-default parameter settings to a file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2583,7 +2583,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set branching */
    if( !SCIPdialogHasEntry(setmenu, "branching") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "branching", "change parameters for branching rules", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2601,7 +2601,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPbranchruleGetName(branchrules[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPbranchruleGetName(branchrules[i]), SCIPbranchruleGetDesc(branchrules[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2611,7 +2611,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set branching priority */
    if( !SCIPdialogHasEntry(submenu, "priority") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetBranchingPriority, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetBranchingPriority, NULL, NULL,
             "priority", "change branching priority of a single variable", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2620,7 +2620,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set branching direction */
    if( !SCIPdialogHasEntry(submenu, "direction") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetBranchingDirection, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetBranchingDirection, NULL, NULL,
             "direction", "change preferred branching direction of a single variable (-1:down, 0:auto, +1:up)",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
@@ -2630,7 +2630,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set conflict */
    if( !SCIPdialogHasEntry(setmenu, "conflict") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "conflict", "change parameters for conflict handlers", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2648,7 +2648,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPconflicthdlrGetName(conflicthdlrs[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPconflicthdlrGetName(conflicthdlrs[i]), SCIPconflicthdlrGetDesc(conflicthdlrs[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2658,7 +2658,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set constraints */
    if( !SCIPdialogHasEntry(setmenu, "constraints") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "constraints", "change parameters for constraint handlers", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2676,7 +2676,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPconshdlrGetName(conshdlrs[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPconshdlrGetName(conshdlrs[i]), SCIPconshdlrGetDesc(conshdlrs[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2686,7 +2686,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set display */
    if( !SCIPdialogHasEntry(setmenu, "display") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "display", "change parameters for display columns", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2704,7 +2704,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPdispGetName(disps[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPdispGetName(disps[i]), SCIPdispGetDesc(disps[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2714,7 +2714,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set heuristics */
    if( !SCIPdialogHasEntry(setmenu, "heuristics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "heuristics", "change parameters for primal heuristics", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2732,7 +2732,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPheurGetName(heurs[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPheurGetName(heurs[i]), SCIPheurGetDesc(heurs[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2742,11 +2742,11 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set limits */
    if( !SCIPdialogHasEntry(setmenu, "limits") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "limits", "change parameters for time, memory, objective value, and other limits", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
 
-      SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecSetLimitsObjective, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetLimitsObjective, NULL, NULL,
             "objective", "set limit on objective value", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2757,7 +2757,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set lp */
    if( !SCIPdialogHasEntry(setmenu, "lp") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "lp", "change parameters for linear programming relaxations", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2766,7 +2766,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set memory */
    if( !SCIPdialogHasEntry(setmenu, "memory") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "memory", "change parameters for memory management", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2775,7 +2775,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set misc */
    if( !SCIPdialogHasEntry(setmenu, "misc") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "misc", "change parameters for miscellaneous stuff", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2784,7 +2784,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set nodeselection */
    if( !SCIPdialogHasEntry(setmenu, "nodeselection") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "nodeselection", "change parameters for node selectors", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2802,7 +2802,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPnodeselGetName(nodesels[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPnodeselGetName(nodesels[i]), SCIPnodeselGetDesc(nodesels[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2812,7 +2812,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set numerics */
    if( !SCIPdialogHasEntry(setmenu, "numerics") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "numerics", "change parameters for numerical values", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2821,7 +2821,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set presolving */
    if( !SCIPdialogHasEntry(setmenu, "presolving") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "presolving", "change parameters for presolving", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2839,7 +2839,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPpresolGetName(presols[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPpresolGetName(presols[i]), SCIPpresolGetDesc(presols[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2849,7 +2849,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set pricing */
    if( !SCIPdialogHasEntry(setmenu, "pricing") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "pricing", "change parameters for pricing variables", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2867,7 +2867,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPpricerGetName(pricers[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPpricerGetName(pricers[i]), SCIPpricerGetDesc(pricers[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2877,7 +2877,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set propagation */
    if( !SCIPdialogHasEntry(setmenu, "propagating") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "propagating", "change parameters for constraint propagation", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2886,7 +2886,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set reading */
    if( !SCIPdialogHasEntry(setmenu, "reading") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "reading", "change parameters for problem file readers", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2904,7 +2904,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPreaderGetName(readers[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPreaderGetName(readers[i]), SCIPreaderGetDesc(readers[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2914,7 +2914,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set separating */
    if( !SCIPdialogHasEntry(setmenu, "separating") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "separating", "change parameters for cut separators", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2932,7 +2932,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    {
       if( !SCIPdialogHasEntry(submenu, SCIPsepaGetName(sepas[i])) )
       {
-         SCIP_CALL( SCIPcreateDialog(scip, &dialog, GCGdialogExecMenu, NULL, NULL,
+         SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecMenu, NULL, NULL,
                SCIPsepaGetName(sepas[i]), SCIPsepaGetDesc(sepas[i]), TRUE, NULL) );
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2942,7 +2942,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set timing */
    if( !SCIPdialogHasEntry(setmenu, "timing") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "timing", "change parameters for timing issues", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
@@ -2951,7 +2951,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    /* set vbc */
    if( !SCIPdialogHasEntry(setmenu, "vbc") )
    {
-      SCIP_CALL( SCIPcreateDialog(scip, &submenu, GCGdialogExecMenu, NULL, NULL,
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu, NULL, GCGdialogExecMenu, NULL, NULL,
             "vbc", "change parameters for VBC tool output", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );

@@ -237,6 +237,7 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
 }
 
 /* define not used callback as NULL */
+#define conshdlrCopyIntegralOrig NULL
 #define consFreeIntegralOrig NULL
 #define consInitIntegralOrig NULL
 #define consExitIntegralOrig NULL
@@ -280,7 +281,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
          CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS, 
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig, 
+         conshdlrCopyIntegralOrig, consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig, 
          consInitpreIntegralOrig, consExitpreIntegralOrig, consInitsolIntegralOrig, consExitsolIntegralOrig,
          consDeleteIntegralOrig, consTransIntegralOrig, consInitlpIntegralOrig,
          consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, 

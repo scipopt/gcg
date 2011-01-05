@@ -95,8 +95,6 @@
 
 
 
-
-
 /** includes default SCIP plugins into SCIP */
 extern
 SCIP_RETCODE GCGincludeMasterPlugins(

@@ -67,6 +67,7 @@ struct SCIP_ConsData
    SCIP_CONS*         parentcons;            /**< the masterbranch constraint of the parent node */
    SCIP_CONS*         child1cons;            /**< the masterbranch constraint of the first child node */
    SCIP_CONS*         child2cons;            /**< the masterbranch constraint of the second child node */
+   SCIP_CONS*         probingtmpcons;        /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
    SCIP_CONS*         origcons;              /**< the corresponding origbranch cons in the original program */
 
    GCG_BRANCHDATA*    branchdata;            /**< branching data stored by the branching rule at the corresponding origcons constraint 
@@ -378,6 +379,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       {
          assert(consdata2->child2cons == cons);
          consdata2->child2cons = NULL;
+
+         if( SCIPinProbing(scip) )
+         {
+            consdata2->child2cons = consdata2->probingtmpcons;
+            consdata2->probingtmpcons = NULL;
+         }
       }
    }
    /* the node should not have children anymore */
@@ -877,6 +884,10 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       consistent = checkVars(scip, conshdlr, TRUE);
       assert(consistent);
 #endif
+
+      SCIPdebugMessage("No propagation of masterbranch constraint needed: <%s>, stack size = %d.\n", 
+         consdata->name, conshdlrData->nstack);
+      
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
@@ -1176,6 +1187,7 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 
 
 /* define not used callbacks as NULL */
+#define conshdlrCopyMasterbranch NULL
 #define consPresolMasterbranch NULL
 #define consRespropMasterbranch NULL
 #define consInitMasterbranch NULL
@@ -1197,19 +1209,9 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
  * Callback methods of event handler
  */
 
-/** destructor of event handler to free user data (called when SCIP is exiting) */
-#if 0
-static
-SCIP_DECL_EVENTFREE(eventFreeOrigvarbound)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of origvarbound event handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
+#define eventCopyOrigvarbound NULL
 #define eventFreeOrigvarbound NULL
-#endif
+#define eventExitOrigvarbound NULL
 
 /** initialization method of event handler (called after problem was transformed) */
 static
@@ -1218,19 +1220,7 @@ SCIP_DECL_EVENTINIT(eventInitOrigvarbound)
    return SCIP_OKAY;
 }
 
-/** deinitialization method of event handler (called before transformed problem is freed) */
-#if 0
-static
-SCIP_DECL_EVENTEXIT(eventExitOrigvarbound)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of origvarbound event handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
 
-   return SCIP_OKAY;
-}
-#else
-#define eventExitOrigvarbound NULL
-#endif
 
 /** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
@@ -1379,7 +1369,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
          CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         consFreeMasterbranch, consInitMasterbranch, consExitMasterbranch,
+         conshdlrCopyMasterbranch, consFreeMasterbranch, consInitMasterbranch, consExitMasterbranch,
          consInitpreMasterbranch, consExitpreMasterbranch, consInitsolMasterbranch, consExitsolMasterbranch,
          consDeleteMasterbranch, consTransMasterbranch, consInitlpMasterbranch,
          consSepalpMasterbranch, consSepasolMasterbranch, consEnfolpMasterbranch, consEnfopsMasterbranch, consCheckMasterbranch,
@@ -1394,7 +1384,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 
    /* include event handler into original SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(GCGpricerGetOrigprob(scip), EVENTHDLR_NAME, EVENTHDLR_DESC,
-         eventFreeOrigvarbound, eventInitOrigvarbound, eventExitOrigvarbound, 
+         eventCopyOrigvarbound, eventFreeOrigvarbound, eventInitOrigvarbound, eventExitOrigvarbound, 
          eventInitsolOrigvarbound, eventExitsolOrigvarbound, eventDeleteOrigvarbound, eventExecOrigvarbound,
          eventhdlrdata) );
 
@@ -1442,6 +1432,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->parentcons = parentcons;
    consdata->child1cons = NULL;
    consdata->child2cons = NULL;
+   consdata->probingtmpcons = NULL;
    consdata->created = FALSE;
    consdata->origcons = NULL;
    consdata->name = NULL;
@@ -1477,7 +1468,15 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       }
       else
       {
-         assert(parentdata->child2cons == NULL);
+         assert(parentdata->child2cons == NULL || SCIPinProbing(scip));
+
+         /* store the second child in case we are in probing and have to overwrite it */
+         if( SCIPinProbing(scip) )
+         {
+            assert(parentdata->probingtmpcons == NULL);
+            parentdata->probingtmpcons = parentdata->child2cons;
+         }
+
          parentdata->child2cons = *cons;
       }
    }
@@ -1694,9 +1693,12 @@ void GCGconsMasterbranchCheckConsistency(
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
       assert(consdata->origcons == NULL || consdata->created);
       assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
-         || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]);
+         || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
+         || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
       assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);
       assert(consdata->child2cons == NULL || SCIPconsGetData(consdata->child2cons)->parentcons == conss[i]);
+      assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
+      assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
       assert(consdata->origcons == NULL || 
          GCGconsOrigbranchGetMastercons(consdata->origcons) == conss[i]);
    }

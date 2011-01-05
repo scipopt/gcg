@@ -163,7 +163,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
 /** branching execution method for relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
+SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 {
    SCIP_VARDATA* vardata;
    SCIP_SOL* currentsol;
@@ -217,7 +217,7 @@ SCIP_DECL_BRANCHEXECREL(branchExecrelOrig)
    currentsol = GCGrelaxGetCurrentOrigSol(scip);
 
    /* get the branching candidates */
-   SCIP_CALL( SCIPgetRelaxBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
          &npriobranchcands, NULL, NULL, NULL) );
 
    branchvar = NULL;
@@ -442,6 +442,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 }
 
 /* define not used callback as NULL*/
+#define branchCopyOrig NULL
 #define branchFreeOrig NULL
 #define branchExitOrig NULL
 #define branchInitsolOrig NULL
@@ -459,9 +460,9 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 {   
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyOrig,
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig, 
-         branchExeclpOrig, branchExecrelOrig, branchExecpsOrig,
+         branchExeclpOrig, branchExecextOrig, branchExecpsOrig,
          NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/enforcebycons",

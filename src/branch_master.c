@@ -43,6 +43,9 @@
  * Callback methods
  */
 
+
+#define branchCopyMaster NULL
+
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
 #define branchFreeMaster NULL
 
@@ -98,10 +101,10 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 
 /** branching execution method relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECREL(branchExecrelMaster)
+SCIP_DECL_BRANCHEXECEXT(branchExecextMaster)
 {
-   SCIPdebugMessage("Execrel method of master branching\n");
-   printf("Execrel method of master branching\n");
+   SCIPdebugMessage("Execext method of master branching\n");
+   printf("Execext method of master branching\n");
 
    return SCIP_OKAY;
 }
@@ -160,8 +163,8 @@ SCIP_RETCODE SCIPincludeBranchruleMaster(
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
-         branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster, branchExitsolMaster, 
-         branchExeclpMaster, branchExecrelMaster, branchExecpsMaster,
+         branchCopyMaster, branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster, 
+         branchExitsolMaster, branchExeclpMaster, branchExecextMaster, branchExecpsMaster,
          branchruledata) );
 
    return SCIP_OKAY;
