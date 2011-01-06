@@ -29,6 +29,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_origbranch.h"
+#include "branch_relpsprob.h"
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "struct_vardata.h"
@@ -42,7 +43,7 @@
 #define DEFAULT_ENFORCEBYCONS FALSE
 #define DEFAULT_MOSTFRAC      FALSE
 #define DEFAULT_USEPSEUDO     TRUE
-
+#define DEFAULT_USEPSSTRONG   FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -173,6 +174,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    SCIP_Bool enforcebycons;
    SCIP_Bool mostfrac;
    SCIP_Bool usepseudocosts;
+   SCIP_Bool usepsstrong;
 
    /* data for b&b child creation */
    SCIP_NODE* childup;
@@ -212,6 +214,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &mostfrac) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts) );
+   SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
 
    /* get current sol */
    currentsol = GCGrelaxGetCurrentOrigSol(scip);
@@ -226,53 +229,67 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    maxfrac = 0.0;
    maxpsscore = -1.0;
 
-   /* branch on an integer variable belonging to a unique block with fractional value */
-   for( i = 0; i < npriobranchcands; i++ )
+   if( usepsstrong )
    {
-      vardata = SCIPvarGetData(branchcands[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
-      
-      /* variable belongs to no block or the block is not unique */
-      if( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
-         continue;
+      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, FALSE, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
+            npriobranchcands, result, &branchvar) );
+      assert(branchvar != NULL || *result == SCIP_CUTOFF);
+      assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
 
-      /* use pseudocost variable selection rule */
-      if( usepseudocosts )
-      {
-         /* select the variable, if its pseudocost are higher than the ones of the currently saved variable */
-         if( SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]) > maxpsscore )
-         {
-            branchvar = branchcands[i];
-            solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-            maxpsscore = SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]);
-         }
-      }
-      /* use most fractional variable selection rule */
-      else
-      {
-         /* compute the fractionality */
-         frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
-         assert(frac > 0);
+      if( *result == SCIP_CUTOFF )
+         return SCIP_OKAY;
 
-         /* fractionality is higher than that of the current highest fractionality */
-         if( frac >= maxfrac  )
-         {
-            SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(branchcands[i]), branchcandssol[i]);
-            solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
-            branchvar = branchcands[i];
-            /* if we do not look for the most fractional variable, but for the first fractional variable,
-             * we can stop here since we found a variable to branch on */
-            if( !mostfrac )
-               break;
-         }
-      }
+      solval = SCIPgetRelaxSolVal(scip, branchvar);
    }
+
+   /* branch on an integer variable belonging to a unique block with fractional value */
+   if( branchvar == NULL )
+      for( i = 0; i < npriobranchcands; i++ )
+      {
+         vardata = SCIPvarGetData(branchcands[i]);
+         assert(vardata != NULL);
+         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+      
+         /* variable belongs to no block or the block is not unique */
+         if( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+            continue;
+
+         /* use pseudocost variable selection rule */
+         if( usepseudocosts )
+         {
+            /* select the variable, if its pseudocost are higher than the ones of the currently saved variable */
+            if( SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]) > maxpsscore )
+            {
+               branchvar = branchcands[i];
+               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
+               maxpsscore = SCIPgetVarPseudocostScore(scip, branchcands[i], branchcandssol[i]);
+            }
+         }
+         /* use most fractional variable selection rule */
+         else
+         {
+            /* compute the fractionality */
+            frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
+            assert(frac > 0);
+
+            /* fractionality is higher than that of the current highest fractionality */
+            if( frac >= maxfrac  )
+            {
+               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(branchcands[i]), branchcandssol[i]);
+               solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
+               branchvar = branchcands[i];
+               /* if we do not look for the most fractional variable, but for the first fractional variable,
+                * we can stop here since we found a variable to branch on */
+               if( !mostfrac )
+                  break;
+            }
+         }
+      }
 
    /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
     * but was directly transferred to the master problem and which has fractional value in the current solution */
-   if(branchvar == NULL)
+   if( branchvar == NULL )
    {
       for( i = 0; i < npriobranchcands; i++ )
       {
@@ -477,6 +494,9 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/usepsstrong",
+         "should strong branching with propagation be used to determine the variable on which the branching is performed?",
+         NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 
    return SCIP_OKAY;
 }

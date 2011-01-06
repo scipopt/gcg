@@ -54,6 +54,7 @@ MAINOBJ		=	reader_blk.o \
 			cons_integralOrig.o \
 			heur_gcgfracdiving.o \
 			branch_master.o \
+			branch_relpsprob.o \
 			masterplugins.o \
 			pricingplugins.o \
 			nodesel_master.o \

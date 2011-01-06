@@ -199,7 +199,7 @@ SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the convexity constraint for the given block */
+/** returns the convexity constraint for the given block */
 extern
 SCIP_CONS* GCGrelaxGetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -207,10 +207,23 @@ SCIP_CONS* GCGrelaxGetConvCons(
                                               *   need the convexity constraint */   
    );
 
-/* returns the current solution for the original problem */
+/** returns the current solution for the original problem */
 extern
 SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** for a probing node in the original problem, create a corresponding probing node in the master problem,
+ *  propagate domains and solve the LP with pricing. */
+extern
+SCIP_RETCODE GCGrelaxPerformProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Longint*         nlpiterations,      /**< pointert to store the number of used LP iterations */
+   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
+   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
+   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
+                                              *   solving process should be stopped (e.g., due to a time limit) */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    );
 
 /** transforms the current solution of the master problem into the original problem's space 
@@ -222,7 +235,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
                                               *   primal feasible*/
    );
 
-/* transforms given values of the given original variables into values of the given master variables */
+/** transforms given values of the given original variables into values of the given master variables */
 extern
 void GCGrelaxTransformOrigvalsToMastervals(
    SCIP*                 scip,               /** SCIP data structure */
@@ -234,7 +247,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
    int                   nmastervars         /** number of master variables */
    );
 
-/* transforms given solution of the master problem into solution of the original problem */
+/** transforms given solution of the master problem into solution of the original problem */
 extern
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /** SCIP data structure */
@@ -242,7 +255,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP_SOL**            origsol             /** pointer to store the new created original problem's solution */
    );
 
-/* prints the given variable: name, type (original, master or pricing) block number,
+/** prints the given variable: name, type (original, master or pricing) block number,
  * and the list of all variables related to the given variable */
 extern
 void GCGrelaxPrintVar(

@@ -2158,6 +2158,99 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    return relaxdata->currentorigsol;
 }
 
+/** for a probing node in the original problem, create a corresponding probing node in the master problem,
+ *  propagate domains and solve the LP with pricing. */
+SCIP_RETCODE GCGrelaxPerformProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Longint*         nlpiterations,      /**< pointert to store the number of used LP iterations */
+   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
+   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
+   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
+                                              *   solving process should be stopped (e.g., due to a time limit) */
+   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP* masterscip;
+   SCIP_NODE* mprobingnode;
+   SCIP_CONS* mprobingcons;
+   SCIP_LPSOLSTAT lpsolstat;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   masterscip = relaxdata->masterprob;
+   assert(masterscip != NULL);
+
+   /* create probing node in master problem, propagate and solve it with pricing */
+   SCIP_CALL( SCIPstartProbing(masterscip) );
+   SCIPnewProbingNode(masterscip);
+
+   mprobingnode = SCIPgetCurrentNode(masterscip);
+   assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode, 
+         GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
+   SCIP_CALL( SCIPreleaseCons(scip, &mprobingcons) );
+
+   SCIP_CALL( SCIPpropagateProbing(masterscip, -1, cutoff, NULL) );
+   assert(!(*cutoff));
+      
+   SCIP_CALL( SCIPsolveProbingLPWithPricing( masterscip, FALSE/* pretendroot */, FALSE /*displayinfo*/,
+         -1 /*maxpricerounds*/, lperror ) );
+   lpsolstat = SCIPgetLPSolstat(masterscip);
+
+   *nlpiterations += SCIPgetNLPIterations(masterscip);
+
+   if( !(*lperror) )
+   {
+      /* get LP solution status, objective value */
+      *cutoff = *cutoff || (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
+      if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && SCIPisLPRelax(masterscip) )
+      {
+         SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
+         *lpobjvalue = SCIPgetLPObjval(masterscip);
+         *lpsolved = TRUE;
+      }
+   }
+   else 
+   {
+      SCIPinfoMessage(scip, NULL, "something went wrong, an lp error occured\n");         
+   }
+
+   SCIP_CALL( SCIPendProbing(masterscip) );
+
+   /* if a new primal solution was found in the master problem, transfer it to the original problem */
+   if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
+   {
+      SCIP_SOL* newsol;
+      SCIP_Bool stored;
+
+      relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
+
+      SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
+
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+      if( !stored )
+      {
+         SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
+      }
+      assert(stored);
+      SCIP_CALL( SCIPfreeSol(scip, &newsol) );
+
+      SCIPdebugMessage("probing finished in master problem\n");
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /** transforms the current solution of the master problem into the original problem's space 
  *  and saves this solution as currentsol in the relaxator's data */
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(

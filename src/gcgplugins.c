@@ -108,6 +108,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeDispGcg(scip) );
 
