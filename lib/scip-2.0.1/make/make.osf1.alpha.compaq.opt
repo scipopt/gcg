@@ -1,0 +1,16 @@
+#--- $Id: make.osf1.alpha.compaq.opt,v 1.11 2009/07/23 12:52:51 bzfviger Exp $
+CC		=	cc
+CXX		=	cxx
+FLAGS		+=      -DNDEBUG -DROUNDING_FP
+OFLAGS		+=	-O4 -fast -std
+CFLAGS		+=	
+CXXFLAGS	+=	-nortti -D__USE_STD_IOSTREAM # -noexceptions (CLP uses exceptions)
+LDFLAGS		+=	-om # -non_shared
+ARFLAGS		=	crs
+LDFLAGS		+=	
+ZLIB_FLAGS	=
+ZLIB_LDFLAGS 	=	-lz
+GMP_FLAGS	=
+GMP_LDFLAGS 	=	-lgmp
+READLINE_FLAGS	=
+READLINE_LDFLAGS=

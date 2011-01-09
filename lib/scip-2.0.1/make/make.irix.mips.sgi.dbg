@@ -1,0 +1,15 @@
+#--- $Id: make.irix.mips.sgi.dbg,v 1.3 2009/07/23 12:52:51 bzfviger Exp $
+FLAGS		+=	-DROUNDING_FE
+OFLAGS		+=	-fullwarn -g
+CFLAGS		+=	
+CXXFLAGS	+=	
+ARFLAGS		=	crs
+LDFLAGS		+=	-Bstatic -lm
+CC		=	cc
+CXX		=	cc
+ZLIB_FLAGS	=
+ZLIB_LDFLAGS 	=	-lz
+GMP_FLAGS	=
+GMP_LDFLAGS 	=	-lgmp
+READLINE_FLAGS	=
+READLINE_LDFLAGS=	-lreadline -lncurses

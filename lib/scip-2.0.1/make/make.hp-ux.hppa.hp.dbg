@@ -1,0 +1,15 @@
+#--- $Id: make.hp-ux.hppa.hp.dbg,v 1.3 2009/07/23 12:52:51 bzfviger Exp $
+FLAGS		+=	-DROUNDING_FE
+OFLAGS		+=	-z -g +DD64 +W21,486,474
+CFLAGS		+=	
+CXXFLAGS	+=	
+ARFLAGS		=	crs
+LDFLAGS		+=	-noshared -lm
+CC		=	cc
+CXX		=	cc
+ZLIB_FLAGS	=
+ZLIB_LDFLAGS 	=	-lz
+GMP_FLAGS	=
+GMP_LDFLAGS 	=	-lgmp
+READLINE_FLAGS	=
+READLINE_LDFLAGS=	-lreadline -lncurses

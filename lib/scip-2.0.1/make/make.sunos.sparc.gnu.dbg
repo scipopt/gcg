@@ -1,0 +1,13 @@
+#--- $Id: make.sunos.sparc.gnu.dbg,v 1.8 2009/07/23 12:52:51 bzfviger Exp $
+FLAGS		+=      -DNO_STRERROR_R -DROUNDING_FE
+OFLAGS		+=	-O0 -g
+CFLAGS		+=	$(GCCWARN) -Wno-strict-aliasing -Wno-missing-declarations -Wno-missing-prototypes
+CXXFLAGS	+=	$(GXXWARN) -Wno-strict-aliasing # -fno-exceptions (CLP uses exceptions)
+ARFLAGS		=	crs
+LDFLAGS		+=      -Bstatic -lsocket -lnsl
+ZLIB_FLAGS	=
+ZLIB_LDFLAGS 	=	-lz
+GMP_FLAGS	=
+GMP_LDFLAGS 	=	-lgmp
+READLINE_FLAGS	=
+READLINE_LDFLAGS=	-lreadline -lncurses
