@@ -628,7 +628,7 @@ SCIP_RETCODE readMasterconss(
 static
 SCIP_RETCODE readBLKFile(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*              blkinput,            /**< BLK reading data */
+   BLKINPUT*             blkinput,           /**< BLK reading data */
    const char*           filename            /**< name of the input file */
    )
 {
