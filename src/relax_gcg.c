@@ -623,6 +623,8 @@ SCIP_RETCODE createMaster(
    /* array for saving convexity constraints belonging to one of the pricing problems */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
 
+   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", SCIP_VERBLEVEL_FULL) );
+
    /* create the pricing problem */
    for( i = 0; i < npricingprobs; i++ )
    {
@@ -630,7 +632,7 @@ SCIP_RETCODE createMaster(
 
       /* initializing the scip data structure for the pricing problem */  
       SCIP_CALL( SCIPcreate(&(relaxdata->pricingprobs[i])) );
-      SCIP_CALL( SCIPincludePricingPlugins(relaxdata->pricingprobs[i]) );
+      SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->pricingprobs[i]) );
  
       /* disable conflict analysis */
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "conflict/useprop", FALSE) );
@@ -643,11 +645,14 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usevartable", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/useconstable", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usesmalltables", TRUE) );
-      
+
+#if 0      
       /* diable some buggy heuristics */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/zirounding/freq", -1) );
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/rapidlearning/freq", -1) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/rens/freq", -1) );
+#endif
 
       /* disable expensive presolving */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
@@ -657,19 +662,12 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolusehashing", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolusehashing", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolusehashing", FALSE) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/rens/freq", -1) );
-
-      //SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "constraints/linear/maxaggrnormscale", 0.0) );
 
       /* disable output to console */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_NONE) );
 
       /* do not abort subproblem on CTRL-C */
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/catchctrlc", FALSE) );
-
-      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxrounds", 0) );
-      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/maxroundsroot", 0) );
-      //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/cmir/maxroundsroot", 0) );
 
       /* create the pricing submip */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
@@ -1009,7 +1007,7 @@ static
 SCIP_DECL_RELAXINIT(relaxInitGcg)
 {  
    SCIP_RELAXDATA* relaxdata;
-   
+
    assert(scip != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -2290,7 +2288,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       }
 
       /* create new solution */
-
       if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
          mastersol = NULL;
       else if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED )
