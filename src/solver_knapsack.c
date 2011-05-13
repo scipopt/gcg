@@ -39,6 +39,7 @@ struct GCG_SolverData
    SCIP_Real** solvals;
    SCIP_VAR*** solvars;
    int* nsolvars;
+   SCIP_Bool* solisray;
    int nsols;
    int maxvars;
 };
@@ -87,6 +88,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
 
    solverdata->nsols = 5;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solisray), solverdata->nsols) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals), solverdata->nsols) );
 
@@ -119,6 +121,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
    }
 
    SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
+   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
    SCIPfreeMemoryArray(scip, &(solverdata->solvars));
    SCIPfreeMemoryArray(scip, &(solverdata->solvals));
 
@@ -279,6 +282,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    //printf("knapsack solved, solval = %g\n", solval);
 
    solverdata->nsolvars[0] = 0;
+   solverdata->solisray[0] = FALSE;
 
    for( i = 0; i < nsolitems; i++ )
    {
@@ -319,6 +323,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    *solvars = solverdata->solvars;
    *solvals = solverdata->solvals;
    *nsolvars = solverdata->nsolvars;
+   *solisray = solverdata->solisray;
    *nsols = 1;
 
 
@@ -526,7 +531,8 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
 
    SCIP_CALL( SCIPallocMemory( scip, &data) );
    data->nsols = 0;
-   data->nsolvars = 0;
+   data->nsolvars = NULL;
+   data->solisray = NULL;
    data->solvars = NULL;
    data->solvals = NULL;
    data->origprob = GCGpricerGetOrigprob(scip);

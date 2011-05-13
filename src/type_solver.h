@@ -89,12 +89,14 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - solvars         : pointer to store array with variables for each solution
  *  - solvals         : pointer to store array with values of the variables in the solutions
  *  - nsolvars        : pointer to store array with number of variables in the solutions
+ *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call: 
- *                      - SCIP_SUCCESS if problem was solved to optimality
- *                      - SCIP_DIDNOTRUN if not
+ *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite optimum
+ *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
+ *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
 
 /** solving method for pricing solver
  *  
@@ -107,12 +109,14 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - solvars         : pointer to store array with variables for each solution
  *  - solvals         : pointer to store array with values of the variables in the solutions
  *  - nsolvars        : pointer to store array with number of variables in the solutions
+ *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call: 
- *                      - SCIP_SUCCESS if problem was solved to optimality
- *                      - SCIP_DIDNOTRUN if not
+ *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite solution value
+ *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
+ *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
 
 
 #ifdef __cplusplus
