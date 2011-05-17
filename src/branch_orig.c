@@ -332,7 +332,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
-      //printf("Original branching rule could not find a variable to branch on!\n");
+      printf("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 
@@ -344,6 +344,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
+   /* TODO: use block memory here */
    /* create the branch data for the childs and assign the values */
    SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
@@ -478,6 +479,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    //assert(SCIPisRelaxSolValid(scip));
 
    SCIPdebugMessage("Execps method of orig branching\n");
+   /* TODO: remove this printf */
    printf("Execps method of orig branching called, this should not happen!\n");
 
    *result = SCIP_DIDNOTRUN;

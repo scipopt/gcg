@@ -39,7 +39,7 @@
 
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
-#define RELAX_PRIORITY         1
+#define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
 
 #define STARTMAXMASTERVARS 10
@@ -957,7 +957,6 @@ SCIP_RETCODE checkConsistency(
 
    GCGconsOrigbranchCheckConsistency(scip);
    GCGconsMasterbranchCheckConsistency(masterprob);
-
 
    /* check variables, constraints and coefficients */
 
@@ -2298,7 +2297,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       }
       else 
       {
-         printf("solstat in master not solving and not solved!\n");
+         printf("stage in master not solving and not solved!\n");
          return SCIP_OKAY;
       }
 
@@ -2326,8 +2325,9 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          /* store branching candidates */
          SCIPclearExternBranchCands(scip);
          for( i = 0; i < norigvars; i++ )
-	   if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+            if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
+               assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
                SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip, 
                         origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])), 
                      SCIPgetRelaxSolVal(scip, origvars[i])) );
@@ -2359,11 +2359,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 }        
 
 
-/* transforms given values of the given original variables into values of the given master variables */
+/** transforms given values of the given original variables into values of the given master variables */
 void GCGrelaxTransformOrigvalsToMastervals(
    SCIP*                 scip,               /** SCIP data structure */
    SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
-   SCIP_Real*            origvals,           /** array with values for the given original variables */
+   SCIP_Real*            origvals,           /** array with values (coefs) for the given original variables */
    int                   norigvars,          /** number of given original variables */
    SCIP_VAR**            mastervars,         /** array of (all present) master variables */
    SCIP_Real*            mastervals,         /** array to store the values of the master variables */
@@ -2405,9 +2405,9 @@ void GCGrelaxTransformOrigvalsToMastervals(
       assert(vardata->data.origvardata.mastervals != NULL);
       assert(vardata->data.origvardata.nmastervars == 1 || vardata->blocknr != -1);
 
-      /* variable belongs to no block, so it is the counterpart of an original variable that was transferred 
-       * directly to the master problem, hence, we transfer the solution value directly to the corresponding
-       * original variabe */
+      /* variable belongs to no block, so it was transferred directly to the master problem, 
+       * hence, we transfer the solution value directly to the corresponding master variabe
+       */
       if( vardata->blocknr == -1 )
       {
          for( k = 0; k < nmastervars; k++ )
@@ -2422,8 +2422,9 @@ void GCGrelaxTransformOrigvalsToMastervals(
          }
          assert(k < nmastervars);
       }
-      /* variable belongs to a block, so we have to look at all original variables in the original problem
-       * and increase their values */
+      /* variable belongs to a block, so we have to look at all master variables and increase their values 
+       * if they contain the original variable
+       */
       else
       {
          vardata = SCIPvarGetData(vardata->data.origvardata.pricingvar);
@@ -2453,7 +2454,8 @@ void GCGrelaxTransformOrigvalsToMastervals(
    }
 }       
 
-/* transforms given solution of the master problem into solution of the original problem */
+/** transforms given solution of the master problem into solution of the original problem
+ *  TODO: think about types of epsilons used in this method*/
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /** SCIP data structure */
    SCIP_SOL*             mastersol,          /** solution of the master problem, or NULL for current LP solution */
@@ -2507,22 +2509,50 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
-      /* first of all, handle the variables with integral values */
+      vardata = SCIPvarGetData(mastervars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(vardata->data.mastervardata.norigvars >= 0);
+      assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+      assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+
+      assert(!SCIPisFeasNegative(scip, mastervals[i]));
+
+      /* TODO: handle infinite master solution values */
+      assert(!SCIPisInfinity(scip, mastervals[i]));
+
+      /* first of all, handle variables representing rays */
+      if( vardata->data.mastervardata.isray )
+      {
+         assert(vardata->blocknr != -1);
+         /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps), 
+          * so we do no feas comparison here */
+         if( SCIPisPositive(scip, mastervals[i]) )
+         {
+            /* loop over all original variables contained in the current master variable */
+            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            {
+               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
+               
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[j], vardata->data.mastervardata.origvals[j] * mastervals[i]) );
+            }
+         }
+         mastervals[i] = 0.0;
+         continue;
+      }
+
+      /* handle the variables with integral values */
       while( SCIPisFeasGE(scip, mastervals[i], 1) )
       {
-         vardata = SCIPvarGetData(mastervars[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->data.mastervardata.norigvars >= 0);
-         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
 
          if( vardata->blocknr == -1 )
          {
+#ifdef ORIGVARS
             assert(vardata->data.mastervardata.norigvars == 2);
             assert(vardata->data.mastervardata.origvals[0] == 1.0);
             assert(vardata->data.mastervardata.origvals[1] == 0.0);
-
+#endif
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;
@@ -2532,8 +2562,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
-               if( SCIPisZero(scip, vardata->data.mastervardata.origvals[j]) )
-                  continue;
+               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
 
                /* get the right original variable */
                vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
@@ -2544,12 +2573,14 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                assert(vardata2 != NULL);
                assert(vardata2->vartype == GCG_VARTYPE_PRICING);
 
+               /* just in case a variable has a value higher than the number of blocks, it represents */
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
                {
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], mastervals[i] * vardata->data.mastervardata.origvals[j]) );
                   mastervals[i] = 1.0;
                }
+               /* this should be default */
                else
                {              
                   /* increase the corresponding value */
@@ -2579,13 +2610,15 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
          assert(vardata->data.mastervardata.norigvars >= 0);
          assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+         assert(!vardata->data.mastervardata.isray);
          
          if( vardata->blocknr == -1 )
          {
+#ifdef ORIGVARS
             assert(vardata->data.mastervardata.norigvars == 2);
             assert(vardata->data.mastervardata.origvals[0] == 1.0);
             assert(vardata->data.mastervardata.origvals[1] == 0.0);
-            
+#endif            
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;

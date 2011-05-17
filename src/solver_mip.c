@@ -276,6 +276,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       SCIP_CALL( SCIPpresolve(pricingprob) );
    }
 
+#if 0
+   SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.lp", NULL, FALSE) );
+   SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.cip", NULL, FALSE) );
+   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", FALSE, FALSE) );
+#endif
+
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
   
@@ -381,7 +387,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          }
          //#ifndef NDEBUG
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
-         SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.lp", NULL, FALSE) );
          //assert(feasible);
          //#endif
 
@@ -406,8 +411,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
                continue;
             if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
             {
-               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfloor(scip, solverdata->tmpsolvals[i])));
-               solverdata->tmpsolvals[i] = SCIPfloor(scip, solverdata->tmpsolvals[i]);
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->tmpsolvals[i])));
+               solverdata->tmpsolvals[i] = SCIPfeasFloor(scip, solverdata->tmpsolvals[i]);
             }
          }
 #endif
@@ -596,9 +601,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
             if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
             {
-               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfloor(scip, solverdata->tmpsolvals[i])));
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->tmpsolvals[i])));
                solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] 
-                  = SCIPfloor(scip, solverdata->tmpsolvals[i]);
+                  = SCIPfeasFloor(scip, solverdata->tmpsolvals[i]);
             }
             else
                solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];

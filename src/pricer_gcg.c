@@ -39,8 +39,6 @@
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define EPS 0.0001
-
 #define DEFAULT_MAXVARSROUNDFARKAS 1
 #define DEFAULT_MAXVARSROUNDREDCOSTROOT 100
 #define DEFAULT_MAXVARSROUNDREDCOST 100
@@ -1039,8 +1037,8 @@ SCIP_RETCODE createNewMasterVar(
    {
       if( SCIPvarGetType(solvars[i]) != SCIP_VARTYPE_CONTINUOUS )
       {
-         assert(SCIPisEQ(scip, solvals[i], SCIPfloor(scip, solvals[i])));
-         solvals[i] = SCIPfloor(scip, solvals[i]);
+         assert(SCIPisEQ(scip, solvals[i], SCIPfeasFloor(scip, solvals[i])));
+         solvals[i] = SCIPfeasFloor(scip, solvals[i]);
       }
    }
 #endif
@@ -1149,7 +1147,7 @@ SCIP_RETCODE createNewMasterVar(
    }
    
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 0, INT_MAX /*GCGrelaxGetNIdenticalBlocks(origprob, prob)*/, 
+   SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 0, INT_MAX /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */, 
          objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost);
@@ -1219,6 +1217,7 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
          assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0);
+         assert(!SCIPisInfinity(scip, solvals[i]));
                   
          /* for each coef, add coef * solval to the coef of the new variable for the corresponding constraint */
          for( c = 0; c < vardata->data.origvardata.ncoefs; c++ )
@@ -1240,6 +1239,7 @@ SCIP_RETCODE createNewMasterVar(
    {
       if( !SCIPisZero(scip, mastercoefs[i]) )
       {
+         assert(!SCIPisInfinity(scip, mastercoefs[i]));
          SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[i], newvar, mastercoefs[i]) );
       }
    }
@@ -1297,6 +1297,9 @@ SCIP_RETCODE createNewMasterVar(
    {
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1) );
    }
+
+   /* store whether the variable represents a ray */
+   newvardata->data.mastervardata.isray = solisray;
 
    SCIPfreeBufferArray(scip, &mastercoefs);
 
@@ -1380,6 +1383,7 @@ SCIP_RETCODE performPricing(
     * current lp objective value rounded up we don't need to continue pricing
     * since the best possible feasible solution must have at least this value
     */
+   /* TODO: also do early branching if gap small? */
    if( pricerdata->abortpricing && SCIPisObjIntegral(scip) && pricetype == GCG_PRICETYPE_REDCOST 
       && SCIPceil(scip, SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip))) 
       == SCIPceil(scip, SCIPgetLPObjval(scip)) && SCIPgetNNodes(scip) > 1 )
@@ -1423,6 +1427,7 @@ SCIP_RETCODE performPricing(
       pricerdata->tmpconvdualsol[i] = pricerdata->dualsolconv[i];
    }
 
+   /* TODO: sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
    if( pricerdata->sorting > 0 )
    {
       SCIPsortDownRealInt(pricerdata->tmpconvdualsol, pricerdata->permu, pricerdata->npricingprobs);
@@ -1433,7 +1438,7 @@ SCIP_RETCODE performPricing(
 
    if( pricerdata->useheurpricing )
    {
-      SCIPdebugMessage("heuristcal pricing\n");
+      SCIPdebugMessage("heuristical pricing\n");
    
       /* solve the pricing MIPs heuristically and check whether solutions 
        * corresponding to variables with negative reduced costs where found 
@@ -1567,13 +1572,17 @@ SCIP_RETCODE performPricing(
          {
             /* compute the ojective value of the best solution */
             bestsolval = 0.0;
+            
             for( j = 0; j < nsolvars[0]; j++ )
             {
+               /* TODO: round solution values??? */
+#if 0
                if( SCIPvarGetType(solvars[0][j]) != SCIP_VARTYPE_CONTINUOUS )
                {
-                  assert(SCIPisEQ(scip, solvals[0][j], SCIPfloor(scip, solvals[0][j])));
-                  solvals[0][j] = SCIPfloor(scip, solvals[0][j]);
+                  assert(SCIPisEQ(scip, solvals[0][j], SCIPfeasFloor(scip, solvals[0][j])));
+                  solvals[0][j] = SCIPfeasFloor(scip, solvals[0][j]);
                }
+#endif
                bestsolval += solvals[0][j] * SCIPvarGetObj(solvars[0][j]);
             }
 
@@ -1621,6 +1630,8 @@ SCIP_RETCODE performPricing(
       pricerdata->nbestsols = 0;
    }
 
+   /* TODO: perhaps solve remaining pricing problems, if only few left? */
+   /* TODO: solve all pricing problems all k iterations? */
    for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
       if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
          bestredcostvalid = FALSE;
@@ -1825,17 +1836,18 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
          newvardata->vartype = GCG_VARTYPE_MASTER;
          newvardata->blocknr = -1;
-         newvardata->data.mastervardata.norigvars = 2;
+         newvardata->data.mastervardata.isray = FALSE;
+         newvardata->data.mastervardata.norigvars = 1;
 
          /* save corresoponding origvar */
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, 
-               &(newvardata->data.mastervardata.origvars), 2) );
+               &(newvardata->data.mastervardata.origvars), 1) );
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, 
-               &(newvardata->data.mastervardata.origvals), 2) );
+               &(newvardata->data.mastervardata.origvals), 1) );
          newvardata->data.mastervardata.origvars[0] = vars[v];
          newvardata->data.mastervardata.origvals[0] = 1.0;
-         newvardata->data.mastervardata.origvars[1] = vars[v];
-         newvardata->data.mastervardata.origvals[1] = 0.0;
+         //newvardata->data.mastervardata.origvars[1] = vars[v];
+         //newvardata->data.mastervardata.origvals[1] = 0.0;
 
          /* create variable in the master problem */
          SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[v]), 
@@ -2029,6 +2041,9 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    assert(pricerdata != NULL);
 
    *result = SCIP_DIDNOTRUN;
+
+   if( pricerdata->redcostcalls == 0 )
+      printf("Starting reduced cost pricing...\n");
 
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNTotalNodes(scip) == pricerdata->currnodenr )

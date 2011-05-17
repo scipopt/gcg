@@ -274,6 +274,38 @@ SCIP_DECL_CONSFREE(consFreeMasterbranch)
 }
 
 
+/** initialization method of constraint handler (called after problem was transformed) */
+static
+SCIP_DECL_CONSINIT(consInitMasterbranch)
+{
+   SCIP_CONSHDLRDATA* conshdlrData;
+
+   assert(scip != NULL);
+   assert(conshdlr != NULL);
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+
+   conshdlrData = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrData != NULL);
+
+   SCIPdebugMessage("consInitMasterbranch()\n");
+
+   /* prepare stack */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
+   conshdlrData->nstack = 0;
+
+   /* prepare pending bound changes */
+   conshdlrData->npendingbnds = 0;
+   conshdlrData->maxpendingbnds = 5;
+   conshdlrData->pendingbndsactivated = FALSE;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds) );
+
+   return SCIP_OKAY;
+}
+
+
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
@@ -288,20 +320,6 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
 
-   /* prepare stack */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
-   conshdlrData->nstack = 0;
-
-
-   /* prepare pending bound changes */
-   conshdlrData->npendingbnds = 0;
-   conshdlrData->maxpendingbnds = 5;
-   conshdlrData->pendingbndsactivated = FALSE;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingnewbnds), conshdlrData->maxpendingbnds) );
-
    SCIPdebugMessage("consInitsolMasterbranch()\n");
 
    /* create masterbranch constraint for the root node */
@@ -314,9 +332,9 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 }
 
 
-/** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
+/** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
-SCIP_DECL_CONSEXITSOL(consExitsolMasterbranch)
+SCIP_DECL_CONSEXIT(consExitMasterbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
 
@@ -592,6 +610,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    /* apply global bound changes in the original problem to the master problem */
    if( !conshdlrData->pendingbndsactivated )
+   {
       for( i = 0; i < conshdlrData->npendingbnds; i++ )
       {
          vardata = SCIPvarGetData(conshdlrData->pendingvars[i]);
@@ -624,8 +643,10 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
                      conshdlrData->pendingvars[i], conshdlrData->pendingnewbnds[i]) );
             }
          }
-         conshdlrData->pendingbndsactivated = TRUE;
       }
+      conshdlrData->pendingbndsactivated = TRUE;
+   }
+   
 
    /* apply local bound changes in the original problem to the pricing problems */
    for( i = 0; i < consdata->nboundchanges; i++ )
@@ -872,7 +893,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( consdata->parentcons == NULL || !consdata->needprop )
+   if( !consdata->needprop )
    {
 #ifdef CHECKPROPAGATEDVARS
       SCIP_Bool consistent;
@@ -899,7 +920,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
    nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
-          
+   
    /* iterate over all master variables and apply global bound changes */
    if( conshdlrData->npendingbnds > 0 )
    {
@@ -1185,8 +1206,7 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 #define conshdlrCopyMasterbranch NULL
 #define consPresolMasterbranch NULL
 #define consRespropMasterbranch NULL
-#define consInitMasterbranch NULL
-#define consExitMasterbranch NULL
+#define consExitsolMasterbranch NULL
 #define consInitpreMasterbranch NULL
 #define consExitpreMasterbranch NULL
 #define consTransMasterbranch NULL

@@ -187,8 +187,10 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       }
    }
 
+#ifndef NDEBUG
    GCGconsOrigbranchCheckConsistency(origscip);
    GCGconsMasterbranchCheckConsistency(scip);
+#endif
 
    return SCIP_OKAY;
 }

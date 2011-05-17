@@ -13622,7 +13622,9 @@ SCIP_RETCODE SCIPlpGetUnboundedSol(
       assert(lpicols[c]->var != NULL);
       rayobjval += ray[c] * lpicols[c]->obj;
    }
-   assert(SCIPsetIsNegative(set, rayobjval));
+   /* TODO: How to check for negative objval here? */
+   assert(rayobjval < 0);
+   //assert(SCIPsetIsNegative(set, rayobjval));
 
    /* scale the ray, such that the resulting point has infinite objective value */
    assert(rayobjval != 0.0);
