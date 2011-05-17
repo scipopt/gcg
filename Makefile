@@ -38,6 +38,7 @@ include $(SCIPDIR)/make/make.project
 
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
+         reader_ref.o \
 			interface.o \
 			gcgplugins.o \
 			relax_gcg.o \

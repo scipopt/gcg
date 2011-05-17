@@ -43,6 +43,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderCip(scip) );
    SCIP_CALL( SCIPincludeReaderLp(scip) );
    SCIP_CALL( SCIPincludeReaderSol(scip) );
+   SCIP_CALL( SCIPincludeReaderMps(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolDualfix(scip) );
@@ -101,6 +102,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
+   SCIP_CALL( SCIPincludeReaderRef(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );

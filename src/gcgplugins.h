@@ -112,7 +112,7 @@
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
 #include "branch_relpsprob.h"
-
+#include "reader_ref.h"
 
 
 /** includes default SCIP plugins into SCIP */
