@@ -719,7 +719,6 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    /* mark the corresponding master node to be repropagated */
    if( consdata->mastercons != NULL)
    {
-      printf("mastercons != NULL and node active = %d\n", SCIPnodeIsActive(GCGconsMasterbranchGetNode(consdata->mastercons)));
       SCIP_CALL( SCIPrepropagateNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
    }
  
