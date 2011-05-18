@@ -13,7 +13,7 @@
 //#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c
  * @ingroup PRICERS
- * @brief  pricer for generic column generation, solves the pricing problem as a MIP
+ * @brief  pricer for generic column generation
  * @author Gerald Gamrath
  */
 
@@ -55,7 +55,7 @@
 #define DEFAULT_MIPSRELREDCOST 1.0
 #define DEFAULT_MIPSRELFARKAS 1.0
 #define DEFAULT_DISPINFOS FALSE
-#define DEFAULT_SORTING 1
+#define DEFAULT_SORTING 2
 
 #define MAXBEST 1000
 
@@ -77,7 +77,7 @@ struct SCIP_PricerData
    int* nraysprob;                 /* number of variables representing rays created by the pricing probs */
    SCIP_Longint currnodenr;
    SCIP_HASHMAP* mapcons2idx;
-   SCIP_Real* tmpconvdualsol;
+   SCIP_Real* score;
    int* permu;
    int npricingprobsnotnull;
 
@@ -1424,13 +1424,16 @@ SCIP_RETCODE performPricing(
          == (pricerdata->dualsolconv[i] != -1.0 * SCIPinfinity(scip)));
 
       pricerdata->permu[i] = i;
-      pricerdata->tmpconvdualsol[i] = pricerdata->dualsolconv[i];
+      if( pricerdata->sorting == 1 )
+         pricerdata->score[i] = pricerdata->dualsolconv[i];
+      else if ( pricerdata->sorting == 2 )
+         pricerdata->score[i] = -(0.2 * pricerdata->npointsprob[i] + pricerdata->nraysprob[i]);
    }
 
    /* TODO: sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
    if( pricerdata->sorting > 0 )
    {
-      SCIPsortDownRealInt(pricerdata->tmpconvdualsol, pricerdata->permu, pricerdata->npricingprobs);
+      SCIPsortDownRealInt(pricerdata->score, pricerdata->permu, pricerdata->npricingprobs);
    }
 
    bestredcost = 0.0;
@@ -1785,7 +1788,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    
    /* alloc memory for arrays of reduced cost */
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->tmpconvdualsol), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->score), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->permu), pricerdata->npricingprobs) );
 
    /* alloc memory for solution values of variables in pricing problems */
@@ -1990,7 +1993,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
    SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
-   SCIPfreeMemoryArray(scip, &(pricerdata->tmpconvdualsol));
+   SCIPfreeMemoryArray(scip, &(pricerdata->score));
    SCIPfreeMemoryArray(scip, &(pricerdata->permu));
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
    SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));

@@ -103,16 +103,16 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
 
 static
-GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolved)
+GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
 {
    assert(scip != NULL);
    assert(branchdata != NULL);
    assert(branchdata->origvar != NULL);
 
-   SCIPdebugMessage("branchMasterSolved: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
+   SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
-   if( !SCIPisInfinity(scip, newlowerbound) )
+   if( !SCIPisInfinity(scip, newlowerbound) && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
    {
       SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar, 
             SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue, 
@@ -438,7 +438,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    assert(branchrule != NULL);
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig, 
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolved, branchDataDeleteOrig) );
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig) );
    
    return SCIP_OKAY;
 }

@@ -123,7 +123,9 @@ SCIP_RETCODE checkSolNew(
    for( s = 0; s < idx && *isnew == TRUE; s++ )
    {
       assert(sols[s] != NULL);
-      assert(SCIPisLE(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])));
+      /* TODO: fix comparison methods and remove 1e+15 here */
+      assert(SCIPisLE(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) 
+         || ABS(SCIPgetSolOrigObj(pricingprob, sols[s])) > 1e+15 * SCIPepsilon(pricingprob));
       if( !SCIPisEQ(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
          continue;
 

@@ -422,12 +422,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
-   assert(SCIPhasCurrentNodeLP(masterprob));
 
    *result = SCIP_DELAYED;
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
+   if( !SCIPhasCurrentNodeLP(masterprob) || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
 
    /* only call heuristic, if the LP solution is basic (which allows fast resolve in diving) */
@@ -749,6 +748,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
 //            lpsolstat = SCIPgetLPSolstat(scip);
             lpsolstat = SCIPgetLPSolstat(masterprob);
 //            cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
+
+            assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
+         }
+         else
+         {
+            assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob) + 1);
          }
 
          /* perform backtracking if a cutoff was detected */
@@ -756,7 +761,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
          {
             SCIPdebugMessage("  *** cutoff detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
             SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-            SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(masterprob)-1) );
+            SCIP_CALL( SCIPbacktrackProbing(masterprob, SCIPgetProbingDepth(scip)) );
             SCIP_CALL( SCIPnewProbingNode(scip) );
             backtracked = TRUE;
          }

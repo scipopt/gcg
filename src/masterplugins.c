@@ -103,7 +103,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
-
+   SCIP_CALL( SCIPincludeDialogDefault(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) );
 

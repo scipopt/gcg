@@ -208,6 +208,12 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** start probing mode on master problem */
+extern
+SCIP_RETCODE GCGrelaxStartProbing(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** for a probing node in the original problem, create a corresponding probing node in the master problem,
  *  propagate domains and solve the LP with pricing. */
 extern
@@ -218,8 +224,16 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
+   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
+   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
    );
+
+/** end probing mode in master problem */
+extern
+SCIP_RETCODE GCGrelaxEndProbing(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 /** transforms the current solution of the master problem into the original problem's space 
  *  and saves this solution as currentsol in the relaxator's data */

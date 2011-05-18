@@ -482,6 +482,8 @@ SCIP_RETCODE applyProbing(
    int leftubprobing;
    int rightlbprobing;
    int rightubprobing;
+   /* TODO: handle the feasible result */
+   SCIP_Bool feasible;
 
    leftubprobing = -1;
    leftlbprobing = -1;
@@ -569,7 +571,7 @@ SCIP_RETCODE applyProbing(
       //printf("before probing = %lld\n", *nlpiterations);
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
-      SCIP_CALL( GCGrelaxPerformProbing(scip, nlpiterations, lpobjvalue, lpsolved, lperror, cutoff) );
+      SCIP_CALL( GCGrelaxPerformProbing(scip, nlpiterations, lpobjvalue, lpsolved, lperror, cutoff, &feasible) );
       
       //printf("after probing = %lld\n", *nlpiterations);
    }

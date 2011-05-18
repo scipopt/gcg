@@ -142,4 +142,12 @@ SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    int*                  npropbounds         /**< pointer to store the number of bound changes stored at the constraint */
    );
 
+/** returns the number of bound changes on original variables found by propagation in the original problem
+ *  at the node corresponding to the given origbranch constraint */
+extern
+int GCGconsOrigbranchGetNPropBoundChgs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
+   );
+
 #endif

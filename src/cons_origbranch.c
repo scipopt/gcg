@@ -715,6 +715,13 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    consdata->propboundtypes[consdata->npropbounds] = boundtype;
    consdata->propbounds[consdata->npropbounds] = newbound;
    consdata->npropbounds++;
+
+   /* mark the corresponding master node to be repropagated */
+   if( consdata->mastercons != NULL)
+   {
+      printf("mastercons != NULL and node active = %d\n", SCIPnodeIsActive(GCGconsMasterbranchGetNode(consdata->mastercons)));
+      SCIP_CALL( SCIPrepropagateNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
+   }
  
    return SCIP_OKAY;
 }
@@ -746,6 +753,24 @@ SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    consdata->npropbounds = 0;
  
    return SCIP_OKAY;
+}
+
+/** returns the number of bound changes on original variables found by propagation in the original problem
+ *  at the node corresponding to the given origbranch constraint */
+int GCGconsOrigbranchGetNPropBoundChgs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   return consdata->npropbounds;
 }
 
 

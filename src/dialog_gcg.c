@@ -806,6 +806,20 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display statistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   printf("switching to the master problem...\n");
+   SCIP_CALL( SCIPstartInteraction(GCGrelaxGetMasterprob(scip)) );
+   printf("back in the original problem...\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the display transproblem command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayTransproblem)
 {  /*lint --e{715}*/
@@ -2279,6 +2293,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
 
    /* set */
    SCIP_CALL( SCIPincludeDialogGcgSet(scip) );
+
+   /* display statistics */
+   if( !SCIPdialogHasEntry(root, "master") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetMaster, NULL, NULL,
+            "master", "switch to the interactive shell of the master problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
 
    /* write */
    if( !SCIPdialogHasEntry(root, "write") )

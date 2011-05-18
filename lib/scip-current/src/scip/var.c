@@ -4898,7 +4898,13 @@ SCIP_RETCODE SCIPvarAddObj(
       case SCIP_VARSTATUS_COLUMN:
          oldobj = var->obj;
          var->obj += addobj;
-         SCIP_CALL( varEventObjChanged(var, blkmem, set, primal, lp, eventqueue, oldobj, var->obj) );
+         /* TODO: handle changes that are bigger than eps, but the chage is smaller than eps due to large values */
+         if( !SCIPsetIsEQ(set, oldobj, var->obj) )
+         {
+            SCIP_CALL( varEventObjChanged(var, blkmem, set, primal, lp, eventqueue, oldobj, var->obj) );
+         }
+         else
+            assert(ABS(oldobj) >= 1e+15 * set->num_epsilon);
          break;
 
       case SCIP_VARSTATUS_FIXED:

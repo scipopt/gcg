@@ -12393,12 +12393,10 @@ SCIP_RETCODE SCIPlpSolveAndEval(
                SCIP_CALL( SCIPsetSetCharParam(set, "lp/pricing", 's') );
 
                /* resolve LP with an iteration limit of 1 */
-               SCIP_CALL( SCIPlpiSetIntpar(lpi, SCIP_LPPAR_LPITLIM, 1) );
-               SCIP_CALL( lpSolve(lp, set, stat,  SCIP_LPALGO_DUALSIMPLEX, -1, -1, FALSE, FALSE, FALSE, fastmip, tightfeastol, fromscratch, keepsol, lperror) );
+               SCIP_CALL( lpSolve(lp, set, stat,  SCIP_LPALGO_DUALSIMPLEX, 1, -1, FALSE, FALSE, TRUE, fastmip, tightfeastol, fromscratch, keepsol, lperror) );
 
-               /* reinstall old cutoff bound, iteration limit and lp pricing strategy */
+               /* reinstall old cutoff bound and lp pricing strategy */
                lp->cutoffbound = tmpcutoff;
-               SCIP_CALL( SCIPlpiSetIntpar(lpi, SCIP_LPPAR_LPITLIM, lp->lpiitlim) );
                SCIP_CALL( SCIPsetSetCharParam(set, "lp/pricing", tmppricingchar) );
 
                /* get objective value */

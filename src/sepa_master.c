@@ -334,10 +334,16 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    assert(sepadata != NULL);
 
    SCIPdebugMessage("sepaExeclpMaster\n");
-   SCIPdebugMessage("%d cuts are in the original LP!\n", SCIPgetNCutsApplied(origscip));
-   SCIPdebugMessage("%d cuts are in the master LP!\n", SCIPgetNCutsApplied(scip));
+   //SCIPdebugMessage("%d cuts are in the original LP!\n", SCIPgetNCutsApplied(origscip));
+   //SCIPdebugMessage("%d cuts are in the master LP!\n", SCIPgetNCutsApplied(scip));
 
    *result = SCIP_DIDNOTFIND;
+
+   if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
+   {
+      SCIPdebugMessage("master LP not solved to optimality, do no separation!\n");
+      return SCIP_OKAY;
+   }
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 

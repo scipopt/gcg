@@ -37,6 +37,7 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
 #include "scip/disp_default.h"
+#include "scip/dialog_default.h"
 #include "scip/heur_actconsdiving.h"
 #include "scip/heur_coefdiving.h"
 #include "scip/heur_crossover.h"

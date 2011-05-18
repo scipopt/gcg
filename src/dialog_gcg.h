@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+/** dialog execution method for the display statistics command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
+
 /** standard menu dialog execution method, that displays it's help screen if the remaining command line is empty */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecMenu);
