@@ -47,7 +47,8 @@
 #define DEFAULT_MAXSOLSPROB INT_MAX
 #define DEFAULT_USEHEURPRICING FALSE
 #define DEFAULT_ONLYPOSCONV FALSE
-#define DEFAULT_ABORTPRICING TRUE
+#define DEFAULT_ABORTPRICINGINT TRUE
+#define DEFAULT_ABORTPRICINGGAP 0.00
 #define DEFAULT_USEINTERBOUNDS TRUE
 #define DEFAULT_ONLYBEST FALSE
 #define DEFAULT_SUCCESSFULMIPSREL 1.0
@@ -126,7 +127,7 @@ struct SCIP_PricerData
    int sorting;
    SCIP_Bool useheurpricing;
    SCIP_Bool onlyposconv;
-   SCIP_Bool abortpricing;
+   SCIP_Bool abortpricingint;
    SCIP_Bool useinterbounds;
    SCIP_Bool onlybest;
    SCIP_Bool dispinfos;
@@ -134,6 +135,7 @@ struct SCIP_PricerData
    SCIP_Real mipsrelredcost;
    SCIP_Real mipsrelredcostroot;
    SCIP_Real mipsrelfarkas;
+   SCIP_Real abortpricinggap;
 };
 
 
@@ -1400,21 +1402,44 @@ SCIP_RETCODE performPricing(
     * current lp objective value rounded up we don't need to continue pricing
     * since the best possible feasible solution must have at least this value
     */
-   /* TODO: also do early branching if gap small? */
-   if( pricerdata->abortpricing && SCIPisObjIntegral(scip) && pricetype == GCG_PRICETYPE_REDCOST 
-      && SCIPceil(scip, SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip))) 
-      == SCIPceil(scip, SCIPgetLPObjval(scip)) && SCIPgetNNodes(scip) > 1 )
+   if( pricerdata->abortpricingint && SCIPisObjIntegral(scip) && pricetype == GCG_PRICETYPE_REDCOST 
+      && SCIPceil(scip, SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip))) 
+      == SCIPceil(scip, SCIPgetLPObjval(scip)) /* && SCIPgetNNodes(scip) > 1 ??????*/ )
    {
       if( pricerdata->dispinfos )
          printf("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
-            SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+            SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
       else
+      {
          SCIPdebugMessage("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
-            SCIPgetNodeDualbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+            SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+      }
 
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
+
+   if( pricerdata->abortpricinggap > 0 && pricetype == GCG_PRICETYPE_REDCOST )
+   {
+      SCIP_Real gap;
+      gap = ABS((SCIPgetLPObjval(scip) - SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)))/SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)));
+
+      if( gap < pricerdata->abortpricinggap )
+      {
+         if( pricerdata->dispinfos )
+            printf("pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n", 
+               SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip), gap);
+         else
+         {
+            SCIPdebugMessage("pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n", 
+               SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip), gap);
+         }
+
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
+      }
+   }
+
 
    if( pricetype == GCG_PRICETYPE_REDCOST )
    {
@@ -1606,6 +1631,7 @@ SCIP_RETCODE performPricing(
                bestsolval += solvals[0][j] * SCIPvarGetObj(solvars[0][j]);
             }
 
+            /* TODO: ensure that the first solution is really the best one and that its objective value is the best reduced cost */
             if( SCIPisSumNegative(scip, bestsolval - pricerdata->dualsolconv[prob]) )
                bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * 
                   (bestsolval - pricerdata->dualsolconv[prob]);
@@ -2180,9 +2206,13 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should only pricing problems be solved with a positive dualsol of the convexity constraint, if possible?",
          &pricerdata->onlyposconv, TRUE, DEFAULT_ONLYPOSCONV, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/abortpricing",
+   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
-         &pricerdata->abortpricing, TRUE, DEFAULT_ABORTPRICING, NULL, NULL) );
+         &pricerdata->abortpricingint, TRUE, DEFAULT_ABORTPRICINGINT, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/abortpricinggap",
+         "should pricing be aborted due to small gap between dual bound and RMP objective?",
+         &pricerdata->abortpricinggap, TRUE, DEFAULT_ABORTPRICINGGAP, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useinterbounds",
          "should lagrangean intermediate dual bounds be computed and used?",

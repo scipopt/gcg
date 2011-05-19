@@ -782,9 +782,22 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          /* lower bound was changed */
          if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
          {
-            assert(SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) == consdata->newbounds[i]);
-            if( SCIPvarGetLbGlobal(consdata->boundchgvars[i]) == consdata->newbounds[i] )
+            assert( SCIPisEQ(scip, SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar), consdata->newbounds[i])
+               || SCIPisEQ(scip, SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
+
+            if( SCIPisEQ(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
                continue;
+
+            if( SCIPisGT(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
+            {
+               SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+                     vardata->data.origvardata.pricingvar, SCIPvarGetLbGlobal(consdata->boundchgvars[i])) );
+               SCIPdebugMessage("relaxed lower bound of var %s from %g to global bound %g\n", 
+                  SCIPvarGetName(vardata->data.origvardata.pricingvar), consdata->newbounds[i],
+                  SCIPvarGetLbGlobal(consdata->boundchgvars[i]));
+
+               continue;
+            }
 
             SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
                   vardata->data.origvardata.pricingvar, consdata->oldbounds[i]) );
@@ -795,9 +808,22 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          /* upper bound was changed */
          else
          {
-            assert(SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) == consdata->newbounds[i]);
-            if( SCIPvarGetUbGlobal(consdata->boundchgvars[i]) == consdata->newbounds[i] )
+            assert( SCIPisEQ(scip, SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar), consdata->newbounds[i])
+               || SCIPisEQ(scip, SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
+
+            if( SCIPisEQ(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
                continue;
+
+            if( SCIPisLT(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
+            {
+               SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
+                     vardata->data.origvardata.pricingvar, SCIPvarGetUbGlobal(consdata->boundchgvars[i])) );
+               SCIPdebugMessage("relaxed upper bound of var %s from %g to global bound %g\n", 
+                  SCIPvarGetName(vardata->data.origvardata.pricingvar), consdata->newbounds[i],
+                  SCIPvarGetUbGlobal(consdata->boundchgvars[i]));
+
+               continue;
+            }
 
             SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, vardata->blocknr),
                   vardata->data.origvardata.pricingvar, consdata->oldbounds[i]) );

@@ -416,7 +416,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
-   if( !SCIPisInfinity(scip, newlowerbound) && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
+   if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING
+      && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
    {
       SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar, 
             SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue, 

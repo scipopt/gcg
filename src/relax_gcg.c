@@ -115,6 +115,13 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
 {
    if( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
    {
+      if( (*vardata)->blocknr == -2 )
+      {
+         assert((*vardata)->data.origvardata.linkingvardata != NULL);
+         SCIPfreeMemory(scip, &((*vardata)->data.origvardata.linkingvardata));
+         (*vardata)->data.origvardata.linkingvardata = NULL;
+      }
+      assert((*vardata)->data.origvardata.linkingvardata == NULL);
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
       if((*vardata)->data.origvardata.ncoefs > 0)
