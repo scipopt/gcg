@@ -38,7 +38,7 @@ include $(SCIPDIR)/make/make.project
 
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
-         reader_ref.o \
+         		reader_ref.o \
 			interface.o \
 			gcgplugins.o \
 			relax_gcg.o \
@@ -60,6 +60,10 @@ MAINOBJ		=	reader_blk.o \
 			dialog_gcg.o \
 			solver_mip.o \
 			solver_knapsack.o \
+			cons_decomp.o \
+			dec_arrowheur.o \
+			reader_gp.o \
+			scip_misc.o \
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
