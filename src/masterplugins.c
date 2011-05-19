@@ -83,6 +83,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
 
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
+   SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
 #endif
 
 #if 0

@@ -49,6 +49,7 @@ MAINOBJ		=	reader_blk.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \
 			heur_gcgfracdiving.o \
+			heur_restmaster.o \
 			branch_master.o \
 			branch_relpsprob.o \
 			masterplugins.o \
