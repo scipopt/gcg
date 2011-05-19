@@ -273,7 +273,9 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {  
    SCIPdebugMessage("Execlp method of ryanfoster branching\n");
-   assert(0);
+   printf("Execlp method of ryanfoster branching\n");
+
+   *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
 }

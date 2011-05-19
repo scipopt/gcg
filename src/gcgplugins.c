@@ -20,7 +20,7 @@
 #include "scip/debug.h"
 
 #define USEHEURS 1
-#define USESEPA 0
+#define USESEPA 1
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -60,8 +60,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurClique(scip) );
    SCIP_CALL( SCIPincludeHeurCoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurCrossover(scip) );
+   SCIP_CALL( SCIPincludeHeurDins(scip) );
    SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
@@ -79,8 +81,16 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
+   SCIP_CALL( SCIPincludeHeurShiftandpropagate(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
+   SCIP_CALL( SCIPincludeHeurSubNlp(scip) );
+   SCIP_CALL( SCIPincludeHeurTrivial(scip) );
+   SCIP_CALL( SCIPincludeHeurTrySol(scip) );
+   SCIP_CALL( SCIPincludeHeurTwoopt(scip) );
+   SCIP_CALL( SCIPincludeHeurUndercover(scip) );
+   SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
+   SCIP_CALL( SCIPincludeHeurZirounding(scip) );
 #endif
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
@@ -89,6 +99,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
 
+#if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaCmir(scip) );
    SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
@@ -99,6 +110,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
+#endif
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );

@@ -131,7 +131,7 @@ SCIP_RETCODE GCGconsMasterbranchAddPendingBndChg(
    }   
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
-   assert(conshdlrData->pendingbndsactivated == FALSE);
+   assert((conshdlrData->npendingbnds > 0) || conshdlrData->pendingbndsactivated);
 
    /* realloc memory if needed */
    if( conshdlrData->npendingbnds >= conshdlrData->maxpendingbnds )
@@ -149,6 +149,7 @@ SCIP_RETCODE GCGconsMasterbranchAddPendingBndChg(
    conshdlrData->pendingoldbnds[conshdlrData->npendingbnds] = oldbound;
    conshdlrData->pendingnewbnds[conshdlrData->npendingbnds] = newbound;
    conshdlrData->npendingbnds++;
+   conshdlrData->pendingbndsactivated = FALSE;
  
    return SCIP_OKAY;
 }
@@ -296,7 +297,7 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
    /* prepare pending bound changes */
    conshdlrData->npendingbnds = 0;
    conshdlrData->maxpendingbnds = 5;
-   conshdlrData->pendingbndsactivated = FALSE;
+   conshdlrData->pendingbndsactivated = TRUE;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingvars), conshdlrData->maxpendingbnds) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingbndtypes), conshdlrData->maxpendingbnds) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrData->pendingoldbnds), conshdlrData->maxpendingbnds) );
@@ -623,6 +624,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* apply global bound changes in the original problem to the master problem */
    if( !conshdlrData->pendingbndsactivated )
    {
+      assert(conshdlrData->npendingbnds > 0);
       for( i = 0; i < conshdlrData->npendingbnds; i++ )
       {
          vardata = SCIPvarGetData(conshdlrData->pendingvars[i]);
@@ -890,6 +892,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
    nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
+
+   assert((conshdlrData->npendingbnds > 0) || conshdlrData->pendingbndsactivated);
    
    /* iterate over all master variables and apply global bound changes */
    if( conshdlrData->npendingbnds > 0 && conshdlrData->pendingbndsactivated )
@@ -968,7 +972,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             }
          }
       }
-      conshdlrData->pendingbndsactivated = FALSE;
       conshdlrData->npendingbnds = 0;
 
       SCIPdebugMessage("Finished handling of pending global bound changes: %d changed bounds\n", propcount);

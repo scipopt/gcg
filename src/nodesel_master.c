@@ -165,6 +165,9 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
       }
       assert(*selnode != NULL);
+
+      /* set the dual bound to the lower bound of the corresponding original node */
+      SCIP_CALL( SCIPupdateNodeDualbound(scip, *selnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
    }
    else
    {

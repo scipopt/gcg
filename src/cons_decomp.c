@@ -31,6 +31,7 @@
 // #include "dec_stairheur.h"
 //#include "reader_dec.h"
 #include "reader_gp.h"
+#include "relax_gcg.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -183,11 +184,14 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
-
 //   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
-   SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+
+   if( GCGrelaxGetNPricingprobs(scip) == 0 )
+   {
+      SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+   }
 
 //   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
 //   SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));

@@ -687,14 +687,14 @@ SCIP_RETCODE checkVarBounds(
    int nvars;
    int v;
    SCIP_VARDATA* vardata;
-   SCIP* origscip;
+   SCIP* origprob;
 
    assert(scip != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(origprob != NULL);
 
-   SCIP_CALL( SCIPgetVarsData(origscip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(origprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
 
    /* check whether the corresponding pricing MIP has the same bound for the variable */
    for( v = 0; v < nvars; v++ )
@@ -709,7 +709,7 @@ SCIP_RETCODE checkVarBounds(
       if( vardata->blocknr == -1 )
          continue;
 
-      if( !GCGrelaxIsPricingprobRelevant(origscip, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origscip, vardata->blocknr) != 1 ) 
+      if( !GCGrelaxIsPricingprobRelevant(origprob, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) != 1 ) 
          continue;
 
       if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
@@ -970,14 +970,17 @@ SCIP_RETCODE setPricingObjs(
 /** creates a new master variable corresponding to the given solution and problem */
 static
 SCIP_RETCODE createNewMasterVar(
-   SCIP*                 scip,
-   SCIP_VAR**            solvars,
-   SCIP_Real*            solvals,
-   int                   nsolvars,
-   SCIP_Bool             solisray,
-   int                   prob,
-   SCIP_Bool             checkonlybest,
-   SCIP_Bool*            added
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+   SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+   int                   nsolvars,           /**< number of variables in array solvars */
+   SCIP_Bool             solisray,           /**< is the solution a ray? */
+   int                   prob,               /**< number of the pricing problem the solution belongs to */
+   SCIP_Bool             checkonlybest,      /**< should the method just store the solution if it is among the best ones?
+                                              *   call this method later with checkonlybest = FALSE to add the best ones */
+   SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
+   SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
+   SCIP_VAR**            addedvar            /**< pointer to store the created variable */
    )
 {
    SCIP* origprob;
@@ -1026,6 +1029,9 @@ SCIP_RETCODE createNewMasterVar(
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
 
+   if( addedvar != NULL )
+      *addedvar = NULL;
+
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
    
@@ -1043,23 +1049,24 @@ SCIP_RETCODE createNewMasterVar(
    }
 #endif
 
-   /* compute the objective function value of the solution */
-   for( i = 0; i < nsolvars; i++ )
-      objvalue += solvals[i] * SCIPvarGetObj(solvars[i]);
-
-   /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
-   redcost = ( solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
-
-   if( !SCIPisSumNegative(scip, redcost) )
+   if( !force )
    {
-      *added = FALSE;
+      /* compute the objective function value of the solution */
+      for( i = 0; i < nsolvars; i++ )
+         objvalue += solvals[i] * SCIPvarGetObj(solvars[i]);
 
-      return SCIP_OKAY;
+      /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
+      redcost = ( solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
+
+      if( !SCIPisSumNegative(scip, redcost) )
+      {
+         *added = FALSE;
+         
+         return SCIP_OKAY;
+      }
    }
-   else
-   {
-      *added = TRUE;
-   }
+
+   *added = TRUE;
 
    SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
    //printf("found var with redcost %f (objvalue = %g, dualsol =%g), checkonlybest = %d\n", 
@@ -1193,7 +1200,14 @@ SCIP_RETCODE createNewMasterVar(
    assert(j == newvardata->data.mastervardata.norigvars);
 
    /* add variable */
-   SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
+   if( !force )
+   {
+      SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
+   }
+   else
+   {
+      SCIP_CALL( SCIPaddVar(scip, newvar) );
+   }
 
    SCIP_CALL( SCIPcaptureVar(scip, newvar) );
    SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
@@ -1307,6 +1321,9 @@ SCIP_RETCODE createNewMasterVar(
    /* check whether the created variable already existed */
    SCIP_CALL( checkNewVar(scip, newvar, SCIPgetSolOrigObj(pricerdata->pricingprobs[prob], sol) - pricerdata->dualsolconv[prob], pricerdata->dualsolconv[prob]) );
 #endif
+
+   if( addedvar != NULL )
+      *addedvar = newvar;
 
    SCIPreleaseVar(scip, &newvar);
 
@@ -1497,7 +1514,7 @@ SCIP_RETCODE performPricing(
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
             SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], solisray[j], prob,
-                  pricetype == GCG_PRICETYPE_REDCOST, &added) );
+                  pricetype == GCG_PRICETYPE_REDCOST, FALSE, &added, NULL) );
             
             if( added )
             {
@@ -1606,7 +1623,7 @@ SCIP_RETCODE performPricing(
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
             SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], solisray[j], prob, 
-                  pricetype == GCG_PRICETYPE_REDCOST, &added) );
+                  pricetype == GCG_PRICETYPE_REDCOST, FALSE, &added, NULL) );
             
             if( added )
             {
@@ -1627,7 +1644,7 @@ SCIP_RETCODE performPricing(
       {
          /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
          SCIP_CALL( createNewMasterVar(scip, pricerdata->bestsolvars[j], pricerdata->bestsolvals[j], 
-               pricerdata->nbestsolvars[j], pricerdata->bestsolisray[j], pricerdata->prob[j], FALSE, &added) );
+               pricerdata->nbestsolvars[j], pricerdata->bestsolisray[j], pricerdata->prob[j], FALSE, FALSE, &added, NULL) );
          assert(added);
       }
       pricerdata->nbestsols = 0;
@@ -1749,7 +1766,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CONS** masterconss;
    int nmasterconss;
 
-
    assert(scip != NULL);
    assert(pricer != NULL);
 
@@ -1833,7 +1849,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          assert(vardata->data.origvardata.pricingvar == NULL);
 
          SCIPdebugMessage("var %s is in no block!\n", SCIPvarGetName(vars[v]));
-         //printf("var %s is in no block!\n", SCIPvarGetName(vars[v]));
 
          /* create vardata */
          SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
@@ -1849,17 +1864,12 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
                &(newvardata->data.mastervardata.origvals), 1) );
          newvardata->data.mastervardata.origvars[0] = vars[v];
          newvardata->data.mastervardata.origvals[0] = 1.0;
-         //newvardata->data.mastervardata.origvars[1] = vars[v];
-         //newvardata->data.mastervardata.origvals[1] = 0.0;
 
          /* create variable in the master problem */
          SCIP_CALL( SCIPcreateVar(scip, &newvar, SCIPvarGetName(vars[v]), 
                SCIPvarGetLbGlobal(vars[v]), SCIPvarGetUbGlobal(vars[v]), SCIPvarGetObj(vars[v]), SCIPvarGetType(vars[v]), 
                TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
          SCIPaddVar(scip, newvar);
-
-         //SCIPchgVarUbLazy(scip, newvar, SCIPvarGetUbGlobal(vars[v]));
-         //SCIPchgVarLbLazy(scip, newvar, SCIPvarGetLbGlobal(vars[v]));
 
          SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vars[v], newvar, 1.0) );
 
@@ -1932,6 +1942,11 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
    SCIP_CALL( solversInitsol(scip, pricerdata) );
+
+   if( GCGrelaxGetOrigPrimalSol(origprob) != NULL )
+   {
+      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, GCGrelaxGetOrigPrimalSol(origprob)) );
+   }
 
    return SCIP_OKAY;
 }
@@ -2446,4 +2461,126 @@ void GCGpricerPrintStatistics(
          SCIPgetClockTime(scip, solver->heurredcostclock),
          SCIPgetClockTime(scip, solver->optredcostclock));
    }
+}
+
+
+/** transfers a primal solution of the original problem into the master variable space,
+ *  i.e. creates one master variable for each block and adds the solution to the master problem  */
+SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_VARDATA* vardata;
+#if 1
+   SCIP_SOL* mastersol;
+#endif
+   SCIP_VAR* newvar;
+   SCIP* origprob;
+   SCIP_Bool added;
+   int prob;
+   int i;
+
+   SCIP_VAR** origvars;
+   SCIP_Real* origsolvals;
+   int norigvars;
+
+   SCIP_VAR*** pricingvars;
+   SCIP_Real** pricingvals;
+   int* npricingvars;
+
+   assert(scip != NULL);
+   
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(origprob != NULL);
+
+   /* now compute coefficients of the master variables in the master constraint */
+   origvars = SCIPgetVars(origprob);
+   norigvars = SCIPgetNVars(origprob);
+
+   /* allocate memory for storing variables and solution values from the solution */
+   SCIP_CALL( SCIPallocBufferArray(scip, &origsolvals, norigvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &npricingvars, pricerdata->npricingprobs) );
+
+   for( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[i])) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[i])) );
+      npricingvars[i] = 0;
+   }
+
+   /* get solution values */
+   SCIP_CALL( SCIPgetSolVals(scip, origsol, norigvars, origvars, origsolvals) );
+
+#if 1
+   SCIP_CALL( SCIPcreateSol(scip, &mastersol, NULL) );
+#endif
+   /* store variables and solutions into arrays */
+   for( i = 0; i < norigvars; i++ )
+   {
+      vardata = SCIPvarGetData(origvars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr == -1);
+      
+      if( vardata->blocknr != -1 )
+      {
+         prob = vardata->blocknr;
+         if( !SCIPisZero(scip, origsolvals[i]) )
+         {
+            pricingvars[prob][npricingvars[prob]] = vardata->data.origvardata.pricingvar;
+            pricingvals[prob][npricingvars[prob]] = origsolvals[i];
+            npricingvars[prob]++;
+         }
+      }
+#if 1
+      else
+      {
+         assert(vardata->data.origvardata.nmastervars == 1);
+         assert(vardata->data.origvardata.mastervars[0] != NULL);
+         SCIP_CALL( SCIPsetSolVal(scip, mastersol, vardata->data.origvardata.mastervars[0], origsolvals[i]) );
+      }
+#endif
+   }
+
+   /* create variables in the master problem */
+   for( prob = 0; prob < pricerdata->npricingprobs; prob++ )
+   {
+      SCIP_CALL( createNewMasterVar(scip, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, FALSE, TRUE, &added, &newvar) );
+      assert(added);
+#if 1
+      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0) );
+#endif
+   }
+
+#if 1
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, &added) );
+#endif
+
+   /* free memory for storing variables and solution values from the solution */
+
+   for( i = pricerdata->npricingprobs - 1; i>= 0; i-- )
+   {
+      SCIPfreeBufferArray(scip, &pricingvals[i]);
+      SCIPfreeBufferArray(scip, &pricingvars[i]);
+   }
+
+   SCIPfreeBufferArray(scip, &npricingvars);
+   SCIPfreeBufferArray(scip, &pricingvals);
+   SCIPfreeBufferArray(scip, &pricingvars);
+   SCIPfreeBufferArray(scip, &origsolvals);
+
+
+
+   return SCIP_OKAY;
 }

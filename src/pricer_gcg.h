@@ -113,4 +113,12 @@ void GCGpricerPrintStatistics(
    FILE*                 file                /**< output file */
    );
 
+/** transfers a primal solution of the original problem into the master variable space,
+ *  i.e. creates one master variable for each block and adds the solution to the master problem  */
+extern
+SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   );
+
 #endif

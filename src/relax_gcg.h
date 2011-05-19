@@ -271,4 +271,17 @@ void GCGrelaxPrintVar(
    SCIP_VAR*             var                 /**< variable that shpuld be printed */
    );
 
+/* returns the stored primal solution of the original problem  */
+extern
+SCIP_SOL* GCGrelaxGetOrigPrimalSol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/* sets the stored primal solution of the original problem  */
+extern
+void GCGrelaxSetOrigPrimalSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             sol                 /**< solution */
+   );
+
 #endif

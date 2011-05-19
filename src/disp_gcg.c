@@ -308,7 +308,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   SCIPdispLongint(file, SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPdispLongint(file, SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
+   }
+   else
+   {
+      SCIPdispLongint(file, 0, DISP_WIDT_MLPITERATIONS);
+   }
 
    return SCIP_OKAY;
 }
@@ -370,7 +377,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCUTS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(file, SCIPgetNCutsApplied(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCUTS);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPdispInt(file, SCIPgetNCutsApplied(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCUTS);
+   }
+   else
+   {
+      SCIPdispInt(file, 0, DISP_WIDT_MCUTS);
+   }
+
+
 
    return SCIP_OKAY;
 }
