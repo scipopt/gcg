@@ -114,5 +114,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
    //SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
 
+   /* martin's decomp stuff */
+   SCIP_CALL(SCIPincludeReaderGp(scip));
+   SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
+
+
+
    return SCIP_OKAY;
 }

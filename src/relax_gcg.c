@@ -419,7 +419,7 @@ SCIP_RETCODE checkIdenticalBlocks(
          if( relaxdata->blockrepresentative[j] != j )
             continue;
 
-         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])) );
+         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* TODO: +1 to deal with empty subproblems */
          SCIP_CALL( pricingprobsAreIdentical(relaxdata, i, j, varmap, &identical) );
          
          if( identical )

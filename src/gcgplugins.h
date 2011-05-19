@@ -114,6 +114,9 @@
 #include "branch_relpsprob.h"
 #include "reader_ref.h"
 
+/* Martin's detection stuff */
+#include "cons_decomp.h"
+#include "reader_gp.h"
 
 /** includes default SCIP plugins into SCIP */
 extern
