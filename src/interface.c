@@ -56,7 +56,7 @@ SCIP_RETCODE GCGsetBlocksForProblem(
          continue;
       }
       assert(blocksPerVar[i] < nblocks);
-      SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(vars[i], blocksPerVar[i]));
+      SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, vars[i], blocksPerVar[i]));
    }
 
    nconss = SCIPgetNConss(scip);

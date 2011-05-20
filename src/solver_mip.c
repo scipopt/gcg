@@ -354,7 +354,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       *result = SCIP_STATUS_UNBOUNDED;
 
       printf("pricingproblem has an unbounded ray!\n");
-   }   
+   }
    else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
    {

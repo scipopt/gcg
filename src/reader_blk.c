@@ -580,7 +580,7 @@ SCIP_RETCODE readBlock(
       }
 
       /* set the block number of the variable to the number of the current block */
-      SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(var, blkinput->blocknr) );
+      SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
    }
 
    return SCIP_OKAY;

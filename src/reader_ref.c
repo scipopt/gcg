@@ -674,7 +674,7 @@ SCIP_RETCODE readBlocks(
                if( vardata->blocknr == -1 )
                {
                   /* set the block number of the variable to the number of the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(var, refinput->blocknr) );
+                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                   refinput->nassignedvars++;
                }
                else if( vardata->blocknr != refinput->blocknr )
@@ -708,7 +708,7 @@ SCIP_RETCODE readBlocks(
                   SCIP_CALL( GCGrelaxCreateOrigVardata(scip, varcopy) );
 
                   /* assign the copy to the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(varcopy, refinput->blocknr) );
+                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, varcopy, refinput->blocknr) );
 
                   /* create a coupling constraint between the variable and its copy */
                   (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "coupling_%s_%s", SCIPvarGetName(var), newvarname);

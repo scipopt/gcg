@@ -84,11 +84,18 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
    );
 
-/** creates a variable in a pricing problem corresponding to the given original variable */
+/** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
 extern
 SCIP_RETCODE GCGrelaxCreatePricingVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             origvar             /**< corresponding variable in the original program */
+   );
+
+/** creates a variable in each of the pricing problems linked by given original variable */
+extern
+SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
    );
 
 /** creates the data for a variable of the original program */
@@ -113,9 +120,11 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP_CONS**           transcons           /**< pointer to the transformed constraint */
    );
 
+
 /* sets the number of the block, the given original variable belongs to */
 extern
 SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< variable to set the block number for */
    int                   blocknr             /**< number of the block, the variable belongs to */
    );

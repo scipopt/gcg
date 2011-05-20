@@ -645,12 +645,12 @@ SCIP_RETCODE checkNewVar(
       assert(vardata != NULL);
       assert(newvardata != NULL);
 
+      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(newvardata->vartype == GCG_VARTYPE_MASTER);
+
       /* vars[v] belongs to a different block, may not be equal to newvar */
       if( vardata->blocknr != newvardata->blocknr )
          continue;
-
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(newvardata->vartype == GCG_VARTYPE_MASTER);
 
       /* vars[v] belongs to a different block, may not be equal to newvar */
       if( vardata->data.mastervardata.norigvars != newvardata->data.mastervardata.norigvars )
@@ -706,29 +706,75 @@ SCIP_RETCODE checkVarBounds(
       vardata = SCIPvarGetData(vars[v]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr == -1);
+      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr == -1 || vardata->blocknr == -2);
 
+      /* variable was directly transferred to master */
       if( vardata->blocknr == -1 )
          continue;
-
-      if( !GCGrelaxIsPricingprobRelevant(origprob, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) != 1 ) 
-         continue;
-
-      if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
+      
+      /* variable belongs to exactly one block */
+      if( vardata->blocknr >= 0 )
       {
-         printf("var %s: orig upper bound = %g, pricing upper bound = %g, global orig upper bound = %g!\n", 
-            SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar),
-            SCIPvarGetUbGlobal(vars[v]));
-      }
-      if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) )
-      {
-         printf("var %s: orig lower bound = %g, pricing lower bound = %g, global orig lower bound = %g!\n", 
-            SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar),
-            SCIPvarGetLbGlobal(vars[v]) );
-      }
+         if( !GCGrelaxIsPricingprobRelevant(origprob, vardata->blocknr) || GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) != 1 ) 
+            continue;
+         
+         if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
+         {
+            printf("var %s: orig upper bound = %g, pricing upper bound = %g, global orig upper bound = %g!\n", 
+               SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar),
+               SCIPvarGetUbGlobal(vars[v]));
+         }
+         if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) )
+         {
+            printf("var %s: orig lower bound = %g, pricing lower bound = %g, global orig lower bound = %g!\n", 
+               SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar),
+               SCIPvarGetLbGlobal(vars[v]) );
+         }
 
-      assert(SCIPvarGetUbLocal(vars[v]) == SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar));
-      assert(SCIPvarGetLbLocal(vars[v]) == SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar));
+         assert(SCIPvarGetUbLocal(vars[v]) == SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar));
+         assert(SCIPvarGetLbLocal(vars[v]) == SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar));
+      }
+      /* variable is a linking variable */
+      else
+      {
+         int i;
+         int nblocks;
+
+         assert(vardata->blocknr == -2);
+         assert(vardata->data.origvardata.linkingvardata != NULL);
+         assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+         assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
+
+         nblocks = GCGrelaxGetNPricingprobs(origprob);
+         
+         /* iterate over the pricing problems the variable belongs to and check the bounds */
+         for( i = 0; i < nblocks; i++ )
+         {
+            if( !GCGrelaxIsPricingprobRelevant(origprob, i) || GCGrelaxGetNIdenticalBlocks(origprob, i) != 1 ) 
+               continue;
+
+            if( SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]) == NULL )
+               continue;
+            
+            if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]) )
+            {
+               printf("linking var %s: orig upper bound = %g, pricing upper bound in block %d = %g, global orig upper bound = %g!\n", 
+                  SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), i
+                  SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]),
+                  SCIPvarGetUbGlobal(vars[v]));
+            }
+            if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]) )
+            {
+               printf("linking var %s: orig lower bound = %g, pricing lower bound in block %d = %g, global orig lower bound = %g!\n", 
+                  SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), i
+                  SCIPvarGetLbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]),
+                  SCIPvarGetLbGlobal(vars[v]) );
+            }
+            
+            assert(SCIPvarGetUbLocal(vars[v]) == SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]));
+            assert(SCIPvarGetLbLocal(vars[v]) == SCIPvarGetLbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]));
+         }
+      }
    }
 
    return SCIP_OKAY;
@@ -795,6 +841,7 @@ SCIP_RETCODE setPricingObjs(
 {
    SCIP* origprob;
    SCIP_VARDATA* vardata;
+   SCIP_VARDATA* origvardata;
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
    SCIP_CONS** origconss;
@@ -852,22 +899,73 @@ SCIP_RETCODE setPricingObjs(
          {
             vardata = SCIPvarGetData(probvars[j]);
             assert(vardata->vartype == GCG_VARTYPE_PRICING);
-            assert(vardata->blocknr == i);
             assert(vardata->data.pricingvardata.origvars != NULL);
             assert(vardata->data.pricingvardata.origvars[0] != NULL);
-            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 
-                  SCIPvarGetObj(vardata->data.pricingvardata.origvars[0])) );
+            assert(vardata->blocknr == i);
+
+            if( SCIPvarGetData(vardata->data.pricingvardata.origvars[0])->blocknr == -2 )
+            {
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0) );
+            }
+            else
+            {
+               assert( SCIPvarGetData(vardata->data.pricingvardata.origvars[0])->blocknr == i);
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 
+                     SCIPvarGetObj(vardata->data.pricingvardata.origvars[0])) );
+            }
          }  
+      }
+   }
+
+   /* compute reduced cost for linking variable constraints and update objectives in the pricing problems */
+   for( i = 0; i < pricerdata->npricingprobs; i++)
+   {
+      if( pricerdata->pricingprobs[i] == NULL )
+         continue;
+      probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
+      nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+
+      for( j = 0; j < nprobvars; j++ )
+      {
+         vardata = SCIPvarGetData(probvars[j]);
+         assert(vardata->vartype == GCG_VARTYPE_PRICING);
+         assert(vardata->data.pricingvardata.origvars != NULL);
+         assert(vardata->data.pricingvardata.origvars[0] != NULL);
+         assert(vardata->blocknr == i);
+
+         origvardata = SCIPvarGetData(vardata->data.pricingvardata.origvars[0]);
+         assert(origvardata->blocknr >= -2 && origvardata->blocknr < pricerdata->npricingprobs);
+
+         if( origvardata->blocknr != -2 )
+            continue;
+         
+         assert(origvardata->data.origvardata.linkingvardata->pricingvars[i] == probvars[j]);
+         assert(origvardata->data.origvardata.linkingvardata->linkconss[i] != NULL);
+         
+
+         /* redcost pricing */
+         if( pricetype == GCG_PRICETYPE_REDCOST )
+            dualsol = SCIPgetDualsolLinear(scip, origvardata->data.origvardata.linkingvardata->linkconss[i]);
+         /* farkas pricing */
+         else 
+         {
+            assert(pricetype == GCG_PRICETYPE_FARKAS);
+            dualsol = SCIPgetDualfarkasLinear(scip, origvardata->data.origvardata.linkingvardata->linkconss[i]);
+         }
+
+         /* add dual solution value to the pricing variable: 
+          * lambda variables get coef -1 in linking constraints --> add dualsol */
+         SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[i], probvars[j], dualsol) );
       }
    }
 
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmasterconss; i++ )
    {
-      /* farkas pricing */
+      /* redcost pricing */
       if( pricetype == GCG_PRICETYPE_REDCOST )
          dualsol = SCIPgetDualsolLinear(scip, masterconss[i]);
-      /* redcost pricing */
+      /* farkas pricing */
       else 
       {
          assert(pricetype == GCG_PRICETYPE_FARKAS);
@@ -883,7 +981,10 @@ SCIP_RETCODE setPricingObjs(
          {
             vardata = SCIPvarGetData(consvars[j]);
             assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-            if( vardata->blocknr != -1 && pricerdata->pricingprobs[vardata->blocknr] != NULL )
+            /* nothing to be done if variable belongs to redundant block or
+             * variable was directly transferred to the master 
+             * or variable is linking variable (which means, the directly transferred copy is part of the master cons) */
+            if( vardata->blocknr >= 0 && pricerdata->pricingprobs[vardata->blocknr] != NULL )
             {
                assert(vardata->data.origvardata.pricingvar != NULL);
                /* modify the objective of the corresponding variable in the pricing problem */
@@ -934,7 +1035,10 @@ SCIP_RETCODE setPricingObjs(
             vardata = SCIPvarGetData(consvars[j]);
             assert(vardata != NULL);
             assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-            if( vardata->blocknr != -1 && pricerdata->pricingprobs[vardata->blocknr] != NULL )
+            /* nothing to be done if variable belongs to redundant block or
+             * variable was directly transferred to the master 
+             * or variable is linking variable (which means, the directly transferred copy is part of the master cut) */
+            if( vardata->blocknr >= 0 && pricerdata->pricingprobs[vardata->blocknr] != NULL )
             {
                assert(vardata->data.origvardata.pricingvar != NULL);
                /* modify the objective of the corresponding variable in the pricing problem */
@@ -1133,6 +1237,12 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata->vartype == GCG_VARTYPE_PRICING);
          assert(vardata->data.pricingvardata.origvars != NULL);
          assert(vardata->data.pricingvardata.origvars[0] != NULL);
+
+         /* original variable is linking variable --> directly transferred master variable got the full obj, 
+          * priced-in variables get no objective value for this origvar */
+         if( SCIPvarGetData(vardata->data.pricingvardata.origvars[0])->blocknr == -2 )
+            continue;
+         
          /* add quota of original variable's objcoef to the master variable's coef */
          objcoeff += solvals[i] * SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]);
       }
@@ -1168,6 +1278,7 @@ SCIP_RETCODE createNewMasterVar(
       if( !SCIPisZero(scip, solvals[i]) )
          newvardata->data.mastervardata.norigvars++;
 
+   /* TODO: switch from block memory to normal memory */
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
@@ -1233,7 +1344,17 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
          assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0);
+         assert(vardata->blocknr >= -2 && vardata->blocknr < pricerdata->npricingprobs);
          assert(!SCIPisInfinity(scip, solvals[i]));
+
+         /* original variable is a linking variable, just add it to the linkcons */
+         if( vardata->blocknr == -2 )
+         {
+            assert(vardata->data.origvardata.linkingvardata->pricingvars[prob] == solvars[i]);
+            assert(vardata->data.origvardata.linkingvardata->linkconss[prob] != NULL);
+            SCIP_CALL( SCIPaddCoefLinear(scip, vardata->data.origvardata.linkingvardata->linkconss[prob], newvar, -solvals[i]) );
+            continue;
+         }
                   
          /* for each coef, add coef * solval to the coef of the new variable for the corresponding constraint */
          for( c = 0; c < vardata->data.origvardata.ncoefs; c++ )
@@ -1250,7 +1371,7 @@ SCIP_RETCODE createNewMasterVar(
                   
       }
    }
-   /* add the variables to the master constraints */
+   /* add the variable to the master constraints */
    for( i = 0; i < nmasterconss; i++ )
    {
       if( !SCIPisZero(scip, mastercoefs[i]) )
@@ -1286,16 +1407,19 @@ SCIP_RETCODE createNewMasterVar(
 
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         /* if the belongs to the same block and is no linking variable, update the coef */
          if( vardata->blocknr == prob )
          {
             assert(vardata->data.origvardata.pricingvar != NULL);
 
             for( k = 0; k < nsolvars; k++ )
+            {
                if( solvars[k] == vardata->data.origvardata.pricingvar )
                {
                   conscoef += ( consvals[j] * solvals[k] );
                   break;
                }
+            }
          }
 
       }
@@ -1867,14 +1991,22 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       vardata = SCIPvarGetData(vars[v]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      if( vardata->blocknr == -1 )
+      if( vardata->blocknr < 0 )
       {
          SCIP_VAR* newvar;
          SCIP_VARDATA* newvardata;
 
+         assert(vardata->blocknr == -1 || vardata->blocknr == -2);
          assert(vardata->data.origvardata.pricingvar == NULL);
 
-         SCIPdebugMessage("var %s is in no block!\n", SCIPvarGetName(vars[v]));
+         if( vardata->blocknr == -1)
+         {
+            SCIPdebugMessage("var %s is in no block - copy it directly to the master\n", SCIPvarGetName(vars[v]));
+         }
+         else
+         {
+            SCIPdebugMessage("var %s is a linking variable - copy it directly to the master\n", SCIPvarGetName(vars[v]));
+         }
 
          /* create vardata */
          SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
@@ -1910,6 +2042,24 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
             SCIP_CALL( SCIPaddCoefLinear(scip, linkcons, 
                   newvar, vardata->data.origvardata.coefs[i]) );
          }
+
+         /* we copied a linking variable into the master, add it to the linkcons */
+         if( vardata->blocknr == -2 )
+         {
+            assert(vardata->data.origvardata.linkingvardata != NULL);
+            assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
+            assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+            for( i = 0; i < pricerdata->npricingprobs; i++ )
+            {
+               if( vardata->data.origvardata.linkingvardata->linkconss[i] != NULL )
+               {
+                  SCIP_CALL( SCIPaddCoefLinear(scip, vardata->data.origvardata.linkingvardata->linkconss[i], 
+                  newvar, 1) );
+               }
+            }
+         }
+
          SCIPreleaseVar(scip, &newvar);
 
       }
@@ -2561,9 +2711,9 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       vardata = SCIPvarGetData(origvars[i]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr == -1);
+      assert(vardata->data.origvardata.pricingvar != NULL || vardata->blocknr < 0);
       
-      if( vardata->blocknr != -1 )
+      if( vardata->blocknr >= 0 )
       {
          prob = vardata->blocknr;
          if( !SCIPisZero(scip, origsolvals[i]) )
