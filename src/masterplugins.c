@@ -83,6 +83,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
 
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
+
+   /* Christian's heuristics */
+   SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
 #endif
 

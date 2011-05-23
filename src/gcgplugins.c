@@ -93,7 +93,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurZirounding(scip) );
 #endif
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
 
 
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
@@ -129,6 +128,14 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* martin's decomp stuff */
    SCIP_CALL(SCIPincludeReaderGp(scip));
    SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
+
+   /* Christian's heuristics */
+   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
 
 
 

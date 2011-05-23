@@ -137,7 +137,7 @@ SCIP_RETCODE getBestMastervar(
    int nmastervars;
 
    int i;
-   int j;
+//   int j;
    int tmpviolchange;
 
    /* get original problem */
@@ -446,9 +446,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
             assert(SCIPvarGetData(vardata->data.mastervardata.origvars[i]) != NULL);
             assert(SCIPvarGetData(vardata->data.mastervardata.origvars[i])->blocknr >= -2);
-            assert(SCIPvarGetData(vardata->data.mastervardata.origvars[i])->blocknr < relaxdata->npricingprobs);
 
-            if( SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2 )
+            if( SCIPvarGetData(vardata->data.mastervardata.origvars[i])->blocknr == -2 )
                continue;
 
             /* get the right original variable */

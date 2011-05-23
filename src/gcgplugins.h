@@ -78,9 +78,6 @@
 #include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
 #include "scip/heur_zirounding.h"
-
-#include "heur_gcgfracdiving.h"
-
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -127,6 +124,14 @@
 /* Martin's detection stuff */
 #include "cons_decomp.h"
 #include "reader_gp.h"
+
+/* Christian's heuristics */
+#include "heur_gcgfracdiving.h"
+#include "heur_gcgrens.h"
+#include "heur_gcgrounding.h"
+#include "heur_gcgshifting.h"
+#include "heur_gcgsimplerounding.h"
+#include "heur_gcgzirounding.h"
 
 /** includes default SCIP plugins into SCIP */
 extern

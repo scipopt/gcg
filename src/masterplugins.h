@@ -87,6 +87,9 @@
 #include "cons_integralOrig.h"
 #include "sepa_master.h"
 #include "branch_master.h"
+
+/* Christian's heuristics */
+#include "heur_greedycolsel.h"
 #include "heur_restmaster.h"
 
 
