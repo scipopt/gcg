@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+#pragma ident ""
 
 /**@file   heur_restmaster.c
  * @ingroup PRIMALHEURISTICS
@@ -366,6 +366,8 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    *result = SCIP_DIDNOTRUN;
 
    /* this heuristic works only for the discretization approach */
+   /* TODO: make heuristic also usable for convexification;
+    *       in this case, we need some sort of constraint handler for the restmaster subSCIP */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( !discretization )
       return SCIP_OKAY;

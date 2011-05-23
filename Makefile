@@ -49,6 +49,11 @@ MAINOBJ		=	reader_blk.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \
 			heur_gcgfracdiving.o \
+			heur_gcgrens.o \
+			heur_gcgrounding.o \
+			heur_gcgsimplerounding.o \
+			heur_gcgshifting.o \
+			heur_gcgzirounding.o \
 			heur_restmaster.o \
 			branch_master.o \
 			branch_relpsprob.o \
