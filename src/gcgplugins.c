@@ -130,6 +130,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
 
    /* Christian's heuristics */
+   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );

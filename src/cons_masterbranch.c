@@ -799,7 +799,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       if( vardata->blocknr == -1 )
          continue;
 
-      if( vardata->blocknr > 0)
+      if( vardata->blocknr >= 0)
       {
          assert(vardata->data.origvardata.pricingvar != NULL);
          assert(GCGrelaxGetPricingprob(origscip, vardata->blocknr) != NULL);

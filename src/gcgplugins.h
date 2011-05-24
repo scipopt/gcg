@@ -126,6 +126,7 @@
 #include "reader_gp.h"
 
 /* Christian's heuristics */
+#include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgrens.h"
 #include "heur_gcgrounding.h"

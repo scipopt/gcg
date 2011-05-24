@@ -444,16 +444,14 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          {
             assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[i]));
 
-            assert(SCIPvarGetData(vardata->data.mastervardata.origvars[i]) != NULL);
-            assert(SCIPvarGetData(vardata->data.mastervardata.origvars[i])->blocknr >= -2);
-
-            if( SCIPvarGetData(vardata->data.mastervardata.origvars[i])->blocknr == -2 )
-               continue;
-
             /* get the right original variable */
             vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[i]);
             assert(vardata2 != NULL);
             assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+
+            if(vardata2->blocknr == -2)
+               continue;
+
             assert(vardata2->data.origvardata.pricingvar != NULL);
             vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
             assert(vardata2 != NULL);
