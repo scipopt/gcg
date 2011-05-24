@@ -487,7 +487,7 @@ SCIP_DECL_HEUREXEC(heurExecFeasrestmaster)
    SCIP_CALL( SCIPincludeDefaultPlugins(restmaster) );
 
    /* get name of the master problem and add the string "_restricted" */
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_restricted", SCIPgetProbName(masterprob));
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_restricted", SCIPgetProbName(scip));
 
    /* create the subproblem */
    SCIP_CALL( SCIPcreateProb(restmaster, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
@@ -533,13 +533,13 @@ SCIP_DECL_HEUREXEC(heurExecFeasrestmaster)
    SCIP_CALL( SCIPsetPresolving(restmaster, SCIP_PARAMSETTING_FAST, TRUE) );
 
    /* use best estimate node selection */
-   if( SCIPfindNodesel(masterprob, "estimate") != NULL )
+   if( SCIPfindNodesel(scip, "estimate") != NULL )
    {
       SCIP_CALL( SCIPsetIntParam(restmaster, "nodeselection/estimate/stdpriority", INT_MAX/4) );
    }
 
    /* use inference branching */
-   if( SCIPfindBranchrule(masterprob, "inference") != NULL )
+   if( SCIPfindBranchrule(scip, "inference") != NULL )
    {
       SCIP_CALL( SCIPsetIntParam(restmaster, "branching/inference/priority", INT_MAX/4) );
    }
