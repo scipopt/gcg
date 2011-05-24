@@ -89,6 +89,7 @@
 #include "branch_master.h"
 
 /* Christian's heuristics */
+#include "heur_feasrestmaster.h"
 #include "heur_greedycolsel.h"
 #include "heur_restmaster.h"
 

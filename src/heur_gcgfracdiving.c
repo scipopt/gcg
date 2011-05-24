@@ -422,7 +422,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
-   assert(SCIPhasCurrentNodeLP(masterprob));
 
    *result = SCIP_DELAYED;
 
