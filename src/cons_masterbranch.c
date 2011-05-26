@@ -1352,8 +1352,8 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    assert(vardata != NULL);
    assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
    
-   /* TODO: LINK: mb: maybe we have to iterate over all pricing probs*/
-   if( vardata->blocknr != -1 && GCGrelaxIsPricingprobRelevant(scip, vardata->blocknr) )
+   /* deal with variables present in the pricing */
+   if( vardata->blocknr >= 0 && GCGrelaxIsPricingprobRelevant(scip, vardata->blocknr) )
    {
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
       {
@@ -1366,7 +1366,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
                vardata->data.origvardata.pricingvar, SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
    }
-   /* TODO: LINK: mb: maybe we have to iterate over all pricing probs*/
+   /* deal with variables appearing in the master only */
    if( vardata->blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
       assert(vardata->data.origvardata.nmastervars == 1);
@@ -1398,6 +1398,42 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
                SCIP_BOUNDTYPE_UPPER, newbound) );
       }
       
+   }
+   /* deal with linking variables */
+   /* TODO: LINK: mb: we have to iterate over all pricing probs*/
+   if( vardata->blocknr == -2 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPerrorMessage("This has not been implemented!\n");
+      assert(0);
+      assert(vardata->data.origvardata.nmastervars == 1);
+      assert(vardata->data.origvardata.mastervals[0] == 1);
+      assert(vardata->data.origvardata.mastervars[0] != NULL);
+
+      if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
+      {
+         assert(SCIPvarGetLbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+               vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+         //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+      }
+      if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
+      {
+         assert(SCIPvarGetUbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+               vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+         //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+      }
+      if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+               SCIP_BOUNDTYPE_LOWER, newbound) );
+      }
+      if( (eventtype & SCIP_EVENTTYPE_UBTIGHTENED) != 0 )
+      {
+         SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
+               SCIP_BOUNDTYPE_UPPER, newbound) );
+      }
+
    }
 
    return SCIP_OKAY;
