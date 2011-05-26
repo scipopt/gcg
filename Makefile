@@ -72,6 +72,7 @@ MAINOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			dec_arrowheur.o \
+			dec_stairheur.o \
 			reader_gp.o \
 			scip_misc.o \
 			main.o
