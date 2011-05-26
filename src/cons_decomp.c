@@ -28,7 +28,7 @@
 #include "dec_arrowheur.h"
 //#include "dec_cutpacking.h"
 //#include "dec_stairexact.h"
-// #include "dec_stairheur.h"
+#include "dec_stairheur.h"
 //#include "reader_dec.h"
 #include "reader_gp.h"
 #include "relax_gcg.h"
@@ -68,6 +68,7 @@ struct SCIP_ConshdlrData
    DECDECOMP* decdecomp;
    SCIP_ARROWHEURDATA* arrowheurdata;
 //   SCIP_CUTPACKINGDATA* cutpackingdata;
+   SCIP_STAIRHEURDATA *stairheurdata;
 };
 
 
@@ -187,14 +188,17 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 //   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
+   //   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
 
-   if( GCGrelaxGetNPricingprobs(scip) == 0 )
+   if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
-      SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+    //  SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+      //   SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
+      SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
    }
 
-//   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
-//   SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
+
+
 
 //   SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s_%d_dec.lp", SCIPgetProbName(scip), conshdlrdata->decdecomp->nblocks);
 //   SCIP_CALL(SCIPwriteOrigProblem(scip, "prob_dec.lp", "lp", FALSE));
@@ -217,6 +221,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    freeArrowheurData(scip, &conshdlrdata->arrowheurdata);
+   freeStairheurData(scip, &conshdlrdata->stairheurdata);
 //   freeCutpackingData(scip, &conshdlrdata->cutpackingdata);
    decdecompFree(scip, &conshdlrdata->decdecomp);
    SCIPfreeBlockMemory(scip, &conshdlrdata);
@@ -279,8 +284,10 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->decdecomp = NULL;
 
    SCIP_CALL(createArrowheurData(scip, &conshdlrdata->arrowheurdata));
+   SCIP_CALL(createStairheurData(scip, &conshdlrdata->stairheurdata));
 //   SCIP_CALL(createCutpackingData(scip, &conshdlrdata->cutpackingdata));
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip, conshdlrdata->arrowheurdata));
+   SCIP_CALL(SCIPincludeDetectionStairheur(scip, conshdlrdata->stairheurdata));
 //   SCIP_CALL(SCIPincludeDetectionCutpacking(scip, conshdlrdata->cutpackingdata));
 
    /* TODO: (optional) create constraint handler specific data here */

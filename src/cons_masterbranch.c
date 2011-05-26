@@ -675,7 +675,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
                }
             }
          }
-         else /* TODO: LINK: mb: here we are performing boundchanges only on pricing variables */
+         else /* TODO: LINK: mb: here we are performing boundchanges only on pricing variables, the pricing variable knows its block */
          {
             /* this is a global boundchange on a variable that belongs to a block, 
              * we have to adjust the bound of the corresponding variable in the pricing problem */
