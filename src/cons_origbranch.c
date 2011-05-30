@@ -726,7 +726,7 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
 }
 
 /** returns the array of bound changes on original variables found by propagation in the original problem
- *  at the node corresponding to the given origbranch constraint and clears the arrays */
+ *  at the node corresponding to the given origbranch constraint */
 SCIP_RETCODE GCGconsOrigbranchGetPropBoundChgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint for which the bound changes are requested */

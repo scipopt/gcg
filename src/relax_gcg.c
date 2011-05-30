@@ -1385,8 +1385,23 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* create gcg relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
    
+   relaxdata->blockrepresentative = NULL;
+   relaxdata->convconss = NULL;
+   relaxdata->hashorig2origvar = NULL;
+   relaxdata->hashorig2pricingvar = NULL;
+   relaxdata->lastsolvednodenr = 0;
+
+   relaxdata->linearmasterconss = NULL;
+   relaxdata->masterconss = NULL;
+
    relaxdata->npricingprobs = -1;
+   relaxdata->nrelpricingprobs = 0;
    relaxdata->currentorigsol = NULL;
+   relaxdata->storedorigsol = NULL;
+   relaxdata->origprimalsol = NULL;
+   relaxdata->masterprob = NULL;
+   relaxdata->nblocksidentical = NULL;
+
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
@@ -1396,6 +1411,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
+
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg, 
