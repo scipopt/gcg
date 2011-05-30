@@ -43,7 +43,7 @@
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
 #define READER_EXTENSION        "txt"
 
-
+#define GCG_NATIVE_LINKINGVARS
 /*
  * Data structures
  */
@@ -611,10 +611,12 @@ SCIP_RETCODE readBlocks(
 {
    SCIP_CONS** conss;
    SCIP_CONS* cons;
-   SCIP_VAR** copyvars;
    SCIP_VAR* var;
+#ifndef GCG_NATIVE_LINKINGVARS
+   SCIP_VAR** copyvars;
    SCIP_VAR* varcopy;
    int ncopyvars;
+#endif
    int val;
    int consctr;
    int v;
@@ -655,10 +657,10 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    constraint of unknown type.\n");
                continue;
             }
-
+#ifndef GCG_NATIVE_LINKINGVARS
             SCIP_CALL( SCIPallocBufferArray(scip, &copyvars, nvars));
             ncopyvars = 0;
-
+#endif
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
@@ -671,6 +673,11 @@ SCIP_RETCODE readBlocks(
 
                vardata = SCIPvarGetData(var);
                assert( vardata != NULL );
+               /* set the block number of the variable to the number of the current block */
+#ifdef GCG_NATIVE_LINKINGVARS
+               SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
+               refinput->nassignedvars++;
+#else
                if( vardata->blocknr == -1 )
                {
                   /* set the block number of the variable to the number of the current block */
@@ -682,8 +689,9 @@ SCIP_RETCODE readBlocks(
                   copyvars[ncopyvars] = var;
                   ncopyvars++;
                }
+#endif
             }
-
+#ifndef GCG_NATIVE_LINKINGVARS
             /* create copies for variables that are already assigned to another block */
             for( v = 0; v < ncopyvars; v++)
             {
@@ -731,13 +739,14 @@ SCIP_RETCODE readBlocks(
                SCIP_CALL( SCIPaddCoefLinear(scip, cons, varcopy, val) );
             }
             SCIPfreeBufferArray(scip, &copyvars);
-
+#endif
             consctr++;
             refinput->totalreadconss++;
          }
          else
             syntaxError(scip, refinput, "ConsNr: Value not an integer.\n");
       }
+
       if( consctr == refinput->blocksizes[refinput->blocknr] )
       {
          refinput->blocknr++;

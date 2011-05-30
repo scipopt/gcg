@@ -763,12 +763,12 @@ SCIP_RETCODE createMaster(
          {
             int count;
             count = 0;
-            for( i = 0; i <= npricingprobs; i++ )
+            for( i = 0; i < npricingprobs; i++ )
             {
                if( vardata->data.origvardata.linkingvardata->pricingvars[i] != NULL)
                {
                   count++;
-                  assert(vardata->data.origvardata.linkingvardata->pricingvars[i] == vars[v]);
+                  //assert(vardata->data.origvardata.linkingvardata->pricingvars[i] == vars[v]);
                }
                assert(vardata->data.origvardata.linkingvardata->linkconss[i] == NULL);
             }
@@ -781,7 +781,7 @@ SCIP_RETCODE createMaster(
          {
             int count;
             count = 0;
-            for( i = 0; i <= npricingprobs; i++ )
+            for( i = 0; i < npricingprobs; i++ )
             {
                if( vardata->data.origvardata.linkingvardata->pricingvars[i] != NULL)
                {
@@ -1155,8 +1155,10 @@ static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {  
    SCIP* masterprob;
+   SCIP_VAR** vars;
    SCIP_RELAXDATA* relaxdata;
    int i;
+   int nvars;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1181,6 +1183,29 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       if( relaxdata->convconss[i] != NULL) 
       {
          SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
+      }
+   }
+
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+   /* transform the linking constraints */
+   for( i = 0; i < nvars; ++i)
+   {
+      SCIP_VARDATA* vardata;
+      int j;
+      vardata = SCIPvarGetData(vars[i]);
+      assert( vardata != NULL );
+      assert( vardata->vartype == GCG_VARTYPE_ORIGINAL );
+      if(vardata->blocknr == -2)
+      {
+         assert(vardata->data.origvardata.linkingvardata != NULL);
+         for(j = 0;j < relaxdata->npricingprobs; ++j)
+         {
+            if(vardata->data.origvardata.linkingvardata->linkconss[j] != NULL)
+            {
+               SCIP_CALL(SCIPtransformCons(masterprob, vardata->data.origvardata.linkingvardata->linkconss[j], &(vardata->data.origvardata.linkingvardata->linkconss[j])));
+            }
+         }
       }
    }
 
@@ -1810,7 +1835,6 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
       SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &origvardata->data.origvardata.linkingvardata->linkconss[pricingprobnr],
             name, 0, NULL, NULL, 0, 0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, origvardata->data.origvardata.linkingvardata->linkconss[pricingprobnr]) );
-
       relaxdata->nvarlinkconss++;
 
       /* because the variable was added to the problem, 
@@ -2109,8 +2133,12 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
       assert(vardata->blocknr == -2);
 
       /* store new block */
-      vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
-      vardata->data.origvardata.linkingvardata->nblocks++;
+      if(vardata->data.origvardata.linkingvardata->pricingvars[blocknr] == NULL)
+      {
+         assert(vardata->data.origvardata.linkingvardata->linkconss[blocknr] == NULL);
+         vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
+         vardata->data.origvardata.linkingvardata->nblocks++;
+      }
       assert(vardata->data.origvardata.linkingvardata->nblocks <= nblocks);
    }
 

@@ -133,7 +133,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
