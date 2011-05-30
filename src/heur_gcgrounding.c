@@ -19,7 +19,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -513,6 +513,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
+
+   SCIPdebugMessage("LP solution status of masterprob: %d\n", SCIPgetLPSolstat(masterprob));
+   SCIPdebugMessage("Masterprob has LP: %d\n", SCIPhasCurrentNodeLP(masterprob));
+   SCIPdebugMessage("Relaxation solution is%s valid\n", SCIPisRelaxSolValid(scip) ? "" : " not");
+   assert(SCIPisRelaxSolValid(scip));
 
    *result = SCIP_DIDNOTRUN;
 

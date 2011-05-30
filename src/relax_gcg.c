@@ -2459,7 +2459,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
    /* create probing node in master problem, propagate and solve it with pricing */
    SCIP_CALL( SCIPstartProbing(masterscip) );
 
-   relaxdata->masterinprobing;
+   relaxdata->masterinprobing = TRUE;
 
    return SCIP_OKAY;
 }

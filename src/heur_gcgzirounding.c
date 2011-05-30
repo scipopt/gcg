@@ -450,7 +450,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
        
       /* get row activity */
       activities[i] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
-      assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) );
+      /* TODO: This assertion has been commented out due to numerical troubles */
+//      assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) );
       
       /* in special case if LHS or RHS is (-)infinity slacks have to be initialized as infinity*/
       if ( SCIPisInfinity(scip, -lhs) ) 

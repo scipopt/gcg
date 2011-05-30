@@ -19,7 +19,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -294,6 +294,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
    int bestcand;
    int c;
 
+   /* TODO: temporary workaround */
+   SCIP_SOL* oldrelaxsol;
+
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
@@ -314,7 +317,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
       return SCIP_OKAY;
 
    /* don't dive two times at the same node */
-   if( SCIPgetLastDivenode(scip) == SCIPgetNNodes(scip) && SCIPgetDepth(scip) > 0 )
+   if( SCIPgetLastDivenode(masterprob) == SCIPgetNNodes(masterprob) && SCIPgetDepth(masterprob) > 0 )
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTRUN;
@@ -386,6 +389,14 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( SCIPstartProbing(masterprob) );
+
+   /* TODO: temporary workaround: remember relaxation solution and branching candidates on this node */
+   SCIP_CALL( SCIPcreateSol(scip, &oldrelaxsol, NULL) );
+   for( c = 0; c < SCIPgetNVars(scip); c++ )
+   {
+      var = SCIPgetVars(scip)[c];
+      SCIPsetSolVal(scip, oldrelaxsol, var, SCIPgetRelaxSolVal(scip, var));
+   }
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
@@ -690,6 +701,23 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
    /* end diving */
    SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( SCIPendProbing(masterprob) );
+
+   /* TODO: temporary workaround: restore relaxation solution and branching candidates */
+   SCIP_CALL( SCIPsetRelaxSolValsSol(scip, oldrelaxsol) );
+   for( c = 0; c < SCIPgetNVars(scip); c++ )
+   {
+      var = SCIPgetVars(scip)[c];
+      SCIPsetSolVal(scip, GCGrelaxGetCurrentOrigSol(scip), var, SCIPgetSolVal(scip, oldrelaxsol, var));
+
+      if( SCIPvarGetType(var) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, var)) )
+      {
+         assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)));
+         SCIP_CALL( SCIPaddExternBranchCand(scip, var, SCIPgetRelaxSolVal(scip, var)
+               - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, var)), SCIPgetRelaxSolVal(scip, var)) );
+      }
+   }
+   assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, GCGrelaxGetCurrentOrigSol(scip))));
+   SCIP_CALL( SCIPfreeSol(scip, &oldrelaxsol) );
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;

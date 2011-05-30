@@ -166,7 +166,36 @@ SCIP_RETCODE initializeOrigsol(
       assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
       assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
 
-      /* first of all, handle the variables with integral values */
+      /* first of all, handle variables representing rays */
+      if( vardata->data.mastervardata.isray )
+      {
+         assert(vardata->blocknr >= 0);
+         /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps),
+          * so we do no feas comparison here */
+         if( SCIPisPositive(scip, mastervals[i]) )
+         {
+            /* loop over all original variables contained in the current master variable */
+            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            {
+               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
+
+               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j]) != NULL);
+               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr >= -2);
+               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr < npricingprobs);
+
+               /* the original variable is a linking variable */
+               if( SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2 )
+                  continue;
+
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata->data.mastervardata.origvars[j], vardata->data.mastervardata.origvals[j] * SCIPfeasFloor(scip, mastervals[i])) );
+            }
+         }
+         mastervals[i] = 0.0;
+         continue;
+      }
+
+      /* handle the variables with value >= 1 to get integral values in original solution */
       /* TODO: handle copied original variables and linking variables */
       while( SCIPisFeasGE(scip, mastervals[i], 1) )
       {
@@ -211,7 +240,8 @@ SCIP_RETCODE initializeOrigsol(
 
       /* if there is a fractional value >= 0.5 remaining for the master variable, add it as a candidate for rounding up */
       if( SCIPisFeasGE(scip, mastervals[i], 0.5)
-            && !vardata->data.mastervardata.isray ) /* TODO: handle rays */
+            && !vardata->data.mastervardata.isray /* TODO: handle rays */
+            && vardata->blocknr >= 0) /* TODO: handle copied original variables and linking variables */
       {
          SCIP_CALL( SCIPreallocBufferArray(scip, mastercands, *nmastercands + 1) );
          (*mastercands)[*nmastercands] = mastervars[i];
@@ -315,6 +345,7 @@ SCIP_RETCODE getAndRemoveBestMastercand(
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_MASTER);
       assert(!vardata->data.mastervardata.isray); /* TODO: handle rays */
+      assert(!vardata->blocknr >= 0); /* TODO: handle copied original variables and linking variables */
 
 //      SCIPdebugMessage("mastercand %d, pricingprob %d, blocknr %d, nidentblocks %d\n",
 //            i, vardata->blocknr, blocknr[vardata->blocknr], GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr));
@@ -349,7 +380,7 @@ SCIP_RETCODE getAndRemoveBestMastercand(
 /* remove master candidates whose blocks are already full */
 static
 SCIP_RETCODE cleanMastercands(
-      SCIP*                   scip,
+      SCIP*                   origprob,
       SCIP_VAR**              mastercands,
       int*                    nmastercands,
       int*                    blocknr
@@ -367,7 +398,7 @@ SCIP_RETCODE cleanMastercands(
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_MASTER);
 
-      if( blocknr[vardata->blocknr] >= GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) )
+      if( blocknr[vardata->blocknr] >= GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) )
          break;
    }
    for( i = j + 1; i < *nmastercands; i++ )
@@ -376,7 +407,7 @@ SCIP_RETCODE cleanMastercands(
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_MASTER);
 
-      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) )
+      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) )
       {
          mastercands[j] = mastercands[i];
          j++;
@@ -415,7 +446,7 @@ SCIP_RETCODE getBestMastervar(
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(nmastervars >= 0);
 
-   mastervar = NULL;
+   *mastervar = NULL;
    *violchange = SCIPinfinity(scip);
 
 //   j = nmastervars - 1;
@@ -437,6 +468,10 @@ SCIP_RETCODE getBestMastervar(
       vardata = SCIPvarGetData(mastervars[i]);
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_MASTER);
+
+      /* TODO: handle copied original variables and linking variables */
+      if( vardata->blocknr < 0 )
+         continue;
 
       /* ignore the master variable if the corresponding block is already full */
       if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr)
@@ -485,6 +520,7 @@ SCIP_RETCODE updateOrigsol(
    assert(vardata->data.mastervardata.norigvars >= 0);
    assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
    assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+   assert(!vardata->data.mastervardata.isray);
 
    /* increase master value by one, i.e. increase solution values in current original solution accordingly */
    if( vardata->blocknr == -1 )
@@ -696,7 +732,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    {
       SCIP_CALL( getAndRemoveBestMastercand(scip, mastercands, &nmastercands, activities, blocknr, &mastervar, &violchange) );
       SCIP_CALL( updateOrigsol(origprob, heur, origsol, mastervar, violchange, &nviolrows, activities, blocknr, &allblocksfull, &success) );
-      SCIP_CALL( cleanMastercands(scip, mastercands, &nmastercands, blocknr) );
+      SCIP_CALL( cleanMastercands(origprob, mastercands, &nmastercands, blocknr) );
 
    }
 
@@ -704,6 +740,8 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    while( !allblocksfull && !success )
    {
       SCIP_CALL( getBestMastervar(scip, activities, blocknr, &mastervar, &violchange) );
+      if( mastervar == NULL )
+         break;
       SCIP_CALL( updateOrigsol(origprob, heur, origsol, mastervar, violchange, &nviolrows, activities, blocknr, &allblocksfull, &success) );
    }
 

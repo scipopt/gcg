@@ -171,6 +171,10 @@ SCIP_RETCODE getBestMastervar(
       assert(vardata != NULL);
       assert(vardata->vartype == GCG_VARTYPE_MASTER);
 
+      /* TODO: handle copied original variables and linking variables */
+      if( vardata->blocknr < 0 )
+         continue;
+
       /* ignore the master variable if the corresponding block is already full */
       if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr)
             && !vardata->data.mastervardata.isray ) /* TODO: handle rays */
@@ -423,6 +427,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
       assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
       assert(vardata->blocknr >= -2);
+      assert(!vardata->data.mastervardata.isray);
 
       /* increase master value by one, i.e. increase solution values in current original solution accordingly */
       /* TODO: handle copied original variables and linking variables */

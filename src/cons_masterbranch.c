@@ -1042,7 +1042,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    {
       for( i = 0; i < nvars; i++)
       {
-         SCIP_Bool ismastervariablerelevant;
+         SCIP_Bool ismastervariableirrelevant;
          vardata = SCIPvarGetData(vars[i]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_MASTER);
@@ -1054,10 +1054,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
          fixed = FALSE;
 
-         ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
-         ismastervariablerelevant = ismastervariablerelevant && (vardata->blocknr >= 0 || vardata->data.origvardata.linkingvardata != NULL);
+         ismastervariableirrelevant = SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
+         ismastervariableirrelevant = ismastervariableirrelevant || vardata->blocknr >= 0;
+         ismastervariableirrelevant = ismastervariableirrelevant || (vardata->data.mastervardata.origvars[0] != NULL && SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata == NULL);
          /* only look at master variables not globally fixed to zero that belong to a block */
-         if( !ismastervariablerelevant )
+         if( ismastervariableirrelevant )
          {
             continue;
          }
