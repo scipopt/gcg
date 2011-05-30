@@ -1038,11 +1038,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    assert((conshdlrData->npendingbnds > 0) || conshdlrData->pendingbndsactivated);
    
    /* iterate over all master variables and apply global bound changes */
-   if( conshdlrData->npendingbnds > 0 && conshdlrData->pendingbndsactivated )
+   if( conshdlrData->npendingbnds > 0 && !conshdlrData->pendingbndsactivated )
    {
       for( i = 0; i < nvars; i++)
       {
-         SCIP_Bool ismastervariableirrelevant;
+         SCIP_Bool ismastervariablerelevant;
          vardata = SCIPvarGetData(vars[i]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_MASTER);
@@ -1050,15 +1050,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          assert(vardata->data.mastervardata.norigvars >= 0);
          assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 2 );
+         assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
 
          fixed = FALSE;
 
-         ismastervariableirrelevant = SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
-         ismastervariableirrelevant = ismastervariableirrelevant || vardata->blocknr >= 0;
-         ismastervariableirrelevant = ismastervariableirrelevant || (vardata->data.mastervardata.origvars[0] != NULL && SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata == NULL);
+         ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
+         ismastervariablerelevant = ismastervariablerelevant &&
+               (vardata->blocknr >= 0 || (vardata->data.mastervardata.origvars[0] != NULL && SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata != NULL));
          /* only look at master variables not globally fixed to zero that belong to a block */
-         if( ismastervariableirrelevant )
+         if( !ismastervariablerelevant )
          {
             continue;
          }
@@ -1071,36 +1071,27 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             boundchgvardata = SCIPvarGetData(conshdlrData->pendingvars[k]);
             assert(boundchgvardata != NULL);
             assert(boundchgvardata->vartype != GCG_VARTYPE_ORIGINAL);
-            assert(boundchgvardata->blocknr != -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+            assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
             /* LINK: mb: this might work  */
             /* the boundchange was performed on a variable in another block, continue */
 
             /* if we are not dealing with a linking variable, skip the master variable if it is useless */
-            ismastervarrelevant = ((vardata->data.origvardata.linkingvardata == NULL) && (boundchgvardata->blocknr != vardata->blocknr));
+            ismastervarrelevant = (boundchgvardata->blocknr == vardata->blocknr);
             /* if we are dealing with a linking master variable but it has nothing to do with the
              * boundchangevar's block, skip it, too */
-            ismastervarrelevant = ismastervarrelevant && (vardata->data.origvardata.linkingvardata != NULL) && (vardata->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] == NULL);
-
-            if( ismastervarrelevant )
-               continue;
-
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            if( (vardata->data.mastervardata.origvars != NULL) )
             {
-               /* TODO: LINK: mb: The assert is certainly wrong, what happens here? */
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr
-                     || SCIPvarGetData(vardata->data.mastervardata.origvars[j])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] != NULL);
-
-               /* check whether the original variable contained in the master variable equals the variable
-                * on which the current branching was performed */
-               if( vardata->data.mastervardata.origvars[j] == boundchgvardata->data.pricingvardata.origvars[0] )
+               if( SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata != NULL )
                {
-                  val = vardata->data.mastervardata.origvals[j];
-                  break;
+                  ismastervarrelevant = ismastervarrelevant || (SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] != NULL);
                }
             }
 
-            assert(boundchgvardata->data.pricingvardata.origvars[0] != NULL);
+            if( !ismastervarrelevant )
+               continue;
 
+            assert(boundchgvardata->blocknr != -1);
+            assert(boundchgvardata->data.pricingvardata.origvars[0] != NULL);
             /* val is the value of the branching variable in the current mastervar,
              * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
              * if we do not find the branching variable in this array, it has value 0.0 */
@@ -1113,7 +1104,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr
                      || (SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2
                            && (vardata->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] != NULL)));
-               
+
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */
                if( vardata->data.mastervardata.origvars[j] == boundchgvardata->data.pricingvardata.origvars[0] )
@@ -1146,6 +1137,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             }
          }
       }
+      conshdlrData->pendingbndsactivated = TRUE;
       conshdlrData->npendingbnds = 0;
 
       SCIPdebugMessage("Finished handling of pending global bound changes: %d changed bounds\n", propcount);
@@ -1232,7 +1224,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                /* TODO: LINK: mb: the assertion will fail in any case */
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr);
-               
+
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */
                if( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
