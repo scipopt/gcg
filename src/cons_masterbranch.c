@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 //#define CHECKPROPAGATEDVARS
 /**@file   cons_masterbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
@@ -1179,8 +1179,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          for( k = 0; k < nboundchanges; k++ )
          {
             assert(SCIPisFeasEQ(scip, vardata->data.mastervardata.origvals[0], 1.0));
-            assert(SCIPisFeasEQ(scip, vardata->data.mastervardata.origvals[1], 0.0));
-
             if( vardata->data.mastervardata.origvars[0] == consdata->boundchgvars[k] )
             {
                /* branching imposes new lower bound */
@@ -1206,14 +1204,20 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
          for( k = 0; k < nboundchanges && !fixed; k++ )
          {
-
+            SCIP_VAR** origvars;
             boundchgvardata = SCIPvarGetData(consdata->boundchgvars[k]);
             assert(boundchgvardata != NULL);
             assert(boundchgvardata->vartype == GCG_VARTYPE_ORIGINAL);
             assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
             /* TODO: LINK: mb: This needs to be changed */
             /* the boundchage was performed on a variable in another block, continue */
-            if( boundchgvardata->blocknr != vardata->blocknr || ( SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata != NULL && SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] == NULL))
+
+            origvars = vardata->data.mastervardata.origvars;
+            if(origvars == NULL)
+               continue;
+            if( boundchgvardata->blocknr != vardata->blocknr || origvars[0] == NULL
+                  || ( SCIPvarGetData( origvars[0])->data.origvardata.linkingvardata != NULL
+                        && SCIPvarGetData( origvars[0])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] == NULL))
                continue;
 
             assert(boundchgvardata->blocknr != -1);
