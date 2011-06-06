@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 //#define CHECKPROPAGATEDVARS
 /**@file   cons_masterbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree

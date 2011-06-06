@@ -131,7 +131,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
+//   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );

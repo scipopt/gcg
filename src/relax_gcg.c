@@ -743,13 +743,13 @@ SCIP_RETCODE createMaster(
       {
          assert(vardata->data.origvardata.pricingvar == NULL);
 	 
-	 SCIP_CALL( GCGrelaxCreatePricingVar(scip, vars[v]) );
-	 assert(vardata->data.origvardata.pricingvar != NULL);
+         SCIP_CALL( GCGrelaxCreatePricingVar(scip, vars[v]) );
+         assert(vardata->data.origvardata.pricingvar != NULL);
 
-	 SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[vardata->blocknr], 
-	     (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
-	 SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, 
-	     (void*)(vars[v]), (void*)(vars[v])) );
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[vardata->blocknr],
+            (void*)(vars[v]), (void*)(vardata->data.origvardata.pricingvar)) );
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar,
+            (void*)(vars[v]), (void*)(vars[v])) );
       }
       /* variable is a linking variable --> create corresponding pricing variable in all linked blocks
        * and create corresponding linking constraints */
@@ -1894,8 +1894,8 @@ SCIP_RETCODE GCGrelaxCreateOrigVarsData(
 
    assert(scip != NULL);
 
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
 
    /* loop over the variables in the original problem */
    for( i = 0; i < nvars; i++ )

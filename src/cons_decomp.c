@@ -78,6 +78,61 @@ struct SCIP_ConshdlrData
  * Local methods
  */
 
+/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+static
+SCIP_RETCODE DECOMPconvertStructToGCG(
+      SCIP*         scip,     /**< SCIP data structure          */
+      DECDECOMP*    decdecomp /**< decdecom data structure      */
+   )
+{
+   int i;
+   int j;
+   int k;
+   int nvars;
+   SCIP_VAR** vars;
+
+   assert(decdecomp != NULL);
+   assert(decdecomp->linkingconss != NULL);
+   assert(decdecomp->nsubscipvars != NULL);
+   assert(decdecomp->subscipvars != NULL);
+
+   vars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
+   GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
+   SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
+
+   /* set master constraints */
+   for(i = 0; i < decdecomp->nlinkingconss; ++i)
+   {
+      assert(decdecomp->linkingconss[i] != NULL);
+      SCIP_CALL(GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]));
+   }
+
+   for( i = 0; i < decdecomp->nblocks; ++i)
+   {
+      assert(decdecomp->subscipvars[i] != NULL);
+      for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
+      {
+         SCIP_VAR* origvar;
+         origvar = NULL;
+         assert(decdecomp->subscipvars[i][j] != NULL);
+         for( k = 0; k < nvars; ++k)
+         {
+            if(SCIPvarGetTransVar(vars[k]) == decdecomp->subscipvars[i][j])
+            {
+               origvar = vars[k];
+               break;
+            }
+         }
+         //SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->subscipvars[i][j], i+1));
+         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, origvar, i));
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /* put your local methods here, and declare them static */
 static
 SCIP_RETCODE decdecompCreate(
@@ -192,10 +247,12 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
-    //  SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+      SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
       //   SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
-      SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
+      //SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
+      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
    }
+
 
 
 
