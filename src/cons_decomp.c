@@ -87,17 +87,19 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
 {
    int i;
    int j;
-   int k;
    int nvars;
-   SCIP_VAR** vars;
+   SCIP_VAR** origvars;
+   SCIP_VAR** transvar2origvar;
 
    assert(decdecomp != NULL);
    assert(decdecomp->linkingconss != NULL);
    assert(decdecomp->nsubscipvars != NULL);
    assert(decdecomp->subscipvars != NULL);
 
-   vars = SCIPgetOrigVars(scip);
+   origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
+
+   SCIP_CALL(SCIPallocBufferArray(scip, &transvar2origvar, nvars));
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
    SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
 
@@ -108,27 +110,33 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
       SCIP_CALL(GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]));
    }
 
+   /* prepare the map from transformed to original variables */
+   for(i = 0; i < nvars; ++i)
+   {
+      SCIP_VAR* transvar;
+      int index;
+      transvar = SCIPvarGetTransVar(origvars[i]);
+      assert(transvar != NULL);
+      index = SCIPvarGetProbindex(transvar);
+      if(index >= 0)
+         transvar2origvar[index] = origvars[i];
+   }
+
    for( i = 0; i < decdecomp->nblocks; ++i)
    {
       assert(decdecomp->subscipvars[i] != NULL);
       for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
       {
-         SCIP_VAR* origvar;
-         origvar = NULL;
+         int index;
          assert(decdecomp->subscipvars[i][j] != NULL);
-         for( k = 0; k < nvars; ++k)
-         {
-            if(SCIPvarGetTransVar(vars[k]) == decdecomp->subscipvars[i][j])
-            {
-               origvar = vars[k];
-               break;
-            }
-         }
+         index = SCIPvarGetProbindex(decdecomp->subscipvars[i][j]);
+         assert(index >= 0);
+         assert(index < nvars);
          //SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->subscipvars[i][j], i+1));
-         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, origvar, i));
+         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, transvar2origvar[index], i));
       }
    }
-
+   SCIPfreeBufferArray(scip, &transvar2origvar);
    return SCIP_OKAY;
 }
 
