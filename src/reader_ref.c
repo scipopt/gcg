@@ -30,6 +30,7 @@
 #include "reader_ref.h"
 #include "relax_gcg.h"
 #include "struct_vardata.h"
+#include "struct_decomp.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
@@ -771,6 +772,7 @@ SCIP_RETCODE readREFFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   int i;
    assert(refinput != NULL);
 
    SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
@@ -816,7 +818,7 @@ SCIP_RETCODE readREFFile(
    /* close file */
    SCIPfclose(refinput->file);
 
-   int i;
+
    for (i = 0; i < refinput->nmarkedmasterconss; ++i)
    {
       SCIP_CALL( GCGrelaxMarkConsMaster(scip, refinput->markedmasterconss[i]) );
@@ -841,7 +843,6 @@ SCIP_RETCODE writeREFFile(
    assert(scip != NULL);
    assert(reader != NULL);
    assert(file != NULL);
-   assert(result != NULL);
 
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
@@ -908,7 +909,7 @@ SCIP_RETCODE SCIPincludeReaderRef(
    SCIP_READERDATA* readerdata;
 
    /* create blk reader data */
-   SCIP_CALL(SCIPallocMemory(scip, readerdata));
+   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
 
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
