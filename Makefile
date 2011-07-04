@@ -73,6 +73,7 @@ MAINOBJ		=	reader_blk.o \
 			cons_decomp.o \
 			dec_arrowheur.o \
 			dec_stairheur.o \
+			dec_borderheur.o \
 			reader_gp.o \
 			scip_misc.o \
 			main.o
