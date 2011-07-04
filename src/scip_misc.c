@@ -105,18 +105,15 @@ SCIP_Real SCIPgetRhsXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS1 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
    }
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS2 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
    else
    {
-      SCIPerrorMessage
-      ("WARNING: NOT IMPLEMENTED");
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
    }
    return -SCIPinfinity(scip);
 }
@@ -166,18 +163,15 @@ SCIP_Real SCIPgetLhsXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS1 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
    }
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS2 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
    else
    {
-      SCIPerrorMessage
-      ("WARNING: NOT IMPLEMENTED");
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED");
    }
    return SCIPinfinity(scip);
 }
@@ -229,7 +223,7 @@ int SCIPgetNVarsXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else
    {
-      SCIPerrorMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
       return 0;
    }
 }
@@ -334,7 +328,7 @@ SCIP_VAR ** SCIPgetVarsXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else
    {
-      SCIPerrorMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
    }
    return NULL;
 }
@@ -378,19 +372,16 @@ SCIP_Real SCIPgetDualsolXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS1 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
    }
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
-      SCIPerrorMessage
-      ("WARNING: SOS2 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
    else
    {
-      SCIPerrorMessage("WARNING: NOT IMPLEMENTED: ");
-      SCIPerrorMessage
-      (conshdlrname);
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED: ");
+      SCIPdebugMessage(conshdlrname);
    }
    return 0;
 }
@@ -484,19 +475,16 @@ SCIP_Real * SCIPgetValsXXX( SCIP * scip, SCIP_CONS * cons )
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
       /* store constraint */
-      SCIPerrorMessage
-      ("WARNING: SOS1 NOT IMPLEMENTED\n");
+      SCIPerrorMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
    }
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
       /* store constraint */
-      SCIPerrorMessage
-      ("WARNING: SOS2 NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
    }
    else
    {
-      SCIPerrorMessage
-      ("WARNING: UNKNOWN NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED\n");
    }
    return NULL;
 }

@@ -35,19 +35,19 @@
 
 /* Default parameter settings*/
 #define DEFAULT_BLOCKS                    2     /**< number of blocks */
-#define DEFAULT_VARWEIGHT                 3     /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN              3     /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT              3     /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT             3     /**< weight for continous variable nodes */
-#define DEFAULT_VARWEIGHTIMPL             3     /**< weight for implicit integer variable nodes */
-#define DEFAULT_CONSWEIGHT                1     /**< weight for constraint hyperedges */
-#define DEFAULT_RANDSEED                 -1     /**< random seed for the hmetis call */
+#define DEFAULT_VARWEIGHT                 1     /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN              2     /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT              2     /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT             1     /**< weight for continous variable nodes */
+#define DEFAULT_VARWEIGHTIMPL             2     /**< weight for implicit integer variable nodes */
+#define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
+#define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
 #define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES	              0.2   /**< percentage of dummy vertices*/
-#define DEFAULT_CONSWEIGHT_SETCOV         1     /**< weight for constraint hyperedges that are setcovering constraints */
-#define DEFAULT_CONSWEIGHT_SETPACK        1     /**< weight for constraint hyperedges that are setpacking constraints */
-#define DEFAULT_CONSWEIGHT_SETPART        1     /**< weight for constraint hyperedges that are setpartitioning constraints */
-#define DEFAULT_CONSWEIGHT_SETPPC         0     /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
+#define DEFAULT_CONSWEIGHT_SETCOV         5     /**< weight for constraint hyperedges that are setcovering constraints */
+#define DEFAULT_CONSWEIGHT_SETPACK        5     /**< weight for constraint hyperedges that are setpacking constraints */
+#define DEFAULT_CONSWEIGHT_SETPART        5     /**< weight for constraint hyperedges that are setpartitioning constraints */
+#define DEFAULT_CONSWEIGHT_SETPPC         5     /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
 //#define DEFAULT_CONSWEIGHT_HIGH_VARIATION 1     /**< weight for constraint hyperedges that have a high variation of coefficients */
 #define DEFAULT_FORCE_SETPART_MASTER      FALSE /**< whether to force setpart constraints in the master */
 #define DEFAULT_FORCE_SETPACK_MASTER      FALSE /**< whether to force setpack constraints in the master */
@@ -59,6 +59,9 @@
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_ALPHA                     0.0   /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA                      0.5   /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
+#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
+#define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
+#define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
 
 #define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
    "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
@@ -136,7 +139,14 @@ struct SCIP_ArrowheurData
 //   int consWeightHighVariation;
 //   int consWeightLowVariation;
 //   SCIP_Real highVariation;
+
+
 //   SCIP_Real lowVariation;
+
+   SCIP_Real metisubfactor;
+   SCIP_Bool metisverbose;
+   SCIP_Bool metisuseptyperb;
+
 };
 
 enum htype
@@ -183,7 +193,7 @@ SCIP_RETCODE printArrowheurScores(
          arrowheurdata->beta,
          arrowheurdata->consWeightSetppc));
 
-   SCIPinfoMessage(scip, NULL, "SCORES:\t%s\t%s\t%f\t%f\t%f\t%f\t%f\n",
+   SCIPdebugMessage("SCORES:\t%s\t%s\t%f\t%f\t%f\t%f\t%f\n",
          SCIPgetProbName(scip), name,
          scores->borderscore,
          scores->densityscore,
@@ -247,6 +257,7 @@ SCIP_RETCODE initArrowheurData(
    {
       SCIP_CALL(SCIPhashmapInsert(arrowheurdata->constolpid, SCIPgetConss(scip)[i], (void*)(size_t)i));
    }
+
    return SCIP_OKAY;
 }
 
@@ -734,10 +745,30 @@ SCIP_RETCODE callMetis(
    }
 
    /* call metis via syscall as there is no library usable ... */
-
-   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d ",  arrowheurdata->blocks,  arrowheurdata->randomseed );
+   if(arrowheurdata->metisverbose)
+   {
+      if(arrowheurdata->metisuseptyperb)
+      {
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype rb -ufactor %f",  arrowheurdata->blocks,  arrowheurdata->randomseed, arrowheurdata->metisubfactor );
+      }
+      else
+      {
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype kway -ufactor %f",  arrowheurdata->blocks,  arrowheurdata->randomseed, arrowheurdata->metisubfactor );
+      }
+   }
+   else
+   {
+      if(arrowheurdata->metisuseptyperb)
+      {
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype rb -ufactor %f >/dev/null",  arrowheurdata->blocks,  arrowheurdata->randomseed, arrowheurdata->metisubfactor );
+      }
+      else
+      {
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype kway -ufactor %f >/dev/null",  arrowheurdata->blocks,  arrowheurdata->randomseed, arrowheurdata->metisubfactor );
+      }
+   }
 //   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis.sh metis.temp %d -seed %d",  arrowheurdata->blocks,  arrowheurdata->randomseed );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\nCalling metis with '%s'.\n", metiscall);
+   SCIPdebugMessage("\nCalling metis with '%s'.\n", metiscall);
 
    status = system( metiscall );
 
@@ -1235,7 +1266,7 @@ SCIP_RETCODE evaluateDecomposition(
    /* calculate matrix area */
    matrixarea = nvars*nconss;
 
-   SCIPinfoMessage(scip, NULL, "Sizes: %d x %d (%d, %d)\n", nvars, nconss, arrowheurdata->nlinkingvars, arrowheurdata->nlinkingconss);
+   //SCIPinfoMessage(scip, NULL, "Sizes: %d x %d (%d, %d)\n", nvars, nconss, arrowheurdata->nlinkingvars, arrowheurdata->nlinkingconss);
 
    /* calculate slave sizes, nonzeros and linkingvars */
    for (i = 0; i < arrowheurdata->blocks; ++i)
@@ -1344,7 +1375,7 @@ SCIP_RETCODE evaluateDecomposition(
    score->densityscore = (1-density);
    //*score = scorelinking*scorecoverage*scoredensity;
 
-   SCIPinfoMessage(scip, NULL, "Score of the decomposition: (%.6f; %.6f; %.6f)\n", score->borderscore,score->densityscore,  score->linkingscore);
+//   SCIPinfoMessage(scip, NULL, "Score of the decomposition: (%.6f; %.6f; %.6f)\n", score->borderscore,score->densityscore,  score->linkingscore);
 //   SCIPinfoMessage(scip, NULL, "\nINDIVIDUAL\t%f\t%f\t%f\t%f\t%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_kind_ref1.txt\n", SCIPgetProbName(scip), *score, scorecoverage, scoredensity, scorelinking, arrowheurdata->blocks, arrowheurdata->varWeightContinous,
 //        arrowheurdata->varWeightInteger, arrowheurdata->consWeight, arrowheurdata->dummynodes, arrowheurdata->alpha, arrowheurdata->beta, arrowheurdata->consWeightSetppc);
    SCIPfreeMemoryArray(scip, &nzblocks);
@@ -1392,7 +1423,7 @@ SCIP_RETCODE detectAndBuildArrowHead(
    int i;
    char filename[SCIP_MAXSTRLEN];
 
-   SCIPinfoMessage(scip, NULL, "detectandbuild arrowhead:\n");
+   //SCIPinfoMessage(scip, NULL, "detectandbuild arrowhead:\n");
    assert(scip != NULL);
 
    SCIP_CALL(initArrowheurData(scip, arrowheurdata));
@@ -1566,5 +1597,8 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
 //   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/forceSetpartMaster", "Whether to force setpart constraints in the master", &arrowheurdata->forceSetpartMaster, FALSE, DEFAULT_FORCE_SETPART_MASTER, NULL, NULL));
 //   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/highVariation", "The value which is considered a high variation", &arrowheurdata->highVariation, FALSE, DEFAULT_HIGH_VARIATION, 0.0, SCIPinfinity(scip), NULL, NULL));
 //   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/lowVariation", "The value which is considered a low variation", &arrowheurdata->lowVariation, FALSE, DEFAULT_LOW_VARIATION, 0.0, SCIPinfinity(scip), NULL, NULL));
+   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/ubfactor", "Unbalance factor for metis", &arrowheurdata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ));
+   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisverbose", "Should the metis output be displayed", &arrowheurdata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ));
+   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &arrowheurdata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL));
    return SCIP_OKAY;
 }

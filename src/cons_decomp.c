@@ -26,6 +26,8 @@
 
 #include "cons_decomp.h"
 #include "dec_arrowheur.h"
+#include "dec_borderheur.h"
+
 //#include "dec_cutpacking.h"
 //#include "dec_stairexact.h"
 #include "dec_stairheur.h"
@@ -68,6 +70,8 @@ struct SCIP_ConshdlrData
    DECDECOMP* decdecomp;
    SCIP_ARROWHEURDATA* arrowheurdata;
 //   SCIP_CUTPACKINGDATA* cutpackingdata;
+   SCIP_BORDERHEURDATA* borderheurdata;
+
    SCIP_STAIRHEURDATA *stairheurdata;
 };
 
@@ -251,12 +255,14 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 //   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
+   SCIP_CALL(SCIPBorderheurSetDecomp(scip, conshdlrdata->borderheurdata, conshdlrdata->decdecomp));
    //   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
+//      SCIP_CALL(detectAndBuildBordered(scip, conshdlrdata->borderheurdata, &result));
       SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
-      //   SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
+//      SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
       //SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
       SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
    }
@@ -286,6 +292,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    freeArrowheurData(scip, &conshdlrdata->arrowheurdata);
+   freeBorderheurData(scip, &conshdlrdata->borderheurdata);
    freeStairheurData(scip, &conshdlrdata->stairheurdata);
 //   freeCutpackingData(scip, &conshdlrdata->cutpackingdata);
    decdecompFree(scip, &conshdlrdata->decdecomp);
@@ -349,10 +356,13 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->decdecomp = NULL;
 
    SCIP_CALL(createArrowheurData(scip, &conshdlrdata->arrowheurdata));
+   SCIP_CALL(createBorderheurData(scip, &conshdlrdata->borderheurdata));
    SCIP_CALL(createStairheurData(scip, &conshdlrdata->stairheurdata));
 //   SCIP_CALL(createCutpackingData(scip, &conshdlrdata->cutpackingdata));
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip, conshdlrdata->arrowheurdata));
    SCIP_CALL(SCIPincludeDetectionStairheur(scip, conshdlrdata->stairheurdata));
+   SCIP_CALL(SCIPincludeDetectionBorderheur(scip, conshdlrdata->borderheurdata));
+
 //   SCIP_CALL(SCIPincludeDetectionCutpacking(scip, conshdlrdata->cutpackingdata));
 
    /* TODO: (optional) create constraint handler specific data here */
