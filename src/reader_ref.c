@@ -96,6 +96,10 @@ static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
 
+struct SCIP_ReaderData
+{
+   DECDECOMP*           decdecomp;
+};
 
 
 
@@ -822,54 +826,31 @@ SCIP_RETCODE readREFFile(
 
 /** writes a BLK file */
 static
-SCIP_RETCODE writeBLKFile(
+SCIP_RETCODE writeREFFile(
    SCIP*                 scip,              /**< SCIP data structure */
-   REFINPUT*             refinput           /**< REF reading data */
+   SCIP_READER*          reader,
+   FILE*                 file
+
    )
 {
-   char filename[SCIP_MAXSTRLEN];
-   FILE* outfile;
-   SCIP_VAR** vars;
-   SCIP_VARDATA* vardata;
+   SCIP_READERDATA* readerdata;
+
    int nvars;
+   int nconss;
 
-   int i;
-   int v;
+   assert(scip != NULL);
+   assert(reader != NULL);
+   assert(file != NULL);
+   assert(result != NULL);
 
-   SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s.blk", SCIPgetProbName(scip));
-   outfile = fopen(filename, "w");
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-
-   SCIPinfoMessage(scip, outfile, "NBlocks\n");
-   SCIPinfoMessage(scip, outfile, "%d\n", refinput->nblocks);
-
-   for( i = 0; i < refinput->nblocks; i++ )
+   if(readerdata->decdecomp == NULL)
    {
-      SCIPinfoMessage(scip, outfile, "Block %d\n", i + 1);
-
-      for( v = 0; v < nvars; v++ )
-      {
-         vardata = SCIPvarGetData(vars[v]);
-         if( vardata->blocknr == i )
-         {
-            SCIPinfoMessage(scip, outfile, "%s\n", SCIPvarGetName(vars[v]));
-         }
-      }
+      SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
+      return SCIP_INVALIDCALL;
    }
-
-   if( refinput->nmarkedmasterconss > 0 )
-   {
-      SCIPinfoMessage(scip, outfile, "Masterconss\n");
-      for( i = 0; i < refinput->nmarkedmasterconss; i++ )
-      {
-         SCIPinfoMessage(scip, outfile, "%s\n", SCIPconsGetName(refinput->markedmasterconss[i]));
-      }
-   }
-
-   SCIPinfoMessage(scip, outfile, "END\n");
-
-   fclose(outfile);
 
    return SCIP_OKAY;
 }
@@ -880,7 +861,20 @@ SCIP_RETCODE writeBLKFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-#define readerFreeRef NULL
+SCIP_DECL_READERFREE(readerFreeRef)
+{
+   SCIP_READERDATA* readerdata;
+   assert(scip != NULL);
+   assert(reader != NULL);
+
+   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
+   return SCIP_OKAY;
+}
 
 
 /** problem reading method of reader */
@@ -897,6 +891,8 @@ SCIP_DECL_READERREAD(readerReadRef)
 static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
+   SCIP_CALL(writeREFFile(scip, reader, file));
+   *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
@@ -912,7 +908,7 @@ SCIP_RETCODE SCIPincludeReaderRef(
    SCIP_READERDATA* readerdata;
 
    /* create blk reader data */
-   readerdata = NULL;
+   SCIP_CALL(SCIPallocMemory(scip, readerdata));
 
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
@@ -1004,6 +1000,31 @@ SCIP_RETCODE SCIPreadRef(
    {
       *result = SCIP_SUCCESS;
    }
+
+   return SCIP_OKAY;
+}
+
+/** set the decomp structure */
+extern
+SCIP_RETCODE SCIPReaderREFSetDecomp(
+   SCIP*       scip,       /**< SCIP data structure */
+   SCIP_READER* reader,    /**< Reader data structure */
+   DECDECOMP*  decdecomp   /**< DECOMP data structure */
+
+   )
+{
+
+   SCIP_READERDATA* readerdata;
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(reader != NULL);
+
+   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
+   readerdata = SCIPreaderGetData(reader);
+
+   assert(readerdata != NULL);
+
+   readerdata->decdecomp = decdecomp;
 
    return SCIP_OKAY;
 }

@@ -365,11 +365,25 @@ int computeHyperedgeWeight(SCIP *scip, SCIP_ARROWHEURDATA *arrowheurdata, SCIP_C
 {
    int j;
    int ncurvars;
+   SCIP_Bool upgraded;
    SCIP_CONS* upgdcons;
    const char* hdlrname;
-   *cost = arrowheurdata->consWeight;
 
-   SCIP_CALL(SCIPupgradeConsLinear(scip, cons, &upgdcons));
+   upgraded = FALSE;
+   *cost = arrowheurdata->consWeight;
+   hdlrname = SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
+
+   if((strcmp("linear", hdlrname) == 0))
+   {
+      SCIP_CALL(SCIPupgradeConsLinear(scip, cons, &upgdcons));
+      if(upgdcons != NULL)
+         upgraded = TRUE;
+   }
+   else
+   {
+      upgdcons = cons;
+   }
+
 
    if(upgdcons != NULL)
    {
@@ -448,7 +462,7 @@ int computeHyperedgeWeight(SCIP *scip, SCIP_ARROWHEURDATA *arrowheurdata, SCIP_C
       }
 
    }
-   if(upgdcons != NULL)
+   if(upgraded == TRUE)
    {
       SCIP_CALL(SCIPreleaseCons(scip, &upgdcons));
    }
@@ -1465,7 +1479,7 @@ SCIP_RETCODE detectAndBuildArrowHead(
    else
    {
       SCIP_Real bestscore = 1E20;
-      int bestsetting;
+      int bestsetting = -1;
       for( i = arrowheurdata->minblocks; i <= arrowheurdata->maxblocks; ++i)
       {
          SCIP_Real cumscore;
