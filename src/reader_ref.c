@@ -30,7 +30,6 @@
 #include "reader_ref.h"
 #include "relax_gcg.h"
 #include "struct_vardata.h"
-#include "struct_decomp.h"
 #include "scip/cons_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_logicor.h"
@@ -836,10 +835,14 @@ SCIP_RETCODE writeREFFile(
    )
 {
    SCIP_READERDATA* readerdata;
+   SCIP_HASHMAP *cons2origindex;
 
-   int nvars;
+   SCIP_CONS** conss;
    int nconss;
 
+   int i;
+   int j;
+   int nblocks;
    assert(scip != NULL);
    assert(reader != NULL);
    assert(file != NULL);
@@ -852,7 +855,54 @@ SCIP_RETCODE writeREFFile(
       SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
       return SCIP_INVALIDCALL;
    }
+   nblocks = readerdata->decdecomp->nblocks;
+   conss = SCIPgetOrigConss(scip);
+   nconss = SCIPgetNOrigConss(scip);
 
+   SCIP_CALL(SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), nconss));
+   for( i = 0; i < nconss; ++i)
+   {
+      size_t ind;
+      size_t unconss;
+      SCIP_CONS* cons;
+      SCIP_CALL(SCIPgetTransformedCons(scip, conss[i], &cons));
+      if(cons == NULL)
+      {
+         SCIPinfoMessage(scip, NULL, "cons is not transformed: %s", SCIPconsGetName(conss[i]));
+         cons = conss[i];
+      }
+
+      ind = i+1;
+      unconss = nconss;
+      assert(ind > 0);
+      assert(ind <= unconss);
+      SCIPhashmapInsert(cons2origindex, conss, (void*)(ind)); /* shift by 1 to enable error checking */
+   }
+
+   SCIPinfoMessage(scip, file, "%d ", nblocks);
+   assert(readerdata->decdecomp->nsubscipconss != NULL);
+   assert(readerdata->decdecomp->subscipconss != NULL);
+   for(i = 0; i < nblocks; ++i)
+   {
+      SCIPinfoMessage(scip, file, "%d ", readerdata->decdecomp->nsubscipconss[i]);
+   }
+   SCIPinfoMessage(scip, file, "\n", nblocks);
+
+   for(i = 0; i < nblocks; ++i)
+   {
+      for(j = 0; j < readerdata->decdecomp->nsubscipconss[i]; ++j)
+      {
+         size_t ind;
+         size_t unconss;
+         ind = (size_t)SCIPhashmapGetImage(cons2origindex, readerdata->decdecomp->subscipconss[i][j]);
+         unconss = nconss;
+         assert(ind > 0); /* shift by 1 */
+         assert(ind <= unconss); /* shift by 1 */
+         SCIPinfoMessage(scip, file, "%d ", readerdata->decdecomp->nsubscipconss[i]);
+      }
+      SCIPinfoMessage(scip, file, "\n", nblocks);
+   }
+   SCIPhashmapFree(&cons2origindex);
    return SCIP_OKAY;
 }
 
@@ -892,6 +942,7 @@ SCIP_DECL_READERREAD(readerReadRef)
 static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
+
    SCIP_CALL(writeREFFile(scip, reader, file));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1011,7 +1062,6 @@ SCIP_RETCODE SCIPReaderREFSetDecomp(
    SCIP*       scip,       /**< SCIP data structure */
    SCIP_READER* reader,    /**< Reader data structure */
    DECDECOMP*  decdecomp   /**< DECOMP data structure */
-
    )
 {
 

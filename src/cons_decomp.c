@@ -33,6 +33,7 @@
 #include "dec_stairheur.h"
 //#include "reader_dec.h"
 #include "reader_gp.h"
+#include "reader_ref.h"
 #include "relax_gcg.h"
 
 /* constraint handler properties */
@@ -51,6 +52,7 @@
 #define CONSHDLR_DELAYPRESOL       TRUE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
+#define DEFAULT_DETECTION             1 /**< Which detection scheme should be used as default 0 = arrowhead, 1 = bordered, 2 = staircase */
 
 
 /*
@@ -73,6 +75,7 @@ struct SCIP_ConshdlrData
    SCIP_BORDERHEURDATA* borderheurdata;
 
    SCIP_STAIRHEURDATA *stairheurdata;
+   int usedetection;
 };
 
 
@@ -93,7 +96,7 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
    int j;
    int nvars;
    SCIP_VAR** origvars;
-   SCIP_VAR** transvar2origvar;
+   SCIP_HASHMAP* transvar2origvar;
 
    assert(decdecomp != NULL);
    assert(decdecomp->linkingconss != NULL);
@@ -103,7 +106,7 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
 
-   SCIP_CALL(SCIPallocBufferArray(scip, &transvar2origvar, nvars));
+   SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
    SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
 
@@ -118,12 +121,9 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
    for(i = 0; i < nvars; ++i)
    {
       SCIP_VAR* transvar;
-      int index;
-      transvar = SCIPvarGetTransVar(origvars[i]);
+      SCIP_CALL(SCIPgetTransformedVar(scip, origvars[i], &transvar));
       assert(transvar != NULL);
-      index = SCIPvarGetProbindex(transvar);
-      if(index >= 0)
-         transvar2origvar[index] = origvars[i];
+      SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
    }
 
    for( i = 0; i < decdecomp->nblocks; ++i)
@@ -131,16 +131,12 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
       assert(decdecomp->subscipvars[i] != NULL);
       for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
       {
-         int index;
          assert(decdecomp->subscipvars[i][j] != NULL);
-         index = SCIPvarGetProbindex(decdecomp->subscipvars[i][j]);
-         assert(index >= 0);
-         assert(index < nvars);
-         //SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->subscipvars[i][j], i+1));
-         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, transvar2origvar[index], i));
+
+         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
       }
    }
-   SCIPfreeBufferArray(scip, &transvar2origvar);
+   SCIPhashmapFree(&transvar2origvar);
    return SCIP_OKAY;
 }
 
@@ -245,6 +241,7 @@ void decdecompFree(
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 {
+   SCIP_READER* reader;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
    assert(conshdlr != NULL);
@@ -252,6 +249,11 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
+   reader = SCIPfindReader(scip, "refreader");
+   if(reader != NULL)
+   {
+      SCIP_CALL(SCIPReaderREFSetDecomp(scip, reader, conshdlrdata->decdecomp));
+   }
 //   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
@@ -260,10 +262,25 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
-//      SCIP_CALL(detectAndBuildBordered(scip, conshdlrdata->borderheurdata, &result));
-      SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
-//      SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
-      //SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
+      switch (conshdlrdata->usedetection) {
+         case 0:
+            SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+            break;
+         case 1:
+            SCIP_CALL(detectAndBuildBordered(scip, conshdlrdata->borderheurdata, &result));
+            break;
+         case 2:
+            SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
+            break;
+         case 3:
+            // SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
+            //break; //intented fall through
+         default:
+            SCIPerrorMessage("This is unreachable code!\n");
+            return SCIP_ERROR;
+            break;
+      }
+
       SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
    }
 
@@ -385,7 +402,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    /* add decomp constraint handler parameters */
    /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */
-
+   SCIP_CALL(SCIPaddIntParam(scip, "cons/decomp/usedetection", "Which detection scheme should be used 0 = arrowhead (default), 1 = bordered, 2 = staircase.\n", &conshdlrdata->usedetection, FALSE, DEFAULT_DETECTION, 0, 2, NULL, NULL ));
    return SCIP_OKAY;
 }
 

@@ -21,6 +21,7 @@
 
 
 #include "scip/scip.h"
+#include "struct_decomp.h"
 
 
 /** includes the blk file reader into SCIP */
@@ -60,6 +61,15 @@ SCIP_RETCODE SCIPwriteRef(
    SCIP_CONS**        conss,              /**< array with constraints of the problem */
    int                nconss,             /**< number of constraints in the problem */
    SCIP_RESULT*       result              /**< pointer to store the result of the file writing call */
+   );
+
+/** set the decomp structure */
+extern
+SCIP_RETCODE SCIPReaderREFSetDecomp(
+   SCIP*       scip,       /**< SCIP data structure */
+   SCIP_READER* reader,    /**< Reader data structure */
+   DECDECOMP*  decdecomp   /**< DECOMP data structure */
+
    );
 
 #endif
