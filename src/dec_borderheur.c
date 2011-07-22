@@ -32,7 +32,7 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
-
+#include <unistd.h>
 /* Default parameter settings*/
 #define DEFAULT_BLOCKS                    2     /**< number of blocks */
 #define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
@@ -356,7 +356,7 @@ SCIP_RETCODE callMetis(
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
    char line[SCIP_MAXSTRLEN];
-   const char *tempfile = "metis.temp";
+   char tempfile[SCIP_MAXSTRLEN];
 
    int status;
    int i;
@@ -368,23 +368,30 @@ SCIP_RETCODE callMetis(
 
    SCIP_FILE *zfile;
    FILE* file;
+   int temp_filedes = -1;
 
    assert(scip != NULL);
    assert(borderheurdata != NULL);
-   assert(!SCIPfileExists(tempfile));
 
    nvertices = borderheurdata->nvertices;
    nhyperedges = borderheurdata->nhyperedges;
    ndummyvertices = borderheurdata->dummynodes*nvertices;
 //   SCIPinfoMessage(scip, NULL, "DUMMY: %.2f", borderheurdata->dummynodes);
+   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   if ( (temp_filedes=mkstemp(tempfile)) <0 )
+   {
+      SCIPerrorMessage("Error creating temporary file: %s", strerror( errno ));
+      return SCIP_FILECREATEERROR;
+   }
 
-   file = fopen(tempfile, "w");
+   SCIPdebugMessage("Temporary filename: %s", tempfile);
+
+   file = fdopen(temp_filedes, "w");
    if(file == NULL)
    {
       SCIPerrorMessage("Could not open temporary metis file!");
       return SCIP_FILECREATEERROR;
    }
-
 
    SCIPinfoMessage(scip, file, "%d %d 1\n", nhyperedges, nvertices+ndummyvertices);
    for( i = 0; i < SCIPgetNConss(scip); i++ )
@@ -421,22 +428,22 @@ SCIP_RETCODE callMetis(
    {
       if(borderheurdata->metisuseptyperb)
       {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype rb -ufactor %f",  borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype rb -ufactor %f", tempfile, borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
       }
       else
       {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype kway -ufactor %f",  borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype kway -ufactor %f", tempfile, borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
       }
    }
    else
    {
       if(borderheurdata->metisuseptyperb)
       {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype rb -ufactor %f >/dev/null",  borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype rb -ufactor %f >/dev/null", tempfile, borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
       }
       else
       {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis metis.temp %d -seed %d -ptype kway -ufactor %f >/dev/null",  borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
+         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype kway -ufactor %f >/dev/null", tempfile, borderheurdata->blocks,  borderheurdata->randomseed, borderheurdata->metisubfactor );
       }
    }
 //   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis.sh metis.temp %d -seed %d",  borderheurdata->blocks,  borderheurdata->randomseed );
@@ -459,7 +466,7 @@ SCIP_RETCODE callMetis(
    {
       if( borderheurdata->tidy )
       {
-         status = remove( tempfile );
+         status = unlink( tempfile );
          if( status == -1 )
          {
             SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
@@ -480,7 +487,7 @@ SCIP_RETCODE callMetis(
    assert(borderheurdata->partition != NULL);
    partition = borderheurdata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "metis.temp.part.%d",borderheurdata->blocks);
+   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d",tempfile, borderheurdata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;
@@ -503,16 +510,20 @@ SCIP_RETCODE callMetis(
    /* if desired delete the temoprary metis file */
    if( borderheurdata->tidy )
    {
-      status = remove( tempfile );
+      status = unlink( tempfile );
       if( status == -1 )
       {
-         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         SCIPerrorMessage("Could not remove metis input file: %s", strerror( errno ));
       }
-      status = remove( metisout );
+      status = unlink( metisout );
       if( status == -1 )
       {
-         SCIPerrorMessage("Could not remove metis output file: ", strerror( errno ));
+         SCIPerrorMessage("Could not remove metis output file: %s", strerror( errno ));
       }
+   }
+   else
+   {
+      SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", tempfile);
    }
 
    return SCIP_OKAY;
@@ -1003,7 +1014,7 @@ SCIP_RETCODE detectAndBuildBordered(
 
    SCIP_BORDERHEURSCORES score;
    int i;
-   char filename[SCIP_MAXSTRLEN];
+   //char filename[SCIP_MAXSTRLEN];
 
    //SCIPinfoMessage(scip, NULL, "detectandbuild arrowhead:\n");
    assert(scip != NULL);
@@ -1023,20 +1034,20 @@ SCIP_RETCODE detectAndBuildBordered(
 
      SCIP_CALL(buildTransformedProblem(scip, borderheurdata, &score));
      SCIP_CALL(evaluateDecomposition(scip, borderheurdata, &score));
-     SCIP_CALL(writeDWsolverOutput(scip, borderheurdata));
+//     SCIP_CALL(writeDWsolverOutput(scip, borderheurdata));
 
      borderheurdata->found = TRUE;
      SCIP_CALL(printBorderheurScores(scip, borderheurdata, &score));
      SCIP_CALL(freeBorderheurDataData(scip, borderheurdata));
 
-     SCIPsnprintf(filename, SCIP_MAXSTRLEN,
-           GP_NAME(SCIPgetProbName(scip),
-              borderheurdata->blocks,
-              borderheurdata->consWeight,
-              borderheurdata->dummynodes)
-              );
-
-     SCIP_CALL(SCIPwriteOrigProblem(scip, filename, "gp", FALSE));
+//     SCIPsnprintf(filename, SCIP_MAXSTRLEN,
+//           GP_NAME(SCIPgetProbName(scip),
+//              borderheurdata->blocks,
+//              borderheurdata->consWeight,
+//              borderheurdata->dummynodes)
+//              );
+//
+//     SCIP_CALL(SCIPwriteOrigProblem(scip, filename, "gp", FALSE));
 
    }
    else
@@ -1093,20 +1104,20 @@ SCIP_RETCODE detectAndBuildBordered(
 
       SCIP_CALL(buildTransformedProblem(scip, borderheurdata, &score));
       SCIP_CALL(evaluateDecomposition(scip, borderheurdata, &score));
-      SCIP_CALL(writeDWsolverOutput(scip, borderheurdata));
+//      SCIP_CALL(writeDWsolverOutput(scip, borderheurdata));
 
       borderheurdata->found = TRUE;
       SCIP_CALL(printBorderheurScores(scip, borderheurdata, &score));
       SCIP_CALL(freeBorderheurDataData(scip, borderheurdata));
 
-      SCIPsnprintf(filename, SCIP_MAXSTRLEN,
-           GP_NAME(SCIPgetProbName(scip),
-              borderheurdata->blocks,
-              borderheurdata->consWeight,
-              borderheurdata->dummynodes)
-              );
-
-      SCIP_CALL(SCIPwriteOrigProblem(scip, filename, "gp", FALSE));
+//      SCIPsnprintf(filename, SCIP_MAXSTRLEN,
+//           GP_NAME(SCIPgetProbName(scip),
+//              borderheurdata->blocks,
+//              borderheurdata->consWeight,
+//              borderheurdata->dummynodes)
+//              );
+//
+//      SCIP_CALL(SCIPwriteOrigProblem(scip, filename, "gp", FALSE));
    }
    *result = SCIP_OKAY;
    return SCIP_OKAY;
