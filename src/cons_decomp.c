@@ -21,12 +21,10 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "cons_decomp.h"
-#include "dec_arrowheur.h"
-#include "dec_borderheur.h"
 
 //#include "dec_cutpacking.h"
 //#include "dec_stairexact.h"
@@ -35,6 +33,9 @@
 #include "reader_gp.h"
 #include "reader_ref.h"
 #include "relax_gcg.h"
+#include "struct_detector.h"
+#include "struct_decomp.h"
+#include "string.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -70,11 +71,11 @@ struct SCIP_ConsData
 struct SCIP_ConshdlrData
 {
    DECDECOMP* decdecomp;
-   SCIP_ARROWHEURDATA* arrowheurdata;
-//   SCIP_CUTPACKINGDATA* cutpackingdata;
-   SCIP_BORDERHEURDATA* borderheurdata;
 
    SCIP_STAIRHEURDATA *stairheurdata;
+   DEC_DETECTOR** detectors;
+   int *priorities;
+   int ndetectors;
    int usedetection;
 };
 
@@ -247,6 +248,7 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    SCIP_READER* reader;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
+   int i;
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -259,42 +261,44 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    }
 //   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
    SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
-   SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
-   SCIP_CALL(SCIPBorderheurSetDecomp(scip, conshdlrdata->borderheurdata, conshdlrdata->decdecomp));
+//   SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
+//   SCIP_CALL(SCIPBorderheurSetDecomp(scip, conshdlrdata->borderheurdata, conshdlrdata->decdecomp));
    //   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
-      switch (conshdlrdata->usedetection) {
-         case 0:
-            SCIP_CALL(detectAndBuildArrowHead(scip, conshdlrdata->arrowheurdata, &result));
+      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
+      for(i = 0; i < conshdlrdata->ndetectors; ++i)
+      {
+         DEC_DETECTOR *detector;
+         detector = conshdlrdata->detectors[i];
+         assert(detector != NULL);
+
+         if(detector->initDetection != NULL)
+         {
+            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
+            SCIP_CALL((*detector->initDetection)(scip));
+         }
+
+         (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
+         SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
+         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &result));
+         if(result == SCIP_SUCCESS)
+         {
+            SCIPdebugPrintf("Success!\n");
             break;
-         case 1:
-            SCIP_CALL(detectAndBuildBordered(scip, conshdlrdata->borderheurdata, &result));
-            break;
-         case 2:
-            SCIP_CALL(detectStructureStairheur(scip, conshdlrdata->stairheurdata, &result));
-            break;
-         case 3:
-            // SCIP_CALL(detectStructureCutpacking(scip, conshdlrdata->cutpackingdata, &result));
-            //break; //intented fall through
-         default:
-            SCIPerrorMessage("This is unreachable code!\n");
-            return SCIP_ERROR;
-            break;
+         }
+         else
+         {
+            SCIPdebugPrintf("Failure!\n");
+         }
       }
 
       SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
    }
 
-
-
-
-
 //   SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s_%d_dec.lp", SCIPgetProbName(scip), conshdlrdata->decdecomp->nblocks);
 //   SCIP_CALL(SCIPwriteOrigProblem(scip, "prob_dec.lp", "lp", FALSE));
-
-
 
    return SCIP_OKAY;
 }
@@ -307,15 +311,24 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
 
    SCIP_CONSHDLRDATA* conshdlrdata;
-
+   int i;
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   freeArrowheurData(scip, &conshdlrdata->arrowheurdata);
-   freeBorderheurData(scip, &conshdlrdata->borderheurdata);
-   freeStairheurData(scip, &conshdlrdata->stairheurdata);
-//   freeCutpackingData(scip, &conshdlrdata->cutpackingdata);
+   for(i = 0; i < conshdlrdata->ndetectors; ++i)
+   {
+      DEC_DETECTOR *detector;
+      detector = conshdlrdata->detectors[i];
+      assert(detector != NULL);
+      if(detector->exitDetection != NULL)
+      {
+         SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
+         SCIP_CALL((*detector->exitDetection)(scip));
+      }
+   }
    decdecompFree(scip, &conshdlrdata->decdecomp);
+   SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
+   SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
    SCIPfreeBlockMemory(scip, &conshdlrdata);
    return SCIP_OKAY;
 }
@@ -374,16 +387,9 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    assert(conshdlrdata != NULL);
 
    conshdlrdata->decdecomp = NULL;
-
-   SCIP_CALL(createArrowheurData(scip, &conshdlrdata->arrowheurdata));
-   SCIP_CALL(createBorderheurData(scip, &conshdlrdata->borderheurdata));
-   SCIP_CALL(createStairheurData(scip, &conshdlrdata->stairheurdata));
-//   SCIP_CALL(createCutpackingData(scip, &conshdlrdata->cutpackingdata));
-   SCIP_CALL(SCIPincludeDetectionArrowheur(scip, conshdlrdata->arrowheurdata));
-   SCIP_CALL(SCIPincludeDetectionStairheur(scip, conshdlrdata->stairheurdata));
-   SCIP_CALL(SCIPincludeDetectionBorderheur(scip, conshdlrdata->borderheurdata));
-
-//   SCIP_CALL(SCIPincludeDetectionCutpacking(scip, conshdlrdata->cutpackingdata));
+   conshdlrdata->ndetectors = 0;
+   conshdlrdata->priorities = NULL;
+   conshdlrdata->detectors = NULL;
 
    /* TODO: (optional) create constraint handler specific data here */
 
@@ -459,4 +465,112 @@ DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    return conshdlrdata->decdecomp;
+}
+
+extern
+DEC_DETECTORDATA* DECdetectorGetData(
+   DEC_DETECTOR*  detector
+   )
+{
+   assert(detector != NULL);
+   return detector->decdata;
+
+}
+
+extern
+const char* DECdetectorGetName(
+   DEC_DETECTOR*  detector
+   )
+{
+   assert(detector != NULL);
+   return detector->name;
+}
+
+
+extern
+DEC_DETECTOR* DECfindDetector(
+   SCIP *      scip,
+   const char* name
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL)
+      return NULL;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   for(i = 0; i < conshdlrdata->ndetectors; ++i)
+   {
+      DEC_DETECTOR *detector;
+      detector = conshdlrdata->detectors[i];
+      assert(detector != NULL);
+      if(strcmp(detector->name, name) == 0)
+      {
+         return detector;
+      }
+   }
+
+   return NULL;
+}
+
+extern
+SCIP_RETCODE DECincludeDetector(
+   SCIP* scip,
+   const char *name,
+   int priority,
+   DEC_DETECTORDATA *detectordata,
+   DEC_DECL_DETECTSTRUCTURE((*detectStructure)),
+   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),
+   DEC_DECL_INITDETECTOR((*initDetector)),
+   DEC_DECL_EXITDETECTOR((*exitDetector))
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   DEC_DETECTOR *detector;
+   assert(scip != NULL);
+   assert(name != NULL);
+   assert(detectStructure != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL)
+      return SCIP_ERROR;
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIP_CALL(SCIPallocBlockMemory(scip, &detector));
+   assert(detector != NULL);
+
+   SCIPdebugMessage("Adding detector %i: %s\n", conshdlrdata->ndetectors+1, name);
+
+
+#ifndef NDEBUG
+   assert(DECfindDetector(scip, name) == NULL);
+#endif
+
+   detector->decdata = detectordata;
+   detector->name = name;
+   detector->priority = priority;
+   detector->detectStructure = detectStructure;
+   detector->initDetection = initDetector;
+   detector->setStructDecomp = setStructDecomp;
+   detector->exitDetection = exitDetector;
+
+   SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1));
+   SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1));
+
+   conshdlrdata->detectors[conshdlrdata->ndetectors] = detector;
+   conshdlrdata->priorities[conshdlrdata->ndetectors] = priority;
+   conshdlrdata->ndetectors = conshdlrdata->ndetectors+1;
+
+   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+
+   return SCIP_OKAY;
+
 }

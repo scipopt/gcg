@@ -36,5 +36,4 @@ struct DecDecomp
    DECDECOMPTYPE  type;
 };
 
-typedef struct DecDecomp DECDECOMP;
 #endif /* STRUCT_DECOMP_H_ */

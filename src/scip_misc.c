@@ -380,8 +380,7 @@ SCIP_Real SCIPgetDualsolXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else
    {
-      SCIPdebugMessage("WARNING: NOT IMPLEMENTED: ");
-      SCIPdebugMessage(conshdlrname);
+      SCIPdebugMessage("WARNING: NOT IMPLEMENTED: %s", conshdlrname);
    }
    return 0;
 }
@@ -484,7 +483,7 @@ SCIP_Real * SCIPgetValsXXX( SCIP * scip, SCIP_CONS * cons )
    }
    else
    {
-      SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED\n");
+      SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
    return NULL;
 }

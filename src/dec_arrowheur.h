@@ -26,44 +26,17 @@
 
 
 #include "scip/scip.h"
-#include "struct_decomp.h"
+#include "type_decomp.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct SCIP_ArrowheurData SCIP_ARROWHEURDATA;
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPArrowHeurSetDecomp(
-   SCIP* scip,
-   SCIP_ARROWHEURDATA* arrowheurdata,
-   DECDECOMP* decdecomp
-   );
-
-extern
-SCIP_RETCODE createArrowheurData(
-      SCIP*         scip,
-      SCIP_ARROWHEURDATA** arrowheurdata
-      );
-
-extern
-void freeArrowheurData(
-      SCIP* scip,
-      SCIP_ARROWHEURDATA** arrowheurdata
-   );
 
 extern
 /** creates the arrowheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP*                 scip,                /**< SCIP data structure */
-   SCIP_ARROWHEURDATA*   arrowheurdata
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
-extern
-SCIP_RETCODE detectAndBuildArrowHead(
-      SCIP*                scip,          /**< SCIP data structure */
-      SCIP_ARROWHEURDATA*  arrowheurdata, /**< presolver data data structure */
-      SCIP_RESULT*         result
-      );
 #ifdef __cplusplus
 }
 #endif

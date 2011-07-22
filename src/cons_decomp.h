@@ -26,7 +26,12 @@
 
 
 #include "scip/scip.h"
-#include "struct_decomp.h"
+#include "type_detector.h"
+#include "type_decomp.h"
+typedef struct DEC_Detector DEC_DETECTOR;
+typedef struct DEC_DetectorData DEC_DETECTORDATA;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +53,37 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 /** returns the decomposition structure **/
 extern
 DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
-      SCIP *scip                            /**< SCIP data structure */
-);
+   SCIP *scip                            /**< SCIP data structure */
+   );
+
+extern
+DEC_DETECTORDATA* DECdetectorGetData(
+   DEC_DETECTOR* detector
+   );
+
+extern
+const char* DECdetectorGetName(
+   DEC_DETECTOR* detector
+   );
+
+
+extern
+DEC_DETECTOR* DECfindDetector(
+   SCIP *scip,
+   const char *name
+   );
+
+extern
+SCIP_RETCODE DECincludeDetector(
+   SCIP* scip,
+   const char *name,
+   int priority,
+   DEC_DETECTORDATA *detectordata,
+   DEC_DECL_DETECTSTRUCTURE((*detectStructure)),
+   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),
+   DEC_DECL_INITDETECTOR((*initDetector)),
+   DEC_DECL_EXITDETECTOR((*exitDetector))
+   );
 
 #ifdef __cplusplus
 }

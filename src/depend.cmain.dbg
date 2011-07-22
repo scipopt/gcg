@@ -72,11 +72,8 @@ $(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h lib/scip/src/scip/scip
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
- src/relax_gcg.h src/type_branchgcg.h src/struct_vardata.h \
- lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
- lib/scip/src/scip/cons_logicor.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h
+ src/type_decomp.h src/relax_gcg.h src/type_branchgcg.h \
+ src/struct_decomp.h lib/scip/src/scip/cons_linear.h
 $(OBJDIR)/interface.o: src/interface.c src/interface.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
@@ -200,11 +197,11 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  src/type_solver.h src/branch_orig.h src/branch_ryanfoster.h \
  src/cons_origbranch.h src/cons_masterbranch.h src/struct_branchgcg.h \
  src/disp_gcg.h src/dialog_gcg.h src/branch_relpsprob.h src/reader_ref.h \
- src/cons_decomp.h src/struct_decomp.h src/reader_gp.h \
- src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h src/heur_gcgrens.h \
- src/heur_gcgrounding.h src/heur_gcgshifting.h \
- src/heur_gcgsimplerounding.h src/heur_gcgzirounding.h \
- lib/scip/src/scip/debug.h
+ src/type_decomp.h src/cons_decomp.h src/type_detector.h src/reader_gp.h \
+ src/dec_borderheur.h src/dec_arrowheur.h src/heur_gcgcoefdiving.h \
+ src/heur_gcgfracdiving.h src/heur_gcgrens.h src/heur_gcgrounding.h \
+ src/heur_gcgshifting.h src/heur_gcgsimplerounding.h \
+ src/heur_gcgzirounding.h lib/scip/src/scip/debug.h
 $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
@@ -308,14 +305,14 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scip.h \
  src/type_solver.h src/branch_orig.h src/branch_ryanfoster.h \
  src/cons_origbranch.h src/cons_masterbranch.h src/disp_gcg.h \
  src/dialog_gcg.h src/branch_relpsprob.h src/reader_ref.h \
- src/cons_decomp.h src/struct_decomp.h src/reader_gp.h \
- src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h src/heur_gcgrens.h \
- src/heur_gcgrounding.h src/heur_gcgshifting.h \
- src/heur_gcgsimplerounding.h src/heur_gcgzirounding.h \
- src/masterplugins.h src/nodesel_master.h src/cons_integralOrig.h \
- src/sepa_master.h src/branch_master.h src/heur_feasrestmaster.h \
- src/heur_greedycolsel.h src/heur_relaxcolsel.h src/heur_restmaster.h \
- src/pricingplugins.h
+ src/type_decomp.h src/cons_decomp.h src/type_detector.h src/reader_gp.h \
+ src/dec_borderheur.h src/dec_arrowheur.h src/heur_gcgcoefdiving.h \
+ src/heur_gcgfracdiving.h src/heur_gcgrens.h src/heur_gcgrounding.h \
+ src/heur_gcgshifting.h src/heur_gcgsimplerounding.h \
+ src/heur_gcgzirounding.h src/masterplugins.h src/nodesel_master.h \
+ src/cons_integralOrig.h src/sepa_master.h src/branch_master.h \
+ src/heur_feasrestmaster.h src/heur_greedycolsel.h src/heur_relaxcolsel.h \
+ src/heur_restmaster.h src/pricingplugins.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
@@ -810,8 +807,9 @@ $(OBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  src/reader_blk.h src/pricer_gcg.h src/type_solver.h src/branch_orig.h \
  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
  src/struct_branchgcg.h src/disp_gcg.h src/dialog_gcg.h \
- src/branch_relpsprob.h src/reader_ref.h src/cons_decomp.h \
- src/struct_decomp.h src/reader_gp.h src/heur_gcgcoefdiving.h \
+ src/branch_relpsprob.h src/reader_ref.h src/type_decomp.h \
+ src/cons_decomp.h src/type_detector.h src/reader_gp.h \
+ src/dec_borderheur.h src/dec_arrowheur.h src/heur_gcgcoefdiving.h \
  src/heur_gcgfracdiving.h src/heur_gcgrounding.h src/heur_gcgshifting.h \
  src/heur_gcgsimplerounding.h src/heur_gcgzirounding.h \
  lib/scip/src/scip/scipdefplugins.h lib/scip/src/scip/cons_countsols.h \
@@ -1682,10 +1680,10 @@ $(OBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
- lib/scip/src/scip/intervalarith.h src/struct_decomp.h \
- src/dec_arrowheur.h src/dec_borderheur.h src/dec_stairheur.h \
- src/reader_gp.h src/relax_gcg.h src/type_branchgcg.h
-$(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
+ lib/scip/src/scip/intervalarith.h src/type_detector.h src/type_decomp.h \
+ src/dec_stairheur.h src/reader_gp.h src/reader_ref.h src/relax_gcg.h \
+ src/type_branchgcg.h src/struct_detector.h src/struct_decomp.h
+$(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
@@ -1720,8 +1718,7 @@ $(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
- lib/scip/src/scip/intervalarith.h src/struct_decomp.h src/scip_misc.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/intervalarith.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
@@ -1783,7 +1780,9 @@ $(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/sepa_mcf.h lib/scip/src/scip/sepa_oddcycle.h \
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_redcost.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
- lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h
+ lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
+ src/dec_arrowheur.h src/type_decomp.h src/cons_decomp.h \
+ src/type_detector.h src/struct_decomp.h src/scip_misc.h
 $(OBJDIR)/dec_stairheur.o: src/dec_stairheur.c src/dec_stairheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -1820,7 +1819,7 @@ $(OBJDIR)/dec_stairheur.o: src/dec_stairheur.c src/dec_stairheur.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/intervalarith.h src/scip_misc.h
-$(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
+$(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
@@ -1855,8 +1854,7 @@ $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
- lib/scip/src/scip/intervalarith.h src/struct_decomp.h src/scip_misc.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/intervalarith.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
@@ -1918,7 +1916,9 @@ $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/scip/sepa_mcf.h lib/scip/src/scip/sepa_oddcycle.h \
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_redcost.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
- lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h
+ lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
+ src/dec_borderheur.h src/cons_decomp.h src/type_detector.h \
+ src/type_decomp.h src/struct_decomp.h src/scip_misc.h
 $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
@@ -1954,7 +1954,7 @@ $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
- src/struct_decomp.h src/scip_misc.h
+ src/type_decomp.h src/scip_misc.h src/struct_decomp.h
 $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
@@ -2154,8 +2154,9 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  src/type_branchgcg.h src/type_solver.h src/branch_orig.h \
  src/branch_ryanfoster.h src/cons_origbranch.h src/cons_masterbranch.h \
  src/struct_branchgcg.h src/disp_gcg.h src/dialog_gcg.h \
- src/branch_relpsprob.h src/reader_ref.h src/cons_decomp.h \
- src/struct_decomp.h src/reader_gp.h src/heur_gcgcoefdiving.h \
+ src/branch_relpsprob.h src/reader_ref.h src/type_decomp.h \
+ src/cons_decomp.h src/type_detector.h src/reader_gp.h \
+ src/dec_borderheur.h src/dec_arrowheur.h src/heur_gcgcoefdiving.h \
  src/heur_gcgfracdiving.h src/heur_gcgrens.h src/heur_gcgrounding.h \
  src/heur_gcgshifting.h src/heur_gcgsimplerounding.h \
  src/heur_gcgzirounding.h

@@ -26,44 +26,17 @@
 
 
 #include "scip/scip.h"
-#include "struct_decomp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct SCIP_BorderheurData SCIP_BORDERHEURDATA;
-/** creates the borderheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPBorderheurSetDecomp(
-   SCIP* scip,
-   SCIP_BORDERHEURDATA* borderheurdata,
-   DECDECOMP* decdecomp
-   );
-
-extern
-SCIP_RETCODE createBorderheurData(
-      SCIP*         scip,
-      SCIP_BORDERHEURDATA** borderheurdata
-      );
-
-extern
-void freeBorderheurData(
-      SCIP* scip,
-      SCIP_BORDERHEURDATA** borderheurdata
-   );
 
 extern
 /** creates the borderheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionBorderheur(
-      SCIP*                 scip,                /**< SCIP data structure */
-      SCIP_BORDERHEURDATA*  borderheurdata
+      SCIP*                 scip                /**< SCIP data structure */
    );
 
-extern
-SCIP_RETCODE detectAndBuildBordered(
-      SCIP*                 scip,          /**< SCIP data structure */
-      SCIP_BORDERHEURDATA*  borderheurdata, /**< presolver data data structure */
-      SCIP_RESULT*          result
-      );
 #ifdef __cplusplus
 }
 #endif

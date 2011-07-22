@@ -21,8 +21,7 @@
 
 
 #include "scip/scip.h"
-#include "struct_decomp.h"
-
+#include "type_decomp.h"
 
 /** includes the blk file reader into SCIP */
 extern

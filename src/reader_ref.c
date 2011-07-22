@@ -29,14 +29,8 @@
 
 #include "reader_ref.h"
 #include "relax_gcg.h"
-#include "struct_vardata.h"
-#include "scip/cons_knapsack.h"
+#include "struct_decomp.h"
 #include "scip/cons_linear.h"
-#include "scip/cons_logicor.h"
-#include "scip/cons_setppc.h"
-#include "scip/cons_varbound.h"
-#include "scip/cons_sos1.h"
-#include "scip/cons_sos2.h"
 #include "scip/scip.h"
 
 #define READER_NAME             "refreader"
@@ -903,6 +897,7 @@ SCIP_RETCODE writeREFFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
+static
 SCIP_DECL_READERFREE(readerFreeRef)
 {
    SCIP_READERDATA* readerdata;

@@ -26,7 +26,7 @@
 
 
 #include "scip/scip.h"
-#include "struct_decomp.h"
+#include "type_decomp.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

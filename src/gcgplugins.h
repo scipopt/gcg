@@ -124,6 +124,8 @@
 /* Martin's detection stuff */
 #include "cons_decomp.h"
 #include "reader_gp.h"
+#include "dec_borderheur.h"
+#include "dec_arrowheur.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
