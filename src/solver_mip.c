@@ -343,7 +343,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          solverdata->solvals[0][solverdata->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
          solverdata->nsolvars[0]++;
 
-         printf("%s: %g\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]));
+         SCIPdebugMessage("%s: %g\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]));
       }
       solverdata->solisray[0] = TRUE;
       *solvars = solverdata->solvars;
@@ -353,7 +353,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       *nsols = 1;
       *result = SCIP_STATUS_UNBOUNDED;
 
-      printf("pricingproblem has an unbounded ray!\n");
+      SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
    }
    else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
@@ -385,7 +385,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          //printf("Objective value of solution: %g\n", SCIPgetSolOrigObj(pricingprob, probsols[s]));
          if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) )
          {
-            printf("unbounded solution\n");
+           SCIPdebugMessage("unbounded solution\n");
          }
          //#ifndef NDEBUG
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );

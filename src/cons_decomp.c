@@ -132,8 +132,11 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
       for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
       {
          assert(decdecomp->subscipvars[i][j] != NULL);
-
-         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
+         if(SCIPvarIsActive(decdecomp->subscipvars[i][j]) && !SCIPvarIsDeleted(decdecomp->subscipvars[i][j]))
+         {
+            if(SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]) != NULL)
+               SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
+         }
       }
    }
    SCIPhashmapFree(&transvar2origvar);

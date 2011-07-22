@@ -511,8 +511,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of orig branching\n");
-   /* TODO: remove this printf */
-   printf("Execps method of orig branching called, this should not happen!\n");
 
    *result = SCIP_DIDNOTRUN;
 

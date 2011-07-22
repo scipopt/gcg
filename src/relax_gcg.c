@@ -1178,6 +1178,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss, 
          relaxdata->masterconss, relaxdata->masterconss) );
 
+   SCIPinfoMessage(scip, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
       if( relaxdata->convconss[i] != NULL) 
@@ -1226,7 +1227,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   SCIPinfoMessage(scip, NULL, "GCG                : Performed Dantzig-Wolfe with %d blocks.\n\n\n", relaxdata->npricingprobs);
    /* free hashmaps for mapping from original to pricing variables */
    if( relaxdata->hashorig2pricingvar != NULL )
    {

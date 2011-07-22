@@ -252,20 +252,6 @@ SCIP_Bool getNextLine(
    return TRUE;
 }
 
-/** swaps the addresses of two pointers */
-static
-void swapPointers(
-   char**                pointer1,           /**< first pointer */
-   char**                pointer2            /**< second pointer */
-   )
-{
-   char* tmp;
-
-   tmp = *pointer1;
-   *pointer1 = *pointer2;
-   *pointer2 = tmp;
-}
-
 /** reads the next token from the input file into the token buffer; returns whether a token was read */
 static
 SCIP_Bool getNextToken(
@@ -283,7 +269,7 @@ SCIP_Bool getNextToken(
    /* check the token stack */
    if( refinput->npushedtokens > 0 )
    {
-      swapPointers(&refinput->token, &refinput->pushedtokens[refinput->npushedtokens-1]);
+      SCIPswapPointers((void**)&refinput->token, (void**)&refinput->pushedtokens[refinput->npushedtokens-1]);
       refinput->npushedtokens--;
       SCIPdebugMessage("(line %d) read token again: '%s'\n", refinput->linenumber, refinput->token);
       return TRUE;
@@ -859,24 +845,22 @@ SCIP_RETCODE writeREFFile(
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss));
    for( i = 0; i < nconss; ++i)
    {
       size_t ind;
       size_t unconss;
       SCIP_CONS* cons;
-      SCIP_CALL(SCIPgetTransformedCons(scip, conss[i], &cons));
-      if(cons == NULL)
-      {
-         SCIPinfoMessage(scip, NULL, "cons is not transformed: %s", SCIPconsGetName(conss[i]));
-         cons = conss[i];
-      }
 
       ind = i+1;
       unconss = nconss;
       assert(ind > 0);
       assert(ind <= unconss);
-      SCIPhashmapInsert(cons2origindex, conss, (void*)(ind)); /* shift by 1 to enable error checking */
+      cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
+
+      SCIPdebugMessage("cons added: %zu\t%p\t%s\n",ind, cons, SCIPconsGetName(cons));
+      SCIPhashmapInsert(cons2origindex, cons, (void*)(ind)); /* shift by 1 to enable error checking */
+
    }
 
    SCIPinfoMessage(scip, file, "%d ", nblocks);
@@ -894,11 +878,18 @@ SCIP_RETCODE writeREFFile(
       {
          size_t ind;
          size_t unconss;
-         ind = (size_t)SCIPhashmapGetImage(cons2origindex, readerdata->decdecomp->subscipconss[i][j]);
+         SCIP_CONS* cons;
+//         assert(SCIPconsIsTransformed(readerdata->decdecomp->subscipconss[i][j]));
+//         SCIP_CALL(SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons));
+//         assert(cons != NULL);
+         cons = SCIPfindCons(scip, SCIPconsGetName(readerdata->decdecomp->subscipconss[i][j]));
+         ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
+         SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
+
          unconss = nconss;
          assert(ind > 0); /* shift by 1 */
          assert(ind <= unconss); /* shift by 1 */
-         SCIPinfoMessage(scip, file, "%d ", readerdata->decdecomp->nsubscipconss[i]);
+         SCIPinfoMessage(scip, file, "%d ", ind-1);
       }
       SCIPinfoMessage(scip, file, "\n", nblocks);
    }
