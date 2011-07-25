@@ -120,11 +120,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeDispGcg(scip) );
 
-   //SCIP_CALL( SCIPincludeDispDefault(scip) );
-   //SCIP_CALL( SCIPincludeDialogDefault(scip) );
-   SCIP_CALL( SCIPincludeDialogGcg(scip) );
-   //SCIP_CALL( SCIPdebugIncludeProp(scip) ); 
-
    /* martin's decomp stuff */
    SCIP_CALL(SCIPincludeReaderGp(scip));
    SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
@@ -140,6 +135,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
 
+   //SCIP_CALL( SCIPincludeDispDefault(scip) );
+   //SCIP_CALL( SCIPincludeDialogDefault(scip) );
+   SCIP_CALL( SCIPincludeDialogGcg(scip) );
+   //SCIP_CALL( SCIPdebugIncludeProp(scip) );
 
 
    return SCIP_OKAY;
