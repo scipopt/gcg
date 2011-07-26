@@ -21,7 +21,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "scip/scipdefplugins.h"
@@ -116,6 +116,7 @@ struct DEC_DetectorData
    SCIP_Real metisubfactor;
    SCIP_Bool metisverbose;
    SCIP_Bool metisuseptyperb;
+   SCIP_CLOCK *metisclock;
 
 };
 
@@ -197,6 +198,7 @@ DEC_DECL_INITDETECTOR(initBorderheur)
       detectordata->hedges[i].cost = 0;
       detectordata->hedges[i].cons = NULL;
    }
+   SCIP_CALL(SCIPcreateWallClock(scip, &detectordata->metisclock));
 
    return SCIP_OKAY;
 }
@@ -281,6 +283,7 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
    SCIPhashmapFree(&detectordata->constoblock);
    */
 
+   SCIP_CALL(SCIPfreeClock(scip, &detectordata->metisclock));
    SCIPfreeMemoryArray(scip, &detectordata->hedges);
    SCIPfreeMemory(scip, &detectordata);
 
@@ -366,7 +369,8 @@ static SCIP_RETCODE buildGraphStructure(
 static
 SCIP_RETCODE callMetis(
       SCIP*             scip,       /**< SCIP data struture */
-      DEC_DETECTORDATA*  detectordata  /**< presolver data data structure */
+      DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
+      SCIP_RESULT *result
       )
 {
    char metiscall[SCIP_MAXSTRLEN];
@@ -385,9 +389,18 @@ SCIP_RETCODE callMetis(
    SCIP_FILE *zfile;
    FILE* file;
    int temp_filedes = -1;
+   SCIP_Real remainingtime;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
+
+   *result = SCIP_DIDNOTRUN;
+
+   SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &remainingtime));
+   if(remainingtime == 0)
+   {
+      return SCIP_OKAY;
+   }
 
    nvertices = detectordata->nvertices;
    nhyperedges = detectordata->nhyperedges;
@@ -440,33 +453,40 @@ SCIP_RETCODE callMetis(
    }
 
    /* call metis via syscall as there is no library usable ... */
-   if(detectordata->metisverbose)
+   if(!SCIPisInfinity(scip, remainingtime))
    {
-      if(detectordata->metisuseptyperb)
-      {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype rb -ufactor %f", tempfile, detectordata->blocks,  detectordata->randomseed, detectordata->metisubfactor );
-      }
-      else
-      {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype kway -ufactor %f", tempfile, detectordata->blocks,  detectordata->randomseed, detectordata->metisubfactor );
-      }
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0fs ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+               remainingtime-SCIPgetSolvingTime(scip),
+               tempfile,
+               detectordata->blocks,
+               detectordata->randomseed,
+               detectordata->metisuseptyperb ? "rb" : "kway",
+               detectordata->metisubfactor,
+               detectordata->metisverbose ? "> /dev/null" : "");
    }
    else
    {
-      if(detectordata->metisuseptyperb)
-      {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype rb -ufactor %f >/dev/null", tempfile, detectordata->blocks,  detectordata->randomseed, detectordata->metisubfactor );
-      }
-      else
-      {
-         SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype kway -ufactor %f >/dev/null", tempfile, detectordata->blocks,  detectordata->randomseed, detectordata->metisubfactor );
-      }
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+               tempfile,
+               detectordata->blocks,
+               detectordata->randomseed,
+               detectordata->metisuseptyperb ? "rb" : "kway",
+               detectordata->metisubfactor,
+               detectordata->metisverbose ? "> /dev/null" : "");
    }
+
 //   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis.sh metis.temp %d -seed %d",  detectordata->blocks,  detectordata->randomseed );
    //SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\nCalling metis with '%s'.\n", metiscall);
+   SCIP_CALL(SCIPresetClock(scip, detectordata->metisclock));
+   SCIP_CALL(SCIPstartClock(scip, detectordata->metisclock));
+   SCIPdebugMessage("Calling metis with: %s\n", metiscall);
 
    status = system( metiscall );
 
+   SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
+   SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetSolvingTime(scip)-SCIPgetClockTime(scip, detectordata->metisclock))));
+
+   SCIPdebugMessage("Metis took %fs.\n", SCIPgetClockTime(scip, detectordata->metisclock));
    /* check error codes */
    if( status == -1 )
    {
@@ -486,6 +506,7 @@ SCIP_RETCODE callMetis(
          if( status == -1 )
          {
             SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+            return SCIP_WRITEERROR;
          }
       }
       return SCIP_ERROR;
@@ -530,18 +551,20 @@ SCIP_RETCODE callMetis(
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: %s", strerror( errno ));
+         return SCIP_WRITEERROR;
       }
       status = unlink( metisout );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis output file: %s", strerror( errno ));
+         return SCIP_WRITEERROR;
       }
    }
    else
    {
       SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", tempfile);
    }
-
+   *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 /** Maps the partitions for the disaggregated vertices to the original vertices */
@@ -1021,7 +1044,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    {
       detectordata->blocks = detectordata->minblocks;
      /* get the partitions for the new variables from metis */
-     SCIP_CALL(callMetis(scip, detectordata));
+     SCIP_CALL(callMetis(scip, detectordata, result));
+
+     if(*result != SCIP_SUCCESS)
+     {
+        *result = SCIP_DIDNOTFIND;
+        return SCIP_OKAY;
+     }
 
      /* deduce the partitions for the original variables */
      SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
@@ -1053,8 +1082,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
          detectordata->blocks = i;
 
          /* get the partitions for the new variables from metis */
-         SCIP_CALL(callMetis(scip, detectordata));
+         SCIP_CALL(callMetis(scip, detectordata, result));
 
+         if(*result != SCIP_SUCCESS)
+         {
+            *result = SCIP_DIDNOTFIND;
+            return SCIP_OKAY;
+         }
          /* deduce the partitions for the original variables */
          SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
 
@@ -1091,8 +1125,12 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       detectordata->blocks = bestsetting;
 
       /* get the partitions for the new variables from metis */
-      SCIP_CALL(callMetis(scip, detectordata));
-
+      SCIP_CALL(callMetis(scip, detectordata, result));
+      if(*result != SCIP_SUCCESS)
+      {
+         *result = SCIP_DIDNOTFIND;
+         return SCIP_OKAY;
+      }
       /* deduce the partitions for the original variables */
       SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
 
@@ -1113,6 +1151,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 //      SCIP_CALL(SCIPwriteOrigProblem(scip, filename, "gp", FALSE));
    }
    SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, detectordata->decdecomp));
+
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
