@@ -1054,7 +1054,9 @@ SCIP_RETCODE execRelpsprob(
    SCIP_Real provedbound;
 //   SCIP_Bool bestsbdownvalid;
 //   SCIP_Bool bestsbupvalid;
+#ifdef SCIP_DEBUG
    SCIP_Bool bestisstrongbranch = FALSE;
+#endif
    int ninitcands = 0;
    int bestcand = -1;
 
@@ -1418,12 +1420,16 @@ SCIP_RETCODE execRelpsprob(
       if( bestpsscore > bestuninitsbscore && SCIPisSumGT(scip, bestpsscore, bestsbscore) )
       {
          bestcand = bestpscand;
+#ifdef SCIP_DEBUG
          bestisstrongbranch = FALSE;
+#endif
       }
       else if( bestsbcand >= 0 )
       {
          bestcand = bestsbcand;
+#ifdef SCIP_DEBUG
          bestisstrongbranch = TRUE;
+#endif
       }
       else
       {
@@ -1432,7 +1438,9 @@ SCIP_RETCODE execRelpsprob(
           */
          assert(ninitcands >= 1);
          bestcand = initcands[0];
+#ifdef SCIP_DEBUG
          bestisstrongbranch = FALSE;
+#endif
       }
 
       /* apply domain reductions */
@@ -1479,8 +1487,9 @@ SCIP_RETCODE execRelpsprob(
       assert(0 <= bestcand && bestcand < nbranchcands);
       assert(SCIPisLT(scip, provedbound, cutoffbound));
 
+#ifdef SCIP_DEBUG
       SCIPdebugMessage(" -> best: <%s> (strongbranch = %d)\n", SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);
-
+#endif
       *branchvar = branchcands[bestcand];
       incNVarBranchings(scip, branchrule, *branchvar);
    }
