@@ -161,7 +161,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 static
 SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 {
-   SCIP_CONSHDLRDATA* conshdlrData;
+//   SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA* consdata2;
 
    assert(scip != NULL);
@@ -171,7 +171,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(*consdata != NULL);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
+//   conshdlrData = SCIPconshdlrGetData(conshdlr);
 
    SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
@@ -253,6 +253,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    }
 
    /* put constraint on the stack */
+   assert(conshdlrData->stack != NULL);
    conshdlrData->stack[conshdlrData->nstack] = cons;
    ++(conshdlrData->nstack);
 

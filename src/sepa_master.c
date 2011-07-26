@@ -321,7 +321,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int ncuts;
    int i;
    int j;
-   int sum;
+//   int sum;
    SCIP_Bool feasible;
 
    assert(scip != NULL);
@@ -351,7 +351,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
          FALSE, FALSE, &delayed, &cutoff) );   
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
-   sum = 0;
+//   sum = 0;
    
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);

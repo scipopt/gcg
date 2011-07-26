@@ -537,7 +537,9 @@ SCIP_Bool consIsInBlock(
    assert(varmap != NULL);
    assert(cons != NULL);
 
+   nvars = 0; /* fix potential problems */
 
+   /* TODO: maybe change that to SCIPgetNVarsXXX/SCIPgetNConssXXX */
    if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
    {
       vars = SCIPgetVarsLinear(scip, cons);
@@ -579,7 +581,7 @@ SCIP_Bool consIsInBlock(
    }
    else
    {
-      printf("constraint %s of unknown type <%s>, copy failed!\n", SCIPconsGetName(cons), SCIPconshdlrGetName(SCIPconsGetHdlr(cons)));
+      SCIPerrorMessage("constraint %s of unknown type <%s>!\n", SCIPconsGetName(cons), SCIPconshdlrGetName(SCIPconsGetHdlr(cons)));
    }
 
    for( i = 0; i < nvars; i++ )

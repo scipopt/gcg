@@ -611,7 +611,7 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
 static
 SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
-   SCIP_CONSHDLRDATA* conshdlrData;
+//   SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA* consdata2;
 
    assert(scip != NULL);
@@ -621,7 +621,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(*consdata != NULL);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
+//   conshdlrData = SCIPconshdlrGetData(conshdlr);
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
@@ -925,8 +925,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          int npricingprobs;
 
          /* if the variable is linking, we have to perform the same step as above for every existing block*/
-         assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
-
          assert(vardata->data.origvardata.linkingvardata != NULL);
          npricingprobs = GCGrelaxGetNPricingprobs(scip);
 
@@ -934,6 +932,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          /* lower bound was changed */
          for( j = 0; j < npricingprobs; ++j)
          {
+            assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
             if( vardata->data.origvardata.linkingvardata->pricingvars[j] == NULL)
                continue;
 
@@ -975,7 +974,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    int i;
    int j;
    int k;
-   SCIP_Bool fixed;
+//   SCIP_Bool fixed;
 
    SCIP_VARDATA* boundchgvardata;
    SCIP_VAR** vars;
@@ -1052,7 +1051,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
 
-         fixed = FALSE;
+//         fixed = FALSE;
 
          ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
          ismastervariablerelevant = ismastervariablerelevant &&
@@ -1064,7 +1063,9 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          }
 
          /* iterate over global bound changes that were not yet checked for the master variables */
-         for( k = 0; k < conshdlrData->npendingbnds && !fixed; k++ )
+//         for( k = 0; k < conshdlrData->npendingbnds && !fixed; k++ )
+         for( k = 0; k < conshdlrData->npendingbnds; k++ )
+
          {
             SCIP_Bool ismastervarrelevant;
             assert(conshdlrData->pendingvars[k] != NULL);
@@ -1123,7 +1124,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIPchgVarUbGlobal(scip, vars[i], 0.0);
                propcount++;
-               fixed = TRUE;
+//               fixed = TRUE; // the break will deal with it
                break;
             }
             /* branching imposes new upper bound */
@@ -1132,7 +1133,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIPchgVarUbGlobal(scip, vars[i], 0.0);
                propcount++;
-               fixed = TRUE;
+//               fixed = TRUE; // the break will deal with it
                break;
             }
          }
@@ -1156,7 +1157,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 2 );
       /* TODO: LINK: mb: This might work*/
 
-      fixed = FALSE;
+//      fixed = FALSE;
 
       /* only look at variables not already fixed to 0 or that belong to no block */
       if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && vardata->blocknr >= 0 )
@@ -1194,7 +1195,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       else
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
-         for( k = 0; k < nboundchanges && !fixed; k++ )
+//         for( k = 0; k < nboundchanges && !fixed; k++ )
+         for( k = 0; k < nboundchanges; k++ )
          {
             SCIP_VAR** origvars;
             boundchgvardata = SCIPvarGetData(consdata->boundchgvars[k]);
@@ -1243,7 +1245,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
                propcount++;
-               fixed = TRUE;
+//               fixed = TRUE; // the break will deal with it
                break;
             }
             /* branching imposes new upper bound */
@@ -1252,7 +1254,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
                propcount++;
-               fixed = TRUE;
+//               fixed = TRUE; // the break will deal with it
                break;
             }
          }

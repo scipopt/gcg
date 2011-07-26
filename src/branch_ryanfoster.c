@@ -351,10 +351,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    /* now search for 2 (fractional) columns v1, v2 in the master and 2 original variables o1, o2
     * s.t. v1 contains both o1 and o2 and column 2 contains either o1 or o2
     */
-   v1 = 0;
-   v2 = 0;
-   o1 = 0;
-   o2 = 0;
    ovar1 = NULL;
    ovar2 = NULL;
    vardata1 = NULL;

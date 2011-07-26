@@ -154,7 +154,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    int*                  nonsolitems;           
    int                   nnonsolitems;          
    SCIP_Real             solval; 
-   SCIP_Bool             applyable;      
+//   SCIP_Bool             applyable;
    SCIP_Bool success;
 
    int i;
@@ -195,7 +195,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          nitems++;
    }
 
-   applyable = TRUE;
+//   applyable = TRUE;
    if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) || 
       !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
@@ -355,7 +355,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    int*                  nonsolitems;           
    int                   nnonsolitems;          
    SCIP_Real             solval; 
-   SCIP_Bool             applyable;      
+//   SCIP_Bool             applyable;
 
    int i;
    int k;
@@ -394,7 +394,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          nitems++;
    }
 
-   applyable = TRUE;
+//   applyable = TRUE;
    if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) || 
       !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
    {

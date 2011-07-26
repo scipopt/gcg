@@ -601,7 +601,7 @@ SCIP_RETCODE readBlocks(
    SCIP_VAR* varcopy;
    int ncopyvars;
 #endif
-   int val;
+//   int val;
    int consctr;
    int v;
 
@@ -617,7 +617,7 @@ SCIP_RETCODE readBlocks(
          SCIP_CONSHDLR* conshdlr;
          SCIP_VAR** vars;
          SCIP_VARDATA* vardata;
-         SCIP_Real* vals;
+//         SCIP_Real* vals;
          int consnr;
          int nvars;
 
@@ -633,7 +633,7 @@ SCIP_RETCODE readBlocks(
             if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0)
             {
                vars = SCIPgetVarsLinear(scip, cons);
-               vals = SCIPgetValsLinear(scip, cons);
+//               vals = SCIPgetValsLinear(scip, cons);
                nvars = SCIPgetNVarsLinear(scip, cons);
             }
             else
@@ -648,7 +648,7 @@ SCIP_RETCODE readBlocks(
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
-               val = vals[v];
+//               val = vals[v];
 
 //               if( SCIPisZero(scip, val) )
 //                  continue;

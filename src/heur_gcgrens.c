@@ -144,8 +144,6 @@ SCIP_RETCODE createSubproblem(
       SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], ub) );
    }
       
-   fixingrate = 0.0;
-
    /* abort, if all integer variables were fixed (which should not happen for MIP) */
    if( fixingcounter == nbinvars + nintvars )
    {
@@ -434,7 +432,6 @@ SCIP_RETCODE SCIPapplyGcgrens(
    if( SCIPgetNSols(scip) > 0 )
    {
       SCIP_Real upperbound;
-      cutoff = SCIPinfinity(scip);
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );   
 
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);

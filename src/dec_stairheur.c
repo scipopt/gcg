@@ -84,6 +84,10 @@ SCIP_RETCODE deleteListEntry(
    )
 {
    assert(entry != NULL);
+   assert(front != NULL);
+   assert(back != NULL);
+   assert((*front) != NULL);
+   assert((*back) != NULL);
    assert((*front)->prev == NULL);
    assert((*back)->next == NULL);
    if(entry->next != NULL)
@@ -108,6 +112,8 @@ SCIP_RETCODE deleteListEntry(
    entry->next = NULL;
    entry->prev = NULL;
 
+   assert((*front) != NULL);
+   assert((*back) != NULL);
    assert((*front)->prev == NULL);
    assert((*back)->next == NULL);
 
@@ -344,8 +350,8 @@ SCIP_RETCODE runROC(
    SCIP_STAIRHEURDATA*  stairheurdata  /**< presolver data data structure */
    )
 {
-   SCIP_CONS** conss;
-   SCIP_VAR** vars;
+//   SCIP_CONS** conss;
+//   SCIP_VAR** vars;
 
    int nconss;
    int nvars;
@@ -363,10 +369,10 @@ SCIP_RETCODE runROC(
    SCIPdebugMessage("Starting one round of the ROC algorithm.\n");
    assert(scip != NULL);
    assert(stairheurdata != NULL);
-   conss = SCIPgetConss(scip);
+//   conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   vars = SCIPgetVars(scip);
+//   vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    changed = FALSE;
 
@@ -378,7 +384,7 @@ SCIP_RETCODE runROC(
    while(changed == FALSE)
    {
 
-#ifndef NDEBUG /* visualisation of the matrix */
+#if 0 /* visualisation of the matrix */
       char *array;
 #endif
 

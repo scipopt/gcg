@@ -437,12 +437,12 @@ int computeHyperedgeWeight(
       double mean;
       double variance;
       double stddev;
-      double varcoeff;
+//      double varcoeff;
       SCIP_Real * vals;
 
       mean = 0.0;
       variance = 0.0;
-      varcoeff = 0.0;
+//      varcoeff = 0.0;
       vals = SCIPgetValsXXX(scip, cons);
 
       *cost = detectordata->consWeight;
@@ -518,7 +518,7 @@ static SCIP_RETCODE buildGraphStructure(
    int j;
    int varWeight;
    int *copies;
-   int ncopies;
+//   int ncopies;
 
    HyperEdge *hedge;
    assert(scip != NULL);
@@ -527,10 +527,10 @@ static SCIP_RETCODE buildGraphStructure(
    conss = SCIPgetConss(scip);
    hedges = detectordata->hedges;
    copytoorig = detectordata->copytooriginal;
-   nvertices = 0;
-   varWeight =  detectordata->varWeight;
+//   nvertices = 0;
+//   varWeight =  detectordata->varWeight;
    SCIP_CALL(SCIPallocMemoryArray(scip, &copies, nconss));
-   ncopies = 0;
+//   ncopies = 0;
    /* we need at least nconss + nvars hyperedges */
    SCIP_CALL(SCIPextendPtrarray(scip, hedges,  0, nconss+nvars));
    /* we have at least nvars may copy vertices */
@@ -1007,7 +1007,7 @@ static SCIP_RETCODE buildTransformedProblem(
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
-         long int varblock;
+         long int varblock = -1;
          if(!SCIPvarIsActive(curvars[j]))
          {
             continue;
@@ -1016,7 +1016,7 @@ static SCIP_RETCODE buildTransformedProblem(
          assert(!SCIPvarIsDeleted(curvars[j]));
 
          var = curvars[j];
-         varblock = -1;
+
          /*
           * if the variable has already been handled, we do not need to look
           * at it again and only need to set the constraint
@@ -1107,15 +1107,15 @@ static SCIP_RETCODE buildTransformedProblem(
       if( consblock < 0 )
       {
          size_t block;
-         HyperEdge* hedge;
-         assert(detectordata->blocks >= 0);
+//         HyperEdge* hedge;
+//         assert(detectordata->blocks >= 0);
          block = detectordata->blocks +1;
          linkingconss[nlinkingconss] = conss[i];
          ++nlinkingconss;
          assert(!SCIPhashmapExists(constoblock, conss[i]));
          SCIP_CALL(SCIPhashmapInsert(constoblock, conss[i], (void*)(block)));
 
-         hedge = (HyperEdge*) SCIPgetPtrarrayVal(scip, detectordata->hedges, i);
+//         hedge = (HyperEdge*) SCIPgetPtrarrayVal(scip, detectordata->hedges, i);
 //         assert(hedge->originalId == i);
 //         assert(hedge->type == CONSTRAINT);
 //         score->minkequicutscore += hedge->cost;
@@ -1276,8 +1276,8 @@ SCIP_RETCODE evaluateDecomposition(
    assert(detectordata != NULL);
    assert(score != NULL);
 
-   matrixarea = 0;
-   borderarea = 0;
+//   matrixarea = 0;
+//   borderarea = 0;
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 

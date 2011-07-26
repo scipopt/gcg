@@ -572,7 +572,6 @@ SCIP_DECL_HEUREXEC(heurExecFeasrestmaster)
    if( SCIPgetNSols(scip) > 0 )
    {
       SCIP_Real upperbound;
-      cutoff = SCIPinfinity(scip);
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);

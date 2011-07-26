@@ -186,7 +186,7 @@ SCIP_RETCODE branchExtern(
    )
 {
    SCIP_VARDATA* vardata;
-   SCIP_SOL* currentsol;
+   // SCIP_SOL* currentsol;
    int i;
 
    /* parameter data */
@@ -224,7 +224,7 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
 
    /* get current sol */
-   currentsol = GCGrelaxGetCurrentOrigSol(scip);
+//   currentsol = GCGrelaxGetCurrentOrigSol(scip);
 
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,

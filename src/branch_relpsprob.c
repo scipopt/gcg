@@ -247,7 +247,7 @@ SCIP_RETCODE addBdchg(
          (*nbdchgs)++;
       }
       
-      if( newbound > bdchgdata->ubchgs[pos] )
+      if( (infeasible != NULL) && (newbound > bdchgdata->ubchgs[pos]) )
       {
          *infeasible = TRUE;
       }
@@ -260,7 +260,7 @@ SCIP_RETCODE addBdchg(
          bdchgdata->ubchgs[pos] = newbound;
          (*nbdchgs)++;
       }
-      if( newbound < bdchgdata->lbchgs[pos] )
+      if(  (infeasible != NULL) && (newbound < bdchgdata->lbchgs[pos]) )
       {
          *infeasible = TRUE;
       }
@@ -477,7 +477,7 @@ SCIP_RETCODE applyProbing(
    SCIP_NODE* probingnode;
    SCIP_CONS* probingcons;
 
-   SCIP_Real varsol;
+//   SCIP_Real varsol;
    int leftlbprobing;
    int leftubprobing;
    int rightlbprobing;
@@ -503,7 +503,7 @@ SCIP_RETCODE applyProbing(
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
       
-   varsol = SCIPgetRelaxSolVal(scip, probingvar);
+//   varsol = SCIPgetRelaxSolVal(scip, probingvar);
    
    if( probingdir == FALSE )
    {
@@ -619,7 +619,7 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    SCIP_Real* leftpropubs;
    SCIP_Real* rightproplbs;
    SCIP_Real* rightpropubs;
-   SCIP_VARTYPE vartype;
+//   SCIP_VARTYPE vartype;
 
    SCIP_Real leftlpbound;
    SCIP_Real rightlpbound;
@@ -630,12 +630,12 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    SCIP_Bool leftcutoff;
    SCIP_Bool rightcutoff;
    
-   SCIP_Bool delay;
+//   SCIP_Bool delay;
    SCIP_Bool cutoff;
 
    int i;
 
-   SCIP_Real varsol;
+//   SCIP_Real varsol;
    int j;
 
    assert(lperror != NULL);
@@ -649,7 +649,7 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    if( upinf != NULL )
       *upinf = FALSE;
    
-   vartype = SCIPvarGetType(probingvar);
+//   vartype = SCIPvarGetType(probingvar);
 
    if( SCIPisStopped(scip) )
    {
@@ -659,7 +659,7 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    }   
    
    /* get lp solution value of last run */
-   varsol = SCIPgetRelaxSolVal(scip, probingvar);
+//   varsol = SCIPgetRelaxSolVal(scip, probingvar);
 
    /* get all variables to store branching deductions of variable bounds */
    /* get all variables and store them in array 'vars' */
@@ -681,10 +681,19 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    SCIP_CALL( SCIPallocBufferArray(scip, &rightpropubs, nvars) );
 
    /* for each binary variable, probe fixing the variable to left and right */
-   delay = FALSE;
+//   delay = FALSE;
    cutoff = FALSE;
    leftcutoff = FALSE;
    rightcutoff = FALSE;
+
+   /* better assume we don't have an error (fixes clang warning)*/
+   leftlperror = FALSE;
+   rightlperror = FALSE;
+
+   /* better assume we don't have solved the lp (fixes clang warning)*/
+   leftlpsolved = FALSE;
+   rightlpsolved = FALSE;
+
   
    /* left branch: apply probing for setting ub to LP solution value  */
    SCIP_CALL( applyProbing(scip, vars, nvars, probingvar, FALSE, solvelp, nlpiterations,
@@ -709,7 +718,7 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
 
       SCIP_CALL( addBdchg(scip, bdchgdata, probingvar, newbound, SCIP_BOUNDTYPE_LOWER, TRUE, nbdchgs, &cutoff) );
    }
-      
+
    if( !cutoff )
    {
       /* right branch: apply probing for setting lb to LP solution value  */
@@ -816,8 +825,10 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
 
    if( cutoff )
    {
-      *downinf = cutoff;
-      *upinf = cutoff;
+      if( downinf != NULL )
+         *downinf = cutoff;
+      if( upinf != NULL )
+         *upinf = cutoff;
    }
 
    /* free temporary memory */
@@ -974,47 +985,47 @@ SCIP_RETCODE incNVarProbings(
 }
 
 /** evaluates whether probing should be performed on the given variable */
-static
-SCIP_Bool shallProbingBeUsed(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
-   SCIP_VAR*             var                 /**< variable to increase number of branchings on */
-   )
-{
-   SCIP_BRANCHRULEDATA* branchruledata;
-   int pos;
-   int maxdepth;
-   int nvarprobings;
-   int nvarbranchings;
-
-   assert(scip != NULL);
-   assert(branchrule != NULL);
-   assert(var != NULL);
-
-   /* get branching rule data */
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
-   assert(SCIPhashmapExists(branchruledata->varhashmap, var) );
-
-   pos = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, var);
-   
-   maxdepth = SCIPgetMaxDepth(scip);
-   nvarprobings = branchruledata->nvarprobings[pos];
-   nvarbranchings = branchruledata->nvarbranchings[pos];
-   
-   //return ( nvarprobings < (SCIP_Real) branchruledata->reliability * ( 1. - log(nvarprobings)/log(2) /maxdepth) );
-
-   //return 1. - (log(nvarprobings)/log(2)) / maxdepth < branchruledata->reliability;
-
-   if( SCIPgetDepth(scip) <= 2 )
-      return TRUE;
-   
-   return (nvarprobings+nvarbranchings) / (branchruledata->nbranchings+1) < branchruledata->reliability;
-
-
-   //  return (log(nvarprobings+nvarbranchings)/log(2)) / maxdepth < branchruledata->reliability;
-}  
+//static
+//SCIP_Bool shallProbingBeUsed(
+//   SCIP*                 scip,               /**< SCIP data structure */
+//   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+//   SCIP_VAR*             var                 /**< variable to increase number of branchings on */
+//   )
+//{
+//   SCIP_BRANCHRULEDATA* branchruledata;
+//   int pos;
+////   int maxdepth;
+//   int nvarprobings;
+//   int nvarbranchings;
+//
+//   assert(scip != NULL);
+//   assert(branchrule != NULL);
+//   assert(var != NULL);
+//
+//   /* get branching rule data */
+//   branchruledata = SCIPbranchruleGetData(branchrule);
+//   assert(branchruledata != NULL);
+//
+//   assert(SCIPhashmapExists(branchruledata->varhashmap, var) );
+//
+//   pos = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, var);
+//
+////   maxdepth = SCIPgetMaxDepth(scip);
+//   nvarprobings = branchruledata->nvarprobings[pos];
+//   nvarbranchings = branchruledata->nvarbranchings[pos];
+//
+//   //return ( nvarprobings < (SCIP_Real) branchruledata->reliability * ( 1. - log(nvarprobings)/log(2) /maxdepth) );
+//
+//   //return 1. - (log(nvarprobings)/log(2)) / maxdepth < branchruledata->reliability;
+//
+//   if( SCIPgetDepth(scip) <= 2 )
+//      return TRUE;
+//
+//   return (nvarprobings+nvarbranchings) / (branchruledata->nbranchings+1) < branchruledata->reliability;
+//
+//
+//   //  return (log(nvarprobings+nvarbranchings)/log(2)) / maxdepth < branchruledata->reliability;
+//}
 
 
 /** execute generalized reliability pseudo cost probing branching */
@@ -1038,14 +1049,14 @@ SCIP_RETCODE execRelpsprob(
    BDCHGDATA* bdchgdata;
    SCIP_Real lpobjval;
    SCIP_Real cutoffbound;
-   SCIP_Real bestsbdown;
-   SCIP_Real bestsbup;
+//   SCIP_Real bestsbdown;
+//   SCIP_Real bestsbup;
    SCIP_Real provedbound;
-   SCIP_Bool bestsbdownvalid;
-   SCIP_Bool bestsbupvalid;
-   SCIP_Bool bestisstrongbranch;
-   int ninitcands;
-   int bestcand;
+//   SCIP_Bool bestsbdownvalid;
+//   SCIP_Bool bestsbupvalid;
+   SCIP_Bool bestisstrongbranch = FALSE;
+   int ninitcands = 0;
+   int bestcand = -1;
 
    *result = SCIP_DIDNOTRUN;
 
@@ -1069,26 +1080,23 @@ SCIP_RETCODE execRelpsprob(
    lpobjval = SCIPgetLocalLowerbound(scip);
    cutoffbound = SCIPgetCutoffbound(scip);
 
-   bestcand = -1;
-   bestisstrongbranch = FALSE;
-   bestsbdown = SCIP_INVALID;
-   bestsbup = SCIP_INVALID;
-   bestsbdownvalid = FALSE;
-   bestsbupvalid = FALSE;
+//   bestsbdown = SCIP_INVALID;
+//   bestsbup = SCIP_INVALID;
+//   bestsbdownvalid = FALSE;
+//   bestsbupvalid = FALSE;
    provedbound = lpobjval;
 
    if( nbranchcands == 1 )
    {
       /* only one candidate: nothing has to be done */
       bestcand = 0;
-      ninitcands = 0;
    }
    else
    {
       SCIP_Real* initcandscores;
       int* initcands;
       int maxninitcands;
-      int nuninitcands;
+//      int nuninitcands;
       int nbdchgs;
       SCIP_Real avgconflictscore;
       SCIP_Real avgconflengthscore;
@@ -1102,10 +1110,10 @@ SCIP_RETCODE execRelpsprob(
       SCIP_Real bestuninitsbscore;
       SCIP_Real bestsbfracscore;
       SCIP_Real bestsbdomainscore;
-      SCIP_Longint nodenum;
+//      SCIP_Longint nodenum;
       SCIP_Bool usesb;
       int ninfprobings;
-      int maxbdchgs;
+//      int maxbdchgs;
       int bestpscand;
       int bestsbcand;
       int inititer;
@@ -1132,28 +1140,27 @@ SCIP_RETCODE execRelpsprob(
       if( !SCIPisLPSolBasic(masterscip) )
       {
          maxninitcands = 0;
-         printf("solution is not basic\n");
+         SCIPdebugMessage("solution is not basic\n");
       }
 
-      printf("maxninitcands = %d\n", maxninitcands);
+      SCIPdebugMessage("maxninitcands = %d\n", maxninitcands);
       
       /* get buffer for storing the unreliable candidates */
       SCIP_CALL( SCIPallocBufferArray(scip, &initcands, maxninitcands+1) ); /* allocate one additional slot for convenience */
       SCIP_CALL( SCIPallocBufferArray(scip, &initcandscores, maxninitcands+1) );
-      ninitcands = 0;
 
       /* get current node number */
-      nodenum = SCIPgetNNodes(scip);
+//      nodenum = SCIPgetNNodes(scip);
 
       /* initialize bound change arrays */
       nbdchgs = 0;
-      maxbdchgs = branchruledata->maxbdchgs;
+//      maxbdchgs = branchruledata->maxbdchgs;
 
       ninfprobings = 0;
 
 
       /* search for the best pseudo cost candidate, while remembering unreliable candidates in a sorted buffer */
-      nuninitcands = 0;
+//      nuninitcands = 0;
       bestpscand = -1;
       bestpsscore = -SCIPinfinity(scip);
       bestpsfracscore = -SCIPinfinity(scip);
@@ -1183,7 +1190,7 @@ SCIP_RETCODE execRelpsprob(
             inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, branchcandsfrac[c]);
          
          /* just for testing: variable dependent reliability-probing */
-         usesb = shallProbingBeUsed(scip, branchrule, branchcands[c]);
+//         usesb = shallProbingBeUsed(scip, branchrule, branchcands[c]);
          usesb = TRUE;
 
          if( usesb )
@@ -1366,10 +1373,10 @@ SCIP_RETCODE execRelpsprob(
                {
                   bestsbcand = c;
                   bestsbscore = score;
-                  bestsbdown = down;
-                  bestsbup = up;
-                  bestsbdownvalid = downvalid;
-                  bestsbupvalid = upvalid;
+//                  bestsbdown = down;
+//                  bestsbup = up;
+//                  bestsbdownvalid = downvalid;
+//                  bestsbupvalid = upvalid;
                   bestsbfracscore = fracscore;
                   bestsbdomainscore = domainscore;
                }
@@ -1395,7 +1402,7 @@ SCIP_RETCODE execRelpsprob(
 #endif
       if ( bestsbcand >= 0 )
       {
-         printf(" -> best: <%s> (%g / %g / %g)\n",
+         SCIPdebugMessage(" -> best: <%s> (%g / %g / %g)\n",
             SCIPvarGetName(branchcands[bestsbcand]), bestsbscore, bestsbfracscore, bestsbdomainscore);     
       }
 
@@ -1472,8 +1479,7 @@ SCIP_RETCODE execRelpsprob(
       assert(0 <= bestcand && bestcand < nbranchcands);
       assert(SCIPisLT(scip, provedbound, cutoffbound));
 
-      printf(" -> best: <%s> (strongbranch = %d)\n",
-         SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);  
+      SCIPdebugMessage(" -> best: <%s> (strongbranch = %d)\n", SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);
 
       *branchvar = branchcands[bestcand];
       incNVarBranchings(scip, branchrule, *branchvar);

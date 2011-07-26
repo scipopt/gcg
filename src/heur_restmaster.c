@@ -135,8 +135,6 @@ SCIP_RETCODE createSubproblem(
       SCIP_CALL( SCIPhashmapInsert(varmapfw, mastervars[i], restmastervars[i]) );
    }
 
-   fixingrate = 0.0;
-
    /* abort, if all variables were fixed (which should not happen) */
    if( fixingcounter == nmastervars )
    {
@@ -519,7 +517,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;
-      cutoff = SCIPinfinity(origprob);
       assert( !SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)) );
 
       upperbound = SCIPgetUpperbound(origprob) - SCIPsumepsilon(origprob);

@@ -654,7 +654,6 @@ static SCIP_RETCODE buildTransformedProblem(
          assert(!SCIPvarIsDeleted(curvars[j]));
 
          var = curvars[j];
-         varblock = -1;
          /*
           * if the variable has already been handled, we do not need to look
           * at it again and only need to set the constraint
@@ -687,12 +686,13 @@ static SCIP_RETCODE buildTransformedProblem(
             assert(varblock == detectordata->varpart[SCIPvarGetProbindex(var)] ||  detectordata->varpart[SCIPvarGetProbindex(var)] == -2);
          }
 
-
+         assert(varblock < detectordata->blocks);
+         assert(varblock >= 0 || varblock == -2);
          /*
           * if the variable is not a linking variable, add it to the correct
           * block and update the block of the constraint, if necessary
           */
-         if( varblock <= detectordata->blocks )
+         if( varblock <= detectordata->blocks && varblock >= 0)
          {
             /*
              * if the block of the constraint has not been set yet, set it to
@@ -860,8 +860,6 @@ SCIP_RETCODE evaluateDecomposition(
    assert(detectordata != NULL);
    assert(score != NULL);
 
-   matrixarea = 0;
-   borderarea = 0;
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
@@ -1048,7 +1046,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    else
    {
       SCIP_Real bestscore = 1E20;
-      int bestsetting;
+      int bestsetting = -1;
       for( i = detectordata->minblocks; i <= detectordata->maxblocks; ++i)
       {
          SCIP_Real cumscore;
@@ -1089,6 +1087,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       }
 
       detectordata->found = TRUE;
+      assert(bestsetting >= 0);
       detectordata->blocks = bestsetting;
 
       /* get the partitions for the new variables from metis */
