@@ -261,7 +261,7 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
       pricerdata->maxbestsols = pricerdata->maxvarsroundredcost;
    }
 
-   printf("paramchanged\n");
+    SCIPdebugMessage("paramchanged\n");
 
    return SCIP_OKAY;
 }
@@ -669,7 +669,7 @@ SCIP_RETCODE checkNewVar(
 
       if( i == vardata->data.mastervardata.norigvars )
       {
-         printf("var %s is equal to var %s! solval = %f, ub = %g, lazyub = %g, redcost = %f, lpsolstat = %d, dualsolconv = %f\n", 
+         SCIPdebugMessage("var %s is equal to var %s! solval = %f, ub = %g, lazyub = %g, redcost = %f, lpsolstat = %d, dualsolconv = %f\n",
             SCIPvarGetName(newvar), SCIPvarGetName(vars[v]), SCIPgetSolVal(scip, NULL, vars[v]), 
             SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLazy(vars[v]), redcost, SCIPgetLPSolstat(scip), dualsolconv);
       }
@@ -720,13 +720,13 @@ SCIP_RETCODE checkVarBounds(
          
          if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar) )
          {
-            printf("var %s: orig upper bound = %g, pricing upper bound = %g, global orig upper bound = %g!\n", 
+            SCIPdebugMessage("var %s: orig upper bound = %g, pricing upper bound = %g, global orig upper bound = %g!\n",
                SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), SCIPvarGetUbLocal(vardata->data.origvardata.pricingvar),
                SCIPvarGetUbGlobal(vars[v]));
          }
          if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar) )
          {
-            printf("var %s: orig lower bound = %g, pricing lower bound = %g, global orig lower bound = %g!\n", 
+            SCIPdebugMessage("var %s: orig lower bound = %g, pricing lower bound = %g, global orig lower bound = %g!\n",
                SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), SCIPvarGetLbLocal(vardata->data.origvardata.pricingvar),
                SCIPvarGetLbGlobal(vars[v]) );
          }
@@ -758,14 +758,14 @@ SCIP_RETCODE checkVarBounds(
             
             if( SCIPvarGetUbLocal(vars[v]) != SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]) )
             {
-               printf("linking var %s: orig upper bound = %g, pricing upper bound in block %d = %g, global orig upper bound = %g!\n", 
+               SCIPdebugMessage("linking var %s: orig upper bound = %g, pricing upper bound in block %d = %g, global orig upper bound = %g!\n",
                   SCIPvarGetName(vars[v]), SCIPvarGetUbLocal(vars[v]), i
                   SCIPvarGetUbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]),
                   SCIPvarGetUbGlobal(vars[v]));
             }
             if( SCIPvarGetLbLocal(vars[v]) != SCIPvarGetLbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]) )
             {
-               printf("linking var %s: orig lower bound = %g, pricing lower bound in block %d = %g, global orig lower bound = %g!\n", 
+               SCIPdebugMessage("linking var %s: orig lower bound = %g, pricing lower bound in block %d = %g, global orig lower bound = %g!\n",
                   SCIPvarGetName(vars[v]), SCIPvarGetLbLocal(vars[v]), i
                   SCIPvarGetLbLocal(vardata->data.origvardata.linkingvardata->pricingvars[i]),
                   SCIPvarGetLbGlobal(vars[v]) );
@@ -1513,7 +1513,7 @@ SCIP_RETCODE performPricing(
    if( pricerdata->dispinfos )
    {
       //if( pricetype == GCG_PRICETYPE_REDCOST || SCIPgetNVars(scip) % 50 == 0 )
-         printf("nvars = %d, current LP objval = %g, time = %f, node = %lld\n", SCIPgetNVars(scip), 
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "nvars = %d, current LP objval = %g, time = %f, node = %lld\n", SCIPgetNVars(scip),
             SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
    }
    else
@@ -1531,7 +1531,7 @@ SCIP_RETCODE performPricing(
       == SCIPceil(scip, SCIPgetLPObjval(scip)) /* && SCIPgetNNodes(scip) > 1 ??????*/ )
    {
       if( pricerdata->dispinfos )
-         printf("pricing aborted due to integral objective: node LB = %g, LP obj = %g\n", 
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
             SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
       else
       {
@@ -1551,7 +1551,7 @@ SCIP_RETCODE performPricing(
       if( gap < pricerdata->abortpricinggap )
       {
          if( pricerdata->dispinfos )
-            printf("pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n", 
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n",
                SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip), gap);
          else
          {
@@ -1819,7 +1819,7 @@ SCIP_RETCODE performPricing(
    {
       assert(lowerbound != NULL);
       if( pricerdata->dispinfos )
-         printf("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
       else
          SCIPdebugMessage("lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
 
@@ -2198,14 +2198,14 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    }
    SCIPfreeMemoryArray(scip, &pricerdata->pricedvars);
 
-   printf("calls = %d\n", pricerdata->calls);
-   printf("solved sub-MIPs heur = %d\n", pricerdata->solvedsubmipsheur);
-   printf("solved sub-MIPs optimal = %d\n", pricerdata->solvedsubmipsoptimal);
-   printf("farkas calls = %d, redcost calls = %d\n", pricerdata->farkascalls, pricerdata->redcostcalls);
-   printf("time for farkas pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
-   printf("time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
-   printf("time for transformation: %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
-   printf("time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "calls = %d\n", pricerdata->calls);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs heur = %d\n", pricerdata->solvedsubmipsheur);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs optimal = %d\n", pricerdata->solvedsubmipsoptimal);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "farkas calls = %d, redcost calls = %d\n", pricerdata->farkascalls, pricerdata->redcostcalls);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for farkas pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for transformation: %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkasclock)) );
@@ -2237,7 +2237,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    *result = SCIP_DIDNOTRUN;
 
    if( pricerdata->redcostcalls == 0 )
-      printf("Starting reduced cost pricing...\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
 
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNTotalNodes(scip) == pricerdata->currnodenr )

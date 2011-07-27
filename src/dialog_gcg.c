@@ -811,9 +811,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   printf("switching to the master problem...\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem...\n");
    SCIP_CALL( SCIPstartInteraction(GCGrelaxGetMasterprob(scip)) );
-   printf("back in the original problem...\n");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 

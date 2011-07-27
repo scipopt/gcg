@@ -512,7 +512,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       }
    }
 
-   printf("Matrix has %d blocks, %d %s relevant!\n", relaxdata->npricingprobs, nrelevant, 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, %d %s relevant!\n", relaxdata->npricingprobs, nrelevant,
       (nrelevant == 1 ? "is" : "are"));
 
    relaxdata->nrelpricingprobs = nrelevant;
@@ -1014,7 +1014,7 @@ SCIP_RETCODE createMaster(
 
       SCIP_CALL( SCIPgetVarsData(relaxdata->pricingprobs[i], NULL, NULL, &nbin, &nint, &nimpl, &ncont) );
 
-      printf("pricing problem %d: %d conss, %d vars (%d bins, %d ints, %d impls and %d cont)\n", i, 
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "pricing problem %d: %d conss, %d vars (%d bins, %d ints, %d impls and %d cont)\n", i,
          SCIPgetNConss(relaxdata->pricingprobs[i]), SCIPgetNVars(relaxdata->pricingprobs[i]), nbin, nint, nimpl, ncont);
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricingprob_%d.lp", i);
@@ -1180,7 +1180,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss, 
          relaxdata->masterconss, relaxdata->masterconss) );
 
-   SCIPinfoMessage(scip, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
+
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
       if( relaxdata->convconss[i] != NULL) 
@@ -2532,7 +2533,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    }
    else 
    {
-      SCIPinfoMessage(scip, NULL, "something went wrong, an lp error occured\n");         
+      SCIPdebugMessage("something went wrong, an lp error occured\n");
    }
 
    return SCIP_OKAY;
@@ -2648,7 +2649,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       }
       else 
       {
-         printf("stage in master not solving and not solved!\n");
+         SCIPdebugMessage("stage in master not solving and not solved!\n");
          return SCIP_OKAY;
       }
 

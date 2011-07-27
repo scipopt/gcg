@@ -99,7 +99,7 @@ static
 SCIP_DECL_BRANCHEXECEXT(branchExecextMaster)
 {
    SCIPdebugMessage("Execext method of master branching\n");
-   printf("Execext method of master branching\n");
+//   printf("Execext method of master branching\n");
 
    return SCIP_OKAY;
 }
@@ -117,7 +117,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of master branching\n");
-   printf("Execps method of master branching\n");
+//   printf("Execps method of master branching\n");
 
    /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );

@@ -328,7 +328,7 @@ SCIP_RETCODE applyBdchgs(
    }
  
    SCIPdebugMessage("applied %d bound changes\n", nbdchgs);
-   printf("applied %d bound changes\n", nbdchgs);
+//   printf("applied %d bound changes\n", nbdchgs);
 
    return SCIP_OKAY;
 }
@@ -1244,7 +1244,7 @@ SCIP_RETCODE execRelpsprob(
          inititer = 500;
       }
       
-      printf("ninitcands = %d\n", ninitcands);
+      SCIPdebugMessage("ninitcands = %d\n", ninitcands);
 
       bestsbcand = -1;
       bestsbscore = -SCIPinfinity(scip);
@@ -1307,8 +1307,8 @@ SCIP_RETCODE execRelpsprob(
             /* both roundings are infeasible -> node is infeasible */
             SCIPdebugMessage(" -> variable <%s> is infeasible in both directions\n",
                SCIPvarGetName(branchcands[c]));
-            printf(" -> variable <%s> is infeasible in both directions\n",
-               SCIPvarGetName(branchcands[c]));
+//            printf(" -> variable <%s> is infeasible in both directions\n",
+//               SCIPvarGetName(branchcands[c]));
             *result = SCIP_CUTOFF;
             break; /* terminate initialization loop, because node is infeasible */
          }

@@ -273,7 +273,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {  
    SCIPdebugMessage("Execlp method of ryanfoster branching\n");
-   printf("Execlp method of ryanfoster branching\n");
+//   printf("Execlp method of ryanfoster branching\n");
 
    *result = SCIP_DIDNOTRUN;
 
@@ -337,7 +337,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
    if( feasible )
    {
-      printf("node cut off, since origsol was feasible, solval = %f\n", SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n", SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
       *result = SCIP_CUTOFF;
       return SCIP_OKAY;
    }
@@ -439,7 +439,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    if( !feasible )
    {
-      printf("Ryanfoster branching rule could not find variables to branch on!\n");
+      SCIPdebugMessage("Ryanfoster branching rule could not find variables to branch on!\n");
       return SCIP_OKAY;
    }
    else

@@ -576,7 +576,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
          SCIP_Bool feasible;
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
          if( !feasible )
-            printf("heur: %s\n", SCIPheurGetName(SCIPsolGetHeur(probsols[s])));
+            SCIPdebugMessage("heur: %s\n", SCIPheurGetName(SCIPsolGetHeur(probsols[s])));
          assert(feasible);
          //#endif
          

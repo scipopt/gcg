@@ -1222,7 +1222,7 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       if(nsubscipconss[i] == 0)
       {
-         SCIPerrorMessage("Block %d does not have any constraints!\n", i);
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
       }
    }
    return SCIP_OKAY;

@@ -433,7 +433,7 @@ SCIP_Bool checkVars(
    assert(vars != NULL);
    nvars = SCIPgetNVars(scip);
 
-   printf("checkVars()\n");
+   SCIPdebugMessage("checkVars()\n");
 
    /* first of all, check whether variables not fixed to 0 are really valid for the current node */
    /* iterate over all constraints */
@@ -465,8 +465,8 @@ SCIP_Bool checkVars(
                   if( consdata->conssense == GCG_CONSSENSE_GE && 
                      SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
-                     printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
-                     printf("--> Reason: origvars[j] = %s >= origvals[j] = %g violated!\n",
+                     SCIPdebugMessage("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+                     SCIPdebugMessage("--> Reason: origvars[j] = %s >= origvals[j] = %g violated!\n",
                         SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
                      if( !printall )
                         return FALSE;
@@ -474,8 +474,8 @@ SCIP_Bool checkVars(
                   if( consdata->conssense == GCG_CONSSENSE_LE && 
                      SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
                   {
-                     printf("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
-                     printf("--> Reason: origvars[j] = %s <= origvals[j] = %g violated!\n",
+                     SCIPdebugMessage("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
+                     SCIPdebugMessage("--> Reason: origvars[j] = %s <= origvals[j] = %g violated!\n",
                         SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
                      if( !printall )
                         return FALSE;
