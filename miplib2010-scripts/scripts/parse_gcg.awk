@@ -19,7 +19,7 @@
 
 # solver name
 BEGIN {
-   solver = "SCIP";
+   solver = "GCG";
 }
 # solver version 
 /^SCIP version/ { solverversion = $3; }
