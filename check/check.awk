@@ -329,7 +329,7 @@ BEGIN {
 #
 # time
 #
-/^Solving Time       :/ { tottime = $4 }
+/^Solving Time \(sec\) :/ { tottime = $5 }
 #
 # Output
 #
