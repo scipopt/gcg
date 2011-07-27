@@ -34,7 +34,8 @@
 #define HEUR_DESC             "LP diving heuristic that chooses fixings w.r.t. the fractionalities"
 #define HEUR_DISPCHAR         'f'
 #define HEUR_PRIORITY         -1003000
-#define HEUR_FREQ             10
+//#define HEUR_FREQ             10
+#define HEUR_FREQ             -1
 #define HEUR_FREQOFS          3
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPSEUDOPLUNGE
@@ -309,11 +310,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
 
    *result = SCIP_DELAYED;
 
-   SCIPdebugMessage("LP solution status of masterprob: %d\n", SCIPgetLPSolstat(masterprob));
-   SCIPdebugMessage("Masterprob has LP: %d\n", SCIPhasCurrentNodeLP(masterprob));
-   SCIPdebugMessage("Relaxation solution is%s valid\n", SCIPisRelaxSolValid(scip) ? "" : " not");
-   assert(SCIPisRelaxSolValid(scip));
-
    /* only call heuristic, if an optimal LP solution is at hand */
    if( !SCIPhasCurrentNodeLP(masterprob) || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
    {
@@ -328,6 +324,14 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    /* don't dive two times at the same node */
    if( SCIPgetLastDivenode(masterprob) == SCIPgetNNodes(masterprob) && SCIPgetDepth(masterprob) > 0 )
       return SCIP_OKAY;
+
+   /* TODO: for some reason, the heuristic is sometimes called with an invalid relaxation solution;
+    *       in that case, don't execute it */
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("not executing GCG fracdiving: invalid relaxation solution (should not happen!)\n");
+      return SCIP_OKAY;
+   }
 
    *result = SCIP_DIDNOTRUN;
 
@@ -736,7 +740,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
                - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, var)), SCIPgetRelaxSolVal(scip, var)) );
       }
    }
-   assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, GCGrelaxGetCurrentOrigSol(scip))));
+   assert(SCIPisFeasEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, GCGrelaxGetCurrentOrigSol(scip))));
    SCIP_CALL( SCIPfreeSol(scip, &oldrelaxsol) );
 
    if( *result == SCIP_FOUNDSOL )

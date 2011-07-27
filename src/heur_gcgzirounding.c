@@ -31,7 +31,8 @@
 #define HEUR_DESC             "LP rounding heuristic on original variables as suggested by C. Wallace taking row slacks and bounds into account"
 #define HEUR_DISPCHAR         'z'
 #define HEUR_PRIORITY         -500
-#define HEUR_FREQ             1
+//#define HEUR_FREQ             1
+#define HEUR_FREQ             -1    // TODO: heuristic deactivated due to false solutions
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
