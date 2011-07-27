@@ -37,6 +37,23 @@
  *
  * In this paper a linear time propagation algorithm is described, a variant of which is implemented
  * here. The implemented variant does not run in linear time, but is very fast in practice.
+ *
+ * <table>
+ *   <caption>translation table</caption>
+ *   <tr><td>here</td><td>paper</td></tr>
+ *   <tr><td></td><td></td></tr>
+ *   <tr><td>nspcons      </td><td>p       </td></tr>
+ *   <tr><td>nblocks      </td><td>q       </td></tr>
+ *   <tr><td>vars         </td><td>x       </td></tr>
+ *   <tr><td>vals         </td><td>A^\\star</td></tr>
+ *   <tr><td>weights      </td><td>\\omega </td></tr>
+ *   <tr><td>cases        </td><td>\\tau   </td></tr>
+ *   <tr><td>fixtriangle  </td><td>--      </td></tr>
+ *   <tr><td>resolveprop  </td><td>--      </td></tr>
+ *   <tr><td>firstnonzeros</td><td>\\mu    </td></tr>
+ *   <tr><td>lastones     </td><td>\\alpha </td></tr>
+ *   <tr><td>frontiersteps</td><td>\\Gamma </td></tr>
+ * </table>
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -66,26 +83,6 @@
 
 /*
  * Data structures
- */
-
-/* ###############################################################################
- * ######                 TRANSLATION TABLE FOR VARIABLE NAMES               #####
- * ###### +---------------+-----------------+----------------+-------------+ #####
- * ###### |     HERE      |    COLORING     |    BHCOUNT     |    PAPER    | #####
- * ###### +---------------+-----------------+----------------+-------------+ #####
- * ###### | nspcons       |  n_             | m              | p           | #####
- * ###### | nblocks       |  maxColors_     | n              | q           | #####
- * ###### | vars          |  XVars_         | xvars          | x           | #####
- * ###### | vals          |  XVals_         | xvals          | A^\star     | #####
- * ###### | weights       |  A_             | A              | \omega      | #####
- * ###### | cases         |  T_             | T              | \tau        | #####
- * ###### | fixtriangle   |  fixTriangle_   | fixtriangle    |     --      | #####
- * ###### | resolveprop   |  resolveProp_   | resolveProp    |     --      | #####
- * ###### | firstnonzeros |  Mu_            | Mu             | \mu         | #####
- * ###### | lastones      |  Alpha_         | Alpha          | \alpha      | #####
- * ###### | frontiersteps |  S              | Gamma          | \Gamma      | #####
- * ###### +---------------+-----------------+----------------+-------------+ #####
- * ###############################################################################
  */
 
 /** constraint data for orbitope constraints */
@@ -776,7 +773,7 @@ SCIP_RETCODE propagateCons(
 
    if ( ! ispart )
    {
-      /* packing case: if entry (0,0) is fixed to zero */
+      /* packing case: if entry (0,0) is fixed to 0 */
       if ( SCIPvarGetUbLocal(vars[0][0]) < 0.5 )
       {
          lastoneprevrow = -1;
@@ -797,13 +794,13 @@ SCIP_RETCODE propagateCons(
       if ( lastcolumn > i )
 	 lastcolumn = i;
 
-      /* find first position not fixed to zero */
+      /* find first position not fixed to 0 (partitioning) or fixed to 1 (packing) */
       firstnonzeroinrow = -1;
       for (j = 0; j <= lastcolumn; ++j)
       {
          if ( ispart )
          {
-            /* partitioning case: if variable is not fixed to zero */
+            /* partitioning case: if variable is not fixed to 0 */
             if ( SCIPvarGetUbLocal(vars[i][j]) > 0.5 )
             {
                firstnonzeroinrow = j;
@@ -812,7 +809,7 @@ SCIP_RETCODE propagateCons(
          }
          else
          {
-            /* packing case: if variable is fixed to one */
+            /* packing case: if variable is fixed to 1 */
             if ( SCIPvarGetLbLocal(vars[i][j]) > 0.5 )
             {
                firstnonzeroinrow = j;
@@ -820,7 +817,7 @@ SCIP_RETCODE propagateCons(
             }
          }
       }
-      /* if all variables are fixed to zero in the partitioning case - should not happen */
+      /* if all variables are fixed to 0 in the partitioning case - should not happen */
       if ( firstnonzeroinrow == -1 && ispart )
       {
 	 SCIPdebugMessage(" -> Infeasible node: all variables in row %d are fixed to 0.\n", i);
@@ -836,7 +833,7 @@ SCIP_RETCODE propagateCons(
       assert( !ispart || 0 <= lastoneprevrow );
       assert( lastoneprevrow <= lastcolumn );
 
-      /* if we are at right border or if entry in column lastoneprevrow+1 is fixed to zero */
+      /* if we are at right border or if entry in column lastoneprevrow+1 is fixed to 0 */
       infrontier = FALSE;
       if ( lastoneprevrow == nblocks-1 || SCIPvarGetUbLocal(vars[i][lastoneprevrow+1]) < 0.5 )
 	 lastoneinrow = lastoneprevrow;
@@ -871,7 +868,7 @@ SCIP_RETCODE propagateCons(
          goto TERMINATE;
       }
 
-      /* fix entries beyond the last possible position for a one in the row to zero (see Lemma 1 in the paper) */
+      /* fix entries beyond the last possible position for a 1 in the row to 0 (see Lemma 1 in the paper) */
       for (j = lastoneinrow+1; j <= lastcolumn; ++j)
       {
 	 /* if the entry is not yet fixed to 0 */
@@ -916,12 +913,12 @@ SCIP_RETCODE propagateCons(
       /* note for packing case: if we are in a frontier step then lastoneinrow >= 0 */
       assert( 0 <= lastoneinrow && lastoneinrow < nblocks );
 
-      /* if entry is not fixed*/
+      /* if entry is not fixed */
       if ( SCIPvarGetLbLocal(vars[s][lastoneinrow]) < 0.5 && SCIPvarGetUbLocal(vars[s][lastoneinrow]) > 0.5 )
       {
          int betaprev;
          betaprev = lastoneinrow - 1;
-            
+
          /* loop through rows below s */
          for (i = s+1; i < nspcons; ++i)
          {
@@ -933,7 +930,7 @@ SCIP_RETCODE propagateCons(
             else
                beta = betaprev + 1;
             assert( -1 <= beta && beta < nblocks );
-               
+
             if ( firstnonzeros[i] > beta )
             {
                SCIP_Bool tightened;
@@ -1005,6 +1002,7 @@ SCIP_RETCODE resolvePropagation(
    SCIP_Real** vals;
    SCIP_Real** weights;
    SCIP_VAR*** vars;
+   SCIP_Bool ispart;
    int** cases;
 
    int i;
@@ -1025,14 +1023,18 @@ SCIP_RETCODE resolvePropagation(
    assert( consdata->cases != NULL );
    assert( consdata->isTriangleFixed );
 
+   *result = SCIP_DIDNOTFIND;
+   if ( ! consdata->resolveprop )
+      return SCIP_OKAY;
+
    nspcons = consdata->nspcons;
    nblocks = consdata->nblocks;
    vars = consdata->vars;
    vals = consdata->vals;
    weights = consdata->weights;
+   ispart = consdata->ispart;
    cases = consdata->cases;
 
-   *result = SCIP_DIDNOTFIND;
    SCIPdebugMessage("Propagation resolution method of orbitope constraint using orbitopal fixing\n");
 
    /* fill table */
@@ -1134,8 +1136,10 @@ SCIP_RETCODE resolvePropagation(
       int k;
       int p1;
       int p2;
+#ifndef NDEBUG
       int pos1;
       int pos2;
+#endif
 #ifdef SCIP_DEBUG
       char str[SCIP_MAXSTRLEN];
       char tmpstr[SCIP_MAXSTRLEN];
@@ -1158,8 +1162,10 @@ SCIP_RETCODE resolvePropagation(
 
       p1 = i-1;
       p2 = j-1;
+#ifndef NDEBUG
       pos1 = -1;
       pos2 = -1;
+#endif
       do
       {
 	 assert( cases[p1][p2] != -1 );
@@ -1171,7 +1177,7 @@ SCIP_RETCODE resolvePropagation(
 	    --p2;   /* decrease column */
 	 else
 	 {
-	    /* case 2 or 3: */
+	    /* case 2 or 3: reason are formed by variables in SC fixed to 0 */
 	    assert( cases[p1][p2] == 2 || cases[p1][p2] == 3 );
 	    if ( SCIPvarGetUbAtIndex(vars[p1][p2], bdchgidx, FALSE) < 0.5 )
 	    {
@@ -1183,6 +1189,7 @@ SCIP_RETCODE resolvePropagation(
 	       (void) strncat(str, tmpstr, SCIP_MAXSTRLEN);
 #endif
 	    }
+#ifndef NDEBUG
 	    else
 	    {
 	       assert( SCIPvarGetLbAtIndex(vars[p1][p2], bdchgidx, FALSE) < 0.5 );
@@ -1190,34 +1197,62 @@ SCIP_RETCODE resolvePropagation(
 	       pos1 = p1;
 	       pos2 = p2;
 	    }
+#endif
 	    if ( cases[p1][p2] == 3 )
 	       break;
 	 }
 	 --p1;  /* decrease row */
       }
-      while ( p1 >= 0 );   /* should always be true, i.e. the break should end the loop */
+      while ( p1 >= 0 );   /* should always be true, i.e., the break should end the loop */
       assert( cases[p1][p2] == 3 );
       assert( pos1 >= 0 && pos2 >= 0 );
 
-      /* add variables before the bar */
-#ifdef SCIP_DEBUG
-      (void) SCIPsnprintf(tmpstr, SCIP_MAXSTRLEN, "  before bar: ");
-      (void) strncat(str, tmpstr, SCIP_MAXSTRLEN);
-#endif
-      for (k = 0; k < j; ++k)
+      /* distinguish partitioning/packing */
+      if ( ispart )
       {
-	 assert( SCIPvarGetUbAtIndex(vars[i][k], bdchgidx, FALSE) < 0.5 );
-	 SCIP_CALL( SCIPaddConflictUb(scip, vars[i][k], bdchgidx) );
-	 *result = SCIP_SUCCESS;
+         /* partitioning case */
 #ifdef SCIP_DEBUG
-	 (void) SCIPsnprintf(tmpstr, SCIP_MAXSTRLEN, " (%d,%d)", i, k);
-	 (void) strncat(str, tmpstr, SCIP_MAXSTRLEN);
+         (void) SCIPsnprintf(tmpstr, SCIP_MAXSTRLEN, "  before bar: ");
+         (void) strncat(str, tmpstr, SCIP_MAXSTRLEN);
 #endif
-      }
+         /* add variables before the bar in the partioning case */
+         for (k = 0; k < j; ++k)
+         {
+            assert( SCIPvarGetUbAtIndex(vars[i][k], bdchgidx, FALSE) < 0.5 );
+            SCIP_CALL( SCIPaddConflictUb(scip, vars[i][k], bdchgidx) );
+            *result = SCIP_SUCCESS;
+#ifdef SCIP_DEBUG
+            (void) SCIPsnprintf(tmpstr, SCIP_MAXSTRLEN, " (%d,%d)", i, k);
+            (void) strncat(str, tmpstr, SCIP_MAXSTRLEN);
+#endif
+         }
 
 #ifdef SCIP_DEBUG
-      SCIPdebugMessage("%s\n", str);
+         SCIPdebugMessage("%s\n", str);
 #endif
+      }
+      else
+      {
+         /* packing case */
+         int lastcolumn;
+
+         /* last column considered as part of the bar: */
+         lastcolumn = nblocks - 1;
+         if ( lastcolumn > i )
+            lastcolumn = i;
+
+         /* search for variable in the bar that is fixed to 1 in the packing case */
+         for (k = j; k <= lastcolumn; ++k)
+         {
+            if ( SCIPvarGetLbAtIndex(vars[i][k], bdchgidx, FALSE) > 0.5 )
+            {
+               SCIP_CALL( SCIPaddConflictLb(scip, vars[i][k], bdchgidx) );
+               *result = SCIP_SUCCESS;
+               SCIPdebugMessage("   and variable x[%d][%d] fixed to 1.\n", i, k);
+               break;
+            }
+         }
+      }
    }
 
    return SCIP_OKAY;
@@ -2235,27 +2270,29 @@ SCIP_RETCODE SCIPcreateConsOrbitope(
       {
          /* init obj to infinity */
          obj = SCIPinfinity(scip);
-	 for (j = 0; j < nblocks; ++j)
-	 {
-            SCIP_VAR* var = vars[i][j];
+         for (j = 0; j < nblocks; ++j)
+         {
+            SCIP_Bool fixedZero;
+            SCIP_VAR* var;
 
-	    /* all variables need to be binary */
-	    assert( SCIPvarGetType(var) == SCIP_VARTYPE_BINARY );
+            var = vars[i][j];
+
+            /* all variables need to be binary */
+            assert( SCIPvarGetType(var) == SCIP_VARTYPE_BINARY );
 
             /* fixed variables have obj = 0; for variables fixed to 0, we assume that there is no
                problem (but we cannot always check it, e.g., when in the original problem
                variables were fixed and this problem was copied.) */
-            SCIP_Bool fixedZero;
             fixedZero = ( SCIPisZero(scip, SCIPvarGetLbGlobal(var)) && SCIPisZero(scip, SCIPvarGetUbGlobal(var)) );
 
             /* check whether all variables in a row have the same objective */
-	    if ( ! fixedZero && SCIPisInfinity(scip, obj) )
-	       obj = SCIPvarGetObj(var);
-	    else
-	    {
-	       assert( fixedZero || SCIPisEQ(scip, obj, SCIPvarGetObj(var)) );    /*lint !e644*/
-	    }
-	 }
+            if ( ! fixedZero && SCIPisInfinity(scip, obj) )
+               obj = SCIPvarGetObj(var);
+            else
+            {
+               assert( fixedZero || SCIPisEQ(scip, obj, SCIPvarGetObj(var)) );    /*lint !e644*/
+            }
+         }
       }
    }
 #endif

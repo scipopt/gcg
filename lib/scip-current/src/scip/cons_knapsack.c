@@ -84,6 +84,8 @@
                                          *   comparison round */
 #define DEFAULT_DUALPRESOLVING     TRUE /**< should dual presolving steps be preformed? */
 
+#define MAXCOVERSIZEITERLEWI       1000 /**< maximal size for which LEWI are iteratively separated by reducing the feasible set */
+
 
 /*
  * Data structures
@@ -345,8 +347,8 @@ static
 SCIP_RETCODE calcCliquepartition(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONSDATA*        consdata,           /**< constraint data */
-   SCIP_Bool             normalclique,       /** should normal cliquepartition be created */
-   SCIP_Bool             negatedclique       /** should negated cliquepartition be created */
+   SCIP_Bool             normalclique,       /**< Should normal cliquepartition be created? */
+   SCIP_Bool             negatedclique       /**< Should negated cliquepartition be created? */
    )
 {
    assert(consdata != NULL);
@@ -801,7 +803,7 @@ SCIP_RETCODE checkCons(
 }
 
 /* IDX computes the integer index for the optimal solution array */
-#define IDX(j,d) ((j)*(intcap+1)+(d))
+#define IDX(j,d) ((j)*(intcap)+(d))
 
 /** solves knapsack problem in maximization form exactly using dynamic programming;
  *  if needed, one can provide arrays to store all selected items and all not selected items
@@ -828,8 +830,21 @@ SCIP_RETCODE SCIPsolveKnapsackExactly(
    SCIP_Real* tempsort;
    SCIP_Real* optvalues;
    int intcap;
-   int d;
+   SCIP_Longint d;
    int j;
+   SCIP_Longint weightsum;
+   int* myitems;
+   SCIP_Longint* myweights;
+   SCIP_Real* myprofits;
+   int nmyitems;
+   SCIP_Longint gcd;
+   SCIP_Longint minweight;
+   SCIP_Longint currminweight;
+   SCIP_Longint greedycap;
+   SCIP_Longint greedysolweight;
+   SCIP_Real greedysolvalue;
+   SCIP_Bool eqweights;
+   SCIP_Bool isoptimal;
 
    assert(weights != NULL);
    assert(profits != NULL);
@@ -839,110 +854,17 @@ SCIP_RETCODE SCIPsolveKnapsackExactly(
    assert(success != NULL);
 
    *success = TRUE;
-
-   if( capacity > INT_MAX )
-   {
-      *success = FALSE;
-      return SCIP_OKAY;
-   }
-   assert(capacity <= INT_MAX);
-
-   if( capacity == 0 )
-   {
-#ifndef NDEBUG
-      for( j = nitems - 1; j >= 0; --j )
-         assert(weights[j] >= 0);
-#endif
-      if( solitems != NULL)
-      {
-         assert(nonsolitems != NULL);
-         assert(nnonsolitems != NULL);
-         assert(nonsolitems != NULL);
-
-         *nsolitems = 0;
-         *nnonsolitems = 0;
-
-         for( j = 0; j < nitems; j++ )
-         {
-            if( weights[j] == 0 )
-            {
-               solitems[*nsolitems] = items[j];
-               (*nsolitems)++;
-            } 
-            else
-            {
-               assert(weights[j] > 0);
-               nonsolitems[*nnonsolitems] = items[j];
-               (*nnonsolitems)++;
-            }
-         }
-
-      }
-
-      if( solval != NULL )
-         *solval = 0.0;
-
-      return SCIP_OKAY;
-   }
-
-   intcap = (int)capacity;
-   assert(intcap >= 0);
-
-   /* this condition is only to check if the size of memory which will be allocated is still positiv( so no error occurs ), which will be necessary after
-    * this if condition */ 
-   if( (nitems+1) * (intcap+1) * ((int) sizeof(*optvalues)) < 0 )
-   {
-      *success = FALSE;
-      return SCIP_OKAY;
-   }
-   /* allocate temporary memory and check for memory exceeding */ 
-   retcode = SCIPallocBufferArray(scip, &optvalues, (nitems+1)*(intcap+1));
-   if( retcode == SCIP_NOMEMORY )
-   {
-      *success = FALSE;
-      return SCIP_OKAY;
-   }
-   else
-   {
-      SCIP_CALL( retcode );
-   }
    
-   /* sort items (plus corresponding arrays weights and profits) such that 
-    * p_1/w_1 >= p_2/w_2 >= ... >= p_n/w_n 
-    */
-   SCIP_CALL( SCIPallocBufferArray(scip, &tempsort, nitems) );
+#ifndef NDEBUG
    for( j = nitems - 1; j >= 0; --j )
-      tempsort[j] = profits[j]/weights[j];
+      assert(weights[j] >= 0);
+#endif
 
-   SCIPsortDownRealLongRealInt(tempsort, weights, profits, items, nitems);
+   SCIPdebugMessage("Solving knapsack exactly.\n");
 
-   /* fills dynamic programming table with optimal values */
-   for( d = 0; d <= intcap; d++ )
-      optvalues[d] = 0.0; /* simpler as optvalues[IDX(0,d)] = 0.0; */
-   for( j = 1; j <= nitems; j++ )
-   {
-      int intweight;
-
-      assert(0 <= weights[j-1] && weights[j-1] < SCIP_LONGINT_MAX);
-      if( weights[j-1] >= INT_MAX )
-      {
-         assert(weights[j-1] > capacity);
-         intweight = INT_MAX;
-      }
-      else
-         intweight = (int)weights[j-1];
-      assert(intweight >= 0);
-
-      for( d = 0; d < intweight && d <= intcap; d++ )
-         optvalues[IDX(j,d)] = optvalues[IDX(j-1,d)];
-      for( d = intweight; d <= intcap; d++ )
-      {
-         SCIP_Real sumprofit;
-
-         sumprofit = optvalues[IDX(j-1,d-intweight)] + profits[j-1];
-         optvalues[IDX(j,d)] = MAX(sumprofit, optvalues[IDX(j-1,d)]);
-      } 
-   }
+   /* initializing solution value */
+   if( solval != NULL )
+      *solval = 0.0;
 
    /* produces optimal solution by following the table */
    if( solitems != NULL)
@@ -954,35 +876,420 @@ SCIP_RETCODE SCIPsolveKnapsackExactly(
 
       *nnonsolitems = 0;
       *nsolitems = 0;
-      d = intcap;
-      
-      for( j = nitems; j > 0; j-- )
+   }
+
+   /* allocate temporary memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &myweights, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &myprofits, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &myitems, nitems) );
+   nmyitems = 0;
+   weightsum = 0;
+   minweight = SCIP_LONGINT_MAX;
+
+   /* remove unnecessary items */
+   for( j = 0; j < nitems; ++j )
+   {
+      assert(0 <= weights[j] && weights[j] < SCIP_LONGINT_MAX);
+      /* items does not fit */
+      if( weights[j] > capacity )
       {
+         if( solitems != NULL)
+         {
+            nonsolitems[*nnonsolitems] = items[j];
+            ++(*nnonsolitems);
+         }
+      }
+      /* items we does not want */
+      else if( profits[j] <= 0.0 )
+      {
+         if( solitems != NULL)
+         {
+            nonsolitems[*nnonsolitems] = items[j];
+            ++(*nnonsolitems);
+         }
+      }
+      /* items which always fit */
+      else if( weights[j] == 0 )
+      {
+         if( solitems != NULL)
+         {
+            solitems[*nsolitems] = items[j];
+            ++(*nsolitems);
+         }
+         if( solval != NULL )
+            *solval += profits[j];
+      }
+      /* all important items */
+      else
+      {
+         myweights[nmyitems] = weights[j];
+         myprofits[nmyitems] = profits[j];
+         myitems[nmyitems] = items[j];
+
+         /* remember smallest item */
+         if( myweights[nmyitems] < minweight )
+            minweight = myweights[nmyitems];
+
+         weightsum += myweights[nmyitems];
+         ++nmyitems;
+      }
+   }
+
+   /* no item is left then goto end */
+   if( nmyitems == 0 )
+   {
+      SCIPdebugMessage("After preprocessing no items are left.\n");
+
+      goto TERMINATE;
+   }
+   /* if all items fit, we also do not need to do the expensive stuff later on */
+   else if( weightsum > 0 && weightsum <= capacity )
+   {
+      SCIPdebugMessage("After preprocessing all items fit into knapsack.\n");
+      
+      for( j = nmyitems - 1; j >= 0; --j )
+      {
+         if( solitems != NULL )
+         {
+            solitems[*nsolitems] = myitems[j];
+            ++(*nsolitems);
+         }
+         if( solval != NULL )
+            *solval += myprofits[j];
+      }
+      
+      goto TERMINATE;
+   }
+
+   /* determine greatest common divisor */
+   gcd = myweights[nmyitems - 1];
+   for( j = nmyitems - 2; j >= 0 && gcd >= 2; --j )
+      gcd = SCIPcalcGreComDiv(gcd, myweights[j]);
+
+   SCIPdebugMessage("Gcd is %"SCIP_LONGINT_FORMAT".\n", gcd);
+
+   /* divide by greatest common divisor */
+   if( gcd > 1 )
+   {
+      eqweights = TRUE;
+      for( j = nmyitems - 1; j >= 0; --j )
+      {
+         myweights[j] /= gcd;
+         eqweights &= (myweights[j] == 1);
+      }
+      capacity /= gcd;
+      minweight /= gcd;
+   }
+   else
+      eqweights = FALSE;
+
+   assert(minweight <= capacity);
+
+   /* only one item fits, than take the best */
+   if( minweight > capacity / 2 )
+   {
+      int p;
+
+      SCIPdebugMessage("Only one item fits into knapsack, so take the best.\n");
+
+      p = nmyitems - 1;
+
+      /* find best item */
+      for( j = nmyitems - 2; j >= 0; --j )
+         if( myprofits[j] > myprofits[p] )
+            p = j;
+
+      /* update solution information */
+      if( solitems != NULL)
+      {
+         solitems[*nsolitems] = myitems[p];
+         ++(*nsolitems);
+         for( j = nmyitems - 1; j >= 0; --j )
+            if( j != p )
+            {
+               nonsolitems[*nnonsolitems] = myitems[j];
+               ++(*nnonsolitems);
+            }
+      }
+      /* update solution value */
+      if( solval != NULL )
+         *solval += myprofits[p];
+      
+      goto TERMINATE;
+   }
+
+   /* all items have the same weight, than take the best */
+   if( eqweights )
+   {
+      SCIP_Real addval;
+
+      SCIPdebugMessage("All weights are equal, so take the best.\n");
+
+      SCIPsortDownRealIntLong(myprofits, myitems, myweights, nmyitems);
+
+      addval = 0.0;
+      /* update solution information */
+      if( solitems != NULL)
+      {
+         /* if all items would fit we had handled this case before */
+         assert(nmyitems > capacity);
+
+         /* take the first best items into the solution */
+         for( d = capacity - 1; d >= 0; --d )
+         {
+            solitems[*nsolitems] = myitems[d];
+            ++(*nsolitems);
+            addval += myprofits[d];
+         }
+
+         /* the rest are not in the solution */
+         for( j = nmyitems - 1; j >= capacity; --j )
+         {
+            nonsolitems[*nnonsolitems] = myitems[j];
+            ++(*nnonsolitems);
+         }
+      }
+      /* update solution value */
+      if( solval != NULL )
+      {
+         assert(addval > 0.0);
+         *solval += addval;
+      }
+
+      goto TERMINATE;
+   }
+
+   /* in the follwoing table we do not need the first minweight columns */
+   capacity -= (minweight - 1);
+
+   /* we can only handle integers */
+   if( capacity >= INT_MAX )
+   {
+      SCIPdebugMessage("Capacity is to big, so we cannot handle it here.\n");
+
+      *success = FALSE;
+      goto TERMINATE;
+   }
+   assert(capacity < INT_MAX);
+
+   intcap = (int)capacity;
+   assert(intcap >= 0);
+
+   /* this condition is only to check if the size of memory which will be allocated is still positiv( so no error occurs
+    * ), which will be necessary after this if condition
+    */ 
+   if( (intcap) < 0 || (nmyitems) * (intcap) < 0 || (nmyitems) * (intcap) * ((int) sizeof(*optvalues)) < 0 )
+   {
+      SCIPdebugMessage("Too much memory will be consumed.\n");
+
+      *success = FALSE;
+      goto TERMINATE;
+   }
+
+   /* allocate temporary memory and check for memory exceeding */ 
+   retcode = SCIPallocBufferArray(scip, &optvalues, (nmyitems)*(intcap));
+   if( retcode == SCIP_NOMEMORY )
+   {
+      SCIPdebugMessage("Did not get enough memory.\n");
+
+      *success = FALSE;
+      goto TERMINATE;
+   }
+   else
+   {
+      SCIP_CALL( retcode );
+   }
+
+   /* sort myitems (plus corresponding arrays myweights and myprofits) such that 
+    * p_1/w_1 >= p_2/w_2 >= ... >= p_n/w_n, this is only use for greedy solution
+    */
+   SCIP_CALL( SCIPallocBufferArray(scip, &tempsort, nmyitems) );
+   for( j = nmyitems - 1; j >= 0; --j )
+      tempsort[j] = myprofits[j]/myweights[j];
+
+   SCIPsortDownRealLongRealInt(tempsort, myweights, myprofits, myitems, nmyitems);
+
+   /* initialize values for greedy solution information */
+   greedysolweight = 0;
+   greedysolvalue = 0.0;
+   isoptimal = TRUE;
+   greedycap = capacity + (minweight - 1);
+
+   SCIPdebugMessage("Determine greedy solution.\n");
+
+   /* determine greedy solution */
+   for( j = 0; j < nmyitems; ++j )
+   {
+      assert(myweights[j] <= greedycap);
+
+      /* take all fitting items */
+      if( myweights[j] + greedysolweight <= greedycap )
+      {
+         /* update greedy solution weight and value */
+         greedysolweight += myweights[j];
+         greedysolvalue += myprofits[j];
+         continue;
+      }
+      else if( greedysolweight < greedycap )
+         isoptimal = FALSE;
+      break;
+   }
+   assert(greedysolweight > 0);
+   assert(greedysolvalue > 0.0);
+
+   /* greedy solution is optimal */
+   if( isoptimal )
+   {
+      assert(greedysolweight == greedycap);
+
+      SCIPdebugMessage("Greedy solution is optimal.\n");
+
+      greedysolweight = 0;
+
+      /* update solution information */
+      if( solitems != NULL)
+      {
+         /* take the first best items into the solution */
+         for( j = 0; j < nmyitems; ++j )
+         {
+            /* take all fitting items */
+            if( myweights[j] + greedysolweight <= greedycap )
+            {
+               solitems[*nsolitems] = myitems[j];
+               ++(*nsolitems);
+               greedysolweight += myweights[j];
+            }
+            else
+            {
+               nonsolitems[*nnonsolitems] = myitems[j];
+               ++(*nnonsolitems);
+            }
+         }
+      }
+      /* update solution value */
+      if( solval != NULL )
+      {
+         assert(greedysolvalue > 0.0);
+         *solval += greedysolvalue;
+      }
+
+      SCIPfreeBufferArray(scip, &tempsort);
+      SCIPfreeBufferArray(scip, &optvalues);
+
+      goto TERMINATE;
+   }
+
+   SCIPdebugMessage("Start real exact algorithm.\n");
+
+   currminweight = myweights[0] - minweight;
+   /* fills first row of dynamic programming table with optimal values */
+   for( d = currminweight; d < intcap; ++d )
+      optvalues[d] = myprofits[0];
+   /* fills dynamic programming table with optimal values */
+   for( j = 1; j < nmyitems; ++j )
+   {
+      int intweight;
+
+      /* compute important part of weight, which will be represented in the table */
+      intweight = (int)(myweights[j] - minweight);
+      assert(0 <= intweight && intweight < intcap);
+      
+      /* copy all nonzeros from row above */
+      for( d = currminweight; d < intweight && d < intcap; ++d )
+         optvalues[IDX(j,d)] = optvalues[IDX(j-1,d)];
+
+      /* initialize last line if we found a new smallest weight which becomes necessary for later use */
+      if( intweight < currminweight )
+      {
+         for( d = intweight; d < currminweight; ++d )
+            optvalues[IDX(j-1,d)] = 0.0;
+      }
+
+      /* update corresponding row */
+      for( d = intweight; d < intcap; ++d )
+      {
+         SCIP_Real sumprofit;
+
+         if( d - myweights[j] < currminweight )
+            sumprofit = myprofits[j];
+         else
+            sumprofit = optvalues[IDX(j-1,d-myweights[j])] + myprofits[j];
+         optvalues[IDX(j,d)] = MAX(sumprofit, optvalues[IDX(j-1,d)]);
+      }
+      /* update currminweight */
+      if( intweight < currminweight )
+         currminweight = intweight;
+   }
+
+   /* update optimal solution by following the table */
+   if( solitems != NULL)
+   {
+      d = intcap - 1;
+
+      SCIPdebugMessage("Fill the solution vector after solving exactly.\n");
+
+      /* insert all items in (non-) solution vector */
+      for( j = nmyitems - 1; j > 0; --j )
+      {
+         /* if we cannot find any item which is in our solution stop */
+         if( d < 0 || optvalues[IDX(j,d)] == 0.0 )
+         {
+            assert(d >= -minweight);
+            break;
+         }
+
+         /* collect solution items */
          if( optvalues[IDX(j,d)] > optvalues[IDX(j-1,d)] )
          {
-            assert(0 <= weights[j-1] && weights[j-1] < INT_MAX);
-            solitems[*nsolitems] = items[j-1];
-            (*nsolitems)++;
-            d -= (int)weights[j-1];
+            solitems[*nsolitems] = myitems[j];
+            ++(*nsolitems);
+            d -= myweights[j];
          } 
+         /* collect non-solution items */
          else
          { 
-            nonsolitems[*nnonsolitems] = items[j-1];
-            (*nnonsolitems)++;
+            nonsolitems[*nnonsolitems] = myitems[j];
+            ++(*nnonsolitems);
          }
-         assert(d >= 0);
       }
+
+      /* insert remaining items */
+      if( d >= 0 && optvalues[IDX(j,d)] > 0.0 )
+      {
+         assert(j == 0);
+         solitems[*nsolitems] = myitems[j];
+         ++(*nsolitems);
+      }
+      else
+      {
+         assert(j >= 0);
+         assert(d < 0 || optvalues[IDX(j,d)] == 0.0);
+         for( ; j >= 0; --j )
+         {
+            nonsolitems[*nnonsolitems] = myitems[j];
+            ++(*nnonsolitems);
+         }
+      }
+         
       assert(*nsolitems + *nnonsolitems == nitems);
    }
 
+   /* update solution value */
    if( solval != NULL )
-      *solval = optvalues[IDX(nitems,intcap)];
+      *solval += optvalues[IDX(nmyitems-1,intcap-1)];
 
+   /* free all temporary memory */
    SCIPfreeBufferArray(scip, &tempsort);
    SCIPfreeBufferArray(scip, &optvalues);
 
+ TERMINATE:
+   SCIPfreeBufferArray(scip, &myitems);
+   SCIPfreeBufferArray(scip, &myprofits);
+   SCIPfreeBufferArray(scip, &myweights);
+
    return SCIP_OKAY;
 }
+
 
 /** solves knapsack problem in maximization form approximately by solving the LP-relaxation of the problem using Dantzig's
  *  method and rounding down the solution; if needed, one can provide arrays to store all selected items and all not 
@@ -1569,6 +1876,7 @@ void getPartitionNoncovervars(
    
    *nvarsF = 0;
    *nvarsR = 0;
+
    for( j = 0; j < nnoncovervars; j++ )
    {
       /* variable has solution value zero */
@@ -1605,6 +1913,7 @@ SCIP_RETCODE getLiftingSequence(
    )
 {
    SORTKEYPAIR** sortkeypairsF;
+   SORTKEYPAIR* sortkeypairsFstore;
    SCIP_Real* sortkeysC2;
    SCIP_Real* sortkeysR;
    int j;
@@ -1620,10 +1929,11 @@ SCIP_RETCODE getLiftingSequence(
    assert(nvarsR >= 0);
    
    /* allocates temporary memory */
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &sortkeypairsF, nvarsF) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &sortkeypairsF, nvarsF) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &sortkeypairsFstore, nvarsF) );
    SCIP_CALL( SCIPallocBufferArray(scip, &sortkeysC2, nvarsC2) );
    SCIP_CALL( SCIPallocBufferArray(scip, &sortkeysR, nvarsR) );
-   
+
    /* gets sorting key for variables in F corresponding to the following lifting sequence 
     *  sequence 1: non-increasing absolute difference between x*_j and the value the variable is fixed to, i.e. 
     *              x*_1 >= x*_2 >= ... >= x*_|F| 
@@ -1632,8 +1942,7 @@ SCIP_RETCODE getLiftingSequence(
     */
    for( j = 0; j < nvarsF; j++ )
    {
-      SCIP_CALL( SCIPallocBlockMemory(scip, &sortkeypairsF[j]) );
-
+      sortkeypairsF[j] =&(sortkeypairsFstore[j]);
       sortkeypairsF[j]->key1 = solvals[varsF[j]]; 
       sortkeypairsF[j]->key2 = (SCIP_Real) weights[varsF[j]]; 
    }
@@ -1665,11 +1974,10 @@ SCIP_RETCODE getLiftingSequence(
    }
    
    /* frees temporary memory */
-   for( j = nvarsF-1; j >= 0; j-- )
-      SCIPfreeBlockMemory(scip, &sortkeypairsF[j]);
    SCIPfreeBufferArray(scip, &sortkeysR);
    SCIPfreeBufferArray(scip, &sortkeysC2);
-   SCIPfreeBlockMemoryArray(scip, &sortkeypairsF, nvarsF);
+   SCIPfreeMemoryArray(scip, &sortkeypairsFstore);
+   SCIPfreeMemoryArray(scip, &sortkeypairsF);
    
    return SCIP_OKAY;
 }
@@ -2878,6 +3186,10 @@ SCIP_RETCODE getFeasibleSet(
          SCIP_CALL( separateSequLiftedExtendedWeightInequality(scip, cons, vars, nvars, ntightened, weights, capacity, solvals, 
                covervars, noncovervars, *ncovervars, *nnoncovervars, sol, ncuts) );
       }
+
+      /* stop if cover is too large */
+      if ( *ncovervars >= MAXCOVERSIZEITERLEWI )
+         break;
    }
 
    /* frees temporary memory */
@@ -3031,13 +3343,15 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
    SCIP_Real             valscale,           /**< -1.0 if lhs of row is used as rhs of c. k. constraint, +1.0 otherwise */
    SCIP_Real             rhs,                /**< right hand side of the continuous knapsack constraint */
    SCIP_SOL*             sol,                /**< primal CIP solution, NULL for current LP solution */
-   int*                  ncuts               /**< pointer to add up the number of found cuts */
+   int*                  ncuts,              /**< pointer to add up the number of found cuts */
+   SCIP_Bool*            cutoff              /**< pointer to store whether a cutoff was found */
    )
 {
    SCIP_VAR** binvars;
    SCIP_VAR** consvars;
    SCIP_Real* binvals;
    SCIP_Longint* consvals;
+   SCIP_Longint minact;
    SCIP_Longint maxact;
    SCIP_Real intscalar;
    SCIP_Bool success;
@@ -3053,6 +3367,7 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
 
    assert(nknapvars > 0);
    assert(knapvars != NULL);
+   assert(cutoff != NULL);
 
    tmpindices = NULL;
 
@@ -3067,6 +3382,8 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
    /* all variables which are of integral type can be potentially of binary type; this can be checked via the method SCIPvarIsBinary(var) */
    nbinvars = SCIPgetNVars(scip) - SCIPgetNContVars(scip);
 
+   *cutoff = FALSE;
+   
    if( nbinvars == 0 )
       return SCIP_OKAY;
 
@@ -3174,6 +3491,16 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
             if( SCIPvarIsBinary(zvlb[j]) && SCIPvarIsActive(zvlb[j]) && REALABS(bvlb[j]) <= MAXABSVBCOEF )
             {
                SCIP_Real vlbsol;
+               
+               if( (bvlb[j] >= 0.0 && SCIPisGT(scip, bvlb[j] * SCIPvarGetLbLocal(zvlb[j]) + dvlb[j], SCIPvarGetUbLocal(var))) ||
+                   (bvlb[j] <= 0.0 && SCIPisGT(scip, bvlb[j] * SCIPvarGetUbLocal(zvlb[j]) + dvlb[j], SCIPvarGetUbLocal(var))) )
+               {
+                  *cutoff = TRUE;
+                  SCIPdebugMessage("variable bound <%s>[%g,%g] >= %g<%s>[%g,%g] + %g implies local cutoff\n",
+                        SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+                        bvlb[j], SCIPvarGetName(zvlb[j]), SCIPvarGetLbLocal(zvlb[j]), SCIPvarGetUbLocal(zvlb[j]), dvlb[j]);
+                  goto TERMINATE;
+               }
 
                assert(0 <= SCIPvarGetProbindex(zvlb[j]) && SCIPvarGetProbindex(zvlb[j]) < nbinvars);
                vlbsol = bvlb[j] * SCIPgetSolVal(scip, sol, zvlb[j]) + dvlb[j];
@@ -3245,6 +3572,16 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
             {
                SCIP_Real vubsol;
 
+               if( (bvub[j] >= 0.0 && SCIPisLT(scip, bvub[j] * SCIPvarGetUbLocal(zvub[j]) + dvub[j], SCIPvarGetLbLocal(var))) ||
+                   (bvub[j] <= 0.0 && SCIPisLT(scip, bvub[j] * SCIPvarGetLbLocal(zvub[j]) + dvub[j], SCIPvarGetLbLocal(var))) )
+               {
+                  *cutoff = TRUE;
+                  SCIPdebugMessage("variable bound <%s>[%g,%g] <= %g<%s>[%g,%g] + %g implies local cutoff\n",
+                        SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+                        bvub[j], SCIPvarGetName(zvub[j]), SCIPvarGetLbLocal(zvub[j]), SCIPvarGetUbLocal(zvub[j]), dvub[j]);
+                  goto TERMINATE;
+               }
+
                assert(0 <= SCIPvarGetProbindex(zvub[j]) && SCIPvarGetProbindex(zvub[j]) < nbinvars);
                vubsol = bvub[j] * SCIPgetSolVal(scip, sol, zvub[j]) + dvub[j];
                if( SCIPisLE(scip, vubsol, bestubsol) )
@@ -3311,6 +3648,7 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
    rhs = rhs*intscalar;
 
    SCIPdebugMessage(" -> rhs = %.15g\n", rhs);
+   minact = 0;
    maxact = 0;
    for( i = 0; i < nbinvars; i++ )
    {
@@ -3338,7 +3676,10 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
             -val, SCIPvarGetName(binvars[i]), binvals[i], SCIPvarGetName(var), rhs);
       }
 
-      maxact += val;
+      if( SCIPvarGetLbLocal(var) > 0.5 )
+         minact += val;
+      if( SCIPvarGetUbLocal(var) > 0.5 )
+         maxact += val;
       consvals[nconsvars] = val;
       consvars[nconsvars] = var;
       nconsvars++;
@@ -3347,13 +3688,13 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
    if( nconsvars > 0 )
    {
       SCIP_Longint capacity;
-
+      
       assert(consvars != NULL);
       assert(consvals != NULL);
       capacity = (SCIP_Longint)SCIPfeasFloor(scip, rhs);
-      if( maxact > capacity )
-      {
+
 #ifdef SCIP_DEBUG
+      {
          SCIP_Real act;
 
          SCIPdebugMessage(" -> linear constraint <%s> relaxed to knapsack:", cons != NULL ? SCIPconsGetName(cons) : "-");
@@ -3364,10 +3705,20 @@ SCIP_RETCODE SCIPseparateRelaxedKnapsack(
                SCIPgetSolVal(scip, sol, consvars[i]));
             act += consvals[i] * SCIPgetSolVal(scip, sol, consvars[i]);
          }
-         SCIPdebugPrintf(" <= %"SCIP_LONGINT_FORMAT" (%.15g) [act: %.15g, max: %"SCIP_LONGINT_FORMAT"]\n",
-            capacity, rhs, act, maxact);
+         SCIPdebugPrintf(" <= %"SCIP_LONGINT_FORMAT" (%.15g) [act: %.15g, min: %"SCIP_LONGINT_FORMAT" max: %"SCIP_LONGINT_FORMAT"]\n",
+            capacity, rhs, act, minact, maxact);
+      }
 #endif
 
+      if( minact > capacity )
+      {
+         SCIPdebugMessage("minactivity of knapsack relaxation implies local cutoff\n");
+         *cutoff = TRUE;
+         goto TERMINATE;
+      }
+
+      if( maxact > capacity )
+      {
          /* separate lifted cut from relaxed knapsack constraint */
          SCIP_CALL( SCIPseparateKnapsackCuts(scip, cons, consvars, nconsvars, consvals, capacity, sol, ncuts) );
       }
@@ -4550,6 +4901,477 @@ SCIP_RETCODE propagateCons(
    return SCIP_OKAY;
 }
 
+/* delete redundant variables
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 2x4 + 1x5 <= 13   =>   x4, x5 always fits into the knapsack, so we can delete them
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 2x4 + 1x5 <= 8 and we have the cliqueinformation (x1,x2,x3) is a clique
+ *      =>   x4, x5 always fits into the knapsack, so we can delete them
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 1x4 + 1x5 <= 6 and we have the cliqueinformation (x1,x2,x3) is a clique and (x4,x5) too
+ *      =>   we create the set partitioning constraint x4 + x5 <= 1 and delete them in this knapsack
+ */
+static
+SCIP_RETCODE deleteRedundantVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< knapsack constraint */
+   SCIP_Longint          frontsum,           /**< sum of front items which fit if we try to take from the first till the last */
+   int                   splitpos,           /**< split position till when all front items are fitting, splitpos is the
+                                              *   first which did not fit */
+   int*                  nchgcoefs,          /**< pointer to store the amount of changed coefficients */
+   int*                  nchgsides,          /**< pointer to store the amount of changed sides */
+   int*                  naddconss           /**< pointer to count number of added constraints */
+   )
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_CONSDATA* consdata;
+   SCIP_VAR** vars;
+   SCIP_Longint* weights;
+   SCIP_Longint capacity;
+   SCIP_Longint gcd;
+   int nvars;
+   int w;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(nchgcoefs != NULL);
+   assert(nchgsides != NULL);
+   assert(naddconss != NULL);
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(SCIPconsGetHdlr(cons));
+   assert(conshdlrdata != NULL);
+
+   vars = consdata->vars;
+   weights = consdata->weights;
+   nvars = consdata->nvars;
+   capacity = consdata->capacity;
+
+   /* if there are no variables rear to splitpos, the constraint has no redundant variables */
+   if( consdata->nvars - 1 >= splitpos )
+      return SCIP_OKAY;
+
+   /* detect redundant variables */
+   if( consdata->weightsum - weights[splitpos] <= capacity )
+   {
+      /* all rear items are redundant, if the frontsum of them is smaller than the weight before, so delete them and update the capacity */
+      if( consdata->weightsum - frontsum < 2 * weights[splitpos] )
+      {
+         SCIPdebugMessage("Found redundant variables in constraint <%s>.\n", SCIPconsGetName(cons));
+
+         /* delete items and update capacity */
+         for( w = nvars - 1; w > splitpos; --w )
+         {
+            consdata->capacity -= weights[w];
+            SCIP_CALL( delCoefPos(scip, cons, w) );
+            ++(*nchgcoefs);
+            ++(*nchgsides);
+         }
+         assert(w == splitpos);
+
+         weights = consdata->weights;
+
+         /* division by greatest common divisor */
+         gcd = weights[w];
+         for( ; w >= 0 && gcd > 1; --w )
+         {
+            gcd = SCIPcalcGreComDiv(gcd, weights[w]);
+         }
+         
+         /* normalize if possible */
+         if( gcd > 1 )
+         {
+            for( w = splitpos; w >= 0; --w )
+            {
+               consdataChgWeight(consdata, w, weights[w]/gcd);
+            }
+            (*nchgcoefs) += nvars;
+         
+            consdata->capacity /= gcd;
+            ++(*nchgsides);
+         }
+      }
+   }
+   /* rear items can only be redundant, when the sum is smaller to the weight at splitpos and all rear items would
+    * always fit into the knapsack, therefor the item directly after splitpos needs to be smaller than the one at
+    * splitpos and needs to fit into the knapsack 
+    */
+   else if( conshdlrdata->disaggregation && weights[splitpos] > weights[splitpos + 1] && frontsum + weights[splitpos + 1] <= capacity )
+   {
+      int* clqpart;
+      int nclq;
+      int len;
+
+      len = nvars - (splitpos + 1);
+      /* allocate temporary memory */
+      SCIP_CALL( SCIPallocBufferArray(scip, &clqpart, len) );
+
+      /* calculate clique partition */
+      SCIP_CALL( SCIPcalcCliquePartition(scip, &(consdata->vars[splitpos+1]), len, clqpart, &nclq) );
+
+      /* check if we found at least one clique */
+      if( nclq < len )
+      {
+         SCIP_Bool* used;
+         SCIP_Longint maxactduetoclq;
+
+         maxactduetoclq = 0;
+
+         /* allocate temporary memory */
+         SCIP_CALL( SCIPallocBufferArray(scip, &used, len) );
+         BMSclearMemoryArray(used, len);
+            
+         /* calculate maxactivy due to cliques */
+         for( w = 0; w < len; ++w )
+         {
+            assert(clqpart[w] >= 0 && clqpart[w] < len - 1);
+            if( !used[clqpart[w]] )
+            {
+               maxactduetoclq += weights[w + splitpos + 1];
+               used[clqpart[w]] = TRUE;
+            }
+         }
+
+         /* all rear items are redundant due to clique information, if maxactduetoclq is smaller than the weight
+          * before, so delete them and create for all clique the corresponding clique constraints and update the
+          * capacity 
+          */
+         if( maxactduetoclq < weights[splitpos] && frontsum + maxactduetoclq <= capacity )
+         {
+            SCIP_VAR** clqvars;
+            int nclqvars;
+            int c;
+
+            SCIPdebugMessage("Found redundant variables in constraint <%s> due to clique information.\n", SCIPconsGetName(cons));
+
+            /* allocate temporary memory */
+            SCIP_CALL( SCIPallocBufferArray(scip, &clqvars, len - nclq + 1) );
+               
+            for( c = 0; c < nclq; ++c )
+            {
+               nclqvars = 0;
+               for( w = 0; w < len; ++w )
+               {
+                  if( clqpart[w] == c )
+                  {
+                     clqvars[nclqvars] = vars[w + splitpos + 1];
+                     ++nclqvars;
+                  }
+               }
+
+               /* we found a real clique so extract this constraint, because we do not know who this information generated so */
+               if( nclqvars > 1 )
+               {
+                  SCIP_CONS* cliquecons;
+                  char name[SCIP_MAXSTRLEN];
+
+                  (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_clq_%"SCIP_LONGINT_FORMAT"_%d", SCIPconsGetName(cons), capacity, c);
+                  SCIP_CALL( SCIPcreateConsSetpack(scip, &cliquecons, name, nclqvars, clqvars,
+                        SCIPconsIsInitial(cons), SCIPconsIsSeparated(cons), SCIPconsIsEnforced(cons),
+                        SCIPconsIsChecked(cons), SCIPconsIsPropagated(cons), SCIPconsIsLocal(cons),
+                        SCIPconsIsModifiable(cons), SCIPconsIsDynamic(cons), SCIPconsIsRemovable(cons),
+                        SCIPconsIsStickingAtNode(cons)) );
+                  SCIPdebugMessage(" -> adding clique constraint: ");
+                  SCIPdebug( SCIP_CALL( SCIPprintCons(scip, cliquecons, NULL) ) );
+                  SCIP_CALL( SCIPaddCons(scip, cliquecons) );
+                  SCIP_CALL( SCIPreleaseCons(scip, &cliquecons) );
+                  ++(*naddconss);
+               }
+            }
+
+            /* delete items and update capacity */
+            for( w = nvars - 1; w > splitpos; --w )
+            {
+               SCIP_CALL( delCoefPos(scip, cons, w) );
+               ++(*nchgcoefs);
+            }
+            consdata->capacity -= maxactduetoclq;
+            ++(*nchgsides);
+
+            assert(w == splitpos);
+
+            /* renew weights pointer */
+            weights = consdata->weights;
+
+            /* division by greatest common divisor */
+            gcd = weights[w];
+            for( ; w >= 0 && gcd > 1; --w )
+            {
+               gcd = SCIPcalcGreComDiv(gcd, weights[w]);
+            }
+               
+            /* normalize if possible */
+            if( gcd > 1 )
+            {
+               for( w = splitpos; w >= 0; --w )
+               {
+                  consdataChgWeight(consdata, w, weights[w]/gcd);
+               }
+               (*nchgcoefs) += nvars;
+         
+               consdata->capacity /= gcd;
+               ++(*nchgsides);
+            }
+
+            /* free temporary memory */
+            SCIPfreeBufferArray(scip, &clqvars);
+         }
+
+         /* free temporary memory */
+         SCIPfreeBufferArray(scip, &used);
+      }
+         
+      /* free temporary memory */
+      SCIPfreeBufferArray(scip, &clqpart);
+   }
+
+   return SCIP_OKAY;
+}
+
+/* detect redundant variables which always fits into the knapsack 
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 2x4 + 1x5 <= 13   =>   x4, x5 always fits into the knapsack, so we can delete them
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 2x4 + 1x5 <= 8 and we have the cliqueinformation (x1,x2,x3) is a clique
+ *      =>   x4, x5 always fits into the knapsack, so we can delete them
+ *
+ * i.e. 5x1 + 5x2 + 5x3 + 1x4 + 1x5 <= 6 and we have the cliqueinformation (x1,x2,x3) is a clique and (x4,x5) too
+ *      =>   we create the set partitioning constraint x4 + x5 <= 1 and delete them in this knapsack
+ */
+static
+SCIP_RETCODE detectRedundantVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< knapsack constraint */
+   int*                  nfixedvars,         /**< pointer to store the amount of fixed variables */
+   int*                  ndelconss,          /**< pointer to store the amount of deleted constraints */
+   int*                  nchgcoefs,          /**< pointer to store the amount of changed coefficients */
+   int*                  nchgsides,          /**< pointer to store the amount of changed sides */
+   int*                  naddconss           /**< pointer to count number of added constraints */
+   )
+{
+   SCIP_CONSDATA* consdata;
+   SCIP_VAR** vars;
+   SCIP_Longint* weights;
+   SCIP_Longint capacity;
+   SCIP_Longint sum;
+   int nvars;
+   int v;
+   int w;
+   SCIP_Bool infeasible;
+   int noldchgcoefs;
+
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(nfixedvars != NULL);
+   assert(ndelconss != NULL);
+   assert(nchgcoefs != NULL);
+   assert(nchgsides != NULL);
+   assert(naddconss != NULL);
+
+   consdata = SCIPconsGetData(cons);
+   assert( consdata != NULL );
+
+   /* no variables left, then delete constraint */
+   if( consdata->nvars == 0 )
+   {
+      SCIP_CALL( SCIPdelConsLocal(scip, cons) );
+      ++(*ndelconss);
+      return SCIP_OKAY;
+   }
+
+   /* sort items */
+   sortItems(consdata);
+
+   noldchgcoefs = *nchgcoefs;
+
+   vars = consdata->vars;
+   weights = consdata->weights;
+   nvars = consdata->nvars;
+   capacity = consdata->capacity;
+
+   /* check for weights bigger than the capacity */
+   for( v = 0; v < nvars; ++v )
+      if( weights[v] > capacity )
+      {
+         SCIP_CALL( SCIPtightenVarUb(scip, vars[v], 0.0, FALSE, &infeasible, NULL) );
+         assert(!infeasible);
+         ++(*nfixedvars);
+      }
+      else
+         break;
+
+   /* if we fixed at least one variable we need to delete them from the conbstraint */
+   if( v > 0 )
+   {
+      if( v == nvars )
+      {
+         SCIP_CALL( SCIPdelConsLocal(scip, cons) );
+         ++(*ndelconss);
+         return SCIP_OKAY;
+      }
+
+      /* delete all position from back to front */
+      for( --v; v >= 0; --v )
+      {
+         SCIP_CALL( delCoefPos(scip, cons, v) );
+         ++(*nchgcoefs);
+      }
+
+      /* sort items again because of deletion */
+      sortItems(consdata);
+
+      vars = consdata->vars;
+      weights = consdata->weights;
+      nvars = consdata->nvars;
+   }
+   assert(consdata->sorted);
+   assert(weights[0] <= capacity);
+
+   sum = 0;
+
+   /* search for maximal fitting items */
+   for( v = 0; v < nvars && sum + weights[v] <= capacity; ++v )
+      sum += weights[v];
+
+   if( v == nvars )
+   {
+      assert(consdata->capacity >= 0);
+      SCIP_CALL( SCIPdelConsLocal(scip, cons) );
+      ++(*ndelconss);
+      return SCIP_OKAY;
+   }
+
+   if( v < nvars - 1 )
+   {
+      /* try to delete variables */
+      SCIP_CALL( deleteRedundantVars(scip, cons, sum, v, nchgcoefs, nchgsides, naddconss) );
+   }
+
+   /* if we already found some redundant variables, stop here */
+   if( *nchgcoefs > noldchgcoefs )
+      return SCIP_OKAY;
+
+   assert(vars == consdata->vars);
+   assert(weights == consdata->weights);
+   assert(nvars == consdata->nvars);
+   assert(capacity == consdata->capacity);
+
+   /* calculate clique partition */
+   SCIP_CALL( calcCliquepartition(scip, consdata, TRUE, FALSE) );
+
+   /* check for real existing cliques */
+   if( consdata->cliquepartition[v] < v )
+   {
+      SCIP_CONSHDLRDATA* conshdlrdata;
+      SCIP_Bool* used;
+      SCIP_Longint sumfront;
+      int maxactduetoclqfront;
+      int* clqpart;
+         
+      conshdlrdata = SCIPconshdlrGetData(SCIPconsGetHdlr(cons));
+      assert(conshdlrdata != NULL);
+
+      sumfront = 0;
+      maxactduetoclqfront = 0;
+
+      /* allocate temporary memory */
+      SCIP_CALL( SCIPallocBufferArray(scip, &used, nvars) );
+      BMSclearMemoryArray(used, nvars);
+
+      clqpart = consdata->cliquepartition;
+            
+      /* calculate maximal activity due to cliques */
+      for( w = 0; w < nvars; ++w )
+      {
+         assert(clqpart[w] >= 0 && clqpart[w] < nvars - 1);
+         if( !used[clqpart[w]] )
+         {
+            if( maxactduetoclqfront + weights[w] <= capacity )
+            {
+               maxactduetoclqfront += weights[w];
+               used[clqpart[w]] = TRUE;
+            }
+            else
+               break;
+         }
+         sumfront += weights[w];
+      }
+      assert(w >= v);
+
+      /* if all items fit, then delete the whole constraint but create clique constraint which led to this
+       * information 
+       */
+      if( conshdlrdata->disaggregation && w == nvars )
+      {
+         SCIP_VAR** clqvars;
+         int nclqvars;
+         int c;
+         int ncliques;
+         
+         assert(maxactduetoclqfront <= capacity);
+
+         SCIPdebugMessage("Found redundant constraint <%s> due to clique information.\n", SCIPconsGetName(cons));
+
+         ncliques = consdata->ncliques;
+
+         /* allocate temporary memory */
+         SCIP_CALL( SCIPallocBufferArray(scip, &clqvars, nvars - ncliques + 1) );
+               
+         for( c = 0; c < ncliques; ++c )
+         {
+            nclqvars = 0;
+            for( w = 0; w < nvars; ++w )
+            {
+               if( clqpart[w] == c )
+               {
+                  clqvars[nclqvars] = vars[w];
+                  ++nclqvars;
+               }
+            }
+            
+            /* we found a real clique so extract this constraint, because we do not know who this information generated so */
+            if( nclqvars > 1 )
+            {
+               SCIP_CONS* cliquecons;
+               char name[SCIP_MAXSTRLEN];
+               
+               (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_clq_%"SCIP_LONGINT_FORMAT"_%d", SCIPconsGetName(cons), capacity, c);
+               SCIP_CALL( SCIPcreateConsSetpack(scip, &cliquecons, name, nclqvars, clqvars,
+                     SCIPconsIsInitial(cons), SCIPconsIsSeparated(cons), SCIPconsIsEnforced(cons),
+                     SCIPconsIsChecked(cons), SCIPconsIsPropagated(cons), SCIPconsIsLocal(cons),
+                     SCIPconsIsModifiable(cons), SCIPconsIsDynamic(cons), SCIPconsIsRemovable(cons),
+                     SCIPconsIsStickingAtNode(cons)) );
+               SCIPdebugMessage(" -> adding clique constraint: ");
+               SCIPdebug( SCIP_CALL( SCIPprintCons(scip, cliquecons, NULL) ) );
+               SCIP_CALL( SCIPaddCons(scip, cliquecons) );
+               SCIP_CALL( SCIPreleaseCons(scip, &cliquecons) );
+               ++(*naddconss);
+            }
+         }
+
+         /* delete old constraint */
+         SCIP_CALL( SCIPdelConsLocal(scip, cons) );
+         ++(*ndelconss);
+
+         SCIPfreeBufferArray(scip, &clqvars);
+         SCIPfreeBufferArray(scip, &used);
+
+         return SCIP_OKAY;
+      }
+
+      if( w > v && w < nvars - 1 )
+      {
+         /* try to delete variables */
+         SCIP_CALL( deleteRedundantVars(scip, cons, sumfront, w, nchgcoefs, nchgsides, naddconss) );
+      }
+      SCIPfreeBufferArray(scip, &used);
+   }
+
+   return SCIP_OKAY;
+}
+
 /*  tries to simplify weights and delete variables in knapsack a^Tx <= rhs in case there is only one binary variable
  *  with an odd weight and the capacity is odd too, then:
  *    - if the odd weight is equal to 1, delete the variable and decrease capacity by 1
@@ -4563,9 +5385,11 @@ static
 SCIP_RETCODE simplifyInequalities(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< knapsack constraint */
+   int*                  nfixedvars,         /**< pointer to store the amount of fixed variables */
    int*                  ndelconss,          /**< pointer to store the amount of deleted constraints */
    int*                  nchgcoefs,          /**< pointer to store the amount of changed coefficients */
    int*                  nchgsides,          /**< pointer to store the amount of changed sides */
+   int*                  naddconss,          /**< pointer to count number of added constraints */
    SCIP_Bool*            cutoff              /**< pointer to store whether the node can be cut off */
    )
 {
@@ -4578,16 +5402,18 @@ SCIP_RETCODE simplifyInequalities(
    SCIP_Longint oddbinval;
    SCIP_Longint capacity;
    SCIP_Longint gcd;
-   
+
    SCIP_VAR* oddbinvar;
-   int noddvals = 0;
-   int pos = 0;
+   int noddvals;
+   int pos;
 
    assert( scip != NULL );
    assert( cons != NULL );
+   assert( nfixedvars != NULL );
    assert( ndelconss != NULL );
    assert( nchgcoefs != NULL );
    assert( nchgsides != NULL );
+   assert( naddconss != NULL );
    assert( cutoff != NULL );
 
    consdata = SCIPconsGetData(cons);
@@ -4600,6 +5426,13 @@ SCIP_RETCODE simplifyInequalities(
    if( *cutoff )
       return SCIP_OKAY;
 
+   assert(consdata->capacity >= 0);
+
+   /* delete redundant variables */
+   SCIP_CALL( detectRedundantVars(scip, cons, nfixedvars, ndelconss, nchgcoefs, nchgsides, naddconss) );
+   if( *cutoff )
+      return SCIP_OKAY;
+
    /* check if capacity is odd */
    if( !(consdata->capacity % 2) )
       return SCIP_OKAY;
@@ -4609,6 +5442,7 @@ SCIP_RETCODE simplifyInequalities(
    {
       success = FALSE;
       noddvals = 0;
+      pos = 0;
 
       capacity = consdata->capacity;
       vars = consdata->vars;
@@ -4685,12 +5519,12 @@ SCIP_RETCODE simplifyInequalities(
          gcd = weights[nvars - 1];
          for( v = nvars - 2; v >= 0 && gcd > 1; --v )
          {
-            gcd = SCIPcalcGreComDiv(gcd, ABS(weights[v]));
+            gcd = SCIPcalcGreComDiv(gcd, weights[v]);
          }
          
          assert(gcd >= 2);
          
-         for( v = nvars - 1; v >= 0 && gcd > 1; --v )
+         for( v = nvars - 1; v >= 0; --v )
          {
             consdataChgWeight(consdata, v, weights[v]/gcd);
          }
@@ -5781,7 +6615,9 @@ SCIP_RETCODE tightenWeights(
             if( delta > 0 )
             {
                SCIP_Longint newcapacity;
+#ifndef NDEBUG
                SCIP_Longint newmincliqueweight;
+#endif
                SCIP_Longint newminweightsuminclique;
                SCIP_Bool forceclique;
                int nnewweights;
@@ -5790,10 +6626,10 @@ SCIP_RETCODE tightenWeights(
                SCIPdebugMessage("knapsack constraint <%s>: weights of clique %d (maxweight: %"SCIP_LONGINT_FORMAT") can be tightened: cliqueweightsum=%"SCIP_LONGINT_FORMAT", capacity=%"SCIP_LONGINT_FORMAT" -> delta: %"SCIP_LONGINT_FORMAT"\n",
                   SCIPconsGetName(cons), i, maxcliqueweights[i], cliqueweightsum, consdata->capacity, delta);
                newcapacity = consdata->capacity - delta;
-               newmincliqueweight = newcapacity + 1;
                forceclique = FALSE;
                nnewweights = 0;
 #ifndef NDEBUG
+               newmincliqueweight = newcapacity + 1;
                for( j = 0; j < i; ++j )
                   assert(consdata->cliquepartition[j] < i); /* no element j < i can be in clique i */
 #endif
@@ -5812,8 +6648,10 @@ SCIP_RETCODE tightenWeights(
                      newweightidxs[nnewweights] = j;
                      nnewweights++;
 
+#ifndef NDEBUG
                      assert(newweight <= newmincliqueweight); /* items are sorted by non-increasing weight! */
                      newmincliqueweight = newweight;
+#endif
                   }
                }
 
@@ -6425,7 +7263,9 @@ SCIP_DECL_HASHGETKEY(hashGetKeyKnapsackcons)
 static
 SCIP_DECL_HASHKEYEQ(hashKeyEqKnapsackcons)
 {
+#ifndef NDEBUG
    SCIP* scip;
+#endif
    SCIP_CONSDATA* consdata1;
    SCIP_CONSDATA* consdata2;
    int i;
@@ -6434,8 +7274,10 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqKnapsackcons)
    consdata2 = SCIPconsGetData((SCIP_CONS*)key2);
    assert(consdata1->sorted);
    assert(consdata2->sorted);
+#ifndef NDEBUG
    scip = (SCIP*)userptr; 
    assert(scip != NULL);
+#endif
    
    /* checks trivial case */
    if( consdata1->nvars != consdata2->nvars )
@@ -6464,7 +7306,9 @@ SCIP_DECL_HASHKEYEQ(hashKeyEqKnapsackcons)
 static
 SCIP_DECL_HASHKEYVAL(hashKeyValKnapsackcons)
 {
+#ifndef NDEBUG
    SCIP* scip;
+#endif
    SCIP_CONSDATA* consdata;
    unsigned int hashval;
    int minidx;
@@ -6476,8 +7320,10 @@ SCIP_DECL_HASHKEYVAL(hashKeyValKnapsackcons)
    assert(consdata != NULL);
    assert(consdata->nvars > 0);
 
+#ifndef NDEBUG
    scip = (SCIP*)userptr; 
    assert(scip != NULL);
+#endif
 
    /* sorts the constraints */
    sortItems(consdata);
@@ -7606,18 +8452,18 @@ SCIP_DECL_CONSPRESOL(consPresolKnapsack)
          /* divide weights by their greatest common divisor */
          normalizeWeights(cons, nchgcoefs, nchgsides);
 
+         /* try to simplify inequalities */
+         if( conshdlrdata->simplifyinequalities )
+         {
+            SCIP_CALL( simplifyInequalities(scip, cons, nfixedvars, ndelconss, nchgcoefs, nchgsides, naddconss, &cutoff) );
+            if( cutoff )
+               break;
+         }
+
          /* tighten capacity and weights */
          SCIP_CALL( tightenWeights(scip, cons, nchgcoefs, nchgsides, naddconss, &cutoff) );
          if( cutoff )
             break;
-
-         /* try to simplify inequalities */
-         if( conshdlrdata->simplifyinequalities )
-         {
-	   SCIP_CALL( simplifyInequalities(scip, cons, ndelconss, nchgcoefs, nchgsides, &cutoff) );
-	   if( cutoff )
-	      break;
-         }
 
          if( SCIPconsIsActive(cons) && conshdlrdata->dualpresolving )
          {

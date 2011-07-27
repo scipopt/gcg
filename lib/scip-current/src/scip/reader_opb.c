@@ -704,7 +704,6 @@ SCIP_RETCODE getVariableOrTerm(
    )
 {
    SCIP_Bool negated;
-   SCIP_Bool created = FALSE;
    char* name;
 
    assert(scip != NULL);
@@ -735,7 +734,6 @@ SCIP_RETCODE getVariableOrTerm(
       if( var == NULL )
       {
          SCIP_CALL( createVariable(scip, &var, name) );
-         created = TRUE;
       }
       
       if( negated )
@@ -3667,8 +3665,6 @@ SCIP_RETCODE SCIPreadOpb(
 #if GENCONSNAMES == TRUE
    opbinput.consnumber = 0;
 #endif
-
-   printf("starting reader opb\n");
 
    /* read the file */
    SCIP_CALL( readOPBFile(scip, &opbinput, filename) );

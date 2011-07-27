@@ -412,14 +412,9 @@ SCIP_RETCODE analyzeConflict(
    SCIP_BOUNDTYPE        boundtype           /**< the type of the changed bound (lower or upper bound) */
    )
 {
-   SCIP_CONSDATA* consdata;
-
    /* conflict analysis can only be applied in solving stage */
    if( SCIPgetStage(scip) != SCIP_STAGE_SOLVING )
       return SCIP_OKAY;
-
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
 
    /* initialize conflict analysis, and add all variables of infeasible constraint to conflict candidate queue */
    SCIP_CALL( SCIPinitConflictAnalysis(scip) );
@@ -1575,7 +1570,10 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
       if( !consdata->addvarbounds )
       {
          SCIP_Bool infeasible;
+         int nlocalchgbds;
          
+         nlocalchgbds = 0;
+
          /* if lhs is finite, we have a variable lower bound: lhs <= x + c*y  =>  x >= -c*y + lhs */
          if( !SCIPisInfinity(scip, -consdata->lhs) )
          {
@@ -1583,9 +1581,11 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
                SCIPvarGetName(consdata->var), -consdata->vbdcoef, SCIPvarGetName(consdata->vbdvar), consdata->lhs);
 
             SCIP_CALL( SCIPaddVarVlb(scip, consdata->var, consdata->vbdvar, -consdata->vbdcoef, consdata->lhs,
-                  &infeasible, NULL) );
+                  &infeasible, &nlocalchgbds) );
             assert(!infeasible);
             
+            *nchgbds += nlocalchgbds;
+
             /* if lhs is finite, and x is not continuous we can add more variable bounds */
             if( SCIPvarGetType(consdata->var) != SCIP_VARTYPE_CONTINUOUS )
             {
@@ -1599,8 +1599,10 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
 
                   /* if c > 0, we have a variable lower bound: lhs <= x + c*y  =>  y >= (lhs-x)/c */
                   SCIP_CALL( SCIPaddVarVlb(scip, consdata->vbdvar, consdata->var, 
-                        -1.0/consdata->vbdcoef, consdata->lhs/consdata->vbdcoef, &infeasible, NULL) );
+                        -1.0/consdata->vbdcoef, consdata->lhs/consdata->vbdcoef, &infeasible, &nlocalchgbds) );
                   assert(!infeasible);
+
+                  *nchgbds += nlocalchgbds;
                }
                else
                {
@@ -1610,8 +1612,10 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
 
                   /* if c < 0, we have a variable upper bound: lhs <= x + c*y  =>  y <= (lhs-x)/c */
                   SCIP_CALL( SCIPaddVarVub(scip, consdata->vbdvar, consdata->var, 
-                        -1.0/consdata->vbdcoef, consdata->lhs/consdata->vbdcoef, &infeasible, NULL) );
+                        -1.0/consdata->vbdcoef, consdata->lhs/consdata->vbdcoef, &infeasible, &nlocalchgbds) );
                   assert(!infeasible);
+
+                  *nchgbds += nlocalchgbds;
                }
             }
          }
@@ -1623,8 +1627,10 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
                SCIPvarGetName(consdata->var), -consdata->vbdcoef, SCIPvarGetName(consdata->vbdvar), consdata->rhs);
 
             SCIP_CALL( SCIPaddVarVub(scip, consdata->var, consdata->vbdvar, -consdata->vbdcoef, consdata->rhs,
-                  &infeasible, NULL) );
+                  &infeasible, &nlocalchgbds) );
             assert(!infeasible);
+
+            *nchgbds += nlocalchgbds;
 
             /* if rhs is finite, and x is not continuous we can add more variable bounds */
             if( SCIPvarGetType(consdata->var) != SCIP_VARTYPE_CONTINUOUS )
@@ -1639,8 +1645,10 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
 
                   /* if c > 0 we have a variable upper bound: x + c*y <= rhs  =>  y <= (rhs-x)/c */
                   SCIP_CALL( SCIPaddVarVub(scip, consdata->vbdvar, consdata->var, 
-                        -1.0/consdata->vbdcoef, consdata->rhs/consdata->vbdcoef, &infeasible, NULL) );
+                        -1.0/consdata->vbdcoef, consdata->rhs/consdata->vbdcoef, &infeasible, &nlocalchgbds) );
                   assert(!infeasible);
+
+                  *nchgbds += nlocalchgbds;
                }
                else
                {
@@ -1650,11 +1658,12 @@ SCIP_DECL_CONSPRESOL(consPresolVarbound)
                   
                   /* if c < 0 we have a variable lower bound: x + c*y <= rhs  =>  y >= (rhs-x)/c */
                   SCIP_CALL( SCIPaddVarVlb(scip, consdata->vbdvar, consdata->var, 
-                        -1.0/consdata->vbdcoef, consdata->rhs/consdata->vbdcoef, &infeasible, NULL) );
+                        -1.0/consdata->vbdcoef, consdata->rhs/consdata->vbdcoef, &infeasible, &nlocalchgbds) );
                   assert(!infeasible);
+
+                  *nchgbds += nlocalchgbds;
                }
             }
-            
          }
          consdata->addvarbounds = TRUE;
       }

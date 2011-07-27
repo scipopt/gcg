@@ -698,7 +698,6 @@ SCIP_RETCODE SCIPsetCreate(
    (*set)->limitchanged = FALSE;
    (*set)->continnonlinpresent = FALSE;
    (*set)->nonlinearitypresent = FALSE;
-   (*set)->nlprequired = FALSE;
    (*set)->extcodenames = NULL;
    (*set)->extcodedescs = NULL;
    (*set)->nextcodes = 0;
@@ -1032,8 +1031,8 @@ SCIP_RETCODE SCIPsetCreate(
          NULL, NULL) );
    SCIP_CALL( SCIPsetAddIntParam(*set, blkmem,
          "lp/fastmip",
-         "which FASTMIP setting of LP solver should be used? 0: off, 1: medium, 2: full (do not use for branch-and-price!)",
-         &(*set)->lp_fastmip, TRUE, SCIP_DEFAULT_LP_FASTMIP, 0, 2,
+         "which FASTMIP setting of LP solver should be used? 0: off, 1: low",
+         &(*set)->lp_fastmip, TRUE, SCIP_DEFAULT_LP_FASTMIP, 0, 1,
          NULL, NULL) );
    SCIP_CALL( SCIPsetAddBoolParam(*set, blkmem,
          "lp/scaling",
@@ -1812,6 +1811,20 @@ SCIP_RETCODE SCIPsetGetStringParam(
    assert(set != NULL);
 
    SCIP_CALL( SCIPparamsetGetString(set->paramset, name, value) );
+
+   return SCIP_OKAY;
+}
+
+/** changes the value of an existing parameter */
+SCIP_RETCODE SCIPsetSetParam(
+   SCIP_SET*             set,                /**< global SCIP settings */
+   const char*           name,               /**< name of the parameter */
+   void*                 value               /**< new value of the parameter */
+   )
+{
+   assert(set != NULL);
+
+   SCIP_CALL( SCIPparamsetSet(set->paramset, set, name, value) );
 
    return SCIP_OKAY;
 }

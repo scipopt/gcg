@@ -87,9 +87,6 @@ SCIP_DECL_HEUREXEC(heurExecTrivial)
    if( SCIPgetNRuns(scip) > 1 )
       return SCIP_OKAY;
 
-   if( SCIPgetNBinVars(scip) + SCIPgetNIntVars(scip) == 0 )
-      return SCIP_OKAY;
-
    *result = SCIP_DIDNOTFIND;
    success = FALSE;
 
@@ -169,6 +166,7 @@ SCIP_DECL_HEUREXEC(heurExecTrivial)
    }
    
    /* try lower bound solution */
+   SCIPdebugMessage("try lower bound solution\n");
    SCIP_CALL( SCIPtrySol(scip, lbsol, FALSE, FALSE, TRUE, TRUE, &success) );
 
    if( success )
@@ -180,6 +178,7 @@ SCIP_DECL_HEUREXEC(heurExecTrivial)
    }
 
    /* try upper bound solution */   
+   SCIPdebugMessage("try upper bound solution\n");
    SCIP_CALL( SCIPtrySol(scip, ubsol, FALSE, FALSE, TRUE, TRUE, &success) );
 
    if( success )
@@ -193,6 +192,7 @@ SCIP_DECL_HEUREXEC(heurExecTrivial)
    /* try zero solution */
    if( zerovalid )
    {
+      SCIPdebugMessage("try zero solution\n");
       SCIP_CALL( SCIPtrySol(scip, zerosol, FALSE, FALSE, TRUE, TRUE, &success) );
       
       if( success )
@@ -205,6 +205,7 @@ SCIP_DECL_HEUREXEC(heurExecTrivial)
    }
 
    /* try lock solution */
+   SCIPdebugMessage("try lock solution\n");
    SCIP_CALL( SCIPtrySol(scip, locksol, FALSE, FALSE, TRUE, TRUE, &success) );
 
    if( success )

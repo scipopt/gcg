@@ -55,7 +55,7 @@ SCIP_RETCODE SCIPincludeConshdlrIndicator(
 extern
 SCIP_RETCODE SCIPcreateConsIndicator(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
+   SCIP_CONS**           cons,               /**< pointer to hold the created constraint (indicator or quadratic) */
    const char*           name,               /**< name of constraint */
    SCIP_VAR*             binvar,             /**< binary indicator variable (or NULL) */
    int                   nvars,              /**< number of variables in the inequality */
@@ -184,12 +184,20 @@ SCIP_RETCODE SCIPmakeIndicatorFeasible(
    SCIP_Bool*            changed             /**< whether the solution has been changed */
    );
 
-/** adds additional linear constraint that is not connected with an indicator constraint, but can be used for separation */
+/** adds additional linear constraint that is not connected by an indicator constraint, but can be used for separation */
 extern
 SCIP_RETCODE SCIPaddLinearConsIndicator(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONSHDLR*        conshdlr,           /**< indicator constraint handler */
    SCIP_CONS*            lincons             /**< linear constraint */
+   );
+
+/** adds additional globally valid row that is not connected by an indicator constraint, but can be used for separation */
+extern
+SCIP_RETCODE SCIPaddRowIndicator(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLR*        conshdlr,           /**< indicator constraint handler */
+   SCIP_ROW*             row                 /**< row to add */
    );
 
 #ifdef __cplusplus

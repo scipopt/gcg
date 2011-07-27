@@ -2434,7 +2434,7 @@ SCIP_RETCODE propagateBounds(
    
    /* @todo do something clever to decide whether propagation should be tried */
 
-   SCIPintervalSet(&lhsrange, consdata->constant);
+   SCIPintervalSetBounds(&lhsrange, consdata->constant - SCIPepsilon(scip), consdata->constant + SCIPepsilon(scip));
    
    SCIP_CALL( SCIPallocBufferArray(scip, &lhsranges, consdata->nvars) );
    for( i = 0; i < consdata->nvars; ++i )
@@ -2575,7 +2575,6 @@ SCIP_RETCODE polishSolution(
    SCIP_Bool*      success    /**< buffer to store whether polishing was successful */
    )
 {
-   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* consdata;
    SCIP_Real rhsval;
    
@@ -2584,16 +2583,10 @@ SCIP_RETCODE polishSolution(
    assert(sol  != NULL);
    assert(success != NULL);
    
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-   
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    assert(!SCIPisZero(scip, consdata->rhscoeff));
 
-   /* assert that absolute constraint violation is positive */
-   assert(SCIPisInfinity(scip, consdata->lhsval) || SCIPisPositive(scip, consdata->lhsval - consdata->rhscoeff * (SCIPgetSolVal(scip, sol, consdata->rhsvar) + consdata->rhsoffset)));
-   
    /* compute minimal rhs variable value so that constraint is satisfied */
    if( !SCIPisInfinity(scip, consdata->lhsval) )
       rhsval = consdata->lhsval / consdata->rhscoeff - consdata->rhsoffset;
@@ -2838,7 +2831,7 @@ SCIP_DECL_QUADCONSUPGD(upgradeConsQuadratic)
 
             ++lhscount;
          }
-         else if( rhsvar || SCIPisLT(scip, SCIPcomputeVarLbGlobal(scip, term->var), term->lincoef / (2*term->sqrcoef)) )
+         else if( rhsvar || SCIPisLT(scip, SCIPcomputeVarLbGlobal(scip, term->var), -term->lincoef / (2*term->sqrcoef)) )
          { /* second variable with positive coefficient -> cannot be SOC */
             /* or lower bound of variable does not ensure positivity of right hand side */
             rhsvar = NULL;
@@ -3477,7 +3470,7 @@ SCIP_DECL_CONSCHECK(consCheckSOC)
       {
          if( SCIPvarGetStatus(consdata->rhsvar) != SCIP_VARSTATUS_MULTAGGR &&
              ( (consdata->rhscoeff > 0.0 && SCIPvarMayRoundUp  (consdata->rhsvar)) ||
-               (consdata->rhscoeff < 0.0 && SCIPvarMayRoundDown(consdata->rhsvar)) )  )
+               (consdata->rhscoeff < 0.0 && SCIPvarMayRoundDown(consdata->rhsvar)) ) )
          {
             SCIP_Bool success;
 

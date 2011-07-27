@@ -611,6 +611,7 @@ void SCIPbranchcandClearExternCands(
    branchcand->nprioexternbins = 0;
    branchcand->nprioexternints = 0;
    branchcand->nprioexternimpls = 0;
+   branchcand->externmaxpriority = INT_MIN;
 }
 
 /** checks whether the given variable is contained in the candidate storage for external branching */
@@ -2221,7 +2222,7 @@ SCIP_RETCODE SCIPbranchExecExtern(
    if( branchcand->nexterncands == 0 )
       return SCIP_OKAY;
 
-   /* if there is a non-fixed variable with higher priority than the maximal priority of the fractional candidates,
+   /* if there is a non-fixed variable with higher priority than the maximal priority of the external candidates,
     * use pseudo solution branching instead
     */
    if( branchcand->pseudomaxpriority > branchcand->externmaxpriority )

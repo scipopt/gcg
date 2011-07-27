@@ -38,15 +38,17 @@ using std::vector;
 
 /* in order to use intervals as operands in CppAD,
  * we need to include the intervalarith.hpp very early and require the interval operations to be in the CppAD namespace */
-namespace CppAD
-{
+#define SCIPInterval_NAMESPACE CppAD
 #include "nlpi/intervalarith.h"
-}
-SCIP_Real CppAD::SCIPInterval::infinity = SCIP_DEFAULT_INFINITY;
-using CppAD::SCIPInterval;
+
+SCIP_Real SCIPInterval_NAMESPACE::SCIPInterval::infinity = SCIP_DEFAULT_INFINITY;
+using SCIPInterval_NAMESPACE::SCIPInterval;
 
 #include <cppad/cppad.hpp>
-#include <cppad/config.h>  // to get PACKAGE_STRING define
+#ifndef CPPAD_PACKAGE_STRING
+#include <cppad/config.h>
+#define CPPAD_PACKAGE_STRING PACKAGE_STRING
+#endif
 #include <cppad/declare.hpp>
 #include <cppad/error_handler.hpp>
 
@@ -717,7 +719,7 @@ bool needAlwaysRetape(SCIP_EXPR* expr)
 /** gets name and version of expression interpreter */
 const char* SCIPexprintGetName(void)
 {
-   return PACKAGE_STRING;
+   return CPPAD_PACKAGE_STRING;
 }
 
 /** gets descriptive text of expression interpreter */

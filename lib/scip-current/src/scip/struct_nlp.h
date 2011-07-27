@@ -98,8 +98,9 @@ struct SCIP_NlRow
    SCIP_Real             minactivity;        /**< minimal activity value w.r.t. the variables's bounds, or SCIP_INVALID */
    SCIP_Real             maxactivity;        /**< maximal activity value w.r.t. the variables's bounds, or SCIP_INVALID */
    SCIP_Longint          validactivitybdsdomchg; /**< domain change number for which activity bound values are valid */
-   int                   nlpindex;           /**< index of this row in NLP, or -1 if used as objective, or -2 if not added */
-   int                   nlpiindex;          /**< index of this row in NLPI problem, or -1 if used as objective, or -2 if not in there */
+   int                   nlpindex;           /**< index of this row in NLP, or -1 if not added */
+   int                   nlpiindex;          /**< index of this row in NLPI problem, or -1 if not in there */
+   SCIP_Real             dualsol;            /**< dual value associated with row in last NLP solve */
 };
 
 /** current NLP data */
@@ -120,8 +121,8 @@ struct SCIP_Nlp
 
    /* variables in problem */
    int                   nvars;              /**< number of variables */
-   int                   sizevars;           /**< size allocated space for variables */
-   SCIP_VAR**            vars;               /**< allocated space for variables */
+   int                   sizevars;           /**< allocated space for variables */
+   SCIP_VAR**            vars;               /**< variables */
    SCIP_HASHMAP*         varhash;            /**< variable hash: map SCIP_VAR* to index of variable in NLP */
    /* variables in NLPI problem */
    int                   nvars_solver;       /**< number of variables in NLPI problem */
@@ -139,7 +140,6 @@ struct SCIP_Nlp
    int*                  nlrowmap_nlpi2nlp;  /**< index of a NLPI row in NLP (nlrows[nlrowmap_nlpi2nlp[i]]->nlpiidx == i for i = 0..nnlrows_solver-1), or -1 if row has been deleted from NLP */
 
    /* objective function */
-   SCIP_NLROW*           objective;          /**< objective function, NULL for using SCIP objective */
    SCIP_Bool             objflushed;         /**< is the objective in the NLPI up to date? */
    SCIP_NLROW*           divingobj;          /**< objective function during diving */
 
@@ -148,14 +148,24 @@ struct SCIP_Nlp
    SCIP_Real*            initialguess;       /**< initial guess of primal values to use in next NLP solve, if available */
 
    /* solution of NLP */
-   SCIP_Real*            primalsolution;     /**< current primal solution of NLP, if available */
    SCIP_Real             primalsolobjval;    /**< objective function value of primal solution */
    SCIP_NLPSOLSTAT       solstat;            /**< status of NLP solution (feasible, optimal, unknown...) */
    SCIP_NLPTERMSTAT      termstat;           /**< termination status of NLP (normal, some limit reached, ...) */
+   SCIP_Real*            varlbdualvals;      /**< dual values associated with variable lower bounds */
+   SCIP_Real*            varubdualvals;      /**< dual values associated with variable upper bounds */
 
    /* event handling */
    SCIP_EVENTHDLR*       eventhdlr;          /**< event handler for bound change events */
    int                   globalfilterpos;    /**< position of event handler in event handler filter */
+
+   /* fractional variables in last NLP solution */
+   SCIP_VAR**            fracvars;           /**< fractional variables */
+   SCIP_Real*            fracvarssol;        /**< values of the fractional variables */
+   SCIP_Real*            fracvarsfrac;       /**< fractionality of the fractional variables  */
+   int                   nfracvars;          /**< number of fractional variables */
+   int                   npriofracvars;      /**< number of fractional variables with hightest branching priority */
+   int                   fracvarssize;       /**< size of fracvars* arrays */
+   int                   validfracvars;      /**< the NLP solve for which the fractional variables are valid, or -1 if never setup */
 
    /* miscellaneous */
    char*                 name;               /**< problem name */

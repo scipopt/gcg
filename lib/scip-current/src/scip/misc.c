@@ -762,7 +762,7 @@ SCIP_DECL_HASHKEYVAL(SCIPhashKeyValString)
 static
 SCIP_RETCODE hashmaplistAppend(
    SCIP_HASHMAPLIST**    hashmaplist,        /**< pointer to hash list */
-   BMS_BLKMEM*           blkmem,             /**< block memory */
+   BMS_BLKMEM*           blkmem,             /**< block memory, or NULL */
    void*                 origin,             /**< origin of the mapping origin -> image */
    void*                 image               /**< image of the mapping origin -> image */
    )
@@ -770,10 +770,17 @@ SCIP_RETCODE hashmaplistAppend(
    SCIP_HASHMAPLIST* newlist;
 
    assert(hashmaplist != NULL);
-   assert(blkmem != NULL);
    assert(origin != NULL);
 
-   SCIP_ALLOC( BMSallocBlockMemory(blkmem, &newlist) );
+   if( blkmem != NULL )
+   {
+      SCIP_ALLOC( BMSallocBlockMemory(blkmem, &newlist) );
+   }
+   else
+   {
+      SCIP_ALLOC( BMSallocMemory(&newlist) );
+   }
+
    newlist->origin = origin;
    newlist->image = image;
    newlist->next = *hashmaplist;
@@ -786,20 +793,28 @@ SCIP_RETCODE hashmaplistAppend(
 static
 void hashmaplistFree(
    SCIP_HASHMAPLIST**    hashmaplist,        /**< pointer to hash list to free */
-   BMS_BLKMEM*           blkmem              /**< block memory */
+   BMS_BLKMEM*           blkmem              /**< block memory, or NULL */
    )
 {
    SCIP_HASHMAPLIST* list;
    SCIP_HASHMAPLIST* nextlist;
 
    assert(hashmaplist != NULL);
-   assert(blkmem != NULL);
    
    list = *hashmaplist;
    while( list != NULL )
    {
       nextlist = list->next;
-      BMSfreeBlockMemory(blkmem, &list);
+
+      if( blkmem != NULL )
+      {
+         BMSfreeBlockMemory(blkmem, &list);
+      }
+      else
+      {
+         BMSfreeMemory(&list);
+      }
+
       list = nextlist;
    }
 
@@ -850,7 +865,7 @@ void* hashmaplistGetImage(
 static
 SCIP_RETCODE hashmaplistSetImage(
    SCIP_HASHMAPLIST**    hashmaplist,        /**< pointer to hash list */
-   BMS_BLKMEM*           blkmem,             /**< block memory */
+   BMS_BLKMEM*           blkmem,             /**< block memory, or NULL */
    void*                 origin,             /**< origin to set image for */
    void*                 image               /**< new image for origin */
    )
@@ -875,14 +890,13 @@ SCIP_RETCODE hashmaplistSetImage(
 static
 SCIP_RETCODE hashmaplistRemove(
    SCIP_HASHMAPLIST**    hashmaplist,        /**< pointer to hash list */
-   BMS_BLKMEM*           blkmem,             /**< block memory */
+   BMS_BLKMEM*           blkmem,             /**< block memory, or NULL */
    void*                 origin              /**< origin to remove from the list */
    )
 {
    SCIP_HASHMAPLIST* nextlist;
 
    assert(hashmaplist != NULL);
-   assert(blkmem != NULL);
    assert(origin != NULL);
 
    while( *hashmaplist != NULL && (*hashmaplist)->origin != origin )
@@ -892,7 +906,16 @@ SCIP_RETCODE hashmaplistRemove(
    if( *hashmaplist != NULL )
    {
       nextlist = (*hashmaplist)->next;
-      BMSfreeBlockMemory(blkmem, hashmaplist);
+
+      if( blkmem != NULL )
+      {
+         BMSfreeBlockMemory(blkmem, hashmaplist);
+      }
+      else
+      {
+         BMSfreeMemory(hashmaplist);
+      }
+
       *hashmaplist = nextlist;
    }
 
@@ -900,10 +923,13 @@ SCIP_RETCODE hashmaplistRemove(
 }
 
 
-/** creates a hash map mapping pointers to pointers */
+/** creates a hash map mapping pointers to pointers 
+ *
+ * @note if possible always use a blkmem pointer instead of NULL, otherwise it could slow down the map
+ */
 SCIP_RETCODE SCIPhashmapCreate(
    SCIP_HASHMAP**        hashmap,            /**< pointer to store the created hash map */
-   BMS_BLKMEM*           blkmem,             /**< block memory used to store hash map entries */
+   BMS_BLKMEM*           blkmem,             /**< block memory used to store hash map entries, or NULL */
    int                   mapsize             /**< size of the hash map */
    )
 {
@@ -2799,7 +2825,6 @@ void SCIPsort(
 #define SORTTPL_KEYTYPE     SCIP_Real
 #include "scip/sorttpl.c" /*lint !e451*/
 
-
 /* SCIPsortRealPtr(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
 #define SORTTPL_NAMEEXT     RealPtr
 #define SORTTPL_KEYTYPE     SCIP_Real
@@ -2814,11 +2839,17 @@ void SCIPsort(
 #define SORTTPL_FIELD3TYPE  int
 #include "scip/sorttpl.c" /*lint !e451*/
 
-
 /* SCIPsortRealInt(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
 #define SORTTPL_NAMEEXT     RealInt
 #define SORTTPL_KEYTYPE     SCIP_Real
 #define SORTTPL_FIELD1TYPE  int
+#include "scip/sorttpl.c" /*lint !e451*/
+
+/* SCIPsortRealIntLong(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
+#define SORTTPL_NAMEEXT     RealIntLong
+#define SORTTPL_KEYTYPE     SCIP_Real
+#define SORTTPL_FIELD1TYPE  int
+#define SORTTPL_FIELD2TYPE  SCIP_Longint
 #include "scip/sorttpl.c" /*lint !e451*/
 
 /* SCIPsortRealIntPtr(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
@@ -2843,6 +2874,13 @@ void SCIPsort(
 #define SORTTPL_FIELD3TYPE  int
 #include "scip/sorttpl.c" /*lint !e451*/
 
+/* SCIPsortRealRealIntInt(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
+#define SORTTPL_NAMEEXT     RealRealIntInt
+#define SORTTPL_KEYTYPE     SCIP_Real
+#define SORTTPL_FIELD1TYPE  SCIP_Real
+#define SORTTPL_FIELD2TYPE  int
+#define SORTTPL_FIELD3TYPE  int
+#include "scip/sorttpl.c" /*lint !e451*/
 
 /* SCIPsortRealRealRealInt(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
 #define SORTTPL_NAMEEXT     RealRealRealInt
@@ -3168,7 +3206,16 @@ void SCIPsortDown(
 #include "scip/sorttpl.c" /*lint !e451*/
 
 
-/* SCIPsortDownRealInt(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
+/* SCIPsortDownRealIntLong(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
+#define SORTTPL_NAMEEXT     DownRealIntLong
+#define SORTTPL_KEYTYPE     SCIP_Real
+#define SORTTPL_FIELD1TYPE  int
+#define SORTTPL_FIELD2TYPE  SCIP_Longint
+#define SORTTPL_BACKWARDS
+#include "scip/sorttpl.c" /*lint !e451*/
+
+
+/* SCIPsortDownRealIntPtr(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
 #define SORTTPL_NAMEEXT     DownRealIntPtr
 #define SORTTPL_KEYTYPE     SCIP_Real
 #define SORTTPL_FIELD1TYPE  int
@@ -3200,6 +3247,16 @@ void SCIPsortDown(
 #define SORTTPL_KEYTYPE     SCIP_Real
 #define SORTTPL_FIELD1TYPE  SCIP_Longint
 #define SORTTPL_FIELD2TYPE  SCIP_Real
+#define SORTTPL_FIELD3TYPE  int
+#define SORTTPL_BACKWARDS
+#include "scip/sorttpl.c" /*lint !e451*/
+
+
+/* SCIPsortDownRealRealIntInt(), SCIPsortedvecInsert...(), SCIPsortedvecDelPos...(), SCIPsortedvecFind...() via sort template */
+#define SORTTPL_NAMEEXT     DownRealRealIntInt
+#define SORTTPL_KEYTYPE     SCIP_Real
+#define SORTTPL_FIELD1TYPE  SCIP_Real
+#define SORTTPL_FIELD2TYPE  int
 #define SORTTPL_FIELD3TYPE  int
 #define SORTTPL_BACKWARDS
 #include "scip/sorttpl.c" /*lint !e451*/

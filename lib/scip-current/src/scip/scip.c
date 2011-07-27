@@ -33,6 +33,11 @@
 #include <assert.h>
 #include <string.h>
 
+#ifndef NPARASCIP
+#include <pthread.h>
+#include <time.h>
+#endif
+
 #include "scip/def.h"
 #include "scip/retcode.h"
 #include "scip/set.h"
@@ -79,6 +84,8 @@
 /* We include the linear constraint handler to be able to copy a (multi)aggregation of variables (to a linear constraint).
  * The better way would be to handle the distinction between original and transformed variables via a flag 'isoriginal' 
  * in the variable data structure. This would allow to have (multi)aggregated variables in the original problem.
+ *
+ * A second reason for including the linear constraint handler is for copying cuts to linear constraints.
  */ 
 #include "scip/cons_linear.h"
 
@@ -904,9 +911,34 @@ SCIP_VERBLEVEL SCIPgetVerbLevel(
    return scip->set->disp_verblevel;
 }
 
+#ifndef NPARASCIP
+/** allocates memory for all message handlers for number of given threads 
+ *
+ * @note it is necessary to call SCIPmessageSetDefaultHandler or SCIPmessageSetHandler for each thread
+ */
+SCIP_RETCODE SCIPcreateMesshdlrPThreads(
+   int                   nthreads            /**< number of threads to allocate memory for */
+   )
+{
+   assert(nthreads > 0);
+
+   return SCIPmesshdlrCreatePThreads(nthreads);
+}
+
+/** frees memory for all message handlers */
+void SCIPfreeMesshdlrPThreads(
+   void
+   )
+{
+   SCIPmesshdlrFreePThreads();
+}
+#endif
+
+
 /*
  * SCIP copy methods
  */
+
 
 #define HASHTABLESIZE_FACTOR 5
 
@@ -914,6 +946,9 @@ SCIP_VERBLEVEL SCIPgetVerbLevel(
  *  cannot be copied, valid will return FALSE. All plugins can declare that, if their copy process failed, the 
  *  copied SCIP instance might not represent the same problem semantics as the original. 
  *  Note that in this case dual reductions might be invalid. 
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
  */
 SCIP_RETCODE SCIPcopyPlugins(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
@@ -953,7 +988,11 @@ SCIP_RETCODE SCIPcopyPlugins(
    return SCIP_OKAY;
 }
 
-/** create a problem by copying the problem data of the source SCIP */
+/** create a problem by copying the problem data of the source SCIP 
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
+ */
 SCIP_RETCODE SCIPcopyProb(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
    SCIP*                 targetscip,         /**< target SCIP data structure */
@@ -1178,7 +1217,7 @@ SCIP_RETCODE SCIPgetVarCopy(
          SCIP_CALL( SCIPgetVarCopy(sourcescip, targetscip, sourceaggrvars[i], &targetaggrvars[i], localvarmap, localconsmap, global, success) );
          assert(*success);
       }
-         
+
       /* create copy of the multiaggregated variable */
       SCIP_CALL( SCIPvarCopy(&var, targetscip->mem->probmem, targetscip->set, targetscip->stat, 
             sourcescip, sourcevar, localvarmap, localconsmap, global) );
@@ -1202,7 +1241,7 @@ SCIP_RETCODE SCIPgetVarCopy(
       SCIP_VAR* targetnegatedvar;
          
       /* get negated source variable */
-      SCIP_CALL( SCIPgetNegatedVar(sourcescip, sourcevar, &sourcenegatedvar) );
+      sourcenegatedvar = SCIPvarGetNegationVar(sourcevar);
       assert(sourcenegatedvar != NULL);
       assert(SCIPvarGetStatus(sourcenegatedvar) != SCIP_VARSTATUS_NEGATED);
 
@@ -1252,6 +1291,9 @@ SCIP_RETCODE SCIPgetVarCopy(
  *  variables are stored in the variable hashmap, target-SCIP has to be in problem creation stage
  *
  *  @note the variables are added to the target-SCIP but not captured
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
  */
 SCIP_RETCODE SCIPcopyVars(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
@@ -1451,7 +1493,7 @@ SCIP_RETCODE SCIPgetConsCopy(
       if( *targetcons != NULL )
          return SCIP_OKAY;
    }
-   
+
    /*  copy the constraint */
    SCIP_CALL( SCIPconsCopy(targetcons, targetscip->set, name, sourcescip, sourceconshdlr, sourcecons, localvarmap, localconsmap,
          initial, separate, enforce, check, propagate, local, modifiable, dynamic, removable, stickingatnode, global, success) );
@@ -1475,6 +1517,9 @@ SCIP_RETCODE SCIPgetConsCopy(
  *  variables between the source and the target SCIP, a hash map can be given;
  *
  *  @note the constraints are added to the target-SCIP but are not captured
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
  */
 SCIP_RETCODE SCIPcopyConss(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
@@ -1634,7 +1679,152 @@ SCIP_RETCODE SCIPcopyConss(
    return SCIP_OKAY;
 }
 
-/** copies parameter settings from sourcescip to targetscip */
+
+/** convert all active cuts from cutpool of sourcescip to linear constraints in targetscip, sourcescip and targetscip
+ *  could be the same
+ */
+SCIP_RETCODE SCIPconvertCutsToConss(
+   SCIP*                 sourcescip,         /**< source SCIP data structure */
+   SCIP*                 targetscip,         /**< target SCIP data structure */
+   SCIP_HASHMAP*         varmap,             /**< a hashmap to store the mapping of source variables corresponding
+                                              *   target variables, or NULL */
+   SCIP_HASHMAP*         consmap,            /**< a hashmap to store the mapping of source constraints to the corresponding
+                                              *   target constraints, or NULL */
+   SCIP_Bool             global,             /**< create a global or a local copy? */
+   int*                  ncutsadded          /**< pointer to store number of added cuts */
+   )
+{
+   SCIP_CUT** cuts;
+   int ncuts;
+   int c;
+
+   assert(sourcescip != NULL);
+   assert(sourcescip->set != NULL);
+   assert(targetscip != NULL);
+   assert(ncutsadded != NULL);
+
+   /* check stages for both, the source and the target SCIP data structure */
+   SCIP_CALL( checkStage(sourcescip, "SCIPconvertCutsToConss", FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE) );
+   SCIP_CALL( checkStage(targetscip, "SCIPconvertCutsToConss", FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE) );
+
+   /* if we do not have any cuts, nothing can be converted */
+   if( sourcescip->set->stage < SCIP_STAGE_SOLVING )
+      return SCIP_OKAY;
+
+   if( SCIPfindConshdlr(targetscip, "linear") == NULL )
+   {
+      SCIPdebugMessage("No linear constraint handler available. Cannot convert cuts.\n");
+      return SCIP_OKAY;
+   }
+
+   cuts = SCIPgetPoolCuts(sourcescip);
+   ncuts = SCIPgetNPoolCuts(sourcescip);
+
+   for( c = 0; c < ncuts; ++c )
+   {
+      SCIP_ROW* row;
+
+      row = SCIPcutGetRow(cuts[c]);
+      assert(!SCIProwIsLocal(row));
+      assert(!SCIProwIsModifiable(row));
+
+      /* create a linear constraint out of the cut */
+      if( SCIPcutGetAge(cuts[c]) == 0 && SCIProwIsInLP(row) )
+      {
+         char name[SCIP_MAXSTRLEN];
+         SCIP_CONS* cons;
+         SCIP_COL** cols;
+         SCIP_VAR** vars;
+         int ncols;
+         int i;
+         
+         cols = SCIProwGetCols(row);
+         ncols = SCIProwGetNNonz(row);
+         
+         /* get all variables of the row */
+         SCIP_CALL( SCIPallocBufferArray(targetscip, &vars, ncols) );
+         for( i = 0; i < ncols; ++i )
+            vars[i] = SCIPcolGetVar(cols[i]);
+
+         /* get corresponding variables in targetscip if neccessary */
+         if( sourcescip != targetscip )
+         {
+            SCIP_Bool success;
+
+            for( i = 0; i < ncols; ++i )
+            {
+               SCIP_CALL( SCIPgetVarCopy(sourcescip, targetscip, vars[i], &vars[i], varmap, consmap, global, &success) );
+
+               if( !success )
+               {
+                  SCIPdebugMessage("Converting cuts to constraints failed.\n");
+                  
+                  /* free temporary memory */
+                  SCIPfreeBufferArray(targetscip, &vars);
+                  return SCIP_OKAY;
+               }
+            }
+         }
+         
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d", SCIProwGetName(row), SCIPgetNRuns(sourcescip));
+         SCIP_CALL( SCIPcreateConsLinear(targetscip, &cons, name, ncols, vars, SCIProwGetVals(row),
+               SCIProwGetLhs(row) - SCIProwGetConstant(row), SCIProwGetRhs(row) - SCIProwGetConstant(row),
+               TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE) );
+         SCIP_CALL( SCIPaddCons(targetscip, cons) );
+
+         SCIPdebugMessage("Converted cut <%s> to constraint <%s>.\n", SCIProwGetName(row), SCIPconsGetName(cons));
+         SCIPdebug( SCIP_CALL( SCIPprintCons(targetscip, cons, NULL) ) );
+         SCIP_CALL( SCIPreleaseCons(targetscip, &cons) );
+
+         /* free temporary memory */
+         SCIPfreeBufferArray(targetscip, &vars);
+
+         ++(*ncutsadded);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** copies all active cuts from cutpool of sourcescip to constraints in targetscip 
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
+ */
+SCIP_RETCODE SCIPcopyCuts(
+   SCIP*                 sourcescip,         /**< source SCIP data structure */
+   SCIP*                 targetscip,         /**< target SCIP data structure */
+   SCIP_HASHMAP*         varmap,             /**< a hashmap to store the mapping of source variables corresponding
+                                              *   target variables, or NULL */
+   SCIP_HASHMAP*         consmap,            /**< a hashmap to store the mapping of source constraints to the corresponding
+                                              *   target constraints, or NULL */
+   SCIP_Bool             global              /**< create a global or a local copy? */
+   )
+{
+   int ncutsadded;
+
+   assert(sourcescip != NULL);
+   assert(targetscip != NULL);
+
+   /* check stages for both, the source and the target SCIP data structure */
+   SCIP_CALL( checkStage(sourcescip, "SCIPcopyCuts", FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE) );
+   SCIP_CALL( checkStage(targetscip, "SCIPcopyCuts", FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   ncutsadded = 0;
+
+   /* create out of all active cuts in cutpool linear constraints in targetscip */
+   SCIP_CALL( SCIPconvertCutsToConss(sourcescip, targetscip, varmap, consmap, global, &ncutsadded) );
+
+   SCIPdebugMessage("Converted %d active cuts to constraints.\n", ncutsadded);
+
+   return SCIP_OKAY;
+}
+
+/** copies parameter settings from sourcescip to targetscip 
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
+ */
 SCIP_RETCODE SCIPcopyParamSettings(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
    SCIP*                 targetscip          /**< target SCIP data structure */
@@ -1662,6 +1852,9 @@ SCIP_RETCODE SCIPcopyParamSettings(
  *  5) copy the settings 
  *
  *  @note all variables and constraints which are created in the target-SCIP are not (user) captured 
+ *
+ *  @note you need to lock from outside before copying
+ *  @note Do not change the source SCIP environment during the copying process
  */
 SCIP_RETCODE SCIPcopy(
    SCIP*                 sourcescip,         /**< source SCIP data structure */
@@ -1969,6 +2162,20 @@ SCIP_RETCODE SCIPgetStringParam(
    SCIP_CALL( checkStage(scip, "SCIPgetStringParam", TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE) );
 
    SCIP_CALL( SCIPsetGetStringParam(scip->set, name, value) );
+
+   return SCIP_OKAY;
+}
+
+/** changes the value of an existing parameter */
+SCIP_RETCODE SCIPsetParam(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           name,               /**< name of the parameter */
+   void*                 value               /**< new value of the parameter */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPsetParam", TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE) );
+
+   SCIP_CALL( SCIPsetSetParam(scip->set, name, value) );
 
    return SCIP_OKAY;
 }
@@ -6505,7 +6712,7 @@ SCIP_RETCODE initSolve(
 
    /* initialize NLP if there are nonlinearities and there is someone who can make use of it and the user did not switch it off */
    assert(!scip->set->continnonlinpresent || scip->set->nonlinearitypresent); /* if there is continous nonlinearity, then there should be nonlinearity in general */
-   if( scip->set->nonlinearitypresent && scip->set->nlprequired && !scip->set->nlp_disable )
+   if( scip->set->nonlinearitypresent && !scip->set->nlp_disable )
    {
       SCIPdebugMessage("constructing empty NLP\n");
 
@@ -6878,7 +7085,7 @@ SCIP_RETCODE SCIPsolve(
                "(run %d, node %lld) restarting after %d global fixings of integer variables\n",
                scip->stat->nruns, scip->stat->nnodes, scip->stat->nrootintfixingsrun);
          /* an extra blank line should be printed separately since the buffer message handler only handles up to one line
-          *  correctly */
+          * correctly */
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n");
          SCIP_CALL( freeSolve(scip, TRUE) );
          assert(scip->set->stage == SCIP_STAGE_TRANSFORMED);
@@ -7212,7 +7419,7 @@ SCIP_RETCODE SCIPwriteVarName(
 
    if( type )
    {
-      /* print vatiable type */
+      /* print variable type */
       SCIPinfoMessage(scip, file, "[%c]", 
          SCIPvarGetType(var) == SCIP_VARTYPE_BINARY ? 'B' :
          SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER ? 'I' :
@@ -7222,15 +7429,19 @@ SCIP_RETCODE SCIPwriteVarName(
    return SCIP_OKAY;
 }
 
-/** print the given list of variables to output stream separated by a comma; the variables x1, x2, ..., xn are
- *  written as: \<x1\>, \<x2\>, ..., \<xn\>; the method SCIPparseVarsList() can parse such a string
+/** print the given list of variables to output stream separated by the given delimiter character; 
+ *
+ *  i. e. the variables x1, x2, ..., xn with given delimiter ',' are written as: \<x1\>, \<x2\>, ..., \<xn\>;
+ *
+ *  the method SCIPparseVarsList() can parse such a string
  */
 SCIP_RETCODE SCIPwriteVarsList(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< output file, or NULL for stdout */
    SCIP_VAR**            vars,               /**< variable array to output */
    int                   nvars,              /**< number of variables */
-   SCIP_Bool             type                /**< should the variable type be also posted */
+   SCIP_Bool             type,               /**< should the variable type be also posted */
+   char                  delimiter           /**< character which is used for delimitation */
    )
 {
    int v;
@@ -7241,7 +7452,7 @@ SCIP_RETCODE SCIPwriteVarsList(
    {
       if( v > 0 )
       {
-         SCIPinfoMessage(scip, file, ", ");
+         SCIPinfoMessage(scip, file, "%c ", delimiter);
       }
       
       /* print variable name */
@@ -7272,14 +7483,84 @@ SCIP_RETCODE SCIPwriteVarsLinearsum(
    for( v = 0; v < nvars; ++v )
    {
       if( vals != NULL )
-         SCIPinfoMessage(scip, file, " %+.15g ", vals[v]);
+      {
+         if( vals[v] == 1.0 )
+         {
+            if( v > 0 )
+               SCIPinfoMessage(scip, file, " +");
+         }
+         else if( vals[v] == -1.0 )
+            SCIPinfoMessage(scip, file, " -");
+         else
+            SCIPinfoMessage(scip, file, " %+.15g", vals[v]);
+      }
       else if( nvars > 0 )
-         SCIPinfoMessage(scip, file, " + ");
+         SCIPinfoMessage(scip, file, " +");
       
       /* print variable name */
       SCIP_CALL( SCIPwriteVarName(scip, file, vars[v], type) );
    }
    
+   return SCIP_OKAY;
+}
+
+/** print the given monomials as polynomial in the following form
+ *  c1 \<x11\>^e11 \<x12\>^e12 ... \<x1n\>^e1n + c2 \<x21\>^e21 \<x22\>^e22 ... + ... + cn \<xn1\>^en1 ...
+ *
+ *  This string can be parsed by the method SCIPparseVarsPolynomial().
+ */
+SCIP_RETCODE SCIPwriteVarsPolynomial(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< output file, or NULL for stdout */
+   SCIP_VAR***           monomialvars,       /**< arrays with variables for each monomial */
+   SCIP_Real**           monomialexps,       /**< arrays with variable exponents, or NULL if always 1.0 */
+   SCIP_Real*            monomialcoefs,      /**< array with monomial coefficients */
+   int*                  monomialnvars,      /**< array with number of variables for each monomial */
+   int                   nmonomials,         /**< number of monomials */
+   SCIP_Bool             type                /**< should the variable type be also posted */
+   )
+{
+   int i;
+   int v;
+
+   assert(scip != NULL);
+   assert(monomialvars  != NULL || nmonomials == 0);
+   assert(monomialexps  != NULL || nmonomials == 0);
+   assert(monomialcoefs != NULL || nmonomials == 0);
+   assert(monomialnvars != NULL || nmonomials == 0);
+
+   SCIP_CALL( checkStage(scip, "SCIPwriteVarsPolynomial", FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE) );
+
+   if( nmonomials == 0 )
+   {
+      SCIPinfoMessage(scip, file, " 0 ");
+      return SCIP_OKAY;
+   }
+
+   for( i = 0; i < nmonomials; ++i )
+   {
+      if( monomialcoefs[i] == 1.0 )
+      {
+         if( i > 0 )
+            SCIPinfoMessage(scip, file, " +");
+      }
+      else if( monomialcoefs[i] == -1.0 )
+         SCIPinfoMessage(scip, file, " -");
+      else
+         SCIPinfoMessage(scip, file, " %+.15g", monomialcoefs[i]);
+
+      assert(monomialvars[i] != NULL || monomialnvars[i] == 0);
+
+      for( v = 0; v < monomialnvars[i]; ++v )
+      {
+         SCIP_CALL( SCIPwriteVarName(scip, file, monomialvars[i][v], type) );
+         if( monomialexps != NULL && monomialexps[i] != NULL && monomialexps[i][v] != 1.0 )
+         {
+            SCIPinfoMessage(scip, file, "^%.15g", monomialexps[i][v]);
+         }
+      }
+   }
+
    return SCIP_OKAY;
 }
 
@@ -7371,12 +7652,18 @@ SCIP_RETCODE SCIPparseVarName(
       /* search for the variable */
       (*var) = SCIPfindVar(scip, varname);
    }
+
+   /* skip additional variable type marker */
+   if( str[*endpos] == '[' &&
+       (str[*endpos+1] == 'B' || str[*endpos+1] == 'I' || str[*endpos+1] == 'C') &&
+       str[*endpos+2] == ']' )
+      *endpos += 3;
    
    return SCIP_OKAY;
 }
 
-/** parse the given string as variable list (\<x1\>, \<x2\>, ..., \<xn\>) (see SCIPwriteVarsList() ); if it was
- *  successful, the pointer success is set to TRUE
+/** parse the given string as variable list (here ',' is the delimiter)) (\<x1\>, \<x2\>, ..., \<xn\>) (see
+ *  SCIPwriteVarsList() ); if it was successful, the pointer success is set to TRUE
  *
  *  @note the pointer success in only set to FALSE in the case that a variable with a parsed variable name does not exist
  *
@@ -7394,6 +7681,7 @@ SCIP_RETCODE SCIPparseVarsList(
    int                   varssize,           /**< size of the variable array */
    int*                  requiredsize,       /**< pointer to store the required array size for the active variables */
    int*                  endpos,             /**< position where the parsing stopped */
+   char                  delimiter,          /**< character which is used for delimitation */
    SCIP_Bool*            success             /**< pointer to store the whether the parsing was successfully or not */
    )
 {
@@ -7432,7 +7720,7 @@ SCIP_RETCODE SCIPparseVarsList(
       while( isspace(str[pos]) )
          pos++;
    }
-   while( str[pos] == ',' );
+   while( str[pos] == delimiter );
 
    /* if all variable name searches were successfully and the variable array has enough slots copy the collected
     * variables 
@@ -7455,6 +7743,403 @@ SCIP_RETCODE SCIPparseVarsList(
    return SCIP_OKAY;
 }
 
+/** parse the given string as polynomial of variables and coefficients
+ *  (c1 \<x11\>^e11 \<x12\>^e12 ... \<x1n\>^e1n + c2 \<x21\>^e21 \<x22\>^e22 ... + ... + cn \<xn1\>^en1 ...)
+ *  (see SCIPwriteVarsPolynomial()); if it was successful, the pointer success is set to TRUE
+ *
+ *  The user has to call SCIPfreeParseVarsPolynomialData(scip, monomialvars, monomialexps,
+ *  monomialcoefs, monomialnvars, *nmonomials) short after SCIPparseVarsPolynomial to free all the
+ *  allocated memory again.  Do not keep the arrays created by SCIPparseVarsPolynomial around, since
+ *  they use buffer memory that is intended for short term use only.
+ *
+ *  Parsing is stopped at the end of string (indicated by the \\0-character), or when the character
+ *  stored in endchar is found (outside of variable names and numbers). Set endchar to \\0 if you
+ *  want parsing until the end of str.  A space character is not allowed for endchar.
+ */
+SCIP_RETCODE SCIPparseVarsPolynomial(
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           str,                /**< string to parse */
+   int                   pos,                /**< position to start parsing the string */
+   char                  endchar,            /**< character where to stop parsing */
+   SCIP_VAR****          monomialvars,       /**< pointer to store arrays with variables for each monomial */
+   SCIP_Real***          monomialexps,       /**< pointer to store arrays with variable exponents */
+   SCIP_Real**           monomialcoefs,      /**< pointer to store array with monomial coefficients */
+   int**                 monomialnvars,      /**< pointer to store array with number of variables for each monomial */
+   int*                  nmonomials,         /**< pointer to store number of parsed monomials */
+   int*                  endpos,             /**< pointer to store where the parsing ended */
+   SCIP_Bool*            success             /**< pointer to store the whether the parsing was successfully or not */
+   )
+{
+   typedef enum {
+      SCIPPARSEPOLYNOMIAL_STATE_BEGIN,       /* we are at the beginning of a monomial */
+      SCIPPARSEPOLYNOMIAL_STATE_INTERMED,    /* we are in between the factors of a monomial */
+      SCIPPARSEPOLYNOMIAL_STATE_COEF,        /* we parse the coefficient of a monomial */
+      SCIPPARSEPOLYNOMIAL_STATE_VARS,        /* we parse monomial variables */
+      SCIPPARSEPOLYNOMIAL_STATE_EXPONENT,    /* we parse the exponent of a variable */
+      SCIPPARSEPOLYNOMIAL_STATE_ERROR        /* a parsing error occured */
+   } SCIPPARSEPOLYNOMIAL_STATES;
+
+   SCIPPARSEPOLYNOMIAL_STATES state;
+   int monomialssize;
+
+   /* data of currently parsed monomial */
+   int varssize;
+   int nvars;
+   SCIP_VAR** vars;
+   SCIP_Real* exponents;
+   SCIP_Real coef;
+
+   assert(scip != NULL);
+   assert(str != NULL);
+   assert(pos >= 0);
+   assert(pos <= (int)strlen(str));
+   assert(!isspace(endchar));
+   assert(monomialvars != NULL);
+   assert(monomialexps != NULL);
+   assert(monomialnvars != NULL);
+   assert(monomialcoefs != NULL);
+   assert(nmonomials != NULL);
+   assert(endpos != NULL);
+   assert(success != NULL);
+
+   SCIP_CALL( checkStage(scip, "SCIPparseVarsPolynomial", FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   *success = FALSE;
+   *endpos = pos;
+   *nmonomials = 0;
+   monomialssize = 0;
+   *monomialvars = NULL;
+   *monomialexps = NULL;
+   *monomialcoefs = NULL;
+   *monomialnvars = NULL;
+
+   /* initialize state machine */
+   state = SCIPPARSEPOLYNOMIAL_STATE_BEGIN;
+   varssize = 0;
+   nvars = 0;
+   vars = NULL;
+   exponents = NULL;
+   coef = SCIP_INVALID;
+
+   SCIPdebugMessage("parsing polynomial from '%s', endchar = %c\n", str, endchar);
+
+   while( str[pos] && str[pos] != endchar && state != SCIPPARSEPOLYNOMIAL_STATE_ERROR )
+   {
+      /* skip white space */
+      while( isspace(str[pos]) )
+         pos++;
+
+      if( str[pos] == endchar )
+         break;
+
+      switch( state )
+      {
+         case SCIPPARSEPOLYNOMIAL_STATE_BEGIN:
+         {
+            if( coef != SCIP_INVALID )
+            {
+               SCIPdebugMessage("push monomial with coef %g and %d vars\n", coef, nvars);
+               /* push previous monomial */
+               if( monomialssize <= *nmonomials )
+               {
+                  monomialssize = SCIPcalcMemGrowSize(scip, *nmonomials+1);
+
+                  SCIP_CALL( SCIPreallocBufferArray(scip, monomialvars,  monomialssize) );
+                  SCIP_CALL( SCIPreallocBufferArray(scip, monomialexps,  monomialssize) );
+                  SCIP_CALL( SCIPreallocBufferArray(scip, monomialnvars, monomialssize) );
+                  SCIP_CALL( SCIPreallocBufferArray(scip, monomialcoefs, monomialssize) );
+               }
+
+               if( nvars > 0 )
+               {
+                  SCIP_CALL( SCIPduplicateBufferArray(scip, &(*monomialvars)[*nmonomials], vars, nvars) );
+                  SCIP_CALL( SCIPduplicateBufferArray(scip, &(*monomialexps)[*nmonomials], exponents, nvars) );
+               }
+               else
+               {
+                  (*monomialvars)[*nmonomials] = NULL;
+                  (*monomialexps)[*nmonomials] = NULL;
+               }
+               (*monomialcoefs)[*nmonomials] = coef;
+               (*monomialnvars)[*nmonomials] = nvars;
+               ++*nmonomials;
+
+               nvars = 0;
+               coef = SCIP_INVALID;
+            }
+
+            if( str[pos] == '<' )
+            {
+               /* there seem to come a variable at the beginning of a monomial
+                * so assume the coefficient is 1.0
+                */
+               state = SCIPPARSEPOLYNOMIAL_STATE_VARS;
+               coef = 1.0;
+               break;
+            }
+            if( str[pos] == '-' || str[pos] == '+' || isdigit(str[pos]) )
+            {
+               state = SCIPPARSEPOLYNOMIAL_STATE_COEF;
+               break;
+            }
+
+            SCIPerrorMessage("unexpected token '%c'\n", str[pos]);
+            state = SCIPPARSEPOLYNOMIAL_STATE_ERROR;
+
+            break;
+         }
+
+         case SCIPPARSEPOLYNOMIAL_STATE_INTERMED:
+         {
+            if( str[pos] == '<' )
+            {
+               /* there seem to come another variable */
+               state = SCIPPARSEPOLYNOMIAL_STATE_VARS;
+               break;
+            }
+
+            if( str[pos] == '-' || str[pos] == '+' || isdigit(str[pos]) )
+            {
+               /* there seem to come a coefficient, which means the next monomial */
+               state = SCIPPARSEPOLYNOMIAL_STATE_BEGIN;
+               break;
+            }
+
+            SCIPerrorMessage("unexpected token '%c'\n", str[pos]);
+            state = SCIPPARSEPOLYNOMIAL_STATE_ERROR;
+
+            break;
+         }
+
+         case SCIPPARSEPOLYNOMIAL_STATE_COEF:
+         {
+            char* endptr;
+
+            assert(coef == SCIP_INVALID);
+            if( str[pos] == '+' && !isdigit(str[pos+1]) )
+            {
+               /* only a plus sign, without number */
+               coef =  1.0;
+               ++pos;
+            }
+            else if( str[pos] == '-' && !isdigit(str[pos+1]) )
+            {
+               /* only a minus sign, without number */
+               coef = -1.0;
+               ++pos;
+            }
+            else
+            {
+               coef = strtod(str+pos, &endptr);
+
+               if( endptr == str+pos )
+               {
+                  SCIPerrorMessage("could not parse number in the beginning of '%s'\n", str+pos);
+                  state = SCIPPARSEPOLYNOMIAL_STATE_ERROR;
+                  break;
+               }
+               /* @todo we could check errno whether an over- or underflow occured, but I am not sure that this works on every platform
+                * also since we expect that the string was written by SCIPwriteVarsPolynomial, we can assume that the numbers are parsable
+                */
+
+               assert(endptr > str+pos);
+               pos = endptr - str;
+            }
+
+            /* after the coefficient we go into the intermediate state, i.e., expecting next variables */
+            state = SCIPPARSEPOLYNOMIAL_STATE_INTERMED;
+
+            break;
+         }
+
+         case SCIPPARSEPOLYNOMIAL_STATE_VARS:
+         {
+            SCIP_VAR* var;
+
+            assert(str[pos] == '<');
+
+            /* parse variable name */
+            SCIP_CALL( SCIPparseVarName(scip, str, pos, &var, &pos) );
+
+            if( var == NULL )
+            {
+               SCIPerrorMessage("did not find variable in the beginning of %s\n", str+pos);
+               state = SCIPPARSEPOLYNOMIAL_STATE_ERROR;
+               break;
+            }
+
+            /* add variable to vars array */
+            if( nvars + 1 > varssize )
+            {
+               varssize = SCIPcalcMemGrowSize(scip, nvars+1);
+               SCIP_CALL( SCIPreallocBufferArray(scip, &vars,      varssize) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, &exponents, varssize) );
+            }
+            vars[nvars] = var;
+            exponents[nvars] = 1.0;
+            ++nvars;
+
+            if( str[pos] == '^' )
+               state = SCIPPARSEPOLYNOMIAL_STATE_EXPONENT;
+            else
+               state = SCIPPARSEPOLYNOMIAL_STATE_INTERMED;
+
+            break;
+         }
+
+         case SCIPPARSEPOLYNOMIAL_STATE_EXPONENT:
+         {
+            char* endptr;
+
+            assert(str[pos] == '^');
+            assert(nvars > 0); /* we should be in a monomial that has already a variable */
+            ++pos;
+
+            exponents[nvars-1] = strtod(str+pos, &endptr);
+
+            if( endptr == str+pos )
+            {
+               SCIPerrorMessage("could not parse number in the beginning of '%s'\n", str+pos);
+               state = SCIPPARSEPOLYNOMIAL_STATE_ERROR;
+               break;
+            }
+
+            assert(endptr > str+pos);
+            pos = endptr - str;
+
+            /* after the exponent we go into the intermediate state, i.e., expecting next variables */
+            state = SCIPPARSEPOLYNOMIAL_STATE_INTERMED;
+            break;
+         }
+
+         default:
+            SCIPerrorMessage("unexpected state\n");
+            return SCIP_ERROR;
+      }
+   }
+
+   /* check state at end of string */
+   switch( state )
+   {
+      case SCIPPARSEPOLYNOMIAL_STATE_BEGIN:
+      case SCIPPARSEPOLYNOMIAL_STATE_INTERMED:
+      {
+         if( coef != SCIP_INVALID )
+         {
+            /* push last monomial */
+            SCIPdebugMessage("push monomial with coef %g and %d vars\n", coef, nvars);
+            if( monomialssize <= *nmonomials )
+            {
+               monomialssize = *nmonomials+1;
+               SCIP_CALL( SCIPreallocBufferArray(scip, monomialvars,  monomialssize) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, monomialexps,  monomialssize) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, monomialnvars, monomialssize) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, monomialcoefs, monomialssize) );
+            }
+
+            if( nvars > 0 )
+            {
+               /* shrink vars and exponents array to needed size and take over ownership */
+               SCIP_CALL( SCIPreallocBufferArray(scip, &vars,      nvars) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, &exponents, nvars) );
+               (*monomialvars)[*nmonomials] = vars;
+               (*monomialexps)[*nmonomials] = exponents;
+               vars = NULL;
+               exponents = NULL;
+               varssize = 0;
+            }
+            else
+            {
+               (*monomialvars)[*nmonomials] = NULL;
+               (*monomialexps)[*nmonomials] = NULL;
+            }
+            (*monomialcoefs)[*nmonomials] = coef;
+            (*monomialnvars)[*nmonomials] = nvars;
+            ++*nmonomials;
+         }
+
+         *success = TRUE;
+         break;
+      }
+
+      case SCIPPARSEPOLYNOMIAL_STATE_COEF:
+      case SCIPPARSEPOLYNOMIAL_STATE_VARS:
+      case SCIPPARSEPOLYNOMIAL_STATE_EXPONENT:
+      {
+         SCIPerrorMessage("unexpected parsing state at end of polynomial string\n");
+      }
+
+      case SCIPPARSEPOLYNOMIAL_STATE_ERROR:
+         ;
+   }
+
+   /* free memory to store current monomial, if still existing */
+   SCIPfreeBufferArrayNull(scip, &vars);
+   SCIPfreeBufferArrayNull(scip, &exponents);
+   varssize = 0;
+
+   if( *success && *nmonomials > 0 )
+   {
+      /* shrink arrays to required size, so we do not need to keep monomialssize around */
+      assert(*nmonomials <= monomialssize);
+      SCIP_CALL( SCIPreallocBufferArray(scip, monomialvars,  *nmonomials) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, monomialexps,  *nmonomials) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, monomialnvars, *nmonomials) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, monomialcoefs, *nmonomials) );
+
+      /* SCIPwriteVarsPolynomial(scip, NULL, *monomialvars, *monomialexps, *monomialcoefs, *monomialnvars, *nmonomials, FALSE); */
+   }
+   else
+   {
+      /* in case of error, cleanup all data here */
+      SCIPfreeParseVarsPolynomialData(scip, monomialvars, monomialexps, monomialcoefs, monomialnvars, *nmonomials);
+      *nmonomials = 0;
+   }
+
+   *endpos = pos;
+
+   return SCIP_OKAY;
+}
+
+/** frees memory allocated when parsing a polynomial from a string */
+void SCIPfreeParseVarsPolynomialData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR****          monomialvars,       /**< pointer to store arrays with variables for each monomial */
+   SCIP_Real***          monomialexps,       /**< pointer to store arrays with variable exponents */
+   SCIP_Real**           monomialcoefs,      /**< pointer to store array with monomial coefficients */
+   int**                 monomialnvars,      /**< pointer to store array with number of variables for each monomial */
+   int                   nmonomials          /**< pointer to store number of parsed monomials */
+   )
+{
+   int i;
+
+   assert(scip != NULL);
+   assert(monomialvars  != NULL);
+   assert(monomialexps  != NULL);
+   assert(monomialcoefs != NULL);
+   assert(monomialnvars != NULL);
+   assert((*monomialvars  != NULL) == (nmonomials > 0));
+   assert((*monomialexps  != NULL) == (nmonomials > 0));
+   assert((*monomialcoefs != NULL) == (nmonomials > 0));
+   assert((*monomialnvars != NULL) == (nmonomials > 0));
+
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPfreeParseVarsPolynomialData", FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( nmonomials == 0 )
+      return;
+
+   for( i = 0; i < nmonomials; ++i )
+   {
+      SCIPfreeBufferArrayNull(scip, &(*monomialvars)[i]);
+      SCIPfreeBufferArrayNull(scip, &(*monomialexps)[i]);
+   }
+
+   SCIPfreeBufferArray(scip, monomialvars);
+   SCIPfreeBufferArray(scip, monomialexps);
+   SCIPfreeBufferArray(scip, monomialcoefs);
+   SCIPfreeBufferArray(scip, monomialnvars);
+}
+
 /** parse the given string as linear sum of variables and coefficients (c1 \<x1\> + c2 \<x2\> + ... + cn \<xn\>) 
  *  (see SCIPwriteVarsLinearsum() ); if it was successful, the pointer success is set to TRUE
  *
@@ -7469,6 +8154,7 @@ SCIP_RETCODE SCIPparseVarsLinearsum(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           str,                /**< string to parse */
    int                   pos,                /**< position to start parsing the string */
+   char                  endchar,            /**< character where to stop parsing, or 0 */
    SCIP_VAR**            vars,               /**< array to store the parsed variables */
    SCIP_Real*            vals,               /**< array to store the parsed coefficients */
    int*                  nvars,              /**< pointer to store number of parsed variables */
@@ -7478,88 +8164,74 @@ SCIP_RETCODE SCIPparseVarsLinearsum(
    SCIP_Bool*            success             /**< pointer to store the whether the parsing was successfully or not */
    )
 {
-#if 0
-   SCIP_VAR** tmpvars;
-   SCIP_Real* tmpvals;
-   SCIP_VAR* var;
-   SCIP_Real value;
-   SCIP_Bool linmonom;
-   int ntmpvars;
-   int v;
+   SCIP_VAR*** monomialvars;
+   SCIP_Real** monomialexps;
+   SCIP_Real*  monomialcoefs;
+   int*        monomialnvars;
+   int         nmonomials;
    
    SCIP_CALL( checkStage(scip, "SCIPparseVarsLinearsum", FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
-   /* allocate buffer memory for temporary storing the parsed variables */
-   SCIP_CALL( SCIPallocBufferArray(scip, &tmpvars, varssize) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &tmpvals, varssize) );
+   assert(scip != NULL);
+   assert(str != NULL);
+   assert(vars != NULL || varssize == 0);
+   assert(vals != NULL || varssize == 0);
+   assert(nvars != NULL);
+   assert(requiredsize != NULL);
+   assert(endpos != NULL);
+   assert(success != NULL);
 
-   ntmpvars = 0;
-   (*success) = TRUE;
-   (*endpos) = pos;
-  
-   /* check for the first coefficient */
-   if( SCIPstrGetValue(str, pos, &value, &pos) )
+   *requiredsize = 0;
+
+   SCIP_CALL( SCIPparseVarsPolynomial(scip, str, pos, endchar, &monomialvars, &monomialexps, &monomialcoefs, &monomialnvars, &nmonomials, endpos, success) );
+
+   if( !*success )
    {
-      linmonom = TRUE;
-      
-      while( linmonom )
+      assert(nmonomials == 0); /* SCIPparseVarsPolynomial should have freed all buffers, so no need to call free here */
+      return SCIP_OKAY;
+   }
+
+   /* check if linear sum is just "0" */
+   if( nmonomials == 1 && monomialnvars[0] == 0 && monomialcoefs[0] == 0.0 )
+   {
+      *nvars = 0;
+      *requiredsize = 0;
+      return SCIP_OKAY;
+   }
+
+   *nvars = nmonomials;
+   *requiredsize = nmonomials;
+
+   /* if we have enough slots in the variables array, copy variables over */
+   if( varssize >= nmonomials )
+   {
+      int v;
+
+      for( v = 0; v < nmonomials; ++v )
       {
-         (*endpos) = pos;
-
-      
-         /* parse variable name */
-         SCIP_CALL( SCIPparseVarName(scip, str, pos, &var, &pos) );
-      
-         if( var == NULL )
-            break;
-      
-         nextpos = pos; 
-      
-         /* check if the bext token is a variable name again */
-         SCIP_CALL( SCIPparseVarName(scip, str, pos, &nextvar, &pos) );
-      
-         if( nextvar != NULL )
+         if( monomialnvars[v] == 0 )
          {
-         }
-         (*endpos) = )
-      
- 
-         if( var == NULL )
-         {
-            SCIPdebugMessage("variable with does not exist\n");
-            (*success) = FALSE;
+            SCIPerrorMessage("constant in linear sum\n");
+            *success = FALSE;
             break;
          }
-
-         /* store the variable in the tmp array */
-         if( ntmpvars < varssize )
+         if( monomialnvars[v] > 1 || monomialexps[v][0] != 1.0 )
          {
-            tmpvars[ntmpvars] = var;
-            tmpvals[ntmpvars] = value;
+            SCIPerrorMessage("nonlinear monomial in linear sum\n");
+            *success = FALSE;
+            break;
          }
-         ntmpvars++;
-   }
- 
-   /* if all variable name searches were successfully and the variable array has enough slots copy the collected
-    * variables 
-    */
-   if( (*success) && ntmpvars <= varssize )
-   {
-      for( v = 0; v < ntmpvars; ++v )
-         vars[v] = tmpvars[v];
-      
-      (*nvars) = ntmpvars;
-   }
-   else
-      (*nvars) = 0;
-   
-   (*requiredsize) = ntmpvars;
+         assert(monomialnvars[v]   == 1);
+         assert(monomialvars[v][0] != NULL);
+         assert(monomialexps[v][0] == 1.0);
 
-   /* free buffer arrays */
-   SCIPfreeBufferArray(scip, &tmpvals);
-   SCIPfreeBufferArray(scip, &tmpvars);
-   SCIPfreeBufferArray(scip, &line);
-#endif
+         vars[v] = monomialvars[v][0];
+         vals[v] = monomialcoefs[v];
+      }
+   }
+
+   SCIPfreeParseVarsPolynomialData(scip, &monomialvars, &monomialexps, &monomialcoefs, &monomialnvars, nmonomials);
+
    return SCIP_OKAY;
 }
 
@@ -8781,7 +9453,7 @@ SCIP_RETCODE SCIPaddVarLocks(
    int                   nlocksup            /**< modification in number of rounding up locks */
    )
 {
-   SCIP_CALL( checkStage(scip, "SCIPaddVarLocks", FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
+   SCIP_CALL( checkStage(scip, "SCIPaddVarLocks", FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE) );
 
    switch( scip->set->stage )
    {
@@ -8789,6 +9461,7 @@ SCIP_RETCODE SCIPaddVarLocks(
       assert(!SCIPvarIsTransformed(var));
       /*lint -fallthrough*/
    case SCIP_STAGE_TRANSFORMING:
+   case SCIP_STAGE_TRANSFORMED:
    case SCIP_STAGE_PRESOLVING:
    case SCIP_STAGE_PRESOLVED:
    case SCIP_STAGE_INITSOLVE:
@@ -11350,7 +12023,7 @@ SCIP_Real SCIPgetVarPseudocostVal(
    SCIP_Real             solvaldelta         /**< difference of variable's new LP value - old LP value */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostVal", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostVal", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetPseudocost(var, scip->stat, solvaldelta);
 }
@@ -11364,7 +12037,7 @@ SCIP_Real SCIPgetVarPseudocostValCurrentRun(
    SCIP_Real             solvaldelta         /**< difference of variable's new LP value - old LP value */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostValCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostValCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
  
    return SCIPvarGetPseudocostCurrentRun(var, scip->stat, solvaldelta);
 }
@@ -11376,7 +12049,7 @@ SCIP_Real SCIPgetVarPseudocost(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocost", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocost", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
    assert(dir == SCIP_BRANCHDIR_DOWNWARDS || dir == SCIP_BRANCHDIR_UPWARDS);
 
    return SCIPvarGetPseudocost(var, scip->stat, dir == SCIP_BRANCHDIR_DOWNWARDS ? -1.0 : 1.0);
@@ -11391,7 +12064,7 @@ SCIP_Real SCIPgetVarPseudocostCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
    assert(dir == SCIP_BRANCHDIR_DOWNWARDS || dir == SCIP_BRANCHDIR_UPWARDS);
    
    return SCIPvarGetPseudocostCurrentRun(var, scip->stat, dir == SCIP_BRANCHDIR_DOWNWARDS ? -1.0 : 1.0);
@@ -11404,7 +12077,7 @@ SCIP_Real SCIPgetVarPseudocostCount(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCount", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCount", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
    assert(dir == SCIP_BRANCHDIR_DOWNWARDS || dir == SCIP_BRANCHDIR_UPWARDS);
 
    return SCIPvarGetPseudocostCount(var, dir);
@@ -11419,7 +12092,7 @@ SCIP_Real SCIPgetVarPseudocostCountCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCountCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostCountCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
    assert(dir == SCIP_BRANCHDIR_DOWNWARDS || dir == SCIP_BRANCHDIR_UPWARDS);
 
    return SCIPvarGetPseudocostCountCurrentRun(var, dir);
@@ -11437,7 +12110,7 @@ SCIP_Real SCIPgetVarPseudocostScore(
    SCIP_Real pscostdown;
    SCIP_Real pscostup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downsol = SCIPsetFeasCeil(scip->set, solval-1.0);
    upsol = SCIPsetFeasFloor(scip->set, solval+1.0);
@@ -11461,7 +12134,7 @@ SCIP_Real SCIPgetVarPseudocostScoreCurrentRun(
    SCIP_Real pscostdown;
    SCIP_Real pscostup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarPseudocostScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downsol = SCIPsetFeasCeil(scip->set, solval-1.0);
    upsol = SCIPsetFeasFloor(scip->set, solval+1.0);
@@ -11478,7 +12151,7 @@ SCIP_Real SCIPgetVarVSIDS(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarVSIDS", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarVSIDS", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
    
    return SCIPvarGetVSIDS(var, scip->stat, dir);
 }
@@ -11490,7 +12163,7 @@ SCIP_Real SCIPgetVarVSIDSCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarVSIDSCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarVSIDSCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetVSIDSCurrentRun(var, scip->stat, dir);
 }
@@ -11504,7 +12177,7 @@ SCIP_Real SCIPgetVarConflictScore(
    SCIP_Real downscore;
    SCIP_Real upscore;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downscore = SCIPvarGetVSIDS(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    upscore = SCIPvarGetVSIDS(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11521,7 +12194,7 @@ SCIP_Real SCIPgetVarConflictScoreCurrentRun(
    SCIP_Real downscore;
    SCIP_Real upscore;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downscore = SCIPvarGetVSIDSCurrentRun(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    upscore = SCIPvarGetVSIDSCurrentRun(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11538,7 +12211,7 @@ SCIP_Real SCIPgetVarConflictlengthScore(
    SCIP_Real downscore;
    SCIP_Real upscore;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictlengthScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictlengthScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downscore = SCIPvarGetAvgConflictlength(var, SCIP_BRANCHDIR_DOWNWARDS);
    upscore = SCIPvarGetAvgConflictlength(var, SCIP_BRANCHDIR_UPWARDS);
@@ -11555,7 +12228,7 @@ SCIP_Real SCIPgetVarConflictlengthScoreCurrentRun(
    SCIP_Real downscore;
    SCIP_Real upscore;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictlengthScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarConflictlengthScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    downscore = SCIPvarGetAvgConflictlengthCurrentRun(var, SCIP_BRANCHDIR_DOWNWARDS);
    upscore = SCIPvarGetAvgConflictlengthCurrentRun(var, SCIP_BRANCHDIR_UPWARDS);
@@ -11570,7 +12243,7 @@ SCIP_Real SCIPgetVarAvgConflictlength(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgConflictlength", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgConflictlength", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgConflictlength(var, dir);
 }
@@ -11582,7 +12255,7 @@ SCIP_Real SCIPgetVarAvgConflictlengthCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgConflictlengthCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgConflictlengthCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgConflictlengthCurrentRun(var, dir);
 }
@@ -11597,7 +12270,7 @@ SCIP_Real SCIPgetVarAvgInferences(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferences", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferences", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgInferences(var, scip->stat, dir);
 }
@@ -11612,7 +12285,7 @@ SCIP_Real SCIPgetVarAvgInferencesCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferencesCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferencesCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgInferencesCurrentRun(var, scip->stat, dir);
 }
@@ -11626,7 +12299,7 @@ SCIP_Real SCIPgetVarAvgInferenceScore(
    SCIP_Real inferdown;
    SCIP_Real inferup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    inferdown = SCIPvarGetAvgInferences(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    inferup = SCIPvarGetAvgInferences(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11643,7 +12316,7 @@ SCIP_Real SCIPgetVarAvgInferenceScoreCurrentRun(
    SCIP_Real inferdown;
    SCIP_Real inferup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    inferdown = SCIPvarGetAvgInferencesCurrentRun(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    inferup = SCIPvarGetAvgInferencesCurrentRun(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11720,7 +12393,7 @@ SCIP_Real SCIPgetVarAvgCutoffs(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffs", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffs", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgCutoffs(var, scip->stat, dir);
 }
@@ -11735,7 +12408,7 @@ SCIP_Real SCIPgetVarAvgCutoffsCurrentRun(
    SCIP_BRANCHDIR        dir                 /**< branching direction (downwards, or upwards) */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffsCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffsCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    return SCIPvarGetAvgCutoffsCurrentRun(var, scip->stat, dir);
 }
@@ -11749,7 +12422,7 @@ SCIP_Real SCIPgetVarAvgCutoffScore(
    SCIP_Real cutoffdown;
    SCIP_Real cutoffup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    cutoffdown = SCIPvarGetAvgCutoffs(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    cutoffup = SCIPvarGetAvgCutoffs(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11766,7 +12439,7 @@ SCIP_Real SCIPgetVarAvgCutoffScoreCurrentRun(
    SCIP_Real cutoffdown;
    SCIP_Real cutoffup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgCutoffScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    cutoffdown = SCIPvarGetAvgCutoffsCurrentRun(var, scip->stat, SCIP_BRANCHDIR_DOWNWARDS);
    cutoffup = SCIPvarGetAvgCutoffsCurrentRun(var, scip->stat, SCIP_BRANCHDIR_UPWARDS);
@@ -11791,7 +12464,7 @@ SCIP_Real SCIPgetVarAvgInferenceCutoffScore(
    SCIP_Real cutoffdown;
    SCIP_Real cutoffup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceCutoffScore", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceCutoffScore", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    avginferdown = SCIPhistoryGetAvgInferences(scip->stat->glbhistory, SCIP_BRANCHDIR_DOWNWARDS);
    avginferup = SCIPhistoryGetAvgInferences(scip->stat->glbhistory, SCIP_BRANCHDIR_UPWARDS);
@@ -11822,7 +12495,7 @@ SCIP_Real SCIPgetVarAvgInferenceCutoffScoreCurrentRun(
    SCIP_Real cutoffdown;
    SCIP_Real cutoffup;
 
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceCutoffScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetVarAvgInferenceCutoffScoreCurrentRun", FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE) );
 
    avginferdown = SCIPhistoryGetAvgInferences(scip->stat->glbhistorycrun, SCIP_BRANCHDIR_DOWNWARDS);
    avginferup = SCIPhistoryGetAvgInferences(scip->stat->glbhistorycrun, SCIP_BRANCHDIR_UPWARDS);
@@ -13422,7 +14095,7 @@ SCIP_RETCODE SCIPprintLPSolutionQuality(
    return SCIP_OKAY;
 }
 
-/** Compute relative interior point to current LP 
+/** Compute relative interior point to current LP w.r.t. one-norm
  *
  *  We use the approach of@par
  *  R. Freund, R. Roundy, M. J. Todd@par
@@ -13447,15 +14120,17 @@ SCIP_RETCODE SCIPprintLPSolutionQuality(
  *             & A x - y - \alpha a & \geq 0\\
  *             & B x + y - \alpha b & \leq 0\\
  *             & D x - \alpha d & = 0\\
- *             & 0 \leq y & \leq 1.
+ *             & 0 \leq y & \leq 1\\
+ *             & alpha & \geq 1.
  *     \end{array}
  *  \f]
  *  If the original LP is feasible, this LP is feasible as well. Any optimal solution yields the
  *  relative interior point \f$x^*_j/\alpha^*\f$.
  */
-SCIP_RETCODE SCIPcomputeLPRelIntPoint(
+SCIP_RETCODE SCIPcomputeLPRelIntPointOneNorm(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_Bool             relaxrows,          /**< should the rows be relaxed */
+   SCIP_Bool             inclobjcutoff,      /**< should a row for the objective cutoff be included */
    SCIP_SOL**            point               /**< relative interior point on exit */
    )
 {
@@ -13474,7 +14149,9 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
    int* rowinds;
    int* colinds;
    int nnewcols;
+#ifndef NDEBUG
    int nslacks;
+#endif
    int beg;
    int cnt;
    int i;
@@ -13488,16 +14165,20 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
    /* init point */
    *point = NULL;
 
-   /* exit if LP if there are no columns */
+   /* exit if there are no columns */
    lp = scip->lp;
    assert( lp->nrows >= 0 && lp->ncols >= 0 );
    if ( lp->ncols == 0 )
       return SCIP_OKAY;
 
+   /* disable objective cutoff if we have none */
+   if( inclobjcutoff && (SCIPgetCutoffbound(scip) >= SCIPinfinity(scip) || SCIPlpGetLooseObjval(lp, scip->set) <= -SCIPinfinity(scip) || SCIPlpGetLooseObjval(lp, scip->set) == SCIP_INVALID) )
+      inclobjcutoff = FALSE;
+
    SCIPdebugMessage("Computing relative interior point to current LP.\n");
 
    /* if there are no rows, we return the zero point */
-   if ( lp->nrows == 0 )
+   if ( lp->nrows == 0 && !inclobjcutoff )
    {
       /* create zero point */
       SCIP_CALL( SCIPcreateSol(scip, point, NULL) );
@@ -13508,7 +14189,7 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
    SCIP_CALL( SCIPlpiCreate(&lpi, "relativeInterior", SCIP_OBJSEN_MAXIMIZE) );
 
    /* get storage */
-   nnewcols = 3*lp->ncols + 2*lp->nrows + 1;
+   nnewcols = 3*lp->ncols + 2*lp->nrows + (inclobjcutoff ? 1 : 0) + 1;
    SCIP_CALL( SCIPallocBufferArray(scip, &lb, nnewcols) );
    SCIP_CALL( SCIPallocBufferArray(scip, &ub, nnewcols) );
    SCIP_CALL( SCIPallocBufferArray(scip, &obj, nnewcols) );
@@ -13569,6 +14250,19 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
       }
    }
 
+   /* create slacks for objective cutoff row */
+   if( inclobjcutoff )
+   {
+      if ( relaxrows )
+      {
+         /* add slacks for right hand side */
+         obj[nnewcols] = 1.0;
+         lb[nnewcols] = 0.0;
+         ub[nnewcols] = 1.0;
+         ++nnewcols;
+      }
+   }
+
    /* create slacks for bounds */
    for (j = 0; j < lp->ncols; ++j)
    {
@@ -13593,9 +14287,11 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
          ++nnewcols;
       }
    }
+#ifndef NDEBUG
    nslacks = nnewcols - lp->ncols - 1;
    assert( nslacks >= 0 );
-   assert( nnewcols <= 3*lp->ncols + 2*lp->nrows + 1 );
+   assert( nnewcols <= 3*lp->ncols + 2*lp->nrows + (inclobjcutoff ? 1 : 0) + 1 );
+#endif
 
    /* add columns */
    SCIP_CALL( SCIPlpiAddCols(lpi, nnewcols, obj, lb, ub, NULL, 0, NULL, NULL, NULL) );
@@ -13606,7 +14302,7 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
    SCIPfreeBufferArray(scip, &lb);
 
    /* prepare storage for rows */
-   SCIP_CALL( SCIPallocBufferArray(scip, &rowinds, lp->nrows + 2*lp->ncols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &rowinds, lp->nrows + (inclobjcutoff ? 1 : 0) + 2*lp->ncols) );
    SCIP_CALL( SCIPallocBufferArray(scip, &colinds, lp->ncols+2) );
    SCIP_CALL( SCIPallocBufferArray(scip, &colvals, lp->ncols+2) );
 
@@ -13632,8 +14328,8 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
          continue;
 
       /* get row data */
-      lhs = row->lhs - row->constant;
-      rhs = row->rhs - row->constant;
+      lhs = row->lhs - (SCIPisInfinity(scip, -row->lhs) ? 0.0 : row->constant);
+      rhs = row->rhs - (SCIPisInfinity(scip,  row->rhs) ? 0.0 : row->constant);
       nnonz = row->nlpcols;
       assert( nnonz <= lp->ncols );
       rowcols = row->cols;
@@ -13646,7 +14342,7 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
          assert( 0 <= rowcols[j]->lppos && rowcols[j]->lppos < lp->ncols );
          assert( lp->cols[rowcols[j]->lppos] == rowcols[j] );
          colinds[j] = rowcols[j]->lppos;
-	 colvals[j] = rowvals[j];
+         colvals[j] = rowvals[j];
       }
 
       /* if we have an equation */
@@ -13656,14 +14352,14 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
          colinds[nnonz] = lp->ncols;
          colvals[nnonz] = -rhs;
 
-	 /* add row */
-	 SCIP_CALL( SCIPlpiAddRows(lpi, 1, &zero, &zero, NULL, nnonz+1, &beg, colinds, colvals) );
+         /* add row */
+         SCIP_CALL( SCIPlpiAddRows(lpi, 1, &zero, &zero, NULL, nnonz+1, &beg, colinds, colvals) );
       }
       else
       {
-	 /* treat lhs */
+         /* treat lhs */
          if ( !SCIPisInfinity(scip, ABS(lhs)) )
-	 {
+         {
             assert( ! SCIPisEQ(scip, lhs, rhs) );
 
             /* add artificial variable */
@@ -13682,11 +14378,11 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
             {
                SCIP_CALL( SCIPlpiAddRows(lpi, 1, &zero, &plusinf, NULL, nnonz+1, &beg, colinds, colvals) );
             }
-	 }
+         }
 
-	 /* treat rhs */
+         /* treat rhs */
          if ( !SCIPisInfinity(scip, ABS(rhs)) )
-	 {
+         {
             assert( ! SCIPisEQ(scip, lhs, rhs) );
 
             /* add artificial variable */
@@ -13705,8 +14401,48 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
             {
                SCIP_CALL( SCIPlpiAddRows(lpi, 1, &minusinf, &zero, NULL, nnonz+1, &beg, colinds, colvals) );
             }
-	 }
+         }
       }
+   }
+
+   /* create row arising from objective cutoff */
+   if( inclobjcutoff )
+   {
+      SCIP_Real rhs;
+      int nnonz;
+
+      /* get row data */
+      rhs = SCIPgetCutoffbound(scip) - SCIPlpGetLooseObjval(lp, scip->set);
+
+      /* set up indices and coefficients */
+      nnonz = 0;
+      for (j = 0; j < lp->ncols; ++j)
+      {
+         assert( lp->cols[j] != NULL );
+         assert( 0 <= lp->cols[j]->lppos && lp->cols[j]->lppos < lp->ncols );
+         assert( lp->cols[lp->cols[j]->lppos] == lp->cols[j] );
+         if( lp->cols[j]->obj == 0.0 )
+            continue;
+         colinds[nnonz] = lp->cols[j]->lppos;
+         colvals[nnonz] = lp->cols[j]->obj;
+         ++nnonz;
+      }
+
+      /* treat rhs */
+      /* add artificial variable */
+      colinds[nnonz] = lp->ncols;
+      colvals[nnonz] = -rhs;
+      ++nnonz;
+
+      if ( relaxrows )
+      {
+         /* add slack variable */
+         colinds[nnonz] = lp->ncols + 1 + cnt;
+         colvals[nnonz] = 1.0;
+         ++nnonz;
+         ++cnt;
+      }
+      SCIP_CALL( SCIPlpiAddRows(lpi, 1, &minusinf, &zero, NULL, nnonz, &beg, colinds, colvals) );
    }
 
    /* create rows arising from bounds */
@@ -13757,7 +14493,7 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
    SCIPfreeBufferArray(scip, &rowinds);
 
 #ifdef SCIP_OUTPUT
-   SCIP_CALL( SCIPlpiWriteLP(lpi, "relativeInterior.lp") );
+   SCIP_CALL( SCIPlpiWriteLP(lpi, "relativeInteriorOneNorm.lp") );
 #endif
 
    /* solve and store point */
@@ -13805,8 +14541,8 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
             assert( row != NULL );
 
             /* get row data */
-            lhs = row->lhs - row->constant;
-            rhs = row->rhs - row->constant;
+            lhs = row->lhs - (SCIPisInfinity(scip, -row->lhs) ? 0.0 : row->constant);
+            rhs = row->rhs - (SCIPisInfinity(scip,  row->rhs) ? 0.0 : row->constant);
             nnonz = row->nlpcols;
             assert( nnonz <= lp->ncols );
             rowcols = row->cols;
@@ -13827,16 +14563,30 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
                /* treat lhs */
                if ( !SCIPisInfinity(scip, ABS(lhs)) )
                {
-                  assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasGT(scip, sum, lhs) ); 
+                  assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasGT(scip, sum, lhs) );
                   ++cnt;
                }
                /* treat rhs */
                if ( !SCIPisInfinity(scip, ABS(rhs)) )
                {
-                  assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasLT(scip, sum, rhs) ); 
+                  assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasLT(scip, sum, rhs) );
                   ++cnt;
                }
             }
+         }
+         if( inclobjcutoff )
+         {
+            SCIP_Real sum;
+            SCIP_Real rhs;
+
+            sum = 0.0;
+            for (j = 0; j < lp->ncols; ++j)
+               sum += lp->cols[j]->obj * primal[lp->cols[j]->lppos];
+            sum /= alpha;
+
+            rhs = SCIPgetCutoffbound(scip) - SCIPlpGetLooseObjval(lp, scip->set);
+            assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasLT(scip, sum, rhs) );
+            ++cnt;
          }
       }
       /* check bounds */
@@ -13844,7 +14594,7 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
       {
          SCIP_COL* col;
          SCIP_Real val;
-         
+
          col = lp->cols[j];
          assert( col != NULL );
          val = primal[col->lppos] / alpha;
@@ -13855,15 +14605,372 @@ SCIP_RETCODE SCIPcomputeLPRelIntPoint(
             /* treat lb */
             if ( !SCIPisInfinity(scip, ABS(col->lb)) )
             {
-               assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasGT(scip, val, col->lb) ); 
+               assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasGT(scip, val, col->lb) );
                ++cnt;
             }
             /* treat rhs */
             if ( !SCIPisInfinity(scip, ABS(col->ub)) )
             {
-               assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasLT(scip, val, col->ub) ); 
+               assert( SCIPisFeasZero(scip, primal[lp->ncols+1+cnt]) || SCIPisFeasLT(scip, val, col->ub) );
                ++cnt;
             }
+         }
+      }
+#endif
+
+      /* free */
+      SCIPfreeBufferArray(scip, &primal);
+   }
+   SCIP_CALL( SCIPlpiFree(&lpi) );
+
+   return SCIP_OKAY;
+}
+
+/** Compute relative interior point to current LP w.r.t. supremum norm
+ *
+ *  Assume the orginal LP looks as follows:
+ *  \f[
+ *     \begin{array}{rrl}
+ *        \min & c^T x &\\
+ *             & A x & \geq a\\
+ *             & B x & \leq b\\
+ *             & D x & = d.
+ *     \end{array}
+ *  \f]
+ *  Note that bounds should be included in the system. The following artificial LP does the job:
+ *  \f[
+ *     \begin{array}{rrl}
+ *        \max & sigma &\\
+ *             & <A_i, x> - sigma ||A_i|| & \geq a_i\\
+ *             & <B_i, x> + sigma ||B_i|| & \leq b_i\\
+ *             & D x & = d\\
+ *             & sigma & \geq 0.
+ *     \end{array}
+ *  \f]
+ *  If the original LP is feasible, this LP is feasible as well. Any optimal solution yields a
+ *  relative interior point.
+ */
+SCIP_RETCODE SCIPcomputeLPRelIntPointSupNorm(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Bool             inclobjcutoff,      /**< should a row for the objective cutoff be included */
+   SCIP_SOL**            point               /**< relative interior point on exit */
+   )
+{
+   SCIP_LP* lp;
+   SCIP_LPI* lpi;
+   SCIP_Real* obj;
+   SCIP_Real* lb;
+   SCIP_Real* ub;
+   SCIP_Real* primal;
+   SCIP_Real* colvals;
+   SCIP_Real minusinf;
+   SCIP_Real plusinf;
+   SCIP_Real objval;
+   int* colinds;
+   int ncols;
+   int beg;
+   int i;
+   int j;
+#ifndef NDEBUG
+   SCIP_Real sigma;
+#endif
+
+   assert( scip != NULL );
+   assert( point != NULL );
+
+   SCIP_CALL( checkStage(scip, "SCIPcomputeLPRelIntPointSup", TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE) );
+
+   /* init point */
+   *point = NULL;
+
+   /* exit if there are no columns */
+   lp = scip->lp;
+   assert( lp->nrows >= 0 && lp->ncols >= 0 );
+   if( lp->ncols == 0 )
+      return SCIP_OKAY;
+
+   /* disable objective cutoff if we have none */
+   if( inclobjcutoff && (SCIPgetCutoffbound(scip) >= SCIPinfinity(scip) || SCIPlpGetLooseObjval(lp, scip->set) <= -SCIPinfinity(scip) || SCIPlpGetLooseObjval(lp, scip->set) == SCIP_INVALID) )
+      inclobjcutoff = FALSE;
+
+   SCIPdebugMessage("Computing relative interior point to current LP.\n");
+
+   /* if there are no rows, we return the zero point */
+   if( lp->nrows == 0 && !inclobjcutoff )
+   {
+      /* create zero point */
+      SCIP_CALL( SCIPcreateSol(scip, point, NULL) );
+      return SCIP_OKAY;
+   }
+
+   /* create auxiliary LP */
+   SCIP_CALL( SCIPlpiCreate(&lpi, "relativeInteriorSup", SCIP_OBJSEN_MAXIMIZE) );
+
+   /* get storage */
+   ncols = lp->ncols + 1;
+   SCIP_CALL( SCIPallocBufferArray(scip, &lb, ncols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &ub, ncols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &obj, ncols) );
+
+   /* create original columns (bounds are relaxed below, unless the variable is fixed) */
+   for (j = 0; j < lp->ncols; ++j)
+   {
+      obj[j] = 0.0;
+      lb[j]  = lp->cols[j]->lb;
+      ub[j]  = lp->cols[j]->ub;
+   }
+
+   /* add artificial sigma variable */
+   obj[lp->ncols] = 1.0;
+   lb[lp->ncols]  = 0.0;
+   ub[lp->ncols]  = SCIPlpiInfinity(lpi);
+
+   /* add columns */
+   SCIP_CALL( SCIPlpiAddCols(lpi, ncols, obj, lb, ub, NULL, 0, NULL, NULL, NULL) );
+
+   /* free storage */
+   SCIPfreeBufferArray(scip, &obj);
+   SCIPfreeBufferArray(scip, &ub);
+   SCIPfreeBufferArray(scip, &lb);
+
+   /* prepare storage for rows */
+   SCIP_CALL( SCIPallocBufferArray(scip, &colinds, lp->ncols+1) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &colvals, lp->ncols+1) );
+
+   /* create rows arising from original rows */
+   beg = 0;
+   minusinf = -SCIPlpiInfinity(lpi);
+   plusinf  =  SCIPlpiInfinity(lpi);
+   for (i = 0; i < lp->nrows; ++i)
+   {
+      SCIP_ROW* row;
+      SCIP_COL** rowcols;
+      SCIP_Real* rowvals;
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      int nnonz;
+
+      row = lp->rows[i];
+      assert( row != NULL );
+
+      if( SCIProwIsModifiable(row) )
+         continue;
+
+      /* get row data */
+      lhs = row->lhs - (SCIPisInfinity(scip, -row->lhs) ? 0.0 : row->constant);
+      rhs = row->rhs - (SCIPisInfinity(scip,  row->rhs) ? 0.0 : row->constant);
+      nnonz = row->nlpcols;
+      assert( nnonz <= lp->ncols );
+      rowcols = row->cols;
+      rowvals = row->vals;
+
+      /* set up indices */
+      for (j = 0; j < nnonz; ++j)
+      {
+         assert( rowcols[j] != NULL );
+         assert( 0 <= rowcols[j]->lppos && rowcols[j]->lppos < lp->ncols );
+         assert( lp->cols[rowcols[j]->lppos] == rowcols[j] );
+         colinds[j] = rowcols[j]->lppos;
+         colvals[j] = rowvals[j];
+      }
+
+      if( SCIPisEQ(scip, lhs, rhs) )
+      {
+         /* add original row to LP -> this is for the 'relative' in the relative interior */
+         SCIP_CALL( SCIPlpiAddRows(lpi, 1, &lhs, &rhs, NULL, nnonz, &beg, colinds, colvals) );
+      }
+      else
+      {
+         /* add row <A_i,x> + sigma ||A_i|| <= rhs, if rhs is finite */
+         if( !SCIPisInfinity(scip,  rhs) )
+         {
+            colinds[nnonz] = lp->ncols;
+            colvals[nnonz] =  SCIProwGetNorm(row);
+
+            SCIP_CALL( SCIPlpiAddRows(lpi, 1, &minusinf, &rhs, NULL, nnonz+1, &beg, colinds, colvals) );
+         }
+
+         /* add row <A_i,x> - sigma ||A_i|| >= lhs, if lhs is finite */
+         if( !SCIPisInfinity(scip, -lhs) )
+         {
+            colinds[nnonz] = lp->ncols;
+            colvals[nnonz] = -SCIProwGetNorm(row);
+
+            SCIP_CALL( SCIPlpiAddRows(lpi, 1, &lhs, &plusinf, NULL, nnonz+1, &beg, colinds, colvals) );
+         }
+      }
+   }
+
+   /* create row arising from objective cutoff */
+   if( inclobjcutoff )
+   {
+      SCIP_Real rhs;
+      SCIP_Real norm;
+      int nnonz;
+
+      /* get row data */
+      rhs = SCIPgetCutoffbound(scip) - SCIPlpGetLooseObjval(lp, scip->set);
+
+      /* set up indices and coefficients */
+      nnonz = 0;
+      norm = 0.0;
+      for (j = 0; j < lp->ncols; ++j)
+      {
+         assert( lp->cols[j] != NULL );
+         assert( 0 <= lp->cols[j]->lppos && lp->cols[j]->lppos < lp->ncols );
+         assert( lp->cols[lp->cols[j]->lppos] == lp->cols[j] );
+         if( lp->cols[j]->obj == 0.0 )
+            continue;
+         colinds[nnonz] = lp->cols[j]->lppos;
+         colvals[nnonz] = lp->cols[j]->obj;
+         norm += lp->cols[j]->obj * lp->cols[j]->obj;
+         ++nnonz;
+      }
+
+      /* add artificial variable */
+      colinds[nnonz] = lp->ncols;
+      colvals[nnonz] = sqrt(norm);
+      ++nnonz;
+
+      SCIP_CALL( SCIPlpiAddRows(lpi, 1, &minusinf, &rhs, NULL, nnonz, &beg, colinds, colvals) );
+   }
+
+   /* create rows arising from bounds */
+   for (j = 0; j < lp->ncols; ++j)
+   {
+      SCIP_COL* col;
+
+      col = lp->cols[j];
+      assert( col != NULL );
+      assert( col->lppos == j );
+
+      /* skip fixed variables, column bounds have been set above already */
+      if( SCIPisEQ(scip, col->lb, col->ub) )
+         continue;
+
+      /* set up index of column */
+      colinds[0] = j;
+      colvals[0] = 1.0;
+
+      if( !SCIPisInfinity(scip,  col->ub) )
+      {
+         /* add artificial variable with coefficient +1.0 */
+         colinds[1] = lp->ncols;
+         colvals[1] = 1.0;
+
+         SCIP_CALL( SCIPlpiAddRows(lpi, 1, &minusinf, &col->ub, NULL, 2, &beg, colinds, colvals) );
+      }
+
+      if( !SCIPisInfinity(scip, -col->lb) )
+      {
+         /* add artificial variable with coefficient -1.0 */
+         colinds[1] = lp->ncols;
+         colvals[1] = -1.0;
+
+         SCIP_CALL( SCIPlpiAddRows(lpi, 1, &col->lb, &plusinf, NULL, 2, &beg, colinds, colvals) );
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &colvals);
+   SCIPfreeBufferArray(scip, &colinds);
+
+#ifdef SCIP_OUTPUT
+   SCIP_CALL( SCIPlpiWriteLP(lpi, "relativeInteriorSupNorm.lp") );
+#endif
+
+   /* solve and store point */
+   SCIP_CALL( SCIPlpiSolveDual(lpi) );  /* dual is usually faster */
+
+   if( SCIPlpiIsOptimal(lpi) )
+   {
+      /* get primal solution */
+      SCIP_CALL( SCIPallocBufferArray(scip, &primal, ncols) );
+      SCIP_CALL( SCIPlpiGetSol(lpi, &objval, primal, NULL, NULL, NULL) );
+#ifndef NDEBUG
+      sigma = primal[lp->ncols];
+      assert( !SCIPisNegative(scip, sigma) );
+#endif
+
+      SCIPdebugMessage("Solved relative interior lp with objective %g.\n", objval);
+
+      /* construct relative interior point */
+      SCIP_CALL( SCIPcreateSol(scip, point, NULL) );
+      for( j = 0; j < lp->ncols; ++j )
+      {
+         if( !SCIPisFeasZero(scip, primal[j]) )
+         {
+            SCIP_VAR* var;
+            var = lp->cols[j]->var;
+            SCIP_CALL( SCIPsetSolVal(scip, *point, var, primal[j]) );
+         }
+      }
+
+#ifdef SCIP_DEBUG
+      /* check whether the point is a relative interior point */
+      for (i = 0; i < lp->nrows; ++i)
+      {
+         SCIP_ROW* row;
+         SCIP_COL** rowcols;
+         SCIP_Real* rowvals;
+         SCIP_Real lhs;
+         SCIP_Real rhs;
+         SCIP_Real sum;
+         int nnonz;
+
+         row = lp->rows[i];
+         assert( row != NULL );
+
+         /* get row data */
+         lhs = row->lhs - (SCIPisInfinity(scip, -row->lhs) ? 0.0 : row->constant);
+         rhs = row->rhs - (SCIPisInfinity(scip,  row->rhs) ? 0.0 : row->constant);
+         nnonz = row->nlpcols;
+         assert( nnonz <= lp->ncols );
+         rowcols = row->cols;
+         rowvals = row->vals;
+
+         sum = 0.0;
+         for (j = 0; j < nnonz; ++j)
+            sum += rowvals[j] * primal[rowcols[j]->lppos];
+
+         /* if we have an equation */
+         if ( SCIPisEQ(scip, lhs, rhs) )
+         {
+            assert( SCIPisFeasEQ(scip, sum, lhs) );
+         }
+         else
+         {
+            assert( SCIPisInfinity(scip, lhs) || SCIPisFeasZero(scip, sigma) || SCIPisFeasGT(scip, sum, lhs) );
+            assert( SCIPisInfinity(scip, rhs) || SCIPisFeasZero(scip, sigma) || SCIPisFeasLT(scip, sum, rhs) );
+         }
+      }
+      if( inclobjcutoff )
+      {
+         SCIP_Real sum;
+         SCIP_Real rhs;
+
+         sum = 0.0;
+         for (j = 0; j < lp->ncols; ++j)
+            sum += lp->cols[j]->obj * primal[lp->cols[j]->lppos];
+
+         rhs = SCIPgetCutoffbound(scip) - SCIPlpGetLooseObjval(lp, scip->set);
+         assert( SCIPisFeasZero(scip, sigma) || SCIPisFeasLT(scip, sum, rhs) );
+      }
+
+      /* check bounds */
+      for( j = 0; j < lp->ncols; ++j )
+      {
+         SCIP_COL* col;
+         SCIP_Real val;
+         
+         col = lp->cols[j];
+         assert( col != NULL );
+
+         /* if the variable is not fixed */
+         if( !SCIPisEQ(scip, col->lb, col->ub) )
+         {
+            val = primal[col->lppos];
+            assert( SCIPisInfinity(scip, -col->lb) || SCIPisFeasZero(scip, sigma) || SCIPisFeasGT(scip, val, col->lb) );
+            assert( SCIPisInfinity(scip,  col->ub) || SCIPisFeasZero(scip, sigma) || SCIPisFeasLT(scip, val, col->ub) );
          }
       }
 #endif
@@ -14427,23 +15534,6 @@ void SCIPmarkNonlinearitiesPresent(
    scip->set->nonlinearitypresent = TRUE;
 }
 
-/** marks that there is a plugin that makes use of an NLP if nonlinear constraints are present
- * This method should be called by heuristics, separators, propagators, or relaxators that can make use of an NLP relaxation of the problem.
- * 
- * The function should be called during initialization or presolving.
- * 
- * If some constraint handler signals that it has nonlinear rows to contribute and there are plugins that can use an NLP,
- * then SCIP initializes the NLP when initializing the solving process (initsol).
- */
-void SCIPmarkRequireNLP(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPmarkRequireNLP", TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) );
-   
-   scip->set->nlprequired = TRUE;
-}
-
 /** returns whether constraints representable as nonlinear rows are present that involve continuous nonlinear variables
  * @see SCIPmarkContinuousNonlinearitiesPresent
  */
@@ -14468,17 +15558,6 @@ SCIP_Bool SCIPhasNonlinearitiesPresent(
    return scip->set->nonlinearitypresent;
 }
 
-/** returns whether some plugin requires an NLP
- * @see SCIPmarkRequireNLP */ 
-SCIP_Bool SCIPisNLPRequired(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPisNLPRequired", TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE) );
-   
-   return scip->set->nlprequired;
-}
-
 /** returns, whether an NLP has been constructed */
 SCIP_Bool SCIPisNLPConstructed(
    SCIP*                 scip                /**< SCIP data structure */
@@ -14487,36 +15566,6 @@ SCIP_Bool SCIPisNLPConstructed(
    SCIP_CALL_ABORT( checkStage(scip, "SCIPisNLPConstructed", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
 
    return (scip->nlp != NULL);
-}
-
-/** returns pointer to NLP */
-SCIP_NLP* SCIPgetNLP(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLP", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
-
-   return scip->nlp;
-}
-
-/** makes sure that the NLP of the current node is flushed */
-SCIP_RETCODE SCIPflushNLP(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CALL( checkStage(scip, "SCIPflushNLP", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
-
-   if( scip->nlp != NULL )
-   {
-      SCIP_CALL( SCIPnlpFlush(scip->nlp, scip->mem->probmem, scip->set) );
-   }
-   else
-   {
-      SCIPerrorMessage("NLP has not been not constructed.\n");
-      return SCIP_ERROR;
-   }
-
-   return SCIP_OKAY;
 }
 
 /** gets current NLP variables along with the current number of NLP variables */
@@ -14544,6 +15593,107 @@ SCIP_RETCODE SCIPgetNLPVarsData(
    return SCIP_OKAY;
 }
 
+/** gets array with variables of the NLP */
+SCIP_VAR** SCIPgetNLPVars(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLPVars", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetVars(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return NULL;
+}
+
+/** gets current number of variables in NLP */
+int SCIPgetNNLPVars(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNNLPVars", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetNVars(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return 0;
+}
+
+/** computes for each variables the number of NLP rows in which the variable appears in a nonlinear var */
+SCIP_RETCODE SCIPgetNLPVarsNonlinearity(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int*                  nlcount             /**< an array of length at least SCIPnlpGetNVars() to store nonlinearity counts of variables */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPVarsNonlinearity", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpGetVarsNonlinearity(scip->nlp, nlcount) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gives dual solution values associated with lower bounds of NLP variables */
+SCIP_Real* SCIPgetNLPVarsLbDualsol(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLPVarsLbDualsol", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetVarsLbDualsol(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return NULL;
+}
+
+/** gives dual solution values associated with upper bounds of NLP variables */
+SCIP_Real* SCIPgetNLPVarsUbDualsol(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLPVarsUbDualsol", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetVarsUbDualsol(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return NULL;
+}
+
 /** gets current NLP nonlinear rows along with the current number of NLP nonlinear rows */
 SCIP_RETCODE SCIPgetNLPNlRowsData(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -14569,6 +15719,46 @@ SCIP_RETCODE SCIPgetNLPNlRowsData(
    return SCIP_OKAY;
 }
 
+/** gets array with nonlinear rows of the NLP */
+SCIP_NLROW** SCIPgetNLPNlRows(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLPNlRows", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetNlRows(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return NULL;
+}
+
+/** gets current number of nonlinear rows in NLP */
+int SCIPgetNNLPNlRows(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNNLPNlRows", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetNNlRows(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return 0;
+}
+
 /** adds a nonlinear row to the NLP
  * row is captured by NLP */
 SCIP_RETCODE SCIPaddNlRow(
@@ -14585,6 +15775,26 @@ SCIP_RETCODE SCIPaddNlRow(
    else
    {
       SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** makes sure that the NLP of the current node is flushed */
+SCIP_RETCODE SCIPflushNLP(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPflushNLP", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpFlush(scip->nlp, scip->mem->probmem, scip->set) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been constructed.\n");
       return SCIP_ERROR;
    }
 
@@ -14672,23 +15882,43 @@ SCIP_NLPSOLSTAT SCIPgetNLPSolstat(
    else
    {
       SCIPerrorMessage("NLP has not been not constructed.\n");
-      return SCIP_NLPSOLSTAT_UNKNOWN;
+      SCIPABORT();
    }
+
+   return SCIP_NLPSOLSTAT_UNKNOWN;
 }
 
-/** gets SCIP solution set to values of current NLP, if available
- * *sol is set to NULL if no solution is available */
-SCIP_RETCODE SCIPcreateNLPSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL**            sol,                /**< buffer where to store point to new SCIP solution */
-   SCIP_HEUR*            heur                /**< heuristic that solved NLP, or NULL */
+/** gets termination status of last NLP solve */
+SCIP_NLPTERMSTAT SCIPgetNLPTermstat(
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL_ABORT( checkStage(scip, "SCIPcreateNLPSol", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPgetNLPTermstat", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
 
    if( scip->nlp != NULL )
    {
-      SCIP_CALL( SCIPnlpGetSol(scip->nlp, SCIPblkmem(scip), scip->set, scip->stat, scip->primal, scip->tree, sol, heur) );
+      return SCIPnlpGetTermstat(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return SCIP_NLPTERMSTAT_OTHER;
+}
+
+/** gives statistics (number of iterations, solving time, ...) of last NLP solve */
+SCIP_RETCODE SCIPgetNLPStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPSTATISTICS*   statistics          /**< pointer to store statistics */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPStatistics", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpGetStatistics(scip->nlp, statistics);
    }
    else
    {
@@ -14717,6 +15947,184 @@ SCIP_Real SCIPgetNLPObjval(
    }
 }
 
+/** indicates whether a feasible solution for the current NLP is available
+ * thus, returns whether the solution status <= feasible  */
+SCIP_Bool SCIPhasNLPSolution(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL_ABORT( checkStage(scip, "SCIPhasNLPSolution", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      return SCIPnlpHasSolution(scip->nlp);
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      SCIPABORT();
+   }
+
+   return FALSE;
+}
+
+/** gets fractional variables of last NLP solution along with solution values and fractionalities */
+SCIP_RETCODE SCIPgetNLPFracVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR***           fracvars,           /**< pointer to store the array of NLP fractional variables, or NULL */
+   SCIP_Real**           fracvarssol,        /**< pointer to store the array of NLP fractional variables solution values, or NULL */
+   SCIP_Real**           fracvarsfrac,       /**< pointer to store the array of NLP fractional variables fractionalities, or NULL */
+   int*                  nfracvars,          /**< pointer to store the number of NLP fractional variables , or NULL */
+   int*                  npriofracvars       /**< pointer to store the number of NLP fractional variables with maximal branching priority, or NULL */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPFracVars", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpGetFracVars(scip->nlp, SCIPblkmem(scip), scip->set, scip->stat, fracvars, fracvarssol, fracvarsfrac, nfracvars, npriofracvars) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gets integer parameter of NLP */
+SCIP_RETCODE SCIPgetNLPIntPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   int*                  ival                /**< pointer to store the parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPIntPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpGetIntPar(scip->nlp, type, ival) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** sets integer parameter of NLP */
+SCIP_RETCODE SCIPsetNLPIntPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   int                   ival                /**< parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPsetNLPIntPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpSetIntPar(scip->nlp, type, ival) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gets floating point parameter of NLP */
+SCIP_RETCODE SCIPgetNLPRealPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   SCIP_Real*            dval                /**< pointer to store the parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPRealPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpGetRealPar(scip->nlp, type, dval) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** sets floating point parameter of NLP */
+SCIP_RETCODE SCIPsetNLPRealPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   SCIP_Real             dval                /**< parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPsetNLPRealPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpSetRealPar(scip->nlp, type, dval) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** gets string parameter of NLP */
+SCIP_RETCODE SCIPgetNLPStringPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   const char**          sval                /**< pointer to store the parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPgetNLPStringPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpGetStringPar(scip->nlp, type, sval) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** sets string parameter of NLP */
+SCIP_RETCODE SCIPsetNLPStringPar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NLPPARAM         type,               /**< parameter number */
+   const char*           sval                /**< parameter value */
+)
+{
+   SCIP_CALL( checkStage(scip, "SCIPsetNLPStringPar", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( scip->nlp != NULL )
+   {
+      SCIP_CALL( SCIPnlpSetStringPar(scip->nlp, type, sval) );
+   }
+   else
+   {
+      SCIPerrorMessage("NLP has not been not constructed.\n");
+      return SCIP_ERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
 /** writes current NLP to a file */
 SCIP_RETCODE SCIPwriteNLP(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -14738,8 +16146,8 @@ SCIP_RETCODE SCIPwriteNLP(
    return SCIP_OKAY;
 }
 
-/** gets the NLP interface of SCIP;
- *  with the NLPI you can use all of the methods defined in nlpi/nlpi.h;
+/** gets the NLP interface and problem used by the SCIP NLP;
+ *  with the NLPI and its problem you can use all of the methods defined in nlpi/nlpi.h;
  *  Warning! You have to make sure, that the full internal state of the NLPI does not change or is recovered completely after
  *  the end of the method that uses the NLPI. In particular, if you manipulate the NLP or its solution (e.g. by calling one of the
  *  SCIPnlpiAdd...() or the SCIPnlpiSolve() method), you have to check in advance whether the NLP is currently solved.
@@ -14749,16 +16157,19 @@ SCIP_RETCODE SCIPwriteNLP(
  */
 SCIP_RETCODE SCIPgetNLPI(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_NLPI**           nlpi                /**< pointer to store the NLP solver interface */
+   SCIP_NLPI**           nlpi,               /**< pointer to store the NLP solver interface */
+   SCIP_NLPIPROBLEM**    nlpiproblem         /**< pointer to store the NLP solver interface problem */
    )
 {
    assert(nlpi != NULL);
+   assert(nlpiproblem != NULL);
 
    SCIP_CALL( checkStage(scip, "SCIPgetNLPI", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE) );
 
    if( scip->nlp != NULL )
    {
       *nlpi = SCIPnlpGetNLPI(scip->nlp);
+      *nlpiproblem = SCIPnlpGetNLPIProblem(scip->nlp);
    }
    else
    {
@@ -15925,7 +17336,7 @@ SCIP_RETCODE SCIPseparateSol(
    actdepth = (pretendroot ? 0 : SCIPtreeGetCurrentDepth(scip->tree));
 
    /* apply separation round */
-   SCIP_CALL( SCIPseparationRound(scip->mem->probmem, scip->set, scip->stat, scip->eventqueue, scip->eventfilter, scip->transprob, scip->lp, scip->sepastore,
+   SCIP_CALL( SCIPseparationRound(scip->mem->probmem, scip->set, scip->stat, scip->eventqueue, scip->eventfilter, scip->transprob, scip->primal, scip->tree, scip->lp, scip->sepastore,
          sol, actdepth, onlydelayed, delayed, cutoff) );
 
    return SCIP_OKAY;
@@ -17088,6 +18499,53 @@ SCIP_RETCODE SCIPbranchVarVal(
    return SCIP_OKAY;
 }
 
+/** n-ary branching on a variable x using a given value
+ * Branches on variable x such that up to n/2 children are created on each side of the usual branching value.
+ * The branching value is selected as in SCIPbranchVarVal().
+ * The parameters minwidth and widthfactor determine the domain width of the branching variable in the child nodes.
+ * If n is odd, one child with domain width 'width' and having the branching value in the middle is created.
+ * Otherwise, two children with domain width 'width' and being left and right of the branching value are created.
+ * Next further nodes to the left and right are created, where width is multiplied by widthfactor with increasing distance from the first nodes.
+ * The initial width is calculated such that n/2 nodes are created to the left and to the right of the branching value.
+ * If this value is below minwidth, the initial width is set to minwidth, which may result in creating less than n nodes.
+ *
+ * Giving a large value for widthfactor results in creating children with small domain when close to the branching value
+ * and large domain when closer to the current variable bounds. That is, setting widthfactor to a very large value and n to 3
+ * results in a ternary branching where the branching variable is mostly fixed in the middle child.
+ * Setting widthfactor to 1.0 results in children where the branching variable always has the same domain width
+ * (except for one child if the branching value is not in the middle).
+ */
+SCIP_RETCODE SCIPbranchVarValNary(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to branch on */
+   SCIP_Real             val,                /**< value to branch on */
+   int                   n,                  /**< attempted number of children to be created, must be >= 2 */
+   SCIP_Real             minwidth,           /**< minimal domain width in children */
+   SCIP_Real             widthfactor,        /**< multiplier for children domain width with increasing distance from val, must be >= 1.0 */
+   int*                  nchildren           /**< buffer to store number of created children, or NULL */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPbranchVarValNary", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   /* see comment in SCIPbranchVarVal */
+   assert(SCIPvarGetType(var) != SCIP_VARTYPE_CONTINUOUS ||
+      SCIPisRelEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)) ||
+      SCIPisInfinity(scip, -2.1*SCIPvarGetLbLocal(var)) || SCIPisInfinity(scip, 2.1*SCIPvarGetUbLocal(var)) ||
+      (SCIPisLT(scip, 2.1*SCIPvarGetLbLocal(var), 2.1*val) && SCIPisLT(scip, 2.1*val, 2.1*SCIPvarGetUbLocal(var)) ) );
+
+   if( SCIPsetIsEQ(scip->set, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)) )
+   {
+      SCIPerrorMessage("cannot branch on variable <%s> with fixed domain [%.15g,%.15g]\n",
+         SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var));
+      return SCIP_INVALIDDATA;
+   }
+
+   SCIP_CALL( SCIPtreeBranchVarNary(scip->tree, scip->mem->probmem, scip->set, scip->stat, scip->lp, scip->branchcand,
+         scip->eventqueue, var, val, n, minwidth, widthfactor, nchildren) );
+
+   return SCIP_OKAY;
+}
+
 /** calls branching rules to branch on an LP solution; if no fractional variables exist, the result is SCIP_DIDNOTRUN;
  *  if the branch priority of an unfixed variable is larger than the maximal branch priority of the fractional
  *  variables, pseudo solution branching is applied on the unfixed variables with maximal branch priority
@@ -17170,6 +18628,34 @@ SCIP_RETCODE SCIPcreateLPSol(
    }
 
    SCIP_CALL( SCIPsolCreateLPSol(sol, scip->mem->probmem, scip->set, scip->stat, scip->primal, scip->tree, scip->lp,
+         heur) );
+
+   return SCIP_OKAY;
+}
+
+/** creates a primal solution, initialized to the current NLP solution */
+SCIP_RETCODE SCIPcreateNLPSol(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL**            sol,                /**< pointer to store the solution */
+   SCIP_HEUR*            heur                /**< heuristic that found the solution (or NULL if it's from the tree) */
+   )
+{
+   SCIP_CALL( checkStage(scip, "SCIPcreateNLPSol", FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   if( !SCIPisNLPConstructed(scip) )
+   {
+      SCIPerrorMessage("NLP does not exist\n");
+      return SCIP_INVALIDCALL;
+   }
+   assert(scip->nlp != NULL);
+
+   if( !SCIPnlpHasSolution(scip->nlp) )
+   {
+      SCIPerrorMessage("NLP solution does not exist\n");
+      return SCIP_INVALIDCALL;
+   }
+
+   SCIP_CALL( SCIPsolCreateNLPSol(sol, scip->mem->probmem, scip->set, scip->stat, scip->primal, scip->tree, scip->nlp,
          heur) );
 
    return SCIP_OKAY;

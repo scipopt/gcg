@@ -12,7 +12,6 @@ interface:
 - the methods SCIPparseVarName() and SCIPparseVarsList() got two new parameters names "pos" and "endpos"; the parameter pos 
   determines the current position in the the string which gets parsed and the pointer to an int (endpos) returns
   the position where the current parsing stopped
-- prototype for methods SCIPparseVarsLinearsum()
 - new functions SCIPround() and SCIPfeasRound() to round to nearest integer
 - new functions SCIPcomputeVarCurrent{L,U}b{Local,Global}() to compute local or global lower or upper bounds of a multiaggregated variable
   from the bounds of the aggregation variables
@@ -28,7 +27,7 @@ interface:
 - new parameter success in SCIPgetVarCopy() that will be FALSE if method is called after problem creation stage
 - SCIP_DECL_PROBCOPY got a new parameter global
 - using proper terms "monomial" and "polynomial" (instead of "monom" and "polynom") in nonlinear expressions (nlpi/*expr*) results in many renamings of types, structs, and methods
-- added function SCIPcomputeLPRelIntPoint() to compute a relative interior point of the current LP
+- added functions SCIPcomputeLPRelIntPointOneNorm() and SCIPcomputeLPRelIntPointSupNorm() to compute relative interior points of the current LP
 - added function SCIPsepastoreRemoveInefficaciousCuts() to remove non-efficious cuts from the separation storage
 - added result value SCIP_NEWROUND that allows a separator/constraint handler to start a new separation round (without previous calls to other separators/conshdlrs)
 - implemented SCIPlpiGetPrimalRay() in SoPlex interface that has become available with SoPlex version 1.5.0.2
@@ -42,6 +41,24 @@ interface:
 - new method SCIPpresolGetNAddConss() which returns the number of added constraints during presolving by a given presolver
 - added two parameters to the callback methods SCIP_DECL_CONSPRESOL() and SCIP_DECL_PRESOLEXEC(), these are nnewaddconss and naddconss; these parameters
   are also added to corresponding C++ wrapper class methods; these scip_presol() in objconshdlr.h and scip_exec() in objpresol.h 
+- added method SCIPsortRealRealIntInt() and corresponding sorting/inserting/deleting methods in pub_misc.h and necessary defines in misc.c
+- added SCIPconvertCutsToConss() and SCIPcopyCuts() to scip.{c,h} for copying cuts to linear constraints
+- new method SCIPnodeGetParent() to get parent node of a node
+- added method SCIPsortRealIntLong() and corresponding sorting/inserting/deleting methods in pub_misc.h and necessary defines in misc.c
+- new method SCIPnodesSharePath() in pub_tree.h that determines whether two nodes are on the same leaf-root path
+- new method SCIPnodesGetCommonAncestor() in pub_tree.h that finds the common ancestor node for two given nodes
+- new method SCIPgetNLPFracVars() to get the fractional variables in an NLP solution
+- new methods SCIPcreateMesshdlrPThreads() and SCIPfreeMesshdlrPThreads() for allocating and deleting necessary memory for message handlers for parallel pthread version
+- new methods SCIPallocClearMemoryArray() and BMSallocClearMemoryArray() for allocating cleared memory arrays in scip.h and memory.h
+- removed methods SCIPnlpGetObjective(), SCIPnlpGetSolVals(), SCIPnlpGetVarSolVal(); added method SCIPvarGetNLPSol(); SCIPcreateNLPSol() now returns an error if NLP or NLP solution is not available
+- removed methods SCIPmarkRequireNLP() and SCIPisNLPRequired(), NLP is now always constructed if nonlinearities are present
+- removed NLP methods from pub_nlp.h and added corresponding methods to scip.h; removed SCIPgetNLP()
+- added method SCIPgetNLPVarsNonlinearity() to get for each variable in the NLP the number of NLP rows in which this variable appears in a nonlinear way
+- added methods SCIPparseVarsLinearsum(), SCIPparseVarsPolynomial() and SCIPwriteVarsPolynomial() and for writing and parsing polynomials in constraint handler writing/parsing methods  
+- new method SCIPsetParam() which is a generic parameter setter method, independent of the parameter type
+- the callbacks NLPIGETSOLUTION and NLPISETINITIALGUESS and the functions SCIPnlpiGetSolution() and SCIPnlpiSetInitialGuess() now also take arguments to get/set dual values
+- added methods SCIPnlrowGetDualsol(), SCIPgetNLPVarsLbDualsol(), SCIPgetNLPVarsUbDualsol() to retrieve dual values from an NLP solution
+- added method SCIPbranchVarValNary() for n-ary variable branching
 
 performance improvements:
 - performance improvements in prop_vbounds
@@ -50,6 +67,10 @@ performance improvements:
 - for continuous variables, the pseudo costs update and the pscost branching rule now use the same strategies for updating the pseudo costs and estimating the improvement in the LP bound
 - only perform probing if the variables are locked
 - performance and memory consumption improvements in xmlparse.c
+- avoid very long separation times of LEWIs in cons_knapsack for very large minimal covers
+- used SCIPallocMemoryArray instead of SCIPallocBlockMemoryArray which leads to fewer memory consumption in getLiftingSequence() in cons_knapsack, also improved cache use bei using an extra array instead blockmemory chunks
+- switched FASTMIP from 1 to 2 for CPLEX and changed default pricing rule back to steepest edge pricing instead of qucikstart steepest edge pricing
+- made sorting method more robust
 
 fixed bugs:
 - fixed bug in propagation of indicator constraints: cannot fix slack variable to 0 if linear constraint is disabled/not active
@@ -65,6 +86,9 @@ fixed bugs:
 - fixed bug which occured when changing a bound in the solving stage when this variables got upgraded from continuous to a integer type, where the bounds of this variable were still not integral; due to that SCIPchgVarType has changed(see above)
 - fixed bug which occured when the dual farkas multipliers were not available in the lpi because the LP could
   only be solved with the primal simplex due to numerical problems
+- fixed bug in cons_orbitope:resprop() for the packing case
+- fixed bug in reader_mps.c: if a variables first occurence is in the bounds section, then the corresponding variable bound was lost
+- fixed bug trying to print big messages bigger than SCIP_MAXSTRLEN
 
 plugins:
 - added vbound heuristic (heur_vbounds.{c,h})
@@ -89,7 +113,8 @@ parameters:
 - added parameter <constraints/indicator/maxConditionAltLP> to enable a quality check for the solution of the alternative LP 
 - moved parameters for pseudoboolean constraints from opb-reader to pseudoboolean constraint handler
 - new parameter for pseudoboolean constraints <constraints/pseudoboolean/decompose>, to transform pseudoboolean constraints into linear- and and-constraints
-- added parameter <constraints/quadratic/maxproprounds> to limit the number of propagations rounds for quadratic constraints within one propagation round of SCIP
+- added parameters <constraints/quadratic/maxproprounds> and <constraints/quadratic/maxproproundspresolve> to limit the number of propagations rounds for
+  quadratic constraints within one propagation round of SCIP solve or during SCIP presolve
 - added parameter <branching/lpgainnormalize> to set the strategy how the LP gain for a continuous variable is normalized when updating the variables pseudocosts:
   default is to divide LP gain by reduction of variable's domain in sibling node
 - added parameter <branching/delaypscostupdate> to delay the update of pseudo costs for continuous variables behind the separation round: default is TRUE
@@ -101,6 +126,11 @@ parameters:
   -1 (no limit) for resolveiterfac and 1000 for resolveitermin
 - added parameter <constraints/indicator/genBilinear> to generate bilinear (quadratic) constraints instead of indicator constraints
 - added parameter <timing/reading> to add reading time to solving time
+- added parameter <constraints/quadratic/binreforminitial> to indicate whether linear (non-varbound) constraints added due to reformulation of products with binary variables in a quadratic constraints should be initial (if the quadratic constraint is initial), default is FALSE
+- renamed parameter <constraints/quadratic/linearizenlpsol> to <constraints/quadratic/linearizeheursol> and do linearizations in every solution found by some heuristic
+- renamed parameter <constraints/quadratic/mincutefficacyenfo> to <constraints/quadratic/mincutefficacyenfofac> and interpret it as a factor of the feasibility tolerance
+- removed fastmip setting 2, which means the dualsolution would not be calculated but because SCIP always asks for the dual solution, the lp would be reoptimized to calculate them; so it had no real effect
+- added parameters <branching/pscost/nchildren> and <branching/pscost/nary*> to enable and customize n-ary branching on external branching candidates (e.g., in spatial branching for MINLP)
 
 features:
 - flatzinc reader is now capable to read cumulative constraints
@@ -139,6 +169,19 @@ features:
 - it is possible to change bounds of a variable in the interactive shell
 - it is possible to add a constraint to a problem in the interactive shell
 - added clock for determine the time for reading
+- new presolving step in cons_knapsack (detectRedundantVars, deleteRedundantVars) which determines redundant variables in knapsack constraint with or without using clique information
+- SCIPcreateSolNLP() now creates a SCIP_SOL that is linked to the solution of the current NLP relaxation
+- it is now possible in SCIP_STAGE_TRANSFORMED to call SCIPaddVarLocks (i.e. to lock variables in initialization methods)
+- new variable $(INSTALLDIR) in Makefile which define installation directory for the libraries, $(INSTALLDIR)/lib/, 
+  binary, $(INSTALLDIR)/bin, and include headers, $(INSTALLDIR)/include, the default value is the empty string
+- new target in Makefile "install" performs "make" and copies the include headers
+- new target in Makefile "uninstall" removes libraries, binary, and include headers
+- cons_logicor is now abled to replace all aggregated variables in presolving by there active or negation of an active variable counterpart
+- reader_gms is now able to write indicator constraints (reformulated either via big-M or sos1), see new parameters <reading/gmsreader/bigmdefault> and <reading/gmsreader/indicatorreform>
+
+design:
+- SCIP_HASHMAP now works also without block memory
+- the 'make' parameter 'PARASCIP=true' leads to threadsafe message handlers where you need to call SCIPcreateMesshdlrPThreads and SCIPmessageSetHandler/SCIPmessageSetDefaultHandler and SCIPfreeMesshdlrPThreads; therefor we need to link with pthread library
 
 SCIP version 2.0.2
 ==================
@@ -163,13 +206,31 @@ fixed bugs:
 - fixed bug w.r.t. setting wall clocks
 - implemented SCIPlpiGetPrimalRay() in SoPlex interface that has become available with SoPlex version 1.5.0.2
 - fixed bug concerning overflow in memsize calculation in set.c
+- fixed segmentation fault in heur_subnlp.c which occured if resolving the NLP with a tighter feasibility tolerance failed with a solver error
+- fixed wrong assumption that an optimal LP solution in the root is optimal for the problem if there are no active pricers, need to check also whether all variables are in the LP
+- fixed wrong assert in var.c (replaced '==' through 'SCIPsetIsEQ'), real values do not have to be exactly the same when computed in different function
+- fixed bug in SCIPsolveIsStopped where it could happen that TRUE was reported if a nodelimit was reached but checknodelimits had been set to FALSE
+- fixed bug in sorting mechanism in cons_xor.c
+- fixed bug in changing quadratic coefficients of a row in the NLP
+- fixed bug caused by not (correctly) counting boundchanges in cons_varbound.c
+- fixed three bugs when writing in fzn format (wrongly splitted writing buffer, wrong variables was used, floats were printed to short)
+- fixed removal of fixed linear variables from a nonlinear row: a fixed variable may have not been removed if there was also a multiaggregated variable
+- fixed bug in reader_cip regarding reading of very long constraints
+- fixed bug in cons_knapsack: in seldom circumstances the relaxation of a linear constraint can detect infeasibility, which was not handled properly
+- fixed bug in cons_quadratic: in seldom cases, fixed variables may have been substituted out wrongly in presolve
+- fixed bugs in cons_countsols.c w.r.t. collecting feasible solutions and forbidding a found solution
+- fixed bug in cons_linear.c: multiaggregated variables were not removed when adding during solve, leading to a failing assert in tightenBounds due to an unsuccessful bound tightening
+- fixed bug w.r.t. to pricing variables in case new initial constraints come in during the price and cut loop
+- fixed bug in conflict.c, infeasibility analysis with big values led to wrong result
+- fixed bug in cons_soc.c w.r.t. upgrading from quadratic constraints with finite left-hand-side
 
 performance improvements:
 - fasten propagation in cons_knapsack.c due to negated clique partitions
 - recalculating only needed partitions in cons_knapsack.c, not always both
 - calculation of node priority now also works when variable's relaxation value is equal to a bound
-- fasten knapsack separation by replacing SCIPallocBufer(Array) through SCIPallocBlockMemory(Array)
+- fasten knapsack separation by replacing SCIPallocBuffer(Array) through SCIPallocBlockMemory(Array)
 - fixed issue w.r.t. calling primal heuristics after presolving detected infeasibility
+- improved runtime and memory consumption in SCIPsolveKnapsackExactly() in cons_knapsack.c
 
 SCIP version 2.0.1
 ==================

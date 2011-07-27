@@ -1295,7 +1295,9 @@ SCIP_RETCODE SCIPconflictFlushConss(
       SCIP_CONFLICTSET* repropconflictset;
       int nconflictsetsused;
       int focusdepth;
+#ifndef NDEBUG
       int currentdepth;
+#endif
       int cutoffdepth;
       int repropdepth;
       int maxconflictsets;
@@ -1307,9 +1309,11 @@ SCIP_RETCODE SCIPconflictFlushConss(
       maxsize = conflictCalcMaxsize(set, prob);
 
       focusdepth = SCIPtreeGetFocusDepth(tree);
+#ifndef NDEBUG
       currentdepth = SCIPtreeGetCurrentDepth(tree);
       assert(focusdepth <= currentdepth);
       assert(currentdepth == tree->pathlen-1);
+#endif
 
       SCIPdebugMessage("flushing %d conflict sets at focus depth %d (maxconflictsets: %d, maxsize: %d)\n",
          conflict->nconflictsets, focusdepth, maxconflictsets, maxsize);
@@ -3521,6 +3525,11 @@ SCIP_RETCODE undoBdchgsProof(
    return SCIP_OKAY;
 }
 
+/* because calculations might cancel out some values, we stop the infeasibility analysis if a value is bigger than
+ * 2^53 = 9007199254740992
+ */
+#define NUMSTOP 9007199254740992
+
 /** analyzes an infeasible LP and undoes additional bound changes while staying infeasible */
 static
 SCIP_RETCODE undoBdchgsDualfarkas(
@@ -3633,6 +3642,11 @@ SCIP_RETCODE undoBdchgsDualfarkas(
             /* check if sign of dual farkas value is valid */
             if( SCIPsetIsInfinity(set, -row->lhs) )
                continue;
+
+            /* due to numerical reasons we want to stop */
+            if( REALABS(dualfarkas[r] * (row->lhs - row->constant)) > NUMSTOP )
+               goto TERMINATE;
+
             farkaslhs += dualfarkas[r] * (row->lhs - row->constant);
          }
          else
@@ -3640,10 +3654,19 @@ SCIP_RETCODE undoBdchgsDualfarkas(
             /* check if sign of dual farkas value is valid */
             if( SCIPsetIsInfinity(set, row->rhs) )
                continue;
+
+            /* due to numerical reasons we want to stop */
+            if( REALABS(dualfarkas[r] * (row->rhs - row->constant)) > NUMSTOP )
+               goto TERMINATE;
+
             farkaslhs += dualfarkas[r] * (row->rhs - row->constant);
          }
          SCIPdebugMessage(" -> farkaslhs: %g<%s>[%g,%g] -> %g\n", dualfarkas[r], SCIProwGetName(row),
             row->lhs - row->constant, row->rhs - row->constant, farkaslhs);
+
+         /* due to numerical reasons we want to stop */
+         if( REALABS(farkaslhs) > NUMSTOP )
+            goto TERMINATE;
 
          /* add row coefficients to farkas row */
          for( i = 0; i < row->len; ++i )
@@ -4156,7 +4179,7 @@ SCIP_RETCODE conflictAnalyzeLP(
    assert(conflict != NULL);
    assert(conflict->nconflictsets == 0);
    assert(set != NULL);
-   assert(set->nactivepricers == 0); /* conflict analysis is not possible with unknown variables */
+   assert(SCIPprobAllColsInLP(prob, set, lp)); /* conflict analysis is not possible with unknown variables */
    assert(stat != NULL);
    assert(prob != NULL);
    assert(lp != NULL);
@@ -4612,7 +4635,7 @@ SCIP_RETCODE conflictAnalyzeInfeasibleLP(
       return SCIP_OKAY;
 
    /* LP conflict analysis is only possible, if all variables are known */
-   if( set->nactivepricers > 0 )
+   if( !SCIPprobAllColsInLP(prob, set, lp) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("analyzing conflict on infeasible LP in depth %d (solstat: %d, objchanged: %u)\n",
@@ -4681,7 +4704,7 @@ SCIP_RETCODE conflictAnalyzeBoundexceedingLP(
       return SCIP_OKAY;
 
    /* LP conflict analysis is only possible, if all variables are known */
-   if( set->nactivepricers > 0 )
+   if( !SCIPprobAllColsInLP(prob, set, lp) )
       return SCIP_OKAY;
 
    SCIPdebugMessage("analyzing conflict on bound exceeding LP in depth %d (solstat: %d)\n",
@@ -4959,7 +4982,7 @@ SCIP_RETCODE SCIPconflictAnalyzeStrongbranch(
       return SCIP_OKAY;
 
    /* LP conflict analysis is only possible, if all variables are known */
-   if( set->nactivepricers > 0 )
+   if( !SCIPprobAllColsInLP(prob, set, lp) )
       return SCIP_OKAY;
 
    /* start timing */

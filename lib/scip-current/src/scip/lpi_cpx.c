@@ -19,6 +19,10 @@
  * @author Tobias Achterberg
  */
 
+/* CPLEX supports FASTMIP which fastens the lp solving process but therefor it might happen that there will be a loss in
+ * precision (because e.g. the optimal basis will not be factorized again)
+ */
+
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
@@ -921,7 +925,7 @@ const char* SCIPlpiGetSolverDesc(
    void
    )
 {
-   return "Linear Programming Solver developed by IBM (www-01.ibm.com/software/integration/optimization/cplex-optimizer)";
+   return "Linear Programming Solver developed by IBM (www.cplex.com)";
 }
 
 /** gets pointer for LP solver - use only with great care 
@@ -3586,8 +3590,10 @@ SCIP_RETCODE SCIPlpiGetIntpar(
       break;
    case SCIP_LPPAR_LPITLIM:
       *ival = getIntParam(lpi, CPX_PARAM_ITLIM);
+#if (CPX_VERSION <= 1230)
       if( *ival >= CPX_INT_MAX )
          *ival = INT_MAX;
+#endif
       break;
    case SCIP_LPPAR_THREADS:
 #if (CPX_VERSION == 1100 || (CPX_VERSION == 1220 && (CPX_SUBVERSION == 0 || CPX_SUBVERSION == 2)))
@@ -3625,7 +3631,7 @@ SCIP_RETCODE SCIPlpiSetIntpar(
       setIntParam(lpi, CPX_PARAM_ADVIND, ival == FALSE ? CPX_ON : CPX_OFF);
       break;
    case SCIP_LPPAR_FASTMIP:
-      assert(0 <= ival && ival <= 2);
+      assert(0 <= ival && ival <= 1);
       setIntParam(lpi, CPX_PARAM_FASTMIP, ival);
       break;
    case SCIP_LPPAR_SCALING:
@@ -3656,11 +3662,11 @@ SCIP_RETCODE SCIPlpiSetIntpar(
 	 setIntParam(lpi, CPX_PARAM_PPRIIND, CPX_PPRIIND_PARTIAL);
 	 setIntParam(lpi, CPX_PARAM_DPRIIND, CPX_DPRIIND_AUTO);
          break;
+      case SCIP_PRICING_LPIDEFAULT:
       case SCIP_PRICING_STEEP:
 	 setIntParam(lpi, CPX_PARAM_PPRIIND, CPX_PPRIIND_STEEP);
 	 setIntParam(lpi, CPX_PARAM_DPRIIND, CPX_DPRIIND_STEEP);
 	 break;
-      case SCIP_PRICING_LPIDEFAULT:
       case SCIP_PRICING_STEEPQSTART:
 	 setIntParam(lpi, CPX_PARAM_PPRIIND, CPX_PPRIIND_STEEPQSTART);
 	 setIntParam(lpi, CPX_PARAM_DPRIIND, CPX_DPRIIND_STEEPQSTART);
@@ -3683,7 +3689,9 @@ SCIP_RETCODE SCIPlpiSetIntpar(
 	 setIntParam(lpi, CPX_PARAM_SCRIND, CPX_OFF);
       break;
    case SCIP_LPPAR_LPITLIM:
+#if (CPX_VERSION <= 1230)
       ival = MIN(ival, CPX_INT_MAX);
+#endif
       setIntParam(lpi, CPX_PARAM_ITLIM, ival);
       break;
    case SCIP_LPPAR_THREADS:
