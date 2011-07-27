@@ -33,8 +33,8 @@ $(LIBOBJDIR)/scip/misc.o: src/scip/misc.c src/scip/def.h src/scip/type_retcode.h
  src/scip/type_presol.h src/scip/type_pricer.h src/scip/type_reader.h \
  src/scip/type_relax.h src/scip/type_sepa.h src/scip/type_prop.h \
  src/scip/struct_set.h src/scip/type_dialog.h src/nlpi/type_nlpi.h \
- src/nlpi/type_expr.h src/scip/pub_misc.h src/scip/type_misc.h \
- src/scip/misc.h src/scip/intervalarith.h src/scip/struct_misc.h \
+ src/nlpi/type_expr.h src/scip/misc.h src/scip/type_misc.h \
+ src/scip/pub_misc.h src/scip/intervalarith.h src/scip/struct_misc.h \
  src/scip/sorttpl.c
 $(LIBOBJDIR)/scip/intervalarith.o: src/scip/intervalarith.c src/scip/def.h \
  src/scip/type_retcode.h src/scip/message.h src/scip/type_message.h \
