@@ -1,0 +1,24 @@
+# SCIP version 2.0.1.4
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# maximal number of presolving rounds (-1: unlimited, 0: off)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrounds = 0
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+#arrowheur/minblocks = 2
+#arrowheur/maxblocks = 20
+
+borderheur/minblocks = 2
+borderheur/maxblocks = 20
+borderheur/ubfactor = 0.1
+
+#arrowheur/ubfactor = 0.1
+#arrowheur/metisverbose = FALSE
+#arrowheur/metisuseptyperb = TRUE

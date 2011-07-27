@@ -810,7 +810,7 @@ SCIP_RETCODE callMetis(
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
                detectordata->metisubfactor,
-               detectordata->metisverbose ? "> /dev/null" : "");
+               detectordata->metisverbose ? "" : "> /dev/null" );
    }
    else
    {
@@ -820,7 +820,7 @@ SCIP_RETCODE callMetis(
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
                detectordata->metisubfactor,
-               detectordata->metisverbose ? "> /dev/null" : "");
+               detectordata->metisverbose ? "" : "> /dev/null" );
    }
 
 //   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis.sh metis.temp %d -seed %d",  detectordata->blocks,  detectordata->randomseed );
