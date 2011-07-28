@@ -5,10 +5,3 @@ LDFLAGS		+=      -m64
 ifeq ($(SHARED),true)
 LIBBUILDFLAGS	+=     	-m64
 endif
-ZLIB_FLAGS  =
-ZLIB_LDFLAGS   =  -lz
-GMP_FLAGS   =
-GMP_LDFLAGS    =  -lgmp
-READLINE_FLAGS =
-READLINE_LDFLAGS= -lreadline -lncurses
-
