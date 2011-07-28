@@ -161,7 +161,7 @@ SCIP_RETCODE performProbingOnMaster(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "something went wrong, an lp error occurred\n");
+      SCIPdebugMessage("something went wrong, an lp error occurred\n");
    }
 
    return SCIP_OKAY;
