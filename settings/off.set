@@ -12,6 +12,11 @@ presolving/maxrounds = 0
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
+# should discretization (TRUE) or convexification (FALSE) approach be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/discretization = FALSE
+
+
 #arrowheur/minblocks = 2
 #arrowheur/maxblocks = 20
 

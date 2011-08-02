@@ -409,16 +409,16 @@ SCIP_RETCODE callMetis(
    SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if ( (temp_filedes=mkstemp(tempfile)) <0 )
    {
-      SCIPerrorMessage("Error creating temporary file: %s", strerror( errno ));
+      SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
       return SCIP_FILECREATEERROR;
    }
 
-   SCIPdebugMessage("Temporary filename: %s", tempfile);
+   SCIPdebugMessage("Temporary filename: %s\n", tempfile);
 
    file = fdopen(temp_filedes, "w");
    if(file == NULL)
    {
-      SCIPerrorMessage("Could not open temporary metis file!");
+      SCIPerrorMessage("Could not open temporary metis file!\n");
       return SCIP_FILECREATEERROR;
    }
 
@@ -448,7 +448,7 @@ SCIP_RETCODE callMetis(
 
    if(status == -1)
    {
-      SCIPerrorMessage("Could not close '%s'", tempfile);
+      SCIPerrorMessage("Could not close '%s'\n", tempfile);
       return SCIP_WRITEERROR;
    }
 
@@ -490,7 +490,7 @@ SCIP_RETCODE callMetis(
    /* check error codes */
    if( status == -1 )
    {
-      SCIPerrorMessage("System call did not succed: %s", strerror( errno ));
+      SCIPerrorMessage("System call did not succed: %s\n", strerror( errno ));
    }
    else if( status != 0 )
    {
@@ -533,7 +533,7 @@ SCIP_RETCODE callMetis(
       int temp;
       if( SCIPfgets(line, SCIP_MAXSTRLEN, zfile) == NULL )
       {
-         SCIPerrorMessage("Line could not be read");
+         SCIPerrorMessage("Line could not be read\n");
          return SCIP_READERROR;
       }
 
@@ -550,13 +550,13 @@ SCIP_RETCODE callMetis(
       status = unlink( tempfile );
       if( status == -1 )
       {
-         SCIPerrorMessage("Could not remove metis input file: %s", strerror( errno ));
+         SCIPerrorMessage("Could not remove metis input file: %s\n", strerror( errno ));
          return SCIP_WRITEERROR;
       }
       status = unlink( metisout );
       if( status == -1 )
       {
-         SCIPerrorMessage("Could not remove metis output file: %s", strerror( errno ));
+         SCIPerrorMessage("Could not remove metis output file: %s\n", strerror( errno ));
          return SCIP_WRITEERROR;
       }
    }
