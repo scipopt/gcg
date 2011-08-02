@@ -373,7 +373,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scip.h \
  src/cons_integralOrig.h src/sepa_master.h src/branch_master.h \
  src/heur_feasrestmaster.h src/heur_greedycolsel.h src/heur_relaxcolsel.h \
  src/heur_restmaster.h src/pricingplugins.h
-$(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h lib/scip/src/scip/scip.h \
+$(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/scip_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
  lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_message.h \
@@ -420,9 +420,10 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c src/pricer_gcg.h lib/scip/src/scip/scip
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_solver.h \
+ src/pricer_gcg.h src/relax_gcg.h src/type_branchgcg.h src/type_solver.h \
  lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_knapsack.h \
- src/sepa_master.h src/struct_vardata.h src/struct_solver.h
+ src/sepa_master.h src/struct_vardata.h src/struct_solver.h \
+ src/struct_solverinfo.h
 $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -1941,7 +1942,7 @@ $(OBJDIR)/dialog_gcg.o: src/dialog_gcg.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/dialog_gcg.h src/relax_gcg.h src/type_branchgcg.h src/pricer_gcg.h \
  src/type_solver.h
-$(OBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/scip.h \
+$(OBJDIR)/solver_mip.o: src/solver_mip.c src/scip_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
  lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_message.h \
@@ -1988,9 +1989,10 @@ $(OBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/scip
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_knapsack.h \
- src/type_solver.h src/struct_vardata.h src/pricer_gcg.h src/relax_gcg.h \
- src/type_branchgcg.h
+ src/solver_mip.h lib/scip/src/scip/cons_linear.h \
+ lib/scip/src/scip/cons_knapsack.h src/type_solver.h \
+ src/struct_solverinfo.h src/struct_vardata.h src/pricer_gcg.h \
+ src/relax_gcg.h src/type_branchgcg.h
 $(OBJDIR)/solver_knapsack.o: src/solver_knapsack.c src/solver_knapsack.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \

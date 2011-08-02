@@ -9,10 +9,23 @@
 #define SCIP_MISC_H_
 
 #include "scip/scip.h"
-
+#include "string.h"
+#include "errno.h"
 typedef enum  {
    linear, knapsack, varbound, setpacking, setcovering, setpartitioning, logicor, sos1, sos2, unknown, nconsTypeItems
 } consType;
+
+#define PTHREAD_CALL(x) do                                                                                    \
+                        {                                                                                     \
+                          int _restat_;                                                                       \
+                          if( (_restat_ = (x)) != 0 )                                                         \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in pthread function call: %s\n", _restat_, strerror(_restat_));     \
+                             return SCIP_ERROR;                                                                 \
+                           }                                                                                  \
+                        }                                                                                     \
+                        while( FALSE )
+
 
 #if 0
 SCIP_RETCODE SCIPcopyProblem(
