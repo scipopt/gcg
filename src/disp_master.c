@@ -25,8 +25,8 @@
 
 #define DISP_NAME_SOLFOUND      "solfound"
 #define DISP_DESC_SOLFOUND      "letter that indicates the heuristic, that found the solution"
-#define DISP_HEAD_SOLFOUND      " "
-#define DISP_WIDT_SOLFOUND      1
+#define DISP_HEAD_SOLFOUND      "  "
+#define DISP_WIDT_SOLFOUND      2
 #define DISP_PRIO_SOLFOUND      80000
 #define DISP_POSI_SOLFOUND      0
 #define DISP_STRI_SOLFOUND      FALSE
@@ -393,11 +393,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    dispdata = SCIPdispGetData(disp);
    if( sol != (SCIP_SOL*)dispdata )
    {
-      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
+      SCIPinfoMessage(scip, file, "*%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
       SCIPdispSetData(disp, (SCIP_DISPDATA*)sol);
    }
    else
-      SCIPinfoMessage(scip, file, " ");
+      SCIPinfoMessage(scip, file, "  ");
 
    return SCIP_OKAY;
 }

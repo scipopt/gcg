@@ -25,8 +25,8 @@
 
 #define DISP_NAME_SOLFOUND      "solfound"
 #define DISP_DESC_SOLFOUND      "letter that indicates the heuristic, that found the solution"
-#define DISP_HEAD_SOLFOUND      " "
-#define DISP_WIDT_SOLFOUND      1
+#define DISP_HEAD_SOLFOUND      "  "
+#define DISP_WIDT_SOLFOUND      2
 #define DISP_PRIO_SOLFOUND      80000
 #define DISP_POSI_SOLFOUND      0
 #define DISP_STRI_SOLFOUND      FALSE
@@ -395,25 +395,37 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
 {  /*lint --e{715}*/
-   SCIP_SOL* sol;
+   SCIP_SOL* origsol;
+   SCIP_SOL* mastersol;
    SCIP_DISPDATA* dispdata;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
    assert(scip != NULL);
 
-   sol = SCIPgetBestSol(GCGrelaxGetMasterprob(scip));
-   if( sol == NULL )
+   origsol = SCIPgetBestSol(scip);
+   mastersol = SCIPgetBestSol(GCGrelaxGetMasterprob(scip));
+   if( origsol == NULL )
       SCIPdispSetData(disp, NULL);
 
    dispdata = SCIPdispGetData(disp);
-   if( sol != (SCIP_SOL*)dispdata )
+   if( origsol != (SCIP_SOL*)dispdata )
    {
-      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), sol)));
-      SCIPdispSetData(disp, (SCIP_DISPDATA*)sol);
+      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)));
+      /* If the solution was obtained in the master problem, display whether it came from its
+       * LP relaxation or from the master heuristics */
+      if( SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)) == '*' )
+      {
+         SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol)));
+      }
+      else
+      {
+         SCIPinfoMessage(scip, file, " ");
+      }
+      SCIPdispSetData(disp, (SCIP_DISPDATA*)origsol);
    }
    else
-      SCIPinfoMessage(scip, file, " ");
+      SCIPinfoMessage(scip, file, "  ");
 
    return SCIP_OKAY;
 }

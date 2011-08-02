@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -34,8 +34,7 @@
 #define HEUR_DESC             "LP diving heuristic that chooses fixings w.r.t. the fractionalities"
 #define HEUR_DISPCHAR         'f'
 #define HEUR_PRIORITY         -1003000
-//#define HEUR_FREQ             10
-#define HEUR_FREQ             -1
+#define HEUR_FREQ             10
 #define HEUR_FREQOFS          3
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPSEUDOPLUNGE
@@ -51,6 +50,8 @@
 #define DEFAULT_MAXRELDEPTH         1.0 /**< maximal relative depth to start diving */
 #define DEFAULT_MAXLPITERQUOT      0.05 /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
+#define DEFAULT_MAXPRICEQUOT       0.05 /**< maximal fraction of pricing rounds compared to node pricing rounds */
+#define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -71,6 +72,8 @@ struct SCIP_HeurData
    SCIP_Real             maxreldepth;        /**< maximal relative depth to start diving */
    SCIP_Real             maxlpiterquot;      /**< maximal fraction of diving LP iterations compared to node LP iterations */
    int                   maxlpiterofs;       /**< additional number of allowed LP iterations */
+   SCIP_Real             maxpricequot;       /**< maximal fraction of pricing rounds compared to node pricing rounds */
+   int                   maxpriceofs;        /**< additional number of allowed pricing rounds (-1: no limit) */
    SCIP_Real             maxdiveubquot;      /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                               *   where diving is performed (0.0: no limit) */
    SCIP_Real             maxdiveavgquot;     /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -97,6 +100,7 @@ struct SCIP_HeurData
 static
 SCIP_RETCODE performProbingOnMaster(
    SCIP*                 scip,               /**< SCIP data structure */
+   int                   maxpricerounds,     /**< maximum number of price rounds allowed */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of used LP iterations */
    int*                  npricerounds,       /**< pointer to store the number of used pricing rounds */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
@@ -110,6 +114,7 @@ SCIP_RETCODE performProbingOnMaster(
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_Bool feasible;
    SCIP_Longint oldnlpiters;
+   int oldpricerounds;
    SCIP_Longint nodelimit;
 
    assert(scip != NULL);
@@ -138,8 +143,9 @@ SCIP_RETCODE performProbingOnMaster(
    //printf("before LP solving\n");
 
    oldnlpiters = SCIPgetNLPIterations(masterscip);
+   oldpricerounds = SCIPgetNPriceRounds(masterscip);
    SCIP_CALL( SCIPsolveProbingLPWithPricing( masterscip, FALSE/* pretendroot */, TRUE /*displayinfo*/,
-         -1 /*maxpricerounds*/, lperror ) );
+         maxpricerounds, lperror ) );
    lpsolstat = SCIPgetLPSolstat(masterscip);
 
    //printf("after LP solving\n");
@@ -147,7 +153,7 @@ SCIP_RETCODE performProbingOnMaster(
    SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit) );
 
    *nlpiterations = SCIPgetNLPIterations(masterscip) - oldnlpiters;
-   *npricerounds = SCIPgetNPriceRounds(masterscip);
+   *npricerounds = SCIPgetNPriceRounds(masterscip) - oldpricerounds;
 
    //printf("lperror = %d\n", (*lperror));
 
@@ -286,7 +292,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;
    SCIP_Longint maxnlpiterations;
+   int maxpricerounds;
    int npricerounds;
+   int totalpricerounds;
    int nlpcands;
    int startnlpcands;
    int depth;
@@ -360,6 +368,18 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    /* allow at least a certain number of LP iterations in this dive */
    maxnlpiterations = MAX(maxnlpiterations, heurdata->nlpiterations + MINLPITER);
 
+   /* TODO: limit number of pricing rounds, play with parameters */
+   if( heurdata->maxpriceofs > -1 )
+   {
+      npricerounds = SCIPgetNPriceRounds(masterprob);
+      SCIPdebugMessage("GCG fracdiving - pricing rounds at this node: %d\n", npricerounds);
+      maxpricerounds = (1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * heurdata->maxpricequot * npricerounds;
+//      maxpricerounds = (1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * npricerounds;
+      maxpricerounds += heurdata->maxpriceofs;
+   }
+   else
+      maxpricerounds = -1;
+
    /* calculate the objective search bound */
    if( SCIPgetNSolsFound(scip) == 0 )
    {
@@ -426,6 +446,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    lperror = FALSE;
    cutoff = FALSE;
    divedepth = 0;
+   npricerounds = 0;
+   totalpricerounds = 0;
 //   bestcandmayrounddown = FALSE;
 //   bestcandmayroundup = FALSE;
    startnlpcands = nlpcands;
@@ -437,7 +459,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
-      npricerounds = 0;
 
       /* choose variable fixing:
        * - prefer variables that may not be rounded without destroying LP feasibility:
@@ -540,26 +561,27 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
       {
          SCIP_Bool success;
          
-         /* create solution from diving LP and try to round it;
-          * in the first loop, we have to take the relaxation solution instead of the LP solution */
-//         if( divedepth > 1 )
-//            SCIP_CALL( SCIPlinkLPSol(scip, heurdata->sol) );
-//         else
-            SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
+         /* create solution from diving LP and try to round it */
+         SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
          SCIP_CALL( SCIProundSol(scip, heurdata->sol, &success) );
 
          if( success )
          {
             SCIPdebugMessage("GCG fracdiving found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
          
-            /* try to add solution to SCIP */
-            SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
-            
-            /* check, if solution was feasible and good enough */
-            if( success )
+            /* a rounded solution will only be accepted if its objective value is below the search bound */
+            if( SCIPgetSolOrigObj(scip, heurdata->sol) <= searchbound )
             {
-               SCIPdebugMessage(" -> solution was feasible and good enough\n");
-               *result = SCIP_FOUNDSOL;
+               /* try to add solution to SCIP */
+//               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+
+               /* check, if solution was feasible and good enough */
+               if( success )
+               {
+                  SCIPdebugMessage(" -> solution was feasible and good enough\n");
+                  *result = SCIP_FOUNDSOL;
+               }
             }
          }
       }
@@ -586,10 +608,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
          if( bestcandroundup == !backtracked )
          {
             /* round variable up */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d: var <%s>, round=%u/%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, heurdata->npricerounds,
-               SCIPvarGetName(var), bestcandmayrounddown, bestcandmayroundup,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
+               SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
                SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
 
             SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
@@ -601,10 +622,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
          else
          {
             /* round variable down */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d: var <%s>, round=%u/%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, heurdata->npricerounds,
-               SCIPvarGetName(var), bestcandmayrounddown, bestcandmayroundup,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
+               SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
                SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
 
             SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
@@ -624,31 +644,23 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;
-//            nlpiterations = SCIPgetNLPIterations(scip);
-//            nlpiterations = SCIPgetNLPIterations(masterprob);
-//            retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
-            retstat = performProbingOnMaster(scip, &nlpiterations, &npricerounds, &lperror, &cutoff);
+            retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
             { 
                SCIPwarningMessage("Error while solving LP in GCG fracdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
-//            nlpiterations = SCIPgetNLPIterations(scip);
-//            nlpiterations = SCIPgetNLPIterations(masterprob);
-//            SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
-            SCIP_CALL( performProbingOnMaster(scip, &nlpiterations, &npricerounds, &lperror, &cutoff) );
+            SCIP_CALL( performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff) );
 #endif
             if( lperror )
                break;
             
             /* update iteration count */
-//            heurdata->nlpiterations += SCIPgetNLPIterations(scip) - nlpiterations;
-//            heurdata->nlpiterations += SCIPgetNLPIterations(masterprob) - nlpiterations;
             heurdata->nlpiterations += nlpiterations;
             heurdata->npricerounds += npricerounds;
+            totalpricerounds += npricerounds;
             
             /* get LP solution status, objective value, and fractional variables, that should be integral */
-//            lpsolstat = SCIPgetLPSolstat(scip);
             lpsolstat = SCIPgetLPSolstat(masterprob);
 //            cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
 
@@ -702,17 +714,18 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    }
 
    /* check if a solution has been found */
+   /* TODO: maybe this is unneccessary since solutions are also added in GCGrelaxUpdateCurrentSol() */
    if( nlpcands == 0 && !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && divedepth > 0 )
    {
       SCIP_Bool success;
 
       /* create solution from diving LP */
-//      SCIP_CALL( SCIPlinkLPSol(scip, heurdata->sol) );
       SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
       SCIPdebugMessage("GCG fracdiving found primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
 
       /* try to add solution to SCIP */
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+//      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
 
       /* check, if solution was feasible and good enough */
       if( success )
@@ -743,6 +756,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    assert(SCIPisFeasEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, GCGrelaxGetCurrentOrigSol(scip))));
    SCIP_CALL( SCIPfreeSol(scip, &oldrelaxsol) );
 
+   /* TODO: since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
+    * *result != SCIP_FOUNDSOL although a solution has been found */
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
 
@@ -792,6 +807,14 @@ SCIP_RETCODE SCIPincludeHeurGcgfracdiving(
          "heuristics/gcgfracdiving/maxlpiterofs",
          "additional number of allowed LP iterations",
          &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip,
+         "heuristics/gcgfracdiving/maxpricequot",
+         "maximal fraction of pricing rounds compared to node pricing rounds",
+         &heurdata->maxpricequot, FALSE, DEFAULT_MAXPRICEQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip,
+         "heuristics/gcgfracdiving/maxpriceofs",
+         "additional number of allowed pricing rounds (-1: no limit)",
+         &heurdata->maxpriceofs, FALSE, DEFAULT_MAXPRICEOFS, -1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
          "heuristics/gcgfracdiving/maxdiveubquot",
          "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
