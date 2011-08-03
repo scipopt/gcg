@@ -29,7 +29,7 @@ extern "C" {
 
 typedef struct GCG_SolverData GCG_SOLVERDATA;   /**< solver data */
 typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
-typedef struct GCG_SolverInfo GCG_SOLVERINFO; /**< parallel solverinformation */
+
 
 /** destructor of pricing solver to free user data (called when SCIP is exiting)
  *
@@ -63,9 +63,8 @@ typedef struct GCG_SolverInfo GCG_SOLVERINFO; /**< parallel solverinformation */
  *  input:
  *  - scip            : SCIP main data structure
  *  - solver          : the pricing solver itself
- *  - solverinfo      : parallel synchronizing information
  */
-#define GCG_DECL_SOLVERINITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, GCG_SOLVERINFO *solverinfo)
+#define GCG_DECL_SOLVERINITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed)
  *

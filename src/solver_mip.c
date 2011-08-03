@@ -18,13 +18,11 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
-#include <pthread.h>
-#include <scip_misc.h>
+
 #include "solver_mip.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
 #include "type_solver.h"
-#include "struct_solverinfo.h"
 #include "struct_vardata.h"
 #include "pricer_gcg.h"
 
@@ -37,9 +35,10 @@
 #define DEFAULT_CHECKSOLS TRUE
 
 
-
-struct GCG_SolData
+/** branching data for branching decisions */
+struct GCG_SolverData
 {
+   SCIP* origprob;
    SCIP_Real** solvals;
    SCIP_VAR*** solvars;
    SCIP_Real*  tmpsolvals;
@@ -47,49 +46,38 @@ struct GCG_SolData
    SCIP_Bool* solisray;
    int nsols;
    int maxvars;
-};
-
-typedef struct GCG_SolData GCG_SOLDATA;
-
-struct GCG_SolverData
-{
-   SCIP* origprob;
-   GCG_SOLDATA** soldata;
-   GCG_SOLVERINFO *solverinfo;
 
    SCIP_Bool checksols;
 };
-
-
 
 /* ensures size of solution arrays */
 static
 SCIP_RETCODE ensureSizeSolvars(
    SCIP*                 scip,
-   GCG_SOLDATA*       soldata,
+   GCG_SOLVERDATA*       solverdata,
    int                   nsols
    )
 {
    int i;
 
    assert(scip != NULL);
-   assert(soldata != NULL);
+   assert(solverdata != NULL);
 
-   if( soldata->nsols < nsols )
+   if( solverdata->nsols < nsols )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(soldata->nsolvars), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(soldata->solisray), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(soldata->solvars), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(soldata->solvals), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->nsolvars), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solisray), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvars), nsols) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvals), nsols) );
 
-      for( i = soldata->nsols; i < nsols; i++ )
+      for( i = solverdata->nsols; i < nsols; i++ )
       {
-         soldata->nsolvars[i] = 0;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(soldata->solvars[i]), soldata->maxvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(soldata->solvals[i]), soldata->maxvars) );
+         solverdata->nsolvars[i] = 0;
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) );
       }
 
-      soldata->nsols = nsols;
+      solverdata->nsols = nsols;
 
    }
 
@@ -186,45 +174,35 @@ GCG_DECL_SOLVERINITSOL(solverInitsolMip)
 {
    GCG_SOLVERDATA* solverdata;
    int i;
-   int j;
 
    assert(scip != NULL);
    assert(solver != NULL);
-   assert(solverinfo != NULL);
 
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
 
-   solverdata->solverinfo = solverinfo;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->soldata, GCGrelaxGetNPricingprobs(solverdata->origprob)));
-   SCIPdebugMessage("Pricingprobs: %d\n",  GCGrelaxGetNPricingprobs(solverdata->origprob));
-   assert(solverdata->soldata != NULL);
-   // solverdata->maxvars = -1;
+   solverdata->maxvars = -1;
    for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
    {
-      SCIP_CALL(SCIPallocMemory(scip, &solverdata->soldata[i]));
-      assert(solverdata->soldata[i] != NULL);
-//      if( SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i)) > solverdata->maxvars )
-      solverdata->soldata[i]->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
+      if( SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i)) > solverdata->maxvars )
+         solverdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
    }
-   for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
+
+   solverdata->nsols = 10;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solisray), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals), solverdata->nsols) );
+
+   for( i = 0; i < solverdata->nsols; i++ )
    {
-      assert(solverdata->soldata[i] != NULL);
-      solverdata->soldata[i]->nsols = 10;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->nsolvars), solverdata->soldata[i]->nsols) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->solisray), solverdata->soldata[i]->nsols) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->solvars), solverdata->soldata[i]->nsols) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->solvals), solverdata->soldata[i]->nsols) );
-
-      for( j = 0; j < solverdata->soldata[i]->nsols; j++ )
-      {
-         solverdata->soldata[i]->nsolvars[j] = 0;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->solvars[j]), solverdata->soldata[i]->maxvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->solvals[j]), solverdata->soldata[i]->maxvars) );
-      }
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->soldata[i]->tmpsolvals), solverdata->soldata[i]->maxvars) );
+      solverdata->nsolvars[i] = 0;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) );
    }
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->tmpsolvals), solverdata->maxvars) );
+
    return SCIP_OKAY;
 }
 
@@ -233,31 +211,26 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
 {
    GCG_SOLVERDATA* solverdata;
    int i;
-   int j;
 
    assert(scip != NULL);
    assert(solver != NULL);
 
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
-   for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
+
+   for( i = 0; i < solverdata->nsols; i++ )
    {
-      for( j = 0; j < solverdata->soldata[i]->nsols; j++ )
-      {
-         SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->solvars[j]));
-         SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->solvals[j]));
-      }
-
-      SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->tmpsolvals));
-
-      SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->nsolvars));
-      SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->solisray));
-      SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->solvars));
-      SCIPfreeMemoryArray(scip, &(solverdata->soldata[i]->solvals));
-      SCIPfreeMemory(scip, &solverdata->soldata[i]);
-
+      SCIPfreeMemoryArray(scip, &(solverdata->solvars[i]));
+      SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
    }
-   SCIPfreeMemoryArray(scip, &solverdata->soldata);
+
+   SCIPfreeMemoryArray(scip, &(solverdata->tmpsolvals));
+
+   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
+   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
+   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
+   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
+
    return SCIP_OKAY;
 }
 
@@ -293,15 +266,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       
    }
 #endif
+
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
-   assert(solverdata->soldata != NULL);
-   assert(solverdata->solverinfo != NULL);
-
-//   pthread_mutex_lock(&solverdata->solverinfo->update_count);
-//   assert(solverdata->solverinfo->count >= 0);
-//   ++(solverdata->solverinfo->count);
-//   pthread_mutex_unlock(&solverdata->solverinfo->update_count);
 
    SCIP_CALL( SCIPtransformProb(pricingprob) );
 
@@ -316,9 +283,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.cip", NULL, FALSE) );
    SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", FALSE, FALSE) );
 #endif
+
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
-
+  
    /* all SCIP statuses handled so far */
    assert( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
@@ -361,7 +329,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       probvars  = SCIPgetOrigVars(pricingprob);
       nprobvars = SCIPgetNOrigVars(pricingprob);
 
-      solverdata->soldata[probnr]->nsolvars[0] = 0;
+      solverdata->nsolvars[0] = 0;
 
       /* store the primal ray values */
       for( i = 0; i < nprobvars; i++ )
@@ -371,17 +339,17 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
          assert(!SCIPisInfinity(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])) && !SCIPisInfinity(scip, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
 
-         solverdata->soldata[probnr]->solvars[0][solverdata->soldata[probnr]->nsolvars[0]] = probvars[i];
-         solverdata->soldata[probnr]->solvals[0][solverdata->soldata[probnr]->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
-         solverdata->soldata[probnr]->nsolvars[0]++;
+         solverdata->solvars[0][solverdata->nsolvars[0]] = probvars[i];
+         solverdata->solvals[0][solverdata->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
+         solverdata->nsolvars[0]++;
 
          SCIPdebugMessage("%s: %g\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]));
       }
-      solverdata->soldata[probnr]->solisray[0] = TRUE;
-      *solvars = solverdata->soldata[probnr]->solvars;
-      *solvals = solverdata->soldata[probnr]->solvals;
-      *nsolvars = solverdata->soldata[probnr]->nsolvars;
-      *solisray = solverdata->soldata[probnr]->solisray;
+      solverdata->solisray[0] = TRUE;
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *solisray = solverdata->solisray;
       *nsols = 1;
       *result = SCIP_STATUS_UNBOUNDED;
 
@@ -390,10 +358,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
    {
-      *solvars = solverdata->soldata[probnr]->solvars;
-      *solvals = solverdata->soldata[probnr]->solvals;
-      *nsolvars = solverdata->soldata[probnr]->nsolvars;
-      *solisray = solverdata->soldata[probnr]->solisray;
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIPgetStatus(pricingprob);
    } 
@@ -407,9 +375,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       probsols = SCIPgetSols(pricingprob);
 
       *nsols = 0;
-      PTHREAD_CALL(pthread_mutex_lock(&solverdata->solverinfo->access_masterscip));
-      SCIP_CALL( ensureSizeSolvars(scip, solverdata->soldata[probnr], nprobsols) ); //TODO: BUG: make sure mutex gets unlocked in every case!
-      PTHREAD_CALL(pthread_mutex_unlock(&solverdata->solverinfo->access_masterscip));
+
+      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
+
       for( s = 0; s < nprobsols; s++ )
       {
          SCIP_Bool feasible;
@@ -427,29 +395,26 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          /* check whether the solution is equal to one of the previous solutions */
          if( solverdata->checksols )
          {
-            PTHREAD_CALL(pthread_mutex_lock(&solverdata->solverinfo->access_masterscip));
             SCIP_CALL( checkSolNew(scip, pricingprob, probsols, s, &newsol) );
-            PTHREAD_CALL(pthread_mutex_unlock(&solverdata->solverinfo->access_masterscip));
-
             if( !newsol )
                continue;
          }
 
-         solverdata->soldata[probnr]->nsolvars[*nsols] = 0;
-         solverdata->soldata[probnr]->solisray[*nsols] = FALSE;
+         solverdata->nsolvars[*nsols] = 0;
+         solverdata->solisray[*nsols] = FALSE;
 
-         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->soldata[probnr]->tmpsolvals) );
+         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
 
 #if 0         
          /* for integer variables, round the solution values */
          for( i = 0; i < nprobvars; i++ )
          {
-            if( SCIPisZero(scip, solverdata->soldata[probnr]->tmpsolvals[i]) )
+            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
                continue;
             if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
             {
-               assert(SCIPisEQ(scip, solverdata->soldata[probnr]->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->soldata[probnr]->tmpsolvals[i])));
-               solverdata->soldata[probnr]->tmpsolvals[i] = SCIPfeasFloor(scip, solverdata->soldata[probnr]->tmpsolvals[i]);
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->tmpsolvals[i])));
+               solverdata->tmpsolvals[i] = SCIPfeasFloor(scip, solverdata->tmpsolvals[i]);
             }
          }
 #endif
@@ -465,7 +430,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
             /* check the solution values for infinity */
             for( i = 0; i < nprobvars; i++ )
             {
-               if( SCIPisInfinity(scip, solverdata->soldata[probnr]->tmpsolvals[i]) )
+               if( SCIPisInfinity(scip, solverdata->tmpsolvals[i]) )
                {
                   SCIP_VARDATA* vardata;
 
@@ -486,12 +451,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
                   SCIP_CALL( SCIPcheckSol(pricingprob, tmpsol, TRUE, TRUE, TRUE, TRUE, &feasible) );
                   if( feasible )
                   {
-                     solverdata->soldata[probnr]->tmpsolvals[i] = SCIPinfinity(scip) / (2 * SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]));
-                     SCIPwarningMessage("--> reduced value of variable to %g\n", solverdata->soldata[probnr]->tmpsolvals[i]);
+                     solverdata->tmpsolvals[i] = SCIPinfinity(scip) / (2 * SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]));
+                     SCIPwarningMessage("--> reduced value of variable to %g\n", solverdata->tmpsolvals[i]);
                   }
                   else
                   {
-                     SCIPwarningMessage("--> reducing value of variable to %g caused infeasibility\n", solverdata->soldata[probnr]->tmpsolvals[i]);
+                     SCIPwarningMessage("--> reducing value of variable to %g caused infeasibility\n", solverdata->tmpsolvals[i]);
                   }
                }
             }
@@ -507,21 +472,21 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          /* store the solution values */
          for( i = 0; i < nprobvars; i++ )
          {
-            if( SCIPisZero(scip, solverdata->soldata[probnr]->tmpsolvals[i]) )
+            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
                continue;
 
-            solverdata->soldata[probnr]->solvars[*nsols][solverdata->soldata[probnr]->nsolvars[*nsols]] = probvars[i];
-            solverdata->soldata[probnr]->solvals[*nsols][solverdata->soldata[probnr]->nsolvars[*nsols]] = solverdata->soldata[probnr]->tmpsolvals[i];
-            solverdata->soldata[probnr]->nsolvars[*nsols]++;
+            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
+            solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
+            solverdata->nsolvars[*nsols]++;
          }
          
          *nsols = *nsols + 1;
       }
          
-      *solvars = solverdata->soldata[probnr]->solvars;
-      *solvals = solverdata->soldata[probnr]->solvals;
-      *nsolvars = solverdata->soldata[probnr]->nsolvars;
-      *solisray = solverdata->soldata[probnr]->solisray;
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *solisray = solverdata->solisray;
 
       *result = SCIP_STATUS_OPTIMAL;
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
@@ -532,14 +497,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
 #endif
 
-   PTHREAD_CALL(pthread_mutex_lock(&solverdata->solverinfo->update_count));
-   --(solverdata->solverinfo->count);
-   solverdata->solverinfo->queue[solverdata->solverinfo->nqueueentries] = probnr;
-   ++(solverdata->solverinfo->nqueueentries);
-   SCIPdebugMessage("Adding thread %d to the queue, we have now %d entries (%d sols).\n", probnr, solverdata->solverinfo->nqueueentries, solverdata->soldata[probnr]->nsols );
-   assert(solverdata->solverinfo->count >= 0);
-   PTHREAD_CALL(pthread_mutex_unlock(&solverdata->solverinfo->update_count));
-   PTHREAD_CALL(pthread_cond_signal(&solverdata->solverinfo->update_cond));
    return SCIP_OKAY;
 }
 
@@ -593,10 +550,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
    {
-      *solvars = solverdata->soldata[probnr]->solvars;
-      *solvals = solverdata->soldata[probnr]->solvals;
-      *nsolvars = solverdata->soldata[probnr]->nsolvars;
-      *solisray = solverdata->soldata[probnr]->solisray;
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
    } 
@@ -611,7 +568,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
       *nsols = 0;
 
-      SCIP_CALL( ensureSizeSolvars(scip, solverdata->soldata[probnr], nprobsols) );
+      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
 
       for( s = 0; s < nprobsols; s++ )
       {
@@ -631,38 +588,38 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
                continue;
          }
 
-         solverdata->soldata[probnr]->nsolvars[*nsols] = 0;
-         solverdata->soldata[probnr]->solisray[*nsols] = FALSE;
+         solverdata->nsolvars[*nsols] = 0;
+         solverdata->solisray[*nsols] = FALSE;
 
-         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->soldata[probnr]->tmpsolvals) );
+         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
          
          /* for integer variable, round the solvals */
          for( i = 0; i < nprobvars; i++ )
          {
-            if( SCIPisZero(scip, solverdata->soldata[probnr]->tmpsolvals[i]) )
+            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
                continue;
 
-            solverdata->soldata[probnr]->solvars[*nsols][solverdata->soldata[probnr]->nsolvars[*nsols]] = probvars[i];
+            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
 
             if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
             {
-               assert(SCIPisEQ(scip, solverdata->soldata[probnr]->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->soldata[probnr]->tmpsolvals[i])));
-               solverdata->soldata[probnr]->solvals[*nsols][solverdata->soldata[probnr]->nsolvars[*nsols]]
-                  = SCIPfeasFloor(scip, solverdata->soldata[probnr]->tmpsolvals[i]);
+               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->tmpsolvals[i])));
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] 
+                  = SCIPfeasFloor(scip, solverdata->tmpsolvals[i]);
             }
             else
-               solverdata->soldata[probnr]->solvals[*nsols][solverdata->soldata[probnr]->nsolvars[*nsols]] = solverdata->soldata[probnr]->tmpsolvals[i];
+               solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
 
-            solverdata->soldata[probnr]->nsolvars[*nsols]++;
+            solverdata->nsolvars[*nsols]++;
          }
          
          *nsols = *nsols + 1;
       }
          
-      *solvars = solverdata->soldata[probnr]->solvars;
-      *solvals = solverdata->soldata[probnr]->solvals;
-      *nsolvars = solverdata->soldata[probnr]->nsolvars;
-      *solisray = solverdata->soldata[probnr]->solisray;
+      *solvars = solverdata->solvars;
+      *solvals = solverdata->solvals;
+      *nsolvars = solverdata->nsolvars;
+      *solisray = solverdata->solisray;
 
       *result = SCIP_STATUS_OPTIMAL;
       //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
@@ -692,7 +649,11 @@ SCIP_RETCODE GCGincludeSolverMip(
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory( scip, &data) );
-   data->solverinfo = NULL;
+   data->nsols = 0;
+   data->nsolvars = NULL;
+   data->solvars = NULL;
+   data->solvals = NULL;
+   data->solisray = NULL;
    data->origprob = GCGpricerGetOrigprob(scip);
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, 
