@@ -414,7 +414,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
       SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)));
       /* If the solution was obtained in the master problem, display whether it came from its
        * LP relaxation or from the master heuristics */
-      if( SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)) == '*' && mastersol != NULL )
+      if( SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)) == '*' && (mastersol != NULL) )
       {
          SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol)));
       }
