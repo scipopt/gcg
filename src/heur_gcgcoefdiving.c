@@ -37,7 +37,7 @@
 #define HEUR_FREQ             10
 #define HEUR_FREQOFS          1
 #define HEUR_MAXDEPTH         -1
-#define HEUR_TIMING           SCIP_HEURTIMING_AFTERPSEUDOPLUNGE
+#define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE
 #define HEUR_USESSUBSCIP      FALSE
 
 
@@ -50,8 +50,10 @@
 #define DEFAULT_MAXRELDEPTH         1.0 /**< maximal relative depth to start diving */
 #define DEFAULT_MAXLPITERQUOT      0.05 /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
-#define DEFAULT_MAXPRICEQUOT       0.05 /**< maximal fraction of pricing rounds compared to node pricing rounds */
-#define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
+//#define DEFAULT_MAXPRICEQUOT       0.05 /**< maximal fraction of pricing rounds compared to node pricing rounds */
+//#define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
+#define DEFAULT_MAXPRICEQUOT       0.00 /**< maximal fraction of pricing rounds compared to node pricing rounds */
+#define DEFAULT_MAXPRICEOFS           0 /**< additional number of allowed pricing rounds (-1: no limit) */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                               *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -585,7 +587,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
             {
                /* try to add solution to SCIP */
 //               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+#ifdef SCIP_DEBUG
                SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+#else
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+#endif
 
                /* check, if solution was feasible and good enough */
                if( success )
@@ -736,7 +742,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
 
       /* try to add solution to SCIP */
 //      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
-      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+#ifdef SCIP_DEBUG
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+#else
+               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+#endif
 
       /* check, if solution was feasible and good enough */
       if( success )
