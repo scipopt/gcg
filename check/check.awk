@@ -129,8 +129,8 @@ BEGIN {
    for( i = 2; i < m; ++i )
       prob = prob "." b[i];
 
-   if( useshortnames && length(prob) > 18 )
-      shortprob = substr(prob, length(prob)-17, 18);
+   if( useshortnames && length(prob) > 12 )
+      shortprob = substr(prob, 0, 12);
    else
       shortprob = prob;
 
