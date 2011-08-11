@@ -1,7 +1,7 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
-#*          GCG --- Generic Colum Generation                                 *
+#*          GCG --- Generic Column Generation                                *
 #*                  a Dantzig-Wolfe decomposition based extension            *
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
@@ -48,13 +48,16 @@ MAINOBJ		=	reader_blk.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \
+			heur_clasfeaspump.o \
 			heur_feasrestmaster.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
+			heur_gcgguideddiving.o \
 			heur_gcgrens.o \
 			heur_gcgrounding.o \
 			heur_gcgsimplerounding.o \
 			heur_gcgshifting.o \
+			heur_gcgveclendiving.o \
 			heur_gcgzirounding.o \
 			heur_greedycolsel.o \
 			heur_relaxcolsel.o \

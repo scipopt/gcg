@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -128,12 +128,15 @@
 #include "dec_arrowheur.h"
 
 /* Christian's heuristics */
+#include "heur_clasfeaspump.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
+#include "heur_gcgguideddiving.h"
 #include "heur_gcgrens.h"
 #include "heur_gcgrounding.h"
 #include "heur_gcgshifting.h"
 #include "heur_gcgsimplerounding.h"
+#include "heur_gcgveclendiving.h"
 #include "heur_gcgzirounding.h"
 
 /** includes default SCIP plugins into SCIP */

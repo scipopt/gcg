@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -131,12 +131,15 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
 
    /* Christian's heuristics */
+   SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 //   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
