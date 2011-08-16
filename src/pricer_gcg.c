@@ -1302,6 +1302,8 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata->vartype == GCG_VARTYPE_PRICING);
          assert(vardata->data.pricingvardata.origvars != NULL);
          assert(vardata->data.pricingvardata.origvars[0] != NULL);
+         assert(newvardata->data.mastervardata.origvars != NULL);
+         assert(newvardata->data.mastervardata.origvals != NULL);
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = vardata->data.pricingvardata.origvars[0];
          newvardata->data.mastervardata.origvals[j] = solvals[i];
