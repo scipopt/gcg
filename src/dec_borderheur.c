@@ -342,7 +342,7 @@ static SCIP_RETCODE buildGraphStructure(
       curvars = SCIPgetVarsXXX(scip, conss[i] );
       for(j = 0; j < ncurvars; ++j)
       {
-         if(SCIPvarIsActive(curvars[j]))
+         if( isVarRelevant(curvars[j]) )
          {
             valid = TRUE;
             break;
@@ -669,14 +669,16 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          SCIP_VAR* var;
          long int varblock;
-         if(!SCIPvarIsActive(curvars[j]))
+         if(!isVarRelevant(curvars[j]))
          {
+            SCIPprintVar(scip, curvars[j], NULL);
             continue;
          }
-         assert(SCIPvarIsActive(curvars[j]));
-         assert(!SCIPvarIsDeleted(curvars[j]));
+         var = SCIPvarGetProbvar(curvars[j]);
 
-         var = curvars[j];
+         assert(var != NULL);
+         assert(SCIPvarIsActive(var));
+         assert(!SCIPvarIsDeleted(var));
          /*
           * if the variable has already been handled, we do not need to look
           * at it again and only need to set the constraint
@@ -934,6 +936,7 @@ SCIP_RETCODE evaluateDecomposition(
       for( j = 0; j < ncurconss; ++j)
       {
          SCIP_VAR** curvars;
+         SCIP_VAR* var;
          int ncurvars;
 
          curvars = SCIPgetVarsXXX(scip, curconss[j]);
@@ -941,20 +944,23 @@ SCIP_RETCODE evaluateDecomposition(
          for( k = 0; k < ncurvars; ++k)
          {
             long int block;
-            if(!SCIPvarIsActive(curvars[k]))
+            if(!isVarRelevant(curvars[k]))
                continue;
 
-
+            var = SCIPvarGetProbvar(curvars[k]);
+            assert(var != NULL);
+            assert(SCIPvarIsActive(var));
+            assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
-            assert(SCIPhashmapExists(detectordata->varstoblock, curvars[k]));
-            block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, curvars[k]);
+            assert(SCIPhashmapExists(detectordata->varstoblock, var));
+            block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, var);
             //SCIPinfoMessage(scip, NULL, "b: %d", block);
-            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(curvars[k])] == FALSE)
+            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
             {
 
                ++(nlinkvarsblocks[i]);
             }
-            ishandled[SCIPvarGetProbindex(curvars[k])] = TRUE;
+            ishandled[SCIPvarGetProbindex(var)] = TRUE;
          }
 
          SCIPfreeMemoryArray(scip, &curvars);

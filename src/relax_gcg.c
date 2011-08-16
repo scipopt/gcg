@@ -111,7 +111,6 @@ struct SCIP_RelaxData
 /*
  * Vardata methods
  */
-
 static
 SCIP_DECL_VARDELORIG(gcgvardelorig)
 {
@@ -1861,8 +1860,7 @@ SCIP_RETCODE GCGrelaxCreateOrigVardata(
 
    assert(scip != NULL);
    assert(var != NULL);
-   assert(SCIPvarIsOriginal(var));
-
+   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
    /* create the vardata and initialize its values */
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
    vardata->vartype = GCG_VARTYPE_ORIGINAL;
@@ -1880,10 +1878,15 @@ SCIP_RETCODE GCGrelaxCreateOrigVardata(
          vardata->data.origvardata.maxmastervars) );
 
    SCIPvarSetData(var, vardata);
-   SCIPvarSetDelorigData(var, gcgvardelorig);
-
-   if( SCIPvarGetTransVar(var) != NULL )
-      SCIPvarSetData(SCIPvarGetTransVar(var), vardata);
+   if(SCIPvarIsOriginal(var)){
+      SCIPvarSetDelorigData(var, gcgvardelorig);
+      if( SCIPvarGetTransVar(var) != NULL )
+         SCIPvarSetData(SCIPvarGetTransVar(var), vardata);
+   }
+   else{
+      assert(SCIPvarIsTransformedOrigvar(var));
+      SCIPvarSetDeltransData(var, gcgvardelorig);
+   }
 
    return SCIP_OKAY;
 }
@@ -2092,7 +2095,7 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
    assert(scip != NULL);
    assert(var != NULL);
    assert(blocknr >= 0);
-   assert(SCIPvarIsOriginal(var));
+   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);

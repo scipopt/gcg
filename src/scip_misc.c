@@ -16,6 +16,44 @@
  * @return
  */
 
+extern
+SCIP_Bool isVarRelevant(
+   SCIP_VAR* var
+   )
+{
+   assert(var != NULL);
+   return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
+}
+
+extern
+SCIP_VAR* getRelevantVariable(
+   SCIP_VAR *var
+   )
+{
+   SCIP_VAR *newvar;
+   assert(var != NULL);
+   if(!isVarRelevant(var))
+   {
+      return NULL;
+   }
+   switch (SCIPvarGetStatus(var))
+   {
+   case SCIP_VARSTATUS_AGGREGATED:
+      newvar = SCIPvarGetAggrVar(var);
+      break;
+   case SCIP_VARSTATUS_NEGATED:
+      newvar = SCIPvarGetNegationVar(var);
+      break;
+   case SCIP_VARSTATUS_MULTAGGR:
+      SCIPABORT();
+      break;
+   default:
+      newvar = var;
+      break;
+   }
+   return newvar;
+}
+
 consType SCIPconsGetType( SCIP* scip, SCIP_CONS *cons )
 {
    SCIP_CONSHDLR* conshdlr;

@@ -32,6 +32,16 @@ SCIP_VAR* const* vars,
 int nvars);
 #endif
 
+extern
+SCIP_Bool isVarRelevant(
+   SCIP_VAR* var
+   );
+
+extern
+SCIP_VAR* getRelevantVariable(
+   SCIP_VAR *var
+   );
+
 consType SCIPconsGetType(SCIP* scip, SCIP_CONS *cons);
 
 SCIP_Real SCIPgetRhsXXX(SCIP * scip, SCIP_CONS * cons);
