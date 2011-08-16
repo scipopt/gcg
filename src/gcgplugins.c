@@ -135,6 +135,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 //   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );

@@ -34,7 +34,8 @@
 #define HEUR_DESC             "LP diving heuristic that chooses fixings in direction of incumbent solutions"
 #define HEUR_DISPCHAR         'g'
 #define HEUR_PRIORITY         -1007000
-#define HEUR_FREQ             10
+//#define HEUR_FREQ             10
+#define HEUR_FREQ             -1
 #define HEUR_FREQOFS          7
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE

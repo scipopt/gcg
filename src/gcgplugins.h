@@ -132,6 +132,8 @@
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
+#include "heur_gcglinesdiving.h"
+#include "heur_gcgpscostdiving.h"
 #include "heur_gcgrens.h"
 #include "heur_gcgrounding.h"
 #include "heur_gcgshifting.h"

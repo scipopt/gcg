@@ -53,6 +53,8 @@ MAINOBJ		=	reader_blk.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \
+			heur_gcglinesdiving.o \
+			heur_gcgpscostdiving.o \
 			heur_gcgrens.o \
 			heur_gcgrounding.o \
 			heur_gcgsimplerounding.o \
