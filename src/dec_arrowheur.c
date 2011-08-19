@@ -430,7 +430,7 @@ int computeHyperedgeWeight(
          break;
       default:
          *cost = detectordata->consWeight;
-           ;
+         break;
       }
    }
    else if(strcmp(hdlrname, "logicor") == 0)
@@ -680,6 +680,9 @@ static SCIP_RETCODE buildGraphStructure(
          break;
       case SCIP_VARTYPE_BINARY:
          varWeight = detectordata->varWeightBinary;
+         break;
+      default:
+         varWeight = detectordata->varWeight;
          break;
       }
 

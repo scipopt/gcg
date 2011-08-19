@@ -12,6 +12,8 @@
 /**@file   pricingplugins.c
  * @brief  default SCIP plugins
  * @author Tobias Achterberg
+ * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -19,7 +21,7 @@
 #include "pricingplugins.h"
 #include "scip/debug.h"
 
-
+#define USEPROP 0
 
 
 /** includes default SCIP plugins into SCIP */
@@ -69,7 +71,6 @@ SCIP_RETCODE SCIPincludePricingPlugins(
    SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
@@ -121,13 +122,19 @@ SCIP_RETCODE SCIPincludePricingPlugins(
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
-   SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
    SCIP_CALL( SCIPincludeSepaRapidlearning(scip) );
    SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );
 
+#if USEPROP
+   SCIP_CALL( SCIPincludePropProbing(scip) );
+   SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
+   SCIP_CALL( SCIPincludePropRootredcost(scip) );
+   SCIP_CALL( SCIPincludePropVbounds(scip) );
+#endif
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
 
    return SCIP_OKAY;

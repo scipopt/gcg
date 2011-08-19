@@ -85,7 +85,7 @@
 #include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "scip/presol_probing.h"
+#include "scip/prop_probing.h"
 #include "scip/presol_trivial.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
@@ -109,11 +109,16 @@
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
 #include "scip/sepa_mcf.h"
-#include "scip/sepa_redcost.h"
+#include "scip/prop_redcost.h"
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
 #include "scip/sepa_rapidlearning.h"
 #include "scip/scipshell.h"
+
+#include "scip/prop_redcost.h"
+#include "scip/prop_rootredcost.h"
+#include "scip/prop_probing.h"
+#include "scip/prop_vbounds.h"
 
 #if 0
 #include "scip/cons_binpack.h"

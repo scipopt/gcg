@@ -538,6 +538,7 @@ SCIP_Bool consIsInBlock(
    assert(cons != NULL);
 
    nvars = 0; /* fix potential problems */
+   vars = NULL;
 
    /* TODO: maybe change that to SCIPgetNVarsXXX/SCIPgetNConssXXX */
    if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
@@ -703,7 +704,7 @@ SCIP_RETCODE createMaster(
 #endif
 
       /* disable expensive presolving */
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
+//      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/setppc/presolpairwise", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/logicor/presolpairwise", FALSE) );

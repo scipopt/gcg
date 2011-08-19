@@ -373,6 +373,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
          CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
+         SCIP_PROPTIMING_ALWAYS,
          consCopyOrigbranch, consFreeOrigbranch, consInitOrigbranch, consExitOrigbranch,
          consInitpreOrigbranch, consExitpreOrigbranch, consInitsolOrigbranch, consExitsolOrigbranch,
          consDeleteOrigbranch, consTransOrigbranch, consInitlpOrigbranch,

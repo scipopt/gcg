@@ -12,6 +12,7 @@
 /**@file   gcgplugins.c
  * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -21,7 +22,7 @@
 
 #define USEHEURS 1
 #define USESEPA 1
-
+#define USEPROP 1
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -49,7 +50,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
    //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
@@ -57,6 +57,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+#if USEPROP
+   SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropProbing(scip) );
+#endif
+
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
@@ -106,7 +111,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
-   SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif

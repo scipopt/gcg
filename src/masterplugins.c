@@ -12,6 +12,7 @@
 /**@file   masterplugins.c
  * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -24,6 +25,7 @@
 
 #define USEHEURS 1
 #define USESEPA 0
+#define USEPROP 1
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -50,8 +52,11 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolProbing(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
+
+#if USEPROP
+   SCIP_CALL( SCIPincludePropProbing(scip) );
+#endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
    //SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );

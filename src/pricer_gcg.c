@@ -1142,7 +1142,7 @@ SCIP_RETCODE createNewMasterVar(
    masterconss = GCGrelaxGetMasterConss(origprob);
    
    objvalue = 0.0;
-
+   redcost = 0.0;
 #if 0
    /* for integer variables, round the solution values */
    for( i = 0; i < nsolvars; i++ )

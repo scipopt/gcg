@@ -312,6 +312,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
          CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS, 
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
+         SCIP_PROPTIMING_ALWAYS,
          conshdlrCopyIntegralOrig, consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig, 
          consInitpreIntegralOrig, consExitpreIntegralOrig, consInitsolIntegralOrig, consExitsolIntegralOrig,
          consDeleteIntegralOrig, consTransIntegralOrig, consInitlpIntegralOrig,
