@@ -15,6 +15,7 @@
  * @ingroup PRICERS
  * @brief  pricer for generic column generation
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -1121,6 +1122,8 @@ SCIP_RETCODE createNewMasterVar(
    int j;
    int k;
 
+   SCIP_Bool trivialsol = FALSE;
+
    assert(scip != NULL);
    assert(solvars != NULL);
    assert(solvals != NULL);
@@ -1264,7 +1267,7 @@ SCIP_RETCODE createNewMasterVar(
       (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "p_%d_%d", prob, pricerdata->npointsprob[prob]);
       pricerdata->npointsprob[prob]++;
    }
-   
+
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(scip, &newvar, varname, 0, INT_MAX /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */, 
          objcoeff, pricerdata->vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
@@ -1275,9 +1278,25 @@ SCIP_RETCODE createNewMasterVar(
    newvardata->data.mastervardata.norigvars = 0;
 
    for( i = 0; i < nsolvars; i++ )
+   {
       if( !SCIPisZero(scip, solvals[i]) )
+      {
          newvardata->data.mastervardata.norigvars++;
+      }
+   }
 
+   /*
+    * if we have not added any original variable to the mastervariable, all coefficients were 0.
+    * In that case, we will add all variables in the pricing problem
+    */
+   if(newvardata->data.mastervardata.norigvars == 0)
+   {
+      newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
+      trivialsol = TRUE;
+   }
+
+
+//   assert(newvardata->data.mastervardata.norigvars > 0);
    /* TODO: switch from block memory to normal memory */
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
@@ -1294,7 +1313,7 @@ SCIP_RETCODE createNewMasterVar(
    j = 0;
 
    /* update variable datas */
-   for( i = 0; i < nsolvars; i++ )
+   for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
       if( !SCIPisZero(scip, solvals[i]) )
       {
@@ -1310,6 +1329,25 @@ SCIP_RETCODE createNewMasterVar(
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvars[0], newvar, solvals[i]) );
          j++;
+      }
+   }
+   if(trivialsol)
+   {
+      SCIP_VAR** pricingvars;
+      pricingvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
+      for( j = 0; j < SCIPgetNOrigVars(pricerdata->pricingprobs[prob]); ++j)
+      {
+         vardata = SCIPvarGetData(pricingvars[j]);
+         assert(vardata->vartype == GCG_VARTYPE_PRICING);
+         assert(vardata->data.pricingvardata.origvars != NULL);
+         assert(vardata->data.pricingvardata.origvars[0] != NULL);
+         assert(newvardata->data.mastervardata.origvars != NULL);
+         assert(newvardata->data.mastervardata.origvals != NULL);
+         /* save in the master problem variable's data the quota of the corresponding original variable */
+         newvardata->data.mastervardata.origvars[j] = pricingvars[j];
+         newvardata->data.mastervardata.origvals[j] = 0;
+         /* save the quota in the original variable's data */
+         SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvars[0], newvar, 0) );
       }
    }
    assert(j == newvardata->data.mastervardata.norigvars);
@@ -2121,11 +2159,12 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    SCIP_CALL( solversInitsol(scip, pricerdata) );
 
+#if 0 /* There is currently a problem with variables created from the trivial solution */
    if( GCGrelaxGetOrigPrimalSol(origprob) != NULL )
    {
       SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, GCGrelaxGetOrigPrimalSol(origprob)) );
    }
-
+#endif
    return SCIP_OKAY;
 }
 

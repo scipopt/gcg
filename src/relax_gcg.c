@@ -14,6 +14,7 @@
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
  * @author  Gerald Gamrath
+ * @author  Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -161,7 +162,6 @@ SCIP_DECL_VARDELORIG(gcgvardelorig)
          SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.coefs));
          SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.linkconss));
       }
-      
    }
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
    {
@@ -2630,6 +2630,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    /* free previous solution and clear branching candidates */
    if( relaxdata->currentorigsol != NULL )
    {
+      SCIPdebugMessage("Freeing previous solution origsol\n");
       SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
    }
    SCIPclearExternBranchCands(scip);
@@ -2644,12 +2645,19 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       /* create new solution */
       if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
+      {
+         SCIPdebugMessage("Masterproblem still solving, mastersol = NULL\n");
          mastersol = NULL;
+      }
       else if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED )
       {
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
          if( mastersol == NULL )
+         {
+            SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
+         }
+         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", mastersol);
       }
       else 
       {
@@ -2888,8 +2896,10 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
-               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
+               if(SCIPisZero(scip, vardata->data.mastervardata.origvals[j]))
+                  break;
 
+               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j]) != NULL);
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr >= -2);
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr < relaxdata->npricingprobs);
@@ -2897,7 +2907,8 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
                if( SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2 )
                   continue;
-               
+
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j] * mastervals[i], SCIPvarGetName(mastervars[i]));
                /* increase the corresponding value */
                SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[j], vardata->data.mastervardata.origvals[j] * mastervals[i]) );
             }
@@ -2918,6 +2929,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             assert(vardata->data.mastervardata.origvals[0] == 1.0);
 
             /* increase the corresponding value */
+            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata->data.mastervardata.origvars[0]), vardata->data.mastervardata.origvals[0] * mastervals[i],  SCIPvarGetName(mastervars[i]));
             SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;
          }
@@ -2927,6 +2939,9 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
+
+               if(SCIPisZero(scip, vardata->data.mastervardata.origvals[j]))
+                  break;
                assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
 
                assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j]) != NULL);
@@ -2949,6 +2964,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* just in case a variable has a value higher than the number of blocks, it represents */
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
                {
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1]), mastervals[i] * vardata->data.mastervardata.origvals[j], SCIPvarGetName(mastervars[i]));
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], mastervals[i] * vardata->data.mastervardata.origvals[j]) );
                   mastervals[i] = 1.0;
@@ -2956,6 +2972,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* this should be default */
                else
                {              
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]]), vardata->data.mastervardata.origvals[j], SCIPvarGetName(mastervars[i]) );
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
                }
@@ -2990,6 +3007,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             assert(vardata->data.mastervardata.norigvars == 1);
             assert(vardata->data.mastervardata.origvals[0] == 1.0);
 
+            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata->data.mastervardata.origvars[0]), vardata->data.mastervardata.origvals[0] * mastervals[i], SCIPvarGetName(mastervars[i]) );
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;
@@ -3025,13 +3043,15 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
                {
                   increaseval = mastervals[i];
-                  
+
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1]),vardata->data.mastervardata.origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j] * increaseval) );
                }
                else
                {
                   /* increase the corresponding value */
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]]), vardata->data.mastervardata.origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j] * increaseval) );
                }
             }
