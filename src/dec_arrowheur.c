@@ -70,6 +70,8 @@
 #define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
+#define DEFAULT_PRIORITY                  DEC_PRIORITY
+
 
 #define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
    "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
@@ -155,7 +157,7 @@ struct DEC_DetectorData
    SCIP_Bool metisverbose;
    SCIP_Bool metisuseptyperb;
    SCIP_CLOCK *metisclock;
-
+   int priority;
 };
 
 enum htype
@@ -1648,6 +1650,20 @@ DEC_DECL_SETSTRUCTDECOMP(ArrowheurSetDecomp)
    detectordata->decdecomp = decdecomp;
 }
 
+static
+DEC_DECL_GETPRIORITY(getPriority)
+{
+   DEC_DETECTOR* arrowheur;
+   DEC_DETECTORDATA* detectordata;
+   assert(scip != NULL);
+   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
+   detectordata = DECdetectorGetData(arrowheur);
+   assert(detectordata != NULL);
+
+   assert(strcmp(DECdetectorGetName(arrowheur), DEC_DETECTORNAME) == 0);
+   return detectordata->priority;
+}
+
 /** creates the arrowheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
@@ -1663,7 +1679,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, DEC_PRIORITY, detectordata, detectAndBuildArrowhead, ArrowheurSetDecomp, initArrowheur, exitArrowheur));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildArrowhead, ArrowheurSetDecomp, initArrowheur, exitArrowheur, getPriority));
 
 
    /* add arrowheur presolver parameters */
@@ -1694,5 +1710,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ));
    SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ));
    SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL));
+   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/priority", "random seed for hmetis", &detectordata->priority, FALSE, DEFAULT_PRIORITY, INT_MIN, INT_MAX, NULL, NULL));
+
    return SCIP_OKAY;
 }

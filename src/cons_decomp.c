@@ -310,6 +310,18 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
+      for (i = 0; i < conshdlrdata->ndetectors; ++i)
+      {
+         DEC_DETECTOR *detector;
+         detector = conshdlrdata->detectors[i];
+         assert(detector != NULL);
+         conshdlrdata->priorities[i] = detector->getPriority(scip);
+      }
+
+      SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+      SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+
+
       SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
       for(i = 0; i < conshdlrdata->ndetectors; ++i)
       {
@@ -358,6 +370,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+
    for(i = 0; i < conshdlrdata->ndetectors; ++i)
    {
       DEC_DETECTOR *detector;
@@ -565,12 +578,12 @@ extern
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,
    const char *name,
-   int priority,
    DEC_DETECTORDATA *detectordata,
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),
    DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),
    DEC_DECL_INITDETECTOR((*initDetector)),
-   DEC_DECL_EXITDETECTOR((*exitDetector))
+   DEC_DECL_EXITDETECTOR((*exitDetector)),
+   DEC_DECL_GETPRIORITY((*getPriority))
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -598,21 +611,17 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->decdata = detectordata;
    detector->name = name;
-   detector->priority = priority;
    detector->detectStructure = detectStructure;
    detector->initDetection = initDetector;
    detector->setStructDecomp = setStructDecomp;
    detector->exitDetection = exitDetector;
-
+   detector->getPriority = getPriority;
+   detector->i = conshdlrdata->ndetectors;
    SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1));
    SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1));
 
    conshdlrdata->detectors[conshdlrdata->ndetectors] = detector;
-   conshdlrdata->priorities[conshdlrdata->ndetectors] = priority;
    conshdlrdata->ndetectors = conshdlrdata->ndetectors+1;
-
-   SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-   SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
 
    return SCIP_OKAY;
 

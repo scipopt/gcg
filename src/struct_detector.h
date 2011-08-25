@@ -31,8 +31,9 @@ struct DEC_Detector {
    DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp));
    DEC_DECL_DETECTSTRUCTURE((*detectStructure));
    DEC_DECL_EXITDETECTOR((*exitDetection));
+   DEC_DECL_GETPRIORITY((*getPriority));
    DEC_DETECTORDATA* decdata;
-   int priority;
+   int i;
    const char *name;
 };
 

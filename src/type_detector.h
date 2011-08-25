@@ -45,7 +45,7 @@ extern "C" {
  */
 #define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)
 
-
+#define DEC_DECL_GETPRIORITY(x) int x (SCIP* scip)
 
 #ifdef __cplusplus
 }

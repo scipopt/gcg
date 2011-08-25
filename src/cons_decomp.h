@@ -77,12 +77,12 @@ extern
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,
    const char *name,
-   int priority,
    DEC_DETECTORDATA *detectordata,
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),
    DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),
    DEC_DECL_INITDETECTOR((*initDetector)),
-   DEC_DECL_EXITDETECTOR((*exitDetector))
+   DEC_DECL_EXITDETECTOR((*exitDetector)),
+   DEC_DECL_GETPRIORITY((*getPriority))
    );
 
 #ifdef __cplusplus
