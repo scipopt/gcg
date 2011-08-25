@@ -21,7 +21,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "cons_decomp.h"
@@ -96,6 +96,8 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
 {
    int i;
    int j;
+   int k;
+   int v;
    int nvars;
    SCIP_VAR** origvars;
    SCIP_HASHMAP* transvar2origvar;
@@ -146,6 +148,41 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
          }
       }
    }
+   for(i = 0; i < decdecomp->nlinkingvars; ++i)
+   {
+      if(SCIPvarGetData(decdecomp->linkingvars[i]) == NULL)
+      {
+         int found;
+         SCIP_CALL(GCGrelaxCreateOrigVardata(scip, getRelevantVariable(decdecomp->linkingvars[i])));
+         /* HACK; TODO: find out constraint blocks */
+         for( j = 0; j < decdecomp->nblocks; ++j)
+         {
+            found = FALSE;
+            for( k = 0; k < decdecomp->nsubscipconss[j]; ++k)
+            {
+               SCIP_VAR** curvars;
+               int        ncurvars;
+               curvars = SCIPgetVarsXXX(scip, decdecomp->subscipconss[j][k]);
+               ncurvars = SCIPgetNVarsXXX(scip, decdecomp->subscipconss[j][k]);
+
+               for(v = 0; v < ncurvars; ++v)
+               {
+                  if(SCIPvarGetProbvar(curvars[v]) == decdecomp->linkingvars[i])
+                  {
+                     SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j));
+                     found = TRUE;
+                     break;
+                  }
+               }
+               SCIPfreeMemoryArray(scip, &curvars);
+               if(found)
+                  break;
+            }
+         }
+      }
+   }
+
    SCIPhashmapFree(&transvar2origvar);
    return SCIP_OKAY;
 }

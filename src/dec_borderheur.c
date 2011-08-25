@@ -485,7 +485,10 @@ SCIP_RETCODE callMetis(
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
    SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock), remainingtime-SCIPgetTotalTime(scip) );
-//   SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, detectordata->metisclock))));
+   if(!SCIPisInfinity(scip, remainingtime))
+   {
+      SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, detectordata->metisclock))));
+   }
 
    SCIPdebugMessage("Metis took %fs.\n", SCIPgetClockTime(scip, detectordata->metisclock));
    /* check error codes */
@@ -675,7 +678,7 @@ static SCIP_RETCODE buildTransformedProblem(
          long int varblock;
          if(!isVarRelevant(curvars[j]))
          {
-            SCIPprintVar(scip, curvars[j], NULL);
+//            SCIPprintVar(scip, curvars[j], NULL);
             continue;
          }
          var = SCIPvarGetProbvar(curvars[j]);
@@ -961,7 +964,6 @@ SCIP_RETCODE evaluateDecomposition(
             //SCIPinfoMessage(scip, NULL, "b: %d", block);
             if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
             {
-
                ++(nlinkvarsblocks[i]);
             }
             ishandled[SCIPvarGetProbindex(var)] = TRUE;

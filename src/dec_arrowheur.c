@@ -590,17 +590,21 @@ static SCIP_RETCODE buildGraphStructure(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         int varIndex = SCIPvarGetProbindex(vars[j]);
+         SCIP_VAR* var;
+         int varIndex;
 
          /* if the variable is inactive, skip it */
-         if(varIndex == -1)
+         if(!isVarRelevant(vars[j]))
          {
             continue;
          }
+         var = SCIPvarGetProbvar(vars[j]);
+         assert(var != NULL);
+         varIndex = SCIPvarGetProbindex(var);
          /* assert that the variable is active and not multiaggregated, otherwise, the mapping will be wrong */
          /* the multiaggregation is useless, if we don't presolve, it might be interesting otherwise */
-         assert(SCIPvarIsActive(vars[j]));
-         assert(SCIPvarGetStatus(vars[j]) != SCIP_VARSTATUS_MULTAGGR);
+         assert(SCIPvarIsActive(var));
+         assert(SCIPvarGetStatus(var) != SCIP_VARSTATUS_MULTAGGR);
 
          /* add the variable id to the end of the variable id array and update the size */
          varids[hedge->nvariableIds] = id;
@@ -748,7 +752,7 @@ SCIP_RETCODE callMetis(
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(!SCIPfileExists(tempfile));
+
 
    *result = SCIP_DIDNOTRUN;
 
@@ -769,7 +773,6 @@ SCIP_RETCODE callMetis(
       SCIPerrorMessage("Error creating temporary file: %s", strerror( errno ));
       return SCIP_FILECREATEERROR;
    }
-
    SCIPdebugMessage("Temporary filename: %s", tempfile);
 
    file = fdopen(temp_filedes, "w");
@@ -803,6 +806,7 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
+   assert(remainingtime-SCIPgetTotalTime(scip) > 0);
    /* call metis via syscall as there is no library usable ... */
    if(!SCIPisInfinity(scip, remainingtime))
    {
@@ -835,18 +839,24 @@ SCIP_RETCODE callMetis(
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
-   SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetSolvingTime(scip)-SCIPgetClockTime(scip, detectordata->metisclock))));
+   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock), remainingtime-SCIPgetTotalTime(scip) );
+   if(!SCIPisInfinity(scip, remainingtime))
+   {
+      SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, detectordata->metisclock))));
+   }
 
    SCIPdebugMessage("Metis took %fs.\n", SCIPgetClockTime(scip, detectordata->metisclock));
-
    /* check error codes */
    if( status == -1 )
    {
-      SCIPerrorMessage("System call did not succed: %s", strerror( errno ));
+      SCIPerrorMessage("System call did not succed: %s\n", strerror( errno ));
+      SCIPerrorMessage("Call was %s\n", metiscall);
    }
    else if( status != 0 )
    {
-      SCIPerrorMessage("Calling hmetis unsuccessful! See the above error message for more details.");
+
+      SCIPerrorMessage("Calling hmetis unsuccessful! See the above error message for more details.\n");
+      SCIPerrorMessage("Call was %s\n", metiscall);
    }
 
    /* exit gracefully in case of errors */
@@ -1041,15 +1051,16 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          SCIP_VAR* var;
          long int varblock = -1;
-         if(!SCIPvarIsActive(curvars[j]))
+         if(!isVarRelevant(curvars[j]))
          {
+//            SCIPprintVar(scip, curvars[j], NULL);
             continue;
          }
-         assert(SCIPvarIsActive(curvars[j]));
-         assert(!SCIPvarIsDeleted(curvars[j]));
+         var = SCIPvarGetProbvar(curvars[j]);
 
-         var = curvars[j];
-
+         assert(var != NULL);
+         assert(SCIPvarIsActive(var));
+         assert(!SCIPvarIsDeleted(var));
          /*
           * if the variable has already been handled, we do not need to look
           * at it again and only need to set the constraint
@@ -1074,6 +1085,7 @@ static SCIP_RETCODE buildTransformedProblem(
                varblock = detectordata->varpart[SCIPvarGetProbindex(var)];
                assert(varblock < detectordata->blocks);
                subscipvars[varblock][nsubscipvars[varblock]] = var;
+               SCIPdebugMessage("v: %s\n", SCIPvarGetName(var));
                ++(nsubscipvars[varblock]);
             }
             /*
@@ -1083,7 +1095,7 @@ static SCIP_RETCODE buildTransformedProblem(
             else
             {
                varblock = detectordata->blocks+1;
-
+               SCIPdebugMessage("v: %s\n", SCIPvarGetName(var));
                linkingvars[nlinkingvars] = var;
                ++nlinkingvars;
             }
@@ -1173,7 +1185,7 @@ static SCIP_RETCODE buildTransformedProblem(
       int partitionOfVar;
       if( detectordata->varpart[i] < 0 )
       {
-         switch(SCIPvarGetType(vars[i]))
+         switch(SCIPvarGetType(SCIPvarGetProbvar(vars[i])))
          {
          case SCIP_VARTYPE_BINARY:
             score->minkequicutscore += detectordata->varWeightBinary;
@@ -1205,12 +1217,14 @@ static SCIP_RETCODE buildTransformedProblem(
 
       if( partitionOfVar != -1 )
       {
-         subscipvars[partitionOfVar][nsubscipvars[partitionOfVar]] = vars[i];
+         subscipvars[partitionOfVar][nsubscipvars[partitionOfVar]] = SCIPvarGetProbvar(vars[i]);
+         SCIPdebugMessage("v: %s\n", SCIPvarGetName(SCIPvarGetProbvar(vars[i])));
          ++nsubscipvars[partitionOfVar];
       }
       else
       {
-         linkingvars[nlinkingvars] = vars[i];
+         SCIPdebugMessage("v: %s\n", SCIPvarGetName(SCIPvarGetProbvar(vars[i])));
+         linkingvars[nlinkingvars] = SCIPvarGetProbvar(SCIPvarGetProbvar(vars[i]));
          ++nlinkingvars;
       }
 
@@ -1367,6 +1381,7 @@ SCIP_RETCODE evaluateDecomposition(
       for( j = 0; j < ncurconss; ++j)
       {
          SCIP_VAR** curvars;
+         SCIP_VAR* var;
          int ncurvars;
 
          curvars = SCIPgetVarsXXX(scip, curconss[j]);
@@ -1374,20 +1389,22 @@ SCIP_RETCODE evaluateDecomposition(
          for( k = 0; k < ncurvars; ++k)
          {
             long int block;
-            if(!SCIPvarIsActive(curvars[k]))
+            if(!isVarRelevant(curvars[k]))
                continue;
 
-
+            var = SCIPvarGetProbvar(curvars[k]);
+            assert(var != NULL);
+            assert(SCIPvarIsActive(var));
+            assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
-            assert(SCIPhashmapExists(detectordata->varstoblock, curvars[k]));
-            block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, curvars[k]);
+            assert(SCIPhashmapExists(detectordata->varstoblock, var));
+            block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, var);
             //SCIPinfoMessage(scip, NULL, "b: %d", block);
-            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(curvars[k])] == FALSE)
+            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
             {
-
                ++(nlinkvarsblocks[i]);
             }
-            ishandled[SCIPvarGetProbindex(curvars[k])] = TRUE;
+            ishandled[SCIPvarGetProbindex(var)] = TRUE;
          }
 
          SCIPfreeMemoryArray(scip, &curvars);

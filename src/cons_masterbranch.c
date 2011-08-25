@@ -1239,7 +1239,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
                /* TODO: LINK: mb: the assertion will fail in any case */
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr);
+               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr
+                     ||SCIPvarGetData(vardata->data.mastervardata.origvars[j])->data.origvardata.linkingvardata->pricingvars[vardata->blocknr] != NULL);
 
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */

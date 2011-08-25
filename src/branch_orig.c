@@ -527,10 +527,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          vardata = SCIPvarGetData(branchcands[i]);
          assert(vardata != NULL);
          assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+         assert(vardata->blocknr >= -2 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
       
          /* variable belongs to no block or the block is not unique */
-         if( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+         if( vardata->blocknr <= -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
             continue;
 
          branchvar = branchcands[i];
