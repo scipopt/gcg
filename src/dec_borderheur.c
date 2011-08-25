@@ -17,11 +17,11 @@
 /**@file   presol_borderheur.c
  * @ingroup PRESOLVERS
  * @brief  borderheur presolver
- * @author Tobias Achterberg
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "scip/scipdefplugins.h"
@@ -451,12 +451,12 @@ SCIP_RETCODE callMetis(
       SCIPerrorMessage("Could not close '%s'\n", tempfile);
       return SCIP_WRITEERROR;
    }
-
+   assert(remainingtime-SCIPgetTotalTime(scip) > 0);
    /* call metis via syscall as there is no library usable ... */
    if(!SCIPisInfinity(scip, remainingtime))
    {
       SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0fs ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
-               remainingtime-SCIPgetSolvingTime(scip),
+               remainingtime-SCIPgetTotalTime(scip),
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -484,17 +484,21 @@ SCIP_RETCODE callMetis(
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
-   SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetSolvingTime(scip)-SCIPgetClockTime(scip, detectordata->metisclock))));
+   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock), remainingtime-SCIPgetTotalTime(scip) );
+//   SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, detectordata->metisclock))));
 
    SCIPdebugMessage("Metis took %fs.\n", SCIPgetClockTime(scip, detectordata->metisclock));
    /* check error codes */
    if( status == -1 )
    {
       SCIPerrorMessage("System call did not succed: %s\n", strerror( errno ));
+      SCIPerrorMessage("Call was %s\n", metiscall);
    }
    else if( status != 0 )
    {
-      SCIPerrorMessage("Calling hmetis unsuccessful! See the above error message for more details.");
+
+      SCIPerrorMessage("Calling hmetis unsuccessful! See the above error message for more details.\n");
+      SCIPerrorMessage("Call was %s\n", metiscall);
    }
 
    /* exit gracefully in case of errors */
