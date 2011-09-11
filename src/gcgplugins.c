@@ -132,6 +132,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );
+   SCIP_CALL( SCIPincludeHeurExtremepoints(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );

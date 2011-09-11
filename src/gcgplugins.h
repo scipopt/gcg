@@ -129,6 +129,7 @@
 
 /* Christian's heuristics */
 #include "heur_clasfeaspump.h"
+#include "heur_extremepoints.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
