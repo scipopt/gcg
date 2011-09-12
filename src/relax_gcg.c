@@ -1335,8 +1335,15 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
    if( !SCIPisInfinity(scip, timelimit) )
    {
-      SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "limits/time",
-            timelimit - SCIPgetTotalTime(scip) + SCIPgetTotalTime(masterprob)) );
+      double tilim;
+      SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time",
+            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob)) );
+      SCIP_CALL(SCIPgetRealParam(masterprob, "limits/time", &tilim));
+
+      SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n", 
+            timelimit - SCIPgetSolvingTime(scip), 
+            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob), 
+            tilim - SCIPgetSolvingTime(masterprob));
    }
 
    /* only solve the relaxation if it was not yet solved at the current node */
@@ -1355,6 +1362,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       if(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT)
       {
+         if(!SCIPisStopped(scip))
+         {
+            double tilim;
+            SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &tilim));
+            SCIPerrorMessage("Time limit: %f elapsed: %f left: %f\n", tilim, SCIPgetSolvingTime(scip), tilim - SCIPgetSolvingTime(scip));
+         }
          assert(SCIPisStopped(scip));
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
