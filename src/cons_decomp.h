@@ -85,6 +85,11 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_GETPRIORITY((*getPriority))
    );
 
+extern
+SCIP_Real DECgetRemainingTime(
+   SCIP* scip
+   );
+
 #ifdef __cplusplus
 }
 #endif

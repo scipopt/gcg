@@ -37,6 +37,7 @@
 #include "struct_decomp.h"
 #include "string.h"
 #include "scip_misc.h"
+#include "scip/clock.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -78,6 +79,7 @@ struct SCIP_ConshdlrData
    int *priorities;
    int ndetectors;
    int usedetection;
+   SCIP_CLOCK* detectorclock;
 };
 
 
@@ -284,6 +286,18 @@ void decdecompFree(
 #define consCopyDecomp NULL
 #define consParseDecomp NULL
 
+extern
+SCIP_Real DECgetRemainingTime(SCIP* scip)
+{
+   SCIP_Real timelimit;
+   assert(scip != NULL);
+   SCIP_CALL_ABORT(SCIPgetRealParam(scip, "limits/time", &timelimit));
+   if(!SCIPisInfinity(scip, timelimit))
+      timelimit -= SCIPgetSolvingTime(scip);
+   return timelimit;
+}
+
+
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
@@ -292,9 +306,14 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
    int i;
+   SCIP_Real remainingtime;
+
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
+   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
+   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
    SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
    reader = SCIPfindReader(scip, "refreader");
@@ -351,7 +370,14 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
       SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
    }
-
+   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
+   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
+   remainingtime = DECgetRemainingTime(scip);
+   if(!SCIPisInfinity(scip, remainingtime))
+   {
+//      SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &remainingtime));
+//      SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, conshdlrdata->detectorclock))));
+   }
 //   SCIPsnprintf(filename, SCIP_MAXSTRLEN, "%s_%d_dec.lp", SCIPgetProbName(scip), conshdlrdata->decdecomp->nblocks);
 //   SCIP_CALL(SCIPwriteOrigProblem(scip, "prob_dec.lp", "lp", FALSE));
 
@@ -383,6 +409,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       }
    }
    decdecompFree(scip, &conshdlrdata->decdecomp);
+   SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
    SCIPfreeBlockMemory(scip, &conshdlrdata);

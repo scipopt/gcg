@@ -1322,7 +1322,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
-   
+
    SCIPdebugMessage("solving node %lld's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 
    /* construct the LP in the original problem */

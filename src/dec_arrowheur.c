@@ -758,8 +758,9 @@ SCIP_RETCODE callMetis(
 
    *result = SCIP_DIDNOTRUN;
 
-   SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &remainingtime));
-   if(remainingtime == 0)
+   remainingtime = DECgetRemainingTime(scip);
+
+   if(remainingtime <= 0)
    {
       return SCIP_OKAY;
    }
@@ -808,12 +809,11 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
-   assert(remainingtime-SCIPgetTotalTime(scip) > 0);
    /* call metis via syscall as there is no library usable ... */
-   if(!SCIPisInfinity(scip, remainingtime))
+   if(!SCIPisInfinity(scip, DECgetRemainingTime(scip)))
    {
       SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0fs ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
-               remainingtime-SCIPgetSolvingTime(scip),
+               remainingtime,
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -841,13 +841,7 @@ SCIP_RETCODE callMetis(
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
-   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock), remainingtime-SCIPgetTotalTime(scip) );
-   if(!SCIPisInfinity(scip, remainingtime))
-   {
-      SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, detectordata->metisclock))));
-   }
-
-   SCIPdebugMessage("Metis took %fs.\n", SCIPgetClockTime(scip, detectordata->metisclock));
+   SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock),  remainingtime-SCIPgetClockTime(scip, detectordata->metisclock) );
    /* check error codes */
    if( status == -1 )
    {
