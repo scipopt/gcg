@@ -16,8 +16,12 @@
 
 /**@file   cons_decomp.c
  * @ingroup CONSHDLRS 
- * @brief  constraint handler for decomp constraints
+ * @brief  constraint handler for structure detection
  * @author Martin Bergner
+ *
+ * This constraint handler will run all registered structure detectors in
+ * increasing priority until the first detector finds a suitable structure.
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

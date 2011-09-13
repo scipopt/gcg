@@ -10,6 +10,7 @@
 #pragma ident "@(#) $Id$"
 
 /**@file   type_branchgcg.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for branching rules in gcg projects
  * @author Gerald Gamrath
  */

@@ -45,3 +45,39 @@ v050:
   the bounds of all variables in the pricing problem and variables cpoied to the master are adjusted,
   for all master variables created by the pricer, it is checked whether they fulfill the current bounds
 - fixed bug when disabling discretization approach
+
+v060:
+- implemented dialog handler for GCG
+- added more test data
+- added pricing solvers
+- added solveheur callback 
+- displayed statistics
+- fixed bugs
+
+v070:
+- fixed some more bugs
+
+v080:
+- added interface to define pricing problems
+- bug fixes
+- polished source code 
+
+next:
+- included detection
+  * arrowhead detection using hmetis
+  * bordered detection using hmetis
+- included new heuristics
+- included new reader for the ref file format
+- fixed multiple bugs related to timing issues
+- fixed bugs related to working with the presolved problem
+- added more extensive test framework
+- added gnuplot visualization reader
+- branch also on pseudosolutions
+- added much more extensive documentation
+- adjusted to latest SCIP git version
+- added support for linking variables
+- added generalized reliability branching using probing
+- added constraint handler to enforce integral original variables
+- allow master to be accessed from the command line interface
+- support probing for heuristics
+- allow for unbounded pricing problems
