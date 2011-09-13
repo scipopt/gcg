@@ -508,7 +508,7 @@ SCIP_RETCODE solvePricingProblem(
 
       /*get time limit */
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 0 )
+      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetSolvingTime(scip) < 0 )
       {
          *nsols = 0;
          *status = SCIP_STATUS_TIMELIMIT;
@@ -581,7 +581,7 @@ SCIP_RETCODE solvePricingProblemHeur(
    {
       /*get time limit */
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetTotalTime(scip) < 1 )
+      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetSolvingTime(scip) < 1 )
       {
          *nsols = 0;
          *status = SCIP_STATUS_TIMELIMIT;
@@ -1784,13 +1784,15 @@ SCIP_RETCODE performPricing(
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {
-            if( timelimit - SCIPgetTotalTime(scip) > 0 )
+            if( timelimit - SCIPgetSolvingTime(scip) > 0 )
             {
                SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
-                     timelimit - SCIPgetTotalTime(scip)) );
+                     timelimit - SCIPgetSolvingTime(scip)) );
+               SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, timelimit- SCIPgetSolvingTime(scip) + 5);
             }
             else
             {
+               SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
                if( pricetype == GCG_PRICETYPE_REDCOST )
                   *result = SCIP_DIDNOTRUN;
 
@@ -1872,9 +1874,11 @@ SCIP_RETCODE performPricing(
             {
                SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
                      timelimit - SCIPgetTotalTime(scip)) );
+               SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, timelimit- SCIPgetSolvingTime(scip) + 5);
             }
             else
             {
+               SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
                if( pricetype == GCG_PRICETYPE_REDCOST )
                   *result = SCIP_DIDNOTRUN;
 

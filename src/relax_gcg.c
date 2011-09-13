@@ -1337,12 +1337,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       double tilim;
       SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time",
-            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob)) );
+            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob) + 3) );
       SCIP_CALL(SCIPgetRealParam(masterprob, "limits/time", &tilim));
 
       SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n", 
             timelimit - SCIPgetSolvingTime(scip), 
-            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob), 
+            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob) + 3,
             tilim - SCIPgetSolvingTime(masterprob));
    }
 
@@ -2203,7 +2203,7 @@ SCIP_RETCODE GCGrelaxMarkConsMaster(
       SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), SCIPgetNConss(scip)) );
       relaxdata->nmarkedmasterconss = 0;
    }
-   assert(relaxdata->nmarkedmasterconss + 1 < SCIPgetNConss(scip));
+   assert(relaxdata->nmarkedmasterconss < SCIPgetNConss(scip));
 
 #ifndef NDEBUG
    /* check that constraints are not marked more than one time */
