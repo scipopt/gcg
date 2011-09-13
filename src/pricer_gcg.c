@@ -2387,18 +2387,20 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
 
    /* update number of reduced cost pricing rounds at the current node */
-   if( SCIPgetNTotalNodes(scip) == pricerdata->currnodenr )
+   if( SCIPgetNNodes(scip) == pricerdata->currnodenr )
    {
       pricerdata->nroundsredcost++;
    }
    else
    {
-      pricerdata->currnodenr = SCIPgetNTotalNodes(scip);
+      pricerdata->currnodenr = SCIPgetNNodes(scip);
       pricerdata->nroundsredcost = 0;
    }
 
-   /* if the number of reduced cost pricing rounds at the current node exceeds the limit (and we are not at the root), stop pricing */
-   if( pricerdata->nroundsredcost >= pricerdata->maxroundsredcost && pricerdata->currnodenr != 1)
+   /* if the number of reduced cost pricing rounds at the current node exceeds the limit (and we are not at the root), stop pricing;
+    * we always stop pricing, if the maximum number of reduced cost rounds is set to 0
+    */
+   if( pricerdata->maxroundsredcost == 0 || (pricerdata->nroundsredcost >= pricerdata->maxroundsredcost && pricerdata->currnodenr != 1) )
    {
       SCIPdebugMessage("pricing aborted at node %lld\n", pricerdata->currnodenr);
       return SCIP_OKAY;
