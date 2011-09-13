@@ -25,6 +25,7 @@
 #include "type_solver.h"
 #include "struct_vardata.h"
 #include "pricer_gcg.h"
+#include "relax_gcg.h"
 
 
 
