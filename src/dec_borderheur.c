@@ -12,30 +12,27 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: presol_borderheur.c,v 1.24 2010/01/04 20:35:45 bzfheinz Exp $"
+#pragma ident "@(#) $Id: dec_borderheur.c,v 1.24 2010/01/04 20:35:45 bzfheinz Exp $"
 
-/**@file   presol_borderheur.c
- * @ingroup PRESOLVERS
+/**@file   dec_borderheur.c
+ * @ingroup DETECTORS
  * @brief  borderheur presolver
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #define SCIP_DEBUG
+
 #include <assert.h>
-
-#include "scip/scipdefplugins.h"
-
-#include "dec_borderheur.h"
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "scip_misc.h"
-
-//#include <cstdio>
-#include <math.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+
+#include "dec_borderheur.h"
+
+#include "cons_decomp.h"
+#include "struct_decomp.h"
+#include "scip_misc.h"
 
 #define DEC_DETECTORNAME      "borderheur"   /**< name of the detector */
 #define DEC_PRIORITY          0              /**< priority of the detector */
@@ -72,7 +69,7 @@ struct hyperedge
 typedef struct hyperedge HyperEdge;
 
 /** score data structure **/
-struct SCIP_BorderheurScores
+struct Dec_BorderheurScores
 {
    SCIP_Real borderscore;
    SCIP_Real minkequicutscore;
@@ -80,8 +77,9 @@ struct SCIP_BorderheurScores
    SCIP_Real densityscore;
    SCIP_Real linkingscore;
 };
-typedef struct SCIP_BorderheurScores SCIP_BORDERHEURSCORES;
-/** presolver data */
+typedef struct Dec_BorderheurScores DEC_BORDERHEURSCORES;
+
+/** detector data */
 struct DEC_DetectorData
 {
    DECDECOMP* decdecomp;
@@ -129,11 +127,12 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
+/** Prints the score of the decomposition */
 static
 SCIP_RETCODE printBorderheurScores(
-      SCIP*                 scip,
-      DEC_DETECTORDATA*   detectordata,
-      SCIP_BORDERHEURSCORES* scores
+      SCIP*                 scip,           /**< SCIP data structure */
+      DEC_DETECTORDATA*     detectordata,   /**< detectordata data structure */
+      DEC_BORDERHEURSCORES* scores          /**< score data structure */
       )
 {
    char name[SCIP_MAXSTRLEN];
@@ -613,7 +612,7 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                    scip,           /**< SCIP data structure */
    DEC_DETECTORDATA*      detectordata,  /**< presolver data data structure */
-   SCIP_BORDERHEURSCORES*    score           /**< scores */
+   DEC_BORDERHEURSCORES*    score           /**< scores */
    )
 {
    SCIP_Bool *isVarHandled;
@@ -866,7 +865,7 @@ static
 SCIP_RETCODE evaluateDecomposition(
       SCIP*                 scip,           /**< SCIP data structure */
       DEC_DETECTORDATA*   detectordata,  /**< presolver data data structure */
-      SCIP_BORDERHEURSCORES* score           /**< returns the score of the decomposition */
+      DEC_BORDERHEURSCORES* score           /**< returns the score of the decomposition */
       )
 {
    char name[SCIP_MAXSTRLEN];
@@ -1032,7 +1031,7 @@ static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 {
 
-   SCIP_BORDERHEURSCORES score;
+   DEC_BORDERHEURSCORES score;
    int i;
    //char filename[SCIP_MAXSTRLEN];
    DEC_DETECTOR* borderheur;

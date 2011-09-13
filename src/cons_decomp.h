@@ -27,7 +27,7 @@
 
 #include "scip/scip.h"
 #include "type_detector.h"
-#include "type_decomp.h"
+
 typedef struct DEC_Detector DEC_DETECTOR;
 typedef struct DEC_DetectorData DEC_DETECTORDATA;
 

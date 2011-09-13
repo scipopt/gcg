@@ -17,7 +17,7 @@
 /**@file   cons_decomp.c
  * @ingroup CONSHDLRS 
  * @brief  constraint handler for decomp constraints
- * @author Tobias Achterberg
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

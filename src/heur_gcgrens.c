@@ -29,7 +29,6 @@
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
-#include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 

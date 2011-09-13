@@ -22,20 +22,18 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/scip.h"
 #include "scip/scipdefplugins.h"
+
+#include "relax_gcg.h"
 
 #include "struct_vardata.h"
 #include "struct_branchgcg.h"
-#include "type_branchgcg.h"
 
-#include "relax_gcg.h"
-#include "gcgplugins.h"
+#include "cons_origbranch.h"
+#include "cons_masterbranch.h"
 #include "pricer_gcg.h"
 #include "masterplugins.h"
-#include "pricingplugins.h"
 #include "nodesel_master.h"
-
 
 
 #define RELAX_NAME             "gcg"

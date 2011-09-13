@@ -18,8 +18,7 @@
 #define CONSORIGBRANCH_H
 
 #include "scip/scip.h"
-#include "cons_masterbranch.h"
-#include "struct_branchgcg.h"
+#include "type_branchgcg.h"
 
 
 /** returns the store graph constraint of the current node, needs only the pointer to scip */

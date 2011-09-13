@@ -21,7 +21,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/scip.h"
 #include "scip/pub_dialog.h"
 #include "scip/type_dialog.h"
 

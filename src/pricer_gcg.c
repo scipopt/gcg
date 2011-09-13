@@ -23,19 +23,15 @@
 #include <assert.h>
 #include <string.h>
 
-#include "pricer_gcg.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
-#include "scip/scip.h"
+
+#include "pricer_gcg.h"
 #include "sepa_master.h"
 #include "struct_vardata.h"
+#include "relax_gcg.h"
 #include "struct_solver.h"
-#include "type_solver.h"
 #include "scip_misc.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
 
 #define PRICER_NAME            "gcg"
 #define PRICER_DESC            "pricer for gcg"

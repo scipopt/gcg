@@ -26,7 +26,6 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 
-#include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 #include "scip/pub_misc.h"

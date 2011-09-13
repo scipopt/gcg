@@ -19,10 +19,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/type_cons.h"
-#include "scip/cons_linear.h"
 #include "cons_origbranch.h"
+
+#include "scip/cons_linear.h"
+
 #include "relax_gcg.h"
+#include "cons_masterbranch.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "origbranch"

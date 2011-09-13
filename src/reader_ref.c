@@ -11,6 +11,7 @@
 //#define SCIP_DEBUG
 /**@file   reader_ref.c
  * @brief  REF file reader for files *ref.txt
+ * @ingroup FILEREADERS
  * @author Gerald Gamrath
  * @author Christian Puchert
  *

@@ -20,10 +20,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/type_cons.h"
+#include "cons_masterbranch.h"
+
 #include "scip/cons_linear.h"
 
-#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"

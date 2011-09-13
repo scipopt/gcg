@@ -12,34 +12,32 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: presol_arrowheur.c,v 1.24 2010/01/04 20:35:45 bzfheinz Exp $"
+#pragma ident "@(#) $Id: dec_arrowheur.c,v 1.24 2010/01/04 20:35:45 bzfheinz Exp $"
 
-/**@file   presol_arrowheur.c
- * @ingroup PRESOLVERS
+/**@file   dec_arrowheur.c
+ * @ingroup DETECTORS
  * @brief  arrowheur presolver
- * @author Tobias Achterberg
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 //#define SCIP_DEBUG
+
 #include <assert.h>
-
-#include "scip/scipdefplugins.h"
-
-#include "dec_arrowheur.h"
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "scip_misc.h"
-
-//#include <cstdio>
-#include <math.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 
+#include "dec_arrowheur.h"
+
+#include "cons_decomp.h"
+#include "struct_decomp.h"
+#include "scip_misc.h"
+#include "scip/cons_linear.h"
+#include "scip/cons_setppc.h"
+
 #define DEC_DETECTORNAME      "arrowheur"   /**< name of the detector */
 #define DEC_PRIORITY          1000          /**< priority of the detector */
-
 
 /* Default parameter settings*/
 #define DEFAULT_BLOCKS                    2     /**< number of blocks */

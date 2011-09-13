@@ -34,8 +34,6 @@
 #include "branch_relpsprob.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
-#include "scip/type_var.h"
-#include "scip/scip.h"
 
 
 #define BRANCHRULE_NAME          "relpsprob"

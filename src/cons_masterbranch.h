@@ -18,7 +18,7 @@
 #define CONSMASTERBRANCH_H
 
 #include "scip/scip.h"
-#include "struct_branchgcg.h"
+#include "type_branchgcg.h"
 
 /** returns the store graph constraint of the current node */
 extern

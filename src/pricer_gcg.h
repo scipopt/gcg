@@ -20,7 +20,6 @@
 #define __SCIP_PRICER_GCG__
 
 #include "scip/scip.h"
-#include "relax_gcg.h"
 #include "type_solver.h"
 
 enum GCG_Pricetype
