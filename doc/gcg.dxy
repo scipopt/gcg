@@ -176,7 +176,7 @@ SEPARATE_MEMBER_PAGES  = NO
 # The TAB_SIZE tag can be used to set the number of spaces in a tab. 
 # Doxygen uses this value to replace tabs by spaces in code fragments.
 
-TAB_SIZE               = 8
+TAB_SIZE               = 3
 
 # This tag can be used to specify a number of aliases that acts 
 # as commands in the documentation. An alias has the form "name=value". 
@@ -192,7 +192,7 @@ ALIASES                =
 # For instance, some of the names that are used will be different. The list 
 # of all members will be omitted, etc.
 
-OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
 
 # Set the OPTIMIZE_OUTPUT_JAVA tag to YES if your project consists of Java 
 # sources only. Doxygen will then generate output that is more tailored for Java. 
@@ -416,6 +416,16 @@ SHOW_DIRECTORIES       = NO
 # is used as the file version. See the manual for examples.
 
 FILE_VERSION_FILTER    = 
+
+# The LAYOUT_FILE tag can be used to specify a layout file which will be parsed
+# by doxygen. The layout file controls the global structure of the generated
+# output files in an output format independent way. The create the layout file
+# that represents doxygen's defaults, run doxygen with the -l option.
+# You can optionally specify a file name after the option, if omitted
+# DoxygenLayout.xml will be used as the name of the layout file.
+
+LAYOUT_FILE            = gcglayout.xml
+
 
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
@@ -1099,7 +1109,7 @@ TAGFILES               =
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 
 # a tag file that is based on the input files it reads.
 
-GENERATE_TAGFILE       = 
+GENERATE_TAGFILE       = gcg.tag
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed 
 # in the class index. If set to NO only the inherited external classes 
