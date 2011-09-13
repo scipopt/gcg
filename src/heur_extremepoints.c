@@ -1,13 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: heur_extremepoints.c,v 1.25 2010/01/04 20:35:41 bzfheinz Exp $"
 
 /**@file   heur_extremepoints.c
  * @ingroup PRIMALHEURISTICS
@@ -125,16 +124,17 @@ SCIP_RETCODE getMembersOfDecomposition(
    SCIP*             scip,
    SCIP*             masterprob,
    SCIP_HEUR*        heur,
-   int               npricingprobs,
+   int               nblocks,
    SCIP_SOL***       members,
+   int**             varindex,
    int*              nmembers
    )
 {
    SCIP_VARDATA* vardata;
    SCIP_VARDATA* vardata2;
-   int* memberind;
    int* blocknr;
    SCIP_Real* blockvalue;
+   int b;
    SCIP_Real increaseval;
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -144,8 +144,8 @@ SCIP_RETCODE getMembersOfDecomposition(
 
    assert(scip != NULL);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, npricingprobs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
 
    /* get variables of the master problem and their solution values */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -155,10 +155,8 @@ SCIP_RETCODE getMembersOfDecomposition(
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
    SCIP_CALL( SCIPgetSolVals(masterprob, NULL, nmastervars, mastervars, mastervals) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &memberind, nmastervars) );
-
    /* initialize the block values for the pricing problems */
-   for( i = 0; i < npricingprobs; i++ )
+   for( i = 0; i < nblocks; i++ )
    {
       blockvalue[i] = 0.0;
       blocknr[i] = 0;
@@ -167,8 +165,6 @@ SCIP_RETCODE getMembersOfDecomposition(
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
-      memberind[i] = -1;
-
       /* first of all, handle the variables with integral values */
       while( SCIPisFeasGE(scip, mastervals[i], 1) )
       {
@@ -179,35 +175,41 @@ SCIP_RETCODE getMembersOfDecomposition(
          assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
 
+         /* TODO: what if a variable belongs to no block, i. e. was just copied? */
          if( vardata->blocknr == -1 )
          {
-            assert(vardata->data.mastervardata.norigvars == 2);
-            assert(vardata->data.mastervardata.origvals[0] == 1.0);
-            assert(vardata->data.mastervardata.origvals[1] == 0.0);
-
-            (*nmembers)++;
-            memberind[i] = *nmembers - 1;
-            SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
-            SCIP_CALL( SCIPcreateSol(scip, &(*members)[memberind[i]], heur) );
-
-            /* increase the corresponding value */
-            SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
-            mastervals[i] = 0.0;
+//            assert(vardata->data.mastervardata.norigvars == 2);
+//            assert(vardata->data.mastervardata.origvals[0] == 1.0);
+//            assert(vardata->data.mastervardata.origvals[1] == 0.0);
+//
+//            (*nmembers)++;
+//            memberind[i] = *nmembers - 1;
+//            SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
+//            SCIP_CALL( SCIPreallocBufferArray(scip, varindex, *nmembers) );
+//            SCIP_CALL( SCIPcreateSol(scip, &(*members)[memberind[i]], heur) );
+//            (*varindex)[memberind[i]] = i;
+//
+//            /* increase the corresponding value */
+//            SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
+//            mastervals[i] = 0.0;
          }
          else
          {
+            if( vardata->data.mastervardata.norigvars > 0 )
+            {
+               b = vardata->blocknr;
+               ++nmembers[b];
+               SCIP_CALL( SCIPreallocBufferArray(scip, &(members[b]), nmembers[b]) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, &(varindex[b]), nmembers[b]) );
+               SCIP_CALL( SCIPcreateSol(scip, &(members[b][nmembers[b]-1]), heur) );
+               varindex[b][nmembers[b]-1] = i;
+            }
+
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
                if( SCIPisZero(scip, vardata->data.mastervardata.origvals[j]) )
                   continue;
-               else if( memberind[i] == -1 )
-               {
-                  (*nmembers)++;
-                  memberind[i] = *nmembers - 1;
-                  SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
-                  SCIP_CALL( SCIPcreateSol(scip, &(*members)[memberind[i]], heur) );
-               }
 
                /* get the right original variable */
                vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
@@ -221,13 +223,13 @@ SCIP_RETCODE getMembersOfDecomposition(
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
                {
                   /* increase the corresponding value */
-                  SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j]) );
+                  SCIP_CALL( SCIPincSolVal(scip, members[b][nmembers[b]-1], vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j]) );
                   mastervals[i] = 1.0;
                }
                else
                {
                   /* increase the corresponding value */
-                  SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
+                  SCIP_CALL( SCIPincSolVal(scip, members[b][nmembers[b]-1], vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
                }
             }
             mastervals[i] = mastervals[i] - 1.0;
@@ -256,37 +258,42 @@ SCIP_RETCODE getMembersOfDecomposition(
       {
          if( vardata->blocknr == -1 )
          {
-            assert(vardata->data.mastervardata.norigvars == 2);
-            assert(vardata->data.mastervardata.origvals[0] == 1.0);
-            assert(vardata->data.mastervardata.origvals[1] == 0.0);
-
-            if( memberind[i] == -1)
-            {
-               (*nmembers)++;
-               SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
-               SCIP_CALL( SCIPcreateSol(scip, &(*members)[*nmembers - 1], heur) );
-               memberind[i] = *nmembers - 1;
-            }
-
-            /* increase the corresponding value */
-            SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
-            mastervals[i] = 0.0;
+//            assert(vardata->data.mastervardata.norigvars == 2);
+//            assert(vardata->data.mastervardata.origvals[0] == 1.0);
+//            assert(vardata->data.mastervardata.origvals[1] == 0.0);
+//
+//            if( memberind[i] == -1)
+//            {
+//               (*nmembers)++;
+//               SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
+//               SCIP_CALL( SCIPreallocBufferArray(scip, varindex, *nmembers) );
+//               SCIP_CALL( SCIPcreateSol(scip, &(*members)[*nmembers - 1], heur) );
+//               (*varindex)[*nmembers - 1] = i;
+//               memberind[i] = *nmembers - 1;
+//            }
+//
+//            /* increase the corresponding value */
+//            SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
+//            mastervals[i] = 0.0;
          }
          else
          {
+            if( vardata->data.mastervardata.norigvars > 0 )
+            {
+               b = vardata->blocknr;
+               ++nmembers[b];
+               SCIP_CALL( SCIPreallocBufferArray(scip, &(members[b]), nmembers[b]) );
+               SCIP_CALL( SCIPreallocBufferArray(scip, &(varindex[b]), nmembers[b]) );
+               SCIP_CALL( SCIPcreateSol(scip, &(members[b][nmembers[b]-1]), heur) );
+               varindex[b][nmembers[b]-1] = i;
+            }
+
             increaseval = MIN(mastervals[i], 1.0 - blockvalue[vardata->blocknr]);
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
             {
                if( SCIPisZero(scip, vardata->data.mastervardata.origvals[j]) )
                   continue;
-               else if( memberind[i] == -1 )
-               {
-                  (*nmembers)++;
-                  SCIP_CALL( SCIPreallocBufferArray(scip, members, *nmembers) );
-                  SCIP_CALL( SCIPcreateSol(scip, &(*members)[*nmembers - 1], heur) );
-                  memberind[i] = *nmembers - 1;
-               }
 
                /* get the right original variable */
                vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
@@ -302,12 +309,12 @@ SCIP_RETCODE getMembersOfDecomposition(
                   increaseval = mastervals[i];
 
                   /* increase the corresponding value */
-                  SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j]) );
+                  SCIP_CALL( SCIPincSolVal(scip, members[b][nmembers[b]-1], vardata2->data.pricingvardata.origvars[vardata2->data.pricingvardata.norigvars-1], vardata->data.mastervardata.origvals[j]) );
                }
                else
                {
                   /* increase the corresponding value */
-                  SCIP_CALL( SCIPincSolVal(scip, (*members)[memberind[i]], vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
+                  SCIP_CALL( SCIPincSolVal(scip, members[b][nmembers[b]-1], vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
                }
             }
 
@@ -329,33 +336,39 @@ SCIP_RETCODE getMembersOfDecomposition(
    }
 
    SCIPfreeBufferArray(scip, &mastervals);
-   SCIPfreeBufferArray(scip, &memberind);
    SCIPfreeBufferArray(scip, &blocknr);
    SCIPfreeBufferArray(scip, &blockvalue);
 
    return SCIP_OKAY;
 }
 
-#if 0
+#ifdef SCIP_DEBUG
 /** prints members of decomposition to standard output */
 static
 SCIP_RETCODE printMembersOfDecomposition(
-      SCIP*       scip,
-      SCIP_SOL**  members,
-      int         nmembers
+      SCIP*          scip,
+      int            nblocks,
+      SCIP_SOL***    members,
+      int*           nmembers
       )
 {
    int i;
+   int j;
 
-//   printf("------------------------------------------------------------\n");
-//   printf("Current LP solution:\n");
-//   SCIP_CALL( SCIPprintSol(scip, GCGrelaxGetCurrentOrigSol(scip), NULL, FALSE) );
    printf("------------------------------------------------------------\n");
-   for( i = 0; i < nmembers; i++)
+   printf("Current LP solution:\n");
+   SCIP_CALL( SCIPprintSol(scip, GCGrelaxGetCurrentOrigSol(scip), NULL, FALSE) );
+   printf("------------------------------------------------------------\n");
+   for( i = 0; i < nblocks; ++i)
    {
-      printf("Member %i:\n", i);
-      SCIP_CALL( SCIPprintSol(scip, members[i], NULL, FALSE) );
+      printf("Block %i: %i extreme points\n", i+1, nmembers[i]);
       printf("------------------------------------------------------------\n");
+      for( j = 0; j < nmembers[i]; ++j)
+      {
+         printf("Extreme point %i:\n", j+1);
+         SCIP_CALL( SCIPprintSol(scip, members[i][j], NULL, FALSE) );
+         printf("------------------------------------------------------------\n");
+      }
    }
 
    return SCIP_OKAY;
@@ -397,10 +410,13 @@ SCIP_RETCODE sortMembersOfDecomposition(
 static
 SCIP_RETCODE sortMembersOfDecomposition(
    SCIP*          scip,
-   SCIP_SOL**     members,
-   int            nmembers
+   int            nblocks,
+   SCIP_SOL***    members,
+   int**          varindex,
+   int*           nmembers
    )
 {
+#if 0
    SCIP_ROW** rows;
    SCIP_Real* violations;
    int nrows;
@@ -429,6 +445,32 @@ SCIP_RETCODE sortMembersOfDecomposition(
    SCIPsortRealPtr(violations, (void**) members, nmembers);
 
    SCIPfreeBufferArray(scip, &violations);
+#else
+   SCIP_Real* membervals;
+   SCIP_Real* mastervals;
+   SCIP_VAR** mastervars;
+   int nmastervars;
+
+   int i;
+   int j;
+
+   SCIP_CALL( SCIPgetVarsData(GCGrelaxGetMasterprob(scip), &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+   SCIP_CALL( SCIPgetSolVals(GCGrelaxGetMasterprob(scip), NULL, nmastervars, mastervars, mastervals) );
+
+   for(i = 0; i < nblocks; ++i)
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &membervals, nmembers[i]) );
+      for( j = 0; j < nmembers[i]; ++j )
+         membervals[j] = mastervals[varindex[i][j]];
+
+      SCIPsortDownRealPtr(membervals, (void**) members[i], nmembers[i]);
+
+      SCIPfreeBufferArray(scip, &membervals);
+   }
+
+   SCIPfreeBufferArray(scip, &mastervals);
+#endif
 
    return SCIP_OKAY;
 }
@@ -563,33 +605,57 @@ SCIP_RETCODE selectSolsRandomized(
    SCIP*                 scip,              /**< original SCIP data structure                                    */
    int*                  selection,         /**< pool of solutions crossover uses                                */
    SCIP_HEURDATA*        heurdata,          /**< primal heuristic data                                           */
-   int                   nmembers,          /**< number of members                                               */
+   int                   nblocks,           /**< number of blocks in decomposition                               */
+   int*                  nmembers,          /**< number of members                                               */
    SCIP_Bool*            success            /**< pointer to store whether the proccess was successful            */
    )
 {
 
    int i;
    int j;
-   int lastsol;          /* the worst solution possible to choose */
+   int k;
+   int iters;
+   int* lastsol;         /* the worst solution possible to choose */
    int nusedsols;        /* number of solutions which will be chosen */
+   SCIP_Bool randomized;
 
    SOLTUPLE* elem;
 
    /* initialization */
    nusedsols = heurdata->nusedsols;
-   lastsol = nmembers;
-   assert(nusedsols < lastsol);
+   SCIP_CALL( SCIPallocBufferArray(scip, &lastsol, nblocks) );
+   for( i = 0; i < nblocks; ++i)
+      lastsol[i] = nmembers[i];
 
-   i = 0;
+   iters = 0;
+   randomized = TRUE;
    *success = FALSE;
 
    /* perform at maximum 100 restarts and stop as soon as a new set of solutions is found */
-   while( !*success && i < 100 )
+   do
    {
-      for( j = 0; j < nusedsols; j++ )
+      for( i = 0; i < nblocks; ++i )
       {
-         selection[j] = SCIPgetRandomInt(nusedsols-j-1, lastsol-1, &heurdata->randseed);
-         lastsol = selection[j];
+         if( nmembers[i] > nusedsols )
+         {
+            randomized = TRUE;
+            for( j = 0; j < nusedsols; j++ )
+            {
+               selection[nusedsols * i + j] = SCIPgetRandomInt(nusedsols-j-1, lastsol[i]-1, &heurdata->randseed);
+               lastsol[i] = selection[nusedsols * i + j];
+            }
+         }
+         else
+         {
+            for( j = 0; j < MIN(nusedsols, nmembers[i]); ++j )
+               selection[nusedsols * i + j] = j;
+
+            /* if there were not enough members for this block
+             * (e. g. because the relaxation solution was zero there),
+             * indicate this by setting the remaining indices to -1 */
+            for( k = j; k < nusedsols; ++k )
+               selection[nusedsols * i + k] = -1;
+         }
       }
 
       /* creates an object ready to be inserted into the hashtable */
@@ -601,13 +667,16 @@ SCIP_RETCODE selectSolsRandomized(
          SCIP_CALL( SCIPhashtableInsert(heurdata->hashtable, elem) );
          *success = TRUE;
       }
-      i++;
+      iters++;
    }
+   while( !*success && iters < 100 && randomized );
+
+   SCIPfreeBufferArray(scip, &lastsol);
 
    return SCIP_OKAY;
 }
 
-
+#if 0
 /** check solutions for "similarity"; solutions are called similar if the rate of
  ** equal variables among all non-zero variables is >= heurdata->similarityrate */
 static
@@ -749,6 +818,7 @@ SCIP_RETCODE selectSimilarSols(
 
    return SCIP_OKAY;
 }
+#endif
 
 
 /** creates the all variables of the subproblem */
@@ -758,13 +828,17 @@ static SCIP_RETCODE fixVariables(
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                               */
    int*                  selection,          /**< pool of solutions crossover will use                          */
    SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                         */
-   SCIP_SOL**            members,            /**< members of decomposition                                      */
+   SCIP_SOL***           members,            /**< members of decomposition                                      */
+   int*                  nmembers,           /**< number of members                                             */
    SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully */
    )
 {
    SCIP_VAR** vars;                          /* original scip variables                */
+   SCIP_VARDATA* vardata;
    SCIP_Real fixingrate;                     /* percentage of variables that are fixed */
 
+   int block;
+   int nusedsols;
    int nvars;
    int nbinvars;
    int nintvars;
@@ -777,6 +851,7 @@ static SCIP_RETCODE fixVariables(
    /* get required data of the original problem */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
 
+   nusedsols = heurdata->nusedsols;
    fixingcounter = 0;
    zerocounter = 0;
 
@@ -784,23 +859,40 @@ static SCIP_RETCODE fixVariables(
    for( i = 0; i < nbinvars + nintvars; i++ )
    {
       SCIP_Real solval;
-      SCIP_Real lpsolval;
+//      SCIP_Real lpsolval;
       SCIP_Real lb;
       SCIP_Real ub;
       SCIP_Bool fixable;
 
-      fixable = TRUE;
-      solval = SCIPgetSolVal(scip, members[selection[0]], vars[i]);
+      vardata = SCIPvarGetData(vars[i]);
+      assert(vardata != NULL);
+      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      block = vardata->blocknr;
 
-      /* check, whether variable's value is identical for each selected solution */
-      for( j = 1; j < heurdata->nusedsols; j++ )
+      fixable = TRUE;
+
+      /* if there are no extreme points in this block in the convex combination,
+       * the relaxation solution is zero in this block */
+      if( nmembers[block] == 0 )
+         solval = 0.0;
+      else
       {
-         SCIP_Real varsolval;
-         varsolval = SCIPgetSolVal(scip, members[selection[j]], vars[i]);
-         if( REALABS(solval - varsolval) > 0.5 )
+         assert(selection[block * nusedsols] != -1);
+         solval = SCIPgetSolVal(scip, members[block][selection[block * nusedsols]], vars[i]);
+
+         /* check, whether variable's value is identical for each selected solution */
+         for( j = 1; j < MIN(nusedsols, nmembers[block]); j++ )
          {
-            fixable = FALSE;
-            break;
+            SCIP_Real varsolval;
+
+            assert(selection[block * nusedsols + j] != -1);
+            varsolval = SCIPgetSolVal(scip, members[block][selection[block * nusedsols + j]], vars[i]);
+
+            if( REALABS(solval - varsolval) > 0.5 )
+            {
+               fixable = FALSE;
+               break;
+            }
          }
       }
 
@@ -808,17 +900,17 @@ static SCIP_RETCODE fixVariables(
 //      if( (SCIP_Real)(fixingcounter + 1) / (SCIP_Real)(MAX(nbinvars + nintvars, 1)) > heurdata->maxfixingrate )
 //         fixable = FALSE;
 
-      /* if variable is 0 for all members in selection, but != 0 for LP optimum, don't fix it */
-      lpsolval = SCIPgetSolVal(scip, GCGrelaxGetCurrentOrigSol(scip), vars[i]);
-      if( fixable && SCIPisZero(scip, solval) && !SCIPisZero(scip, lpsolval) )
-         fixable = FALSE;
-
-      /* fix other zero variables only with a certain probability */
-      if( fixable && SCIPisZero(scip, solval) )
-      {
-         if( SCIPgetRandomReal(0, 1, &heurdata->randseed) >= heurdata->zerofixprob )
-            fixable = FALSE;
-      }
+//      /* if variable is 0 for all members in selection, but != 0 for LP optimum, don't fix it */
+//      lpsolval = SCIPgetSolVal(scip, GCGrelaxGetCurrentOrigSol(scip), vars[i]);
+//      if( fixable && SCIPisZero(scip, solval) && !SCIPisZero(scip, lpsolval) )
+//         fixable = FALSE;
+//
+//      /* fix other zero variables only with a certain probability */
+//      if( fixable && SCIPisZero(scip, solval) )
+//      {
+//         if( SCIPgetRandomReal(0, 1, &heurdata->randseed) >= heurdata->zerofixprob )
+//            fixable = FALSE;
+//      }
 
       /* get variable's global bounds */
       lb = SCIPvarGetLbGlobal(vars[i]);
@@ -926,47 +1018,52 @@ SCIP_RETCODE setupSubproblem(
    SCIP*                 subscip,            /**< SCIP data structure for the subproblem                        */
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                               */
    int*                  selection,          /**< pool of solutions crossover will use                          */
-   SCIP_Bool*            used,               /**< vertices that have already been used for crossover            */
+//   SCIP_Bool*            used,               /**< vertices that have already been used for crossover            */
    SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                         */
-   SCIP_SOL**            members,            /**< members of decomposition                                      */
-   int                   nmembers,           /**< number of members                                             */
+   int                   nblocks,            /**< number of blocks in the decomposition                         */
+   SCIP_SOL***           members,            /**< members of decomposition                                      */
+   int*                  nmembers,           /**< number of members                                             */
    SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully */
    )
 {
 
    int nusedsols;                           /* number of solutions to use in crossover     */
 
-//   int i;
+   int i;
+   int j;
+   int k;
 
    /* get solutions' data */
    nusedsols = heurdata->nusedsols;
 
    assert(nusedsols > 1);
-   assert(nmembers >= nusedsols);
 
-#if 0
+#if 1
    /* use nusedsols best solutions if randomization is deactivated or there are only nusedsols solutions at hand
     * or a good new solution was found since last call */
-   if( !heurdata->randomization || nmembers == nusedsols || heurdata->prevlastsol != members[nusedsols-1] )
+   if( !heurdata->randomization )
+      // || heurdata->prevlastsol != members[nusedsols-1] )
    {
       SOLTUPLE* elem;
 
-      for( i = 0; i < nusedsols; i++ )
-         selection[i] = i;
-      SCIP_CALL( createSolTuple(scip, &elem, selection, nusedsols, heurdata) );
+      /* for each block, select a set of extreme points to cross */
+      for( i = 0; i < nblocks; ++i )
+      {
+         for( j = 0; j < MIN(nusedsols, nmembers[i]); ++j )
+            selection[nusedsols * i + j] = j;
+
+         /* if there were not enough members for this block
+          * (e. g. because the relaxation solution was zero there),
+          * indicate this by setting the remaining indices to -1 */
+         for( k = j; k < nusedsols; ++k )
+            selection[nusedsols * i + k] = -1;
+      }
+
+      SCIP_CALL( createSolTuple(scip, &elem, selection, nblocks * nusedsols, heurdata) );
 
       /* check, whether solution tuple has already been tried */
       if( SCIPhashtableExists(heurdata->hashtable, elem) )
-      {
          *success = FALSE;
-
-         /* if solution tuple has already been tried, randomization is allowed and enough solutions are at hand, try
-          * to randomize another tuple. E.g., this can happen if the last crossover solution was among the best ones */
-         if( heurdata->randomization && nmembers > nusedsols )
-         {
-            SCIP_CALL( selectSolsRandomized(scip, selection, heurdata, nmembers, success) );
-         }
-      }
       else
       {
          *success = TRUE;
@@ -976,7 +1073,7 @@ SCIP_RETCODE setupSubproblem(
    /* otherwise randomize the set of solutions */
    else
    {
-      SCIP_CALL( selectSolsRandomized(scip, selection, heurdata, nmembers, success) );
+      SCIP_CALL( selectSolsRandomized(scip, selection, heurdata, nblocks, nmembers, success) );
    }
 #else
    SCIP_CALL( selectSimilarSols(scip, heurdata, selection, used, members, nmembers, success) );
@@ -987,7 +1084,7 @@ SCIP_RETCODE setupSubproblem(
       return SCIP_OKAY;
 
    /* create the variables of the subproblem */
-   SCIP_CALL( fixVariables(scip, subscip, subvars, selection, heurdata, members, success) );
+   SCIP_CALL( fixVariables(scip, subscip, subvars, selection, heurdata, members, nmembers, success) );
 
    /* if the enough variables could be fixed, create rows of the subproblem */
    if( *success && heurdata->uselprows )
@@ -1071,8 +1168,9 @@ SCIP_RETCODE applyCrossover(
       SCIP_Real            memorylimit,
       SCIP_Real            timelimit,
       SCIP_Longint         nstallnodes,
-      SCIP_SOL**           members,
-      int                  nmembers
+      int                  nblocks,
+      SCIP_SOL***          members,
+      int*                 nmembers
       )
 {
    SCIP_HEURDATA* heurdata;
@@ -1082,7 +1180,7 @@ SCIP_RETCODE applyCrossover(
    SCIP_Real upperbound;
    SCIP_Bool success;
 
-   SCIP_Bool* used;
+//   SCIP_Bool* used;
    int nvars;                                /* number of original problem's variables              */
    int nusedsols;
    int maxruns;
@@ -1104,9 +1202,9 @@ SCIP_RETCODE applyCrossover(
 
    *result = SCIP_DIDNOTFIND;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &used, nmembers) );
-   for( i = 0; i < nmembers; i++ )
-      used[i] = FALSE;
+//   SCIP_CALL( SCIPallocBufferArray(scip, &used, nmembers) );
+//   for( i = 0; i < nmembers; i++ )
+//      used[i] = FALSE;
 
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
    assert(nvars > 0);
@@ -1129,7 +1227,7 @@ SCIP_RETCODE applyCrossover(
 
       SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
       SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &selection, nusedsols) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &selection, nblocks * nusedsols) );
 
       if( heurdata->usegcg )
       {
@@ -1196,7 +1294,7 @@ SCIP_RETCODE applyCrossover(
       SCIPhashmapFree(&varmapfw);
 
       /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
-      SCIP_CALL( setupSubproblem(scip, subscip, subvars, selection, used, heurdata, members, nmembers, &success) );
+      SCIP_CALL( setupSubproblem(scip, subscip, subvars, selection, heurdata, nblocks, members, nmembers, &success) );
       SCIPdebugMessage("Extreme Points Crossover subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
       /* if creation of subscip was aborted (e.g. due to number of fixings), free subscip and abort */
@@ -1210,10 +1308,10 @@ SCIP_RETCODE applyCrossover(
             int nbinvars;
             int nintvars;
             SCIP_CALL( SCIPgetVarsData(scip, NULL, NULL, &nbinvars, &nintvars, NULL, NULL) );
-            for( i = 0; i < nbinvars + nintvars; i++ )
-            {
-               SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-            }
+//            for( i = 0; i < nbinvars + nintvars; i++ )
+//            {
+//               SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
+//            }
             SCIP_CALL( SCIPfreeTransform(subscip) );
          }
 
@@ -1367,15 +1465,15 @@ SCIP_RETCODE applyCrossover(
       /* free subproblem */
       SCIPfreeBufferArray(scip, &selection);
       SCIP_CALL( SCIPfreeTransform(subscip) );
-      for( i = 0; i < nvars; i++ )
-      {
-         SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-      }
+//      for( i = 0; i < nvars; i++ )
+//      {
+//         SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
+//      }
       SCIPfreeBufferArray(scip, &subvars);
       SCIP_CALL( SCIPfree(&subscip) );
    }
 
-   SCIPfreeBufferArray(scip, &used);
+//   SCIPfreeBufferArray(scip, &used);
 
    return SCIP_OKAY;
 }
@@ -1491,10 +1589,13 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
    SCIP_Real timelimit;                      /* time limit for the subproblem                       */
    SCIP_Longint nstallnodes;                 /* node limit for the subproblem                       */
 
-   int nmembers;
-   SCIP_SOL** members;                       /* array to store relevant extreme points              */
+   int* nmembers;
+   SCIP_SOL*** members;                      /* array to store relevant extreme points              */
+   int** varindex;
+   int nblocks;
 
    int i;
+   int j;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
@@ -1504,6 +1605,8 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
    /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
+
+   nblocks = GCGrelaxGetNPricingprobs(scip);
 
    assert(SCIPhasCurrentNodeLP(masterprob));
 
@@ -1562,40 +1665,62 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
 
    SCIPdebugMessage("Executing GCG extreme points crossover heuristic ...\n");
 
-   /* get members of decomposition, i. e. the points of which the relaxation solution is a convex combination */
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &members, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &varindex, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nmembers, nblocks) );
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &(members[i]), 1) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(varindex[i]), 1) );
+      nmembers[i] = 0;
+   }
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &members, 1) );
-   nmembers = 0;
-   SCIP_CALL( getMembersOfDecomposition(scip, masterprob, heur, GCGrelaxGetNPricingprobs(scip), &members, &nmembers) );
-   SCIPdebugMessage("Current original LP solution consists of %i members of decomposition.\n", nmembers);
+   /* get members of decomposition, i. e. the points of which the relaxation solution is a convex combination */
+   SCIP_CALL( getMembersOfDecomposition(scip, masterprob, heur, nblocks, members, varindex, nmembers) );
+//   SCIPdebugMessage("Current original LP solution consists of %i members of decomposition.\n", nmembers);
 
    *result = SCIP_DIDNOTFIND;
 
-   /* only call heuristic if there are enough members */
-   if( nmembers < heurdata->nusedsols  ) {
-      /* free memory */
-      for ( i = 0; i < nmembers; i++ )
-      {
-         SCIP_CALL( SCIPfreeSol(scip, &members[i]) );
-      }
-      SCIPfreeBufferArray(scip, &members);
-      return SCIP_OKAY;
-   }
+//   /* only call heuristic if there are enough members */
+//   if( nmembers < heurdata->nusedsols  ) {
+//      /* free memory */
+//      for( i = 0; i < nblocks; ++i)
+//      {
+//         for ( j = 0; j < nmembers[i]; ++j )
+//         {
+//            SCIP_CALL( SCIPfreeSol(scip, &(members[i][j])) );
+//         }
+//         SCIPfreeBufferArray(scip, &members[i]);
+//         SCIPfreeBufferArray(scip, &varindex[i]);
+//      }
+//      SCIPfreeBufferArray(scip, &members);
+//      SCIPfreeBufferArray(scip, &varindex);
+//      SCIPfreeBufferArrax(scip, &nmembers);
+//      return SCIP_OKAY;
+//   }
 
-   SCIP_CALL( sortMembersOfDecomposition(scip, members, nmembers) );
+   SCIP_CALL( sortMembersOfDecomposition(scip, nblocks, members, varindex, nmembers) );
 
-//#ifdef SCIP_DEBUG
-//   SCIP_CALL( printMembersOfDecomposition(scip, members, nmembers) );
-//#endif
+#ifdef SCIP_DEBUG
+   SCIP_CALL( printMembersOfDecomposition(scip, nblocks, members, nmembers) );
+#endif
 
-   SCIP_CALL( applyCrossover(scip, heur, result, memorylimit, timelimit, nstallnodes, members, nmembers) );
+   SCIP_CALL( applyCrossover(scip, heur, result, memorylimit, timelimit, nstallnodes, nblocks, members, nmembers) );
 
    /* free memory */
-   for ( i = 0; i < nmembers; i++ )
+   for( i = 0; i < nblocks; ++i)
    {
-      SCIP_CALL( SCIPfreeSol(scip, &members[i]) );
+      for ( j = 0; j < nmembers[i]; ++j )
+      {
+         SCIP_CALL( SCIPfreeSol(scip, &(members[i][j])) );
+      }
+      SCIPfreeBufferArray(scip, &members[i]);
+      SCIPfreeBufferArray(scip, &varindex[i]);
    }
    SCIPfreeBufferArray(scip, &members);
+   SCIPfreeBufferArray(scip, &varindex);
+   SCIPfreeBufferArray(scip, &nmembers);
 
    return SCIP_OKAY;
 }

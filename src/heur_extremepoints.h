@@ -1,13 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: heur_extremepoints.h,v 1.15 2010/01/04 20:35:41 bzfheinz Exp $"
 
 /**@file   heur_extremepoints.h
  * @brief  extreme points crossover primal heuristic
