@@ -693,14 +693,6 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/useconstable", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/usesmalltables", TRUE) );
 
-#if 0      
-      /* diable some buggy heuristics */
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/oneopt/freq", -1) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/zirounding/freq", -1) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "separating/rapidlearning/freq", -1) );
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "heuristics/rens/freq", -1) );
-#endif
-
       /* disable expensive presolving */
 //      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "presolving/probing/maxrounds", 0) );
       SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "constraints/linear/presolpairwise", FALSE) );

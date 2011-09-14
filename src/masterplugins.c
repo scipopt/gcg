@@ -179,11 +179,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
 #endif
 
-#if 0
-   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
-   SCIP_CALL( SCIPincludePropRootredcost(scip) );
-#endif
-
 #if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );
    SCIP_CALL( SCIPincludeSepaCmir(scip) );

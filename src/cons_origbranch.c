@@ -8,8 +8,10 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
-//#define CHECKCONSISTENCY
+/*
+ #define SCIP_DEBUG
+ #define CHECKCONSISTENCY
+ */
 /**@file   cons_origbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath

@@ -91,110 +91,14 @@ SCIP_RETCODE ensureSizeCuts(
    return SCIP_OKAY;
 }
 
-#if 0
-static
-SCIP_RETCODE checkCutConsistency(
-   SCIP*                 scip
-   )
-{
-   SCIP_SEPA* sepa;
-   SCIP_SEPADATA* sepadata;
-   int i;
-   int j;
-   int k;
-   int l;
-   int v;
-   SCIP_COL** origcols;
-   SCIP_COL** mastercols;
-   SCIP_Real* origvals;
-   SCIP_Real* mastervals;
-   int norigcols;
-   int nmastercols;
-   
-   SCIP_Real sum;
-   SCIP_Real masterval;
-
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   SCIP_VARDATA* vardata;
-
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert(sepa != NULL);
-
-   sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
-
-   mastervars = SCIPgetVars(scip);
-   nmastervars = SCIPgetNVars(scip);
-
-   assert(sepadata->norigcuts == sepadata->nmastercuts);
-   
-   for( i = 0; i < sepadata->norigcuts; i++ )
-   {
-      /* check lhs and rhs */
-      assert(SCIPisInfinity(scip, SCIProwGetRhs(sepadata->origcuts[i])) == SCIPisInfinity(scip, SCIProwGetRhs(sepadata->mastercuts[i])));
-      assert(SCIPisInfinity(scip, -1 * SCIProwGetLhs(sepadata->origcuts[i])) == SCIPisInfinity(scip, -1 * SCIProwGetLhs(sepadata->mastercuts[i])));
-      assert(SCIPisInfinity(scip, SCIProwGetRhs(sepadata->origcuts[i]))
-         || (SCIProwGetRhs(sepadata->origcuts[i]) - SCIProwGetConstant(sepadata->origcuts[i])
-            == SCIProwGetRhs(sepadata->mastercuts[i]) - SCIProwGetConstant(sepadata->mastercuts[i])));
-      assert(SCIPisInfinity(scip, -1 * SCIProwGetRhs(sepadata->origcuts[i]))
-         || (SCIProwGetLhs(sepadata->origcuts[i]) - SCIProwGetConstant(sepadata->origcuts[i])
-            == SCIProwGetLhs(sepadata->mastercuts[i]) - SCIProwGetConstant(sepadata->mastercuts[i])));
-
-      /* check the variables */
-      norigcols = SCIProwGetNNonz(sepadata->origcuts[i]);
-      origcols = SCIProwGetCols(sepadata->origcuts[i]);
-      origvals = SCIProwGetVals(sepadata->origcuts[i]);
-      nmastercols = SCIProwGetNNonz(sepadata->mastercuts[i]);
-      mastercols = SCIProwGetCols(sepadata->mastercuts[i]);
-      mastervals = SCIProwGetVals(sepadata->mastercuts[i]);
-
-      for( v = 0; v < nmastervars; v++ )
-      {
-         /* get value of the variable in the master cut */
-         masterval = 0.0;
-         for( j = 0; j < nmastercols; j++ )
-         {
-            if( SCIPcolGetVar(mastercols[j]) == mastervars[v] )
-            {
-               masterval = mastervals[j];
-               break;
-            }
-         }
-         
-         vardata = SCIPvarGetData(mastervars[v]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         
-         /* sum up values of corresponding original variables and compare it to the mastervalue */
-         sum = 0.0;
-         for( k = 0; k < vardata->data.mastervardata.norigvars; k++ )
-         {
-            for( l = 0; l < norigcols; l++ )
-            {
-               if( SCIPcolGetVar(origcols[l]) == vardata->data.mastervardata.origvars[k] )
-               {
-                  sum += origvals[l] * vardata->data.mastervardata.origvals[k];
-               }
-            }
-         }
-         assert(SCIPisFeasEQ(scip, masterval, sum));
-         
-      }
-   }
-   
-   return SCIP_OKAY;
-}
-#endif
-
-
-
-
 /*
  * Callback methods of separator
  */
 
 #define sepaCopyMaster NULL
+#define sepaInitMaster NULL
+#define sepaInitsolMaster NULL
+#define sepaExecsolMaster NULL
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
@@ -212,24 +116,7 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
    return SCIP_OKAY;
 }
 
-
-/** initialization method of separator (called after problem was transformed) */
-#if 0
-static
-SCIP_DECL_SEPAINIT(sepaInitMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define sepaInitMaster NULL
-#endif
-
-
 /** deinitialization method of separator (called before transformed problem is freed) */
-#if 1
 static
 SCIP_DECL_SEPAEXIT(sepaExitMaster)
 {  
@@ -251,26 +138,6 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
 
    return SCIP_OKAY;
 }
-#else
-#define sepaExitMaster NULL
-#endif
-
-
-
-/** solving process initialization method of separator (called when branch and bound process is about to begin) */
-#if 0
-static
-SCIP_DECL_SEPAINITSOL(sepaInitsolMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define sepaInitsolMaster NULL
-#endif
-
 
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
 static
@@ -429,30 +296,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    assert(sepadata->norigcuts == sepadata->nmastercuts );
 
-#if 0
-   SCIP_CALL( checkCutConsistency(scip) );
-#endif
-
    return SCIP_OKAY;
 }
-
-
-
-/** arbitrary primal solution separation method of separator */
-#if 0
-static
-SCIP_DECL_SEPAEXECSOL(sepaExecsolMaster)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of master separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define sepaExecsolMaster NULL
-#endif
-
-
 
 
 /*

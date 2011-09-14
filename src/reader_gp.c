@@ -296,19 +296,9 @@ SCIP_RETCODE writeFileTrailer(
 /*
  * Callback methods of reader
  */
-/** copy method for reader plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_READERCOPY(readerCopyGp)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of gp reader not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
 
-   return SCIP_OKAY;
-}
-#else
 #define readerCopyGp NULL
-#endif
+
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_READERFREE(readerFreeGp)

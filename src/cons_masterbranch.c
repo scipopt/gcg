@@ -1447,33 +1447,9 @@ SCIP_DECL_EVENTINITSOL(eventInitsolOrigvarbound)
    return SCIP_OKAY;
 }
 
-/** solving process deinitialization method of event handler (called before branch and bound process data is freed) */
-#if 0
-static
-SCIP_DECL_EVENTEXITSOL(eventExitsolOrigvarbound)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of origvarbound event handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
 
-   return SCIP_OKAY;
-}
-#else
 #define eventExitsolOrigvarbound NULL
-#endif
-
-/** frees specific event data */
-#if 0
-static
-SCIP_DECL_EVENTDELETE(eventDeleteOrigvarbound)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of origvarbound event handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define eventDeleteOrigvarbound NULL
-#endif
 
 /** execution method of event handler */
 static

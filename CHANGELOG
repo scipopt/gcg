@@ -104,4 +104,7 @@ v090:
 - allow for unbounded pricing problems
 -  Change branding in interactive SHELL, display version and githash
   
-next:
+v0901:
+- removed all #if 0
+- try to avoid infeasible problems if the timelimit is hit during farkas
+  pricing

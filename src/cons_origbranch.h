@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define CHECKCONSISTENCY
+
 /**@file   cons_origbranch.h
  * @brief  constraint handler for storing the graph at each node of the tree
  * @author Gerald Gamrath

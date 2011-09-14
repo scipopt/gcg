@@ -551,18 +551,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
    SCIPdebugMessage("presolved restricted master problem: %d vars, %d cons, success=%u\n", SCIPgetNVars(restmaster), SCIPgetNConss(restmaster), success);
 
-#if 0
-   {
-      char fname[SCIP_MAXSTRLEN];
-      (void) SCIPsnprintf(fname, SCIP_MAXSTRLEN, "test/%s.lp",SCIPgetProbName(origprob));
-      SCIP_CALL( SCIPsetLongintParam(restmaster, "limits/nodes", 1) );
-      SCIP_CALL( SCIPsolve(restmaster) );
-      SCIP_CALL( SCIPwriteMIP(restmaster,fname,TRUE,TRUE) );
-      SCIPmessagePrintInfo("wrote restricted master subMIP to file <%s>\n",fname);
-      SCIP_CALL( SCIPsetLongintParam(restmaster, "limits/nodes", maxnodes ) );
-   }
-#endif
-
    /* after presolving, we should have at least reached a certain fixing rate over ALL variables (including continuous)
     * to ensure that not only the MIP but also the LP relaxation is easy enough
     */

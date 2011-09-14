@@ -27,7 +27,9 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 
-
+/*
+  #define EXPERIMENTALUNBOUNDED
+ */
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "mip solver for pricing problems"
@@ -279,12 +281,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       SCIP_CALL( SCIPpresolve(pricingprob) );
    }
 
-#if 0
-   SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.lp", NULL, FALSE) );
-   SCIP_CALL( SCIPwriteOrigProblem(pricingprob, "pricing.cip", NULL, FALSE) );
-   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", FALSE, FALSE) );
-#endif
-
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
   
@@ -300,7 +296,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
    //printf("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
 
-#if 0 /* we will ignore this change as it caused some problems */
+#ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
    if(SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED
       && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
    {
@@ -318,6 +314,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       }
    }
 #endif
+
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
    {
@@ -423,70 +420,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          solverdata->solisray[*nsols] = FALSE;
 
          SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
-
-#if 0         
-         /* for integer variables, round the solution values */
-         for( i = 0; i < nprobvars; i++ )
-         {
-            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
-               continue;
-            if( SCIPvarGetType(probvars[i]) != SCIP_VARTYPE_CONTINUOUS )
-            {
-               assert(SCIPisEQ(scip, solverdata->tmpsolvals[i], SCIPfeasFloor(scip, solverdata->tmpsolvals[i])));
-               solverdata->tmpsolvals[i] = SCIPfeasFloor(scip, solverdata->tmpsolvals[i]);
-            }
-         }
-#endif
-
-         /* try to handle nearly unbounded solutions, that are only finite due to numerical troubles:
-          * ATTENTION: some of the methods below are called where this is normally not allowed in SCIP
-          */
-#if 0
-         {
-            SCIP_SOL* tmpsol;
-            tmpsol = NULL;
-
-            /* check the solution values for infinity */
-            for( i = 0; i < nprobvars; i++ )
-            {
-               if( SCIPisInfinity(scip, solverdata->tmpsolvals[i]) )
-               {
-                  SCIP_VARDATA* vardata;
-
-                  if( tmpsol == NULL )
-                  {
-                     SCIP_CALL( SCIPcreateSolCopy(pricingprob, &tmpsol, probsols[s]) );
-                  }
-
-                  SCIPwarningMessage("found solution for pricing problem with variable, that has solution value +infinity - try to reduce this value\n");
-                  vardata = SCIPvarGetData(probvars[i]);
-                  assert(vardata->vartype == GCG_VARTYPE_PRICING);
-                  assert(vardata->data.pricingvardata.origvars != NULL);
-                  assert(vardata->data.pricingvardata.origvars[0] != NULL);
-
-                  SCIP_CALL( SCIPsetSolVal(pricingprob, tmpsol, probvars[i], 
-                        SCIPinfinity(scip) / (2 * SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]))) );
-
-                  SCIP_CALL( SCIPcheckSol(pricingprob, tmpsol, TRUE, TRUE, TRUE, TRUE, &feasible) );
-                  if( feasible )
-                  {
-                     solverdata->tmpsolvals[i] = SCIPinfinity(scip) / (2 * SCIPvarGetObj(vardata->data.pricingvardata.origvars[0]));
-                     SCIPwarningMessage("--> reduced value of variable to %g\n", solverdata->tmpsolvals[i]);
-                  }
-                  else
-                  {
-                     SCIPwarningMessage("--> reducing value of variable to %g caused infeasibility\n", solverdata->tmpsolvals[i]);
-                  }
-               }
-            }
-         
-            if( tmpsol != NULL )
-            {
-               SCIP_CALL( SCIPfreeSol(pricingprob, &tmpsol) );
-            }
-         }
-#endif
-        
 
          /* store the solution values */
          for( i = 0; i < nprobvars; i++ )

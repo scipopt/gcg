@@ -1315,17 +1315,6 @@ SCIP_RETCODE createNewMasterVar(
 
    objvalue = 0.0;
    redcost = 0.0;
-#if 0
-   /* for integer variables, round the solution values */
-   for( i = 0; i < nsolvars; i++ )
-   {
-      if( SCIPvarGetType(solvars[i]) != SCIP_VARTYPE_CONTINUOUS )
-      {
-         assert(SCIPisEQ(scip, solvals[i], SCIPfeasFloor(scip, solvals[i])));
-         solvals[i] = SCIPfeasFloor(scip, solvals[i]);
-      }
-   }
-#endif
 
    if( !force )
    {
@@ -1897,13 +1886,6 @@ SCIP_RETCODE performPricing(
             for( j = 0; j < nsolvars[0]; j++ )
             {
                /* TODO: round solution values??? */
-#if 0
-               if( SCIPvarGetType(solvars[0][j]) != SCIP_VARTYPE_CONTINUOUS )
-               {
-                  assert(SCIPisEQ(scip, solvals[0][j], SCIPfeasFloor(scip, solvals[0][j])));
-                  solvals[0][j] = SCIPfeasFloor(scip, solvals[0][j]);
-               }
-#endif
                bestsolval += solvals[0][j] * SCIPvarGetObj(solvars[0][j]);
             }
 
@@ -2267,12 +2249,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    SCIP_CALL( solversInitsol(scip, pricerdata) );
 
-#if 0 /* There is currently a problem with variables created from the trivial solution */
-   if( GCGrelaxGetOrigPrimalSol(origprob) != NULL )
-   {
-      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, GCGrelaxGetOrigPrimalSol(origprob)) );
-   }
-#endif
    return SCIP_OKAY;
 }
 
