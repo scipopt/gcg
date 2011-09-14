@@ -55,7 +55,7 @@
 #define DEFAULT_MAXRUNS       1             /* maximum times the heuristic runs on an LP solution                  */
 #define DEFAULT_NUSEDSOLS     2             /* number of solutions that will be taken into account                 */
 #define DEFAULT_NWAITINGNODES 200LL         /* number of nodes without incumbent change heuristic should wait      */
-#define DEFAULT_RANDOMIZATION TRUE          /* should the choice which sols to take be randomized?                 */
+#define DEFAULT_RANDOMIZATION FALSE         /* should the choice which sols to take be randomized?                 */
 #define DEFAULT_DONTWAITATROOT FALSE        /* should the nwaitingnodes parameter be ignored at the root node?     */
 #define DEFAULT_USELPROWS     TRUE           /* should subproblem be created out of the rows in the LP rows,
                                               * otherwise, the copy constructors of the constraints handlers are used */
@@ -557,12 +557,14 @@ static void sortArray(
    int j;
    int tmp;
 
+   return;
+
    /* simple insertion sort algorithm */
    for( i = 1; i < size; i++ )
    {
       tmp = a[i];
       j = i-1;
-      while( j >= 0 && a[j] > tmp )
+      while( j >= 0 && (a[j] > tmp || a[j] == -1) )
       {
          a[j+1] = a[j];
          j = j-1;
@@ -573,6 +575,8 @@ static void sortArray(
 
 
 /** creates a new tuple of solutions */
+/* TODO: in this form, this does not make much sense here;
+ *       use indices of mastervars instead */
 static
 SCIP_RETCODE createSolTuple(
    SCIP*                 scip,              /**< original SCIP data structure                                    */
