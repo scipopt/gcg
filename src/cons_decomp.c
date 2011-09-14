@@ -30,10 +30,6 @@
 
 #include "cons_decomp.h"
 
-//#include "dec_cutpacking.h"
-//#include "dec_stairexact.h"
-#include "dec_stairheur.h"
-//#include "reader_dec.h"
 #include "reader_gp.h"
 #include "reader_ref.h"
 #include "relax_gcg.h"
@@ -78,7 +74,6 @@ struct SCIP_ConshdlrData
 {
    DECDECOMP* decdecomp;
 
-   SCIP_STAIRHEURDATA *stairheurdata;
    DEC_DETECTOR** detectors;
    int *priorities;
    int ndetectors;

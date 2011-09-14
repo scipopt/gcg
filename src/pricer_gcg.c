@@ -1866,10 +1866,10 @@ SCIP_RETCODE performPricing(
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {
-            if( timelimit - SCIPgetTotalTime(scip) > 0 )
+            if( timelimit - SCIPgetSolvingTime(scip) > 0 )
             {
                SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time", 
-                     timelimit - SCIPgetTotalTime(scip)) );
+                     timelimit - SCIPgetSolvingTime(scip)) );
                SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, timelimit- SCIPgetSolvingTime(scip) + 5);
             }
             else
