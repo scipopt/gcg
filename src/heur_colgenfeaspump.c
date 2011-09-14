@@ -42,10 +42,10 @@
 
 #define DEFAULT_MAXLPITERQUOT    0.01   /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS     1000   /**< additional number of allowed LP iterations */
-#define DEFAULT_CYCLELENGTH      3
+#define DEFAULT_CYCLELENGTH      20
 #define DEFAULT_MAXLOOPS         100    /**< maximal number of pumping rounds */
 #define DEFAULT_MAXSTALLLOOPS    10     /**< maximal number of pumping rounds without fractionality improvement (-1: no limit) */
-#define DEFAULT_OBJFACTOR        1.0
+#define DEFAULT_OBJFACTOR        0.95
 #define DEFAULT_SHIFTRATE        0.05   /**< percentage of variables to be shifted in case of a 1-cycle */
 
 #define MINLPITER                5000  /**< minimal number of LP iterations allowed in each LP solving call */
@@ -182,31 +182,6 @@ SCIP_RETCODE performDivingOnMaster(
    return SCIP_OKAY;
 }
 
-/** calculate the objective norm for a pricing SCIP */
-static
-SCIP_Real getPricingObjNorm(
-      SCIP*             pricingprob
-      )
-{
-   SCIP_VAR** vars;
-   SCIP_VARDATA* vardata;
-   int nvars;
-
-   int i;
-   SCIP_Real objnorm;
-
-   SCIP_CALL( SCIPgetVarsData(pricingprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
-
-   objnorm = 0.0;
-   for( i = 0; i < nvars; i++ )
-   {
-      vardata = SCIPvarGetData(vars[i]);
-      objnorm += SQR((SCIPvarGetObj(vardata->data.pricingvardata.origvars[0])));
-   }
-
-   return SQRT(objnorm);
-}
-
 /** solve the subproblems with a distance objective function */
 static
 SCIP_RETCODE solvePricingProblems(
@@ -224,10 +199,7 @@ SCIP_RETCODE solvePricingProblems(
    SCIP_VARDATA* vardata;
    SCIP_Real solval;
    SCIP_Real frac;
-   SCIP_Real objnorm;
-   SCIP_Real orgobjcoeff;
    SCIP_Real newobjcoeff;
-   SCIP_Real scalingfactor;
    int idx;
 
    int npricingprobs;
@@ -249,20 +221,21 @@ SCIP_RETCODE solvePricingProblems(
    for( i = 0; i < npricingprobs; i++ )
    {
       pricingprob = GCGrelaxGetPricingprob(scip, i);
+      assert(pricingprob == NULL || GCGrelaxGetNIdenticalBlocks(scip, i) > 0);
+      assert(pricingprob != NULL || GCGrelaxGetNIdenticalBlocks(scip, i) == 0);
 
       /* If the pricing problem is relevant, i. e. not represented by an identical one,
        * solve it */
       if( pricingprob != NULL )
       {
+         int nidenticalblocks;
          SCIP_CALL( SCIPgetVarsData(pricingprob, &subvars, &nsubvars, &nbinvars, &nintvars, NULL, NULL) );
-         objnorm = getPricingObjNorm(pricingprob);
-         objnorm = MAX(objnorm, 1.0);
-         scalingfactor = SQRT((SCIP_Real)(nbinvars + nintvars)) / objnorm;
+         nidenticalblocks = GCGrelaxGetNIdenticalBlocks(scip, i);
 
          /* The pricing problem may represent a number of other pricing problems
           * (in case of identical blocks); in that case, it has to be solved
           * once for each block */
-         for( j = 0; j < GCGrelaxGetNIdenticalBlocks(scip, i); j++ )
+         for( j = 0; j < nidenticalblocks; j++ )
          {
             /* change objective function values */
             for( v = 0; v < nbinvars + nintvars; v++ )
@@ -273,7 +246,6 @@ SCIP_RETCODE solvePricingProblems(
 
                origvar = vardata->data.pricingvardata.origvars[j];
                idx = SCIPvarGetProbindex(origvar);
-               orgobjcoeff = SCIPvarGetObj(origvar);
                solval = SCIPgetSolVal(scip, relaxsol, origvar);
                frac = SCIPfeasFrac(scip, solval);
 
@@ -287,18 +259,18 @@ SCIP_RETCODE solvePricingProblems(
                   lb = SCIPvarGetLbLocal(origvar);
                   ub = SCIPvarGetUbLocal(origvar);
                   if( SCIPisFeasEQ(scip, solval, lb) )
-                     newobjcoeff = (1.0 - alpha)/scalingfactor + alpha * orgobjcoeff;
+                     newobjcoeff = 1.0;
                   else if( SCIPisFeasEQ(scip, solval, ub) )
-                     newobjcoeff = - (1.0 - alpha)/scalingfactor + alpha * orgobjcoeff;
+                     newobjcoeff = -1.0;
                   else
-                     newobjcoeff = alpha * orgobjcoeff;
+                     newobjcoeff = 0.0;
                }
                else
                {
                   if( frac > 0.5 )
-                     newobjcoeff = - (1.0 - alpha)/scalingfactor + alpha * orgobjcoeff;
+                     newobjcoeff = -1.0;
                   else
-                     newobjcoeff = (1.0 - alpha)/scalingfactor + alpha * orgobjcoeff;
+                     newobjcoeff = 1.0;
                }
 
                SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], newobjcoeff) );
@@ -313,7 +285,7 @@ SCIP_RETCODE solvePricingProblems(
 
                origvar = vardata->data.pricingvardata.origvars[j];
                idx = SCIPvarGetProbindex(origvar);
-               SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], alpha * SCIPvarGetObj(origvar)) );
+               SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], 0.0) );
                pricingobjs[idx] = newobjcoeff;
                SCIP_CALL( SCIPsetSolVal(scip, sol, origvar, 0.0) );
             }
@@ -663,7 +635,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
@@ -701,7 +673,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    if( SCIPgetDepth(scip) == 0 && SCIPheurGetNCalls(heur) > 0 )
       return SCIP_OKAY;
 
-   /* TODO: for some reason, the heuristic is sometimes called with an invalid relaxation solution;
+   /* @todo for some reason, the heuristic is sometimes called with an invalid relaxation solution;
     *       in that case, don't execute it */
    if( !SCIPisRelaxSolValid(scip) )
    {
@@ -866,7 +838,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          SCIP_VAR* pricingvar;
          SCIP_VARDATA* vardata;
          SCIP_VARDATA* vardata2;
-         SCIP_VARTYPE vartype;
+         // SCIP_VARTYPE vartype;
          SCIP_Real masterobjcoeff;
          SCIP_Real newobjcoeff;
          SCIP_Real origval;
@@ -886,13 +858,13 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
             pricingvar = vardata2->data.origvardata.pricingvar;
             relaxval = SCIPgetSolVal(scip, relaxsol, origvar);
             solval = SCIPgetSolVal(scip, sol, origvar);
-            vartype = SCIPvarGetType(origvar);
+            //            vartype = SCIPvarGetType(origvar);
 
             /* compute new objective coefficient for original variable */
             if( SCIPisGT(scip, solval, relaxval) )
-               newobjcoeff = -alpha + (1.0 - alpha) * SCIPvarGetNLocksDown(pricingvar);
+               newobjcoeff = -alpha + (1.0 - alpha) * SCIPvarGetNLocksDown(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
             else
-               newobjcoeff = alpha + (1.0 - alpha) * SCIPvarGetNLocksUp(pricingvar);
+               newobjcoeff = alpha + (1.0 - alpha) * SCIPvarGetNLocksUp(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
 
             /* transfer objective coeff to master variable */
             masterobjcoeff += origval * newobjcoeff;
