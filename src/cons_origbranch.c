@@ -361,7 +361,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 /** creates the handler for origbranch constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    SCIP*                 scip                /**< SCIP data structure */
-		       )
+   )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
 

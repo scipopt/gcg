@@ -1902,8 +1902,8 @@ SCIP_RETCODE performPricing(
 
          for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
                  (pricetype == GCG_PRICETYPE_REDCOST || nfoundvars < pricerdata->maxvarsroundfarkas)
-		&& (pricetype == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricerdata->maxvarsroundredcost || root ) && (nfoundvars < pricerdata->maxvarsroundredcostroot || !root))
-                    || pricerdata->onlybest); j++ )
+                 && (pricetype == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricerdata->maxvarsroundredcost || root ) && (nfoundvars < pricerdata->maxvarsroundredcostroot || !root))
+                       || pricerdata->onlybest); j++ )
          {
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
             SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], solisray[j], prob, 

@@ -42,7 +42,7 @@
 #define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
 #define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
-#define DEFAULT_DUMMYNODES	              0.2   /**< percentage of dummy vertices*/
+#define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
 
 #define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */

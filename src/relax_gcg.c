@@ -736,7 +736,7 @@ SCIP_RETCODE createMaster(
       if( vardata->blocknr >= 0 )
       {
          assert(vardata->data.origvardata.pricingvar == NULL);
-	 
+
          SCIP_CALL( GCGrelaxCreatePricingVar(scip, vars[v]) );
          assert(vardata->data.origvardata.pricingvar != NULL);
 
@@ -769,7 +769,7 @@ SCIP_RETCODE createMaster(
             assert(vardata->data.origvardata.linkingvardata->nblocks == count);
          }
 #endif
-	 SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, vars[v]) );
+    SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, vars[v]) );
 #ifndef NDEBUG
          /* checks that GCGrelaxCreateLinkingPricingVars() worked correctly */
          {
@@ -799,8 +799,7 @@ SCIP_RETCODE createMaster(
                      (void*)(vardata->data.origvardata.linkingvardata->pricingvars[i])) );
             }
          }
-	 SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, 
-	     (void*)(vars[v]), (void*)(vars[v])) );
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(vars[v]), (void*)(vars[v])) );
       }
       else
       {

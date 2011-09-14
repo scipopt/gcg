@@ -49,7 +49,7 @@
 #define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
 #define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
-#define DEFAULT_DUMMYNODES	              0.2   /**< percentage of dummy vertices*/
+#define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETCOV         5     /**< weight for constraint hyperedges that are setcovering constraints */
 #define DEFAULT_CONSWEIGHT_SETPACK        5     /**< weight for constraint hyperedges that are setpacking constraints */
 #define DEFAULT_CONSWEIGHT_SETPART        5     /**< weight for constraint hyperedges that are setpartitioning constraints */

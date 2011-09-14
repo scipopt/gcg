@@ -108,3 +108,4 @@ v0901:
 - removed all #if 0
 - try to avoid infeasible problems if the timelimit is hit during farkas
   pricing
+- removed interface.{c,h}, it is not needed anymore
