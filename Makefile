@@ -73,6 +73,7 @@ MAINOBJ		=	reader_blk.o \
 			cons_decomp.o \
 			dec_arrowheur.o \
 			dec_borderheur.o \
+			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
 			main.o
@@ -95,7 +96,7 @@ ifeq ($(VERBOSE),false)
 endif
 
 .PHONY: all
-all:            $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
 .PHONY: lint
 lint:		$(MAINSRC)
@@ -120,6 +121,12 @@ $(OBJDIR):
 
 $(BINDIR):
 		@-mkdir -p $(BINDIR)
+
+# include target to detect the current git hash
+-include make.detectgithash
+
+# this empty target is needed for the SCIP release versions
+githash::   # do not remove the double-colon
 
 .PHONY: test
 test:		

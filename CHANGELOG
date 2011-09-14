@@ -83,7 +83,7 @@ v081:
 - bug fixes
 - polished source code 
 
-next:
+v090:
 - included detection
   * arrowhead detection using hmetis
   * bordered detection using hmetis
@@ -102,3 +102,6 @@ next:
 - allow master to be accessed from the command line interface
 - support probing for heuristics
 - allow for unbounded pricing problems
+-  Change branding in interactive SHELL, display version and githash
+  
+next:
