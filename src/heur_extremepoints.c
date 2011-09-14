@@ -39,7 +39,7 @@
 #define HEUR_FREQ             30
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
-#define HEUR_TIMING           SCIP_HEURTIMING_AFTERPSEUDONODE
+#define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      TRUE
 
 #define DEFAULT_MAXNODES      1000LL        /* maximum number of nodes to regard in the subproblem                 */
@@ -166,7 +166,7 @@ SCIP_RETCODE getMembersOfDecomposition(
    for( i = 0; i < nmastervars; i++ )
    {
       /* first of all, handle the variables with integral values */
-      while( SCIPisFeasGE(scip, mastervals[i], 1) )
+      while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
       {
          vardata = SCIPvarGetData(mastervars[i]);
          assert(vardata != NULL);
@@ -1204,7 +1204,7 @@ SCIP_RETCODE applyCrossover(
    nusedsols = heurdata->nusedsols;
    maxruns = heurdata->maxruns;
 
-   *result = SCIP_DIDNOTFIND;
+   *result = SCIP_DIDNOTRUN;
 
 //   SCIP_CALL( SCIPallocBufferArray(scip, &used, nmembers) );
 //   for( i = 0; i < nmembers; i++ )
@@ -1331,6 +1331,7 @@ SCIP_RETCODE applyCrossover(
 
          return SCIP_OKAY;
       }
+      *result = SCIP_DIDNOTFIND;
 
       /* do not abort subproblem on CTRL-C */
       SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );
