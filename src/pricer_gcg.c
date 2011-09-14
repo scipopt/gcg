@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 //#define CHECKNEWVAR
 //#define CHECKVARBOUNDS
 /**@file   pricer_gcg.c

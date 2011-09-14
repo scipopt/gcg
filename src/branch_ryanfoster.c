@@ -538,11 +538,19 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    return SCIP_OKAY;
 }
 
-/** branching execution method for not completely fixed pseudo solutions */
+/** branching execution method for not completely fixed pseudo solutions
+ *
+ * TODO: maybe we can remove this method */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 {  
    SCIPdebugMessage("Execps method of ryanfoster branching\n");
+   if(SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING)
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    assert(0);
 
    return SCIP_OKAY;

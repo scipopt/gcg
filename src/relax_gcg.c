@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 //#define CHECKCONSISTENCY
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
@@ -1376,11 +1376,21 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          *lowerbound = SCIPgetLocalDualbound(masterprob);
       else
       {
+         SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
          assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+         {
+            double tilim;
+            SCIP_CALL(SCIPgetRealParam(masterprob, "limits/time", &tilim));
+            if(tilim-SCIPgetSolvingTime(masterprob) < 0)
+            {
+               *result = SCIP_DIDNOTRUN;
+               return SCIP_OKAY;
+            }
             *lowerbound = SCIPinfinity(scip);
+         }
       }
       
       SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", *lowerbound);

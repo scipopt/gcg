@@ -513,7 +513,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    SCIPdebugMessage("Execps method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
-
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING )
+      return SCIP_OKAY;
    /* get the branching candidates */
    SCIP_CALL( SCIPgetPseudoBranchCands(scip, &branchcands, &nbranchcands, &npriobranchcands) );
 
