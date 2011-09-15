@@ -111,3 +111,5 @@ v0901:
 - removed interface.{c,h}, it is not needed anymore
 - cleaned up code (whitespace and code style changes)
 - fixed a bug in borderheur related to empty hyperedges
+- try to deal with the time limit of the master by looping until the 
+  original instance hits the time limit

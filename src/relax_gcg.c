@@ -769,7 +769,7 @@ SCIP_RETCODE createMaster(
             assert(vardata->data.origvardata.linkingvardata->nblocks == count);
          }
 #endif
-    SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, vars[v]) );
+         SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, vars[v]) );
 #ifndef NDEBUG
          /* checks that GCGrelaxCreateLinkingPricingVars() worked correctly */
          {
@@ -1321,19 +1321,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    /* solve the next node in the master problem */
    SCIPdebugMessage("Solve master LP.\n");
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip, timelimit) )
-   {
-      double tilim;
-      SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time",
-            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob) + 3) );
-      SCIP_CALL(SCIPgetRealParam(masterprob, "limits/time", &tilim));
-
-      SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n", 
-            timelimit - SCIPgetSolvingTime(scip), 
-            timelimit - SCIPgetSolvingTime(scip) + SCIPgetSolvingTime(masterprob) + 3,
-            tilim - SCIPgetSolvingTime(masterprob));
-   }
 
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
@@ -1347,17 +1334,34 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", 
             ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
 
-      SCIP_CALL( SCIPsolve(masterprob) );
-
-      if(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT)
+      while( !SCIPisStopped(scip))
       {
-         if(!SCIPisStopped(scip))
+         double mastertimelimit;
+         SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+         if( !SCIPisInfinity(scip, timelimit) )
          {
-            double tilim;
-            SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &tilim));
-            SCIPerrorMessage("Time limit: %f elapsed: %f left: %f\n", tilim, SCIPgetSolvingTime(scip), tilim - SCIPgetSolvingTime(scip));
+
+            /* give the master 2% more time then the original scip has left */
+            mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
+            SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit));
+
+            SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n",
+                  timelimit - SCIPgetSolvingTime(scip),
+                  mastertimelimit,
+                  mastertimelimit - SCIPgetSolvingTime(masterprob));
          }
-         assert(SCIPisStopped(scip));
+         SCIP_CALL( SCIPsolve(masterprob) );
+
+         if(SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT)
+         {
+            break;
+         }
+
+         if( !SCIPisInfinity(scip, timelimit) )
+            SCIPinfoMessage(scip, NULL, "Masterprob was to short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+      }
+      if(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip))
+      {
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }
