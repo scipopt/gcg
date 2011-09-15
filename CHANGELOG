@@ -109,3 +109,5 @@ v0901:
 - try to avoid infeasible problems if the timelimit is hit during farkas
   pricing
 - removed interface.{c,h}, it is not needed anymore
+- cleaned up code (whitespace and code style changes)
+- fixed a bug in borderheur related to empty hyperedges

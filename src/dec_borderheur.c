@@ -433,7 +433,7 @@ SCIP_RETCODE callMetis(
       curvars = SCIPgetVarsXXX(scip, hedge.cons);
       for( j = 0; j < ncurvars; ++j )
       {
-         int ind = SCIPvarGetProbindex(curvars[j]);
+         int ind = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
          assert(ind < SCIPgetNVars(scip));
          if( ind >= 0)
             SCIPinfoMessage(scip, file, "%d ", ind + 1 );
@@ -513,7 +513,7 @@ SCIP_RETCODE callMetis(
     * parse the output into the vector
     * alloc the memory
     */
-   if( detectordata->partition == NULL)
+   if( detectordata->partition == NULL )
    {
       SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->partition, nvertices));
    }
@@ -906,7 +906,7 @@ SCIP_RETCODE evaluateDecomposition(
             assert(SCIPhashmapExists(detectordata->varstoblock, var));
             block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, var);
 
-            if( block == detectordata->blocks + 1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
+            if( block == detectordata->blocks + 1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
             {
                ++(nlinkvarsblocks[i]);
             }
