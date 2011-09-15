@@ -72,6 +72,7 @@ MAINOBJ		=	reader_blk.o \
 				cons_decomp.o \
 				dec_arrowheur.o \
 				dec_borderheur.o \
+				dec_stairheur.o \
 				gcggithash.o \
 				reader_gp.o \
 				scip_misc.o \
