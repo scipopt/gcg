@@ -8,21 +8,21 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-
-/**@file    interface.h
- * @brief   scip interface for gcg (header file)
- * @author  Martin Bergner
+/**@file   gcggithash.c
+ * @brief  git hash methods
+ * @author Stefan Heinz
+ * @author Martin Bergner
  */
-#ifndef INTERFACE_H_
-#define INTERFACE_H_
 
-#include "scip/scip.h"
-extern SCIP_RETCODE GCGsetBlocksForProblem(
-		SCIP *scip,
-		int* blocksPerVar,
-		int nblocks,
-		int* masterConstraints,
-		int nMasterConstraints
-		);
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#endif /* INTERFACE_H_ */
+#include "gcggithash.h"
+#include "githash.c"
+
+/** returns the SCIP git hash */
+const char* GCGgetGitHash(
+   void
+   )
+{
+   return GCG_GITHASH;
+}

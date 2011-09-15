@@ -156,7 +156,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    *result = SCIP_DIDNOTRUN;
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
+   if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
 
    /* get heuristic data */

@@ -1,15 +1,10 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Colum Generation                                 */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
-/*                                                                           */
-/*    Copyright (C) 2002-2011 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
-/*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
-/*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id: cons_decomp.h,v 1.27.2.1 2011/01/02 11:19:45 bzfheinz Exp $"
@@ -27,7 +22,7 @@
 
 #include "scip/scip.h"
 #include "type_detector.h"
-#include "type_decomp.h"
+
 typedef struct DEC_Detector DEC_DETECTOR;
 typedef struct DEC_DetectorData DEC_DETECTORDATA;
 
@@ -77,12 +72,17 @@ extern
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,
    const char *name,
-   int priority,
    DEC_DETECTORDATA *detectordata,
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),
    DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),
    DEC_DECL_INITDETECTOR((*initDetector)),
-   DEC_DECL_EXITDETECTOR((*exitDetector))
+   DEC_DECL_EXITDETECTOR((*exitDetector)),
+   DEC_DECL_GETPRIORITY((*getPriority))
+   );
+
+extern
+SCIP_Real DECgetRemainingTime(
+   SCIP* scip
    );
 
 #ifdef __cplusplus

@@ -19,7 +19,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <limits.h>
 
 #include "cons_integralOrig.h"
 #include "pricer_gcg.h"

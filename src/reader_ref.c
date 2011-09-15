@@ -11,6 +11,7 @@
 //#define SCIP_DEBUG
 /**@file   reader_ref.c
  * @brief  REF file reader for files *ref.txt
+ * @ingroup FILEREADERS
  * @author Gerald Gamrath
  * @author Christian Puchert
  *
@@ -357,32 +358,6 @@ SCIP_Bool getNextToken(
    return TRUE;
 }
 
-#if 0
-/** puts the current token on the token stack, such that it is read at the next call to getNextToken() */
-static
-void pushToken(
-   REFINPUT*              refinput             /**< REF reading data */
-   )
-{
-   assert(refinput != NULL);
-   assert(refinput->npushedtokens < REF_MAX_PUSHEDTOKENS);
-
-   swapPointers(&refinput->pushedtokens[refinput->npushedtokens], &refinput->token);
-   refinput->npushedtokens++;
-}
-
-/** swaps the current token with the token buffer */
-static
-void swapTokenBuffer(
-   REFINPUT*              refinput             /**< REF reading data */
-   )
-{
-   assert(refinput != NULL);
-
-   swapPointers(&refinput->token, &refinput->tokenbuf);
-}
-#endif
-
 /** returns whether the current token is a value */
 static
 SCIP_Bool isInt(
@@ -414,91 +389,6 @@ SCIP_Bool isInt(
 
    return FALSE;
 }
-
-#if 0
-/** checks whether the current token is a section identifier, and if yes, switches to the corresponding section */
-static
-SCIP_Bool isNewSection(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
-   )
-{
-   SCIP_Bool iscolon;
-
-   assert(refinput != NULL);
-
-   /* remember first token by swapping the token buffer */
-   swapTokenBuffer(refinput);
-
-   /* look at next token: if this is a ':', the first token is a name and no section keyword */
-   iscolon = FALSE;
-   if( getNextToken(refinput) )
-   {
-      iscolon = (strcmp(refinput->token, ":") == 0);
-      pushToken(refinput);
-   }
-
-   /* reinstall the previous token by swapping back the token buffer */
-   swapTokenBuffer(refinput);
-
-   /* check for ':' */
-   if( iscolon )
-      return FALSE;
-
-   if( strcasecmp(refinput->token, "NBLOCKS") == 0 )
-   {
-      SCIPdebugMessage("(line %d) new section: NBLOCKS\n", refinput->linenumber);
-      refinput->section = REF_NBLOCKS;
-      return TRUE;
-   }
-
-   if( strcasecmp(refinput->token, "BLOCK") == 0 )
-   {
-      int blocknr;
-
-      refinput->section = REF_BLOCK;
-      
-      if( getNextToken(refinput) )
-      {
-         /* read block number */
-         if( isInt(scip, refinput, &blocknr) )
-         {
-            assert(blocknr >= 0);
-            assert(blocknr <= refinput->nblocks);
-            
-            refinput->blocknr = blocknr-1;
-         }
-         else 
-            syntaxError(scip, refinput, "no block number after block keyword!\n");
-      }
-      else 
-         syntaxError(scip, refinput, "no block number after block keyword!\n");
-
-      SCIPdebugMessage("new section: BLOCK %d\n", refinput->blocknr);
-
-      return TRUE;
-
-   }
-
-   if( strcasecmp(refinput->token, "MASTERCONSS") == 0 )
-   {
-      refinput->section = REF_MASTERCONSS;
-      
-      SCIPdebugMessage("new section: MASTERCONSS\n");
-
-      return TRUE;
-   }
-
-   if( strcasecmp(refinput->token, "END") == 0 )
-   {
-      SCIPdebugMessage("(line %d) new section: END\n", refinput->linenumber);
-      refinput->section = REF_END;
-      return TRUE;
-   }
-
-   return FALSE;
-}
-#endif
 
 /** reads the header of the file */
 static

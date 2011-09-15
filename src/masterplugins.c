@@ -16,16 +16,99 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#define USEHEURS 1
+#define USESEPA 0
+#define USEPROP 1
 
 #include "masterplugins.h"
+
+#include "scip/cons_and.h"
+#include "scip/cons_bounddisjunction.h"
+#include "scip/cons_conjunction.h"
+#include "scip/cons_integral.h"
+#include "scip/cons_knapsack.h"
+#include "scip/cons_linear.h"
+#include "scip/cons_logicor.h"
+#include "scip/cons_or.h"
+#include "scip/cons_setppc.h"
+#include "scip/cons_varbound.h"
+#include "scip/cons_xor.h"
+#include "scip/disp_default.h"
+#include "scip/dialog_default.h"
+
+#if USEHEURS
+#include "scip/heur_actconsdiving.h"
+#include "scip/heur_coefdiving.h"
+#include "scip/heur_crossover.h"
+#include "scip/heur_feaspump.h"
+#include "scip/heur_fixandinfer.h"
+#include "scip/heur_fracdiving.h"
+#include "scip/heur_guideddiving.h"
+#include "scip/heur_intdiving.h"
+#include "scip/heur_intshifting.h"
+#include "scip/heur_linesearchdiving.h"
+#include "scip/heur_localbranching.h"
+#include "scip/heur_mutation.h"
+#include "scip/heur_objpscostdiving.h"
+#include "scip/heur_octane.h"
+#include "scip/heur_oneopt.h"
+#include "scip/heur_pscostdiving.h"
+#include "scip/heur_rens.h"
+#include "scip/heur_rins.h"
+#include "scip/heur_rootsoldiving.h"
+#include "scip/heur_rounding.h"
+#include "scip/heur_shifting.h"
+#include "scip/heur_simplerounding.h"
+#include "scip/heur_veclendiving.h"
+#endif
+
+#include "scip/presol_dualfix.h"
+#include "scip/presol_implics.h"
+#include "scip/presol_inttobinary.h"
+#include "scip/presol_trivial.h"
+#include "scip/presol_boundshift.h"
+
+#if USEPROP
+#include "scip/prop_probing.h"
+#include "scip/prop_pseudoobj.h"
+#include "scip/prop_rootredcost.h"
+#include "scip/prop_redcost.h"
+#endif
+
+#if USESEPA
+#include "scip/sepa_clique.h"
+#include "scip/sepa_cmir.h"
+#include "scip/sepa_flowcover.h"
+#include "scip/sepa_gomory.h"
+#include "scip/sepa_impliedbounds.h"
+#include "scip/sepa_intobj.h"
+#include "scip/sepa_mcf.h"
+#include "scip/sepa_strongcg.h"
+#endif
+
+#include "scip/reader_cip.h"
+#include "scip/reader_lp.h"
+#include "scip/scipshell.h"
+
+/* GGC specific stuff */
+#include "pricer_gcg.h"
+#include "nodesel_master.h"
+#include "cons_masterbranch.h"
+#include "cons_integralOrig.h"
+#include "sepa_master.h"
+#include "branch_master.h"
 #include "scip/debug.h"
 #include "disp_master.h"
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 
-#define USEHEURS 1
-#define USESEPA 0
-#define USEPROP 1
+/* Christian's heuristics */
+#include "heur_feasrestmaster.h"
+#include "heur_greedycolsel.h"
+#include "heur_relaxcolsel.h"
+#include "heur_restmaster.h"
+
+
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -94,11 +177,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
    //SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
-#endif
-
-#if 0
-   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
-   SCIP_CALL( SCIPincludePropRootredcost(scip) );
 #endif
 
 #if USESEPA

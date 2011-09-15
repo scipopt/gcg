@@ -29,7 +29,6 @@
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
-#include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
 
@@ -465,21 +464,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_CALL( SCIPpresolve(subscip) );
 #endif
 
-
-
    SCIPdebugMessage("RENS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
-
-#if 0
-   {
-   char fname[SCIP_MAXSTRLEN];
-   (void) SCIPsnprintf(fname, SCIP_MAXSTRLEN, "test/%s.lp", SCIPgetProbName(scip));
-   SCIPsetNodeLimit(subscip, 1);
-   SCIP_CALL( SCIPsolve(subscip) );
-   SCIP_CALL( SCIPwriteMIP(subscip,fname,TRUE,TRUE) );
-   SCIPmessagePrintInfo("wrote RENS-subMIP to file <%s>\n",fname);
-   SCIPsetNodeLimit(subscip, maxnodes);
-   }
-#endif
 
    /* after presolving, we should have at least reached a certain fixing rate over ALL variables (including continuous)
     * to ensure that not only the MIP but also the LP relaxation is easy enough
@@ -616,7 +601,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    *result = SCIP_DELAYED;
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
+   if(  SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTRUN;

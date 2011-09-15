@@ -7,29 +7,26 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: presol_borderheur.h,v 1.16 2010/01/04 20:35:45 bzfheinz Exp $"
 
-/**@file   dec_borderheur.h
- * @brief  borderheur presolver
+/**@file   gcggithash.h
+ * @brief  git hash methods
+ * @author Stefan Heinz
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_DEC_BORDERHEUR_H__
-#define __SCIP_DEC_BORDERHEUR_H__
-
-
-#include "scip/scip.h"
+#ifndef __GCGGITHASH_H__
+#define __GCGGITHASH_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** returns the GCG git hash */
 extern
-/** creates the borderheur presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionBorderheur(
-      SCIP*                 scip                /**< SCIP data structure */
+const char* GCGgetGitHash(
+   void
    );
 
 #ifdef __cplusplus

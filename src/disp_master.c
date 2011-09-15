@@ -22,6 +22,7 @@
 
 #include "disp_master.h"
 #include "pricer_gcg.h"
+#include "relax_gcg.h"
 
 #define DISP_NAME_SOLFOUND      "solfound"
 #define DISP_DESC_SOLFOUND      "letter that indicates the heuristic, that found the solution"

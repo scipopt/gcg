@@ -48,12 +48,6 @@ SCIP_RETCODE SCIPincludePricingPlugins(
    SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
    SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
-#if 0
-   SCIP_CALL( SCIPincludeConshdlrEqknapsack(scip) );
-   SCIP_CALL( SCIPincludeConshdlrInvarknapsack(scip) );
-   SCIP_CALL( SCIPincludeConshdlrBinpack(scip) );
-#endif
-
    SCIP_CALL( SCIPincludeReaderCcg(scip) );
    SCIP_CALL( SCIPincludeReaderCip(scip) );
    SCIP_CALL( SCIPincludeReaderCnf(scip) );

@@ -10,6 +10,7 @@
 #pragma ident "@(#) $Id$"
 
 /**@file   type_solver.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for pricing problem solvers in gcg projects
  * @author Gerald Gamrath
  */

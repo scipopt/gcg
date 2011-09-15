@@ -8,8 +8,10 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident "@(#) $Id$"
-//#define SCIP_DEBUG
-//#define CHECKCONSISTENCY
+/*
+ #define SCIP_DEBUG
+ #define CHECKCONSISTENCY
+ */
 /**@file   cons_origbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
@@ -19,10 +21,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/type_cons.h"
-#include "scip/cons_linear.h"
 #include "cons_origbranch.h"
+
+#include "scip/cons_linear.h"
+
 #include "relax_gcg.h"
+#include "cons_masterbranch.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "origbranch"
@@ -357,7 +361,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 /** creates the handler for origbranch constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    SCIP*                 scip                /**< SCIP data structure */
-		       )
+   )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
 

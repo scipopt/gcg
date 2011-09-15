@@ -10,6 +10,7 @@
 #pragma ident "@(#) $Id: type_detector.h 198 2011-01-06 16:58:56Z ggamrath $"
 
 /**@file   type_detector.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for branching rules in gcg projects
  * @author Martin Bergner
  */
@@ -30,22 +31,26 @@ extern "C" {
 
 /**
  * initialize data for a detector
+ *
+ * scip SCIP data structure
  */
 #define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
 
+/**
+ * set decomp structure
+ */
 #define DEC_DECL_SETSTRUCTDECOMP(x) void x (SCIP* scip, DECDECOMP* decdecomp)
 
-/**
- * free data from a detector
- */
+/** free data from a detector */
 #define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
 
-/**
- * detects the structure of a the problem
- */
+/** detects the structure of a the problem */
 #define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)
 
-
+/**
+ * get detector priority
+ */
+#define DEC_DECL_GETPRIORITY(x) int x (SCIP* scip)
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,7 @@
 #pragma ident "@(#) $Id: type_decomp.h 198 2011-01-06 16:58:56Z ggamrath $"
 
 /**@file   type_decomp.h
+ * @ingroup TYPEDEFINITIONS
  * @brief  type definitions for branching rules in gcg projects
  * @author Martin Bergner
  */

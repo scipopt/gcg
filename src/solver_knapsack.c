@@ -23,7 +23,7 @@
 #include "scip/cons_knapsack.h"
 #include "type_solver.h"
 #include "pricer_gcg.h"
-
+#include "relax_gcg.h"
 
 
 #define SOLVER_NAME          "knapsack"

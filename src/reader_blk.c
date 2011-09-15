@@ -11,6 +11,7 @@
 //#define SCIP_DEBUG
 /**@file   reader_blk.c
  * @brief  BLK file reader
+ * @ingroup FILEREADERS
  * @author Gerald Gamrath
  *
  */
@@ -35,8 +36,7 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_sos1.h"
 #include "scip/cons_sos2.h"
-#include "scip/pub_misc.h"
-#include "scip/scip.h"
+
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"

@@ -26,6 +26,8 @@
 
 #include "heur_gcgcoefdiving.h"
 
+/* @todo: remove include of cons_masterbranch */
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 
@@ -381,7 +383,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
 //   if( maxpricerounds != -1 && heurdata->npricerounds >= maxpricerounds )
 //   {
 //      SCIPdebugMessage("GCG coefdiving not called because of pricing round limit: %d/%d pricing rounds\n", heurdata->npricerounds, maxpricerounds);
-//	   return SCIP_OKAY;
+//      return SCIP_OKAY;
 //   }
 
    SCIPdebugMessage("Maximum number of LP iters and price rounds: %"SCIP_LONGINT_FORMAT", %d\n", maxnlpiterations, maxpricerounds);
@@ -464,7 +466,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations
 //             && (maxpricerounds == -1 || totalpricerounds < maxpricerounds)
              && objval < searchbound))
-	  && !SCIPisStopped(scip) )
+             && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;

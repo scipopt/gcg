@@ -25,7 +25,6 @@
 #include "cons_masterbranch.h"
 #include "pricer_gcg.h"
 
-
 #define NODESEL_NAME             "master"
 #define NODESEL_DESC             "orig master coordination"
 #define NODESEL_STDPRIORITY           0

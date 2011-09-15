@@ -19,10 +19,8 @@
 #ifndef __SCIP_RELAX_GCG_H__
 #define __SCIP_RELAX_GCG_H__
 
-
+#include "scip/scip.h"
 #include "type_branchgcg.h"
-
-
 
 /** creates the gcg relaxator and includes it in SCIP */
 extern

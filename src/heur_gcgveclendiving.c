@@ -26,6 +26,8 @@
 
 #include "heur_gcgveclendiving.h"
 
+/* @todo: remove include of cons_masterbranch */
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 

@@ -14,6 +14,8 @@
  * @brief  gcg user interface dialog
  * @author Tobias Achterberg
  * @author Timo Berthold
+ * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -21,7 +23,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/scip.h"
 #include "scip/pub_dialog.h"
 #include "scip/type_dialog.h"
 
@@ -2034,7 +2035,7 @@ SCIP_RETCODE GCGcreateRootDialog(
    )
 {
    SCIP_CALL( SCIPincludeDialog(scip, root, NULL, GCGdialogExecMenuLazy, NULL, NULL,
-         "SCIP", "SCIP's main menu", TRUE, NULL) );
+         "GCG", "GCG's main menu", TRUE, NULL) );
    
    SCIP_CALL( SCIPsetRootDialog(scip, *root) );
    SCIP_CALL( SCIPreleaseDialog(scip, root) );
@@ -2313,7 +2314,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    if( !SCIPdialogHasEntry(root, "quit") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecQuit, NULL, NULL,
-            "quit", "leave SCIP", FALSE, NULL) );
+            "quit", "leave GCG", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

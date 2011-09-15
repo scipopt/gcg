@@ -26,6 +26,8 @@
 
 #include "heur_gcgfracdiving.h"
 
+/* @todo: remove include of cons_masterbranch */
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 
@@ -458,7 +460,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound)) 
-	  && !SCIPisStopped(scip) )
+         && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;

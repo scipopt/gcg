@@ -14,23 +14,15 @@ typedef enum  {
    linear, knapsack, varbound, setpacking, setcovering, setpartitioning, logicor, sos1, sos2, unknown, nconsTypeItems
 } consType;
 
-#if 0
-SCIP_RETCODE SCIPcopyProblem(
-      SCIP *scip,
-      SCIP* const* target,
-      SCIP_HASHMAP ** varmap,
-      SCIP_CONS * const* conss,
-      int nconss,
-      SCIP_VAR ** vars,
-      int nvars);
+extern
+SCIP_Bool isVarRelevant(
+   SCIP_VAR* var
+   );
 
-SCIP_RETCODE SCIPcopyPresolvedProblem(SCIP *scip,
-SCIP* const* target,
-SCIP_CONS* const* conss,
-int nconss,
-SCIP_VAR* const* vars,
-int nvars);
-#endif
+extern
+SCIP_VAR* getRelevantVariable(
+   SCIP_VAR *var
+   );
 
 consType SCIPconsGetType(SCIP* scip, SCIP_CONS *cons);
 

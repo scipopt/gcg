@@ -34,8 +34,6 @@
 #include "branch_relpsprob.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
-#include "scip/type_var.h"
-#include "scip/scip.h"
 
 
 #define BRANCHRULE_NAME          "relpsprob"
@@ -1398,8 +1396,8 @@ SCIP_RETCODE execRelpsprob(
 #ifdef SCIP_DEBUG
       if ( bestsbcand >= 0 )
       {
-	 SCIPdebugMessage(" -> best: <%s> (%g / %g / %g)\n",
-	    SCIPvarGetName(branchcands[bestsbcand]), bestsbscore, bestsbfracscore, bestsbdomainscore);
+         SCIPdebugMessage(" -> best: <%s> (%g / %g / %g)\n",
+               SCIPvarGetName(branchcands[bestsbcand]), bestsbscore, bestsbfracscore, bestsbdomainscore);
       }
 #endif
       if ( bestsbcand >= 0 )
