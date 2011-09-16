@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma ident ""
-//#define SCIP_DEBUG
+/*#define SCIP_DEBUG*/
 /**@file   reader_ref.c
  * @brief  REF file reader for files *ref.txt
  * @ingroup FILEREADERS
@@ -32,7 +32,7 @@
 #include "relax_gcg.h"
 #include "struct_decomp.h"
 #include "scip/cons_linear.h"
-#include "scip/scip.h"
+#include "pub_gcgvar.h"
 
 #define READER_NAME             "refreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -506,8 +506,6 @@ SCIP_RETCODE readBlocks(
       {
          SCIP_CONSHDLR* conshdlr;
          SCIP_VAR** vars;
-         SCIP_VARDATA* vardata;
-//         SCIP_Real* vals;
          int consnr;
          int nvars;
 
@@ -523,7 +521,6 @@ SCIP_RETCODE readBlocks(
             if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0)
             {
                vars = SCIPgetVarsLinear(scip, cons);
-//               vals = SCIPgetValsLinear(scip, cons);
                nvars = SCIPgetNVarsLinear(scip, cons);
             }
             else
@@ -538,27 +535,21 @@ SCIP_RETCODE readBlocks(
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
-//               val = vals[v];
-
-//               if( SCIPisZero(scip, val) )
-//                  continue;
 
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
-               vardata = SCIPvarGetData(var);
-               assert( vardata != NULL );
                /* set the block number of the variable to the number of the current block */
 #ifdef GCG_NATIVE_LINKINGVARS
                SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                refinput->nassignedvars++;
 #else
-               if( vardata->blocknr == -1 )
+               if( GCGvarGetBlock(var) == -1 )
                {
                   /* set the block number of the variable to the number of the current block */
                   SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                   refinput->nassignedvars++;
                }
-               else if( vardata->blocknr != refinput->blocknr )
+               else if( GCGvarGetBlock(var) != refinput->blocknr )
                {
                   copyvars[ncopyvars] = var;
                   ncopyvars++;
@@ -860,7 +851,6 @@ SCIP_RETCODE SCIPreadRef(
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
    int nvars;
-   SCIP_VARDATA* vardata;
 #endif
 
    /* initialize REF input data */
@@ -899,10 +889,7 @@ SCIP_RETCODE SCIPreadRef(
 
    for( i = 0; i < nvars; i++ )
    {
-      vardata = SCIPvarGetData(vars[i]);
-      assert( vardata != NULL );
-
-      if( vardata->blocknr == -1 )
+      if( GCGvarGetBlock(vars[i]) == -1)
       {
          SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
       }
