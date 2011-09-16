@@ -63,6 +63,21 @@ SCIP_Bool GCGvarIsOriginal(
    return vardata->vartype == GCG_VARTYPE_ORIGINAL;
 }
 
+/** Returns TRUE or FALSE whether variable is a linking variable or not */
+extern
+SCIP_Bool GCGvarIsLinking(
+      SCIP_VAR* var /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->blocknr == -2;
+}
+
 /** Returns the pricing var of an original variable */
 extern
 SCIP_VAR* GCGoriginalVarGetPricingVar(
@@ -151,3 +166,103 @@ SCIP_Real* GCGoriginalVarGetMastervals(
    assert(vardata->data.origvardata.mastervals != NULL);
    return vardata->data.origvardata.mastervals;
 }
+
+/** Returns the number of original variables the master variable is contained in */
+extern
+int GCGmasterVarGetNOrigvars(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.norigvars >= 0);
+   return vardata->data.mastervardata.norigvars;
+}
+
+/** Returns the original variables the master variable is contained in */
+extern
+SCIP_VAR** GCGmasterVarGetOrigvars(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.origvars != NULL);
+   return vardata->data.mastervardata.origvars;
+}
+
+/** Returns the fraction of original variables the master variable is contained in */
+extern
+SCIP_Real* GCGmasterVarGetOrigvals(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsMaster(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.mastervardata.origvals != NULL);
+   return vardata->data.mastervardata.origvals;
+}
+
+/** Returns the number of original variables the pricing variable is contained in */
+extern
+int GCGpricingVarGetNOrigvars(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.pricingvardata.norigvars >= 0);
+   return vardata->data.pricingvardata.norigvars;
+}
+
+/** Returns the original variables the pricing variable is contained in */
+extern
+SCIP_VAR** GCGpricingVarGetOrigvars(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.pricingvardata.origvars != NULL);
+   return vardata->data.pricingvardata.origvars;
+}
+
+/** Returns the block of the variable */
+extern
+int GCGvarGetBlock(
+   SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->blocknr >= -2);
+   return vardata->blocknr;
+ }

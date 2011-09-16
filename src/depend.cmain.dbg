@@ -272,7 +272,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/nlpi/nlpi_ipopt.h src/relax_gcg.h src/type_branchgcg.h \
  src/struct_vardata.h src/struct_branchgcg.h src/cons_origbranch.h \
  src/cons_masterbranch.h src/pricer_gcg.h src/type_solver.h \
- src/masterplugins.h src/nodesel_master.h
+ src/masterplugins.h src/nodesel_master.h src/pub_gcgvar.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -311,7 +311,8 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/scip/cons_knapsack.h src/pricer_gcg.h src/type_solver.h \
  src/sepa_master.h src/struct_vardata.h src/relax_gcg.h \
- src/type_branchgcg.h src/struct_solver.h src/scip_misc.h
+ src/type_branchgcg.h src/struct_solver.h src/scip_misc.h \
+ src/pub_gcgvar.h
 $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -350,7 +351,7 @@ $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  src/relax_gcg.h src/type_branchgcg.h src/pricer_gcg.h src/type_solver.h \
  src/cons_origbranch.h src/branch_relpsprob.h \
- lib/scip/src/scip/cons_linear.h src/struct_vardata.h
+ lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h
 $(OBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -389,7 +390,7 @@ $(OBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  src/relax_gcg.h src/type_branchgcg.h src/cons_origbranch.h \
  src/pricer_gcg.h src/type_solver.h lib/scip/src/scip/cons_varbound.h \
- src/struct_branchgcg.h src/struct_vardata.h
+ src/pub_gcgvar.h
 $(OBJDIR)/cons_origbranch.o: src/cons_origbranch.c src/cons_origbranch.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -503,8 +504,8 @@ $(OBJDIR)/cons_integralOrig.o: src/cons_integralOrig.c src/cons_integralOrig.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
- src/pricer_gcg.h src/type_solver.h src/struct_vardata.h \
- src/cons_masterbranch.h src/type_branchgcg.h
+ src/pricer_gcg.h src/type_solver.h src/cons_masterbranch.h \
+ src/type_branchgcg.h src/pub_gcgvar.h
 $(OBJDIR)/heur_clasfeaspump.o: src/heur_clasfeaspump.c src/heur_clasfeaspump.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -1919,8 +1920,8 @@ $(OBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/scip
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/scip/cons_linear.h \
- lib/scip/src/scip/cons_knapsack.h src/type_solver.h src/struct_vardata.h \
- src/pricer_gcg.h src/relax_gcg.h src/type_branchgcg.h
+ lib/scip/src/scip/cons_knapsack.h src/type_solver.h src/pricer_gcg.h \
+ src/relax_gcg.h src/type_branchgcg.h
 $(OBJDIR)/solver_knapsack.o: src/solver_knapsack.c src/solver_knapsack.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -2212,6 +2213,42 @@ $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_strongcg.h \
  lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
  lib/scip/src/nlpi/nlpi_ipopt.h
+$(OBJDIR)/gcgvar.o: src/gcgvar.c src/pub_gcgvar.h lib/scip/src/scip/scip.h \
+ lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
+ lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
+ lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
+ lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
+ lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
+ lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
+ lib/scip/src/scip/type_lp.h lib/scip/src/scip/type_nlp.h \
+ lib/scip/src/scip/type_var.h lib/scip/src/scip/type_prob.h \
+ lib/scip/src/scip/type_tree.h lib/scip/src/scip/type_branch.h \
+ lib/scip/src/scip/type_conflict.h lib/scip/src/scip/type_cons.h \
+ lib/scip/src/scip/type_sol.h lib/scip/src/scip/type_dialog.h \
+ lib/scip/src/scip/type_disp.h lib/scip/src/scip/type_heur.h \
+ lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
+ lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/pub_branch.h \
+ lib/scip/src/scip/pub_conflict.h lib/scip/src/scip/pub_cons.h \
+ lib/scip/src/scip/pub_cutpool.h lib/scip/src/scip/type_cutpool.h \
+ lib/scip/src/scip/pub_dialog.h lib/scip/src/scip/pub_disp.h \
+ lib/scip/src/scip/pub_event.h lib/scip/src/scip/pub_fileio.h \
+ lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_implics.h \
+ lib/scip/src/scip/type_implics.h lib/scip/src/scip/pub_lp.h \
+ lib/scip/src/scip/type_set.h lib/scip/src/scip/type_stat.h \
+ lib/scip/src/scip/type_lpi.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_nodesel.h \
+ lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
+ lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
+ lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
+ lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
+ lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
+ lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
+ lib/scip/src/scip/intervalarith.h src/struct_vardata.h
 $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \

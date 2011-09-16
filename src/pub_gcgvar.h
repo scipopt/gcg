@@ -29,51 +29,94 @@ extern "C" {
 /** Returns TRUE or FALSE whether variable is a pricing variable or not */
 extern 
 SCIP_Bool GCGvarIsPricing(
-								  SCIP_VAR* var          /**< SCIP variable */
-								  );
+   SCIP_VAR* var          /**< SCIP variable */
+   );
 
 /** Returns TRUE or FALSE whether variable is a original variable or not */
 extern 
 SCIP_Bool GCGvarIsOriginal(
-								  SCIP_VAR* var          /**< SCIP variable structure */
-									);
+   SCIP_VAR* var          /**< SCIP variable structure */
+   );
 
 /** Returns TRUE or FALSE whether variable is a master variable or not */
 extern 
 SCIP_Bool GCGvarIsMaster(
-								  SCIP_VAR* var          /**< SCIP variable structure */
-									);
+   SCIP_VAR* var          /**< SCIP variable structure */
+   );
+
+   /** Returns TRUE or FALSE whether variable is a linking variable or not */
+extern
+SCIP_Bool GCGvarIsLinking(
+   SCIP_VAR* var /**< SCIP variable structure */
+   );
 
 /** Returns the original var of a pricing variable */
 extern
 SCIP_VAR* GCGpricingVarGetOriginalVar(
-      SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var /**< SCIP variable structure */
    );
 
 /** Returns the pricing var of an original variable */
 extern
 SCIP_VAR* GCGoriginalVarGetPricingVar(
-      SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var /**< SCIP variable structure */
    );
 
 /** Returns the number of master variables the original variable is contained in */
 extern
 int GCGoriginalVarGetNMastervars(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
 
 /** Returns the master variables the original variable is contained in */
 extern
 SCIP_VAR** GCGoriginalVarGetMastervars(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
 
 /** Returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_Real* GCGoriginalVarGetMastervals(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
 
+/** Returns the number of original variables the master variable is contained in */
+extern
+int GCGmasterVarGetNOrigvars(
+   SCIP_VAR* var
+   );
+
+/** Returns the original variables the master variable is contained in */
+extern
+SCIP_VAR** GCGmasterVarGetOrigvars(
+   SCIP_VAR* var
+   );
+
+/** Returns the fraction of original variables the master variable is contained in */
+extern
+SCIP_Real* GCGmasterVarGetOrigvals(
+   SCIP_VAR* var
+   );
+
+/** Returns the number of original variables the pricing variable is contained in */
+extern
+int GCGpricingVarGetNOrigvars(
+   SCIP_VAR* var
+   );
+
+/** Returns the original variables the pricing variable is contained in */
+extern
+SCIP_VAR** GCGpricingVarGetOrigvars(
+   SCIP_VAR* var
+   );
+
+/** Returns the block of the variable */
+extern
+int GCGvarGetBlock(
+   SCIP_VAR* var
+   );
+
+   
 #ifdef __cplusplus
 }
 #endif
