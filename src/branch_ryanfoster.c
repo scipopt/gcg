@@ -79,7 +79,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    vardata1 = SCIPvarGetData(branchdata->var1);
    assert(vardata1 != NULL);
    assert(vardata1->vartype == GCG_VARTYPE_ORIGINAL);
-   assert(vardata1->blocknr == branchdata->blocknr);
+   assert(vardata1->blocknr == branchdata->blocknr); /** @todo it is not clear to Martin if linking variables interfere with ryan foster branching */
    assert(vardata1->data.origvardata.pricingvar != NULL);
 
    vardata2 = SCIPvarGetData(branchdata->var2);

@@ -34,7 +34,7 @@
 #include "pricer_gcg.h"
 #include "masterplugins.h"
 #include "nodesel_master.h"
-
+#include "pub_gcgvar.h"
 
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
@@ -333,8 +333,8 @@ SCIP_RETCODE pricingprobsAreIdentical(
       vardata1 = SCIPvarGetData(vars1[i]);
       vardata2 = SCIPvarGetData(vars2[i]);
       assert(vardata1 != NULL && vardata2 != NULL);
-      assert(vardata1->vartype == GCG_VARTYPE_PRICING);
-      assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+      assert(GCGvarIsPricing(vars1[i]));
+      assert(GCGvarIsPricing(vars2[i]));
       assert(vardata1->data.pricingvardata.origvars != NULL);
       assert(vardata2->data.pricingvardata.origvars != NULL);
 
@@ -348,8 +348,8 @@ SCIP_RETCODE pricingprobsAreIdentical(
       vardata1 = SCIPvarGetData(vardata1->data.pricingvardata.origvars[0]);
       vardata2 = SCIPvarGetData(vardata2->data.pricingvardata.origvars[0]);
       assert(vardata1 != NULL && vardata2 != NULL);
-      assert(vardata1->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(GCGvarIsOriginal(vardata1->data.pricingvardata.origvars[0]));
+      assert(GCGvarIsOriginal(vardata2->data.pricingvardata.origvars[0]));
 
       if( !realArraysAreEqual(vardata1->data.origvardata.coefs, vardata1->data.origvardata.ncoefs,
             vardata2->data.origvardata.coefs, vardata2->data.origvardata.ncoefs) )
@@ -474,18 +474,18 @@ SCIP_RETCODE checkIdenticalBlocks(
             for( k = 0; k < nvars; k++ )
             {
                vardata = SCIPvarGetData(vars[k]);
-               assert(vardata->vartype == GCG_VARTYPE_PRICING);
+               assert(GCGvarIsPricing(vars[k]));
                assert(vardata->data.pricingvardata.origvars != NULL);
                assert(vardata->data.pricingvardata.norigvars == 1);
                assert(vardata->data.pricingvardata.origvars[0] != NULL);
                origvar = vardata->data.pricingvardata.origvars[0];
                pricingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars[k]);
                vardata = SCIPvarGetData(pricingvar);
-               assert(vardata->vartype == GCG_VARTYPE_PRICING);
+               assert(GCGvarIsPricing(pricingvar));
                assert(vardata->data.pricingvardata.origvars != NULL);
                assert(vardata->data.pricingvardata.norigvars >= 1);
                vardata2 = SCIPvarGetData(origvar);
-               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(GCGvarIsOriginal(origvar));
                assert(vardata2->data.origvardata.pricingvar != NULL);
                vardata2->data.origvardata.pricingvar = pricingvar;
                if( vardata->data.pricingvardata.norigvars >= 2 )
@@ -783,7 +783,7 @@ SCIP_RETCODE createMaster(
                if( vardata->data.origvardata.linkingvardata->pricingvars[i] != NULL)
                {
                   count++;
-                  assert(SCIPvarGetData(vardata->data.origvardata.linkingvardata->pricingvars[i])->vartype == GCG_VARTYPE_PRICING);
+                  assert(GCGvarIsPricing(vardata->data.origvardata.linkingvardata->pricingvars[i]));
                   assert(vardata->data.origvardata.linkingvardata->linkconss[i] != NULL);
                }
                else
@@ -939,7 +939,7 @@ SCIP_RETCODE createMaster(
    {
       vardata = SCIPvarGetData(vars[v]);
       assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(GCGvarIsOriginal(vars[v]));
       assert(vardata->data.origvardata.coefs == NULL);
 
       vardata->data.origvardata.ncoefs = 0;
@@ -956,7 +956,7 @@ SCIP_RETCODE createMaster(
          assert(!SCIPisZero(scip, vals[v]));
          vardata = SCIPvarGetData(vars[v]);
          assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         assert(GCGvarIsOriginal(vars[v]));
          if( vardata->data.origvardata.ncoefs == 0 ) 
          {
             SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) );
@@ -1193,7 +1193,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       int j;
       vardata = SCIPvarGetData(vars[i]);
       assert( vardata != NULL );
-      assert( vardata->vartype == GCG_VARTYPE_ORIGINAL );
+      assert(GCGvarIsOriginal(vars[i]));
       if(vardata->blocknr == -2)
       {
          assert(vardata->data.origvardata.linkingvardata != NULL);
@@ -1771,7 +1771,7 @@ SCIP_RETCODE GCGrelaxCreatePricingVar(
    /* get variable data of the original variable */
    origvardata = SCIPvarGetData(origvar);
    assert(origvardata != NULL);
-   assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(GCGvarIsOriginal(origvar));
    assert(origvardata->data.origvardata.pricingvar == NULL);
    assert(origvardata->blocknr >= 0);
 
@@ -1831,7 +1831,7 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
    /* get variable data of the original variable */
    origvardata = SCIPvarGetData(origvar);
    assert(origvardata != NULL);
-   assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(GCGvarIsOriginal(origvar));
    assert(origvardata->data.origvardata.pricingvar == NULL);
    assert(origvardata->data.origvardata.linkingvardata != NULL);
    assert(origvardata->data.origvardata.linkingvardata->pricingvars != NULL);
@@ -2011,7 +2011,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
          assert(!SCIPisZero(scip, consvals[v]));
          vardata = SCIPvarGetData(consvars[v]);
          assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+         assert(GCGvarIsOriginal(consvars[v]));
 
          SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), vardata->data.origvardata.ncoefs+1) );
          SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.linkconss), vardata->data.origvardata.ncoefs+1) );
@@ -2071,10 +2071,9 @@ void GCGrelaxPrintVar(
    int i;
 
    vardata = SCIPvarGetData(var);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL || vardata->vartype == GCG_VARTYPE_MASTER
-      || vardata->vartype == GCG_VARTYPE_PRICING );
+   assert(GCGvarIsOriginal(var) || GCGvarIsMaster(var) || GCGvarIsPricing(var));
 
-   if( vardata->vartype == GCG_VARTYPE_ORIGINAL )
+   if( GCGvarIsOriginal(var) )
    {
       printf("Variable %s (original): block %d\n", SCIPvarGetName(var), vardata->blocknr);
       printf("mastervars:");
@@ -2086,7 +2085,7 @@ void GCGrelaxPrintVar(
          printf("%s (%g)\n", SCIPvarGetName(vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars-1]),
             vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars-1]);
    }
-   else if( vardata->vartype == GCG_VARTYPE_PRICING )
+   else if( GCGvarIsPricing(var) )
    {
       printf("Variable %s (pricing): block %d\n", SCIPvarGetName(var), vardata->blocknr);
       printf("origvars:");
@@ -2096,7 +2095,7 @@ void GCGrelaxPrintVar(
       }
       printf("%s\n", SCIPvarGetName(vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars-1]));
    }
-   else if( vardata->vartype == GCG_VARTYPE_MASTER )
+   else if( GCGvarIsMaster(var) )
    {
       printf("Variable %s (master): block %d\n", SCIPvarGetName(var), vardata->blocknr);
       printf("origvars:");
@@ -2127,7 +2126,7 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+   assert(GCGvarIsOriginal(var));
 
    nblocks = GCGrelaxGetNPricingprobs(scip);
    assert(nblocks > 0);
@@ -2790,7 +2789,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
       vardata = SCIPvarGetData(origvars[i]);
 
       assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(GCGvarIsOriginal(origvars[i]));
       assert(vardata->data.origvardata.nmastervars >= 0);
       assert(vardata->data.origvardata.mastervars != NULL);
       assert(vardata->data.origvardata.mastervals != NULL);
@@ -2819,24 +2818,27 @@ void GCGrelaxTransformOrigvalsToMastervals(
        */
       else
       {
-         vardata = SCIPvarGetData(vardata->data.origvardata.pricingvar);
-         assert(vardata->vartype == GCG_VARTYPE_PRICING);
-         assert(vardata->data.pricingvardata.norigvars >= 0);
-         assert(vardata->data.pricingvardata.origvars != NULL);
-         assert(vardata->data.pricingvardata.origvars[0] != NULL);
+         SCIP_VAR* pricingvar;
+         SCIP_VAR* origvar;
+         SCIP_VAR** curmastervars;
+         SCIP_Real* curmastervals;
+         int ncurmastervars;
 
-         vardata = SCIPvarGetData(vardata->data.pricingvardata.origvars[0]);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->data.origvardata.nmastervars >= 0);
-         assert(vardata->data.origvardata.mastervars != NULL);
-         assert(vardata->data.origvardata.mastervals != NULL);
+         pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+         assert(GCGvarIsPricing(pricingvar));
 
-         for( j = 0; j < vardata->data.origvardata.nmastervars; j++ )
+         origvar = GCGpricingVarGetOriginalVar(pricingvar);
+         assert(GCGvarIsOriginal(origvar));
+         curmastervars = GCGoriginalVarGetMastervars(origvar);
+         curmastervals = GCGoriginalVarGetMastervals(origvar);
+         ncurmastervars = GCGoriginalVarGetNMastervars(origvar);
+
+         for( j = 0; j < ncurmastervars; j++ )
          {
             for( k = 0; k < nmastervars; k++ )
-               if( mastervars[k] == vardata->data.origvardata.mastervars[j] )
+               if( mastervars[k] == curmastervars[j] )
                {
-                  mastervals[k] += (vardata->data.origvardata.mastervals[j] * origvals[i]);
+                  mastervals[k] += (curmastervals[j] * origvals[i]);
                   break;
                }
             assert(k < nmastervars);
@@ -2903,7 +2905,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    {
       vardata = SCIPvarGetData(mastervars[i]);
       assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(GCGvarIsMaster(mastervars[i]));
       assert(vardata->data.mastervardata.norigvars >= 0);
       assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
       assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
@@ -2983,11 +2985,11 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* get the right original variable */
                vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
                assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(GCGvarIsOriginal(vardata->data.mastervardata.origvars[j]));
                assert(vardata2->data.origvardata.pricingvar != NULL);
                vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
                assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+               assert(GCGvarIsPricing(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->data.origvardata.pricingvar));
 
                /* just in case a variable has a value higher than the number of blocks, it represents */
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
@@ -3024,7 +3026,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       {
          vardata = SCIPvarGetData(mastervars[i]);
          assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
+         assert(GCGvarIsMaster(mastervars[i]));
          assert(vardata->data.mastervardata.norigvars >= 0);
          assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
          assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
@@ -3062,11 +3064,11 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* get the right original variable */
                vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
                assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+               assert(GCGvarIsOriginal(vardata->data.mastervardata.origvars[j]));
                assert(vardata2->data.origvardata.pricingvar != NULL);
                vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
                assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+               assert(GCGvarIsPricing(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->data.origvardata.pricingvar));
                
                if( vardata2->data.pricingvardata.norigvars <= blocknr[vardata->blocknr] )
                {

@@ -22,8 +22,8 @@
 
 #include "cons_integralOrig.h"
 #include "pricer_gcg.h"
-#include "struct_vardata.h"
 #include "cons_masterbranch.h"
+#include "pub_gcgvar.h"
 
 #define CONSHDLR_NAME          "integralOrig"
 #define CONSHDLR_DESC          "integrality constraint"
@@ -50,7 +50,6 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 {  
    SCIP* origprob;
    SCIP_VAR** origvars;
-   SCIP_VARDATA* vardata;
    int norigvars;
    SCIP_Real solval;
    SCIP_Bool discretization;
@@ -93,20 +92,23 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars; v++ )
    {
+      SCIP_Real* mastervals;
+      SCIP_VAR** mastervars;
+      int nmastervars;
+
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
          continue;
 
       solval = 0;
-      vardata = SCIPvarGetData(origvars[v]);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.mastervars != NULL);
-      assert(vardata->data.origvardata.mastervals != NULL);
-      assert(vardata->data.origvardata.nmastervars >= 0);
+      assert(GCGvarIsOriginal(origvars[v]));
 
-      for( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
+      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
+      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
+
+      for( i = 0; i < nmastervars; i++ )
       {
-         solval += vardata->data.origvardata.mastervals[i] 
-            * SCIPgetSolVal(scip, NULL, vardata->data.origvardata.mastervars[i]);
+         solval += mastervals[i] * SCIPgetSolVal(scip, NULL, mastervars[i]);
       }
       /* create two children if a variable with fractional value is found */
       if( !SCIPisFeasIntegral(scip, solval) )
@@ -197,7 +199,6 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    SCIP* origprob;
    SCIP_VAR** origvars;
    int norigvars;
-   SCIP_VARDATA* vardata;
    SCIP_Real solval;
    SCIP_Bool discretization;
    int v;
@@ -228,20 +229,23 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    /* check for each integral original variable whether it has a fractional value */
    for( v = 0; v < norigvars && *result == SCIP_FEASIBLE; v++ )
    {
+      SCIP_Real* mastervals;
+      SCIP_VAR** mastervars;
+      int nmastervars;
+
       if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
          continue;
 
       solval = 0;
-      vardata = SCIPvarGetData(origvars[v]);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->data.origvardata.mastervars != NULL);
-      assert(vardata->data.origvardata.mastervals != NULL);
-      assert(vardata->data.origvardata.nmastervars >= 0);
+      assert(GCGvarIsOriginal(origvars[v]));
 
-      for( i = 0; i < vardata->data.origvardata.nmastervars; i++ )
+      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
+      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
+      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
+
+      for( i = 0; i < nmastervars; i++ )
       {
-         solval += vardata->data.origvardata.mastervals[i] 
-            * SCIPgetSolVal(scip, sol, vardata->data.origvardata.mastervars[i]);
+         solval += mastervals[i] * SCIPgetSolVal(scip, sol, mastervars[i]);
       }
       if( !SCIPisFeasIntegral(scip, solval) )
       {
