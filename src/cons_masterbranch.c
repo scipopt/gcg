@@ -29,7 +29,7 @@
 #include "pricer_gcg.h"
 
 #include "struct_vardata.h"
-
+#include "pub_gcgvar.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "masterbranch"
@@ -454,7 +454,7 @@ SCIP_Bool checkVars(
          {
             vardata = SCIPvarGetData(vars[i]);
             assert(vardata != NULL);
-            assert(vardata->vartype == GCG_VARTYPE_MASTER);
+            assert(GCGvarIsMaster(vars[i]));
             assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip)); /* TODO: LINK: This has probably no effect */
             assert(vardata->data.mastervardata.norigvars >= 0);
             assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
@@ -765,9 +765,9 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          /* This should not have an effect on linking variables */
          vardata = SCIPvarGetData(conshdlrData->pendingvars[i]);
          assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER || vardata->vartype == GCG_VARTYPE_PRICING);
+         assert(GCGvarIsMaster(conshdlrData->pendingvars[i]) || GCGvarIsPricing(conshdlrData->pendingvars[i]));
          
-         if( vardata->vartype == GCG_VARTYPE_MASTER )
+         if( GCGvarIsMaster(conshdlrData->pendingvars[i]) )
          {
             if( conshdlrData->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
@@ -813,7 +813,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    {
       vardata = SCIPvarGetData(consdata->boundchgvars[i]);
       assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
+      assert(GCGvarIsOriginal(consdata->boundchgvars[i]));
       assert(vardata->blocknr >= -2 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
 
       /* if variable belongs to no block, skip it here because the bound changes are treated in the propagation */
@@ -905,25 +905,27 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    /* undo local bound changes in the original problem to the pricing problems */
    for( i = consdata->nboundchanges - 1; i >= 0; i-- )
    {
+      int blocknr;
+      blocknr = GCGvarGetBlock(consdata->boundchgvars[i]);
       vardata = SCIPvarGetData(consdata->boundchgvars[i]);
       assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->blocknr >= -2 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+      assert(GCGvarIsOriginal(consdata->boundchgvars[i]));
+      assert(blocknr < GCGrelaxGetNPricingprobs(origscip));
 
       /* if variable belongs to no block, local bound in master was set, is reset automatically */
-      if( vardata->blocknr == -1 )
+      if( blocknr == -1 )
          continue;
 
-      else if( vardata->blocknr >= 0)
+      else if( blocknr >= 0 )
       {
-         assert(vardata->data.origvardata.pricingvar != NULL);
-         assert(GCGrelaxGetPricingprob(origscip, vardata->blocknr) != NULL);
+         assert(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(consdata->boundchgvars[i])) != NULL);
 
          /* reset corresponding bound in the pricing problem */
+
          SCIP_CALL(GCGresetPricingVarBound(scip, origscip,
-               vardata->data.origvardata.pricingvar, consdata, i, vardata->blocknr));
+               GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr));
       }
-      else if(vardata->blocknr == -2)
+      else if(blocknr == -2)
       {
          int j;
          int npricingprobs;
@@ -949,7 +951,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       }
       else
       {
-         SCIPerrorMessage("vardata->blocknr = %d is not valid! This is a serious error!", vardata->blocknr);
+         SCIPerrorMessage("vardata->blocknr = %d is not valid! This is a serious error!", blocknr);
          SCIPABORT();
       }
    }
