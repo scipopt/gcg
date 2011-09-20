@@ -92,8 +92,26 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    assert(vardata != NULL);
    assert(vardata->data.origvardata.pricingvar != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
-
+   assert(!GCGvarIsLinking(var));
    return vardata->data.origvardata.pricingvar;
+}
+
+/** Returns the pricing variables of an linking variable */
+extern
+SCIP_VAR** GCGlinkingVarGetPricingVars(
+   SCIP_VAR* var /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsLinking(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+   return vardata->data.origvardata.linkingvardata->pricingvars;
 }
 
 /** Returns the original var of a pricing variable */
@@ -181,6 +199,10 @@ int GCGmasterVarGetNOrigvars(
    assert(vardata != NULL);
 
    assert(vardata->data.mastervardata.norigvars >= 0);
+   assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+   assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+   assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
+
    return vardata->data.mastervardata.norigvars;
 }
 
@@ -197,7 +219,13 @@ SCIP_VAR** GCGmasterVarGetOrigvars(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   assert(vardata->data.mastervardata.origvars != NULL);
+   assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
+   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars != NULL);
+   assert(vardata->blocknr != -1 || vardata->data.mastervardata.origvars[0] != NULL);
+   assert(vardata->blocknr != -1 || GCGvarGetBlock(vardata->data.mastervardata.origvars[0]) == -1 
+      || GCGvarIsLinking(vardata->data.mastervardata.origvars[0]));
+
+
    return vardata->data.mastervardata.origvars;
 }
 
@@ -214,7 +242,7 @@ SCIP_Real* GCGmasterVarGetOrigvals(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   assert(vardata->data.mastervardata.origvals != NULL);
+   assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
    return vardata->data.mastervardata.origvals;
 }
 
@@ -266,3 +294,27 @@ int GCGvarGetBlock(
    assert(vardata->blocknr >= -2);
    return vardata->blocknr;
  }
+
+/** Returns TRUE if the linking variable is in the block, FALSE otherwise **/
+extern
+SCIP_Bool GCGisLinkingVarInBlock(
+   SCIP_VAR* var,
+   int block
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(block >= 0);
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(GCGvarIsLinking(var));
+   assert(GCGvarIsOriginal(var));
+
+   assert(vardata->data.origvardata.linkingvardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+   return vardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
+
+}

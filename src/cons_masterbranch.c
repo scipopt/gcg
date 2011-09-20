@@ -28,7 +28,6 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 
-#include "struct_vardata.h"
 #include "pub_gcgvar.h"
 
 /* constraint handler properties */
@@ -417,7 +416,6 @@ SCIP_Bool checkVars(
    SCIP_CONSDATA*     consdata;
    SCIP_VAR**         vars;
    int                nvars;
-   SCIP_VARDATA*      vardata;
    SCIP*              origscip;
    int                i;
    int                j;
@@ -452,33 +450,34 @@ SCIP_Bool checkVars(
       {
          if( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
          {
-            vardata = SCIPvarGetData(vars[i]);
-            assert(vardata != NULL);
+            SCIP_VAR** origvars;
+            SCIP_Real *origvals;
+            int norigvars;
+
             assert(GCGvarIsMaster(vars[i]));
-            assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip)); /* TODO: LINK: This has probably no effect */
-            assert(vardata->data.mastervardata.norigvars >= 0);
-            assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-            assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-            
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            origvars = GCGmasterVarGetOrigvars(vars[i]);
+            origvals = GCGmasterVarGetOrigvals(vars[i]);
+            norigvars = GCGmasterVarGetNOrigvars(vars[i]);
+
+            for( j = 0; j < norigvars; j++ )
             {
-               if( vardata->data.mastervardata.origvars[j] == consdata->origvar )
+               if( origvars[j] == consdata->origvar )
                {
                   if( consdata->conssense == GCG_CONSSENSE_GE && 
-                     SCIPisFeasLT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                     SCIPisFeasLT(scip, origvals[j], consdata->val) )
                   {
                      SCIPdebugMessage("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      SCIPdebugMessage("--> Reason: origvars[j] = %s >= origvals[j] = %g violated!\n",
-                        SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);
+                        SCIPvarGetName(origvars[j]), origvals[j]);
                      if( !printall )
                         return FALSE;
                   }
                   if( consdata->conssense == GCG_CONSSENSE_LE && 
-                     SCIPisFeasGT(scip, vardata->data.mastervardata.origvals[j], consdata->val) )
+                     SCIPisFeasGT(scip, origvals[j], consdata->val) )
                   {
                      SCIPdebugMessage("var %s: upper bound should be fixed to 0 because of cons %s [c=%d], but it is not!\n", SCIPvarGetName(vars[i]), SCIPconsGetName(cons), c);
                      SCIPdebugMessage("--> Reason: origvars[j] = %s <= origvals[j] = %g violated!\n",
-                        SCIPvarGetName(vardata->data.mastervardata.origvars[j]), vardata->data.mastervardata.origvals[j]);                       
+                        SCIPvarGetName(origvars[j]), origvals[j]);                       
                      if( !printall )
                         return FALSE;
                   }
@@ -702,7 +701,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIP* origscip;
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA* consdata;
-   SCIP_VARDATA* vardata;
    int i;
 
 
@@ -763,8 +761,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       for( i = 0; i < conshdlrData->npendingbnds; i++ )
       {
          /* This should not have an effect on linking variables */
-         vardata = SCIPvarGetData(conshdlrData->pendingvars[i]);
-         assert(vardata != NULL);
          assert(GCGvarIsMaster(conshdlrData->pendingvars[i]) || GCGvarIsPricing(conshdlrData->pendingvars[i]));
          
          if( GCGvarIsMaster(conshdlrData->pendingvars[i]) )
@@ -794,12 +790,12 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
              * we have to adjust the bound of the corresponding variable in the pricing problem */
             if( conshdlrData->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
-               SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, vardata->blocknr), 
+               SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i])), 
                      conshdlrData->pendingvars[i], conshdlrData->pendingnewbnds[i]) );
             }
             else
             {
-               SCIP_CALL( SCIPchgVarUbGlobal(GCGrelaxGetPricingprob(origscip, vardata->blocknr), 
+               SCIP_CALL( SCIPchgVarUbGlobal(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i])), 
                      conshdlrData->pendingvars[i], conshdlrData->pendingnewbnds[i]) );
             }
          }
@@ -811,45 +807,41 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* apply local bound changes in the original problem to the pricing problems */
    for( i = 0; i < consdata->nboundchanges; i++ )
    {
-      vardata = SCIPvarGetData(consdata->boundchgvars[i]);
-      assert(vardata != NULL);
       assert(GCGvarIsOriginal(consdata->boundchgvars[i]));
-      assert(vardata->blocknr >= -2 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+      assert(GCGvarGetBlock(consdata->boundchgvars[i]) < GCGrelaxGetNPricingprobs(origscip));
 
       /* if variable belongs to no block, skip it here because the bound changes are treated in the propagation */
-      if( vardata->blocknr == -1 )
+      if( GCGvarGetBlock(consdata->boundchgvars[i]) == -1 )
          continue;
 
-      else if( vardata->blocknr >= 0)
+      else if( GCGvarGetBlock(consdata->boundchgvars[i]) >= 0 )
       {
-         assert(vardata->data.origvardata.pricingvar != NULL);
          SCIPdebugMessage("adjusting bound of pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
          SCIP_CALL(GCGtightenPricingVarBound(scip, origscip,
-               vardata->data.origvardata.pricingvar, consdata, i, vardata->blocknr));
+               GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, GCGvarGetBlock(consdata->boundchgvars[i])));
       }
-      else if( vardata->blocknr == -2 )
+      else if( GCGvarGetBlock(consdata->boundchgvars[i]) == -2 )
       {
          int j;
          int npricingprobs;
+         SCIP_VAR** pricingvars;
 
-         assert(vardata->data.origvardata.linkingvardata != NULL);
          npricingprobs = GCGrelaxGetNPricingprobs(scip);
-
+         pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
          SCIPdebugMessage("adjusting bound of linking pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
          for(j = 0; j < npricingprobs; ++j)
          {
-            if(vardata->data.origvardata.linkingvardata->pricingvars[j] == NULL)
+            if(pricingvars[j] == NULL)
                continue;
 
-            SCIP_CALL(GCGtightenPricingVarBound(scip, origscip,
-                  vardata->data.origvardata.linkingvardata->pricingvars[j], consdata, i, j));
+            SCIP_CALL(GCGtightenPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j));
          }
       }
       else
       {
-         SCIPerrorMessage("vardata->blocknr = %d is not valid! This is a serious error!", vardata->blocknr);
+         SCIPerrorMessage("blocknr = %d is not valid! This is a serious error!", GCGvarGetBlock(consdata->boundchgvars[i]));
          SCIPABORT();
       }
    }
@@ -870,7 +862,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA* consdata;
-   SCIP_VARDATA* vardata;
    SCIP* origscip;
    int i;
 
@@ -907,8 +898,6 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    {
       int blocknr;
       blocknr = GCGvarGetBlock(consdata->boundchgvars[i]);
-      vardata = SCIPvarGetData(consdata->boundchgvars[i]);
-      assert(vardata != NULL);
       assert(GCGvarIsOriginal(consdata->boundchgvars[i]));
       assert(blocknr < GCGrelaxGetNPricingprobs(origscip));
 
@@ -928,10 +917,12 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       else if(blocknr == -2)
       {
          int j;
+         SCIP_VAR** pricingvars;
          int npricingprobs;
 
          /* if the variable is linking, we have to perform the same step as above for every existing block*/
-         assert(vardata->data.origvardata.linkingvardata != NULL);
+         assert(GCGvarIsLinking(consdata->boundchgvars[i]));
+         pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
          npricingprobs = GCGrelaxGetNPricingprobs(scip);
 
          /* reset corresponding bound in the pricing problem */
@@ -939,19 +930,18 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          for( j = 0; j < npricingprobs; ++j)
          {
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
-            if( vardata->data.origvardata.linkingvardata->pricingvars[j] == NULL)
+            if( pricingvars[j] == NULL)
                continue;
             
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
 
             /* reset corresponding bound in the pricing problem */
-            SCIP_CALL(GCGresetPricingVarBound(scip, origscip,
-                  vardata->data.origvardata.linkingvardata->pricingvars[j], consdata, i, j));
+            SCIP_CALL(GCGresetPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j));
          }
       }
       else
       {
-         SCIPerrorMessage("vardata->blocknr = %d is not valid! This is a serious error!", blocknr);
+         SCIPerrorMessage("blocknr = %d is not valid! This is a serious error!", blocknr);
          SCIPABORT();
       }
    }
@@ -975,16 +965,13 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_CONSHDLRDATA* conshdlrData;  
    SCIP_CONS* cons;
    SCIP_CONSDATA* consdata;
-   SCIP_VARDATA* vardata;
    SCIP_Real val;
 
    int propcount;
    int i;
    int j;
    int k;
-//   SCIP_Bool fixed;
 
-   SCIP_VARDATA* boundchgvardata;
    SCIP_VAR** vars;
    int nvars;
    int nboundchanges;
@@ -992,8 +979,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_VAR**         propvars;              /**< original variable for which the propagation found domain reductions */
    SCIP_BOUNDTYPE*    propboundtypes;        /**< type of the domain new bound found by propagation */
    SCIP_Real*         propbounds;            /**< new lower/upper bound of the propagated original variable */
-   int                npropbounds;
-   SCIP_VAR* mastervar;
+   int                npropbounds; 
+   SCIP_VAR*          mastervar;
 
 
    assert(conshdlr != NULL); 
@@ -1050,23 +1037,24 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       for( i = 0; i < nvars; i++)
       {
          SCIP_Bool ismastervariablerelevant;
-         vardata = SCIPvarGetData(vars[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_MASTER);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-         assert(vardata->data.mastervardata.norigvars >= 0);
-         assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-         assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 1 );
-         assert(vardata->blocknr >= 0 || vardata->data.mastervardata.origvars[0] != NULL);
-         assert(vardata->blocknr >= 0 || SCIPvarGetData(vardata->data.mastervardata.origvars[0])->blocknr == -1 
-            || SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata != NULL);
+         SCIP_VAR** origvars;
+         SCIP_Real* origvals;
+         int norigvars;
+         int blocknr;
+         blocknr = GCGvarGetBlock(vars[i]);
+
+         assert(GCGvarIsMaster(vars[i]));
+         norigvars = GCGmasterVarGetNOrigvars(vars[i]);
+         origvars = GCGmasterVarGetOrigvars(vars[i]);
+         origvals = GCGmasterVarGetOrigvals(vars[i]);
+
+         assert(blocknr < GCGrelaxGetNPricingprobs(origscip));
+         assert(norigvars >= 0);
 
 //         fixed = FALSE;
 
          ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
-         ismastervariablerelevant = ismastervariablerelevant &&
-               (vardata->blocknr >= 0 || (SCIPvarGetData(vardata->data.mastervardata.origvars[0])->blocknr == -2));
+         ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0]));
          /* only look at master variables not globally fixed to zero that belong to a block */
          if( !ismastervariablerelevant )
          {
@@ -1079,49 +1067,49 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
          {
             SCIP_Bool ismastervarrelevant;
-            assert(conshdlrData->pendingvars[k] != NULL);
-            boundchgvardata = SCIPvarGetData(conshdlrData->pendingvars[k]);
-            assert(boundchgvardata != NULL);
-            assert(boundchgvardata->vartype != GCG_VARTYPE_ORIGINAL);
-            assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+            SCIP_VAR** pricingvars;
+            int bndchgblocknr;
+            SCIP_VAR** bndchgorigvars;
+            assert(GCGvarIsOriginal(conshdlrData->pendingvars[k]));
+            bndchgblocknr = GCGvarGetBlock(conshdlrData->pendingvars[k]);
+            bndchgorigvars = GCGpricingVarGetOrigvars(conshdlrData->pendingvars[k]);
+            assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
             /* LINK: mb: this might work  */
             /* the boundchange was performed on a variable in another block, continue */
 
             /* if we are not dealing with a linking variable, skip the master variable if it is useless */
-            ismastervarrelevant = (boundchgvardata->blocknr == vardata->blocknr);
+            ismastervarrelevant = (bndchgblocknr == blocknr);
             /* if we are dealing with a linking master variable but it has nothing to do with the
              * boundchangevar's block, skip it, too */
-            if( (vardata->data.mastervardata.origvars != NULL) )
+            if( (origvars != NULL) )
             {
-               if( SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata != NULL )
+               if( GCGvarIsLinking(origvars[0]) )
                {
-                  ismastervarrelevant = ismastervarrelevant || (SCIPvarGetData(vardata->data.mastervardata.origvars[0])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] != NULL);
+                  pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+                  ismastervarrelevant = ismastervarrelevant || (pricingvars[bndchgblocknr] != NULL);
                }
             }
 
             if( !ismastervarrelevant )
                continue;
 
-            assert(boundchgvardata->blocknr != -1);
-            assert(boundchgvardata->data.pricingvardata.origvars[0] != NULL);
+            assert(bndchgorigvars[0] != NULL);
             /* val is the value of the branching variable in the current mastervar,
              * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
              * if we do not find the branching variable in this array, it has value 0.0 */
             val = 0.0;
 
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < norigvars; j++ )
             {
                /* Make sure that the original variable and the master variable belong to the same block
                 * or that, in case of linking variables, the linking variable is in that block */
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr
-                     || (SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2
-                           && (vardata->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] != NULL)));
+               assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr)));
 
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */
-               if( vardata->data.mastervardata.origvars[j] == boundchgvardata->data.pricingvardata.origvars[0] )
+               if( origvars[j] == bndchgorigvars[0] )
                {
-                  val = vardata->data.mastervardata.origvals[j];
+                  val = origvals[j];
                   break;
                }
             }
@@ -1158,32 +1146,34 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    /* iterate over all master variables created after the current node was left the last time */
    for( i = consdata->propagatedvars; i < nvars; i++)
    {
-      vardata = SCIPvarGetData(vars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
-      assert(vardata->data.mastervardata.norigvars >= 0);
-      assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-      assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-      assert(vardata->blocknr != -1 || vardata->data.mastervardata.norigvars == 2 );
-      /* TODO: LINK: mb: This might work*/
+      SCIP_VAR** origvars;
+      int norigvars;
+      SCIP_Real* origvals;
+      int blocknr;
 
-//      fixed = FALSE;
+      assert(GCGvarIsMaster(vars[i]));
+      blocknr = GCGvarGetBlock(vars[i]);
+      assert(blocknr >= -1 && blocknr < GCGrelaxGetNPricingprobs(origscip));
+
+      origvals = GCGmasterVarGetOrigvals(vars[i]);
+      norigvars = GCGmasterVarGetNOrigvars(vars[i]);
+      origvars = GCGmasterVarGetOrigvars(vars[i]);
+      /** @todo: LINK: mb: This might work*/
 
       /* only look at variables not already fixed to 0 or that belong to no block */
-      if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && vardata->blocknr >= 0 )
+      if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
       {
          continue;
       }
 
       /* the variable was copied from original to master */
-      if( vardata->blocknr == -1 )
+      if( blocknr == -1 )
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
          for( k = 0; k < nboundchanges; k++ )
          {
-            assert(SCIPisFeasEQ(scip, vardata->data.mastervardata.origvals[0], 1.0));
-            if( vardata->data.mastervardata.origvars[0] == consdata->boundchgvars[k] )
+            assert(SCIPisFeasEQ(scip, origvals[0], 1.0));
+            if( origvars[0] == consdata->boundchgvars[k] )
             {
                /* branching imposes new lower bound */
                if( consdata->boundtypes[k] == SCIP_BOUNDTYPE_LOWER
@@ -1206,31 +1196,27 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       else
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
-//         for( k = 0; k < nboundchanges && !fixed; k++ )
          for( k = 0; k < nboundchanges; k++ )
          {
-            SCIP_VAR** origvars;
 #ifdef SCIP_DEBUG
             SCIP_VAR* var = NULL;
             SCIP_Bool contained = FALSE;
             SCIP_Bool handled = FALSE;
 #endif
-            boundchgvardata = SCIPvarGetData(consdata->boundchgvars[k]);
-            assert(boundchgvardata != NULL);
-            assert(boundchgvardata->vartype == GCG_VARTYPE_ORIGINAL);
-            assert(boundchgvardata->blocknr >= -1 && boundchgvardata->blocknr < GCGrelaxGetNPricingprobs(origscip));
+            int bndchgblocknr;
+            bndchgblocknr = GCGvarGetBlock(consdata->boundchgvars[k]);
+            assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
+            assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
             /* TODO: LINK: mb: This needs to be changed */
             /* the boundchage was performed on a variable in another block, continue */
 
-            origvars = vardata->data.mastervardata.origvars;
             if(origvars == NULL)
                continue;
-            if( boundchgvardata->blocknr != vardata->blocknr || origvars[0] == NULL
-                  || ( SCIPvarGetData( origvars[0])->data.origvardata.linkingvardata != NULL
-                        && SCIPvarGetData( origvars[0])->data.origvardata.linkingvardata->pricingvars[boundchgvardata->blocknr] == NULL))
+
+            if( bndchgblocknr != blocknr || origvars[0] == NULL || GCGisLinkingVarInBlock(origvars[0], bndchgblocknr))
                continue;
 
-            assert(boundchgvardata->blocknr != -1);
+            assert(bndchgblocknr != -1);
 
             /* val is the value of the branching variable in the current mastervar,
              * we set it to 0.0, since variables with 0 coefficient are not stored in the origvars array,
@@ -1238,20 +1224,19 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             val = 0.0;
 
             /* iterate over all original variables contained in the current master variable */
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < norigvars; j++ )
             {
                /* TODO: LINK: mb: the assertion will fail in any case */
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == vardata->blocknr
-                     ||SCIPvarGetData(vardata->data.mastervardata.origvars[j])->data.origvardata.linkingvardata->pricingvars[vardata->blocknr] != NULL);
+               assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
 
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */
-               if( vardata->data.mastervardata.origvars[j] == consdata->boundchgvars[k] )
+               if( origvars[j] == consdata->boundchgvars[k] )
                {
 #ifdef SCIP_DEBUG
                   contained = TRUE;
 #endif
-                  val = vardata->data.mastervardata.origvals[j];
+                  val = origvals[j];
                   break;
                }
             }
@@ -1268,7 +1253,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 #ifdef SCIP_DEBUG
                handled = TRUE;
 #endif
-//               fixed = TRUE; // the break will deal with it
                break;
             }
             /* branching imposes new upper bound */
@@ -1282,7 +1266,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 #ifdef SCIP_DEBUG
                handled = TRUE;
 #endif
-//               fixed = TRUE; // the break will deal with it
                break;
             }
 #ifdef SCIP_DEBUG
@@ -1291,7 +1274,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
 
             }
-            assert(j == vardata->data.mastervardata.norigvars || contained);
+            assert(j == norigvars || contained);
 #endif
          }
       }
@@ -1303,15 +1286,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          &propbounds, &npropbounds) );
    for( i = 0; i < npropbounds; i++ )
    {
-      vardata = SCIPvarGetData(propvars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-      assert(vardata->blocknr == -1); /* TODO: LINK: mb: this might not work */
-      assert(vardata->data.origvardata.nmastervars == 1);
-      assert(vardata->data.origvardata.mastervals[0] == 1);
-      assert(vardata->data.origvardata.mastervars[0] != NULL);
-
-      mastervar = vardata->data.origvardata.mastervars[0];
+      
+      assert(GCGvarIsOriginal(propvars[i]));
+      assert(GCGvarGetBlock(propvars[i]) == -1); /* TODO: LINK: mb: this might not work */
+      assert(GCGoriginalVarGetNMastervars(propvars[i]) == 1);
+      mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
 
       if( propboundtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
@@ -1462,10 +1441,14 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    SCIP_Real oldbound;
    SCIP_Real newbound;
    int i;
-   SCIP_VARDATA* vardata;
+   int blocknr;
 #ifdef SCIP_DEBUG
    SCIP_Bool handled = FALSE;
 #endif
+   SCIP_VAR** mastervars;
+   int nmastervars;
+   SCIP_Real* mastervals;
+
    eventtype = SCIPeventGetType(event);
    var = SCIPeventGetVar(event);
    oldbound = SCIPeventGetOldbound(event);
@@ -1474,12 +1457,15 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    SCIPdebugMessage("eventexec: eventtype = %x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
    //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f, diff = %g\n", eventtype, SCIPvarGetName(var), oldbound, newbound, oldbound-newbound);
 
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-   
+   assert(GCGvarIsOriginal(var));
+   blocknr = GCGvarGetBlock(var);
+
+   nmastervars = GCGoriginalVarGetNMastervars(var);
+   mastervars = GCGoriginalVarGetMastervars(var);
+   mastervals = GCGoriginalVarGetMastervals(var);
+
    /* deal with variables present in the pricing */
-   if( vardata->blocknr >= 0 && GCGrelaxIsPricingprobRelevant(scip, vardata->blocknr) )
+   if( blocknr >= 0 && GCGrelaxIsPricingprobRelevant(scip, blocknr) )
    {
       SCIPdebugMessage("Pricing var!\n");
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
@@ -1488,7 +1474,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          handled = TRUE;
 #endif
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
-               vardata->data.origvardata.pricingvar, SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+               GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
@@ -1496,35 +1482,36 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          handled = TRUE;
 #endif
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
-               vardata->data.origvardata.pricingvar, SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+               GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
    }
    /* deal with variables appearing in the master only */
-   if( vardata->blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( blocknr == -1 && SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      assert(vardata->data.origvardata.nmastervars == 1);
-      assert(vardata->data.origvardata.mastervals[0] == 1);
-      assert(vardata->data.origvardata.mastervars[0] != NULL);
+      assert(nmastervars == 1);
+      assert(mastervals[0] == 1);
+      assert(mastervars[0] != NULL);
+
       SCIPdebugMessage("Master var!\n");
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPvarGetLbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+         assert(SCIPvarGetLbGlobal(mastervars[0]) == oldbound);
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
-               vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-         //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+               mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+         //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPvarGetUbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+         assert(SCIPvarGetUbGlobal(mastervars[0]) == oldbound);
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
-               vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-         //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+               mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+         //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
       {
@@ -1546,16 +1533,19 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       }
    }
    /* deal with linking variables */
-   if( vardata->blocknr == -2 )
+   if( blocknr == -2 )
    {
-      int npricingprobs;
-      SCIPdebugMessage("Linking var!\n");
-      assert(vardata->data.origvardata.nmastervars >= 1);
-      assert(vardata->data.origvardata.mastervals[0] == 1);
-      assert(vardata->data.origvardata.mastervars[0] != NULL);
-      assert(vardata->data.origvardata.linkingvardata != NULL);
 
+      int npricingprobs;
+      SCIP_VAR** pricingvars;
+
+      SCIPdebugMessage("Linking var!\n");
+      pricingvars = GCGlinkingVarGetPricingVars(var);
       npricingprobs = GCGrelaxGetNPricingprobs(scip);
+
+      assert(nmastervars == 1);
+      assert(mastervals[0] == 1);
+      assert(mastervars[0] != NULL);
 
       if( (eventtype & SCIP_EVENTTYPE_GLBCHANGED) != 0 )
       {
@@ -1565,22 +1555,22 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPvarGetLbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+            assert(SCIPvarGetLbGlobal(mastervars[0]) == oldbound);
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
-                  vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-            //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+                  mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+            //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */
          for (i = 0; i < npricingprobs; ++i)
          {
-            if(vardata->data.origvardata.linkingvardata->pricingvars[i] == NULL)
+            if(pricingvars[i] == NULL)
                continue;
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
-                  vardata->data.origvardata.linkingvardata->pricingvars[i], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
+            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip), 
+                  pricingvars[i], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
@@ -1591,22 +1581,22 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPvarGetUbGlobal(vardata->data.origvardata.mastervars[0]) == oldbound);
+            assert(SCIPvarGetUbGlobal(mastervars[0]) == oldbound);
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
-                  vardata->data.origvardata.mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-            //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(vardata->data.origvardata.mastervars[0]), newbound);
+                  mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+            //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */
          for (i = 0; i < npricingprobs; ++i)
          {
-            if(vardata->data.origvardata.linkingvardata->pricingvars[i] == NULL)
+            if(pricingvars[i] == NULL)
                continue;
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
-                  vardata->data.origvardata.linkingvardata->pricingvars[i], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
+                  pricingvars[i], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
 
       }

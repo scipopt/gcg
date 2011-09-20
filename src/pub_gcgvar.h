@@ -62,6 +62,12 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    SCIP_VAR* var /**< SCIP variable structure */
    );
 
+/** Returns the pricing variables of an linking variable */
+extern
+SCIP_VAR** GCGlinkingVarGetPricingVars(
+   SCIP_VAR* var /**< SCIP variable structure */
+   );
+
 /** Returns the number of master variables the original variable is contained in */
 extern
 int GCGoriginalVarGetNMastervars(
@@ -116,6 +122,12 @@ int GCGvarGetBlock(
    SCIP_VAR* var
    );
 
+/** Returns TRUE if the linking variable is in the block, FALSE otherwise */
+extern
+SCIP_Bool GCGisLinkingVarInBlock(
+   SCIP_VAR* var,
+   int block
+   );
    
 #ifdef __cplusplus
 }
