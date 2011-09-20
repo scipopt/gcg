@@ -652,12 +652,14 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
    *result = SCIP_DELAYED;
 
-   /* only call heuristic, if an optimal master LP solution is at hand */
-   if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
+   /* only call heuristic, if an optimal LP solution is at hand */
+   if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("Not executing CG Feaspump: master LP not solved to optimality.\n");
       return SCIP_OKAY;
    }
+
+   assert(SCIPhasCurrentNodeLP(masterprob));
 
    /* only call heuristic, if the LP solution is basic (which allows fast resolve in diving) */
    if( !SCIPisLPSolBasic(masterprob) )
