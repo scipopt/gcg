@@ -569,8 +569,6 @@ SCIP_RETCODE readBlock(
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
 
-      var = NULL;
-
       /* the token must be the name of an existing variable */
       var = SCIPfindVar(scip, blkinput->token);
       if( var == NULL )
@@ -602,8 +600,6 @@ SCIP_RETCODE readMasterconss(
       /* check if we reached a new section */
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
-
-      cons = NULL;
 
       /* the token must be the name of an existing constraint */
       cons = SCIPfindCons(scip, blkinput->token);

@@ -315,11 +315,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    SCIP_VAR* pricingvar2;
 
    int norigvars1;
-   SCIP_Real* origvals1;
    SCIP_VAR** origvars1;
 
    int norigvars2;
-   SCIP_Real* origvals2;
    SCIP_VAR** origvars2;
 
 
@@ -360,7 +358,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       assert(GCGvarIsMaster(mvar1));
       
       origvars1 = GCGmasterVarGetOrigvars(mvar1);
-      origvals1 = GCGmasterVarGetOrigvals(mvar1);
       norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
       
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
@@ -373,7 +370,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             assert(GCGvarIsMaster(mvar2));
             
             origvars2 = GCGmasterVarGetOrigvars(mvar2);
-            origvals2 = GCGmasterVarGetOrigvals(mvar2);
             norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
       
             contained = FALSE;

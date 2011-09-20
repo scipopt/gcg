@@ -1339,7 +1339,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
       while( !SCIPisStopped(scip))
       {
-         double mastertimelimit;
+         double mastertimelimit = SCIPinfinity(scip);
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {

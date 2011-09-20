@@ -1070,7 +1070,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             SCIP_VAR** pricingvars;
             int bndchgblocknr;
             SCIP_VAR** bndchgorigvars;
-            assert(GCGvarIsOriginal(conshdlrData->pendingvars[k]));
+            assert(!GCGvarIsOriginal(conshdlrData->pendingvars[k]));
             bndchgblocknr = GCGvarGetBlock(conshdlrData->pendingvars[k]);
             bndchgorigvars = GCGpricingVarGetOrigvars(conshdlrData->pendingvars[k]);
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
@@ -1213,7 +1213,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             if(origvars == NULL)
                continue;
 
-            if( bndchgblocknr != blocknr || origvars[0] == NULL || GCGisLinkingVarInBlock(origvars[0], bndchgblocknr))
+            if( bndchgblocknr != blocknr || origvars[0] == NULL || (GCGvarIsLinking(origvars[0]) && !GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)))
                continue;
 
             assert(bndchgblocknr != -1);

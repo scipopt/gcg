@@ -219,17 +219,17 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -758,17 +758,17 @@ $(OBJDIR)/heur_extremepoints.o: src/heur_extremepoints.c src/heur_extremepoints.
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1049,17 +1049,17 @@ $(OBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1412,17 +1412,17 @@ $(OBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2162,17 +2162,17 @@ $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2297,17 +2297,17 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
- lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
- lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_or.h lib/scip/src/scip/cons_orbitope.h \
+ lib/scip/src/scip/cons_pseudoboolean.h \
  lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_signedpower.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_soc.h \
- lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
- lib/scip/src/scip/dialog_default.h lib/scip/src/scip/disp_default.h \
- lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
- lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
- lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
- lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
+ lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \

@@ -294,7 +294,6 @@ SCIP_Bool getNextToken(
             }
             return FALSE;
          }
-         assert(refinput->linepos == 0);
       }
       else
          refinput->linepos++;
@@ -734,7 +733,7 @@ SCIP_RETCODE writeREFFile(
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
 
       SCIPdebugMessage("cons added: %zu\t%p\t%s\n",ind, cons, SCIPconsGetName(cons));
-      SCIPhashmapInsert(cons2origindex, cons, (void*)(ind)); /* shift by 1 to enable error checking */
+      SCIP_CALL(SCIPhashmapInsert(cons2origindex, cons, (void*)(ind))); /* shift by 1 to enable error checking */
 
    }
 

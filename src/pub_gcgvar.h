@@ -86,6 +86,30 @@ SCIP_Real* GCGoriginalVarGetMastervals(
    SCIP_VAR* var
    );
 
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_Real* GCGoriginalVarGetCoefs(
+      SCIP_VAR* var
+   );
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_CONS** GCGoriginalVarGetLinkingCons(
+      SCIP_VAR* var
+   );
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_CONS** GCGlinkingVarGetLinkingConss(
+      SCIP_VAR* var
+   );
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+int GCGoriginalVarGetNCoefs(
+      SCIP_VAR* var
+   );
+
 /** Returns the number of original variables the master variable is contained in */
 extern
 int GCGmasterVarGetNOrigvars(
@@ -127,6 +151,18 @@ extern
 SCIP_Bool GCGisLinkingVarInBlock(
    SCIP_VAR* var,
    int block
+   );
+
+/* informs an original variable, that a variable in the master problem was created, 
+ * that contains a part of the original variable.
+ * Saves this information in the original variable's data 
+ * @todo this method needs a little love
+ */
+SCIP_RETCODE GCGoriginalVarAddMasterVar(
+   SCIP*                 scip,                  /**< SCIP data structure                */
+   SCIP_VAR*             origvar,               /**< Original variable                  */
+   SCIP_VAR*             var,                   /**< Master variable                    */
+   SCIP_Real             val                    /**< Fraction of the original variable  */
    );
    
 #ifdef __cplusplus

@@ -185,6 +185,76 @@ SCIP_Real* GCGoriginalVarGetMastervals(
    return vardata->data.origvardata.mastervals;
 }
 
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_Real* GCGoriginalVarGetCoefs(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0 );
+   return vardata->data.origvardata.coefs;
+}
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+int GCGoriginalVarGetNCoefs(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0 );
+   return vardata->data.origvardata.ncoefs;
+}
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_CONS** GCGoriginalVarGetLinkingCons(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.origvardata.linkconss != NULL);
+   return vardata->data.origvardata.linkconss;
+}
+
+/** Returns the fraction of master variables the original variable is contained in */
+extern
+SCIP_CONS** GCGlinkingVarGetLinkingConss(
+      SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
+   assert(GCGvarIsLinking(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.origvardata.linkingvardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
+   return vardata->data.origvardata.linkingvardata->linkconss;
+}
+
 /** Returns the number of original variables the master variable is contained in */
 extern
 int GCGmasterVarGetNOrigvars(
@@ -317,4 +387,50 @@ SCIP_Bool GCGisLinkingVarInBlock(
 
    return vardata->data.origvardata.linkingvardata->pricingvars[block] != NULL;
 
+}
+
+/* informs an original variable, that a variable in the master problem was created, 
+ * that contains a part of the original variable.
+ * Saves this information in the original variable's data 
+ * @todo this method needs a little love
+ */
+SCIP_RETCODE GCGoriginalVarAddMasterVar(
+   SCIP*                 scip,                  /**< SCIP data structure                */
+   SCIP_VAR*             origvar,               /**< Original variable                  */
+   SCIP_VAR*             var,                   /**< Master variable                    */
+   SCIP_Real             val                    /**< Fraction of the original variable  */
+   )
+{
+   SCIP_VARDATA* vardata;
+
+   assert(scip != NULL);
+   assert(origvar != NULL);
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(origvar);
+
+   assert(vardata != NULL);
+   assert(GCGvarIsOriginal(origvar));
+   assert(vardata->data.origvardata.mastervars != NULL);
+   assert(vardata->data.origvardata.mastervals != NULL);
+   assert(vardata->data.origvardata.nmastervars >= 0);
+   assert(vardata->data.origvardata.maxmastervars >= vardata->data.origvardata.nmastervars);
+
+   /* realloc mastervars array of the original variable, if needed */
+   if( vardata->data.origvardata.maxmastervars == vardata->data.origvardata.nmastervars )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervars),
+            2*vardata->data.origvardata.maxmastervars) );
+      SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervals),
+            2*vardata->data.origvardata.maxmastervars) );
+      SCIPdebugMessage("mastervars array of var %s resized from %d to %d\n", SCIPvarGetName(origvar), 
+         vardata->data.origvardata.maxmastervars, 2*vardata->data.origvardata.maxmastervars);
+      vardata->data.origvardata.maxmastervars = 2*vardata->data.origvardata.maxmastervars;
+   }
+   /* add information to the original variable's vardata */
+   vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars] = var;
+   vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars] = val;
+   vardata->data.origvardata.nmastervars++;
+
+   return SCIP_OKAY;
 }
