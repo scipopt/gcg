@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -1484,6 +1484,7 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata->data.pricingvardata.origvars[0] != NULL);
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
+         assert(SCIPvarGetData(vardata->data.pricingvardata.origvars[0])->vartype == GCG_VARTYPE_ORIGINAL);
          /* save in the master problem variable's data the quota of the corresponding original variable */
          newvardata->data.mastervardata.origvars[j] = vardata->data.pricingvardata.origvars[0];
          newvardata->data.mastervardata.origvals[j] = solvals[i];
@@ -1492,7 +1493,7 @@ SCIP_RETCODE createNewMasterVar(
          j++;
       }
    }
-   if(trivialsol)
+   if( trivialsol )
    {
       SCIP_VAR** pricingvars;
       pricingvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
@@ -1504,9 +1505,10 @@ SCIP_RETCODE createNewMasterVar(
          assert(vardata->data.pricingvardata.origvars[0] != NULL);
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
+         assert(SCIPvarGetData(vardata->data.pricingvardata.origvars[0])->vartype == GCG_VARTYPE_ORIGINAL);
          /* save in the master problem variable's data the quota of the corresponding original variable */
-         newvardata->data.mastervardata.origvars[j] = pricingvars[j];
-         newvardata->data.mastervardata.origvals[j] = 0;
+         newvardata->data.mastervardata.origvars[j] = vardata->data.pricingvardata.origvars[0];
+         newvardata->data.mastervardata.origvals[j] = 0.0;
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGpricerAddMasterVarToOrigVar(scip, vardata->data.pricingvardata.origvars[0], newvar, 0) );
       }
