@@ -103,6 +103,7 @@ BEGIN {
    lpsname = "?";
    lpsversion = "?";
    scipversion = "?";
+   gcgversion = "?";
    conftottime = 0.0;
    overheadtottime = 0.0;
    timelimit = 0.0;
@@ -197,6 +198,11 @@ BEGIN {
 
 /@03/ { starttime = $2; }
 /@04/ { endtime = $2; }
+
+/^GCG version/ {
+   # get GCG version
+   gcgversion = $3;
+}
 
 /^SCIP version/ {
    # get SCIP version 
@@ -852,11 +858,11 @@ BEGIN {
                printf(" & %7.1f & %7.1f", timetofirst, timetobest) > TEXFILE;
             printf("\\\\\n") > TEXFILE;
          }
-         printf("%-12s %-3s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7d %7.1f %7.1f %8d %7d %7.1f",
+         printf("%-12s %-3s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
                 shortprob, probtype, origcons, origvars, cons, vars, blocks, rel, mcons, db, pb, gapstr, 
                 pricecall, npriceprobs, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
-            printf(" %9.1f %9.1f ", timetofirst, timetobest);
+            printf("%9.1f %9.1f ", timetofirst, timetobest);
          printf("%s\n", status);
       }
 
@@ -953,7 +959,7 @@ END {
    printf(tablebottom2);
    printf(tablebottom3);
    
-   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f",
+   printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f ",
 	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom, 
 	  slptime, lpgeom, spriceprobs, priceprobsgeom);
    if( printsoltimes )
@@ -977,5 +983,5 @@ END {
    }
 
    printf("@02 timelimit: %g\n", timelimit);
-   printf("@01 SCIP(%s)%s(%s):%s\n", scipversion, lpsname, lpsversion, settings);
+   printf("@01 GCG(%s)SCIP(%s)%s(%s):%s\n", gcgversion, scipversion, lpsname, lpsversion, settings);
 }
