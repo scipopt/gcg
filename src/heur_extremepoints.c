@@ -36,7 +36,7 @@
 #define HEUR_DESC             "heuristic that performs a crossover on the extreme points of a relaxation solution"
 #define HEUR_DISPCHAR         'X'
 #define HEUR_PRIORITY         -1101500
-#define HEUR_FREQ             30
+#define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE

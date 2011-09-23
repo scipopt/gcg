@@ -34,7 +34,7 @@
 #define HEUR_DESC             "column generation based feasibility pump"
 #define HEUR_DISPCHAR         '?'
 #define HEUR_PRIORITY         0
-#define HEUR_FREQ             0
+#define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE

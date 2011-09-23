@@ -50,7 +50,6 @@ MAINOBJ		=	reader_blk.o \
 			heur_clasfeaspump.o \
 			heur_colgenfeaspump.o \
 			heur_extremepoints.o \
-			heur_feasrestmaster.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \

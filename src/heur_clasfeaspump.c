@@ -35,7 +35,7 @@
 #define HEUR_DESC             "(classical) objective feasibility pump 2.0, using the GCG relaxator"
 #define HEUR_DISPCHAR         'F'
 #define HEUR_PRIORITY         -1000000
-#define HEUR_FREQ             30
+#define HEUR_FREQ             -1 /* 30 */
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE
