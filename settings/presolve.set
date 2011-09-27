@@ -20,6 +20,7 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/discretization = FALSE
 
+limits/maxorigsol = 0
 
 #arrowheur/minblocks = 2
 #arrowheur/maxblocks = 20
