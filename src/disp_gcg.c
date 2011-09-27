@@ -411,12 +411,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    dispdata = SCIPdispGetData(disp);
    if( origsol != (SCIP_SOL*)dispdata )
    {
-      SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)));
+      SCIPinfoMessage(scip, file, "%c", (SCIPgetSolHeur(scip, origsol) == NULL ? '*'
+            : SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol))));
       /* If the solution was obtained in the master problem, display whether it came from its
        * LP relaxation or from the master heuristics */
-      if( SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol)) == '*' && (mastersol != NULL) )
+      if( SCIPgetSolHeur(scip, origsol) == NULL && (mastersol != NULL) )
       {
-         SCIPinfoMessage(scip, file, "%c", SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol)));
+         SCIPinfoMessage(scip, file, "%c", (SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol) == NULL ? '*'
+               : SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol))));
       }
       else
       {
