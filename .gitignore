@@ -1,5 +1,11 @@
 bin/
+lib/
+obj/
+src/TAGS
 doc/html/
 doc/gcg.tag
 *.log
 src/githash.c
+*~
+#*
+IP
