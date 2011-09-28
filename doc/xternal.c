@@ -618,9 +618,9 @@
  * later
  * 
  * Very quick until more elaborate, these are the relavant fields of the structure:
- *  - subscipconss - an array of array of constraints in each block
+ *  - subscipconss - an array of array of constraints in each block - array[blocknr][constraintid]
  *  - nsubscipconss - an array of the number of constraints in each block
- *  - subscipvars - an array of arrays of variables in each block 
+ *  - subscipvars - an array of arrays of variables in each block - array[blocknr][varid]
  *  - nsubscipvars - an array of the number of constraints in each blocks
  *  - nblocks - number of blocks
  *  - type - Type of the decomposition (DEC_STAIRCASE is the most general)
