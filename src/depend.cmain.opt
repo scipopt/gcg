@@ -319,9 +319,9 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_strongcg.h \
  lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
  lib/scip/src/nlpi/nlpi_ipopt.h src/relax_gcg.h src/type_branchgcg.h \
- src/struct_vardata.h src/struct_branchgcg.h src/cons_origbranch.h \
- src/cons_masterbranch.h src/pricer_gcg.h src/type_solver.h \
- src/masterplugins.h src/nodesel_master.h src/pub_gcgvar.h
+ src/struct_branchgcg.h src/cons_origbranch.h src/cons_masterbranch.h \
+ src/pricer_gcg.h src/type_solver.h src/masterplugins.h \
+ src/nodesel_master.h src/pub_gcgvar.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -2780,7 +2780,7 @@ $(OBJDIR)/gcgvar.o: src/gcgvar.c src/pub_gcgvar.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/struct_vardata.h src/relax_gcg.h \
- src/type_branchgcg.h
+ src/type_branchgcg.h lib/scip/src/scip/cons_linear.h
 $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \

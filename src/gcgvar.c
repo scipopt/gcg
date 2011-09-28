@@ -18,7 +18,7 @@
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "relax_gcg.h"
-
+#include "scip/cons_linear.h"
 #define STARTMAXMASTERVARS 10
 
 /*
@@ -159,6 +159,26 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    return vardata->data.origvardata.pricingvar;
 }
 
+/** Returns the pricing var of an original variable */
+void GCGoriginalVarSetPricingVar(
+   SCIP_VAR* var, /**< SCIP variable structure */
+   SCIP_VAR* pricingvar /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);   
+   assert(pricingvar != NULL);
+   assert(GCGvarIsOriginal(var));
+   assert(GCGvarIsPricing(pricingvar));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   assert(vardata->data.origvardata.linkingvardata == NULL);
+   assert(!GCGvarIsLinking(var));
+   vardata->data.origvardata.pricingvar = pricingvar;
+}
+
 /** creates the data for all variables of the original program */
 SCIP_RETCODE GCGcreateOrigVarsData(
    SCIP*                 scip                /**< SCIP data structure */
@@ -242,6 +262,29 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
    return vardata->data.origvardata.linkingvardata->pricingvars;
 }
 
+/** sets the pricing var of the corresponding linking variable at the specified position */
+void GCGlinkingVarSetPricingVar(
+   SCIP_VAR* origvar, 
+   int pricingprobnr, 
+   SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(origvar != NULL);
+   assert(var != NULL);
+   assert(pricingprobnr >= 0);
+
+   assert(GCGvarIsLinking(origvar));
+   assert(GCGvarIsPricing(var));
+
+   vardata = SCIPvarGetData(origvar);
+   assert(vardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
+
+   vardata->data.origvardata.linkingvardata->pricingvars[pricingprobnr] = var;
+}
+
 /** returns the number of blocks the linking variable is in */
 int GCGlinkingVarGetNBlocks(
    SCIP_VAR* var /**< SCIP variable structure */
@@ -275,6 +318,35 @@ SCIP_VAR* GCGpricingVarGetOriginalVar(
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
 
    return vardata->data.pricingvardata.origvars[0];
+}
+
+/** Adds the original var to the pricing variable */
+SCIP_RETCODE GCGpricingVarAddOrigVar(
+   SCIP* scip, /**< SCIP variable structure */
+   SCIP_VAR* pricingvar,
+   SCIP_VAR* origvar
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(pricingvar != NULL);
+   assert(origvar != NULL);
+   assert(GCGvarIsPricing(pricingvar));
+   assert(GCGvarIsOriginal(origvar));
+
+   vardata = SCIPvarGetData(pricingvar);
+   assert(vardata != NULL);
+   assert(vardata->data.pricingvardata.norigvars >= 0);
+   assert(vardata->data.pricingvardata.origvars != NULL);
+   assert(vardata->data.pricingvardata.origvars[0] != NULL);
+   assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
+   if( vardata->data.pricingvardata.norigvars >= 2 )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.norigvars+1) );
+   }
+   vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
+   vardata->data.pricingvardata.norigvars++;
+
+   return SCIP_OKAY;
 }
 
 /** Returns the number of master variables the original variable is contained in */
@@ -727,3 +799,83 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
 
    return SCIP_OKAY;
 }
+
+/** creates the corresponding pricing variable for the given original variable */
+SCIP_RETCODE GCGoriginalVarCreatePricingVar(
+   SCIP* scip,
+   SCIP_VAR* origvar,
+   SCIP_VAR** var
+   )
+{
+   SCIP_VARDATA* vardata;
+   char name[SCIP_MAXSTRLEN];
+   int pricingprobnr;
+   assert(scip != NULL);
+   assert(origvar != NULL);
+   assert(var != NULL);
+   assert(GCGvarIsOriginal(origvar));
+   assert(!GCGvarIsLinking(origvar));
+   assert(GCGoriginalVarGetPricingVar(origvar) == NULL);
+
+   /* get the number of the pricing block to which the variable belongs */
+   pricingprobnr = GCGvarGetBlock(origvar);
+
+   /* create variable data */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
+   vardata->vartype = GCG_VARTYPE_PRICING;
+   vardata->blocknr = pricingprobnr;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) );
+   vardata->data.pricingvardata.origvars[0] = origvar;
+   vardata->data.pricingvardata.norigvars = 1;
+
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
+   SCIP_CALL( SCIPcreateVar(scip, var, name, SCIPvarGetLbGlobal(origvar), 
+         SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+
+   return SCIP_OKAY;
+}
+
+/** creates the corresponding pricing variable for the given original variable */
+SCIP_RETCODE GCGlinkingVarCreatePricingVar(
+   SCIP* masterscip,
+   SCIP* pricingscip,
+   int pricingprobnr,
+   SCIP_VAR* origvar,
+   SCIP_VAR** var,
+   SCIP_CONS** linkcons
+   )
+{
+   SCIP_VARDATA* vardata;
+   char name[SCIP_MAXSTRLEN];
+
+   assert(masterscip != NULL);
+   assert(pricingscip != NULL);
+   assert(pricingprobnr >= 0);
+   assert(origvar != NULL);
+   assert(GCGvarIsLinking(origvar));
+   assert(var != NULL);
+   assert(linkcons != NULL);
+   
+   /* create variable data */
+   SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
+   vardata->vartype = GCG_VARTYPE_PRICING;
+   vardata->blocknr = pricingprobnr;
+   SCIP_CALL( SCIPallocMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) );
+   vardata->data.pricingvardata.origvars[0] = origvar;
+   vardata->data.pricingvardata.norigvars = 1;
+
+   /* create and add variable */
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
+   SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar), 
+         SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+
+   /* add corresponding linking constraint to the master problem */
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "l_%s_%d", SCIPvarGetName(origvar), pricingprobnr);
+   SCIP_CALL( SCIPcreateConsLinear(masterscip, linkcons, name, 0, NULL, NULL, 0, 0, 
+         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
+
+   return SCIP_OKAY;
+}
+

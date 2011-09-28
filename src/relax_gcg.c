@@ -26,7 +26,6 @@
 
 #include "relax_gcg.h"
 
-#include "struct_vardata.h"
 #include "struct_branchgcg.h"
 
 #include "cons_origbranch.h"
@@ -355,8 +354,6 @@ SCIP_RETCODE checkIdenticalBlocks(
    SCIP_RELAXDATA* relaxdata;
 
    SCIP_HASHMAP* varmap;
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* vardata2;
    SCIP_VAR** vars;
    SCIP_VAR* origvar;
    SCIP_VAR* pricingvar;
@@ -405,34 +402,23 @@ SCIP_RETCODE checkIdenticalBlocks(
             relaxdata->blockrepresentative[i] = j;
             relaxdata->nblocksidentical[i] = 0;
             relaxdata->nblocksidentical[j]++;
-            /* save variables in pricing problem variable's vardata */
+            /* save variables in pricing problem variable */
             vars = SCIPgetVars(relaxdata->pricingprobs[i]);
             nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
             for( k = 0; k < nvars; k++ )
             {
-               vardata = SCIPvarGetData(vars[k]);
+               int blocknr;
                assert(GCGvarIsPricing(vars[k]));
-               assert(vardata->data.pricingvardata.origvars != NULL);
-               assert(vardata->data.pricingvardata.norigvars == 1);
-               assert(vardata->data.pricingvardata.origvars[0] != NULL);
-               origvar = vardata->data.pricingvardata.origvars[0];
+               origvar = GCGpricingVarGetOrigvars(vars[k])[0];
+
                pricingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars[k]);
-               vardata = SCIPvarGetData(pricingvar);
+               blocknr = GCGvarGetBlock(pricingvar);
+
                assert(GCGvarIsPricing(pricingvar));
-               assert(vardata->data.pricingvardata.origvars != NULL);
-               assert(vardata->data.pricingvardata.norigvars >= 1);
-               vardata2 = SCIPvarGetData(origvar);
                assert(GCGvarIsOriginal(origvar));
-               assert(vardata2->data.origvardata.pricingvar != NULL);
-               vardata2->data.origvardata.pricingvar = pricingvar;
-               if( vardata->data.pricingvardata.norigvars >= 2 )
-               {
-                  assert(vardata->blocknr > 0);
-                  SCIP_CALL( SCIPreallocMemoryArray(relaxdata->pricingprobs[vardata->blocknr], 
-                        &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.norigvars+1) );
-               }
-               vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
-               vardata->data.pricingvardata.norigvars++;
+               assert(GCGoriginalVarGetPricingVar(origvar) != NULL);
+               GCGoriginalVarSetPricingVar(origvar, pricingvar);
+               SCIP_CALL(GCGpricingVarAddOrigVar(relaxdata->pricingprobs[blocknr], pricingvar, origvar));
             }
 
          }
@@ -884,7 +870,7 @@ SCIP_RETCODE createMaster(
       }
    }
 
-   /* for original variables, save the coefficients in the master problem in their vardata */
+   /* for original variables, save the coefficients in the master problem */
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    for( v = 0; v < nvars; v++ )
@@ -894,7 +880,7 @@ SCIP_RETCODE createMaster(
       GCGoriginalVarSetNCoefs(vars[v], 0);
    }
 
-   /* save coefs in the vardata */   
+   /* save coefs */   
    for( i = 0; i < relaxdata->nmasterconss; i++ )
    {
       vars = SCIPgetVarsLinear(scip, relaxdata->linearmasterconss[i]);
@@ -1620,12 +1606,9 @@ SCIP_RETCODE GCGrelaxCreatePricingVar(
    SCIP_VAR*             origvar             /**< corresponding variable in the original program */
    )
 {
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* origvardata;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    SCIP_VAR* var;
-   char name[SCIP_MAXSTRLEN];
    int pricingprobnr;
 
    assert(scip != NULL);
@@ -1637,33 +1620,12 @@ SCIP_RETCODE GCGrelaxCreatePricingVar(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* get variable data of the original variable */
-   origvardata = SCIPvarGetData(origvar);
-   assert(origvardata != NULL);
-   assert(GCGvarIsOriginal(origvar));
-   assert(origvardata->data.origvardata.pricingvar == NULL);
-   assert(origvardata->blocknr >= 0);
+   pricingprobnr = GCGvarGetBlock(origvar);
 
-   /* get the number of the pricing block to which the variable belongs */
-   pricingprobnr = origvardata->blocknr;
-   assert(pricingprobnr >= 0 && pricingprobnr < relaxdata->npricingprobs);
+   SCIP_CALL( GCGoriginalVarCreatePricingVar(relaxdata->pricingprobs[pricingprobnr], origvar, &var) );
+   assert(var != NULL);
 
-   /* create variable data */
-   SCIP_CALL( SCIPallocBlockMemory(relaxdata->pricingprobs[pricingprobnr], &vardata) );
-   vardata->vartype = GCG_VARTYPE_PRICING;
-   vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocMemoryArray(relaxdata->pricingprobs[pricingprobnr], 
-         &(vardata->data.pricingvardata.origvars), 1) );
-   vardata->data.pricingvardata.origvars[0] = origvar;
-   vardata->data.pricingvardata.norigvars = 1;
-
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
-   SCIP_CALL( SCIPcreateVar(relaxdata->pricingprobs[pricingprobnr], &var, name, 
-         SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
-         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
-
-   origvardata->data.origvardata.pricingvar = var;
-
+   GCGoriginalVarSetPricingVar(origvar, var);
    SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
 
    /* because the variable was added to the problem, 
@@ -1680,13 +1642,12 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
    SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
    )
 {
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* origvardata;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    SCIP_VAR* var;
-   char name[SCIP_MAXSTRLEN];
    int pricingprobnr;
+   SCIP_CONS* linkcons;
+   SCIP_VAR** pricingvars;
 
    assert(scip != NULL);
    assert(origvar != NULL);
@@ -1697,45 +1658,23 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   pricingprobnr = GCGvarGetBlock(origvar);
    /* get variable data of the original variable */
-   origvardata = SCIPvarGetData(origvar);
-   assert(origvardata != NULL);
    assert(GCGvarIsOriginal(origvar));
-   assert(origvardata->data.origvardata.pricingvar == NULL);
-   assert(origvardata->data.origvardata.linkingvardata != NULL);
-   assert(origvardata->data.origvardata.linkingvardata->pricingvars != NULL);
-   assert(origvardata->data.origvardata.linkingvardata->linkconss != NULL);
-   assert(origvardata->blocknr == -2);
-
+   assert(GCGvarIsLinking(origvar));
+   pricingvars = GCGlinkingVarGetPricingVars(origvar);
+   
    for( pricingprobnr = 0; pricingprobnr < relaxdata->npricingprobs; pricingprobnr++ )
    {
-      if( origvardata->data.origvardata.linkingvardata->pricingvars[pricingprobnr] == NULL )
+      if( pricingvars[pricingprobnr] == NULL )
          continue;
 
-      /* create variable data */
-      SCIP_CALL( SCIPallocBlockMemory(relaxdata->pricingprobs[pricingprobnr], &vardata) );
-      vardata->vartype = GCG_VARTYPE_PRICING;
-      vardata->blocknr = pricingprobnr;
-      SCIP_CALL( SCIPallocMemoryArray(relaxdata->pricingprobs[pricingprobnr], 
-            &(vardata->data.pricingvardata.origvars), 1) );
-      vardata->data.pricingvardata.origvars[0] = origvar;
-      vardata->data.pricingvardata.norigvars = 1;
-
-      /* create and add variable */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
-      SCIP_CALL( SCIPcreateVar(relaxdata->pricingprobs[pricingprobnr], &var, name,
-            SCIPvarGetLbGlobal(origvar), SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar), 
-            TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
-
-      origvardata->data.origvardata.linkingvardata->pricingvars[pricingprobnr] = var;
-
+      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob, 
+            relaxdata->pricingprobs[pricingprobnr], pricingprobnr, origvar, &var, &linkcons) );
+      GCGlinkingVarSetPricingVar(origvar, pricingprobnr, var);
+   
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
-
-      /* add corresponding linking constraint to the master problem */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "l_%s_%d", SCIPvarGetName(origvar), pricingprobnr);
-      SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &origvardata->data.origvardata.linkingvardata->linkconss[pricingprobnr],
-            name, 0, NULL, NULL, 0, 0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, origvardata->data.origvardata.linkingvardata->linkconss[pricingprobnr]) );
+      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
       relaxdata->nvarlinkconss++;
 
       /* because the variable was added to the problem, 
@@ -1748,7 +1687,7 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
 }
 
 /** transforms a constraint of the original problem into the master variable space 
- *  and stores information about the constraints in the vardatas */
+ *  and stores information about the constraints in the variable */
 SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be transformed */
@@ -1855,52 +1794,90 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    return SCIP_OKAY;
 }
 
-/* prints the given variable: name, type (original, master or pricing) block number,
+/**  prints the given variable: name, type (original, master or pricing) block number,
  * and the list of all variables related to the given variable 
- * TODO: incorporate linking variables */
+ */
 void GCGrelaxPrintVar(
-   SCIP_VAR*             var                 /**< variable that shpuld be printed */
+   SCIP_VAR*             var                 /**< variable that should be printed */
    )
 {
-   SCIP_VARDATA* vardata;
    int i;
-
-   vardata = SCIPvarGetData(var);
+   int blocknr;
    assert(GCGvarIsOriginal(var) || GCGvarIsMaster(var) || GCGvarIsPricing(var));
+   
+   blocknr = GCGvarGetBlock(var);
 
    if( GCGvarIsOriginal(var) )
    {
-      printf("Variable %s (original): block %d\n", SCIPvarGetName(var), vardata->blocknr);
-      printf("mastervars:");
-      for( i = 0; i < vardata->data.origvardata.nmastervars-1; i++ )
+      SCIP_VAR** mastervars;
+      SCIP_Real* mastervals;
+      int  nmastervars;
+      
+      if( GCGvarIsLinking(var) )
       {
-         printf("%s (%g), ", SCIPvarGetName(vardata->data.origvardata.mastervars[i]),
-            vardata->data.origvardata.mastervals[i]);
+         SCIP_VAR** pricingvars;
+         int nblocks;
+         int j;
+         pricingvars = GCGlinkingVarGetPricingVars(var);
+         nblocks = GCGlinkingVarGetNBlocks(var);
+         printf("Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
+         for( i = 0, j = 0; j < nblocks; ++i)
+         {
+            if( pricingvars[i] != NULL )
+            {
+               printf("%d ", i);
+               ++j;
+            }
+         }
+         printf(")\n");
       }
-         printf("%s (%g)\n", SCIPvarGetName(vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars-1]),
-            vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars-1]);
+      else 
+      {
+         printf("Variable %s (original): block %d\n", SCIPvarGetName(var), blocknr);
+      }
+ 
+      mastervars = GCGoriginalVarGetMastervars(var);
+      mastervals = GCGoriginalVarGetMastervals(var);
+      nmastervars = GCGoriginalVarGetNMastervars(var);
+      printf("mastervars:");
+      for( i = 0; i < nmastervars-1; i++ )
+      {
+         printf("%s (%g), ", SCIPvarGetName(mastervars[i]), mastervals[i]);
+      }
+      printf("%s (%g)\n", SCIPvarGetName(mastervars[nmastervars-1]), mastervals[nmastervars-1]);
    }
    else if( GCGvarIsPricing(var) )
    {
-      printf("Variable %s (pricing): block %d\n", SCIPvarGetName(var), vardata->blocknr);
+      SCIP_VAR** origvars;
+      int  norigvars;
+
+      origvars = GCGpricingVarGetOrigvars(var);
+      norigvars = GCGpricingVarGetNOrigvars(var);
+
+      printf("Variable %s (pricing): block %d\n", SCIPvarGetName(var), blocknr);
       printf("origvars:");
-      for( i = 0; i < vardata->data.pricingvardata.norigvars-1; i++ )
+      for( i = 0; i < norigvars-1; i++ )
       {
-         printf("%s, ", SCIPvarGetName(vardata->data.pricingvardata.origvars[i]));
+         printf("%s, ", SCIPvarGetName(origvars[i]));
       }
-      printf("%s\n", SCIPvarGetName(vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars-1]));
+      printf("%s\n", SCIPvarGetName(origvars[norigvars-1]));
    }
    else if( GCGvarIsMaster(var) )
    {
-      printf("Variable %s (master): block %d\n", SCIPvarGetName(var), vardata->blocknr);
+      SCIP_VAR** origvars;
+      int  norigvars;
+      SCIP_Real* origvals;
+
+      origvars = GCGmasterVarGetOrigvars(var);
+      norigvars = GCGmasterVarGetNOrigvars(var);      
+      origvals = GCGmasterVarGetOrigvals(var);
+      printf("Variable %s (master): block %d\n", SCIPvarGetName(var), blocknr);
       printf("origvars:");
-      for( i = 0; i < vardata->data.mastervardata.norigvars-1; i++ )
+      for( i = 0; i < norigvars-1; i++ )
       {
-         printf("%s (%g), ", SCIPvarGetName(vardata->data.mastervardata.origvars[i]),
-            vardata->data.mastervardata.origvals[i]);
+         printf("%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
       }
-         printf("%s (%g)\n", SCIPvarGetName(vardata->data.mastervardata.origvars[vardata->data.mastervardata.norigvars-1]),
-            vardata->data.mastervardata.origvals[vardata->data.mastervardata.norigvars-1]);
+         printf("%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
 } 
 

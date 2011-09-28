@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-extern SCIP_DECL_VARDELORIG(GCGvarDelOrig);
-
 /** Returns TRUE or FALSE whether variable is a pricing variable or not */
 extern 
 SCIP_Bool GCGvarIsPricing(
@@ -58,16 +56,39 @@ SCIP_VAR* GCGpricingVarGetOriginalVar(
    SCIP_VAR* var /**< SCIP variable structure */
    );
 
+/** Adds the original var to the pricing variable */
+extern
+SCIP_RETCODE GCGpricingVarAddOrigVar(
+   SCIP* scip, /**< SCIP variable structure */
+   SCIP_VAR* pricingvar,
+   SCIP_VAR* origvar
+   );
+
 /** Returns the pricing var of an original variable */
 extern
 SCIP_VAR* GCGoriginalVarGetPricingVar(
    SCIP_VAR* var /**< SCIP variable structure */
    );
 
+/** Returns the pricing var of an original variable */
+extern
+void GCGoriginalVarSetPricingVar(
+   SCIP_VAR* var, /**< SCIP variable structure */
+   SCIP_VAR* pricingvar /**< SCIP variable structure */
+   );
+
 /** Returns the pricing variables of an linking variable */
 extern
 SCIP_VAR** GCGlinkingVarGetPricingVars(
    SCIP_VAR* var /**< SCIP variable structure */
+   );
+
+/** sets the pricing var of the corresponding linking variable at the specified position */
+extern
+void GCGlinkingVarSetPricingVar(
+   SCIP_VAR* origvar, 
+   int pricingprobnr, 
+   SCIP_VAR* var
    );
 
 /** Returns the number of master variables the original variable is contained in */
@@ -231,6 +252,26 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    SCIP_VAR*             origvar,               /**< Original variable                  */
    SCIP_VAR*             var,                   /**< Master variable                    */
    SCIP_Real             val                    /**< Fraction of the original variable  */
+   );
+
+
+/** creates the corresponding pricing variable for the given original variable */
+extern
+SCIP_RETCODE GCGoriginalVarCreatePricingVar(
+   SCIP* scip,
+   SCIP_VAR* origvar,
+   SCIP_VAR** var
+   );
+
+/** creates the corresponding pricing variable for the given original variable */
+extern
+SCIP_RETCODE GCGlinkingVarCreatePricingVar(
+   SCIP* masterscip,
+   SCIP* pricingscip,
+   int pricingprobnr,
+   SCIP_VAR* origvar,
+   SCIP_VAR** var,
+   SCIP_CONS** linkcons
    );
    
 #ifdef __cplusplus
