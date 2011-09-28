@@ -273,6 +273,30 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_VAR** var,
    SCIP_CONS** linkcons
    );
+
+/** creates the master var and initializes the vardata */
+extern
+SCIP_RETCODE GCGcreateMasterVar(
+   SCIP* scip,
+   SCIP* pricingscip,
+   SCIP_VAR** newvar,
+   char* varname,
+   SCIP_Real objcoeff,
+   SCIP_VARTYPE vartype,
+   SCIP_Bool solisray,
+   int prob,
+   int nsolvars,
+   SCIP_Real* solvals,
+   SCIP_VAR** solvars
+   );
+
+/** creates initial master variables and the vardata */
+SCIP_RETCODE GCGcreateInitialMasterVar(
+   SCIP* scip,
+   SCIP_VAR* var,
+   SCIP_VAR** newvar
+   );
+
    
 #ifdef __cplusplus
 }

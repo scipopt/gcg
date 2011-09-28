@@ -371,9 +371,8 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons_knapsack.h src/pricer_gcg.h src/type_solver.h \
- src/sepa_master.h src/struct_vardata.h src/relax_gcg.h \
- src/type_branchgcg.h src/struct_solver.h src/scip_misc.h \
- src/pub_gcgvar.h
+ src/sepa_master.h src/relax_gcg.h src/type_branchgcg.h \
+ src/struct_solver.h src/scip_misc.h src/pub_gcgvar.h
 $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \

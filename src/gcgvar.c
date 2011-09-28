@@ -24,6 +24,7 @@
 /*
  * Vardata methods
  */
+static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 {
    if( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
@@ -84,6 +85,19 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 
    return SCIP_OKAY;
 }  
+
+static
+SCIP_DECL_VARDELTRANS(gcgvardeltrans)
+{
+   assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+   
+   SCIPfreeBlockMemory(scip, vardata);
+
+   return SCIP_OKAY;
+}
+
 
 
 /** Returns TRUE or FALSE whether variable is a pricing variable or not */
@@ -879,3 +893,183 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    return SCIP_OKAY;
 }
 
+/** creates the master var and initializes the vardata */
+SCIP_RETCODE GCGcreateMasterVar(
+   SCIP* scip,
+   SCIP* pricingscip,
+   SCIP_VAR** newvar,
+   char* varname,
+   SCIP_Real objcoeff,
+   SCIP_VARTYPE vartype,
+   SCIP_Bool solisray,
+   int prob,
+   int nsolvars,
+   SCIP_Real* solvals,
+   SCIP_VAR** solvars
+   )
+{
+   SCIP_VARDATA* newvardata;
+   int i;
+   int j;
+   SCIP_Bool trivialsol;
+
+   assert(scip != NULL);
+   assert(pricingscip != NULL);
+   assert(newvar != NULL);
+   assert(varname != NULL);
+   assert(!SCIPisInfinity(pricingscip, ABS(objcoeff)));
+   assert(vartype == SCIP_VARTYPE_INTEGER || vartype == SCIP_VARTYPE_CONTINUOUS);
+   assert(prob >= 0);
+   assert(nsolvars >= 0);
+   assert(solvals != NULL || nsolvars == 0);
+   assert(solvars != NULL || nsolvars == 0);
+
+   trivialsol = FALSE;
+   /* create data for the new variable in the master problem */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = prob;
+
+   /* store whether the variable represents a ray */
+   newvardata->data.mastervardata.isray = solisray;
+
+   /* create variable in the master problem */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0, INT_MAX /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */, 
+         objcoeff, vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   /* count number of non-zeros */
+   newvardata->data.mastervardata.norigvars = 0;
+
+   for( i = 0; i < nsolvars; i++ )
+   {
+      if( !SCIPisZero(scip, solvals[i]) )
+      {
+         newvardata->data.mastervardata.norigvars++;
+      }
+   }
+
+   /*
+    * if we have not added any original variable to the mastervariable, all coefficients were 0.
+    * In that case, we will add all variables in the pricing problem
+    */
+   if(newvardata->data.mastervardata.norigvars == 0)
+   {
+      newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
+      trivialsol = TRUE;
+   }
+
+   /** @todo: switch from block memory to normal memory */
+   if( newvardata->data.mastervardata.norigvars > 0 )
+   {
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+   }
+   else
+   {
+      newvardata->data.mastervardata.origvars = NULL;
+      newvardata->data.mastervardata.origvals = NULL;
+   }
+               
+   /* number of original variables already saved in mastervardata */
+   j = 0;
+
+   /* update variable datas */
+   for( i = 0; i < nsolvars && !trivialsol; i++ )
+   {
+      if( !SCIPisZero(scip, solvals[i]) )
+      {
+         SCIP_VAR* origvar;
+         assert(GCGvarIsPricing(solvars[i]));
+
+         origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
+         assert(origvar != NULL);
+
+         assert(newvardata->data.mastervardata.origvars != NULL);
+         assert(newvardata->data.mastervardata.origvals != NULL);
+         assert(GCGvarIsOriginal(origvar));
+         /* save in the master problem variable's data the quota of the corresponding original variable */
+         newvardata->data.mastervardata.origvars[j] = origvar;
+         newvardata->data.mastervardata.origvals[j] = solvals[i];
+         /* save the quota in the original variable's data */
+         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, solvals[i]) );
+         j++;
+      }
+   }
+   if( trivialsol )
+   {
+      SCIP_VAR** pricingvars;
+      int npricingvars;
+      
+      pricingvars = SCIPgetOrigVars(pricingscip);
+      npricingvars = SCIPgetNOrigVars(pricingscip);
+      for( j = 0; j < npricingvars; ++j)
+      {
+         SCIP_VAR* origvar;
+         assert(GCGvarIsPricing(pricingvars[j]));
+
+         origvar = GCGpricingVarGetOrigvars(pricingvars[j])[0];
+         assert(origvar != NULL);
+
+         assert(newvardata->data.mastervardata.origvars != NULL);
+         assert(newvardata->data.mastervardata.origvals != NULL);
+         assert(GCGvarIsOriginal(origvar));
+         /* save in the master problem variable's data the quota of the corresponding original variable */
+         newvardata->data.mastervardata.origvars[j] = origvar;
+         newvardata->data.mastervardata.origvals[j] = 0.0;
+         /* save the quota in the original variable's data */
+         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, 0.0) );
+      }
+   }
+   assert(j == newvardata->data.mastervardata.norigvars);
+return SCIP_OKAY;
+}
+
+/** creates initial master variables and the vardata */
+SCIP_RETCODE GCGcreateInitialMasterVar(
+   SCIP* scip,
+   SCIP_VAR* var,
+   SCIP_VAR** newvar
+   )
+{
+   SCIP_VARDATA* newvardata;
+   int blocknr;
+   SCIP_Real* coefs;
+   SCIP_CONS** linkconss;
+   int ncoefs;
+
+   blocknr = GCGvarGetBlock(var);
+   coefs = GCGoriginalVarGetCoefs(var);
+   ncoefs = GCGoriginalVarGetNCoefs(var);
+   linkconss = GCGoriginalVarGetLinkingCons(var);
+   assert( blocknr == -1 || blocknr == -2);
+   assert(GCGoriginalVarGetPricingVar(var) == NULL);
+
+   if( blocknr == -1)
+   {
+      SCIPdebugMessage("var %s is in no block - copy it directly to the master\n", SCIPvarGetName(var));
+   }
+   else
+   {
+      SCIPdebugMessage("var %s is a linking variable - copy it directly to the master\n", SCIPvarGetName(var));
+   }
+
+   /* create vardata */
+   SCIP_CALL( SCIPallocBlockMemory(scip, &newvardata) );
+   newvardata->vartype = GCG_VARTYPE_MASTER;
+   newvardata->blocknr = -1;
+   newvardata->data.mastervardata.isray = FALSE;
+   newvardata->data.mastervardata.norigvars = 1;
+
+   /* save corresoponding origvar */
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) );
+   newvardata->data.mastervardata.origvars[0] = var;
+   newvardata->data.mastervardata.origvals[0] = 1.0;
+
+   /* create variable in the master problem */
+   SCIP_CALL( SCIPcreateVar(scip, newvar, SCIPvarGetName(var), 
+         SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var), SCIPvarGetObj(var), SCIPvarGetType(var), 
+         TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
+
+   return SCIP_OKAY;
+}
