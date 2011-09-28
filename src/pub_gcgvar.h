@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+extern SCIP_DECL_VARDELORIG(GCGvarDelOrig);
+
 /** Returns TRUE or FALSE whether variable is a pricing variable or not */
 extern 
 SCIP_Bool GCGvarIsPricing(
@@ -44,7 +46,7 @@ SCIP_Bool GCGvarIsMaster(
    SCIP_VAR* var          /**< SCIP variable structure */
    );
 
-   /** Returns TRUE or FALSE whether variable is a linking variable or not */
+/** Returns TRUE or FALSE whether variable is a linking variable or not */
 extern
 SCIP_Bool GCGvarIsLinking(
    SCIP_VAR* var /**< SCIP variable structure */
@@ -89,25 +91,70 @@ SCIP_Real* GCGoriginalVarGetMastervals(
 /** Returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_Real* GCGoriginalVarGetCoefs(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
 
 /** Returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_CONS** GCGoriginalVarGetLinkingCons(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
+
+/** adds a coefficient of the master variable to the coefs array for the resp. constraint */
+extern
+SCIP_RETCODE GCGoriginalVarAddCoef(
+   SCIP* scip,         /**< SCIP data structure */
+   SCIP_VAR* var,      /**< variable to add coef */
+   SCIP_Real val,      /**< coefficent to set */
+   SCIP_CONS* cons     /**< constraint the variable is in */
+   );
+
+/** adds variable to a new block, making a linkingvariable out of it, if necessary */
+extern
+SCIP_RETCODE GCGoriginalVarAddBlock(
+   SCIP* scip,    /**< SCIP data structure */
+   SCIP_VAR* var, /**< var that is added to a block */
+   int newblock   /**< The new block the variable will be in */
+   );
+
 
 /** Returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_CONS** GCGlinkingVarGetLinkingConss(
-      SCIP_VAR* var
+   SCIP_VAR* var
    );
 
 /** Returns the fraction of master variables the original variable is contained in */
 extern
+void GCGlinkingVarSetLinkingCons(
+   SCIP_VAR* var,
+   SCIP_CONS* cons,
+   int i
+   );
+
+/** returns the number of blocks the linking variable is in */
+extern
+int GCGlinkingVarGetNBlocks(
+   SCIP_VAR* var /**< SCIP variable structure */
+   );
+
+/** Returns the number of master variables the original variable is contained in */
+extern
 int GCGoriginalVarGetNCoefs(
-      SCIP_VAR* var
+   SCIP_VAR* var /**< SCIP variable structure */
+   );
+
+/** Sets the number of master variables the original variable is contained in */
+extern
+void GCGoriginalVarSetNCoefs(
+   SCIP_VAR* var, /**< SCIP variable structure      */
+   int coef       /**< number of coefficient to set */
+   );
+
+/** Returns whether the  master variable is a ray */
+extern
+SCIP_Bool GCGmasterVarIsRay(
+   SCIP_VAR* var
    );
 
 /** Returns the number of original variables the master variable is contained in */
@@ -146,6 +193,26 @@ int GCGvarGetBlock(
    SCIP_VAR* var
    );
 
+/** Sets the block of the variable */
+extern
+void GCGvarSetBlock(
+   SCIP_VAR* var, /**< Variable to set block for */
+   int block      /**< block to set */
+   );
+
+/** creates the data for all variables of the original program */
+extern
+SCIP_RETCODE GCGcreateOrigVarsData(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** creates the data for a variable of the original program */
+extern
+SCIP_RETCODE GCGorigVarCreateData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var                 /**< pointer to variable object */
+   );
+
 /** Returns TRUE if the linking variable is in the block, FALSE otherwise */
 extern
 SCIP_Bool GCGisLinkingVarInBlock(
@@ -158,6 +225,7 @@ SCIP_Bool GCGisLinkingVarInBlock(
  * Saves this information in the original variable's data 
  * @todo this method needs a little love
  */
+extern
 SCIP_RETCODE GCGoriginalVarAddMasterVar(
    SCIP*                 scip,                  /**< SCIP data structure                */
    SCIP_VAR*             origvar,               /**< Original variable                  */

@@ -36,7 +36,7 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_sos1.h"
 #include "scip/cons_sos2.h"
-
+#include "pub_gcgvar.h"
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -630,7 +630,7 @@ SCIP_RETCODE readBLKFile(
 {
    assert(blkinput != NULL);
 
-   SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
    /* open file */
    blkinput->file = SCIPfopen(filename, "r");
