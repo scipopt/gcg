@@ -113,3 +113,7 @@ v0901:
 - fixed a bug in borderheur related to empty hyperedges
 - try to deal with the time limit of the master by looping until the 
   original instance hits the time limit
+- removed all vardata accesses from the core code
+
+v0902:
+
