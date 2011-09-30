@@ -102,7 +102,7 @@ v090:
 - allow master to be accessed from the command line interface
 - support probing for heuristics
 - allow for unbounded pricing problems
--  Change branding in interactive SHELL, display version and githash
+- Change branding in interactive SHELL, display version and githash
   
 v0901:
 - removed all #if 0
@@ -116,4 +116,4 @@ v0901:
 - removed all vardata accesses from the core code
 
 v0902:
-
+- make githash look nicer

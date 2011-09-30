@@ -2489,10 +2489,15 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       {
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
-      assert(stored);
+      /** @todo: Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.
+       *  Remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+       */ 
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-
-      SCIPdebugMessage("updated current best primal feasible solution!\n");
+      /** @todo: Martin will disable that here, because at the current stage, it does not have to be true!
+       *       assert(stored);
+       */ 
+      if(stored)
+         SCIPdebugMessage("updated current best primal feasible solution!\n");
    }
 
    return SCIP_OKAY;
