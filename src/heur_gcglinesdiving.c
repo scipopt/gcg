@@ -258,7 +258,7 @@ SCIP_DECL_HEURINIT(heurInitGcglinesdiving)
 
    /* create working solution and root relaxation solution */
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
-   SCIP_CALL( SCIPcreateSol(scip, &heurdata->rootsol, NULL) );
+   heurdata->rootsol = NULL;
 
    /* initialize data */
    heurdata->nlpiterations = 0;
@@ -284,7 +284,8 @@ SCIP_DECL_HEUREXIT(heurExitGcglinesdiving)
 
    /* free working solution and root relaxation solution */
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
-   SCIP_CALL( SCIPfreeSol(scip, &heurdata->rootsol) );
+   if (heurdata->rootsol != NULL )
+      SCIP_CALL( SCIPfreeSol(scip, &heurdata->rootsol) );
 
    return SCIP_OKAY;
 }
