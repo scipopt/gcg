@@ -509,19 +509,18 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    solval = 0.0;
 
    /* branch on an integer variable belonging to a unique block with fractional value */
-   if( branchvar == NULL )
-      for( i = 0; i < npriobranchcands; i++ )
-      {
-         assert(GCGvarIsOriginal(branchcands[i]));
+   for( i = 0; i < npriobranchcands; i++ )
+   {
+      assert(GCGvarIsOriginal(branchcands[i]));
+      
+      /* variable belongs to no block or the block is not unique */
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         continue;
 
-         /* variable belongs to no block or the block is not unique */
-         if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
-            continue;
-
-         branchvar = branchcands[i];
-         assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
-         solval = SCIPvarGetLbLocal(branchvar) + 0.5;
-      }
+      branchvar = branchcands[i];
+      assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
+      solval = SCIPvarGetLbLocal(branchvar) + 0.5;
+   }
 
    /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
     * but was directly transferred to the master problem and which has fractional value in the current solution */

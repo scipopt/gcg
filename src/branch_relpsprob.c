@@ -1394,13 +1394,13 @@ SCIP_RETCODE execRelpsprob(
          }
       }
 #ifdef SCIP_DEBUG
-      if ( bestsbcand >= 0 )
+      if( bestsbcand >= 0 )
       {
          SCIPdebugMessage(" -> best: <%s> (%g / %g / %g)\n",
                SCIPvarGetName(branchcands[bestsbcand]), bestsbscore, bestsbfracscore, bestsbdomainscore);
       }
 #endif
-      if ( bestsbcand >= 0 )
+      if( bestsbcand >= 0 )
       {
          SCIPdebugMessage(" -> best: <%s> (%g / %g / %g)\n",
             SCIPvarGetName(branchcands[bestsbcand]), bestsbscore, bestsbfracscore, bestsbdomainscore);     

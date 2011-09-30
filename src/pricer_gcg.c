@@ -92,7 +92,7 @@ struct SCIP_PricerData
    SCIP_Real** bestsolvals;
    SCIP_VAR*** bestsolvars;
    int* nbestsolvars;
-   int* bestsolisray;
+   SCIP_Bool* bestsolisray;
    int* prob;
    SCIP_Real* redcost;
    int nbestsols;
@@ -662,25 +662,23 @@ SCIP_RETCODE setPricingObjs(
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0) );
+            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0.0) );
          }
          else 
          {
-            SCIP_VAR** origvars;
-            int norigvars;
-            origvars = GCGpricingVarGetOrigvars(probvars[j]);
-            norigvars = GCGpricingVarGetNOrigvars(probvars[j]);
+            SCIP_VAR* origvar;
+            origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
             
             assert(GCGvarGetBlock(probvars[j]) == i);
 
-            if( GCGvarIsLinking(origvars[0]) )
+            if( GCGvarIsLinking(origvar) )
             {
-               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0) );
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0.0) );
             }
             else
             {
-               assert( GCGvarGetBlock(origvars[0]) == i);
-               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], SCIPvarGetObj(origvars[0])) );
+               assert( GCGvarGetBlock(origvar) == i);
+               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], SCIPvarGetObj(origvar)) );
             }
          }  
       }
@@ -696,22 +694,20 @@ SCIP_RETCODE setPricingObjs(
 
       for( j = 0; j < nprobvars; j++ )
       {
-         SCIP_VAR** origvars;
-         int norigvars;
+         SCIP_VAR* origvar;
          SCIP_VAR** pricingvars;
          SCIP_CONS** linkconss;
 
-         origvars = GCGpricingVarGetOrigvars(probvars[j]);
-         norigvars = GCGpricingVarGetNOrigvars(probvars[j]);
+         origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
 
          assert(GCGvarIsPricing(probvars[j]));
          assert(GCGvarGetBlock(probvars[j]) == i);
 
-         if( !GCGvarIsLinking(origvars[0]) )
+         if( !GCGvarIsLinking(origvar) )
             continue;
          
-         pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
-         linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
+         pricingvars = GCGlinkingVarGetPricingVars(origvar);
+         linkconss = GCGlinkingVarGetLinkingConss(origvar);
          assert(pricingvars[i] == probvars[j]);
          assert(linkconss[i] != NULL);
 
@@ -1191,13 +1187,13 @@ SCIP_RETCODE createNewMasterVar(
    /* add variable to convexity constraint */
    if( !solisray )
    {
-      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
    }
 
    if( addedvar != NULL )
       *addedvar = newvar;
 
-   SCIPreleaseVar(scip, &newvar);
+   SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
 
    return SCIP_OKAY;
 }
@@ -1248,7 +1244,7 @@ SCIP_Bool canPricingBeAborted(
    assert(pricerdata != NULL);
    canabort = FALSE;
    if ( pricerdata->abortpricingint && SCIPisObjIntegral(scip)
-   && SCIPceil(scip, SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip))) == SCIPceil(scip, SCIPgetLPObjval(scip)) /* && SCIPgetNNodes(scip) > 1 ??????*/)
+      && SCIPisEQ(scip, SCIPceil(scip, SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip))), SCIPceil(scip, SCIPgetLPObjval(scip))) /* && SCIPgetNNodes(scip) > 1 ??????*/)
    {
       GCGpricerPrintInfo(scip, pricerdata,
             "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
@@ -1382,6 +1378,7 @@ SCIP_RETCODE performPricing(
    bestredcost = 0.0;
    bestredcostvalid = FALSE;
 
+   i = 0; /* to make lint happy */
    if( pricerdata->useheurpricing )
    {
       SCIPdebugMessage("heuristical pricing\n");
@@ -1574,8 +1571,9 @@ SCIP_RETCODE performPricing(
       pricerdata->nbestsols = 0;
    }
 
-   /* TODO: perhaps solve remaining pricing problems, if only few left? */
-   /* TODO: solve all pricing problems all k iterations? */
+   /** @todo: perhaps solve remaining pricing problems, if only few left? */
+   /** @todo: solve all pricing problems all k iterations? */
+   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */ 
    for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
       if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
          bestredcostvalid = FALSE;
@@ -1770,8 +1768,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          SCIP_VAR* newvar;
          linkconss = GCGoriginalVarGetLinkingCons(vars[v]);
 
-         SCIP_CALL(GCGcreateInitialMasterVar(scip, vars[v], &newvar));
-         SCIPaddVar(scip, newvar);
+         SCIP_CALL( GCGcreateInitialMasterVar(scip, vars[v], &newvar) );
+         SCIP_CALL( SCIPaddVar(scip, newvar) ); 
 
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, vars[v], newvar, 1.0) );
 
@@ -1795,13 +1793,12 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
             {
                if( linkingconss[i] != NULL )
                {
-                  SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1) );
+                  SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1.0) );
                }
             }
          }
 
-
-         SCIPreleaseVar(scip, &newvar);
+         SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
 
       }
    }
