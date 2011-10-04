@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -181,6 +181,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingDirection);
 /** dialog execution method for the set branching priority command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingPriority);
+
+/** dialog execution method for the set heuristics aggressive command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisAggressive);
+
+/** dialog execution method for the set heuristics fast command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisFast);
+
+/** dialog execution method for the set heuristics off command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisOff);
 
 /** dialog execution method for the set limits objective command */
 extern

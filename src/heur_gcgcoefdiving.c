@@ -26,6 +26,8 @@
 
 #include "heur_gcgcoefdiving.h"
 
+/* @todo: remove include of cons_masterbranch */
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 
@@ -652,7 +654,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
          }
          
          /* apply domain propagation */
-         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
+//         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
+         SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
          if( !cutoff )
          {
             /* resolve the diving LP */

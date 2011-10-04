@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -103,7 +103,6 @@
 #include "solver_mip.h"
 
 /* Christian's heuristics */
-#include "heur_feasrestmaster.h"
 #include "heur_greedycolsel.h"
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
@@ -173,7 +172,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurFeasrestmaster(scip) );
    SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
    //SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );

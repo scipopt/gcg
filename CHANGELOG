@@ -102,10 +102,18 @@ v090:
 - allow master to be accessed from the command line interface
 - support probing for heuristics
 - allow for unbounded pricing problems
--  Change branding in interactive SHELL, display version and githash
+- Change branding in interactive SHELL, display version and githash
   
 v0901:
 - removed all #if 0
 - try to avoid infeasible problems if the timelimit is hit during farkas
   pricing
 - removed interface.{c,h}, it is not needed anymore
+- cleaned up code (whitespace and code style changes)
+- fixed a bug in borderheur related to empty hyperedges
+- try to deal with the time limit of the master by looping until the 
+  original instance hits the time limit
+- removed all vardata accesses from the core code
+
+v0902:
+- make githash look nicer

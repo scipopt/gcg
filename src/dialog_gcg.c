@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -1647,6 +1647,42 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingPriority)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the set heuristics aggressive command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisAggressive)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set heuristics fast command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisFast)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set heuristics off command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsEmphasisOff)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_OFF, FALSE) );
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the set limits objective command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLimitsObjective)
 {  /*lint --e{715}*/
@@ -2505,6 +2541,33 @@ SCIP_RETCODE addParamDialog(
    return SCIP_OKAY;
 }
 
+/** create a "emphasis" sub menu */
+static
+SCIP_RETCODE createEmphasisSubmenu(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          root,               /**< the menu to add the empty sub menu */
+   SCIP_DIALOG**         submenu             /**< pointer to store the created emphasis sub menu */
+   )
+{
+   if( !SCIPdialogHasEntry(root, "emphasis") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, submenu,
+            NULL, GCGdialogExecMenu, NULL, NULL,
+            "emphasis", "predefined parameter settings", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, *submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, submenu) );
+   }
+   else if( SCIPdialogFindEntry(root, "emphasis", submenu) != 1 )
+   {
+      SCIPerrorMessage("emphasis sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   assert(*submenu != NULL);
+
+   return SCIP_OKAY;
+}
+
 /** includes or updates the "set" menu for each available parameter setting */
 SCIP_RETCODE SCIPincludeDialogGcgSet(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2513,6 +2576,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    SCIP_DIALOG* root;
    SCIP_DIALOG* setmenu;
    SCIP_DIALOG* submenu;
+   SCIP_DIALOG* emphasismenu;
    SCIP_DIALOG* dialog;
    SCIP_PARAM** params;
    const char* pname;
@@ -2756,6 +2820,40 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
          SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
          SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
       }
+   }
+
+   /* create set heuristics emphasis */
+   SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
+   assert(emphasismenu != NULL);
+
+   /* set heuristics emphasis aggressive */
+   if( !SCIPdialogHasEntry(emphasismenu, "aggressive") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, GCGdialogExecSetHeuristicsEmphasisAggressive, NULL, NULL,
+            "aggressive", "sets heuristics <aggressive>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics emphasis fast */
+   if( !SCIPdialogHasEntry(emphasismenu, "fast") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, GCGdialogExecSetHeuristicsEmphasisFast, NULL, NULL,
+            "fast", "sets heuristics <fast>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics emphasis off */
+   if( !SCIPdialogHasEntry(emphasismenu, "off") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, GCGdialogExecSetHeuristicsEmphasisOff, NULL, NULL,
+            "off", "turns <off> all heuritics", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
    /* set limits */

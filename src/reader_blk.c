@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -36,7 +36,7 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_sos1.h"
 #include "scip/cons_sos2.h"
-
+#include "pub_gcgvar.h"
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -569,8 +569,6 @@ SCIP_RETCODE readBlock(
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
 
-      var = NULL;
-
       /* the token must be the name of an existing variable */
       var = SCIPfindVar(scip, blkinput->token);
       if( var == NULL )
@@ -603,8 +601,6 @@ SCIP_RETCODE readMasterconss(
       if( isNewSection(scip, blkinput) )
          return SCIP_OKAY;
 
-      cons = NULL;
-
       /* the token must be the name of an existing constraint */
       cons = SCIPfindCons(scip, blkinput->token);
       if( cons == NULL )
@@ -634,7 +630,7 @@ SCIP_RETCODE readBLKFile(
 {
    assert(blkinput != NULL);
 
-   SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
    /* open file */
    blkinput->file = SCIPfopen(filename, "r");

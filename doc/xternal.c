@@ -23,7 +23,7 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /**@mainpage Generic Column Genration
- * @version  0.9.0.1
+ * @version  0.9.0.2
  * @author   Gerald Gamrath
  * @author   Martin Bergner
  * @author   Christian Puchert
@@ -40,11 +40,11 @@
  * <b>SCIP Authors</b>
  * - <a class="el" href="AUTHORS.html#main">Current main developers</a>
  * - <a class="el" href="AUTHORS.html#further">Further developers</a>
- * 
+ *
  * <b>Further Documentation</b>
  * - \ref DETECT "How to write a custom structure detection"
  * - \ref HEUR "How to write custom heuristics"
- * 
+ *
  *     </td>
  *     <td valign="bottom" width="200">
  *       \image html scippy.png

@@ -7,17 +7,16 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
-/**@file   heur_feasrestmaster.h
- * @brief  feasibility restricted master primal heuristic
+/**@file   heur_colgenfeaspump.h
+ * @brief  column generation based feasibility pump primal heuristic
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_FEASRESTMASTER_H__
-#define __SCIP_HEUR_FEASRESTMASTER_H__
+#ifndef __SCIP_HEUR_COLGENFEASPUMP_H__
+#define __SCIP_HEUR_COLGENFEASPUMP_H__
 
 
 #include "scip/scip.h"
@@ -26,9 +25,9 @@
 extern "C" {
 #endif
 
-/** creates the feasibility restricted master primal heuristic and includes it in SCIP */
+/** creates the colgenfeaspump primal heuristic and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeHeurFeasrestmaster(
+SCIP_RETCODE SCIPincludeHeurColgenfeaspump(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

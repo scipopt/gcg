@@ -14,7 +14,7 @@
 #@author  Martin Bergner
 
 GCGGITHASHFILE	= 	$(SRCDIR)/githash.c
-GCGGITHASH	=	$(shell git describe --always --dirty)
+GCGGITHASH	=	$(shell git describe --tag --always --dirty)
 
 .PHONY: githash
 githash::	# do not remove the double-colon

@@ -26,6 +26,8 @@
 
 #include "heur_gcgfracdiving.h"
 
+/* @todo: remove include of cons_masterbranch */
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 
@@ -323,7 +325,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    /* only call heuristic, if an optimal LP solution is at hand */
    if( !SCIPhasCurrentNodeLP(masterprob) || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
    {
-      SCIPdebugMessage("not executing GCG fracdiving: master LP not solved at this node\n");
+//      SCIPdebugMessage("not executing GCG fracdiving: master LP not solved at this node\n");
       return SCIP_OKAY;
    }
 

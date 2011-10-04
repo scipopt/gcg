@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -27,7 +27,7 @@
 #include "branch_relpsprob.h"
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
-#include "struct_vardata.h"
+#include "pub_gcgvar.h"
 
 #define BRANCHRULE_NAME          "orig"
 #define BRANCHRULE_DESC          "branching for the original program in generic column generation"
@@ -161,7 +161,7 @@ SCIP_RETCODE branchVar(
    SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
 
    /* store bound change of variables that were directly transferred to the master problem */
-   if( !enforcebycons && SCIPvarGetData(branchvar)->blocknr == -1 )
+   if( !enforcebycons && GCGvarGetBlock(branchvar) == -1 )
    {
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchup, branchdowndata->origvar,
             branchupdata->boundtype, branchupdata->newbound) );
@@ -185,8 +185,6 @@ SCIP_RETCODE branchExtern(
    SCIP_RESULT*          result              /** pointer to store the result of the branching call */
    )
 {
-   SCIP_VARDATA* vardata;
-   // SCIP_SOL* currentsol;
    int i;
 
    /* parameter data */
@@ -253,13 +251,10 @@ SCIP_RETCODE branchExtern(
    if( branchvar == NULL )
       for( i = 0; i < npriobranchcands; i++ )
       {
-         vardata = SCIPvarGetData(branchcands[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+         assert(GCGvarIsOriginal(branchcands[i]));
       
          /* variable belongs to no block or the block is not unique */
-         if( vardata->blocknr == -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+         if( GCGvarGetBlock(branchcands[i]) == -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
          /* use pseudocost variable selection rule */
@@ -300,13 +295,10 @@ SCIP_RETCODE branchExtern(
    {
       for( i = 0; i < npriobranchcands; i++ )
       {
-         vardata = SCIPvarGetData(branchcands[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+         assert(GCGvarIsOriginal(branchcands[i]));
          
          /* continue if variable belongs to a block */
-         if( vardata->blocknr != -1 )
+         if( GCGvarGetBlock(branchcands[i]) != -1 )
             continue;
          
          /* use pseudocost variable selection rule */
@@ -370,7 +362,6 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
    SCIP* origscip;
    SCIP_CONS* mastercons;
-   SCIP_VARDATA* vardata;
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -384,9 +375,6 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   vardata = SCIPvarGetData(branchdata->origvar);
-   assert(vardata != NULL);
-   
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
    
@@ -493,7 +481,6 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 {  
-   SCIP_VARDATA* vardata;
    int i;
 
    /* branching candidates */
@@ -525,13 +512,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    if( branchvar == NULL )
       for( i = 0; i < npriobranchcands; i++ )
       {
-         vardata = SCIPvarGetData(branchcands[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->blocknr >= -2 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
-      
+         assert(GCGvarIsOriginal(branchcands[i]));
+
          /* variable belongs to no block or the block is not unique */
-         if( vardata->blocknr <= -1 || GCGrelaxGetNIdenticalBlocks(scip, vardata->blocknr) != 1 )
+         if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
          branchvar = branchcands[i];
@@ -545,13 +529,10 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    {
       for( i = 0; i < npriobranchcands; i++ )
       {
-         vardata = SCIPvarGetData(branchcands[i]);
-         assert(vardata != NULL);
-         assert(vardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(vardata->blocknr >= -1 && vardata->blocknr < GCGrelaxGetNPricingprobs(scip));
+         assert(GCGvarIsOriginal(branchcands[i]));
          
          /* continue if variable belongs to a block */
-         if( vardata->blocknr != -1 )
+         if( GCGvarGetBlock(branchcands[i]) != -1 )
             continue;
          
          branchvar = branchcands[i];

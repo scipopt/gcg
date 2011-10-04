@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -33,6 +33,7 @@
 #include "string.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
+#include "pub_gcgvar.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
@@ -108,7 +109,7 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
 
    SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
-   SCIP_CALL( GCGrelaxCreateOrigVarsData(scip) );
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
    /* set master constraints */
    for( i = 0; i < decdecomp->nlinkingconss; ++i )
@@ -139,7 +140,7 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
          }
          else
          {
-            SCIP_CALL(GCGrelaxCreateOrigVardata(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
+            SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
             SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
          }
       }
@@ -149,7 +150,7 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
       if( SCIPvarGetData(decdecomp->linkingvars[i]) == NULL)
       {
          int found;
-         SCIP_CALL(GCGrelaxCreateOrigVardata(scip, getRelevantVariable(decdecomp->linkingvars[i])));
+         SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->linkingvars[i])));
          /* HACK; TODO: find out constraint blocks */
          for( j = 0; j < decdecomp->nblocks; ++j )
          {

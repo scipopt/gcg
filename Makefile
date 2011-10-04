@@ -1,7 +1,7 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
-#*          GCG --- Generic Colum Generation                                 *
+#*          GCG --- Generic Column Generation                                *
 #*                  a Dantzig-Wolfe decomposition based extension            *
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
@@ -38,45 +38,52 @@ include $(SCIPDIR)/make/make.project
 
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
-         		reader_ref.o \
-				gcgplugins.o \
-				relax_gcg.o \
-				pricer_gcg.o \
-				branch_orig.o \
-				branch_ryanfoster.o \
-				cons_origbranch.o \
-				cons_masterbranch.o \
-				cons_integralOrig.o \
-				heur_feasrestmaster.o \
-				heur_gcgcoefdiving.o \
-				heur_gcgfracdiving.o \
-				heur_gcgrens.o \
-				heur_gcgrounding.o \
-				heur_gcgsimplerounding.o \
-				heur_gcgshifting.o \
-				heur_gcgzirounding.o \
-				heur_greedycolsel.o \
-				heur_relaxcolsel.o \
-				heur_restmaster.o \
-				branch_master.o \
-				branch_relpsprob.o \
-				masterplugins.o \
-				pricingplugins.o \
-				nodesel_master.o \
-				sepa_master.o \
-				disp_gcg.o \
-				disp_master.o \
-				dialog_gcg.o \
-				solver_mip.o \
-				solver_knapsack.o \
-				cons_decomp.o \
-				dec_arrowheur.o \
-				dec_borderheur.o \
-				dec_stairheur.o \
-				gcggithash.o \
-				reader_gp.o \
-				scip_misc.o \
-				main.o
+	 		reader_ref.o \
+			gcgplugins.o \
+			relax_gcg.o \
+			pricer_gcg.o \
+			branch_orig.o \
+			branch_ryanfoster.o \
+			cons_origbranch.o \
+			cons_masterbranch.o \
+			cons_integralOrig.o \
+			heur_clasfeaspump.o \
+			heur_colgenfeaspump.o \
+			heur_extremepoints.o \
+			heur_gcgcoefdiving.o \
+			heur_gcgfracdiving.o \
+			heur_gcgguideddiving.o \
+			heur_gcglinesdiving.o \
+			heur_gcgpscostdiving.o \
+			heur_gcgrens.o \
+			heur_gcgrounding.o \
+			heur_gcgsimplerounding.o \
+			heur_gcgshifting.o \
+			heur_gcgveclendiving.o \
+			heur_gcgzirounding.o \
+			heur_greedycolsel.o \
+			heur_relaxcolsel.o \
+			heur_restmaster.o \
+			branch_master.o \
+			branch_relpsprob.o \
+			masterplugins.o \
+			pricingplugins.o \
+			nodesel_master.o \
+			sepa_master.o \
+			disp_gcg.o \
+			disp_master.o \
+			dialog_gcg.o \
+			solver_mip.o \
+			solver_knapsack.o \
+			cons_decomp.o \
+			dec_arrowheur.o \
+			dec_borderheur.o \
+			dec_stairheur.o \
+			gcggithash.o \
+			reader_gp.o \
+			scip_misc.o \
+			gcgvar.o \
+			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
