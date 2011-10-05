@@ -24,8 +24,8 @@
 
 #include "heur_greedycolsel.h"
 #include "pricer_gcg.h"
+#include "pub_gcgvar.h"
 #include "relax_gcg.h"
-#include "struct_vardata.h"
 
 
 #define HEUR_NAME             "greedycolsel"
@@ -133,8 +133,10 @@ SCIP_RETCODE getBestMastervar(
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
-   SCIP_VARDATA* vardata;
    int nmastervars;
+
+   SCIP_VAR* mastervar;
+   int block;
 
    int i;
 //   int j;
@@ -167,19 +169,19 @@ SCIP_RETCODE getBestMastervar(
 
    for( i = nmastervars - 1; i >= 0; i-- )
    {
-      vardata = SCIPvarGetData(mastervars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      mastervar = mastervars[i];
+      assert(GCGvarIsMaster(mastervar));
+      block = GCGvarGetBlock(mastervar);
 
       /* TODO: handle copied original variables and linking variables */
-      if( vardata->blocknr < 0 )
+      if( block < 0 )
          continue;
 
       /* ignore the master variable if the corresponding block is already full */
-      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr)
-            && !vardata->data.mastervardata.isray ) /* TODO: handle rays */
+      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block)
+            && !GCGmasterVarIsRay(mastervar) ) /* TODO: handle rays */
       {
-         tmpviolchange = getViolationChange(scip, activities, mastervars[i]);
+         tmpviolchange = getViolationChange(scip, activities, mastervar);
          if( tmpviolchange < *violchange )
          {
             *index = i;
@@ -316,16 +318,22 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_ROW** lprows;                        /* LP rows of master problem           */
    SCIP_SOL* origsol;                        /* working original solution           */
    SCIP_VAR** mastervars;
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* vardata2;
+   SCIP_VAR** origvars;
+   SCIP_VAR** origpricingvars;
+   SCIP_VAR* mastervar;
+   SCIP_VAR* pricingvar;
    SCIP_Real* activities;                    /* for each master LP row, activity of current master solution          */
+   SCIP_Real* origvals;
    int* blocknr;                             /* for each pricing problem, block we are currently working in          */
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
    SCIP_Bool discretization;
    SCIP_Bool success;
+   int block;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
    int nlprows;
    int nmastervars;
+   int norigvars;
+   int norigpricingvars;
    int npricingprobs;
    int nviolrows;
    int violchange;
@@ -419,25 +427,26 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       if( index == -1 )
          break;
 
-      /* get master variable data */
-      vardata = SCIPvarGetData(mastervars[index]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(vardata->data.mastervardata.norigvars >= 0);
-      assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-      assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-      assert(vardata->blocknr >= -2);
-      assert(!vardata->data.mastervardata.isray);
+      /* get master variable */
+      mastervar = mastervars[index];
+      assert(GCGvarIsMaster(mastervar));
+      assert(GCGmasterVarIsRay(mastervar));
+
+      /* get blocknr and original variables */
+      block = GCGvarGetBlock(mastervar);
+      origvars = GCGmasterVarGetOrigvars(mastervar);
+      origvals = GCGmasterVarGetOrigvals(mastervar);
+      norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
       /* increase master value by one, i.e. increase solution values in current original solution accordingly */
       /* TODO: handle copied original variables and linking variables */
-      if( vardata->blocknr == -1 )
+      if( block == -1 )
       {
-         assert(vardata->data.mastervardata.norigvars == 1);
-         assert(vardata->data.mastervardata.origvals[0] == 1.0);
+         assert(norigvars == 1);
+         assert(origvals[0] == 1.0);
 
          /* increase the corresponding value */
-         SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
+         SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[0], origvals[0]) );
 
          /* try to add original solution to solution pool */
          SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
@@ -445,28 +454,25 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       else
       {
          /* loop over all original variables contained in the current master variable */
-         for( i = 0; i < vardata->data.mastervardata.norigvars; i++ )
+         for( i = 0; i < norigvars; i++ )
          {
-            assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[i]));
+            assert(!SCIPisZero(scip, origvals[i]));
+            assert(GCGvarIsOriginal(origvars[i]));
 
-            /* get the right original variable */
-            vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[i]);
-            assert(vardata2 != NULL);
-            assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
-
-            if(vardata2->blocknr == -2)
+            if(GCGvarGetBlock(origvars[i]) == -2)
                continue;
 
-            assert(vardata2->data.origvardata.pricingvar != NULL);
-            vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
-            assert(vardata2 != NULL);
-            assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+            pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+            assert(GCGvarIsPricing(pricingvar));
+
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
 
             /* increase the corresponding value */
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[i]) );
+            SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
          }
 
-         blocknr[vardata->blocknr]++;
+         blocknr[block]++;
 
          /* try to add original solution to solution pool */
          SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
