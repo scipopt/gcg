@@ -154,7 +154,10 @@ SCIP_RETCODE ensureSizeBranchrules(
    return SCIP_OKAY;
 }
 
-/* checks whether two arrays of SCIP_Real's are identical */
+/** checks whether two arrays of SCIP_Real's are identical 
+ * @todo: What about using SCIPisEq()
+ */
+
 static 
 SCIP_Bool realArraysAreEqual(
    SCIP_Real*            array1,
@@ -203,9 +206,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    int nconss;
 
    SCIP_VAR** origvars1;
-   int norigvars1;
    SCIP_VAR** origvars2;
-   int norigvars2;
 
    SCIP_Real* coefs1;
    int ncoefs1;
@@ -245,17 +246,17 @@ SCIP_RETCODE pricingprobsAreIdentical(
    
    for( i = 0; i < nvars1; i++ )
    {
-      if( SCIPvarGetObj(vars1[i]) != SCIPvarGetObj(vars2[i]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetObj(vars1[i]), SCIPvarGetObj(vars2[i])) )
       {
          SCIPdebugMessage("--> obj differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
       }
-      if( SCIPvarGetLbOriginal(vars1[i]) != SCIPvarGetLbOriginal(vars2[i]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetLbOriginal(vars1[i]), SCIPvarGetLbOriginal(vars2[i])) )
       {
          SCIPdebugMessage("--> lb differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
       }
-      if( SCIPvarGetUbOriginal(vars1[i]) != SCIPvarGetUbOriginal(vars2[i]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetUbOriginal(vars1[i]), SCIPvarGetUbOriginal(vars2[i])) )
       {
          SCIPdebugMessage("--> ub differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
@@ -270,11 +271,9 @@ SCIP_RETCODE pricingprobsAreIdentical(
       assert(GCGvarIsPricing(vars2[i]));
       
       origvars1 = GCGpricingVarGetOrigvars(vars1[i]);
-      norigvars1 = GCGpricingVarGetNOrigvars(vars1[i]);
       origvars2 = GCGpricingVarGetOrigvars(vars2[i]);
-      norigvars2 = GCGpricingVarGetNOrigvars(vars2[i]);
 
-      if( SCIPvarGetObj(origvars1[0]) != SCIPvarGetObj(origvars2[0]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetObj(origvars1[0]),SCIPvarGetObj(origvars2[0])) )
       {
          SCIPdebugMessage("--> orig obj differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
@@ -309,12 +308,12 @@ SCIP_RETCODE pricingprobsAreIdentical(
          SCIPdebugMessage("--> nvars differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
       }
-      if( SCIPgetLhsLinear(scip1, conss1[i]) != SCIPgetLhsLinear(scip2, conss2[i]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPgetLhsLinear(scip1, conss1[i]), SCIPgetLhsLinear(scip2, conss2[i])) )
       {
          SCIPdebugMessage("--> lhs differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
       }
-      if( SCIPgetRhsLinear(scip1, conss1[i]) != SCIPgetRhsLinear(scip2, conss2[i]) )
+      if( !SCIPisEQ(relaxdata->masterprob, SCIPgetRhsLinear(scip1, conss1[i]), SCIPgetRhsLinear(scip2, conss2[i])) )
       {
          SCIPdebugMessage("--> rhs differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
@@ -504,6 +503,8 @@ SCIP_Bool consIsInBlock(
    {
       SCIPerrorMessage("constraint %s of unknown type <%s>!\n", SCIPconsGetName(cons), SCIPconshdlrGetName(SCIPconsGetHdlr(cons)));
    }
+   
+   assert(vars != NULL || nvars == 0);
 
    for( i = 0; i < nvars; i++ )
    {
@@ -579,7 +580,7 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
-   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1) );
+   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1.0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "timing/clocktype", 2) );
 
    /* ----- initialize the pricing problems ----- */
@@ -677,7 +678,6 @@ SCIP_RETCODE createMaster(
       else if( GCGvarIsLinking(vars[v]) )
       {
          SCIP_VAR** pricingvars;
-         SCIP_CONS** linkconss;
 
          assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
 
@@ -686,6 +686,8 @@ SCIP_RETCODE createMaster(
          {
             int count;
             int nblocks;
+            SCIP_CONS** linkconss;
+
             pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
             linkconss = GCGlinkingVarGetLinkingConss(vars[v]);
             nblocks = GCGlinkingVarGetNBlocks(vars[v]);
@@ -709,6 +711,8 @@ SCIP_RETCODE createMaster(
          {
             int count;
             int nblocks;
+            SCIP_CONS** linkconss;
+
             pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
             linkconss = GCGlinkingVarGetLinkingConss(vars[v]);
             nblocks = GCGlinkingVarGetNBlocks(vars[v]);
@@ -731,7 +735,6 @@ SCIP_RETCODE createMaster(
          assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
 
          pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
-         linkconss = GCGlinkingVarGetLinkingConss(vars[v]);
 
          for( i = 0; i < npricingprobs; i++ )
          {
@@ -903,7 +906,7 @@ SCIP_RETCODE createMaster(
       /* create the corresponding convexity constraint */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "conv_block_%d", i);
       SCIP_CALL( SCIPcreateConsLinear(relaxdata->masterprob, &(relaxdata->convconss[i]), name, 0, NULL, NULL, 
-            relaxdata->nblocksidentical[i], relaxdata->nblocksidentical[i], 
+            relaxdata->nblocksidentical[i]*1.0, relaxdata->nblocksidentical[i]*1.0, 
             TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
    }
@@ -1658,7 +1661,6 @@ SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   pricingprobnr = GCGvarGetBlock(origvar);
    /* get variable data of the original variable */
    assert(GCGvarIsOriginal(origvar));
    assert(GCGvarIsLinking(origvar));
@@ -1877,7 +1879,7 @@ void GCGrelaxPrintVar(
       {
          printf("%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
       }
-         printf("%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
+      printf("%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
 } 
 
@@ -1955,7 +1957,9 @@ SCIP_RETCODE GCGrelaxMarkConsMaster(
    /* allocate array, if not yet done */
    if( relaxdata->markedmasterconss == NULL )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), SCIPgetNConss(scip)) );
+      int nconss;
+      nconss = SCIPgetNConss(scip);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
       relaxdata->nmarkedmasterconss = 0;
    }
    assert(relaxdata->nmarkedmasterconss < SCIPgetNConss(scip));
@@ -2282,7 +2286,7 @@ SCIP_RETCODE GCGrelaxPerformProbing(
    assert(masterscip != NULL);
 
    /* create probing node in master problem, propagate and solve it with pricing */
-   SCIPnewProbingNode(masterscip);
+   SCIP_CALL( SCIPnewProbingNode(masterscip) );
 
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
@@ -2526,6 +2530,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
    assert(origvals != NULL);
    assert(mastervars != NULL);
    assert(mastervals != NULL);
+   assert(nmastervars >= 0);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
@@ -2540,13 +2545,11 @@ void GCGrelaxTransformOrigvalsToMastervals(
    /* iterate over all original variables */
    for( i = 0; i < norigvars; i++ )
    {
-      int nvarmastervars;
       SCIP_VAR** varmastervars;
       SCIP_Real* varmastervals;
       int blocknr;
 
       assert(GCGvarIsOriginal(origvars[i]));
-      nvarmastervars = GCGoriginalVarGetNMastervars(origvars[i]);
       varmastervars = GCGoriginalVarGetMastervars(origvars[i]);
       varmastervals = GCGoriginalVarGetMastervals(origvars[i]);
       blocknr = GCGvarGetBlock(origvars[i]);
@@ -2705,7 +2708,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       }
 
       /* handle the variables with value >= 1 to get integral values in original solution */
-      while( SCIPisFeasGE(scip, mastervals[i], 1) )
+      while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
       {
          /* variable was directly transferred to the master problem (only in linking conss or linking variable) */
          /* TODO: this may be the wrong place for this case, handle it before the while loop 
