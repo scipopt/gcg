@@ -1386,6 +1386,7 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 #define consSepasolMasterbranch NULL
 #define consEnableMasterbranch NULL
 #define consDisableMasterbranch NULL
+#define consDelVarMasterbranch NULL
 #define consPrintMasterbranch NULL
 #define consCopyMasterbranch NULL
 #define consParseMasterbranch NULL
@@ -1661,7 +1662,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
          consSepalpMasterbranch, consSepasolMasterbranch, consEnfolpMasterbranch, consEnfopsMasterbranch, consCheckMasterbranch,
          consPropMasterbranch, consPresolMasterbranch, consRespropMasterbranch, consLockMasterbranch,
          consActiveMasterbranch, consDeactiveMasterbranch,
-         consEnableMasterbranch, consDisableMasterbranch,
+         consEnableMasterbranch, consDisableMasterbranch, consDelVarMasterbranch,
          consPrintMasterbranch, consCopyMasterbranch, consParseMasterbranch, 
          conshdlrData) );
 

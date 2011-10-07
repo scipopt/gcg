@@ -348,6 +348,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consSepasolOrigbranch NULL
 #define consEnableOrigbranch NULL
 #define consDisableOrigbranch NULL
+#define consDelVarOrigbranch NULL
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
@@ -384,7 +385,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          consSepalpOrigbranch, consSepasolOrigbranch, consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
          consPropOrigbranch, consPresolOrigbranch, consRespropOrigbranch, consLockOrigbranch,
          consActiveOrigbranch, consDeactiveOrigbranch,
-         consEnableOrigbranch, consDisableOrigbranch,
+         consEnableOrigbranch, consDisableOrigbranch, consDelVarOrigbranch,
          consPrintOrigbranch, consCopyOrigbranch, consParseOrigbranch, 
          conshdlrData) );
 
