@@ -15,12 +15,15 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
 
 #include "cons_connected.h"
 #include "scip_misc.h"
+#include "type_decomp.h"
+#include "scip/clock.h" 
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "connected"
@@ -61,10 +64,9 @@ struct SCIP_ConshdlrData
    SCIP_HASHMAP* vartoblock;
    SCIP_Bool blockdiagonal;
    
-   SCIP_CONS** consstack;
-   SCIP_VAR** varstack;
-   int consstacksize;
-   int varstacksize;
+   DECDECOMP* decdecomp;
+   SCIP_CLOCK* clock;
+   int nblocks;
 };
 
 
@@ -93,6 +95,8 @@ SCIP_RETCODE findConnectedComponents(
    int i;
    int j;
    int k;
+   int tempblock;
+
    int* blockrepresentative;
    int nextblock;
    int *vartoblock;
@@ -102,6 +106,8 @@ SCIP_RETCODE findConnectedComponents(
    assert(conshdlrdata != NULL);
    assert(result != NULL);
 
+
+   SCIPdebugMessage("Trying to detect block diagonal matrix.\n");
    /* initialize data structures */
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
@@ -111,7 +117,8 @@ SCIP_RETCODE findConnectedComponents(
    SCIP_CALL( SCIPallocMemoryArray(scip, &vartoblock, nvars) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &blockrepresentative, nconss+1) );
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   
+   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->constoblock, SCIPblkmem(scip), nconss) );
+
    for( i = 0; i < nvars; ++i )
    {
       vartoblock[i] = -1;
@@ -151,7 +158,7 @@ SCIP_RETCODE findConnectedComponents(
    /* prepare consblock for the next costraint */
    ++nextblock;
 
-   SCIPfreeMemoryArrayNull(scip, curvars);
+   SCIPfreeMemoryArrayNull(scip, &curvars);
    /* go through the remaining constraints */ 
    for( i = 1; i < nconss; ++i )
    {
@@ -165,7 +172,7 @@ SCIP_RETCODE findConnectedComponents(
       assert(ncurvars <= nvars);
       assert(curvars != NULL || ncurvars == 0);
 
-      assert(SCIPhashmapGetImage(constoblock, cons) != NULL);
+      assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
       consblock = nextblock;
 
       /* go through all variables */
@@ -218,19 +225,29 @@ SCIP_RETCODE findConnectedComponents(
             ++nextblock;
          }
       }
-      SCIPfreeMemoryArrayNull(scip, curvars);
+      SCIPfreeMemoryArrayNull(scip, &curvars);
+      assert(consblock >= 1);
+      SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
+
    }
 
+   tempblock = 1;
    /* postprocess blockrepresentatives */
    for( i = 1; i < nextblock; ++i )
    {
       /* forward replace the representatives */
       if(blockrepresentative[i] != i)
          blockrepresentative[i] = blockrepresentative[blockrepresentative[i]];
-
+      else
+      {
+         blockrepresentative[i] = tempblock;
+         ++tempblock;
+      }
       /* It is crucial that this condition holds */
       assert(blockrepresentative[i] <= i);
    }
+
+
 
    /* convert temporary data to conshdlrdata */
    for(i = 0; i < nconss; ++i)
@@ -241,17 +258,37 @@ SCIP_RETCODE findConnectedComponents(
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
-
       assert(consblock < nextblock);
       SCIP_CALL( SCIPhashmapInsert(conshdlrdata->constoblock, cons, (void*)(size_t)consblock) );
+      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
    }
 
    /* free method data */
    SCIPfreeMemoryArray(scip, &vartoblock);
    SCIPfreeMemoryArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
+   conshdlrdata->nblocks = tempblock;
 
-   *result = SCIP_DIDNOTFIND;
+   if(conshdlrdata->nblocks > 1)
+      *result = SCIP_SUCCESS;
+   else
+      *result = SCIP_DIDNOTFIND;
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE copyToDecdecomp(
+   SCIP* scip, 
+   SCIP_CONSHDLRDATA* conshdlrdata, 
+   DECDECOMP* decdecomp
+   )
+{
+   assert(scip != NULL);
+   assert(conshdlrdata != NULL);
+   assert(decdecomp != NULL);
+
+
    return SCIP_OKAY;
 }
 
@@ -375,14 +412,26 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    nscipvars = SCIPgetNVars(scip);
    nscipconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->consstack, nscipconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->varstack, nscipvars) );
-
-   conshdlrdata->consstacksize = 0;
-   conshdlrdata->varstacksize = 0;
+   SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
+   SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
 
    SCIP_CALL( findConnectedComponents(scip, conshdlrdata, &result) );
 
+   SCIP_CALL( SCIPstopClock(scip, conshdlrdata->clock) );
+
+   SCIPdebugMessage("Detection took %f s.\n", SCIPclockGetTime(conshdlrdata->clock));
+
+   if(result == SCIP_SUCCESS)
+   {
+      SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
+      conshdlrdata->blockdiagonal = TRUE;
+   }
+   else
+   {
+      SCIPdebugMessage("No block diagonal structure found.\n");
+   }
+
+   SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
    return SCIP_OKAY;
 }
 
@@ -402,9 +451,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolConnected)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPfreeMemoryArray(scip, &conshdlrdata->consstack);
-   SCIPfreeMemoryArray(scip, &conshdlrdata->varstack);
-
+   SCIPfreeClock(scip, &conshdlrdata->clock);
    return SCIP_OKAY;
 }
 #else
@@ -657,6 +704,12 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
    
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
    assert(conshdlrdata != NULL);
+
+   conshdlrdata->constoblock = NULL;
+   conshdlrdata->vartoblock = NULL;
+   conshdlrdata->blockdiagonal = FALSE;
+
+   conshdlrdata->nblocks = 0;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,

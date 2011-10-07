@@ -200,14 +200,15 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  src/type_branchgcg.h src/branch_orig.h src/branch_ryanfoster.h \
  src/cons_origbranch.h src/disp_gcg.h src/dialog_gcg.h \
  src/branch_relpsprob.h src/reader_ref.h src/type_decomp.h \
- src/cons_decomp.h src/type_detector.h src/reader_gp.h \
- src/dec_borderheur.h src/dec_arrowheur.h src/heur_clasfeaspump.h \
- src/heur_colgenfeaspump.h src/heur_extremepoints.h \
- src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h \
- src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
- src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrounding.h \
- src/heur_gcgshifting.h src/heur_gcgsimplerounding.h \
- src/heur_gcgveclendiving.h src/heur_gcgzirounding.h
+ src/cons_decomp.h src/type_detector.h src/cons_connected.h \
+ src/reader_gp.h src/dec_borderheur.h src/dec_arrowheur.h \
+ src/heur_clasfeaspump.h src/heur_colgenfeaspump.h \
+ src/heur_extremepoints.h src/heur_gcgcoefdiving.h \
+ src/heur_gcgfracdiving.h src/heur_gcgguideddiving.h \
+ src/heur_gcglinesdiving.h src/heur_gcgpscostdiving.h src/heur_gcgrens.h \
+ src/heur_gcgrounding.h src/heur_gcgshifting.h \
+ src/heur_gcgsimplerounding.h src/heur_gcgveclendiving.h \
+ src/heur_gcgzirounding.h
 $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -275,11 +276,11 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -697,11 +698,11 @@ $(OBJDIR)/heur_clasfeaspump.o: src/heur_clasfeaspump.c src/heur_clasfeaspump.h \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -813,11 +814,11 @@ $(OBJDIR)/heur_colgenfeaspump.o: src/heur_colgenfeaspump.c \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -907,8 +908,8 @@ $(OBJDIR)/heur_extremepoints.o: src/heur_extremepoints.c src/heur_extremepoints.
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/gcgplugins.h \
- src/struct_vardata.h lib/scip/src/scip/scipdefplugins.h \
+ src/pub_gcgvar.h src/relax_gcg.h src/type_branchgcg.h src/gcgplugins.h \
+ lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
@@ -928,11 +929,11 @@ $(OBJDIR)/heur_extremepoints.o: src/heur_extremepoints.c src/heur_extremepoints.
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1293,11 +1294,11 @@ $(OBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1754,11 +1755,11 @@ $(OBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2629,7 +2630,8 @@ $(OBJDIR)/cons_connected.o: src/cons_connected.c src/cons_connected.h \
  lib/scip/src/scip/buffer.h lib/scip/src/scip/type_buffer.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
+ src/scip_misc.h src/type_decomp.h lib/scip/src/scip/clock.h
 $(OBJDIR)/gcggithash.o: src/gcggithash.c src/gcggithash.h src/githash.c
 $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -2747,11 +2749,11 @@ $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2909,11 +2911,11 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
  lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_varbound.h \
  lib/scip/src/scip/cons_xor.h lib/scip/src/scip/dialog_default.h \
- lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
- lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
- lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/event_boundwriting.h \
+ lib/scip/src/scip/heur_actconsdiving.h lib/scip/src/scip/heur_clique.h \
+ lib/scip/src/scip/heur_coefdiving.h lib/scip/src/scip/heur_crossover.h \
+ lib/scip/src/scip/heur_dins.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_intdiving.h \
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \

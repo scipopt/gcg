@@ -4,6 +4,10 @@
 # [type: int, range: [-1,2147483647], default: 1]
 lp/solvefreq = -1
 
+# default clock type (1: CPU user seconds, 2: wall clock time)
+# [type: int, range: [1,2], default: 1]
+timing/clocktype = 2
+
 # maximal number of presolving rounds (-1: unlimited, 0: off)
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrounds = 0
@@ -16,14 +20,14 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/discretization = FALSE
 
-
 #arrowheur/minblocks = 2
 #arrowheur/maxblocks = 20
 
 borderheur/minblocks = 2
 borderheur/maxblocks = 20
 borderheur/ubfactor = 0.1
+borderheur/metisverbose = FALSE
 
 #arrowheur/ubfactor = 0.1
-#arrowheur/metisverbose = FALSE
+arrowheur/metisverbose = FALSE
 #arrowheur/metisuseptyperb = TRUE
