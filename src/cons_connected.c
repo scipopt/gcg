@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "cons_connected.h"
-
+#include "scip_misc.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "connected"
@@ -85,7 +85,7 @@ SCIP_RETCODE findConnectedComponents(
 {
    int nvars;
    int nconss;
-   SCIP_VAR* curvars;
+   SCIP_VAR** curvars;
    int ncurvars;
    SCIP_CONS* cons;
    SCIP_CONS** conss;
@@ -93,9 +93,8 @@ SCIP_RETCODE findConnectedComponents(
    int i;
    int j;
    int k;
-   int b;
+   int* blockrepresentative;
    int nextblock;
-
    int *vartoblock;
    SCIP_HASHMAP *constoblock;
 
@@ -107,9 +106,10 @@ SCIP_RETCODE findConnectedComponents(
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
-   nextblock = 0;
+   nextblock = 1; /* start at 1 in order to see whether the hashmap has a key*/
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &vartoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &blockrepresentative, nconss+1) );
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    
    for( i = 0; i < nvars; ++i )
@@ -117,23 +117,56 @@ SCIP_RETCODE findConnectedComponents(
       vartoblock[i] = -1;
    }
 
+   for( i = 0; i < nconss+1; ++i )
+   {
+      blockrepresentative[i] = -1;
+   }
+
+   assert(nconss >= 1);
+
    /* process the first constraint */
+   cons = conss[0];
+   ncurvars = SCIPgetNVarsXXX(scip, cons);
+   curvars = SCIPgetVarsXXX(scip, cons);
+   assert(ncurvars >= 0);
+   assert(ncurvars <= nvars);
+   assert(curvars != NULL || ncurvars == 0);
 
+   SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)nextblock) );
+   for( j = 0; j < ncurvars; ++j)
+   {
+      SCIP_VAR* probvar;
+      int varindex;
+      probvar = SCIPvarGetProbvar(curvars[j]);
+      assert(probvar != NULL);
 
-   /* go through all constraints */ 
-   for( i = 0; i < nconss; ++i )
+      varindex = SCIPvarGetProbindex(probvar);
+      assert(varindex >= 0);
+      assert(varindex < nvars);
+      vartoblock[varindex] = nextblock;
+      
+   }
+   blockrepresentative[0] = nextblock;
+
+   /* prepare consblock for the next costraint */
+   ++nextblock;
+
+   SCIPfreeMemoryArrayNull(scip, curvars);
+   /* go through the remaining constraints */ 
+   for( i = 1; i < nconss; ++i )
    {
       int consblock;
       cons = conss[i];
       assert(cons != NULL);
 
-      ncurvars = SCIPgetNVarsXXX(cons);
+      ncurvars = SCIPgetNVarsXXX(scip, cons);
       curvars = SCIPgetVarsXXX(scip, cons);
       assert(ncurvars >= 0);
       assert(ncurvars <= nvars);
       assert(curvars != NULL || ncurvars == 0);
 
       assert(SCIPhashmapGetImage(constoblock, cons) != NULL);
+      consblock = nextblock;
 
       /* go through all variables */
       for( j = 0; j < ncurvars; ++j)
@@ -151,14 +184,19 @@ SCIP_RETCODE findConnectedComponents(
 
          /** @todo: what about deleted variables? */
          varblock = vartoblock[varindex];
-
          /* if variable is assigned to a block, assign constraint to that block */
          if( varblock != -1 )
          {
+            if(consblock == nextblock)
+               consblock = varblock;
             /* if variable is assigned to a different block, merge the blocks */
             if( varblock != consblock  )
             {
-
+               /* always take the lower one of both as the representative*/
+               if(varblock < consblock)
+                  blockrepresentative[consblock] = varblock;
+               else
+                  blockrepresentative[varblock] = consblock;
             }
             /* assign all previous variables of this constraint to this block */
             for (k = j; k >= 0; --k)
@@ -171,13 +209,46 @@ SCIP_RETCODE findConnectedComponents(
          else
          {
             /* if variable is free, assign it to the new block for this constraint */
-            vartoblock[varindex] = consblock;
+            varblock = consblock;
+            vartoblock[varindex] = varblock;
+         }
+         if( consblock == nextblock )
+         {
+            blockrepresentative[consblock] = consblock;
+            ++nextblock;
          }
       }
-      SCIPfreeMemoryArray(curvars);
+      SCIPfreeMemoryArrayNull(scip, curvars);
    }
+
+   /* postprocess blockrepresentatives */
+   for( i = 1; i < nextblock; ++i )
+   {
+      /* forward replace the representatives */
+      if(blockrepresentative[i] != i)
+         blockrepresentative[i] = blockrepresentative[blockrepresentative[i]];
+
+      /* It is crucial that this condition holds */
+      assert(blockrepresentative[i] <= i);
+   }
+
+   /* convert temporary data to conshdlrdata */
+   for(i = 0; i < nconss; ++i)
+   {
+      int consblock;
+
+      cons = conss[i];
+      consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
+      assert(consblock > 0);
+      consblock = blockrepresentative[consblock];
+
+      assert(consblock < nextblock);
+      SCIP_CALL( SCIPhashmapInsert(conshdlrdata->constoblock, cons, (void*)(size_t)consblock) );
+   }
+
    /* free method data */
-   SCIPfreeMemoryArray(scip, vartoblock);
+   SCIPfreeMemoryArray(scip, &vartoblock);
+   SCIPfreeMemoryArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
 
    *result = SCIP_DIDNOTFIND;
@@ -387,19 +458,7 @@ SCIP_DECL_CONSINITLP(consInitlpConnected)
 
 
 /** separation method of constraint handler for LP solutions */
-#if 0
-static
-SCIP_DECL_CONSSEPALP(consSepalpConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define consSepalpConnected NULL
-#endif
-
 
 /** separation method of constraint handler for arbitrary primal solutions */
 #define consSepasolConnected NULL
@@ -469,8 +528,6 @@ SCIP_DECL_CONSRESPROP(consRespropConnected)
 static
 SCIP_DECL_CONSLOCK(consLockConnected)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
