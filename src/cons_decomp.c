@@ -10,7 +10,7 @@
 #pragma ident "@(#) $Id: cons_decomp.c,v 1.54.2.1 2011/01/02 11:19:45 bzfheinz Exp $"
 
 /**@file   cons_decomp.c
- * @ingroup CONSHDLRS 
+ * @ingroup CONSHDLRS
  * @brief  constraint handler for structure detection
  * @author Martin Bergner
  *
@@ -27,6 +27,8 @@
 
 #include "reader_gp.h"
 #include "reader_ref.h"
+#include "reader_dec.h"
+#include "cons_connected.h"
 #include "relax_gcg.h"
 #include "struct_detector.h"
 #include "struct_decomp.h"
@@ -298,7 +300,6 @@ SCIP_Real DECgetRemainingTime(SCIP* scip)
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 {
-   SCIP_READER* reader;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
    int i;
@@ -310,18 +311,6 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
-   SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
-
-   reader = SCIPfindReader(scip, "refreader");
-   if( reader != NULL)
-   {
-      SCIP_CALL(SCIPReaderREFSetDecomp(scip, reader, conshdlrdata->decdecomp));
-   }
-//   SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
-   SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
-//   SCIP_CALL(SCIPArrowHeurSetDecomp(scip, conshdlrdata->arrowheurdata, conshdlrdata->decdecomp));
-//   SCIP_CALL(SCIPBorderheurSetDecomp(scip, conshdlrdata->borderheurdata, conshdlrdata->decdecomp));
-   //   SCIP_CALL(SCIPCutpackingSetDecomp(scip, conshdlrdata->cutpackingdata, conshdlrdata->decdecomp));
 
    if( GCGrelaxGetNPricingprobs(scip) <= 0 )
    {
@@ -458,6 +447,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_READER* reader;
 
    /* create decomp constraint handler data */
    SCIP_CALL(SCIPallocBlockMemory(scip, &conshdlrdata));
@@ -485,6 +475,20 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consEnableDecomp, consDisableDecomp, consDelVarDecomp,
          consPrintDecomp, consCopyDecomp, consParseDecomp,
          conshdlrdata) );
+
+   SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
+
+   reader = SCIPfindReader(scip, "refreader");
+   if( reader != NULL)
+   {
+      SCIP_CALL(SCIPReaderREFSetDecomp(scip, reader, conshdlrdata->decdecomp));
+   }
+   reader = SCIPfindReader(scip,"decreader");
+   if(reader!=NULL)
+   {
+      SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
+   }
+   SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
 
    /* add decomp constraint handler parameters */
    /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */

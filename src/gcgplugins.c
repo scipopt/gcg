@@ -126,7 +126,7 @@
 #include "scip/scipshell.h"
 #include "scip/disp_default.h"
 #include "reader_blk.h"
-#include "reader_blk_n.h"
+#include "reader_dec.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "branch_orig.h"
@@ -254,7 +254,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( SCIPincludeReaderBlk2(scip) );
+   SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );

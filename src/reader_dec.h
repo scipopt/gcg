@@ -26,14 +26,14 @@
 
 /** includes the blk file reader into SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderBlk2(
+SCIP_RETCODE SCIPincludeReaderDec(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
 /* reads problem from file */
 extern
-SCIP_RETCODE SCIPreadBlk2(
+SCIP_RETCODE SCIPreadDec(
    SCIP*              scip,               /**< SCIP data structure */
    SCIP_READER*       reader,             /**< the file reader itself */
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
@@ -43,7 +43,7 @@ SCIP_RETCODE SCIPreadBlk2(
 
 /* writes problem to file */
 extern
-SCIP_RETCODE SCIPwriteBlk2(
+SCIP_RETCODE SCIPwriteDec(
    SCIP*              scip,               /**< SCIP data structure */
    FILE*              file,               /**< output file, or NULL if standard output should be used */
    const char*        name,               /**< problem name */
@@ -63,8 +63,15 @@ SCIP_RETCODE SCIPwriteBlk2(
    SCIP_RESULT*       result              /**< pointer to store the result of the file writing call */
    );
 
+SCIP_RETCODE SCIPwriteDecomp(
+   SCIP* scip,                                /**< SCIP data structure */
+   FILE* file,                                /**< File pointer to write to */
+   DECDECOMP* decdecomp,                      /**< Decomposition pointer */
+   SCIP_Bool writeDecomposition                  /**< whether to write decomposed problem */
+   );
 
-SCIP_RETCODE SCIPReaderBlk2SetDecomp(
+
+SCIP_RETCODE SCIPReaderDecSetDecomp(
    SCIP* scip,
    DECDECOMP* decdecomp
    );
