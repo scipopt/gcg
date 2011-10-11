@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
@@ -535,6 +535,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    int blocknr;
    assert(scip != NULL);
    assert(var != NULL);
+   assert(GCGvarIsOriginal(var));
    
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
@@ -551,7 +552,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
          
-      /* store old block */
+      /* store old block; store the original variable, it will be exchanged for the correct pricing variable later */
       vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
       vardata->data.origvardata.linkingvardata->nblocks = 1;
       
@@ -560,10 +561,10 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    assert(GCGvarIsLinking(var));
 
    /* store new block */
-   if(vardata->data.origvardata.linkingvardata->pricingvars[blocknr] == NULL)
+   if(vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL)
    {
-      assert(vardata->data.origvardata.linkingvardata->linkconss[blocknr] == NULL);
-      vardata->data.origvardata.linkingvardata->pricingvars[blocknr] = var;
+      assert(vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
+      vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
       vardata->data.origvardata.linkingvardata->nblocks++;
    }
    assert(vardata->data.origvardata.linkingvardata->nblocks <= nblocks);
