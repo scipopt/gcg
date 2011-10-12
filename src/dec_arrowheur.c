@@ -198,16 +198,12 @@ DEC_DECL_INITDETECTOR(initArrowheur)
    int i;
    int nvars;
    int nconss;
-   DEC_DETECTOR*  arrowheur;
    DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   assert( arrowheur != NULL);
-
-   detectordata = DECdetectorGetData( arrowheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName( arrowheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
    assert(detectordata != NULL);
 
    nvars = SCIPgetNVars(scip);
@@ -297,16 +293,14 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
 {
 
    int i;
-   DEC_DETECTOR*  arrowheur;
    DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData( arrowheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName( arrowheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
    /* copy data to decomp structure */
    if( !detectordata->found)
    {

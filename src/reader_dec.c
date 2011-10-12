@@ -1035,7 +1035,16 @@ readBLKFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-#define readerFreeBlk NULL
+static
+SCIP_DECL_READERFREE(readerFreeDec)
+{
+   SCIP_READERDATA* readerdata;
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+   return SCIP_OKAY;
+}
 
 /** problem reading method of reader */
 static
@@ -1081,7 +1090,7 @@ SCIPincludeReaderDec(
 
    /* include lp reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreeBlk, readerReadDec, readerWriteDec, readerdata));
+           readerFreeDec, readerReadDec, readerWriteDec, readerdata));
 
    return SCIP_OKAY;
 }

@@ -33,7 +33,7 @@ extern "C" {
  *
  * scip SCIP data structure
  */
-#define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
+#define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
 /**
  * set decomp structure
@@ -41,7 +41,7 @@ extern "C" {
 #define DEC_DECL_SETSTRUCTDECOMP(x) void x (SCIP* scip, DECDECOMP* decdecomp)
 
 /** free data from a detector */
-#define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
+#define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
 /** detects the structure of a the problem */
 #define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)

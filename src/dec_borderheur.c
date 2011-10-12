@@ -145,16 +145,12 @@ DEC_DECL_INITDETECTOR(initBorderheur)
    int i;
    int nvars;
    int nconss;
-   DEC_DETECTOR* borderheur;
    DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   assert(borderheur != NULL);
-
-   detectordata = DECdetectorGetData(borderheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
@@ -239,16 +235,14 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
 {
 
    int i;
-   DEC_DETECTOR* borderheur;
    DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(borderheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    /* copy data to decomp structure */
    if( !detectordata->found)

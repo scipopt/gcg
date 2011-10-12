@@ -161,7 +161,6 @@ void decdecompFree(
  */
 
 #define conshdlrCopyDecomp NULL
-#define consFreeDecomp NULL
 #define consInitDecomp NULL
 #define consExitDecomp NULL
 #define consInitpreDecomp NULL
@@ -183,6 +182,36 @@ void decdecompFree(
 #define consCopyDecomp NULL
 #define consParseDecomp NULL
 
+/** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
+static
+SCIP_DECL_CONSFREE(consFreeDecomp)
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   decdecompFree(scip, &conshdlrdata->decdecomp);
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      DEC_DETECTOR *detector;
+      detector = conshdlrdata->detectors[i];
+      assert(detector != NULL);
+      if( detector->exitDetection != NULL)
+      {
+         SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
+         SCIP_CALL((*detector->exitDetection)(scip, detector));
+      }
+   }
+
+   SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
+   SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
+   SCIPfreeMemory(scip, &conshdlrdata);
+
+   return SCIP_OKAY;
+}
+
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
@@ -195,6 +224,8 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
    SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
@@ -222,7 +253,7 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
          if(detector->initDetection != NULL)
          {
             SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
-            SCIP_CALL((*detector->initDetection)(scip));
+            SCIP_CALL((*detector->initDetection)(scip, detector));
          }
 
          (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
@@ -260,27 +291,11 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
 
    SCIP_CONSHDLRDATA* conshdlrdata;
-   int i;
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
 
-   for( i = 0; i < conshdlrdata->ndetectors; ++i )
-   {
-      DEC_DETECTOR *detector;
-      detector = conshdlrdata->detectors[i];
-      assert(detector != NULL);
-      if( detector->exitDetection != NULL)
-      {
-         SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
-         SCIP_CALL((*detector->exitDetection)(scip));
-      }
-   }
-   decdecompFree(scip, &conshdlrdata->decdecomp);
    SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
-   SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
-   SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
-   SCIPfreeBlockMemory(scip, &conshdlrdata);
    return SCIP_OKAY;
 }
 
@@ -335,7 +350,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_READER* reader;
 
    /* create decomp constraint handler data */
-   SCIP_CALL(SCIPallocBlockMemory(scip, &conshdlrdata));
+   SCIP_CALL(SCIPallocMemory(scip, &conshdlrdata));
    assert(conshdlrdata != NULL);
 
    conshdlrdata->decdecomp = NULL;
