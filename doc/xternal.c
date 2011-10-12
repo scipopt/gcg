@@ -607,7 +607,7 @@
  * If you have allocated memory for fields in your detector data, remember to free this memory 
  * before freeing the detector data itself. 
  * The DETECTOREXIT callback is executed before the solution process is started.
- * In this method, the detector should free all resources that have been allocated for the solving process in PRESOLINIT.
+ * In this method, the detector should free all resources that have been allocated for the solving process in DECINIT.
  *
  */
 
