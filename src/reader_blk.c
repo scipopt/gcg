@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   reader_blk.c
  * @brief  BLK file reader
@@ -451,21 +450,21 @@ SCIP_Bool isNewSection(
       int blocknr;
 
       blkinput->section = BLK_BLOCK;
-      
+
       if( getNextToken(blkinput) )
       {
          /* read block number */
          if( isInt(scip, blkinput, &blocknr) )
          {
             assert(blocknr >= 0);
-            assert(blocknr <= blkinput->nblocks);  
-            
+            assert(blocknr <= blkinput->nblocks);
+
             blkinput->blocknr = blocknr-1;
          }
-         else 
+         else
             syntaxError(scip, blkinput, "no block number after block keyword!\n");
       }
-      else 
+      else
          syntaxError(scip, blkinput, "no block number after block keyword!\n");
 
       SCIPdebugMessage("new section: BLOCK %d\n", blkinput->blocknr);
@@ -477,7 +476,7 @@ SCIP_Bool isNewSection(
    if( strcasecmp(blkinput->token, "MASTERCONSS") == 0 )
    {
       blkinput->section = BLK_MASTERCONSS;
-      
+
       SCIPdebugMessage("new section: MASTERCONSS\n");
 
       return TRUE;
@@ -688,7 +687,7 @@ SCIP_RETCODE readBLKFile(
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadBlk)
-{  
+{
    SCIP_CALL( SCIPreadBlk(scip, reader, filename, result) );
 
    return SCIP_OKAY;
@@ -717,7 +716,7 @@ SCIP_RETCODE SCIPincludeReaderBlk(
    readerdata = NULL;
 
    /* include lp reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL, 
+   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
          readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
    return SCIP_OKAY;
@@ -731,7 +730,7 @@ SCIP_RETCODE SCIPreadBlk(
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    )
-{  
+{
    BLKINPUT blkinput;
    int i;
 

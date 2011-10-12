@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgsimplerounding.c
  * @ingroup PRIMALHEURISTICS
@@ -202,7 +201,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    /* don't call heuristic, if there are more fractional variables than roundable ones */
    if( nlpcands > heurdata->nroundablevars )
       return SCIP_OKAY;
-   
+
    *result = SCIP_DIDNOTFIND;
 
    SCIPdebugMessage("executing GCG simple rounding heuristic: %d fractionals\n", nlpcands);

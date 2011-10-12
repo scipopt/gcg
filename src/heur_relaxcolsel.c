@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_relaxcolsel.c
  * @ingroup PRIMALHEURISTICS
@@ -393,10 +392,10 @@ SCIP_RETCODE cleanMastercands(
 {
    SCIP_VAR* mastercand;
    int block;
-   
+
    int i;
    int j;
-   
+
    /* clean the candidate list from master variables whose blocks are full */
    for( j = 0; j < *nmastercands; j++ )
    {
@@ -423,7 +422,7 @@ SCIP_RETCODE cleanMastercands(
    }
 
    *nmastercands = j;
-   
+
    return SCIP_OKAY;
 }
 

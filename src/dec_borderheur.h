@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: presol_borderheur.h,v 1.16 2010/01/04 20:35:45 bzfheinz Exp $"
 
 /**@file   dec_borderheur.h
  * @brief  borderheur presolver

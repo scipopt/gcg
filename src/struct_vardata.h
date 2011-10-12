@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   struct_event.h
  * @brief  datastructures for managing events
@@ -86,7 +85,7 @@ struct SCIP_VarData
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
    } data;
    GCG_VARTYPE        vartype;               /**< type of variable */
-   int                blocknr;               /**< number of the block and pricing problem, the variable belongs to, 
+   int                blocknr;               /**< number of the block and pricing problem, the variable belongs to,
                                               *   or -1 if variable is directly transferred to the master problem,
                                               *   or -2 if variable is a linking variable */
 };

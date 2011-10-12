@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   sepa_master.c
  * @ingroup SEPARATORS
@@ -51,7 +50,7 @@ struct SCIP_SepaData
    SCIP_ROW** origcuts;
    int norigcuts;
    int nmastercuts;
-   int maxcuts;  
+   int maxcuts;
 };
 
 
@@ -103,7 +102,7 @@ SCIP_RETCODE ensureSizeCuts(
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_SEPAFREE(sepaFreeMaster)
-{  
+{
    SCIP_SEPADATA* sepadata;
 
    sepadata = SCIPsepaGetData(sepa);
@@ -119,7 +118,7 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
 /** deinitialization method of separator (called before transformed problem is freed) */
 static
 SCIP_DECL_SEPAEXIT(sepaExitMaster)
-{  
+{
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
    int i;
@@ -142,7 +141,7 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
 /** solving process deinitialization method of separator (called before branch and bound process data is freed) */
 static
 SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
-{  
+{
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
    int i;
@@ -166,7 +165,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
 /** LP solution separation method of separator */
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
-{  
+{
    SCIP*   origscip;
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
@@ -215,11 +214,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
-         FALSE, FALSE, &delayed, &cutoff) );   
+         FALSE, FALSE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
 //   sum = 0;
-   
+
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
 
@@ -239,7 +238,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    mastervars = SCIPgetVars(scip);
    nmastervars = SCIPgetNVars(scip);
    SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-      
+
    for( i = 0; i < ncuts; i++ )
    {
       origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i];
@@ -260,11 +259,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       /* create new cut in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
-      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name, 
-            ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ? 
-               SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)), 
-            ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ? 
-               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)), 
+      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name,
+            ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
+               SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
+            ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
+               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut)),
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
       /* transform the original variables to master variables and add them to the cut */
@@ -281,14 +280,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       //SCIPdebugMessage("Cut %d:\n", i);
       //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
       //SCIPdebugMessage("\n\n");
-#endif 
+#endif
 
       SCIPfreeBufferArray(scip, &rowvars);
    }
 
    if( ncuts > 0 )
       *result = SCIP_SEPARATED;
-   
+
    SCIPdebugMessage("%d cuts are in the original sepastore!\n", SCIPgetNCuts(origscip));
    SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
@@ -323,7 +322,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
-         sepaCopyMaster, sepaFreeMaster, sepaInitMaster, sepaExitMaster, 
+         sepaCopyMaster, sepaFreeMaster, sepaInitMaster, sepaExitMaster,
          sepaInitsolMaster, sepaExitsolMaster,
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );

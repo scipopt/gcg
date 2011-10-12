@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgrounding.c
  * @ingroup PRIMALHEURISTICS
@@ -83,7 +82,7 @@ void updateViolations(
    {
       int rowpos;
       int violpos;
-      
+
       rowpos = SCIProwGetLPPos(row);
       assert(rowpos >= 0);
 
@@ -148,7 +147,7 @@ SCIP_RETCODE updateActivities(
    {
       SCIP_ROW* row;
       int rowpos;
-      
+
       row = colrows[r];
       rowpos = SCIProwGetLPPos(row);
       assert(-1 <= rowpos && rowpos < nlprows);
@@ -157,9 +156,9 @@ SCIP_RETCODE updateActivities(
       {
          SCIP_Real oldactivity;
          SCIP_Real newactivity;
-         
+
          assert(SCIProwIsInLP(row));
-         
+
          /* update row activity */
          oldactivity = activities[rowpos];
          newactivity = oldactivity + delta * colvals[r];
@@ -171,7 +170,7 @@ SCIP_RETCODE updateActivities(
 
          /* update row violation arrays */
          updateViolations(scip, row, violrows, violrowpos, nviolrows, oldactivity, newactivity);
-      }            
+      }
    }
 
    return SCIP_OKAY;
@@ -227,12 +226,12 @@ SCIP_RETCODE selectRounding(
    {
       col = rowcols[c];
       var = SCIPcolGetVar(col);
-      
+
       vartype = SCIPvarGetType(var);
       if( vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
       {
          solval = SCIPgetSolVal(scip, sol, var);
-      
+
          if( !SCIPisFeasIntegral(scip, solval) )
          {
             val = rowvals[c];
@@ -351,7 +350,7 @@ SCIP_RETCODE selectEssentialRounding(
    {
       var = lpcands[v];
       assert(SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER);
-      
+
       solval = SCIPgetSolVal(scip, sol, var);
       if( !SCIPisFeasIntegral(scip, solval) )
       {
@@ -611,7 +610,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
       SCIP_VAR* roundvar;
       SCIP_Real oldsolval;
       SCIP_Real newsolval;
-         
+
       SCIPdebugMessage("GCG rounding heuristic: nfrac=%d, nviolrows=%d, obj=%g (best possible obj: %g)\n",
          nfrac, nviolrows, SCIPgetSolOrigObj(scip, sol), SCIPretransformObj(scip, minobj));
 
@@ -660,11 +659,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
 
       SCIPdebugMessage("GCG rounding heuristic:  -> round var <%s>, oldval=%g, newval=%g, obj=%g\n",
          SCIPvarGetName(roundvar), oldsolval, newsolval, SCIPvarGetObj(roundvar));
-         
+
       /* update row activities of globally valid rows */
-      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows, 
+      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows,
             roundvar, oldsolval, newsolval) );
-         
+
       /* store new solution value and decrease fractionality counter */
       SCIP_CALL( SCIPsetSolVal(scip, sol, roundvar, newsolval) );
       nfrac--;
@@ -706,7 +705,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    SCIPfreeBufferArray(scip, &violrowpos);
    SCIPfreeBufferArray(scip, &violrows);
    SCIPfreeBufferArray(scip, &activities);
-   
+
    return SCIP_OKAY;
 }
 

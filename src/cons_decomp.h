@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: cons_decomp.h,v 1.27.2.1 2011/01/02 11:19:45 bzfheinz Exp $"
 
 /**@file   cons_decomp.h
  * @brief  constraint handler for decomp constraints

@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgveclendiving.c
  * @ingroup PRIMALHEURISTICS
@@ -483,7 +482,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
          assert(objdelta >= 0.0);
 
          colveclen = (SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN ? SCIPcolGetNNonz(SCIPvarGetCol(var)) : 0);
-         
+
          /* check whether the variable is roundable */
          allroundable = allroundable && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
 
@@ -512,7 +511,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
       if( allroundable )
       {
          SCIP_Bool success;
-         
+
          /* create solution from diving LP and try to round it */
          SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
          SCIP_CALL( SCIProundSol(scip, heurdata->sol, &success) );
@@ -520,7 +519,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
          if( success )
          {
             SCIPdebugMessage("GCG veclendiving found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
-         
+
             /* a rounded solution will only be accepted if its objective value is below the search bound */
             if( SCIPgetSolOrigObj(scip, heurdata->sol) <= searchbound )
             {
@@ -547,8 +546,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed, numerical troubles may have occured or 
-          * variable was fixed by propagation while backtracking => Abort diving! 
+         /* if the variable is already fixed, numerical troubles may have occured or
+          * variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
          {
@@ -589,7 +588,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
             SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
             SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
          }
-         
+
          /* apply domain propagation */
          SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          if( !cutoff )
@@ -602,7 +601,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
             SCIP_RETCODE retstat;
             retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
-            { 
+            {
                SCIPwarningMessage("Error while solving LP in GCG veclendiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
@@ -611,7 +610,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
 
             if( lperror )
                break;
-            
+
             /* update iteration count */
             heurdata->nlpiterations += nlpiterations;
             heurdata->npricerounds += npricerounds;
@@ -791,7 +790,7 @@ SCIP_RETCODE SCIPincludeHeurGcgveclendiving(
          "heuristics/gcgveclendiving/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
-   
+
    return SCIP_OKAY;
 }
 

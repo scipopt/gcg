@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 /*#define SCIP_DEBUG*/
 /**@file   reader_ref.c
  * @brief  REF file reader for files *ref.txt
@@ -797,7 +796,7 @@ SCIP_DECL_READERFREE(readerFreeRef)
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadRef)
-{  
+{
    SCIP_CALL( SCIPreadRef(scip, reader, filename, result) );
 
    return SCIP_OKAY;
@@ -843,7 +842,7 @@ SCIP_RETCODE SCIPreadRef(
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    )
-{  
+{
    REFINPUT refinput;
    int i;
 

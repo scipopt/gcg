@@ -24,7 +24,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 #include "type_decomp.h"
-#include "scip/clock.h" 
+#include "scip/clock.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "connected"
@@ -64,7 +64,7 @@ struct SCIP_ConshdlrData
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
    SCIP_Bool blockdiagonal;
-   
+
    DECDECOMP* decdecomp;
    SCIP_CLOCK* clock;
    int nblocks;
@@ -79,7 +79,7 @@ struct SCIP_ConshdlrData
 
 /* put your local methods here, and declare them static */
 
-static 
+static
 SCIP_RETCODE findConnectedComponents(
    SCIP* scip,
    SCIP_CONSHDLRDATA* conshdlrdata,
@@ -152,7 +152,7 @@ SCIP_RETCODE findConnectedComponents(
       assert(varindex >= 0);
       assert(varindex < nvars);
       vartoblock[varindex] = nextblock;
-      
+
    }
    blockrepresentative[0] = nextblock;
 
@@ -160,7 +160,7 @@ SCIP_RETCODE findConnectedComponents(
    ++nextblock;
 
    SCIPfreeMemoryArrayNull(scip, &curvars);
-   /* go through the remaining constraints */ 
+   /* go through the remaining constraints */
    for( i = 1; i < nconss; ++i )
    {
       int consblock;
@@ -280,8 +280,8 @@ SCIP_RETCODE findConnectedComponents(
 
 static
 SCIP_RETCODE copyToDecdecomp(
-   SCIP* scip, 
-   SCIP_CONSHDLRDATA* conshdlrdata, 
+   SCIP* scip,
+   SCIP_CONSHDLRDATA* conshdlrdata,
    DECDECOMP* decdecomp
    )
 {
@@ -706,7 +706,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
 
    /* create connected constraint handler data */
    conshdlrdata = NULL;
-   
+
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
    assert(conshdlrdata != NULL);
 

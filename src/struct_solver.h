@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   struct_solver.h
  * @brief  datastructures for solvers
@@ -31,7 +30,7 @@ struct GCG_Solver
    char*                 name;
    char*                 description;
    int                   priority;
-   GCG_SOLVERDATA*       solverdata;     
+   GCG_SOLVERDATA*       solverdata;
    GCG_DECL_SOLVERSOLVE((*solversolve));
    GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur));
    GCG_DECL_SOLVERFREE   ((*solverfree));

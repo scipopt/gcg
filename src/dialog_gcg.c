@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   dialog_gcg.c
  * @ingroup DIALOGS
@@ -148,7 +147,7 @@ void displayReaders(
    int r;
 
    assert( scip != NULL );
-   
+
    readers = SCIPgetReaders(scip);
    nreaders = SCIPgetNReaders(scip);
 
@@ -204,20 +203,20 @@ SCIP_RETCODE writeProblem(
       /* copy filename */
       SCIP_CALL( SCIPduplicateBufferArray(scip, &tmpfilename, filename, (int)strlen(filename)+1) );
       extension = NULL;
-      
+
       do
       {
          if( transformed )
             retcode = SCIPwriteTransProblem(scip, tmpfilename, extension, genericnames);
          else
             retcode = SCIPwriteOrigProblem(scip, tmpfilename, extension, genericnames);
-      
+
          if( retcode == SCIP_FILECREATEERROR )
          {
             SCIPdialogMessage(scip, NULL, "error creating the file <%s>\n", filename);
             SCIPdialoghdlrClearBuffer(dialoghdlr);
             break;
-         }         
+         }
          else if(retcode == SCIP_WRITEERROR )
          {
             SCIPdialogMessage(scip, NULL, "error writing file <%s>\n", filename);
@@ -233,10 +232,10 @@ SCIP_RETCODE writeProblem(
 
                SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
                displayReaders(scip, FALSE, TRUE);
-         
-               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+
+               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
                      "select a suitable reader by extension (or return): ", &extension, &endoffile) );
-         
+
                if( extension[0] == '\0' )
                   break;
             }
@@ -260,10 +259,10 @@ SCIP_RETCODE writeProblem(
          }
       }
       while (extension != NULL );
-      
+
       SCIPfreeBufferArray(scip, &tmpfilename);
    }
-   
+
    return SCIP_OKAY;
 }
 
@@ -734,9 +733,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayReaders)
 
    /* print reader information */
    displayReaders(scip, TRUE, TRUE);
-   
+
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
-   
+
    return SCIP_OKAY;
 }
 
@@ -1094,7 +1093,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecRead)
          /* copy filename */
          SCIP_CALL( SCIPduplicateBufferArray(scip, &tmpfilename, filename, (int)strlen(filename)+1) );
          extension = NULL;
-         
+
          do
          {
             retcode = SCIPreadProb(scip, tmpfilename, extension);
@@ -1103,9 +1102,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecRead)
                if( extension == NULL )
                   SCIPdialogMessage(scip, NULL, "error reading file <%s>\n", tmpfilename);
                else
-                  SCIPdialogMessage(scip, NULL, "error reading file <%s> using <%s> file format\n", 
+                  SCIPdialogMessage(scip, NULL, "error reading file <%s> using <%s> file format\n",
                      tmpfilename, extension);
-               
+
                SCIP_CALL( SCIPfreeProb(scip) );
                break;
             }
@@ -1118,10 +1117,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecRead)
 
                   SCIPdialogMessage(scip, NULL, "following readers are avaliable for reading:\n");
                   displayReaders(scip, TRUE, FALSE);
-               
-                  SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, 
+
+                  SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
                         "select a suitable reader by extension (or return): ", &extension, &endoffile) );
-               
+
                   if( extension[0] == '\0' )
                      break;
                }
@@ -1137,9 +1136,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecRead)
                SCIP_CALL( retcode );
                break;
             }
-         }           
+         }
          while (extension != NULL );
-             
+
          /* free buffer array */
          SCIPfreeBufferArray(scip, &tmpfilename);
       }
@@ -2036,11 +2035,11 @@ SCIP_RETCODE GCGcreateRootDialog(
 {
    SCIP_CALL( SCIPincludeDialog(scip, root, NULL, GCGdialogExecMenuLazy, NULL, NULL,
          "GCG", "GCG's main menu", TRUE, NULL) );
-   
+
    SCIP_CALL( SCIPsetRootDialog(scip, *root) );
    SCIP_CALL( SCIPreleaseDialog(scip, root) );
    *root = SCIPgetRootDialog(scip);
-   
+
    return SCIP_OKAY;
 }
 
@@ -2584,7 +2583,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    int nparams;
    int i;
 
-   SCIP_BRANCHRULE** branchrules; 
+   SCIP_BRANCHRULE** branchrules;
    SCIP_CONFLICTHDLR** conflicthdlrs;
    SCIP_CONSHDLR** conshdlrs;
    SCIP_DISP** disps;
@@ -2604,7 +2603,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
    int npricers;
    int nreaders;
    int nsepas;
-   
+
    /* get root dialog */
    root = SCIPgetRootDialog(scip);
    if( root == NULL )
@@ -2723,7 +2722,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
       SCIPerrorMessage("conflict sub menu not found\n");
       return SCIP_PLUGINNOTFOUND;
    }
-   
+
    nconflicthdlrs = SCIPgetNConflicthdlrs(scip);
    conflicthdlrs = SCIPgetConflicthdlrs(scip);
 
@@ -2807,10 +2806,10 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
       SCIPerrorMessage("heuristics sub menu not found\n");
       return SCIP_PLUGINNOTFOUND;
    }
-   
+
    nheurs = SCIPgetNHeurs(scip);
    heurs = SCIPgetHeurs(scip);
-   
+
    for( i = 0; i < nheurs; ++i )
    {
       if( !SCIPdialogHasEntry(submenu, SCIPheurGetName(heurs[i])) )
@@ -3044,7 +3043,7 @@ SCIP_RETCODE SCIPincludeDialogGcgSet(
 
    nsepas = SCIPgetNSepas(scip);
    sepas = SCIPgetSepas(scip);
-   
+
    for( i = 0; i < nsepas; ++i )
    {
       if( !SCIPdialogHasEntry(submenu, SCIPsepaGetName(sepas[i])) )

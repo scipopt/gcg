@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   type_solver.h
  * @ingroup TYPEDEFINITIONS
@@ -80,7 +79,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 
 
 /** solving method for pricing solver
- *  
+ *
  *
  *  input:
  *  - scip            : SCIP main data structure of the master problem
@@ -92,7 +91,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - nsolvars        : pointer to store array with number of variables in the solutions
  *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
- *  - result          : the result of the solving call: 
+ *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite optimum
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
@@ -100,7 +99,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 #define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
 
 /** solving method for pricing solver
- *  
+ *
  *
  *  input:
  *  - scip            : SCIP main data structure of the master problem
@@ -112,7 +111,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - nsolvars        : pointer to store array with number of variables in the solutions
  *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
- *  - result          : the result of the solving call: 
+ *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite solution value
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped

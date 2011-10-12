@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   branch_master.c
  * @ingroup BRANCHINGRULES
@@ -64,7 +63,7 @@
 /** branching execution method for fractional LP solutions */
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
-{  
+{
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
@@ -156,9 +155,9 @@ SCIP_RETCODE SCIPincludeBranchruleMaster(
    branchruledata = NULL;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
+   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
-         branchCopyMaster, branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster, 
+         branchCopyMaster, branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster,
          branchExitsolMaster, branchExeclpMaster, branchExecextMaster, branchExecpsMaster,
          branchruledata) );
 

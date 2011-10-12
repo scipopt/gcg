@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   main.c
  * @brief  Main file for C compilation
@@ -123,12 +122,12 @@ main(
   SCIP_RETCODE retcode;
 
   retcode = SCIPrunGCGShell(argc, argv, "gcg.set");
-  
+
   if( retcode != SCIP_OKAY )
   {
      SCIPprintError(retcode, stderr);
      return -1;
   }
-  
+
   return 0;
 }

@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: type_decomp.h 198 2011-01-06 16:58:56Z ggamrath $"
 
 /**@file   type_decomp.h
  * @ingroup TYPEDEFINITIONS

@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   branch_orig.c
  * @ingroup BRANCHINGRULES
@@ -49,7 +48,7 @@ struct GCG_BranchData
    SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
    SCIP_Real          oldvalue;              /**< old value of the original variable */
    SCIP_Real          olddualbound;          /**< dual bound before the branching was performed */
-   SCIP_CONS*         cons;                  /**< constraint that enforces the branching restriction in the original 
+   SCIP_CONS*         cons;                  /**< constraint that enforces the branching restriction in the original
                                               *   problem, or NULL if this is done by variable bounds */
 };
 
@@ -61,7 +60,7 @@ SCIP_RETCODE branchVar(
    SCIP_BRANCHRULE*      branchrule,         /** pointer of the orig branching rule */
    SCIP_VAR*             branchvar,          /** variable to branch on */
    SCIP_Real             solval              /** value of the variable in the current solution */
-   ) 
+   )
 {
    /* data for b&b child creation */
    SCIP_NODE* childup;
@@ -111,9 +110,9 @@ SCIP_RETCODE branchVar(
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
 
 
-   (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar), 
+   (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar),
       ">=", branchupdata->newbound);
-   (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar), 
+   (void) SCIPsnprintf(downname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchdowndata->origvar),
       "<=", branchdowndata->newbound);
 
    /* enforce branching decision by a constraint rather than by bound changes */
@@ -124,11 +123,11 @@ SCIP_RETCODE branchVar(
       SCIP_CONS* consdown;
 
       /* create corresponding constraints */
-      SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL, 
-            SCIPceil(scip, solval), SCIPinfinity(scip), 
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL,
+            SCIPceil(scip, solval), SCIPinfinity(scip),
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
-      SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, downname, 0, NULL, NULL, 
-            -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),  
+      SCIP_CALL( SCIPcreateConsLinear(scip, &consdown, downname, 0, NULL, NULL,
+            -1.0 * SCIPinfinity(scip), SCIPfloor(scip, solval),
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
       SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
       SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
@@ -151,9 +150,9 @@ SCIP_RETCODE branchVar(
    }
 
    /* create the origbranch constraints */
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup, 
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup,
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, downname, childdown, 
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, downname, childdown,
          GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
@@ -252,7 +251,7 @@ SCIP_RETCODE branchExtern(
       for( i = 0; i < npriobranchcands; i++ )
       {
          assert(GCGvarIsOriginal(branchcands[i]));
-      
+
          /* variable belongs to no block or the block is not unique */
          if( GCGvarGetBlock(branchcands[i]) == -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
@@ -296,11 +295,11 @@ SCIP_RETCODE branchExtern(
       for( i = 0; i < npriobranchcands; i++ )
       {
          assert(GCGvarIsOriginal(branchcands[i]));
-         
+
          /* continue if variable belongs to a block */
          if( GCGvarGetBlock(branchcands[i]) != -1 )
             continue;
-         
+
          /* use pseudocost variable selection rule */
          if( usepseudocosts )
          {
@@ -320,11 +319,11 @@ SCIP_RETCODE branchExtern(
 
             if( frac >= maxfrac  )
             {
-               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", 
+               SCIPdebugMessage("Var %s has fractional value in current solution: %f\n",
                   SCIPvarGetName(branchcands[i]), branchcandssol[i]);
                solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
                branchvar = branchcands[i];
-               /* if we do not look for the most fractional variable, but for the first fractional variable, 
+               /* if we do not look for the most fractional variable, but for the first fractional variable,
                 * we stop here since we found a variable to branch on */
                if( !mostfrac )
                   break;
@@ -343,7 +342,7 @@ SCIP_RETCODE branchExtern(
    assert(branchvar != NULL);
 
    SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
-      
+
    *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
@@ -377,11 +376,11 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
-   
+
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
    assert(mastercons != NULL);
-   
+
    /* add constraint to the master problem */
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetCurrentNode(scip), mastercons, NULL) );
 
@@ -407,8 +406,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING
       && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
    {
-      SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar, 
-            SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue, 
+      SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar,
+            SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue,
             newlowerbound - branchdata->olddualbound, 1.0) );
    }
 
@@ -420,19 +419,19 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 {
    assert(scip != NULL);
    assert(branchdata != NULL);
-   
+
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
       ( (*branchdata)->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
-   
+
    /* release constraint */
    if( (*branchdata)->cons != NULL )
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(*branchdata)->cons) );
    }
-   
+
    SCIPfreeMemory(scip, branchdata);
    *branchdata = NULL;
-   
+
    return SCIP_OKAY;
 }
 
@@ -443,7 +442,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 /** branching execution method for fractional LP solutions */
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
-{  
+{
    SCIPdebugMessage("Execlp method of orig branching\n");
    //printf("Execlp method of orig branching\n");
 
@@ -468,19 +467,19 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 /** initialization method of branching rule (called after problem was transformed) */
 static
 SCIP_DECL_BRANCHINIT(branchInitOrig)
-{  
+{
    assert(branchrule != NULL);
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig, 
+   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig,
          branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig) );
-   
+
    return SCIP_OKAY;
 }
 
 /** branching execution method for not completely fixed pseudo solutions */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
-{  
+{
    int i;
 
    /* branching candidates */
@@ -512,7 +511,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    for( i = 0; i < npriobranchcands; i++ )
    {
       assert(GCGvarIsOriginal(branchcands[i]));
-      
+
       /* variable belongs to no block or the block is not unique */
       if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
@@ -529,11 +528,11 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       for( i = 0; i < npriobranchcands; i++ )
       {
          assert(GCGvarIsOriginal(branchcands[i]));
-         
+
          /* continue if variable belongs to a block */
          if( GCGvarGetBlock(branchcands[i]) != -1 )
             continue;
-         
+
          branchvar = branchcands[i];
          assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
          solval = SCIPvarGetLbLocal(branchvar) + 0.5;
@@ -550,7 +549,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(branchvar != NULL);
 
    SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
-      
+
    *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
@@ -572,11 +571,11 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
-{   
+{
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, 
+   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyOrig,
-         branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig, 
+         branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
          branchExeclpOrig, branchExecextOrig, branchExecpsOrig,
          NULL) );
 

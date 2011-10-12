@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgpscostdiving.c
  * @ingroup PRIMALHEURISTICS
@@ -152,13 +151,13 @@ void calcPscostQuot(
    /* bound fractions to not prefer variables that are nearly integral */
    frac = MAX(frac, 0.1);
    frac = MIN(frac, 0.9);
-   
+
    /* get pseudo cost quotient */
    pscostdown = SCIPgetVarPseudocostVal(scip, var, 0.0-frac);
    pscostup = SCIPgetVarPseudocostVal(scip, var, 1.0-frac);
    SCIPdebugMessage("Pseudocosts of variable %s: %g down, %g up\n", SCIPvarGetName(var), pscostdown, pscostup);
    assert(pscostdown >= 0.0 && pscostup >= 0.0);
-   
+
    /* choose rounding direction */
    if( rounddir == -1 )
       *roundup = FALSE;
@@ -176,13 +175,13 @@ void calcPscostQuot(
       *roundup = FALSE;
    else
       *roundup = TRUE;
-   
+
    /* calculate pseudo cost quotient */
    if( *roundup )
       *pscostquot = sqrt(frac) * (1.0+pscostdown) / (1.0+pscostup);
    else
       *pscostquot = sqrt(1.0-frac) * (1.0+pscostup) / (1.0+pscostdown);
-   
+
    /* prefer decisions on binary variables */
    if( SCIPvarIsBinary(var) )
       (*pscostquot) *= 1000.0;
@@ -558,7 +557,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
    while( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && nlpcands > 0
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
-         || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound)) 
+         || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
 	  && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
@@ -638,7 +637,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
       if( bestcandmayrounddown || bestcandmayroundup )
       {
          SCIP_Bool success;
-         
+
          /* create solution from diving LP and try to round it */
          SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
          SCIP_CALL( SCIProundSol(scip, heurdata->sol, &success) );
@@ -681,8 +680,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed, numerical troubles may have occured or 
-          * variable was fixed by propagation while backtracking => Abort diving! 
+         /* if the variable is already fixed, numerical troubles may have occured or
+          * variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
          {
@@ -725,7 +724,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
             SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
             SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
          }
-         
+
          /* apply domain propagation */
 //         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
@@ -739,7 +738,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
             SCIP_RETCODE retstat;
             retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
-            { 
+            {
                SCIPwarningMessage("Error while solving LP in GCG pscostdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
@@ -753,7 +752,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
             heurdata->nlpiterations += nlpiterations;
             heurdata->npricerounds += npricerounds;
             totalpricerounds += npricerounds;
-            
+
             /* get LP solution status, objective value, and fractional variables, that should be integral */
             lpsolstat = SCIPgetLPSolstat(scip);
 //            cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
@@ -797,7 +796,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
          /* get new fractional variables */
          SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
       }
-      SCIPdebugMessage("   -> lpsolstat=%d, objval=%g/%g, nfrac=%d, lpiterations=%"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT"\n", 
+      SCIPdebugMessage("   -> lpsolstat=%d, objval=%g/%g, nfrac=%d, lpiterations=%"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT"\n",
          lpsolstat, objval, searchbound, nlpcands, heurdata->nlpiterations, maxnlpiterations);
    }
 
@@ -929,7 +928,7 @@ SCIP_RETCODE SCIPincludeHeurGcgpscostdiving(
          "heuristics/gcgpscostdiving/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
-   
+
    return SCIP_OKAY;
 }
 

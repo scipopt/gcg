@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   type_branchgcg.h
  * @ingroup TYPEDEFINITIONS
@@ -37,7 +36,7 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *
  *  input:
  *  - scip            : SCIP main data structure of the master problem
- *  - branchdata      : the branching data 
+ *  - branchdata      : the branching data
  */
 #define GCG_DECL_BRANCHACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
 
@@ -46,7 +45,7 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *
  *  input:
  *  - scip            : SCIP main data structure of the master problem
- *  - branchdata      : the branching data 
+ *  - branchdata      : the branching data
  */
 #define GCG_DECL_BRANCHDEACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
 
@@ -55,7 +54,7 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *
  *  input:
  *  - scip            : SCIP main data structure of the master problem
- *  - branchdata      : the branching data 
+ *  - branchdata      : the branching data
  *  - node            : the activated node
  *  - result          : pointer to store the result of the propagation call
  *
@@ -74,7 +73,7 @@ typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
  *
  *  input:
  *  - scip            : SCIP main data structure of the original problem
- *  - branchdata      : the branching data 
+ *  - branchdata      : the branching data
  *  - newlowerbound   : the new local lower bound
  *
  */

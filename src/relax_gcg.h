@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   relax_gcg.h
  * @brief  gcg relaxator
@@ -109,7 +108,7 @@ SCIP_RETCODE GCGrelaxCreateOrigVarsData(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** transformes a constraint of the original problem into the master variable space and 
+/** transformes a constraint of the original problem into the master variable space and
  *  adds it to the master problem */
 extern
 SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
@@ -167,7 +166,7 @@ SCIP_Bool GCGrelaxIsPricingprobRelevant(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
-/** returns the number of blocks in the original formulation, that are represented by 
+/** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
 extern
 int GCGrelaxGetNIdenticalBlocks(
@@ -194,7 +193,7 @@ SCIP_CONS** GCGrelaxGetOrigMasterConss(
    );
 
 
-/* returns the linear counterpart of the contraints in the original problem that correspond 
+/* returns the linear counterpart of the contraints in the original problem that correspond
  * to the constraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
@@ -205,8 +204,8 @@ SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
 extern
 SCIP_CONS* GCGrelaxGetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
-   int                   blocknr             /**< the number of the block for which we 
-                                              *   need the convexity constraint */   
+   int                   blocknr             /**< the number of the block for which we
+                                              *   need the convexity constraint */
    );
 
 /** returns the current solution for the original problem */
@@ -242,12 +241,12 @@ SCIP_RETCODE GCGrelaxEndProbing(
    );
 
 
-/** transforms the current solution of the master problem into the original problem's space 
+/** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data */
 extern
 SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is 
+   SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is
                                               *   primal feasible*/
    );
 
