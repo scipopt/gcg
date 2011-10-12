@@ -536,6 +536,11 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
    }
+   /* apparently, there is a structure, which means we don't try to detect one */
+   if( conshdlrdata->decdecomp->type != DEC_UNKNOWN )
+   {
+      return SCIP_OKAY;
+   }
 
    assert(conshdlrdata->decdecomp != NULL);
 
@@ -911,4 +916,25 @@ void SCIPconsConnectedSetDecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    conshdlrdata->decdecomp = decdecomp;
+}
+
+/** returns whether a block diagonal structure was found */
+extern
+SCIP_Bool SCIPisMatrixBlockDiagonal(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA *conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, "CONSHDLR_NAME");
+   assert(conshdlr != NULL);
+
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   return conshdlrdata->blockdiagonal;
 }

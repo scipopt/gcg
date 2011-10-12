@@ -32,6 +32,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
    );
 
 /** sets the decomp structure for the given constraint handler */
+extern
 void SCIPconsConnectedSetDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
@@ -43,6 +44,12 @@ SCIP_RETCODE SCIPcreateConsConnected(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name                /**< name of constraint */
+   );
+
+/** returns whether a block diagonal structure was found */
+extern
+SCIP_Bool SCIPisMatrixBlockDiagonal(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus
