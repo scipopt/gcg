@@ -17,6 +17,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#define SCIP_DEBUG
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -1161,49 +1163,42 @@ writeData(
 
    assert(scip != NULL);
    assert(file != NULL);
+   assert(decdecomp != NULL);
 
-   if( decdecomp != NULL )
+   assert(decdecomp->type == DEC_ARROWHEAD
+           || decdecomp->type == DEC_BORDERED
+           || decdecomp->type == DEC_DIAGONAL
+           || decdecomp->type == DEC_UNKNOWN
+           || decdecomp->type == DEC_STAIRCASE);
+   SCIPdebugMessage("DECDECOMP Type: %d\n",decdecomp->type);
+   
+   /* if we don't have staicase, but something else, go through the blocks and create the indices */
+   //cons
+   assert(decdecomp->constoblock!=NULL);
+   assert(decdecomp->nsubscipconss != NULL);
+   assert(decdecomp->subscipconss != NULL);
+   //linking cons
+   assert(decdecomp->nlinkingconss >= 0 && decdecomp->nlinkingconss < SCIPgetNConss(scip));
+   assert(decdecomp->linkingconss != NULL);
+
+   SCIPinfoMessage(scip, file, "NBLOCKS\n");
+   SCIPinfoMessage(scip, file, "%d\n", decdecomp->nblocks);
+
+   for( i = 0; i < decdecomp->nblocks; i ++ )
    {
-      assert(decdecomp->type == DEC_ARROWHEAD
-              || decdecomp->type == DEC_BORDERED
-              || decdecomp->type == DEC_DIAGONAL
-              || decdecomp->type == DEC_UNKNOWN
-              || decdecomp->type == DEC_STAIRCASE);
-      /* if we don't have staicase, but something else, go through the blocks and create the indices */
-      if( decdecomp->type == DEC_ARROWHEAD )
+      SCIPinfoMessage(scip, file, "BLOCK %d\n", i + 1);
+      for( j = 0; j < decdecomp->nsubscipconss[i]; j ++ )
       {
-         //cons
-         assert(decdecomp->nsubscipconss != NULL);
-         assert(decdecomp->subscipconss != NULL);
-         //linking cons
-         assert(decdecomp->nlinkingconss >= 0 && decdecomp->nlinkingconss < SCIPgetNConss(scip));
-         assert(decdecomp->linkingconss != NULL);
-
-         SCIPinfoMessage(scip, file, "NBLOCKS\n");
-         SCIPinfoMessage(scip, file, "%d\n", decdecomp->nblocks);
-
-         for( i = 0; i < decdecomp->nblocks; i ++ )
-         {
-            SCIPinfoMessage(scip, file, "BLOCK %d\n", i + 1);
-            for( j = 0; j < decdecomp->nsubscipconss[i]; j ++ )
-            {
-               SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->subscipconss[i][j]));
-            }
-         }
-
-         if( decdecomp->nlinkingconss > 0 )
-         {
-            SCIPinfoMessage(scip, file, "MASTERCONSS\n");
-            for( i = 0; i < decdecomp->nlinkingconss; i ++ )
-            {
-               SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->linkingconss[i]));
-            }
-         }
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->subscipconss[i][j]));
       }
-      else
-      {
+   }
 
-         SCIPwarningMessage("No decomp type set");
+   if( decdecomp->nlinkingconss > 0 )
+   {
+      SCIPinfoMessage(scip, file, "MASTERCONSS\n");
+      for( i = 0; i < decdecomp->nlinkingconss; i ++ )
+      {
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->linkingconss[i]));
       }
    }
 
