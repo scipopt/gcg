@@ -68,6 +68,7 @@ struct SCIP_ConshdlrData
    DECDECOMP* decdecomp;
    SCIP_CLOCK* clock;
    int nblocks;
+   SCIP_Bool enable;
 };
 
 
@@ -532,6 +533,10 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+
+   if( !conshdlrdata->enable )
+      return SCIP_OKAY;
+
    if( conshdlrdata->decdecomp == NULL )
    {
       conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
@@ -583,7 +588,8 @@ SCIP_DECL_CONSEXITSOL(consExitsolConnected)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->clock) );
+   if( conshdlrdata->clock != NULL )
+      SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->clock) );
    return SCIP_OKAY;
 }
 
@@ -839,7 +845,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
    conshdlrdata->blockdiagonal = FALSE;
 
    conshdlrdata->nblocks = 0;
-
+   conshdlrdata->enable = TRUE;
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
@@ -859,6 +865,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
 
    /* add connected constraint handler parameters */
    /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */
+   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/enable", "Controls whether block diagonal detection is enabled", &conshdlrdata->enable, FALSE, FALSE, NULL, NULL) );
 
    return SCIP_OKAY;
 }
