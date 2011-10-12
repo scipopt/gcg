@@ -20,7 +20,7 @@
 
 
 #include "scip/scip.h"
-
+#include "type_decomp.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +29,12 @@ extern "C" {
 extern
 SCIP_RETCODE SCIPincludeConshdlrConnected(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** sets the decomp structure for the given constraint handler */
+void SCIPconsConnectedSetDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
    );
 
 /** creates and captures a connected constraint */

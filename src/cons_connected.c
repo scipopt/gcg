@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "cons_connected.h"
+#include "cons_decomp.h"
 #include "scip_misc.h"
 #include "type_decomp.h"
 #include "scip/clock.h" 
@@ -408,7 +409,11 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
+   if( conshdlrdata->decdecomp != NULL )
+   {
+      conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
+   }
+   assert(conshdlrdata->decdecomp != NULL);
    nscipvars = SCIPgetNVars(scip);
    nscipconss = SCIPgetNConss(scip);
 
@@ -776,3 +781,23 @@ SCIP_RETCODE SCIPcreateConsConnected(
    return SCIP_OKAY;
 }
 
+void SCIPconsConnectedSetDecomp(
+   SCIP* scip,
+   DECDECOMP* decdecomp
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA *conshdlrdata;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, "CONSHDLR_NAME");
+   assert(conshdlr != NULL);
+
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   conshdlrdata->decdecomp = decdecomp;
+}
