@@ -23,7 +23,7 @@
 #include "cons_connected.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
-#include "type_decomp.h"
+#include "struct_decomp.h"
 #include "scip/clock.h"
 
 /* constraint handler properties */
@@ -80,12 +80,29 @@ struct SCIP_ConshdlrData
 /* put your local methods here, and declare them static */
 
 static
+SCIP_Bool isConsGCGCons(
+   SCIP_CONS* cons
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   assert(cons != NULL);
+   conshdlr = SCIPconsGetHdlr(cons);
+   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+
+   return FALSE;
+}
+
+static
 SCIP_RETCODE findConnectedComponents(
    SCIP* scip,
    SCIP_CONSHDLRDATA* conshdlrdata,
    SCIP_RESULT* result
    )
 {
+   SCIP_VAR** vars;
    int nvars;
    int nconss;
    SCIP_VAR** curvars;
@@ -110,6 +127,7 @@ SCIP_RETCODE findConnectedComponents(
 
    SCIPdebugMessage("Trying to detect block diagonal matrix.\n");
    /* initialize data structures */
+   vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
@@ -145,6 +163,8 @@ SCIP_RETCODE findConnectedComponents(
    {
       SCIP_VAR* probvar;
       int varindex;
+      assert(curvars != NULL);
+
       probvar = SCIPvarGetProbvar(curvars[j]);
       assert(probvar != NULL);
 
@@ -166,6 +186,8 @@ SCIP_RETCODE findConnectedComponents(
       int consblock;
       cons = conss[i];
       assert(cons != NULL);
+      if( isConsGCGCons(cons) )
+         continue;
 
       ncurvars = SCIPgetNVarsXXX(scip, cons);
       curvars = SCIPgetVarsXXX(scip, cons);
@@ -174,7 +196,10 @@ SCIP_RETCODE findConnectedComponents(
       assert(curvars != NULL || ncurvars == 0);
 
       assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
-      consblock = nextblock;
+      if(ncurvars == 0)
+         consblock = 1;
+      else
+         consblock = nextblock;
 
       /* go through all variables */
       for( j = 0; j < ncurvars; ++j)
@@ -183,6 +208,7 @@ SCIP_RETCODE findConnectedComponents(
          int varindex;
          int varblock;
 
+         assert(curvars != NULL);
          probvar = SCIPvarGetProbvar(curvars[j]);
          assert(probvar != NULL);
 
@@ -192,6 +218,7 @@ SCIP_RETCODE findConnectedComponents(
 
          /** @todo: what about deleted variables? */
          varblock = vartoblock[varindex];
+
          /* if variable is assigned to a block, assign constraint to that block */
          if( varblock != -1 )
          {
@@ -212,7 +239,6 @@ SCIP_RETCODE findConnectedComponents(
                /** @todo: what about deleted variables? */
                vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
             }
-
          }
          else
          {
@@ -226,6 +252,7 @@ SCIP_RETCODE findConnectedComponents(
             ++nextblock;
          }
       }
+
       SCIPfreeMemoryArrayNull(scip, &curvars);
       assert(consblock >= 1);
       SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
@@ -256,6 +283,9 @@ SCIP_RETCODE findConnectedComponents(
       int consblock;
 
       cons = conss[i];
+      if( isConsGCGCons(cons) )
+         continue;
+
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
@@ -264,10 +294,30 @@ SCIP_RETCODE findConnectedComponents(
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
    }
 
+   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->vartoblock, SCIPblkmem(scip), nvars) );
+
+   for( i = 0; i < nvars; ++i)
+   {
+      int varindex;
+      int varblock;
+      varindex = SCIPvarGetProbindex(SCIPvarGetProbvar(vars[i]));
+      assert(varindex >= 0);
+      assert(varindex < nvars);
+
+      varblock = vartoblock[varindex];
+      assert(varblock == -1 || varblock > 0);
+      if(varblock > 0)
+      {
+         assert(varblock > 0);
+         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]), (void*)(size_t)(varblock)) );
+      }
+
+   }
+
    /* free method data */
    SCIPfreeMemoryArray(scip, &vartoblock);
    SCIPfreeMemoryArray(scip, &blockrepresentative);
-   SCIPhashmapFree(&constoblock);
+   conshdlrdata->constoblock = constoblock;
    conshdlrdata->nblocks = tempblock;
 
    if(conshdlrdata->nblocks > 1)
@@ -285,10 +335,85 @@ SCIP_RETCODE copyToDecdecomp(
    DECDECOMP* decdecomp
    )
 {
+   SCIP_CONS** conss;
+   int nconss;
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
    assert(decdecomp != NULL);
 
+   if( !conshdlrdata->blockdiagonal )
+      return SCIP_OKAY;
+
+   assert(decdecomp->type == DEC_UNKNOWN);
+
+   nconss = SCIPgetNConss(scip);
+   conss = SCIPgetConss(scip);
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+
+   SCIPallocMemoryArray(scip, &decdecomp->subscipvars, conshdlrdata->nblocks);
+   SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, conshdlrdata->nblocks);
+   SCIPallocMemoryArray(scip, &decdecomp->subscipconss, conshdlrdata->nblocks);
+   SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, conshdlrdata->nblocks);
+
+   for( i = 0; i < conshdlrdata->nblocks; ++i)
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipvars[i], nvars) );
+      decdecomp->nsubscipvars[i] = 0;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipconss[i], nconss) );
+      decdecomp->nsubscipconss[i] = 0;
+   }
+
+   decdecomp->nlinkingcuts = 0;
+   decdecomp->nlinkingconss = 0;
+   decdecomp->nblocks = conshdlrdata->nblocks;
+   decdecomp->type = DEC_DIAGONAL;
+
+   assert(decdecomp->constoblock == NULL);
+   assert(decdecomp->vartoblock == NULL);
+
+   decdecomp->constoblock = conshdlrdata->constoblock;
+   decdecomp->vartoblock = conshdlrdata->vartoblock;
+
+   for( i = 0; i < nconss; ++i)
+   {
+      size_t consblock;
+      if( isConsGCGCons(conss[i]) )
+         continue;
+
+      consblock = (size_t) SCIPhashmapGetImage(decdecomp->constoblock, conss[i]);
+      assert(consblock > 0);
+      assert(decdecomp->nblocks >= 0);
+      assert(consblock <= (size_t)decdecomp->nblocks);
+
+      decdecomp->subscipconss[consblock-1][decdecomp->nsubscipconss[consblock-1]] = conss[i];
+      ++(decdecomp->nsubscipconss[consblock-1]);
+   }
+
+   for( i = 0; i < nvars; ++i)
+   {
+      size_t varblock;
+      varblock = (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, vars[i]);
+      assert(varblock > 0);
+      assert(decdecomp->nblocks >= 0);
+      assert(varblock <= (size_t) decdecomp->nblocks);
+
+      decdecomp->subscipvars[varblock-1][decdecomp->nsubscipvars[varblock-1]] = vars[i];
+      ++(decdecomp->nsubscipvars[varblock-1]);
+   }
+
+   for( i = 0; i < conshdlrdata->nblocks; ++i)
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipvars[i], decdecomp->nsubscipvars[i]) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[i], decdecomp->nsubscipconss[i]) );
+   }
+
+   conshdlrdata->vartoblock = NULL;
+   conshdlrdata->constoblock = NULL;
 
    return SCIP_OKAY;
 }
@@ -399,8 +524,6 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    SCIP_CONSHDLRDATA *conshdlrdata;
    SCIP_RESULT result;
-   int nscipconss;
-   int nscipvars;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -409,13 +532,12 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-   if( conshdlrdata->decdecomp != NULL )
+   if( conshdlrdata->decdecomp == NULL )
    {
       conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
    }
+
    assert(conshdlrdata->decdecomp != NULL);
-   nscipvars = SCIPgetNVars(scip);
-   nscipconss = SCIPgetNConss(scip);
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
@@ -437,12 +559,12 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    }
 
    SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
+   SCIP_CALL( DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp) );
    return SCIP_OKAY;
 }
 
 
 /** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
-#if 0
 static
 SCIP_DECL_CONSEXITSOL(consExitsolConnected)
 {  /*lint --e{715}*/
@@ -456,12 +578,9 @@ SCIP_DECL_CONSEXITSOL(consExitsolConnected)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPfreeClock(scip, &conshdlrdata->clock);
+   SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->clock) );
    return SCIP_OKAY;
 }
-#else
-#define consExitsolConnected NULL
-#endif
 
 
 /** frees specific constraint data */
@@ -732,14 +851,6 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
          consEnableConnected, consDisableConnected, consDelVarConnected,
          consPrintConnected, consCopyConnected, consParseConnected,
          conshdlrdata) );
-
-#ifdef LINCONSUPGD_PRIORITY
-   if( SCIPfindConshdlr(scip,"linear") != NULL )
-   {
-      /* include the linear constraint upgrade in the linear constraint handler */
-      SCIP_CALL( SCIPincludeLinconsUpgrade(scip, linconsUpgdConnected, LINCONSUPGD_PRIORITY, CONSHDLR_NAME) );
-   }
-#endif
 
    /* add connected constraint handler parameters */
    /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */

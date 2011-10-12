@@ -26,6 +26,7 @@
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 {
+   /*lint -e715 */
    if( (*vardata)->vartype == GCG_VARTYPE_ORIGINAL )
    {
       if( (*vardata)->blocknr == -2 )
@@ -88,6 +89,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 static
 SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
+   /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
    SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
    SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
@@ -844,7 +846,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(scip, var, name, SCIPvarGetLbGlobal(origvar),
-         SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar),
+         SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
          TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
 
    return SCIP_OKAY;
@@ -882,12 +884,12 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    /* create and add variable */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar),
-         SCIPvarGetUbGlobal(origvar), 0, SCIPvarGetType(origvar),
+         SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
          TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
 
    /* add corresponding linking constraint to the master problem */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "l_%s_%d", SCIPvarGetName(origvar), pricingprobnr);
-   SCIP_CALL( SCIPcreateConsLinear(masterscip, linkcons, name, 0, NULL, NULL, 0, 0,
+   SCIP_CALL( SCIPcreateConsLinear(masterscip, linkcons, name, 0, NULL, NULL, 0.0, 0.0,
          TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
    return SCIP_OKAY;
@@ -942,6 +944,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    for( i = 0; i < nsolvars; i++ )
    {
+      assert(solvars != NULL);
       if( !SCIPisZero(scip, solvals[i]) )
       {
          newvardata->data.mastervardata.norigvars++;
@@ -976,6 +979,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
+      assert(solvars != NULL);
       if( !SCIPisZero(scip, solvals[i]) )
       {
          SCIP_VAR* origvar;

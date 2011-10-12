@@ -263,8 +263,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* martin's decomp stuff */
    SCIP_CALL(SCIPincludeReaderGp(scip));
-   SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
    SCIP_CALL(SCIPincludeConshdlrConnected(scip));
+   SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
    SCIP_CALL(SCIPincludeDetectionBorderheur(scip));
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
 

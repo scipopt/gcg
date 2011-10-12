@@ -25,24 +25,6 @@ typedef struct DecDecomp DECDECOMP;
 extern "C" {
 #endif
 
-
-/**
- * initialize data for a detector
- */
-#define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
-
-/**
- * free data from a detector
- */
-#define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
-
-/**
- * detects the structure of a the problem
- */
-#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)
-
-
-
 #ifdef __cplusplus
 }
 #endif
