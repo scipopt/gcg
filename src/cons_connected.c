@@ -763,7 +763,7 @@ SCIP_DECL_CONSDISABLE(consDisableConnected)
 #define consDisableConnected NULL
 #endif
 
-#define consDelVarConnected NULL
+#define consDelvarConnected NULL
 
 /** constraint display method of constraint handler */
 #if 0
@@ -848,7 +848,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
          consSepalpConnected, consSepasolConnected, consEnfolpConnected, consEnfopsConnected, consCheckConnected,
          consPropConnected, consPresolConnected, consRespropConnected, consLockConnected,
          consActiveConnected, consDeactiveConnected,
-         consEnableConnected, consDisableConnected, consDelVarConnected,
+         consEnableConnected, consDisableConnected, consDelvarConnected,
          consPrintConnected, consCopyConnected, consParseConnected,
          conshdlrdata) );
 
