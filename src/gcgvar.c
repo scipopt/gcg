@@ -1037,14 +1037,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 {
    SCIP_VARDATA* newvardata;
    int blocknr;
-   SCIP_Real* coefs;
-   SCIP_CONS** linkconss;
-   int ncoefs;
 
    blocknr = GCGvarGetBlock(var);
-   coefs = GCGoriginalVarGetCoefs(var);
-   ncoefs = GCGoriginalVarGetNCoefs(var);
-   linkconss = GCGoriginalVarGetLinkingCons(var);
    assert( blocknr == -1 || blocknr == -2);
    assert(GCGoriginalVarGetPricingVar(var) == NULL);
 

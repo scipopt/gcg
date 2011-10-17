@@ -751,7 +751,6 @@ fillDecompStruct(
    int n2;
    int value;
    int ind;
-   int tmp;
    int nconss;
 
    assert(scip != NULL);
@@ -842,7 +841,6 @@ fillDecompStruct(
          ind = decomp->nsubscipvars[value];
 
          assert(ind >= 0);
-         tmp = readerdata->nblockvars[value];
          assert(ind <= readerdata->nblockvars[value]);
 
 

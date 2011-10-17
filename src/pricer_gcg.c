@@ -1802,7 +1802,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       }
    }
 
-   SCIP_CALL( SCIPhashmapCreate(&(pricerdata->mapcons2idx), SCIPblkmem(scip), 10 * nmasterconss) );
+   SCIP_CALL( SCIPhashmapCreate(&(pricerdata->mapcons2idx), SCIPblkmem(scip), 10 * nmasterconss +1) );
    for( i = 0; i < nmasterconss; i++ )
    {
       //printf("add cons %s to hashmap: pointer %p\n", SCIPconsGetName(masterconss[i]), masterconss[i]);
