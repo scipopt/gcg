@@ -57,6 +57,7 @@ MAINOBJ		=	reader_blk.o \
 			heur_gcglinesdiving.o \
 			heur_gcgpscostdiving.o \
 			heur_gcgrens.o \
+			heur_gcgrins.o \
 			heur_gcgrounding.o \
 			heur_gcgsimplerounding.o \
 			heur_gcgshifting.o \

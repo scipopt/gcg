@@ -153,6 +153,7 @@
 #include "heur_gcglinesdiving.h"
 #include "heur_gcgpscostdiving.h"
 #include "heur_gcgrens.h"
+#include "heur_gcgrins.h"
 #include "heur_gcgrounding.h"
 #include "heur_gcgshifting.h"
 #include "heur_gcgsimplerounding.h"
@@ -278,6 +279,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 //   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
