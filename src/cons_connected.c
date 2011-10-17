@@ -149,6 +149,8 @@ SCIP_RETCODE findConnectedComponents(
       blockrepresentative[i] = -1;
    }
 
+   blockrepresentative[0] = 0;
+   blockrepresentative[1] = 1;
    assert(nconss >= 1);
 
    /* process the first constraint */
@@ -159,7 +161,9 @@ SCIP_RETCODE findConnectedComponents(
    assert(ncurvars <= nvars);
    assert(curvars != NULL || ncurvars == 0);
 
+   assert(nextblock >= 1);
    SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)nextblock) );
+
    for( j = 0; j < ncurvars; ++j)
    {
       SCIP_VAR* probvar;
@@ -172,15 +176,14 @@ SCIP_RETCODE findConnectedComponents(
       varindex = SCIPvarGetProbindex(probvar);
       assert(varindex >= 0);
       assert(varindex < nvars);
-      vartoblock[varindex] = nextblock;
-
+      vartoblock[varindex] = 1;
    }
-   blockrepresentative[0] = nextblock;
 
    /* prepare consblock for the next costraint */
    ++nextblock;
 
    SCIPfreeMemoryArrayNull(scip, &curvars);
+
    /* go through the remaining constraints */
    for( i = 1; i < nconss; ++i )
    {
@@ -233,11 +236,18 @@ SCIP_RETCODE findConnectedComponents(
                   blockrepresentative[consblock] = varblock;
                else
                   blockrepresentative[varblock] = consblock;
+
+               assert(blockrepresentative[consblock] >= 1);
+               assert(blockrepresentative[consblock] <= nextblock);
+               assert(blockrepresentative[varblock] >= 1);
+               assert(blockrepresentative[varblock] <= nextblock);
             }
             /* assign all previous variables of this constraint to this block */
             for (k = j; k >= 0; --k)
             {
                /** @todo: what about deleted variables? */
+               assert(consblock >= 1);
+               assert(consblock <= nextblock);
                vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
             }
          }
@@ -245,26 +255,35 @@ SCIP_RETCODE findConnectedComponents(
          {
             /* if variable is free, assign it to the new block for this constraint */
             varblock = consblock;
+            assert(varblock >= 0);
+            assert(varblock <= nextblock);
             vartoblock[varindex] = varblock;
          }
-         if( consblock == nextblock )
-         {
-            blockrepresentative[consblock] = consblock;
-            ++nextblock;
-         }
+      }
+
+      if( consblock == nextblock )
+      {
+         blockrepresentative[consblock] = consblock;
+         assert(blockrepresentative[consblock] >= 0);
+         assert(blockrepresentative[consblock] <= nextblock);
+         ++nextblock;
       }
 
       SCIPfreeMemoryArrayNull(scip, &curvars);
       assert(consblock >= 1);
+      assert(consblock <= nextblock);
       SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
-
    }
 
    tempblock = 1;
+
+   SCIPdebugPrintf("Blocks: ");
    /* postprocess blockrepresentatives */
    for( i = 1; i < nextblock; ++i )
    {
       /* forward replace the representatives */
+      assert(blockrepresentative[i] >= 0);
+      assert(blockrepresentative[i] < nextblock);
       if(blockrepresentative[i] != i)
          blockrepresentative[i] = blockrepresentative[blockrepresentative[i]];
       else
@@ -274,9 +293,9 @@ SCIP_RETCODE findConnectedComponents(
       }
       /* It is crucial that this condition holds */
       assert(blockrepresentative[i] <= i);
+      SCIPdebugPrintf("%d ", blockrepresentative[i]);
    }
-
-
+   SCIPdebugPrintf("\n");
 
    /* convert temporary data to conshdlrdata */
    for(i = 0; i < nconss; ++i)
@@ -290,7 +309,7 @@ SCIP_RETCODE findConnectedComponents(
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
-      assert(consblock < nextblock);
+      assert(consblock < tempblock);
       SCIP_CALL( SCIPhashmapInsert(conshdlrdata->constoblock, cons, (void*)(size_t)consblock) );
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
    }
@@ -305,21 +324,21 @@ SCIP_RETCODE findConnectedComponents(
       assert(varindex >= 0);
       assert(varindex < nvars);
 
-      varblock = vartoblock[varindex];
+      assert(vartoblock[varindex] < nextblock);
+      varblock = blockrepresentative[vartoblock[varindex]];
       assert(varblock == -1 || varblock > 0);
       if(varblock > 0)
       {
-         assert(varblock > 0);
+         assert(varblock < tempblock);
          SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]), (void*)(size_t)(varblock)) );
       }
-
    }
 
    /* free method data */
    SCIPfreeMemoryArray(scip, &vartoblock);
    SCIPfreeMemoryArray(scip, &blockrepresentative);
-   conshdlrdata->constoblock = constoblock;
-   conshdlrdata->nblocks = tempblock;
+   SCIPhashmapFree(&constoblock);
+   conshdlrdata->nblocks = tempblock-1;
 
    if(conshdlrdata->nblocks > 1)
       *result = SCIP_SUCCESS;
@@ -562,14 +581,14 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
       conshdlrdata->blockdiagonal = TRUE;
+      SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
+      SCIP_CALL( DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp) );
    }
    else
    {
       SCIPdebugMessage("No block diagonal structure found.\n");
    }
 
-   SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
-   SCIP_CALL( DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp) );
    return SCIP_OKAY;
 }
 
@@ -846,6 +865,8 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
 
    conshdlrdata->nblocks = 0;
    conshdlrdata->enable = TRUE;
+   conshdlrdata->decdecomp = NULL;
+
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
