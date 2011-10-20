@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -126,6 +126,7 @@ SCIP_RETCODE getBestMastervar(
       SCIP*                   scip,
       SCIP_Real*              activities,
       int*                    blocknr,
+      SCIP_Bool*              ignored,
       int*                    index,
       int*                    violchange
       )
@@ -150,7 +151,7 @@ SCIP_RETCODE getBestMastervar(
    assert(nmastervars >= 0);
 
    *index = -1;
-   *violchange= SCIPinfinity(scip);
+   *violchange = INT_MAX;
 
 //   j = nmastervars - 1;
 //   do
@@ -172,13 +173,17 @@ SCIP_RETCODE getBestMastervar(
       assert(GCGvarIsMaster(mastervar));
       block = GCGvarGetBlock(mastervar);
 
-      /* TODO: handle copied original variables and linking variables */
+      /* @todo: handle copied original variables and linking variables */
       if( block < 0 )
+         continue;
+
+      /* @todo: handle rays */
+      if( GCGmasterVarIsRay(mastervar) )
          continue;
 
       /* ignore the master variable if the corresponding block is already full */
       if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block)
-            && !GCGmasterVarIsRay(mastervar) ) /* TODO: handle rays */
+            && !ignored[i])
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);
          if( tmpviolchange < *violchange )
@@ -318,26 +323,26 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_SOL* origsol;                        /* working original solution           */
    SCIP_VAR** mastervars;
    SCIP_VAR** origvars;
-   SCIP_VAR** origpricingvars;
    SCIP_VAR* mastervar;
-   SCIP_VAR* pricingvar;
    SCIP_Real* activities;                    /* for each master LP row, activity of current master solution          */
    SCIP_Real* origvals;
    int* blocknr;                             /* for each pricing problem, block we are currently working in          */
+   SCIP_Bool* ignored;                       /* for each master variable, store whether it has to be ignored         */
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
-   SCIP_Bool discretization;
+//   SCIP_Bool discretization;
    SCIP_Bool success;
    int block;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
    int nlprows;
    int nmastervars;
    int norigvars;
-   int norigpricingvars;
    int npricingprobs;
    int nviolrows;
    int violchange;
 
    int i;
+   int j;
+   int k;
    int index;
 
    assert( heur != NULL );
@@ -354,10 +359,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    *result = SCIP_DIDNOTRUN;
 
-   /* this heuristic works only for the discretization approach */
-   SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-   if( !discretization )
-      return SCIP_OKAY;
+//   /* this heuristic works only for the discretization approach */
+//   SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
+//   if( !discretization )
+//      return SCIP_OKAY;
 
    *result = SCIP_DELAYED;
 
@@ -375,7 +380,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    *result = SCIP_DIDNOTFIND;
 
-   SCIPdebugMessage("Executing GCG greedy column selection heuristic (nmastervars = %d) ...\n", nmastervars);
+   SCIPdebugMessage("Executing Greedy Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of pricing problems */
    npricingprobs = GCGrelaxGetNPricingprobs(origprob);
@@ -388,6 +393,11 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       blocknr[i] = 0;
    }
    allblocksfull = FALSE;
+
+   /* initialize master variable information */
+   SCIP_CALL( SCIPallocBufferArray(scip, &ignored, nmastervars) );
+   for( i = 0; i < nmastervars; i++ )
+      ignored[i] = FALSE;
 
    /* get master LP rows data */
    SCIP_CALL( SCIPgetLPRowsData(scip, &lprows, &nlprows) );
@@ -420,16 +430,22 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
-      SCIP_CALL( getBestMastervar(scip, activities, blocknr, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, &index, &violchange) );
+      assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
       if( index == -1 )
+      {
+         assert(violchange == INT_MAX);
+         SCIPdebugMessage("  -> no master variable could be selected\n");
          break;
+      }
 
       /* get master variable */
       mastervar = mastervars[index];
       assert(GCGvarIsMaster(mastervar));
-      assert(GCGmasterVarIsRay(mastervar));
+      assert(GCGvarGetBlock(mastervar) >= 0);
+      assert(!GCGmasterVarIsRay(mastervar));
 
       /* get blocknr and original variables */
       block = GCGvarGetBlock(mastervar);
@@ -437,31 +453,66 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       origvals = GCGmasterVarGetOrigvals(mastervar);
       norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
+      SCIPdebugMessage("  -> (block %d) selected master variable %s; violchange=%d\n",
+            block, SCIPvarGetName(mastervar), violchange);
+
       /* increase master value by one, i.e. increase solution values in current original solution accordingly */
-      /* TODO: handle copied original variables and linking variables */
-      if( block == -1 )
+      /* loop over all original variables contained in the current master variable */
+      for( i = 0; i < norigvars; i++ )
       {
-         assert(norigvars == 1);
-         assert(origvals[0] == 1.0);
+         assert(!SCIPisZero(scip, origvals[i]));
+         assert(GCGvarIsOriginal(origvars[i]));
 
-         /* increase the corresponding value */
-         SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[0], origvals[0]) );
-
-         /* try to add original solution to solution pool */
-         SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
-      }
-      else
-      {
-         /* loop over all original variables contained in the current master variable */
-         for( i = 0; i < norigvars; i++ )
+         /* If the master variable contains a linking variable, we need to pay attention if this linking
+          * variable has already been assigned a value; if the linking var has a wrong value in this point,
+          * the point cannot be used */
+         if( GCGvarIsLinking(origvars[i]) )
          {
-            assert(!SCIPisZero(scip, origvals[i]));
-            assert(GCGvarIsOriginal(origvars[i]));
+            SCIP_VAR** linkingpricingvars;
+            SCIP_Bool hasvalue;
+            SCIP_Real value;
 
-            if(GCGvarGetBlock(origvars[i]) == -2)
-               continue;
+            /* check whether linking variable has already been assigned a value */
+            linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
+            hasvalue = FALSE;
+            for( j = 0; j < npricingprobs; j++ )
+            {
+               if( linkingpricingvars[j] != NULL )
+               {
+                  if( blocknr[j] > 0 )
+                  {
+                     hasvalue = TRUE;
+                     break;
+                  }
+               }
+            }
+
+            /* if the linking variable has not been assigned a value yet, assign it */
+            if( !hasvalue )
+            {
+               SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], origvals[i]) );
+            }
+            /* otherwise, exclude the current master variable, if the point has a different value for it */
+            else
+            {
+               value = SCIPgetSolVal(origprob, origsol, origvars[i]);
+               if( !SCIPisEQ(origprob, value, origvals[i]) )
+               {
+                  SCIPdebugMessage("    -> cannot use mastervar: origvar %s already has value %g in block %d, different to %g\n",
+                        SCIPvarGetName(origvars[i]), value, j, origvals[i]);
+                  ignored[index] = TRUE;
+                  break;
+               }
+            }
+         }
+         else
+         {
+            SCIP_VAR* pricingvar;
+            SCIP_VAR** origpricingvars;
+            int norigpricingvars;
 
             pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+            assert(pricingvar != NULL);
             assert(GCGvarIsPricing(pricingvar));
 
             norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
@@ -470,12 +521,63 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
          }
-
-         blocknr[block]++;
-
-         /* try to add original solution to solution pool */
-         SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
       }
+
+      /* if the current master variable was set to be ignored, reset solution values and choose a new one */
+      if( ignored[index] )
+      {
+         for( k = 0; k < i; k++ )
+         {
+            if( GCGvarIsLinking(origvars[k]) )
+            {
+               SCIP_VAR** linkingpricingvars;
+               SCIP_Bool hasvalue;
+
+               /* check whether linking variable has already been assigned a value */
+               linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+               hasvalue = FALSE;
+               for( j = 0; j < npricingprobs; j++ )
+               {
+                  if( linkingpricingvars[j] != NULL )
+                  {
+                     if( blocknr[j] > 0 && j != block )
+                     {
+                        hasvalue = TRUE;
+                        break;
+                     }
+                  }
+               }
+
+               /* if the linking variable has not had a value before, set it back to zero */
+               if( !hasvalue )
+               {
+                  SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], -origvals[i]) );
+               }
+            }
+            else
+            {
+               SCIP_VAR* pricingvar;
+               SCIP_VAR** origpricingvars;
+               int norigpricingvars;
+
+               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+               assert(pricingvar != NULL);
+               assert(GCGvarIsPricing(pricingvar));
+
+               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+               origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+               /* decrease the corresponding value */
+               SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], -origvals[k]) );
+            }
+         }
+         continue;
+      }
+
+      blocknr[block]++;
+
+      /* try to add original solution to solution pool */
+      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
 
       /* update number of violated rows and activities array */
       nviolrows += violchange;
@@ -490,23 +592,24 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    }
 
 //#ifdef SCIP_DEBUG
-//   SCIPdebugMessage("  -> generated solution:\n");
+//   SCIPdebugMessage("generated solution:\n");
 //   SCIPprintSol(origprob, origsol, NULL, FALSE);
 //#endif
 
    if( success )
    {
       *result = SCIP_FOUNDSOL;
-      SCIPdebugMessage("  -> heuristic successful - feasible solution found.\n");
+      SCIPdebugMessage("heuristic successful - feasible solution found.\n");
    }
    else
    {
-      SCIPdebugMessage("  -> no feasible solution found.\n");
+      SCIPdebugMessage("no feasible solution found, still %d constraints violated.\n", nviolrows);
    }
 
    SCIPfreeSol(origprob, &origsol);
    SCIPfreeBufferArray(scip, &activities);
    SCIPfreeBufferArray(scip, &blocknr);
+   SCIPfreeBufferArray(scip, &ignored);
 
    heurdata->lastncols = nmastervars;
 
