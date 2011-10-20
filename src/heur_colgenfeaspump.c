@@ -32,7 +32,7 @@
 
 #define HEUR_NAME             "colgenfeaspump"
 #define HEUR_DESC             "column generation based feasibility pump"
-#define HEUR_DISPCHAR         '?'
+#define HEUR_DISPCHAR         'G'
 #define HEUR_PRIORITY         0
 #define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
@@ -874,9 +874,9 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
             /* compute new objective coefficient for original variable */
             if( SCIPisGT(scip, solval, relaxval) )
-               newobjcoeff = -alpha + (1.0 - alpha) * SCIPvarGetNLocksDown(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
+               newobjcoeff = -alpha + (1.0 - alpha) * (SCIPvarGetNLocksDown(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
             else
-               newobjcoeff = alpha + (1.0 - alpha) * SCIPvarGetNLocksUp(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
+               newobjcoeff = alpha + (1.0 - alpha) * (SCIPvarGetNLocksUp(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
 
             /* transfer objective coeff to master variable */
             masterobjcoeff += origval * newobjcoeff;
