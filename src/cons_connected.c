@@ -779,7 +779,7 @@ SCIP_Bool SCIPisMatrixBlockDiagonal(
 
    assert(scip != NULL);
 
-   conshdlr = SCIPfindConshdlr(scip, "CONSHDLR_NAME");
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);

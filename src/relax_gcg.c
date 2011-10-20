@@ -100,6 +100,9 @@ struct SCIP_RelaxData
 
    /* solution data */
    SCIP_SOL*        origprimalsol;       /* best original primal solution */
+
+   /* structure information */
+   SCIP_Bool        hasblockdetection;   /* indicates whether the block detection code is present */
 };
 
 /*
@@ -949,6 +952,92 @@ SCIP_RETCODE createMaster(
    return SCIP_OKAY;
 }
 
+/** combines the solutions from all (disjoint) problems to one solution */
+static
+SCIP_RETCODE combineSolutions(
+   SCIP*      scip,     /**< SCIP data structure */
+   SCIP_SOL** newsol,   /**< pointer to store new solution */
+   SCIP**     probs,    /**< array of (solved) subproblems */
+   int        nprobs    /**< number of subproblems */
+   )
+{
+   int i;
+   int v;
+   SCIP_SOL* sol;
+   int nvars;
+
+   SCIP_VAR** vars;
+   assert(scip != NULL);
+   assert(newsol != NULL);
+   assert(probs != NULL);
+   assert(nprobs > 0);
+
+   SCIP_CALL( SCIPcreateSol(scip, newsol, NULL) );
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+
+   for (i = 0; i < nprobs; ++i)
+   {
+      if( probs[i] == NULL )
+         continue;
+      SCIPprintOrigProblem(probs[i], NULL, "lp", FALSE);
+      SCIPprintSol(probs[i], SCIPgetBestSol(probs[i]), NULL, FALSE );
+   }
+
+   for( v = 0; v < nvars; ++v)
+   {
+      SCIP_VAR* pricingvar;
+      int block;
+
+      pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
+      block = GCGvarGetBlock(vars[v]);
+      assert(block >= 0);
+      assert(block < nprobs);
+      assert(probs[block] != NULL);
+      sol = SCIPgetBestSol(probs[block]);
+      SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
+   }
+   return SCIP_OKAY;
+}
+
+/** sets the pricing objective function to what is necessary */
+static
+SCIP_RETCODE setPricingObjsOriginal(
+   SCIP*    scip,    /**< SCIP data structure */
+   SCIP**   probs,   /**< array of subproblems */
+   int      nprobs   /**< number of subproblems */
+   )
+{
+   int i;
+   int v;
+   int nvars;
+   SCIP_VAR** vars;
+   SCIP_VAR* origvar;
+
+   assert(scip != NULL);
+   assert(probs != NULL);
+   assert(nprobs > 0);
+
+   nvars = SCIPgetNOrigVars(scip);
+   vars = SCIPgetOrigVars(scip);
+
+   for( v = 0; v < nvars; ++v )
+   {
+      SCIP_VAR* pricingvar;
+      SCIP_Real objvalue;
+      assert(GCGvarIsOriginal(vars[v]));
+      pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
+      origvar = vars[v];
+      objvalue = SCIPvarGetObj(origvar);
+      SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));
+      if(SCIPgetObjsense(scip) == SCIP_OBJSENSE_MAXIMIZE)
+         SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  -SCIPvarGetObj(origvar)) );
+      else
+         SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  SCIPvarGetObj(origvar)) );
+   }
+   return SCIP_OKAY;
+}
+
 /*
  * Callback methods of relaxator
  */
@@ -1079,6 +1168,11 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       }
    }
 
+   if( SCIPfindConshdlr(scip, "connected") != NULL )
+   {
+      relaxdata->hasblockdetection = TRUE;
+      SCIPdebugMessage("Block detection code present.\n");
+   }
    return SCIP_OKAY;
 }
 
@@ -1213,6 +1307,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes",
             ( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes+1)) );
 
+
+      /* loop to solve the master problem, this is a workaround and does not fix any problem */
       while( !SCIPisStopped(scip))
       {
          double mastertimelimit = SCIPinfinity(scip);
@@ -1229,7 +1325,91 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                   mastertimelimit,
                   mastertimelimit - SCIPgetSolvingTime(masterprob));
          }
-         SCIP_CALL( SCIPsolve(masterprob) );
+
+         /* if we have a blockdetection, see whether the node is block diagonal */
+
+         if( relaxdata->hasblockdetection && SCIPisMatrixBlockDiagonal(scip) )
+         {
+            int i;
+            SCIP_Real objvalue;
+            SCIP_Real pricingtimelimit;
+            SCIP_SOL *newsol;
+            SCIP_Bool isfeasible;
+            /* set objective of pricing problems to original objective */
+            SCIP_CALL( setPricingObjsOriginal(scip, relaxdata->pricingprobs, relaxdata->npricingprobs) );
+
+            objvalue = 0.0;
+            /* solve pricing problems one after the other */
+            for( i = 0; i < relaxdata->npricingprobs; ++i)
+            {
+
+               char name[SCIP_MAXSTRLEN];
+
+               if( relaxdata->pricingprobs[i] == NULL )
+                  continue;
+               SCIPinfoMessage(scip, NULL, "solving pricing %i", i);
+               SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_FULL) );
+               /* give the pricing problem 2% more time then the original scip has left */
+               //               pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(relaxdata->pricingprobs[i]);
+               //               SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit));
+
+
+               SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
+               SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
+
+               SCIP_CALL( SCIPsolve(relaxdata->pricingprobs[i]) );
+
+               switch( SCIPgetStatus(relaxdata->pricingprobs[i]) )
+               {
+               case SCIP_STATUS_UNBOUNDED:
+               case SCIP_STATUS_INFORUNBD:
+               case SCIP_STATUS_INFEASIBLE:
+                  *result = SCIP_CUTOFF;
+                  return SCIP_OKAY;
+                  break;
+               case SCIP_STATUS_BESTSOLLIMIT:
+               case SCIP_STATUS_MEMLIMIT:
+               case SCIP_STATUS_STALLNODELIMIT:
+               case SCIP_STATUS_NODELIMIT:
+               case SCIP_STATUS_SOLLIMIT:
+               case SCIP_STATUS_TIMELIMIT:
+                  *result = SCIP_DIDNOTRUN;
+                  return SCIP_OKAY;
+                  break;
+               case SCIP_STATUS_GAPLIMIT:
+               case SCIP_STATUS_OPTIMAL:
+                  objvalue += SCIPgetDualbound(relaxdata->pricingprobs[i]);
+                  break;
+               default:
+                  break;
+               }
+            }
+
+            /* get solution and glue it together */
+            SCIP_CALL( combineSolutions(scip, &newsol, relaxdata->pricingprobs, relaxdata->npricingprobs) );
+
+            /* update lower bound pointer and add solution such that this node will be cut off automatically */
+            if(SCIPgetObjsense(scip) == SCIP_OBJSENSE_MAXIMIZE)
+               *lowerbound = -objvalue;
+            else
+               *lowerbound = objvalue;
+            SCIP_CALL( SCIPcheckSol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+            assert(isfeasible);
+
+            SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+
+            /* maybe add a constraint to the node to indicate that it has been decomposed */
+
+            SCIPinfoMessage(scip, NULL, "We need code for this situation here!\n");
+            *result = SCIP_SUCCESS;
+            return SCIP_OKAY;
+         }
+         /* We are solving the masterproblem regularly */
+         else
+         {
+            SCIP_CALL( SCIPsolve(masterprob) );
+         }
+
 
          if(SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT)
          {
