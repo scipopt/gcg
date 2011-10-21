@@ -320,6 +320,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP* origprob;                           /* SCIP structure of original problem  */
    SCIP_HEURDATA* heurdata;                  /* heuristic's data                    */
    SCIP_ROW** lprows;                        /* LP rows of master problem           */
+   SCIP_SOL* mastersol;                      /* working master solution             */
    SCIP_SOL* origsol;                        /* working original solution           */
    SCIP_VAR** mastervars;
    SCIP_VAR** origvars;
@@ -330,6 +331,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_Bool* ignored;                       /* for each master variable, store whether it has to be ignored         */
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
 //   SCIP_Bool discretization;
+   SCIP_Bool masterfeas;
+   SCIP_Bool origfeas;
    SCIP_Bool success;
    int block;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
@@ -404,7 +407,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    assert( lprows != NULL );
    assert( nlprows >= 0);
 
-   /* get memory for working original solution and row activities */
+   /* get memory for working solutions and row activities */
+   SCIP_CALL( SCIPcreateSol(scip, &mastersol, heur) );
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
    SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
 
@@ -425,6 +429,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       }
    }
 
+   masterfeas = FALSE;
+   origfeas = FALSE;
    success = FALSE;
 
    /* try to increase master variables until all blocks are full */
@@ -456,7 +462,9 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       SCIPdebugMessage("  -> (block %d) selected master variable %s; violchange=%d\n",
             block, SCIPvarGetName(mastervar), violchange);
 
-      /* increase master value by one, i.e. increase solution values in current original solution accordingly */
+      /* increase master value by one and increase solution values in current original solution accordingly */
+      SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, 1.0) );
+
       /* loop over all original variables contained in the current master variable */
       for( i = 0; i < norigvars; i++ )
       {
@@ -487,10 +495,15 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
                }
             }
 
-            /* if the linking variable has not been assigned a value yet, assign it */
+            /* if the linking variable has not been assigned a value yet, assign a value to
+             * the variable and the corresponding copy in the master problem */
             if( !hasvalue )
             {
+               SCIP_VAR* linkingmastervar;
+
+               linkingmastervar = GCGoriginalVarGetMastervars(origvars[i])[0];
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], origvals[i]) );
+               SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, origvals[i]) );
             }
             /* otherwise, exclude the current master variable, if the point has a different value for it */
             else
@@ -526,6 +539,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       /* if the current master variable was set to be ignored, reset solution values and choose a new one */
       if( ignored[index] )
       {
+         SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, -1.0) );
          for( k = 0; k < i; k++ )
          {
             if( GCGvarIsLinking(origvars[k]) )
@@ -551,7 +565,11 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
                /* if the linking variable has not had a value before, set it back to zero */
                if( !hasvalue )
                {
-                  SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], -origvals[i]) );
+                  SCIP_VAR* linkingmastervar;
+
+                  linkingmastervar = GCGoriginalVarGetMastervars(origvars[k])[0];
+                  SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[k], -origvals[k]) );
+                  SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, -origvals[k]) );
                }
             }
             else
@@ -576,8 +594,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
       blocknr[block]++;
 
-      /* try to add original solution to solution pool */
-      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
+      /* try to add solutions to solution pool */
+      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &origfeas) );
+      SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+      assert((origfeas && masterfeas) || (!origfeas && !masterfeas));
+      if( origfeas && masterfeas )
+         success = TRUE;
 
       /* update number of violated rows and activities array */
       nviolrows += violchange;
@@ -599,7 +621,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    if( success )
    {
       *result = SCIP_FOUNDSOL;
-      SCIPdebugMessage("heuristic successful - feasible solution found.\n");
+      SCIPdebugMessage("heuristic successful - feasible solution found, obj=%g\n",
+            SCIPgetSolOrigObj(origprob, origsol));
    }
    else
    {
@@ -607,6 +630,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    }
 
    SCIPfreeSol(origprob, &origsol);
+   SCIPfreeSol(scip, &mastersol);
    SCIPfreeBufferArray(scip, &activities);
    SCIPfreeBufferArray(scip, &blocknr);
    SCIPfreeBufferArray(scip, &ignored);
