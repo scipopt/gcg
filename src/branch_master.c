@@ -23,6 +23,20 @@
 #include "cons_origbranch.h"
 #include "cons_masterbranch.h"
 
+#include "scip/nodesel_bfs.h"
+#include "scip/nodesel_dfs.h"
+#include "scip/nodesel_estimate.h"
+#include "scip/nodesel_hybridestim.h"
+#include "scip/nodesel_restartdfs.h"
+#include "scip/branch_allfullstrong.h"
+#include "scip/branch_fullstrong.h"
+#include "scip/branch_inference.h"
+#include "scip/branch_mostinf.h"
+#include "scip/branch_leastinf.h"
+#include "scip/branch_pscost.h"
+#include "scip/branch_random.h"
+#include "scip/branch_relpscost.h"
+
 
 #define BRANCHRULE_NAME          "master"
 #define BRANCHRULE_DESC          "branching for generic column generation master"
@@ -31,14 +45,41 @@
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
 
-
+static
+SCIP_RETCODE GCGincludeMasterCopyPlugins(
+   SCIP* scip
+   )
+{
+   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
+   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
+   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
+   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
+   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
+   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+   return SCIP_OKAY;
+}
 
 /*
  * Callback methods
  */
 
+static
+SCIP_DECL_BRANCHCOPY(branchCopyMaster)
+{
+   assert(branchrule != NULL);
+   assert(scip != NULL);
+   SCIPdebugMessage("pricer copy called.\n");
+   SCIP_CALL(GCGincludeMasterCopyPlugins(scip));
 
-#define branchCopyMaster NULL
+   return SCIP_OKAY;
+}
 
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
 #define branchFreeMaster NULL
