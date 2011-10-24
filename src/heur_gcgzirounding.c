@@ -253,18 +253,7 @@ void updateSlacks(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgzirounding)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
-
-   return SCIP_OKAY;
-}
+#define heurCopyGcgzirounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static

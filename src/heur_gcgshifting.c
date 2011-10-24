@@ -447,18 +447,7 @@ void addFracCounter(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgshifting)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
-
-   return SCIP_OKAY;
-}
+#define heurCopyGcgshifting NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 #define heurFreeGcgshifting NULL

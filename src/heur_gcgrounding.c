@@ -18,7 +18,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -401,18 +401,7 @@ SCIP_RETCODE selectEssentialRounding(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgrounding)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-
-   return SCIP_OKAY;
-}
+#define heurCopyGcgrounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 #define heurFreeGcgrounding NULL

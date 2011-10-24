@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+// #define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -475,18 +475,7 @@ SCIP_RETCODE shiftSol(
 /* TODO: Implement all necessary primal heuristic methods. The methods with an #if 0 ... #else #define ... are optional */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_HEURCOPY(heurCopyColgenfeaspump)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define heurCopyColgenfeaspump NULL
-#endif
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static

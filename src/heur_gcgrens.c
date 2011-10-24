@@ -18,7 +18,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -576,22 +576,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgrens)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
-
-   return SCIP_OKAY;
-}
-#else
 #define heurCopyGcgrens NULL  /* copy method should not be used unless GCG supports copying the extended instance */
-#endif
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
