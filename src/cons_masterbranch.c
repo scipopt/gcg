@@ -269,7 +269,7 @@ SCIP_RETCODE GCGresetPricingVarBound(
    if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
    {
       assert( SCIPisEQ(scip, SCIPvarGetLbLocal(pricingvar), consdata->newbounds[i])
-           || SCIPisEQ(scip, SCIPvarGetLbLocal(pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
+           || SCIPisLE(scip, SCIPvarGetLbLocal(pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
 
       if( SCIPisEQ(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
          return SCIP_OKAY;
@@ -277,21 +277,21 @@ SCIP_RETCODE GCGresetPricingVarBound(
       if( SCIPisGT(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
       {
          SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, SCIPvarGetLbGlobal(consdata->boundchgvars[i])) );
-         SCIPdebugMessage("relaxed lower bound of pricing var %s from %g to global bound %g\n",
-            SCIPvarGetName(pricingvar), consdata->newbounds[i], SCIPvarGetLbGlobal(consdata->boundchgvars[i]));
+         SCIPdebugMessage("relaxed lower bound of pricing var %s from %g to global bound %g (%s)\n",
+            SCIPvarGetName(pricingvar), consdata->newbounds[i], SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->name);
       }
       else
       {
          SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->oldbounds[i]) );
-         SCIPdebugMessage("relaxed lower bound of pricing var %s from %g to %g\n",
-            SCIPvarGetName(pricingvar), consdata->newbounds[i], consdata->oldbounds[i]);
+         SCIPdebugMessage("relaxed lower bound of pricing var %s from %g to %g (%s)\n",
+            SCIPvarGetName(pricingvar), consdata->newbounds[i], consdata->oldbounds[i], consdata->name);
       }
    }
    /* upper bound was changed */
    else
    {
       assert( SCIPisEQ(scip, SCIPvarGetUbLocal(pricingvar), consdata->newbounds[i])
-           || SCIPisEQ(scip, SCIPvarGetUbLocal(pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
+           || SCIPisGE(scip, SCIPvarGetUbLocal(pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
 
       if( SCIPisEQ(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
          return SCIP_OKAY;
@@ -299,14 +299,14 @@ SCIP_RETCODE GCGresetPricingVarBound(
       if( SCIPisLT(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
       {
          SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, SCIPvarGetUbGlobal(consdata->boundchgvars[i])) );
-         SCIPdebugMessage("relaxed upper bound of pricing var %s from %g to global bound %g\n",
-            SCIPvarGetName(pricingvar), consdata->newbounds[i], SCIPvarGetUbGlobal(consdata->boundchgvars[i]));
+         SCIPdebugMessage("relaxed upper bound of pricing var %s from %g to global bound %g (%s)\n",
+            SCIPvarGetName(pricingvar), consdata->newbounds[i], SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->name);
       }
       else
       {
          SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->oldbounds[i]) );
-         SCIPdebugMessage("relaxed upper bound of pricing var %s from %g to %g\n",
-            SCIPvarGetName(pricingvar), consdata->newbounds[i], consdata->oldbounds[i]);
+         SCIPdebugMessage("relaxed upper bound of pricing var %s from %g to %g (%s)\n",
+            SCIPvarGetName(pricingvar), consdata->newbounds[i], consdata->oldbounds[i], consdata->name);
       }
    }
    return SCIP_OKAY;
@@ -882,6 +882,12 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+   if( !conshdlrData->pendingbndsactivated )
+   {
+      SCIPdebugMessage("We need repropagation\n");
+      consdata->needprop = TRUE;
+   }
+
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING )
       consdata->propagatedvars = GCGpricerGetNPricedvars(scip);
 
@@ -1198,7 +1204,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          for( k = 0; k < nboundchanges; k++ )
          {
 #ifdef SCIP_DEBUG
-            SCIP_VAR* var = NULL;
             SCIP_Bool contained = FALSE;
             SCIP_Bool handled = FALSE;
 #endif
@@ -1454,7 +1459,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    oldbound = SCIPeventGetOldbound(event);
    newbound = SCIPeventGetNewbound(event);
 
-   SCIPdebugMessage("eventexec: eventtype = %x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
+   SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
    //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f, diff = %g\n", eventtype, SCIPvarGetName(var), oldbound, newbound, oldbound-newbound);
 
    assert(GCGvarIsOriginal(var));
