@@ -479,7 +479,6 @@ $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  src/relax_gcg.h src/type_branchgcg.h src/pricer_gcg.h src/type_solver.h \
  src/cons_origbranch.h src/branch_relpsprob.h \
  lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h \
- lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_dfs.h \
  lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \

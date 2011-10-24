@@ -37,7 +37,7 @@
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define DEFAULT_MAXVARSROUNDFARKAS 1
+#define DEFAULT_MAXVARSROUNDFARKAS 10
 #define DEFAULT_MAXVARSROUNDREDCOSTROOT 100
 #define DEFAULT_MAXVARSROUNDREDCOST 100
 #define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX

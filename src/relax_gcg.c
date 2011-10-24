@@ -39,7 +39,7 @@
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
 
-#define DEFAULT_DISCRETIZATION TRUE
+#define DEFAULT_DISCRETIZATION FALSE
 #define DEFAULT_MERGEIDENTICALBLOCS TRUE
 #define DEFAULT_DISPINFOS FALSE
 
@@ -1332,7 +1332,10 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
 
    /* inform the main scip, that no LPs should be solved */
-   //SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/solvefreq", -1) );
+
+   /* Disable restarts */
+   SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
 
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );

@@ -28,8 +28,6 @@
 #include "type_branchgcg.h"
 #include "pub_gcgvar.h"
 
-#include "scip/nodesel_bfs.h"
-#include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"
 #include "scip/nodesel_restartdfs.h"
@@ -368,8 +366,6 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP* scip
    )
 {
-   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
-   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
    SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
    SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
    SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
