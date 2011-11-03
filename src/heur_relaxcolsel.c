@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_relaxcolsel.c
  * @ingroup PRIMALHEURISTICS
@@ -24,8 +23,8 @@
 
 #include "heur_relaxcolsel.h"
 #include "pricer_gcg.h"
+#include "pub_gcgvar.h"
 #include "relax_gcg.h"
-#include "struct_vardata.h"
 
 
 #define HEUR_NAME             "relaxcolsel"
@@ -132,11 +131,18 @@ SCIP_RETCODE initializeOrigsol(
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* vardata2;
    SCIP_Real* mastervals;
    int nmastervars;
    int npricingprobs;
+
+   SCIP_VAR* mastervar;
+   int block;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+   SCIP_VAR* pricingvar;
+   SCIP_VAR** origpricingvars;
+   int norigpricingvars;
 
    int i;
    int j;
@@ -159,36 +165,36 @@ SCIP_RETCODE initializeOrigsol(
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
    {
-      vardata = SCIPvarGetData(mastervars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(vardata->data.mastervardata.norigvars >= 0);
-      assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-      assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
+      /* get master variable */
+      mastervar = mastervars[i];
+      assert(GCGvarIsMaster(mastervar));
+
+      /* get blocknr and corresponding original variables */
+      block = GCGvarGetBlock(mastervar);
+      origvars = GCGmasterVarGetOrigvars(mastervar);
+      origvals = GCGmasterVarGetOrigvals(mastervar);
+      norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
       /* first of all, handle variables representing rays */
-      if( vardata->data.mastervardata.isray )
+      if( GCGmasterVarIsRay(mastervar) )
       {
-         assert(vardata->blocknr >= 0);
+         assert(block >= 0);
          /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps),
           * so we do no feas comparison here */
          if( SCIPisPositive(scip, mastervals[i]) )
          {
             /* loop over all original variables contained in the current master variable */
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < norigvars; j++ )
             {
-               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
-
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j]) != NULL);
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr >= -2);
-               assert(SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr < npricingprobs);
+               assert(!SCIPisZero(scip, origvals[j]));
+               assert(GCGvarGetBlock(origvars[j]) < npricingprobs);
 
                /* the original variable is a linking variable */
-               if( SCIPvarGetData(vardata->data.mastervardata.origvars[j])->blocknr == -2 )
+               if( GCGvarIsLinking(origvars[j]) )
                   continue;
 
                /* increase the corresponding value */
-               SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata->data.mastervardata.origvars[j], vardata->data.mastervardata.origvals[j] * SCIPfeasFloor(scip, mastervals[i])) );
+               SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[j], origvals[j] * SCIPfeasFloor(scip, mastervals[i])) );
             }
          }
          mastervals[i] = 0.0;
@@ -199,52 +205,48 @@ SCIP_RETCODE initializeOrigsol(
       /* TODO: handle copied original variables and linking variables */
       while( SCIPisFeasGE(scip, mastervals[i], 1) )
       {
-         if( vardata->blocknr == -1 )
+         if( block == -1 )
          {
-            assert(vardata->data.mastervardata.norigvars == 1);
-            assert(vardata->data.mastervardata.origvals[0] == 1.0);
+            assert(norigvars == 1);
+            assert(origvals[0] == 1.0);
 
             /* increase the corresponding value */
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
+            SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[0], origvals[0]) );
             mastervals[i] = mastervals[i] - 1.0;
          }
          else
          {
             /* loop over all original variables contained in the current master variable */
-            for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+            for( j = 0; j < norigvars; j++ )
             {
-               assert(!SCIPisZero(scip, vardata->data.mastervardata.origvals[j]));
+               assert(!SCIPisZero(scip, origvals[j]));
 
-               /* get the right original variable */
-               vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[j]);
-               assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
-
-               if(vardata2->blocknr == -2)
+               if(GCGvarGetBlock(origvars[i]) == -2)
                   continue;
 
-               assert(vardata2->data.origvardata.pricingvar != NULL);
-               vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
-               assert(vardata2 != NULL);
-               assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+               pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+               assert(GCGvarIsPricing(pricingvar));
+
+               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+               origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
 
                /* increase the corresponding value */
-               SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[j]) );
+               SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
             }
             mastervals[i] = mastervals[i] - 1.0;
-            blocknr[vardata->blocknr]++;
+            blocknr[block]++;
          }
 
-         SCIP_CALL( updateActivities(scip, activities, mastervars[i]) );
+         SCIP_CALL( updateActivities(scip, activities, mastervar) );
       }
 
       /* if there is a fractional value >= 0.5 remaining for the master variable, add it as a candidate for rounding up */
       if( SCIPisFeasGE(scip, mastervals[i], 0.5)
-            && !vardata->data.mastervardata.isray /* TODO: handle rays */
-            && vardata->blocknr >= 0) /* TODO: handle copied original variables and linking variables */
+            && !GCGmasterVarIsRay(mastervar) /* TODO: handle rays */
+            && block >= 0) /* TODO: handle copied original variables and linking variables */
       {
          SCIP_CALL( SCIPreallocBufferArray(scip, mastercands, *nmastercands + 1) );
-         (*mastercands)[*nmastercands] = mastervars[i];
+         (*mastercands)[*nmastercands] = mastervar;
          (*nmastercands)++;
       }
    }
@@ -326,8 +328,10 @@ SCIP_RETCODE getAndRemoveBestMastercand(
       )
 {
    SCIP* origprob;
-   SCIP_VARDATA* vardata;
    int index;
+
+   SCIP_VAR* mastercand;
+   int block;
 
    int i;
    int tmpviolchange;
@@ -341,23 +345,23 @@ SCIP_RETCODE getAndRemoveBestMastercand(
    *violchange = SCIPinfinity(scip);
    for( i = *nmastercands - 1; i >= 0; i-- )
    {
-      vardata = SCIPvarGetData(mastercands[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-      assert(!vardata->data.mastervardata.isray); /* TODO: handle rays */
-      assert(!vardata->blocknr >= 0); /* TODO: handle copied original variables and linking variables */
+      mastercand = mastercands[i];
+      assert(GCGvarIsMaster(mastercand));
+      assert(!GCGmasterVarIsRay(mastercand));
+
+      block = GCGvarGetBlock(mastercand);
 
 //      SCIPdebugMessage("mastercand %d, pricingprob %d, blocknr %d, nidentblocks %d\n",
 //            i, vardata->blocknr, blocknr[vardata->blocknr], GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr));
 
       /* ignore the master variable if the corresponding block is already full */
-      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) )
+      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block) )
       {
-         tmpviolchange = getViolationChange(scip, activities, mastercands[i]);
+         tmpviolchange = getViolationChange(scip, activities, mastercand);
          if( tmpviolchange < *violchange || *mastervar == NULL )
          {
             index = i;
-            *mastervar = mastercands[i];
+            *mastervar = mastercand;
             *violchange = tmpviolchange;
          }
       }
@@ -386,36 +390,39 @@ SCIP_RETCODE cleanMastercands(
       int*                    blocknr
       )
 {
-   SCIP_VARDATA* vardata;
-   
+   SCIP_VAR* mastercand;
+   int block;
+
    int i;
    int j;
-   
+
    /* clean the candidate list from master variables whose blocks are full */
    for( j = 0; j < *nmastercands; j++ )
    {
-      vardata = SCIPvarGetData(mastercands[j]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      mastercand = mastercands[j];
+      assert(GCGvarIsMaster(mastercand));
 
-      if( blocknr[vardata->blocknr] >= GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) )
+      block = GCGvarGetBlock(mastercand);
+
+      if( blocknr[block] >= GCGrelaxGetNIdenticalBlocks(origprob, block) )
          break;
    }
    for( i = j + 1; i < *nmastercands; i++ )
    {
-      vardata = SCIPvarGetData(mastercands[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      mastercand = mastercands[i];
+      assert(GCGvarIsMaster(mastercand));
 
-      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) )
+      block = GCGvarGetBlock(mastercand);
+
+      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block) )
       {
-         mastercands[j] = mastercands[i];
+         mastercands[j] = mastercand;
          j++;
       }
    }
 
    *nmastercands = j;
-   
+
    return SCIP_OKAY;
 }
 
@@ -431,8 +438,9 @@ SCIP_RETCODE getBestMastervar(
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
-   SCIP_VARDATA* vardata;
    int nmastervars;
+
+   int block;
 
    int i;
 //   int j;
@@ -465,17 +473,17 @@ SCIP_RETCODE getBestMastervar(
 
    for( i = nmastervars - 1; i >= 0; i-- )
    {
-      vardata = SCIPvarGetData(mastervars[i]);
-      assert(vardata != NULL);
-      assert(vardata->vartype == GCG_VARTYPE_MASTER);
+      assert(GCGvarIsMaster(mastervars[i]));
+
+      block = GCGvarGetBlock(mastervars[i]);
 
       /* TODO: handle copied original variables and linking variables */
-      if( vardata->blocknr < 0 )
+      if( block < 0 )
          continue;
 
       /* ignore the master variable if the corresponding block is already full */
-      if( blocknr[vardata->blocknr] < GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr)
-            && !vardata->data.mastervardata.isray ) /* TODO: handle rays */
+      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block)
+            && !GCGmasterVarIsRay(mastervars[i]) ) /* TODO: handle rays */
       {
          tmpviolchange = getViolationChange(scip, activities, mastervars[i]);
          if( tmpviolchange < *violchange )
@@ -504,32 +512,38 @@ SCIP_RETCODE updateOrigsol(
       SCIP_Bool*              success
       )
 {
-   SCIP_VARDATA* vardata;
-   SCIP_VARDATA* vardata2;
    int npricingprobs;
+
+   int block;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+   SCIP_VAR* pricingvar;
+   SCIP_VAR** origpricingvars;
+   int norigpricingvars;
 
    int i;
 
    /* get number of pricing problems */
    npricingprobs = GCGrelaxGetNPricingprobs(origprob);
 
-   /* get master variable data */
-   vardata = SCIPvarGetData(mastervar);
-   assert(vardata != NULL);
-   assert(vardata->vartype == GCG_VARTYPE_MASTER);
-   assert(vardata->data.mastervardata.norigvars >= 0);
-   assert(vardata->data.mastervardata.origvars != NULL || vardata->data.mastervardata.norigvars == 0);
-   assert(vardata->data.mastervardata.origvals != NULL || vardata->data.mastervardata.norigvars == 0);
-   assert(!vardata->data.mastervardata.isray);
+   assert(GCGvarIsMaster(mastervar));
+   assert(!GCGmasterVarIsRay(mastervar));
+
+   /* get block and corresponding origvars of mastervar */
+   block = GCGvarGetBlock(mastervar);
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
    /* increase master value by one, i.e. increase solution values in current original solution accordingly */
-   if( vardata->blocknr == -1 )
+   if( block == -1 )
    {
-      assert(vardata->data.mastervardata.norigvars == 1);
-      assert(vardata->data.mastervardata.origvals[0] == 1.0);
+      assert(norigvars == 1);
+      assert(origvals[0] == 1.0);
 
       /* increase the corresponding value */
-      SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata->data.mastervardata.origvars[0], vardata->data.mastervardata.origvals[0]) );
+      SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[0], origvals[0]) );
 
       /* try to add original solution to solution pool */
       SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, success) );
@@ -537,28 +551,24 @@ SCIP_RETCODE updateOrigsol(
    else
    {
       /* loop over all original variables contained in the current master variable */
-      for( i = 0; i < vardata->data.mastervardata.norigvars; i++ )
+      for( i = 0; i < norigvars; i++ )
       {
-         assert(!SCIPisZero(origprob, vardata->data.mastervardata.origvals[i]));
+         assert(!SCIPisZero(origprob, origvals[i]));
 
-         /* get the right original variable */
-         vardata2 = SCIPvarGetData(vardata->data.mastervardata.origvars[i]);
-         assert(vardata2 != NULL);
-         assert(vardata2->vartype == GCG_VARTYPE_ORIGINAL);
+         if(GCGvarGetBlock(origvars[i]) == -2)
+                           continue;
 
-         if(vardata2->blocknr == -2)
-            continue;
+         pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
+         assert(GCGvarIsPricing(pricingvar));
 
-         assert(vardata2->data.origvardata.pricingvar != NULL);
-         vardata2 = SCIPvarGetData(vardata2->data.origvardata.pricingvar);
-         assert(vardata2 != NULL);
-         assert(vardata2->vartype == GCG_VARTYPE_PRICING);
+         norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+         origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
 
          /* increase the corresponding value */
-         SCIP_CALL( SCIPincSolVal(origprob, origsol, vardata2->data.pricingvardata.origvars[blocknr[vardata->blocknr]], vardata->data.mastervardata.origvals[i]) );
+         SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
       }
 
-      blocknr[vardata->blocknr]++;
+      blocknr[block]++;
 
       /* try to add original solution to solution pool */
       SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, success) );

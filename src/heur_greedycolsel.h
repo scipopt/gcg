@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_greedycolsel.h
  * @brief  greedy column selection primal heuristic

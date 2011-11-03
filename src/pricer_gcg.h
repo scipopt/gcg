@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   pricer_gcg.h
  * @brief  gcg variable pricer

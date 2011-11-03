@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgshifting.h
  * @brief  LP gcgrounding heuristic that tries to recover from intermediate infeasibilities and shifts continuous variables

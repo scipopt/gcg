@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgrens.c
  * @ingroup PRIMALHEURISTICS
@@ -40,19 +39,22 @@
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
-#define HEUR_USESSUBSCIP      TRUE  /**< does the heuristic use a secondary SCIP instance? */
+#define HEUR_USESSUBSCIP      TRUE      /**< does the heuristic use a secondary SCIP instance? */
 
-#define DEFAULT_BINARYBOUNDS  TRUE      /* should general integers get binary bounds [floor(.),ceil(.)] ?      */ 
+/* default values for RENS-specific plugins */
+#define DEFAULT_BINARYBOUNDS  TRUE      /* should general integers get binary bounds [floor(.),ceil(.)] ?      */
 #define DEFAULT_MAXNODES      5000LL    /* maximum number of nodes to regard in the subproblem                 */
 #define DEFAULT_MINFIXINGRATE 0.5       /* minimum percentage of integer variables that have to be fixed       */
 #define DEFAULT_MINIMPROVE    0.01      /* factor by which RENS should at least improve the incumbent          */
 #define DEFAULT_MINNODES      500LL     /* minimum number of nodes to regard in the subproblem                 */
 #define DEFAULT_NODESOFS      500LL     /* number of nodes added to the contingent of the total nodes          */
 #define DEFAULT_NODESQUOT     0.1       /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_USELPROWS     TRUE      /* should subproblem be created out of the rows in the LP rows, 
+#define DEFAULT_USELPROWS     TRUE      /* should subproblem be created out of the rows in the LP rows,
                                          * otherwise, the copy constructors of the constraints handlers are used */
+#define DEFAULT_COPYCUTS      TRUE      /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+                                         * of the original scip be copied to constraints of the subscip
+                                         */
 #define DEFAULT_USEGCG        FALSE     /* should the subproblem be solved with GCG?                           */
-
 
 
 /*
@@ -71,6 +73,9 @@ struct SCIP_HeurData
    SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem       */
    SCIP_Bool             binarybounds;      /**< should general integers get binary bounds [floor(.),ceil(.)] ?      */
    SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?        */
+   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                              *   to constraints in subproblem?
+                                              */
    SCIP_Bool             usegcg;            /**< should the subproblem be solved with GCG?                           */
 };
 
@@ -95,31 +100,37 @@ SCIP_RETCODE createSubproblem(
 
    SCIP_Real fixingrate;
 
-   int nvars;   
+   int nvars;
    int nbinvars;
    int nintvars;
-   int i; 
+   int i;
    int fixingcounter;
+
+   assert(scip != NULL);
+   assert(subscip != NULL);
+   assert(subvars != NULL);
+
+   assert(0.0 <= minfixingrate && minfixingrate <= 1.0);
 
    /* get required variable data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
-   
+
    fixingcounter = 0;
-   
+
    /* change bounds of variables of the subproblem */
    for( i = 0; i < nbinvars + nintvars; i++ )
    {
       SCIP_Real lpsolval;
       SCIP_Real lb;
       SCIP_Real ub;
-      
+
       /* get the current LP solution for each variable */
       lpsolval = SCIPgetRelaxSolVal(scip, vars[i]);
 
       if( SCIPisFeasIntegral(scip, lpsolval) )
       {
          /* fix variables to current LP solution if it is integral,
-          *  use exact integral value, if the variable is only integral within numerical tolerances
+          * use exact integral value, if the variable is only integral within numerical tolerances
           */
          lb = SCIPfloor(scip, lpsolval+0.5);
          ub = lb;
@@ -131,7 +142,7 @@ SCIP_RETCODE createSubproblem(
          lb = SCIPfeasFloor(scip,lpsolval);
          ub = SCIPfeasCeil(scip,lpsolval);
       }
-      else 
+      else
       {
          /* otherwise just copy bounds */
          lb =  SCIPvarGetLbGlobal(vars[i]);
@@ -142,7 +153,9 @@ SCIP_RETCODE createSubproblem(
       SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], lb) );
       SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], ub) );
    }
-      
+
+   fixingrate = 0.0;
+
    /* abort, if all integer variables were fixed (which should not happen for MIP) */
    if( fixingcounter == nbinvars + nintvars )
    {
@@ -151,23 +164,23 @@ SCIP_RETCODE createSubproblem(
    }
    else
       fixingrate = fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
-   
+   SCIPdebugMessage("fixing rate: %g = %d of %d\n", fixingrate, fixingcounter, nbinvars + nintvars);
+
    /* abort, if the amount of fixed variables is insufficient */
    if( fixingrate < minfixingrate )
    {
       *success = FALSE;
-      return SCIP_OKAY;      
+      return SCIP_OKAY;
    }
-     
-   /**@todo it might be also of interest to copy the cuts, like in case of restart (see cons_linear.c) */
+
    if( uselprows )
    {
       SCIP_ROW** rows;                          /* original scip rows                         */
       int nrows;
-      
+
       /* get the rows and their number */
-      SCIP_CALL( SCIPgetLPRowsData(scip, &rows, &nrows) ); 
-   
+      SCIP_CALL( SCIPgetLPRowsData(scip, &rows, &nrows) );
+
       /* copy all rows to linear constraints */
       for( i = 0; i < nrows; i++ )
       {
@@ -180,11 +193,11 @@ SCIP_RETCODE createSubproblem(
          SCIP_Real* vals;
          int nnonz;
          int j;
-         
+
          /* ignore rows that are only locally valid */
          if( SCIProwIsLocal(rows[i]) )
             continue;
-         
+
          /* get the row's data */
          constant = SCIProwGetConstant(rows[i]);
          lhs = SCIProwGetLhs(rows[i]) - constant;
@@ -192,25 +205,25 @@ SCIP_RETCODE createSubproblem(
          vals = SCIProwGetVals(rows[i]);
          nnonz = SCIProwGetNNonz(rows[i]);
          cols = SCIProwGetCols(rows[i]);
-         
+
          assert( lhs <= rhs );
-         
+
          /* allocate memory array to be filled with the corresponding subproblem variables */
          SCIP_CALL( SCIPallocBufferArray(subscip, &consvars, nnonz) );
-         for( j = 0; j < nnonz; j++ ) 
+         for( j = 0; j < nnonz; j++ )
             consvars[j] = subvars[SCIPvarGetProbindex(SCIPcolGetVar(cols[j]))];
-         
+
          /* create a new linear constraint and add it to the subproblem */
          SCIP_CALL( SCIPcreateConsLinear(subscip, &cons, SCIProwGetName(rows[i]), nnonz, consvars, vals, lhs, rhs,
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE) );
          SCIP_CALL( SCIPaddCons(subscip, cons) );
          SCIP_CALL( SCIPreleaseCons(subscip, &cons) );
-         
+
          /* free temporary memory */
          SCIPfreeBufferArray(subscip, &consvars);
       }
    }
-   
+
    *success = TRUE;
    return SCIP_OKAY;
 }
@@ -228,27 +241,28 @@ SCIP_RETCODE createNewSol(
    )
 {
    SCIP_VAR** vars;                          /* the original problem's variables                */
-   int        nvars;
+   int        nvars;                         /* the original problem's number of variables      */
    SCIP_Real* subsolvals;                    /* solution values of the subproblem               */
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
-        
-   assert( scip != NULL );
-   assert( subscip != NULL );
-   assert( subvars != NULL );
-   assert( subsol != NULL );
+
+   assert(scip != NULL);
+   assert(subscip != NULL);
+   assert(subvars != NULL);
+   assert(subsol != NULL);
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-   /* subSCIP may have more variable than the number of active (transformed) variables in the main SCIP
+
+   /* sub-SCIP may have more variables than the number of active (transformed) variables in the main SCIP
     * since constraint copying may have required the copy of variables that are fixed in the main SCIP
-    */ 
-   assert( nvars <= SCIPgetNOrigVars(subscip) );  
- 
+    */
+   assert(nvars <= SCIPgetNOrigVars(subscip));
+
    SCIP_CALL( SCIPallocBufferArray(scip, &subsolvals, nvars) );
 
    /* copy the solution */
    SCIP_CALL( SCIPgetSolVals(subscip, subsol, nvars, subvars, subsolvals) );
-       
+
    /* create new solution for the original problem */
    SCIP_CALL( SCIPcreateSol(scip, &newsol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newsol, nvars, vars, subsolvals) );
@@ -266,8 +280,6 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP*                 scip,               /**< original SCIP data structure                                   */
    SCIP_HEUR*            heur,               /**< heuristic data structure                                       */
    SCIP_RESULT*          result,             /**< result data structure                                          */
-   SCIP_Real             timelimit,          /**< timelimit for the subproblem                                   */        
-   SCIP_Real             memorylimit,        /**< memorylimit for the subproblem                                 */
    SCIP_Real             minfixingrate,      /**< minimum percentage of integer variables that have to be fixed  */
    SCIP_Real             minimprove,         /**< factor by which RENS should at least improve the incumbent     */
    SCIP_Longint          maxnodes,           /**< maximum number of  nodes for the subproblem                    */
@@ -277,30 +289,39 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_Bool             usegcg              /**< should the subproblem be solved with GCG as well?              */
    )
 {
-   SCIP* subscip;                            /* the subproblem created by RENS      */
-   SCIP_HASHMAP* varmapfw;                   /* mapping of SCIP variables to subSCIP variables */    
-   SCIP_VAR** vars;                          /* original problem's variables        */
-   SCIP_VAR** subvars;                       /* subproblem's variables              */
-  
-   SCIP_Real cutoff;                         /* objective cutoff for the subproblem */
-   
+   SCIP* subscip;                            /* the subproblem created by RENS                  */
+   SCIP_HASHMAP* varmapfw;                   /* mapping of SCIP variables to sub-SCIP variables */
+   SCIP_VAR** vars;                          /* original problem's variables                    */
+   SCIP_VAR** subvars;                       /* subproblem's variables                          */
+
+   SCIP_Real cutoff;                         /* objective cutoff for the subproblem             */
+   SCIP_Real timelimit;
+   SCIP_Real memorylimit;
+
+   int nvars;
+   int i;
+
    SCIP_Bool success;
+   SCIP_RETCODE retcode;
 
-   int nvars;                     
-   int i;   
+   assert(scip != NULL);
+   assert(heur != NULL);
+   assert(result != NULL);
 
-#ifdef NDEBUG
-   SCIP_RETCODE retstat;
-#endif
+   assert(maxnodes >= 0);
+   assert(nstallnodes >= 0);
+
+   assert(0.0 <= minfixingrate && minfixingrate <= 1.0);
+   assert(0.0 <= minimprove && minimprove <= 1.0);
 
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
 
-   /* initialize the subproblem */  
+   /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(&subscip) );
 
    /* create the variable mapping hash map */
    SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) ); 
+   SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
 
    if( usegcg )
    {
@@ -323,9 +344,22 @@ SCIP_RETCODE SCIPapplyGcgrens(
       else
       {
          SCIP_Bool valid;
+         SCIP_HEURDATA* heurdata;
+         
          valid = FALSE;
 
          SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "rens", TRUE, FALSE, &valid) );
+         
+         /* get heuristic's data */
+	      heurdata = SCIPheurGetData(heur);
+   	   assert( heurdata != NULL );
+         
+         if( heurdata->copycuts )
+      	{
+         	/** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         	SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
+      	}
+      	
          SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
       }
 
@@ -353,36 +387,61 @@ SCIP_RETCODE SCIPapplyGcgrens(
       if( !uselprows )
       {
          SCIP_Bool valid;
+         SCIP_HEURDATA* heurdata;
+         
          valid = FALSE;
 
          SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
+         
+         /* get heuristic's data */
+	      heurdata = SCIPheurGetData(heur);
+   	   assert( heurdata != NULL );
+         
+         if( heurdata->copycuts )
+      	{
+         	/** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         	SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
+      	}
+      
          SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
       }
    }
-   
+
    for( i = 0; i < nvars; i++ )
      subvars[i] = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, vars[i]);
-   
+
    /* free hash map */
    SCIPhashmapFree(&varmapfw);
 
    /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
    SCIP_CALL( createSubproblem(scip, subscip, subvars, minfixingrate, binarybounds, uselprows, &success) );
    SCIPdebugMessage("RENS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
-   
+
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );
- 
+
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 0) );
- 
+
+   /* check whether there is enough time and memory left */
+   timelimit = 0.0;
+   memorylimit = 0.0;
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+   if( !SCIPisInfinity(scip, timelimit) )
+      timelimit -= SCIPgetSolvingTime(scip);
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
+   if( !SCIPisInfinity(scip, memorylimit) )
+      memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
+   if( timelimit <= 0.0 || memorylimit <= 0.0 )
+      goto TERMINATE;
+
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/stallnodes", nstallnodes) );
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", maxnodes) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/time", timelimit) );
    SCIP_CALL( SCIPsetRealParam(subscip, "limits/memory", memorylimit) );
 
-   /* forbid recursive call of heuristics and separators solving subMIPs */
+   /* forbid recursive call of heuristics and separators solving sub-SCIPs */
    SCIP_CALL( SCIPsetSubscipsOff(subscip, TRUE) );
 
    /* disable cutting plane separation */
@@ -390,11 +449,11 @@ SCIP_RETCODE SCIPapplyGcgrens(
 
    /* disable expensive presolving */
    SCIP_CALL( SCIPsetPresolving(subscip, SCIP_PARAMSETTING_FAST, TRUE) );
-   
+
    /* use best estimate node selection */
    if( SCIPfindNodesel(scip, "estimate") != NULL )
    {
-      SCIP_CALL( SCIPsetIntParam(subscip, "nodeselection/estimate/stdpriority", INT_MAX/4) ); 
+      SCIP_CALL( SCIPsetIntParam(subscip, "nodeselection/estimate/stdpriority", INT_MAX/4) );
    }
 
    /* use inference branching */
@@ -414,10 +473,10 @@ SCIP_RETCODE SCIPapplyGcgrens(
 #ifdef SCIP_DEBUG
    /* for debugging RENS, enable MIP output */
    SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 5) );
-   SCIP_CALL( SCIPsetIntParam(subscip, "display/freq", 100000000) ); 
+   SCIP_CALL( SCIPsetIntParam(subscip, "display/freq", 100000000) );
 #endif
 
- 
+
    /* if the subproblem could not be created, free memory and return */
    if( !success )
    {
@@ -425,13 +484,14 @@ SCIP_RETCODE SCIPapplyGcgrens(
       SCIPfreeBufferArray(scip, &subvars);
       SCIP_CALL( SCIPfree(&subscip) );
       return SCIP_OKAY;
-   } 
+   }
 
    /* if there is already a solution, add an objective cutoff */
    if( SCIPgetNSols(scip) > 0 )
    {
       SCIP_Real upperbound;
-      assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );   
+      cutoff = SCIPinfinity(scip);
+      assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);
 
@@ -441,7 +501,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
       }
       else
       {
-         if ( SCIPgetUpperbound ( scip ) >= 0 )
+         if( SCIPgetUpperbound ( scip ) >= 0 )
             cutoff = ( 1 - minimprove ) * SCIPgetUpperbound ( scip );
          else
             cutoff = ( 1 + minimprove ) * SCIPgetUpperbound ( scip );
@@ -450,21 +510,21 @@ SCIP_RETCODE SCIPapplyGcgrens(
       SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
    }
 
-   /* solve the subproblem */
-   /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-    * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
-    */
-#ifdef NDEBUG
-   retstat = SCIPpresolve(subscip);
-   if( retstat != SCIP_OKAY )
-   { 
-      SCIPwarningMessage("Error while presolving subMIP in RENS heuristic; subSCIP terminated with code <%d>\n",retstat);
-   }
-#else
-   SCIP_CALL( SCIPpresolve(subscip) );
-#endif
+   /* presolve the subproblem */
+   retcode = SCIPpresolve(subscip);
 
-   SCIPdebugMessage("RENS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
+   /* Errors in solving the subproblem should not kill the overall solving process
+    * Hence, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
+    */
+   if( retcode != SCIP_OKAY )
+   {
+#ifndef NDEBUG
+      SCIP_CALL( retcode );
+#endif
+      SCIPwarningMessage("Error while presolving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+   }
+
+   SCIPdebugMessage("GCG RENS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
    /* after presolving, we should have at least reached a certain fixing rate over ALL variables (including continuous)
     * to ensure that not only the MIP but also the LP relaxation is easy enough
@@ -474,18 +534,20 @@ SCIP_RETCODE SCIPapplyGcgrens(
       SCIP_SOL** subsols;
       int nsubsols;
 
+      /* solve the subproblem */
       SCIPdebugMessage("solving subproblem: nstallnodes=%"SCIP_LONGINT_FORMAT", maxnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, maxnodes);
+      retcode = SCIPsolve(subscip);
 
-#ifdef NDEBUG
-      retstat = SCIPsolve(subscip);
-      if( retstat != SCIP_OKAY )
-      { 
-         SCIPwarningMessage("Error while solving subMIP in RENS heuristic; subSCIP terminated with code <%d>\n",retstat);
-      }
-#else
-      SCIP_CALL( SCIPsolve(subscip) );
+      /* Errors in solving the subproblem should not kill the overall solving process
+       * Hence, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
+       */
+      if( retcode != SCIP_OKAY )
+      {
+#ifndef NDEBUG
+         SCIP_CALL( retcode );
 #endif
-
+         SCIPwarningMessage("Error while solving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      }
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
@@ -501,6 +563,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
          *result = SCIP_FOUNDSOL;
    }
 
+ TERMINATE:
    /* free subproblem */
    SCIPfreeBufferArray(scip, &subvars);
    SCIP_CALL( SCIPfree(&subscip) );
@@ -513,18 +576,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgrens)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
- 
-   return SCIP_OKAY;
-}
+#define heurCopyGcgrens NULL  /* copy method should not be used unless GCG supports copying the extended instance */
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
@@ -582,8 +634,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
 
    SCIP* masterprob;
    SCIP_HEURDATA* heurdata;                  /* heuristic's data                    */
-   SCIP_Real timelimit;                      /* timelimit for the subproblem        */
-   SCIP_Real memorylimit;
    SCIP_Longint nstallnodes;                 /* number of stalling nodes for the subproblem */
 
    assert( heur != NULL );
@@ -605,17 +655,17 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTRUN;
- 
+
    /* only continue with some fractional variables */
    if( SCIPgetNExternBranchCands(scip) == 0 )
       return SCIP_OKAY;
 
    /* calculate the maximal number of branching nodes until heuristic is aborted */
    nstallnodes = (SCIP_Longint)(heurdata->nodesquot * SCIPgetNNodes(scip));
-   
+
    /* reward RENS if it succeeded often */
    nstallnodes = (SCIP_Longint)(nstallnodes * 3.0 * (SCIPheurGetNBestSolsFound(heur)+1.0)/(SCIPheurGetNCalls(heur) + 1.0));
-   nstallnodes -= 100 * SCIPheurGetNCalls(heur);  /* count the setup costs for the sub-MIP as 100 nodes */
+   nstallnodes -= 100 * SCIPheurGetNCalls(heur);  /* count the setup costs for the sub-SCIP as 100 nodes */
    nstallnodes += heurdata->nodesofs;
 
    /* determine the node limit for the current process */
@@ -629,22 +679,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
       return SCIP_OKAY;
    }
 
-   /* check whether there is enough time and memory left */
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip, timelimit) )
-      timelimit -= SCIPgetSolvingTime(scip);
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
-   if( !SCIPisInfinity(scip, memorylimit) )   
-      memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
-   if( timelimit < 10.0 || memorylimit <= 0.0 )
-      return SCIP_OKAY;
-
    if( SCIPisStopped(scip) )
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTFIND;
 
-   SCIP_CALL( SCIPapplyGcgrens(scip, heur, result, timelimit, memorylimit, heurdata->minfixingrate, heurdata-> minimprove,
+   SCIP_CALL( SCIPapplyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
          heurdata->maxnodes, nstallnodes, heurdata->binarybounds, heurdata->uselprows, heurdata->usegcg) );
 
    return SCIP_OKAY;
@@ -675,39 +715,43 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
          heurdata) );
 
    /* add rens primal heuristic parameters */
- 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/gcgrens/minfixingrate",
+
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minfixingrate",
          "minimum percentage of integer variables that have to be fixable ",
          &heurdata->minfixingrate, FALSE, DEFAULT_MINFIXINGRATE, 0.0, 1.0, NULL, NULL) );
-   
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/gcgrens/maxnodes",
+
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/maxnodes",
          "maximum number of nodes to regard in the subproblem",
          &heurdata->maxnodes,  TRUE,DEFAULT_MAXNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
- 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/gcgrens/binarybounds",
-         "should general integers get binary bounds [floor(.),ceil(.)] ?",
-         &heurdata->binarybounds, TRUE, DEFAULT_BINARYBOUNDS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/gcgrens/nodesofs",
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
          "number of nodes added to the contingent of the total nodes",
          &heurdata->nodesofs, FALSE, DEFAULT_NODESOFS, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
-   
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/gcgrens/minnodes",
+
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/minnodes",
          "minimum number of nodes required to start the subproblem",
          &heurdata->minnodes, TRUE, DEFAULT_MINNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
- 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/gcgrens/nodesquot",
+
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/nodesquot",
          "contingent of sub problem nodes in relation to the number of nodes of the original problem",
          &heurdata->nodesquot, FALSE, DEFAULT_NODESQUOT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/gcgrens/minimprove",
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minimprove",
          "factor by which RENS should at least improve the incumbent  ",
          &heurdata->minimprove, TRUE, DEFAULT_MINIMPROVE, 0.0, 1.0, NULL, NULL) );
-   
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/binarybounds",
+         "should general integers get binary bounds [floor(.),ceil(.)] ?",
+         &heurdata->binarybounds, TRUE, DEFAULT_BINARYBOUNDS, NULL, NULL) );
+
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
-   
+         
+	SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+         "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
+         &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
+
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usegcg",
          "should the subproblem be solved with GCG?",
          &heurdata->usegcg, TRUE, DEFAULT_USEGCG, NULL, NULL) );

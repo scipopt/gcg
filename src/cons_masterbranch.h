@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   cons_masterbranch.h
  * @brief  constraint handler for storing the graph at each node of the tree
@@ -68,35 +67,35 @@ SCIP_NODE* GCGconsMasterbranchGetNode(
    SCIP_CONS*            cons
    );
 
-/** returns the masterbranch constraint of the B&B father of the node at which the 
+/** returns the masterbranch constraint of the B&B father of the node at which the
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetParentcons(
    SCIP_CONS*            cons
    );
 
-/** returns the masterbranch constraint of the first child of the node at which the 
+/** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
    SCIP_CONS*            cons
    );
 
-/** returns the masterbranch constraint of the second child of the node at which the 
+/** returns the masterbranch constraint of the second child of the node at which the
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
    SCIP_CONS*            cons
    );
 
-/** returns the origbranch constraint of the node in the original program corresponding to the node 
+/** returns the origbranch constraint of the node in the original program corresponding to the node
     at which the given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetOrigcons(
    SCIP_CONS*            cons
    );
 
-/** sets the origbranch constraint of the node in the master program corresponding to the node 
+/** sets the origbranch constraint of the node in the master program corresponding to the node
     at which the given masterbranchbranch constraint is sticking */
 extern
 void GCGconsMasterbranchSetOrigcons(

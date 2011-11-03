@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: branch_relpsprob.h,v 1.16 2010/02/04 10:23:56 bzfheinz Exp $"
 
 /**@file   branch_relpsprob.h
  * @brief  reliable pseudo costs branching rule

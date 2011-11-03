@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: dec_borderheur.c,v 1.24 2010/01/04 20:35:45 bzfheinz Exp $"
 
 /**@file   dec_borderheur.c
  * @ingroup DETECTORS
@@ -32,14 +31,13 @@
 #define DEC_DETECTORNAME      "borderheur"   /**< name of the detector */
 #define DEC_PRIORITY          0              /**< priority of the detector */
 
-/* Default parameter settings*/
-#define DEFAULT_BLOCKS                    2     /**< number of blocks */
+/* Default parameter settings */
 #define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
 #define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
 
-#define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MAXBLOCKS                 20    /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
 
 #define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
@@ -146,16 +144,12 @@ DEC_DECL_INITDETECTOR(initBorderheur)
    int i;
    int nvars;
    int nconss;
-   DEC_DETECTOR* borderheur;
    DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
 
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   assert(borderheur != NULL);
-
-   detectordata = DECdetectorGetData(borderheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
@@ -240,16 +234,14 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
 {
 
    int i;
-   DEC_DETECTOR* borderheur;
    DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
 
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(borderheur);
+   detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    /* copy data to decomp structure */
    if( !detectordata->found)

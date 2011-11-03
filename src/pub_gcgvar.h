@@ -1,13 +1,12 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   dec_borderheur.h
  * @brief  borderheur presolver
@@ -27,19 +26,19 @@ extern "C" {
 #endif
 
 /** Returns TRUE or FALSE whether variable is a pricing variable or not */
-extern 
+extern
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR* var          /**< SCIP variable */
    );
 
 /** Returns TRUE or FALSE whether variable is a original variable or not */
-extern 
+extern
 SCIP_Bool GCGvarIsOriginal(
    SCIP_VAR* var          /**< SCIP variable structure */
    );
 
 /** Returns TRUE or FALSE whether variable is a master variable or not */
-extern 
+extern
 SCIP_Bool GCGvarIsMaster(
    SCIP_VAR* var          /**< SCIP variable structure */
    );
@@ -86,8 +85,8 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
 /** sets the pricing var of the corresponding linking variable at the specified position */
 extern
 void GCGlinkingVarSetPricingVar(
-   SCIP_VAR* origvar, 
-   int pricingprobnr, 
+   SCIP_VAR* origvar,
+   int pricingprobnr,
    SCIP_VAR* var
    );
 
@@ -241,9 +240,9 @@ SCIP_Bool GCGisLinkingVarInBlock(
    int block
    );
 
-/* informs an original variable, that a variable in the master problem was created, 
+/* informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
- * Saves this information in the original variable's data 
+ * Saves this information in the original variable's data
  * @todo this method needs a little love
  */
 extern
@@ -297,7 +296,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP_VAR** newvar
    );
 
-   
+
 #ifdef __cplusplus
 }
 #endif

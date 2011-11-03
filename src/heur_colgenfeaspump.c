@@ -17,22 +17,22 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+// #define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
 
 #include "heur_colgenfeaspump.h"
 #include "pricer_gcg.h"
+#include "pub_gcgvar.h"
 #include "relax_gcg.h"
-#include "struct_vardata.h"
 
 #include "scip/scipdefplugins.h"
 
 
 #define HEUR_NAME             "colgenfeaspump"
 #define HEUR_DESC             "column generation based feasibility pump"
-#define HEUR_DISPCHAR         '?'
+#define HEUR_DISPCHAR         'G'
 #define HEUR_PRIORITY         0
 #define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
@@ -195,8 +195,9 @@ SCIP_RETCODE solvePricingProblems(
 {
    SCIP* masterprob;
 
+   SCIP_VAR** origvars;
+   int norigvars;
    SCIP_VAR* origvar;
-   SCIP_VARDATA* vardata;
    SCIP_Real solval;
    SCIP_Real frac;
    SCIP_Real newobjcoeff;
@@ -240,11 +241,12 @@ SCIP_RETCODE solvePricingProblems(
             /* change objective function values */
             for( v = 0; v < nbinvars + nintvars; v++ )
             {
-               vardata = SCIPvarGetData(subvars[v]);
-               assert(vardata->vartype == GCG_VARTYPE_PRICING);
-               assert(j < vardata->data.pricingvardata.norigvars);
+               assert(GCGvarIsPricing(subvars[v]));
+               origvars = GCGpricingVarGetOrigvars(subvars[v]);
+               norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
+               assert(j < norigvars);
 
-               origvar = vardata->data.pricingvardata.origvars[j];
+               origvar = origvars[j];
                idx = SCIPvarGetProbindex(origvar);
                solval = SCIPgetSolVal(scip, relaxsol, origvar);
                frac = SCIPfeasFrac(scip, solval);
@@ -279,11 +281,12 @@ SCIP_RETCODE solvePricingProblems(
             }
             for( v = nbinvars + nintvars; v < nsubvars; v++ )
             {
-               vardata = SCIPvarGetData(subvars[v]);
-               assert(vardata->vartype == GCG_VARTYPE_PRICING);
-               assert(j < vardata->data.pricingvardata.norigvars);
+               assert(GCGvarIsPricing(subvars[v]));
+               origvars = GCGpricingVarGetOrigvars(subvars[v]);
+               norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
+               assert(j < norigvars);
 
-               origvar = vardata->data.pricingvardata.origvars[j];
+               origvar = origvars[j];
                idx = SCIPvarGetProbindex(origvar);
                SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], 0.0) );
                pricingobjs[idx] = newobjcoeff;
@@ -298,10 +301,10 @@ SCIP_RETCODE solvePricingProblems(
             /* set solution values of corresponding block in current working solution */
             for( v = 0; v < nsubvars; v++ )
             {
-               vardata = SCIPvarGetData(subvars[v]);
-               assert(vardata->vartype == GCG_VARTYPE_PRICING);
-               assert(vardata->data.pricingvardata.origvars != NULL);
-               assert(vardata->data.pricingvardata.origvars[0] != NULL);
+               assert(GCGvarIsPricing(subvars[v]));
+               origvars = GCGpricingVarGetOrigvars(subvars[v]);
+               norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
+               assert(j < norigvars);
 
                solval = SCIPgetSolVal(pricingprob, subsol, subvars[v]);
 
@@ -313,7 +316,7 @@ SCIP_RETCODE solvePricingProblems(
                   solval = SCIPfloor(scip, solval);
                }
 
-               SCIP_CALL( SCIPsetSolVal(scip, sol, vardata->data.pricingvardata.origvars[j], solval) );
+               SCIP_CALL( SCIPsetSolVal(scip, sol, origvars[j], solval) );
             }
 
 //            /* add column to the subSCIP of the master problem */
@@ -395,7 +398,6 @@ SCIP_RETCODE shiftSol(
    int score;
    int minscore;
    SCIP_VAR* var;
-   SCIP_VARDATA* vardata;
    SCIP_VAR* pricingvar;
    SCIP_VAR* shiftvar;
    int idx;
@@ -423,8 +425,9 @@ SCIP_RETCODE shiftSol(
             continue;
 
          var = vars[j];
-         vardata = SCIPvarGetData(var);
-         pricingvar = vardata->data.origvardata.pricingvar;
+         assert(GCGvarIsOriginal(var));
+         pricingvar = GCGoriginalVarGetPricingVar(var);
+
          score = pricingobjs[j] > 0 ? SCIPvarGetNLocksUp(pricingvar) + varshifts[j] : SCIPvarGetNLocksDown(pricingvar) + varshifts[j];
          if( score < minscore )
          {
@@ -472,18 +475,7 @@ SCIP_RETCODE shiftSol(
 /* TODO: Implement all necessary primal heuristic methods. The methods with an #if 0 ... #else #define ... are optional */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_HEURCOPY(heurCopyColgenfeaspump)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define heurCopyColgenfeaspump NULL
-#endif
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
@@ -836,10 +828,13 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
       /* change objective coefficients in master problem */
       for( i = 0; i < nmastervars; i++ )
       {
+         SCIP_VAR* mastervar;
+         SCIP_VAR** origvars;
+         SCIP_Real* origvals;
+         int norigvars;
+
          SCIP_VAR* origvar;
          SCIP_VAR* pricingvar;
-         SCIP_VARDATA* vardata;
-         SCIP_VARDATA* vardata2;
          // SCIP_VARTYPE vartype;
          SCIP_Real masterobjcoeff;
          SCIP_Real newobjcoeff;
@@ -847,32 +842,36 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          SCIP_Real relaxval;
          SCIP_Real solval;
 
+         mastervar = mastervars[i];
          masterobjcoeff = 0.0;
-         vardata = SCIPvarGetData(mastervars[i]);
+         origvars = GCGmasterVarGetOrigvars(mastervar);
+         origvals = GCGmasterVarGetOrigvals(mastervar);
+         norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
          /* for each original variable contained in mastervar, compute newobjcoeff
           * and add origval * newobjcoeff to objective coefficient of mastervar */
-         for( j = 0; j < vardata->data.mastervardata.norigvars; j++ )
+         for( j = 0; j < norigvars; j++ )
          {
-            origvar = vardata->data.mastervardata.origvars[j];
-            origval = vardata->data.mastervardata.origvals[j];
-            vardata2 = SCIPvarGetData(origvar);
-            pricingvar = vardata2->data.origvardata.pricingvar;
+            origvar = origvars[j];
+            origval = origvals[j];
+            assert(GCGvarIsOriginal(origvar));
+
+            pricingvar = GCGoriginalVarGetPricingVar(origvar);
             relaxval = SCIPgetSolVal(scip, relaxsol, origvar);
             solval = SCIPgetSolVal(scip, sol, origvar);
             //            vartype = SCIPvarGetType(origvar);
 
             /* compute new objective coefficient for original variable */
             if( SCIPisGT(scip, solval, relaxval) )
-               newobjcoeff = -alpha + (1.0 - alpha) * SCIPvarGetNLocksDown(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
+               newobjcoeff = -alpha + (1.0 - alpha) * (SCIPvarGetNLocksDown(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
             else
-               newobjcoeff = alpha + (1.0 - alpha) * SCIPvarGetNLocksUp(pricingvar) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar));
+               newobjcoeff = alpha + (1.0 - alpha) * (SCIPvarGetNLocksUp(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
 
             /* transfer objective coeff to master variable */
             masterobjcoeff += origval * newobjcoeff;
          }
 
-         SCIP_CALL( SCIPchgVarObjDive(masterprob, mastervars[i], masterobjcoeff) );
+         SCIP_CALL( SCIPchgVarObjDive(masterprob, mastervar, masterobjcoeff) );
       }
 
       /* the LP with the new (distance) objective is solved */

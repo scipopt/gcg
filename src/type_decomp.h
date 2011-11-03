@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: type_decomp.h 198 2011-01-06 16:58:56Z ggamrath $"
 
 /**@file   type_decomp.h
  * @ingroup TYPEDEFINITIONS
@@ -25,24 +24,6 @@ typedef struct DecDecomp DECDECOMP;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/**
- * initialize data for a detector
- */
-#define DEC_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
-
-/**
- * free data from a detector
- */
-#define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip)
-
-/**
- * detects the structure of a the problem
- */
-#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)
-
-
 
 #ifdef __cplusplus
 }

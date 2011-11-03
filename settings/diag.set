@@ -31,3 +31,4 @@ borderheur/metisverbose = FALSE
 #arrowheur/ubfactor = 0.1
 arrowheur/metisverbose = FALSE
 #arrowheur/metisuseptyperb = TRUE
+constraints/connected/enable = TRUE

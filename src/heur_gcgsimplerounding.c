@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgsimplerounding.c
  * @ingroup PRIMALHEURISTICS
@@ -55,18 +54,8 @@ struct SCIP_HeurData
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgsimplerounding)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
 
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-
-   return SCIP_OKAY;
-}
+#define heurCopyGcgsimplerounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 #define heurFreeGcgsimplerounding NULL
@@ -202,7 +191,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    /* don't call heuristic, if there are more fractional variables than roundable ones */
    if( nlpcands > heurdata->nroundablevars )
       return SCIP_OKAY;
-   
+
    *result = SCIP_DIDNOTFIND;
 
    SCIPdebugMessage("executing GCG simple rounding heuristic: %d fractionals\n", nlpcands);

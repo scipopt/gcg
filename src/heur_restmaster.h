@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: heur_xxx.h,v 1.15 2010/01/04 20:35:41 bzfheinz Exp $"
 
 /**@file   heur_restmaster.h
  * @brief  restricted master primal heuristic

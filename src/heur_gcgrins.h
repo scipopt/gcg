@@ -8,16 +8,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_relaxcolsel.h
- * @brief  relaxation based column selection primal heuristic
- * @author Christian Puchert
+/**@file   heur_gcgrins.h
+ * @brief  GCG RINS primal heuristic
+ * @author Timo Berthold
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_RELAXCOLSEL_H__
-#define __SCIP_HEUR_RELAXCOLSEL_H__
-
+#ifndef __SCIP_HEUR_GCGRINS_H__
+#define __SCIP_HEUR_GCGRINS_H__
 
 #include "scip/scip.h"
 
@@ -25,9 +24,9 @@
 extern "C" {
 #endif
 
-/** creates the relaxation based column selection primal heuristic and includes it in SCIP */
+/** creates RINS primal heuristic and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeHeurRelaxcolsel(
+SCIP_RETCODE SCIPincludeHeurGcgrins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

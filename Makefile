@@ -38,6 +38,7 @@ include $(SCIPDIR)/make/make.project
 
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
+			reader_dec.o \
 	 		reader_ref.o \
 			gcgplugins.o \
 			relax_gcg.o \
@@ -56,6 +57,7 @@ MAINOBJ		=	reader_blk.o \
 			heur_gcglinesdiving.o \
 			heur_gcgpscostdiving.o \
 			heur_gcgrens.o \
+			heur_gcgrins.o \
 			heur_gcgrounding.o \
 			heur_gcgsimplerounding.o \
 			heur_gcgshifting.o \
@@ -79,6 +81,7 @@ MAINOBJ		=	reader_blk.o \
 			dec_arrowheur.o \
 			dec_borderheur.o \
 			dec_stairheur.o \
+			cons_connected.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
@@ -102,6 +105,7 @@ ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK)
 endif
 
+
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
@@ -114,6 +118,11 @@ lint:		$(MAINSRC)
 			$(LINT) lint/$(MAINNAME).lnt +os\(lint.out\) -u -zero \
 			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
+
+.PHONY: scip
+scip:
+		@$(MAKE) -C $(SCIPDIR) libs $^
+
 
 .PHONY: doc
 doc:

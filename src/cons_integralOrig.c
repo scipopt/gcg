@@ -7,10 +7,9 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   cons_integralOrig.c
- * @ingroup CONSHDLRS 
+ * @ingroup CONSHDLRS
  * @brief  constraint handler for enforcing integrality of the transferred master solution in the original problem
  * @author Gerald Gamrath
  */
@@ -47,7 +46,7 @@
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
-{  
+{
    SCIP* origprob;
    SCIP_VAR** origvars;
    int norigvars;
@@ -78,7 +77,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the 
+   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
@@ -116,13 +115,13 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
          /* create the b&b-tree child-nodes of the current node */
          SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
          SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-         
+
          SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
          SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-         
+
          SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
          SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-         
+
          /* release constraints */
          SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
          SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
@@ -141,7 +140,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
-{  
+{
    SCIP* origprob;
    SCIP_Bool discretization;
 
@@ -162,7 +161,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the 
+   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
@@ -175,17 +174,17 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   
+
    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-   
+
    SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-   
+
    /* release constraints */
    SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
    SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-   
+
    *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
@@ -195,7 +194,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 /** feasibility check method of constraint handler for integral solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
-{  
+{
    SCIP* origprob;
    SCIP_VAR** origvars;
    int norigvars;
@@ -215,7 +214,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
    *result = SCIP_FEASIBLE;
 
-   /* if we use the discretization approach, we do not have to check for integrality of the solution in the 
+   /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( discretization )
@@ -250,10 +249,10 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
       if( !SCIPisFeasIntegral(scip, solval) )
       {
          *result = SCIP_INFEASIBLE;
-         
+
          if( printreason )
          {
-            SCIPinfoMessage(scip, NULL, "violation: integrality condition of variable <%s> = %.15g\n", 
+            SCIPinfoMessage(scip, NULL, "violation: integrality condition of variable <%s> = %.15g\n",
                SCIPvarGetName(origvars[v]), solval);
          }
       }
@@ -266,7 +265,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockIntegralOrig)
-{  
+{
    return SCIP_OKAY;
 }
 
@@ -291,6 +290,7 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
 #define consDeactiveIntegralOrig NULL
 #define consEnableIntegralOrig NULL
 #define consDisableIntegralOrig NULL
+#define consDelvarIntegralOrig NULL
 #define consPrintIntegralOrig NULL
 #define consCopyIntegralOrig NULL
 #define consParseIntegralOrig NULL
@@ -313,16 +313,16 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS, 
+         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
          CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
          SCIP_PROPTIMING_ALWAYS,
-         conshdlrCopyIntegralOrig, consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig, 
+         conshdlrCopyIntegralOrig, consFreeIntegralOrig, consInitIntegralOrig, consExitIntegralOrig,
          consInitpreIntegralOrig, consExitpreIntegralOrig, consInitsolIntegralOrig, consExitsolIntegralOrig,
          consDeleteIntegralOrig, consTransIntegralOrig, consInitlpIntegralOrig,
-         consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, 
+         consSepalpIntegralOrig, consSepasolIntegralOrig, consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig,
          consPropIntegralOrig, consPresolIntegralOrig, consRespropIntegralOrig, consLockIntegralOrig,
-         consActiveIntegralOrig, consDeactiveIntegralOrig, 
-         consEnableIntegralOrig, consDisableIntegralOrig,
+         consActiveIntegralOrig, consDeactiveIntegralOrig,
+         consEnableIntegralOrig, consDisableIntegralOrig, consDelvarIntegralOrig,
          consPrintIntegralOrig, consCopyIntegralOrig, consParseIntegralOrig,
          conshdlrdata) );
 

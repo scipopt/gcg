@@ -12,10 +12,9 @@
 /*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: reader_gp.c,v 1.21 2010/01/04 20:35:47 bzfheinz Exp $"
 
 /**@file   reader_gp.c
- * @ingroup FILEREADERS 
+ * @ingroup FILEREADERS
  * @brief  GP file reader
  * @author Martin Bergner
  */
@@ -421,12 +420,12 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP_CALL(SCIPallocMemory(scip, &readerdata));
    readerdata->decdecomp = NULL;
    readerdata->vartoindex = NULL;
-   
+
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
          readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
 
    /* add gp reader parameters */
-   
+
    return SCIP_OKAY;
 }

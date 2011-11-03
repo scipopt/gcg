@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 //#define SCIP_DEBUG
 /**@file   nodesel_master.c
  * @ingroup NODESELECTORS
@@ -79,7 +78,7 @@ SCIP_DECL_NODESELFREE(nodeselFreeMaster)
 /** node selection method of node selector */
 static
 SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
-{  
+{
    SCIP_NODESELDATA* nodeseldata;
    SCIP_NODE** nodes;
    SCIP_CONS* origcons;
@@ -102,7 +101,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    *selnode = NULL;
 
    orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
-   
+
    if( orignodenumber != nodeseldata->lastorignodenumber )
    {
       nodeseldata->lastorignodenumber = orignodenumber;
@@ -116,7 +115,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          assert(GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip));
          assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
          assert(GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip));
-         
+
          *selnode = SCIPgetRootNode(scip);
          SCIPdebugMessage("selected root node in the master program\n");
       }
@@ -128,7 +127,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          assert( (GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons)
             != (GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons));
 
-         /* the original cons is the left child of its parentcons, 
+         /* the original cons is the left child of its parentcons,
             select the left child of the corresponding parentcons in the master*/
          if( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
          {
@@ -142,7 +141,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
          }
 
-         /* the original cons is the right child of its parentcons, 
+         /* the original cons is the right child of its parentcons,
             select the right child of the corresponding parentcons in the master */
          else
          {
@@ -156,7 +155,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
                SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
          }
-         
+
       }
 
       if( *selnode == NULL )
@@ -201,14 +200,14 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 /** node comparison method of node selector */
 static
 SCIP_DECL_NODESELCOMP(nodeselCompMaster)
-{  
+{
    assert(nodesel != NULL);
    assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
    assert(scip != NULL);
 
    if( SCIPnodeGetNumber(node1) < SCIPnodeGetNumber(node2) )
       return 1;
-   else 
+   else
       return -1;
 }
 
@@ -234,7 +233,7 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
 
    /* include node selector */
    SCIP_CALL( SCIPincludeNodesel(scip, NODESEL_NAME, NODESEL_DESC, NODESEL_STDPRIORITY, NODESEL_MEMSAVEPRIORITY,
-         nodeselCopyMaster, nodeselFreeMaster, nodeselInitMaster, nodeselExitMaster, 
+         nodeselCopyMaster, nodeselFreeMaster, nodeselInitMaster, nodeselExitMaster,
          nodeselInitsolMaster, nodeselExitsolMaster, nodeselSelectMaster, nodeselCompMaster,
          nodeseldata) );
 

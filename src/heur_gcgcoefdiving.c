@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcgcoefdiving.c
  * @ingroup PRIMALHEURISTICS
@@ -515,7 +514,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
                /* penalize too small fractions */
                if( frac < 0.01 )
                   nviolrows *= 100;
-            
+
                /* prefer decisions on binary variables */
                if( !SCIPvarIsBinary(var) )
                   nviolrows *= 100;
@@ -550,7 +549,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
             /* penalize too small fractions */
             if( frac < 0.01 )
                nviolrows *= 100;
-            
+
             /* prefer decisions on binary variables */
             if( !SCIPvarIsBinary(var) )
                nviolrows *= 100;
@@ -575,7 +574,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
       if( bestcandmayrounddown || bestcandmayroundup )
       {
          SCIP_Bool success;
-         
+
          /* create solution from diving LP and try to round it */
          SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
          SCIP_CALL( SCIProundSol(scip, heurdata->sol, &success) );
@@ -583,7 +582,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
          if( success )
          {
             SCIPdebugMessage("GCG coefdiving found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
-         
+
             /* a rounded solution will only be accepted if its objective value is below the search bound */
             if( SCIPgetSolOrigObj(scip, heurdata->sol) <= searchbound )
             {
@@ -610,8 +609,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed, numerical troubles may have occured or 
-          * variable was fixed by propagation while backtracking => Abort diving! 
+         /* if the variable is already fixed, numerical troubles may have occured or
+          * variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
          {
@@ -652,7 +651,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
             SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
             SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
          }
-         
+
          /* apply domain propagation */
 //         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
@@ -666,7 +665,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
             SCIP_RETCODE retstat;
             retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
-            { 
+            {
                SCIPwarningMessage("Error while solving LP in GCG coefdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
@@ -861,7 +860,7 @@ SCIP_RETCODE SCIPincludeHeurGcgcoefdiving(
          "heuristics/gcgcoefdiving/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
-   
+
    return SCIP_OKAY;
 }
 

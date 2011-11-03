@@ -8,15 +8,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   cons_connected.h
+ * @brief  constraint handler for connected constraints
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_DEC_ARROWHEUR_H__
-#define __SCIP_DEC_ARROWHEUR_H__
+#ifndef __SCIP_CONS_CONNECTED_H__
+#define __SCIP_CONS_CONNECTED_H__
 
 
 #include "scip/scip.h"
@@ -25,9 +25,30 @@
 extern "C" {
 #endif
 
+/** creates the handler for connected constraints and includes it in SCIP */
 extern
-/** creates the arrowheur presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
+SCIP_RETCODE SCIPincludeConshdlrConnected(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** sets the decomp structure for the given constraint handler */
+extern
+void SCIPconsConnectedSetDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+   );
+
+/** creates and captures a connected constraint */
+extern
+SCIP_RETCODE SCIPcreateConsConnected(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
+   const char*           name                /**< name of constraint */
+   );
+
+/** returns whether a block diagonal structure was found */
+extern
+SCIP_Bool SCIPisMatrixBlockDiagonal(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

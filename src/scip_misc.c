@@ -5,6 +5,8 @@
  *      Author: mbergner
  */
 
+#define SCIP_DEBUG
+
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
 #include <string.h>

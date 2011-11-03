@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident ""
 
 /**@file   heur_gcglinesdiving.c
  * @ingroup PRIMALHEURISTICS
@@ -498,7 +497,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    while( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && nlpcands > 0
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
-         || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound)) 
+         || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
 	  && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
@@ -597,8 +596,8 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed, numerical troubles may have occured or 
-          * variable was fixed by propagation while backtracking => Abort diving! 
+         /* if the variable is already fixed, numerical troubles may have occured or
+          * variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
          {
@@ -652,7 +651,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
             SCIP_RETCODE retstat;
             retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
-            { 
+            {
                SCIPwarningMessage("Error while solving LP in GCG linesearchdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else

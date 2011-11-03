@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id: struct_branchgcg.h 198 2011-01-06 16:58:56Z ggamrath $"
 
 /**@file   struct_detector.h
  * @brief  datastructures for branching rules

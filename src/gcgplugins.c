@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#pragma ident "@(#) $Id$"
 
 /**@file   gcgplugins.c
  * @brief  SCIP plugins for generic column generation
@@ -126,6 +125,7 @@
 #include "scip/scipshell.h"
 #include "scip/disp_default.h"
 #include "reader_blk.h"
+#include "reader_dec.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "branch_orig.h"
@@ -138,6 +138,7 @@
 
 /* Martin's detection stuff */
 #include "cons_decomp.h"
+#include "cons_connected.h"
 #include "reader_gp.h"
 #include "dec_borderheur.h"
 #include "dec_arrowheur.h"
@@ -153,6 +154,7 @@
 #include "heur_gcglinesdiving.h"
 #include "heur_gcgpscostdiving.h"
 #include "heur_gcgrens.h"
+#include "heur_gcgrins.h"
 #include "heur_gcgrounding.h"
 #include "heur_gcgshifting.h"
 #include "heur_gcgsimplerounding.h"
@@ -253,6 +255,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
+   SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
@@ -262,6 +265,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* martin's decomp stuff */
    SCIP_CALL(SCIPincludeReaderGp(scip));
+   SCIP_CALL(SCIPincludeConshdlrConnected(scip));
    SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
    SCIP_CALL(SCIPincludeDetectionBorderheur(scip));
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
@@ -277,6 +281,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 //   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
