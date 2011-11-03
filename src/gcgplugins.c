@@ -141,6 +141,7 @@
 #include "reader_gp.h"
 #include "dec_borderheur.h"
 #include "dec_arrowheur.h"
+#include "dec_stairheur.h"
 
 /* Christian's heuristics */
 #include "heur_clasfeaspump.h"
@@ -264,6 +265,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
    SCIP_CALL(SCIPincludeDetectionBorderheur(scip));
    SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
+   SCIP_CALL(SCIPincludeDetectionStairheur(scip));
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );

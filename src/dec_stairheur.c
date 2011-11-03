@@ -33,9 +33,10 @@
 #include "cons_decomp.h"
 #include "struct_decomp.h"
 #include "scip_misc.h"
+#include "scip/struct_var.h"
 
 #define DEC_DETECTORNAME      "stairheur"   /**< name of the detector */
-#define DEC_PRIORITY          0              /**< priority of the detector */
+#define DEC_PRIORITY          -100              /**< priority of the detector */
 
 /* Default parameter settings*/
 #define DEFAULT_BLOCKS                    2     /**< number of blocks */
@@ -1028,16 +1029,81 @@ SCIP_RETCODE evaluateDecomposition(
 
 
 static
-DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
+DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 {
-
    DEC_STAIRHEURSCORES score;
    int i;
+   int j;
+   int k;
+   int norigcons; //number of constraints in the original problem
+   int norigvars; //number of variables in the original problem
+   int nconsvars; //number of variables in a constraint
+   int nentries; //number of entries in the constraint matrix
    //char filename[SCIP_MAXSTRLEN];
    DEC_DETECTOR* stairheur;
    DEC_DETECTORDATA* detectordata;
+
+   SCIP_VAR** origvars; //array of all variables of the original problem
+   SCIP_CONS** origcons_array; //array of constraints of the original problem
+   SCIP_CONS* origcons; //one constraint of the original problem
+   SCIP_VAR** consvars; //array of variables that occur in a constraint (unequal zero)
+   SCIP_VAR* consvar; //one variable that occurs in a constraint
+   SCIP_Real* consvals; //array of values of the variables in a constraint (coefficients)
+   SCIP_Real consval;
+   SCIP_Real* consmatrix; //constraint matrix
+
    //SCIPinfoMessage(scip, NULL, "detectandbuild arrowhead:\n");
    assert(scip != NULL);
+
+   origvars = SCIPgetOrigVars(scip);
+   norigvars = SCIPgetNOrigVars(scip);
+   origcons_array=SCIPgetOrigConss(scip);
+   norigcons = SCIPgetNOrigConss(scip);
+   SCIPdebugMessage("XXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\nXXXX\n");
+   SCIPwriteOrigProblem(scip, NULL, NULL, FALSE);
+   //allocate memory for constraint matrix
+   nentries=norigvars*norigcons;
+   SCIP_CALL(SCIPallocMemoryArray(scip, &consmatrix, nentries));
+   for( j=0; j < nentries; ++j)
+   {
+      consmatrix[j]=0.0;
+   }
+   //loop over all constrains of the original problem
+   for( i=0; i<norigcons; ++i)
+   {
+	   origcons=origcons_array[i];
+	   nconsvars=SCIPgetNVarsXXX(scip, origcons);
+	   consvars=SCIPgetVarsXXX(scip, origcons);
+	   consvals=SCIPgetValsXXX(scip, origcons);
+
+	   //loop over all variables in the constraint
+	   for( k = 0; k < nconsvars; ++k)
+	   {
+	      consvar=consvars[k];
+	      consval=consvals[k];
+	      //find consvar in the array of all variables of the original problem
+	      for(j = 0; j < norigvars; ++j)
+	      {
+	         if(consvar->index == origvars[j]->index)
+	         {
+	            consmatrix[i*norigvars+j]=consval;
+	            break;
+	         }
+	      }
+	   }
+   }
+   //print the matrix
+   for(i = 0; i < norigcons; ++i)
+   {
+      for(j = 0; j < norigvars; ++j)
+      {
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "%f ", consmatrix[i*norigvars+j]);
+      }
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "%\n");
+   }
+   //free memory for constraint matrix
+  SCIPfreeMemoryArray(scip, &consmatrix);
+
 
    stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
    detectordata = DECdetectorGetData(stairheur);
@@ -1213,7 +1279,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, StairheurSetDecomp, initStairheur, exitStairheur, getPriority));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildStair, StairheurSetDecomp, initStairheur, exitStairheur, getPriority));
 
    /* add stairheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));
