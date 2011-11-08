@@ -46,10 +46,8 @@
 #define DEFAULT_MINIMPROVE    0.01          /* factor by which crossover should at least improve the incumbent     */
 #define DEFAULT_MINNODES      200LL         /* minimum number of nodes to regard in the subproblem                 */
 #define DEFAULT_MINFIXINGRATE 0.4           /* minimum percentage of integer variables that have to be fixed       */
-#define DEFAULT_MAXFIXINGRATE 1.000         /* maximum percentage of integer variables that can be fixed           */
 #define DEFAULT_NODESOFS      200LL         /* number of nodes added to the contingent of the total nodes          */
 #define DEFAULT_NODESQUOT     0.1           /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_MAXRUNS       1             /* maximum times the heuristic runs on an LP solution                  */
 #define DEFAULT_NUSEDPTS      2             /* number of extreme pts per block that will be taken into account     */
 #define DEFAULT_NWAITINGNODES 200LL         /* number of nodes without incumbent change heuristic should wait      */
 #define DEFAULT_RANDOMIZATION FALSE         /* should the choice which sols to take be randomized?                 */
@@ -78,12 +76,10 @@ struct SCIP_HeurData
    SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem     */
 
    int                   nusedpts;          /**< number of extreme pts per block that will be taken into account   */
-   int                   maxruns;           /**< maximum times the heuristic runs on an LP solution                */
    SCIP_Longint          nwaitingnodes;     /**< number of nodes without incumbent change heuristic should wait    */
    unsigned int          nfailures;         /**< number of failures since last successful call                     */
    SCIP_Longint          nextnodenumber;    /**< number of BnB nodes at which crossover should be called next      */
    SCIP_Real             minfixingrate;     /**< minimum percentage of integer variables that have to be fixed     */
-   SCIP_Real             maxfixingrate;     /**< maximum percentage of integer variables that can be fixed         */
    SCIP_Real             minimprove;        /**< factor by which crossover should at least improve the incumbent   */
    SCIP_Bool             randomization;     /**< should the choice which sols to take be randomized?               */
    SCIP_Bool             dontwaitatroot;    /**< should the nwaitingnodes parameter be ignored at the root node?   */
@@ -1375,10 +1371,6 @@ SCIP_RETCODE SCIPincludeHeurExtremepoints(
          "minimum number of nodes required to start the subproblem",
          &heurdata->minnodes, TRUE, DEFAULT_MINNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/maxruns",
-         "maximum times the heuristic runs on an LP solution",
-         &heurdata->maxruns, FALSE, DEFAULT_MAXRUNS, 1, INT_MAX, NULL, NULL) );
-
    SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/nusedpts",
          "number of extreme pts per block that will be taken into account",
          &heurdata->nusedpts, FALSE, DEFAULT_NUSEDPTS, 2, INT_MAX, NULL, NULL) );
@@ -1394,10 +1386,6 @@ SCIP_RETCODE SCIPincludeHeurExtremepoints(
    SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minfixingrate",
          "minimum percentage of integer variables that have to be fixed",
          &heurdata->minfixingrate, FALSE, DEFAULT_MINFIXINGRATE, 0.0, 1.0, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/maxfixingrate",
-         "maximum percentage of integer variables that can be fixed",
-         &heurdata->maxfixingrate, FALSE, DEFAULT_MAXFIXINGRATE, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minimprove",
          "factor by which crossover should at least improve the incumbent",
