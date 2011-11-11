@@ -37,8 +37,10 @@
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
+#include "scip/heur_clique.h"
 #include "scip/heur_coefdiving.h"
 #include "scip/heur_crossover.h"
+#include "scip/heur_dins.h"
 #include "scip/heur_feaspump.h"
 #include "scip/heur_fixandinfer.h"
 #include "scip/heur_fracdiving.h"
@@ -56,9 +58,13 @@
 #include "scip/heur_rins.h"
 #include "scip/heur_rootsoldiving.h"
 #include "scip/heur_rounding.h"
+#include "scip/heur_shiftandpropagate.h"
 #include "scip/heur_shifting.h"
 #include "scip/heur_simplerounding.h"
+#include "scip/heur_twoopt.h"
+#include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
+#include "scip/heur_zirounding.h"
 #endif
 
 #include "scip/presol_dualfix.h"
@@ -146,8 +152,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurClique(scip) );
    SCIP_CALL( SCIPincludeHeurCoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurCrossover(scip) );
+   SCIP_CALL( SCIPincludeHeurDins(scip) );
    SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
@@ -165,8 +173,12 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRounding(scip) );
+   SCIP_CALL( SCIPincludeHeurShiftandpropagate(scip) );
    SCIP_CALL( SCIPincludeHeurShifting(scip) );
+   SCIP_CALL( SCIPincludeHeurTwoopt(scip) );
+   SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
+   SCIP_CALL( SCIPincludeHeurZirounding(scip) );
 
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
