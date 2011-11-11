@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-// #define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -546,6 +546,9 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    SCIP_CONS** masterconss;
    int nmasterconss;
 
+#ifdef SCIP_DEBUG
+   SCIP_VAR** origvars;
+#endif
    int nvars;
 
    int i;
@@ -565,11 +568,15 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    assert(masterconss != NULL);
 
    /* get original variable data */
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPgetVarsData(scip, &origvars, &nvars, NULL, NULL, NULL, NULL) );
+#else
    nvars = SCIPgetNVars(scip);
+#endif
 
    /* allocate memory, initialize heuristic's data */
-   SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->masterlocksup, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->masterlocksdown, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->masterlocksup, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->masterlocksdown, nvars) );
    heurdata->nvars = nvars;
    for( i = 0; i < nvars; ++i )
    {
@@ -582,54 +589,58 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    for( i = 0; i < nmasterconss; ++i )
    {
       SCIP_CONS* cons;
-      SCIP_ROW* row;
-      SCIP_COL** cols;
-      SCIP_Real* rowvals;
+      SCIP_VAR** vars;
+      SCIP_Real* vals;
+      int nnonz;
       SCIP_Real lhs;
       SCIP_Real rhs;
-      int nnonz;
 
       /* get constraint; the constraint must be linear */
       cons = masterconss[i];
       assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0);
 
-      /* get corresponding LP row, its columns, the nonzero entries, the lhs and the rhs */
-      row = SCIPgetRowLinear(scip, cons);
-      cols = SCIProwGetCols(row);
-      rowvals = SCIProwGetVals(row);
-      nnonz = SCIProwGetNNonz(row);
-      lhs = SCIProwGetLhs(row);
-      rhs = SCIProwGetRhs(row);
+      /* get the variables of this constraints, their coefficients, the lhs and the rhs */
+      vars = SCIPgetVarsLinear(scip, cons);
+      vals = SCIPgetValsLinear(scip, cons);
+      nnonz = SCIPgetNVarsLinear(scip, cons);
+      lhs = SCIPgetLhsLinear(scip, cons);
+      rhs = SCIPgetRhsLinear(scip, cons);
 
       /* for each entry, get the variable and determine whether there is a lock */
       for( j = 0; j < nnonz; ++j )
       {
-         SCIP_VAR* var;
          int idx;
          SCIP_Real coef;
 
-         /* get variable corresponding to the column,  its problem index and its coefficient */
-         var = SCIPcolGetVar(cols[j]);
-         idx = SCIPvarGetProbindex(var);
-         coef = rowvals[j];
+         /* get variable index and coefficient */
+         idx = SCIPvarGetProbindex(vars[j]);
+         coef = vals[j];
 
          /* compute the locks */
          if( SCIPisPositive(scip, coef) )
          {
             if( !SCIPisInfinity(scip, -lhs) )
-               ++heurdata->masterlocksdown;
+               ++heurdata->masterlocksdown[idx];
             if( !SCIPisInfinity(scip, rhs) )
-               ++heurdata->masterlocksup;
+               ++heurdata->masterlocksup[idx];
          }
          if( SCIPisNegative(scip, coef) )
          {
             if( !SCIPisInfinity(scip, -lhs) )
-               ++heurdata->masterlocksup;
+               ++heurdata->masterlocksup[idx];
             if( !SCIPisInfinity(scip, rhs) )
-               ++heurdata->masterlocksdown;
+               ++heurdata->masterlocksdown[idx];
          }
       }
    }
+
+#ifdef SCIP_DEBUG
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIPdebugMessage("Variable %s: nlocksup=%d, nlocksdown=%d\n", SCIPvarGetName(origvars[i]),
+                            heurdata->masterlocksup[i], heurdata->masterlocksdown[i]);
+   }
+#endif
 
    return SCIP_OKAY;
 }
@@ -646,8 +657,8 @@ SCIP_DECL_HEUREXITSOL(heurExitsolColgenfeaspump)
    assert(heurdata != NULL);
 
    /* free memory */
-   SCIPfreeBufferArrayNull(scip, &heurdata->masterlocksup);
-   SCIPfreeBufferArrayNull(scip, &heurdata->masterlocksdown);
+   SCIPfreeMemoryArray(scip, &heurdata->masterlocksup);
+   SCIPfreeMemoryArray(scip, &heurdata->masterlocksdown);
 
    return SCIP_OKAY;
 }
