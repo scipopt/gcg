@@ -27,6 +27,7 @@
 #include "pub_gcgvar.h"
 #include "relax_gcg.h"
 
+#include "scip/cons_linear.h"
 #include "scip/scipdefplugins.h"
 
 
@@ -49,6 +50,7 @@
 #define DEFAULT_SHIFTRATE        0.05   /**< percentage of variables to be shifted in case of a 1-cycle */
 
 #define MINLPITER                5000  /**< minimal number of LP iterations allowed in each LP solving call */
+#define M_PENALTY                100
 
 
 
@@ -72,6 +74,11 @@ struct SCIP_HeurData
    /* statistics */
    SCIP_Longint      nlpiterations;      /**< number of LP iterations used in this heuristic */
    int               nsuccess;           /**< number of runs that produced at least one feasible solution */
+
+   /* data */
+   int*              masterlocksup;
+   int*              masterlocksdown;
+   int               nvars;
 };
 
 
@@ -186,6 +193,7 @@ SCIP_RETCODE performDivingOnMaster(
 static
 SCIP_RETCODE solvePricingProblems(
       SCIP*             scip,
+      SCIP_HEURDATA*    heurdata,
       SCIP_Real         alpha,
       SCIP_SOL*         relaxsol,
       SCIP_SOL*         sol,
@@ -202,6 +210,8 @@ SCIP_RETCODE solvePricingProblems(
    SCIP_Real frac;
    SCIP_Real newobjcoeff;
    int idx;
+   int nlocksup;
+   int nlocksdown;
 
    int npricingprobs;
    SCIP* pricingprob;
@@ -219,17 +229,21 @@ SCIP_RETCODE solvePricingProblems(
    masterprob = GCGrelaxGetMasterprob(scip);
    npricingprobs = GCGrelaxGetNPricingprobs(scip);
 
+   /* for each pricing problem, change the objective coefficients and solve it */
    for( i = 0; i < npricingprobs; i++ )
    {
+      /* get the pricing problem */
       pricingprob = GCGrelaxGetPricingprob(scip, i);
       assert(pricingprob == NULL || GCGrelaxGetNIdenticalBlocks(scip, i) > 0);
       assert(pricingprob != NULL || GCGrelaxGetNIdenticalBlocks(scip, i) == 0);
 
-      /* If the pricing problem is relevant, i. e. not represented by an identical one,
-       * solve it */
+      /* Due to identical blocks, it may be that the pricing problem of the current block
+       * is represented by another one */
       if( pricingprob != NULL )
       {
          int nidenticalblocks;
+
+         /* get the pricing variables and the number of pricing problems represented by the current problem */
          SCIP_CALL( SCIPgetVarsData(pricingprob, &subvars, &nsubvars, &nbinvars, &nintvars, NULL, NULL) );
          nidenticalblocks = GCGrelaxGetNIdenticalBlocks(scip, i);
 
@@ -238,7 +252,8 @@ SCIP_RETCODE solvePricingProblems(
           * once for each block */
          for( j = 0; j < nidenticalblocks; j++ )
          {
-            /* change objective function values */
+            /* change objective function values;
+             * first, look at the binary and integer variables */
             for( v = 0; v < nbinvars + nintvars; v++ )
             {
                assert(GCGvarIsPricing(subvars[v]));
@@ -246,12 +261,15 @@ SCIP_RETCODE solvePricingProblems(
                norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
                assert(j < norigvars);
 
+               /* get corresponding variable in the original problem, its index,
+                * relaxation solution value and its fractionality */
                origvar = origvars[j];
                idx = SCIPvarGetProbindex(origvar);
                solval = SCIPgetSolVal(scip, relaxsol, origvar);
                frac = SCIPfeasFrac(scip, solval);
 
-               /* variables which are already integral, are treated separately */
+               /* compute the objective coefficient;
+                * variables which are already integral, are treated separately */
                if( SCIPisFeasZero(scip, frac) )
                {
                   SCIP_Real lb;
@@ -261,24 +279,36 @@ SCIP_RETCODE solvePricingProblems(
                   lb = SCIPvarGetLbLocal(origvar);
                   ub = SCIPvarGetUbLocal(origvar);
                   if( SCIPisFeasEQ(scip, solval, lb) )
-                     newobjcoeff = 1.0;
+                     newobjcoeff = M_PENALTY;
                   else if( SCIPisFeasEQ(scip, solval, ub) )
-                     newobjcoeff = -1.0;
+                     newobjcoeff = -M_PENALTY;
                   else
                      newobjcoeff = 0.0;
                }
                else
                {
-                  if( frac > 0.5 )
-                     newobjcoeff = -1.0;
+                  /* decide by the number of locks (w.r.t. the master constraints)
+                   * in which direction the variable should preferably go */
+                  nlocksup = heurdata->masterlocksup[idx];
+                  nlocksdown = heurdata->masterlocksdown[idx];
+
+                  if( nlocksup > nlocksdown )
+                     newobjcoeff = - (SCIP_Real) nlocksup / (SCIP_Real) (nlocksup + nlocksdown);
+                  else if ( nlocksdown > nlocksup )
+                     newobjcoeff = (SCIP_Real) nlocksdown / (SCIP_Real) (nlocksup + nlocksdown);
                   else
-                     newobjcoeff = 1.0;
+                     newobjcoeff = 0.0;
                }
 
+               /* change the objective coefficient */
                SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], newobjcoeff) );
                pricingobjs[idx] = newobjcoeff;
+
+               /* reset the solution value to zero */
                SCIP_CALL( SCIPsetSolVal(scip, sol, origvar, 0.0) );
             }
+
+            /* now, look at continous variables; all of them will get objective coefficient zero */
             for( v = nbinvars + nintvars; v < nsubvars; v++ )
             {
                assert(GCGvarIsPricing(subvars[v]));
@@ -286,15 +316,19 @@ SCIP_RETCODE solvePricingProblems(
                norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
                assert(j < norigvars);
 
+               /* get corresponding variable in the original problem and its index */
                origvar = origvars[j];
                idx = SCIPvarGetProbindex(origvar);
+
+               /* change the objective coefficient */
                SCIP_CALL( SCIPchgVarObj(pricingprob, subvars[v], 0.0) );
                pricingobjs[idx] = newobjcoeff;
+
+               /* reset the solution value to zero */
                SCIP_CALL( SCIPsetSolVal(scip, sol, origvar, 0.0) );
             }
 
             /* solve subproblem for current block */
-//            GCGpricerSolveSinglePricingProblem(masterprob, i, &solvars, &solvals, &nsolvars, &status);
             SCIP_CALL( SCIPsolve(pricingprob) );
             subsol = SCIPgetBestSol(pricingprob);
 
@@ -306,6 +340,7 @@ SCIP_RETCODE solvePricingProblems(
                norigvars = GCGpricingVarGetNOrigvars(subvars[v]);
                assert(j < norigvars);
 
+               /* get solution value */
                solval = SCIPgetSolVal(pricingprob, subsol, subvars[v]);
 
                /* solution values which should be integral may not be integral due to numerics;
@@ -318,9 +353,6 @@ SCIP_RETCODE solvePricingProblems(
 
                SCIP_CALL( SCIPsetSolVal(scip, sol, origvars[j], solval) );
             }
-
-//            /* add column to the subSCIP of the master problem */
-//            SCIP_CALL( addVarToMastersub(scip, mastersub, i, nsolvars, solvars, solvals, subvars, nsubvars, consmapfw, varcounter) );
 
             /* free pricing problem s. t. it can be solved again */
             SCIP_CALL( SCIPfreeTransform(pricingprob) );
@@ -472,8 +504,6 @@ SCIP_RETCODE shiftSol(
  * Callback methods of primal heuristic
  */
 
-/* TODO: Implement all necessary primal heuristic methods. The methods with an #if 0 ... #else #define ... are optional */
-
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
 #define heurCopyColgenfeaspump NULL
 
@@ -499,63 +529,128 @@ SCIP_DECL_HEURFREE(heurFreeColgenfeaspump)
 
 
 /** initialization method of primal heuristic (called after problem was transformed) */
-#if 0
-static
-SCIP_DECL_HEURINIT(heurInitColgenfeaspump)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define heurInitColgenfeaspump NULL
-#endif
 
 
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
-#if 0
-static
-SCIP_DECL_HEUREXIT(heurExitColgenfeaspump)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
 #define heurExitColgenfeaspump NULL
-#endif
 
 
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
-#if 0
 static
 SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+   SCIP* masterprob;
+   SCIP_HEURDATA* heurdata;
+
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+
+   int nvars;
+
+   int i;
+   int j;
+
+   /* get heuristic's data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get (linear) constraints in the original problem that were transferred to the master problem */
+   masterconss = GCGrelaxGetLinearOrigMasterConss(scip);
+   nmasterconss = GCGrelaxGetNMasterConss(scip);
+   assert(masterconss != NULL);
+
+   /* get original variable data */
+   nvars = SCIPgetNVars(scip);
+
+   /* allocate memory, initialize heuristic's data */
+   SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->masterlocksup, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &heurdata->masterlocksdown, nvars) );
+   heurdata->nvars = nvars;
+   for( i = 0; i < nvars; ++i )
+   {
+      heurdata->masterlocksup[i] = 0;
+      heurdata->masterlocksdown[i] = 0;
+   }
+
+   /* for each master constraint, get the LP row in the original problem and check if there are
+    * locks for the variables in this row */
+   for( i = 0; i < nmasterconss; ++i )
+   {
+      SCIP_CONS* cons;
+      SCIP_ROW* row;
+      SCIP_COL** cols;
+      SCIP_Real* rowvals;
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      int nnonz;
+
+      /* get constraint; the constraint must be linear */
+      cons = masterconss[i];
+      assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0);
+
+      /* get corresponding LP row, its columns, the nonzero entries, the lhs and the rhs */
+      row = SCIPgetRowLinear(scip, cons);
+      cols = SCIProwGetCols(row);
+      rowvals = SCIProwGetVals(row);
+      nnonz = SCIProwGetNNonz(row);
+      lhs = SCIProwGetLhs(row);
+      rhs = SCIProwGetRhs(row);
+
+      /* for each entry, get the variable and determine whether there is a lock */
+      for( j = 0; j < nnonz; ++j )
+      {
+         SCIP_VAR* var;
+         int idx;
+         SCIP_Real coef;
+
+         /* get variable corresponding to the column,  its problem index and its coefficient */
+         var = SCIPcolGetVar(cols[j]);
+         idx = SCIPvarGetProbindex(var);
+         coef = rowvals[j];
+
+         /* compute the locks */
+         if( SCIPisPositive(scip, coef) )
+         {
+            if( !SCIPisInfinity(scip, -lhs) )
+               ++heurdata->masterlocksdown;
+            if( !SCIPisInfinity(scip, rhs) )
+               ++heurdata->masterlocksup;
+         }
+         if( SCIPisNegative(scip, coef) )
+         {
+            if( !SCIPisInfinity(scip, -lhs) )
+               ++heurdata->masterlocksup;
+            if( !SCIPisInfinity(scip, rhs) )
+               ++heurdata->masterlocksdown;
+         }
+      }
+   }
 
    return SCIP_OKAY;
 }
-#else
-#define heurInitsolColgenfeaspump NULL
-#endif
 
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#if 0
 static
 SCIP_DECL_HEUREXITSOL(heurExitsolColgenfeaspump)
 {  /*lint --e{715}*/
-   SCIPerrorMessage("method of colgenfeaspump primal heuristic not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+   SCIP_HEURDATA* heurdata;
+
+   /* get heuristic's data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* free memory */
+   SCIPfreeBufferArrayNull(scip, &heurdata->masterlocksup);
+   SCIPfreeBufferArrayNull(scip, &heurdata->masterlocksdown);
 
    return SCIP_OKAY;
 }
-#else
-#define heurExitsolColgenfeaspump NULL
-#endif
 
 
 /** calculates an adjusted maximal number of LP iterations */
@@ -611,6 +706,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    int nfracs;
    int nloops;
    int nmastervars;
+   int oldnmastervars;
    int npricingprobs;
    int nshifts;
    int nstallloops;
@@ -784,7 +880,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
       /* solve all pricing problems and store the result in the current working solution */
       SCIPdebugMessage(" -> solving pricing problem\n");
-      SCIP_CALL( solvePricingProblems(scip, alpha, relaxsol, sol, pricingobjs, &varcounter) );
+      SCIP_CALL( solvePricingProblems(scip, heurdata, alpha, relaxsol, sol, pricingobjs, &varcounter) );
       SCIPdebugMessage(" -> new solution, obj=%g\n", SCIPgetSolOrigObj(scip, sol));
 
       /* check for cycles */
@@ -825,6 +921,13 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          break;
       }
 
+      /* add new columns to the master problem and update master variables array */
+      oldnmastervars = nmastervars;
+      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
+      SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+      SCIPdebugMessage(" -> added %d new master variables\n", nmastervars - oldnmastervars);
+
+
       /* change objective coefficients in master problem */
       for( i = 0; i < nmastervars; i++ )
       {
@@ -834,13 +937,12 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          int norigvars;
 
          SCIP_VAR* origvar;
-         SCIP_VAR* pricingvar;
-         // SCIP_VARTYPE vartype;
          SCIP_Real masterobjcoeff;
          SCIP_Real newobjcoeff;
          SCIP_Real origval;
-         SCIP_Real relaxval;
+//         SCIP_Real relaxval;
          SCIP_Real solval;
+         SCIP_Real frac;
 
          mastervar = mastervars[i];
          masterobjcoeff = 0.0;
@@ -856,21 +958,39 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
             origval = origvals[j];
             assert(GCGvarIsOriginal(origvar));
 
-            pricingvar = GCGoriginalVarGetPricingVar(origvar);
-            relaxval = SCIPgetSolVal(scip, relaxsol, origvar);
+//            relaxval = SCIPgetSolVal(scip, relaxsol, origvar);
             solval = SCIPgetSolVal(scip, sol, origvar);
-            //            vartype = SCIPvarGetType(origvar);
+            frac = SCIPfeasFrac(scip, solval);
 
-            /* compute new objective coefficient for original variable */
-            if( SCIPisGT(scip, solval, relaxval) )
-               newobjcoeff = -alpha + (1.0 - alpha) * (SCIPvarGetNLocksDown(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
+            /* variables which are already integral, are treated separately */
+            if( SCIPisFeasZero(scip, frac) )
+            {
+               SCIP_Real lb;
+               SCIP_Real ub;
+
+               /* variables at their bounds should be kept there */
+               lb = SCIPvarGetLbLocal(origvar);
+               ub = SCIPvarGetUbLocal(origvar);
+               if( SCIPisFeasEQ(scip, solval, lb) )
+                  newobjcoeff = 1.0;
+               else if( SCIPisFeasEQ(scip, solval, ub) )
+                  newobjcoeff = -1.0;
+               else
+                  newobjcoeff = 0.0;
+            }
             else
-               newobjcoeff = alpha + (1.0 - alpha) * (SCIPvarGetNLocksUp(pricingvar) + 1) / (SCIP_Real) (SCIPvarGetNLocksDown(pricingvar) + SCIPvarGetNLocksUp(pricingvar) + 1);
+            {
+               if( frac > 0.5 )
+                  newobjcoeff = - 1.0;
+               else
+                  newobjcoeff = 1.0;
+            }
 
-            /* transfer objective coeff to master variable */
+            /* transfer objective coefficient to the master variable */
             masterobjcoeff += origval * newobjcoeff;
          }
 
+         /* change objective coefficient in the master problem */
          SCIP_CALL( SCIPchgVarObjDive(masterprob, mastervar, masterobjcoeff) );
       }
 
