@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -197,8 +197,7 @@ SCIP_RETCODE solvePricingProblems(
       SCIP_Real         alpha,
       SCIP_SOL*         relaxsol,
       SCIP_SOL*         sol,
-      SCIP_Real*        pricingobjs,
-      int*              varcounter
+      SCIP_Real*        pricingobjs
       )
 {
    SCIP* masterprob;
@@ -719,10 +718,9 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    int nmastervars;
    int oldnmastervars;
    int npricingprobs;
-   int nshifts;
+//   int nshifts;
    int nstallloops;
    int nvars;
-   int varcounter;
 
    int i;
    int j;
@@ -849,7 +847,6 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    nstallloops = 0;
    alpha = 1.0;
    cycle = -1;
-   varcounter = 0;
 
    while( nfracs > 0
       && heurdata->nlpiterations < adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops)
@@ -891,37 +888,38 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
       /* solve all pricing problems and store the result in the current working solution */
       SCIPdebugMessage(" -> solving pricing problem\n");
-      SCIP_CALL( solvePricingProblems(scip, heurdata, alpha, relaxsol, sol, pricingobjs, &varcounter) );
-      SCIPdebugMessage(" -> new solution, obj=%g\n", SCIPgetSolOrigObj(scip, sol));
+      SCIP_CALL( solvePricingProblems(scip, heurdata, alpha, relaxsol, sol, pricingobjs) );
+      SCIPdebugMessage(" -> new integer solution, obj=%g\n", SCIPgetSolOrigObj(scip, sol));
 
       /* check for cycles */
       SCIP_CALL( checkCycles(scip, heurdata->cyclelength, nloops, sol, alpha, lastsols, lastalphas, &cycle) );
 
+      /* @todo: What to do when a cycle occurs? */
       if( cycle >= 0 )
       {
-         SCIPdebugMessage(" -> cycle of length %d detected, shift variables\n", cycle + 1);
-         SCIP_CALL( shiftSol(scip, sol, heurdata->shiftrate, pricingobjs, &nshifts) );
-         if( nshifts > 0 )
-         {
-            SCIPdebugMessage(" -> %d shiftings performed\n", nshifts);
-         }
-         else
-         {
-            SCIPdebugMessage(" -> no shifting performed - change alpha\n");
-            alpha /= objfactor * objfactor;
-            alpha = MIN(alpha, 1.0);
-            nstallloops++;
-            continue;
-         }
+         SCIPdebugMessage(" -> cycle of length %d detected\n", cycle + 1);
+//         SCIP_CALL( shiftSol(scip, sol, heurdata->shiftrate, pricingobjs, &nshifts) );
+//         if( nshifts > 0 )
+//         {
+//            SCIPdebugMessage(" -> %d shiftings performed\n", nshifts);
+//         }
+//         else
+//         {
+//            SCIPdebugMessage(" -> no shifting performed - change alpha\n");
+//            alpha /= objfactor * objfactor;
+//            alpha = MIN(alpha, 1.0);
+//            nstallloops++;
+//            continue;
+//         }
       }
-//      else if( cycle > 0)
-//      {
-//         SCIPdebugMessage(" -> cycle of length %d detected, change alpha\n", cycle + 1);
+      else if( cycle > 0)
+      {
+         SCIPdebugMessage(" -> cycle of length %d detected\n", cycle + 1);
 //         alpha /= objfactor * objfactor;
 //         alpha = MIN(alpha, 1.0);
 //         nstallloops++;
 //         continue;
-//      }
+      }
 
       /* try to add obtained pricing solution to the solution pool; if it is feasible, then stop */
       SCIP_CALL( SCIPtrySol(scip, sol, FALSE, TRUE, FALSE, TRUE, &success) );
@@ -931,8 +929,13 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          *result = SCIP_FOUNDSOL;
          break;
       }
+      else
+      {
+         SCIPdebugMessage(" -> infeasible\n");
+      }
 
       /* add new columns to the master problem and update master variables array */
+      /* @todo: this is not allowed in diving mode */
       oldnmastervars = nmastervars;
       SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
       SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
