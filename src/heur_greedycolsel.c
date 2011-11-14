@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -52,6 +52,7 @@ struct SCIP_HeurData
 {
    int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
 
+   SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
    int                  lastncols;            /**< number of columns in the last call of the heuristic       */
 };
 
@@ -63,7 +64,7 @@ struct SCIP_HeurData
  */
 
 
-/* How would the number of violated rows change if mastervar were increased?  */
+/** How would the number of violated rows change if mastervar were increased?  */
 static
 int getViolationChange(
       SCIP*                   scip,
@@ -120,7 +121,7 @@ int getViolationChange(
    return violchange;
 }
 
-/* get the index of the "best" master variable w.r.t. pseudo costs */
+/** get the index of the "best" master variable w.r.t. pseudo costs */
 static
 SCIP_RETCODE getBestMastervar(
       SCIP*                   scip,
@@ -197,7 +198,7 @@ SCIP_RETCODE getBestMastervar(
    return SCIP_OKAY;
 }
 
-/* update activities */
+/** update activities */
 static
 SCIP_RETCODE updateActivities(
       SCIP*                   scip,
@@ -250,6 +251,77 @@ SCIP_RETCODE updateActivities(
    return SCIP_OKAY;
 }
 
+/** for a given block, search if there is a master variable corresponding to the zero solution;
+ * @todo: it would be more efficient to "mark" master variables as being trivial */
+static
+SCIP_RETCODE searchZeroMastervar(
+      SCIP*             scip,
+      int               block,
+      SCIP_VAR**        zeromastervar
+      )
+{
+   SCIP_VAR** mastervars;
+   int nmastervars;
+
+   SCIP_VAR* mastervar;
+   int b;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   int i;
+   int j;
+
+   /* get variable data of the master problem */
+   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   *zeromastervar = NULL;
+
+   /* go through all master variables */
+   for( i = 0; i < nmastervars && *zeromastervar == NULL; ++i )
+   {
+      mastervar = mastervars[i];
+      b = GCGvarGetBlock(mastervar);
+
+      /* only regard master variables belonging to the block we are searching for */
+      if( b == block )
+      {
+         origvals = GCGmasterVarGetOrigvals(mastervar);
+         norigvars = GCGmasterVarGetNOrigvars(mastervar);
+
+         /* check if all original variables contained in the master variable have value zero */
+         for( j = 0; j < norigvars; ++j )
+            if( !SCIPisZero(scip, origvals[j]) )
+               break;
+
+         /* if so, we have found the right master variable */
+         if( j == norigvars )
+            *zeromastervar = mastervar;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** for a given block, return the master variable corresponding to the zero solution,
+ *  or NULL is there is no such variable available */
+static
+SCIP_RETCODE getZeroMastervar(
+      SCIP*             scip,
+      SCIP_HEURDATA*    heurdata,
+      int               block,
+      SCIP_VAR**        zeromastervar
+      )
+{
+   /* if no zero solution is known for the block, look if a master variable has been added
+    * and remember the variable for future use */
+   if( heurdata->zerovars[block] == NULL )
+      searchZeroMastervar(scip, block, zeromastervar);
+   else
+      *zeromastervar = heurdata->zerovars[block];
+
+   return SCIP_OKAY;
+}
+
 
 
 
@@ -286,23 +358,55 @@ SCIP_DECL_HEURFREE(heurFreeGreedycolsel)
 static
 SCIP_DECL_HEURINIT(heurInitGreedycolsel)
 {  /*lint --e{715}*/
+   SCIP* origprob;
    SCIP_HEURDATA* heurdata;
+   int nblocks;
+
+   int i;
 
    assert(heur != NULL);
    assert(scip != NULL);
+
+   /* get original problem */
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(origprob != NULL);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
+   /* get number of blocks */
+   nblocks = GCGrelaxGetNPricingprobs(origprob);
+
    heurdata->lastncols = 0;
+
+   /* allocate memory and initialize array with NULL pointers */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->zerovars, nblocks) );
+   for( i = 0; i < nblocks; ++i )
+      heurdata->zerovars[i] = NULL;
 
    return SCIP_OKAY;
 }
 
 
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
-#define heurExitGreedycolsel NULL
+static
+SCIP_DECL_HEUREXIT(heurExitGreedycolsel)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert( heur != NULL );
+   assert( scip != NULL );
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert( heurdata != NULL );
+
+   /* free memory */
+   SCIPfreeMemoryArray(scip, &heurdata->zerovars);
+
+   return SCIP_OKAY;
+}
 
 
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
@@ -332,14 +436,13 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
 //   SCIP_Bool discretization;
    SCIP_Bool masterfeas;
-   SCIP_Bool origfeas;
    SCIP_Bool success;
    int block;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
    int nlprows;
    int nmastervars;
    int norigvars;
-   int npricingprobs;
+   int nblocks;
    int nviolrows;
    int violchange;
 
@@ -386,12 +489,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIPdebugMessage("Executing Greedy Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of pricing problems */
-   npricingprobs = GCGrelaxGetNPricingprobs(origprob);
-   assert( npricingprobs >= 0 );
+   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   assert(nblocks >= 0);
 
    /* initialize the block numbers for the pricing problems */
-   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, npricingprobs) );
-   for( i = 0; i < npricingprobs; i++ )
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
+   for( i = 0; i < nblocks; i++ )
    {
       blocknr[i] = 0;
    }
@@ -429,8 +532,9 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       }
    }
 
+   SCIPdebugMessage("  -> %d master LP rows violated\n", nviolrows);
+
    masterfeas = FALSE;
-   origfeas = FALSE;
    success = FALSE;
 
    /* try to increase master variables until all blocks are full */
@@ -468,7 +572,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       /* loop over all original variables contained in the current master variable */
       for( i = 0; i < norigvars; i++ )
       {
-         assert(!SCIPisZero(scip, origvals[i]));
          assert(GCGvarIsOriginal(origvars[i]));
 
          /* If the master variable contains a linking variable, we need to pay attention if this linking
@@ -483,7 +586,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             /* check whether linking variable has already been assigned a value */
             linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
             hasvalue = FALSE;
-            for( j = 0; j < npricingprobs; j++ )
+            for( j = 0; j < nblocks; j++ )
             {
                if( linkingpricingvars[j] != NULL )
                {
@@ -524,6 +627,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             SCIP_VAR** origpricingvars;
             int norigpricingvars;
 
+            /* if the variable is zero, nothing happens */
+            if( SCIPisZero(scip, origvals[i]) )
+               continue;
+
             pricingvar = GCGoriginalVarGetPricingVar(origvars[i]);
             assert(pricingvar != NULL);
             assert(GCGvarIsPricing(pricingvar));
@@ -550,7 +657,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
                /* check whether linking variable has already been assigned a value */
                linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
                hasvalue = FALSE;
-               for( j = 0; j < npricingprobs; j++ )
+               for( j = 0; j < nblocks; j++ )
                {
                   if( linkingpricingvars[j] != NULL )
                   {
@@ -594,23 +701,59 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
       blocknr[block]++;
 
-      /* try to add solutions to solution pool */
-      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &origfeas) );
-      SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
-      assert((origfeas && masterfeas) || (!origfeas && !masterfeas));
-      if( origfeas && masterfeas )
-         success = TRUE;
+      /* try to add the solution to (original) solution pool */
+      SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
+
+      /* if the solution is feasible, ensure that all columns are in the master problem -
+       * necessary if the solution contains a zero column that has not been added before */
+//      if( success )
+//      {
+//         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(origprob, origsol) );
+//      }
+
+      /* check if all blocks are full */
+      allblocksfull = TRUE;
+      for( i = 0; i < nblocks && allblocksfull; i++ )
+      {
+         int nidentblocks;
+
+         nidentblocks = GCGrelaxGetNIdenticalBlocks(origprob, i);
+
+         /* in case the solution is feasible but the block is not full,
+          * we need a zero solution for this block in order to generate
+          * a corresponding master solution */
+         if( success && blocknr[i] < nidentblocks )
+         {
+            SCIP_VAR* zeromastervar;
+
+            /* fill the block with the zero solution */
+            getZeroMastervar(scip, heurdata, i, &zeromastervar);
+            if( zeromastervar != NULL )
+            {
+               SCIPdebugMessage("  -> (block %d) selected zero master variable %s (%d times)\n",
+                           i, SCIPvarGetName(zeromastervar), nidentblocks - blocknr[i]);
+
+               SCIP_CALL( SCIPincSolVal(scip, mastersol, zeromastervar,
+                     (SCIP_Real) nidentblocks - blocknr[i]) );
+               blocknr[i] = nidentblocks;
+            }
+         }
+
+         /* @todo: >= should not happen, replace it by == ? */
+         allblocksfull &= blocknr[i] >= nidentblocks;
+      }
+
+      /* if we found a solution for the original instance,
+       * also add the corresponding master solution */
+      if( success && allblocksfull )
+      {
+         SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+         assert(masterfeas);
+      }
 
       /* update number of violated rows and activities array */
       nviolrows += violchange;
       SCIP_CALL( updateActivities(scip, activities, mastervars[index]) );
-
-      /* check if all blocks are full */
-      allblocksfull = TRUE;
-      for( i = 0; i < npricingprobs; i++ )
-      {
-         allblocksfull &= blocknr[i] >= GCGrelaxGetNIdenticalBlocks(origprob, i);
-      }
    }
 
 //#ifdef SCIP_DEBUG
@@ -626,7 +769,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    }
    else
    {
-      SCIPdebugMessage("no feasible solution found, still %d constraints violated.\n", nviolrows);
+      SCIPdebugMessage("no feasible solution found or solution already known; %d constraints violated.\n", nviolrows);
    }
 
    SCIPfreeSol(origprob, &origsol);
