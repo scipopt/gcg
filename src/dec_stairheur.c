@@ -739,9 +739,14 @@ struct DEC_DetectorData
    int blocks;
    int maxblocks;
    int minblocks;
-   SCIP_HASHMAP*  probindex_to_var;
-   SCIP_HASHMAP*  varindex;
-   SCIP_HASHMAP*  consindex;
+   SCIP_HASHMAP* indexvar_old;  // index in problem -> variable
+   SCIP_HASHMAP* indexvar_new;  // index in permuted problem -> variable
+   SCIP_HASHMAP* varindex_old;  // variable -> index in problem
+   SCIP_HASHMAP* varindex_new;  // variable -> index in permuted problem
+   SCIP_HASHMAP* indexcons_old; // index in problem -> constraint
+   SCIP_HASHMAP* indexcons_new; // index in permuted problem -> constraint
+   SCIP_HASHMAP* consindex_old; // constraint -> index in problem
+   SCIP_HASHMAP* consindex_new; // constraint -> index in permuted problem
    SCIP_Bool found;
    int priority;
 };
@@ -764,9 +769,17 @@ bool compare_int(void* a, void * b)
    return ( *(int*)a == *(int*)b ? true : false );
 }
 
+static
+void ChangePointers(SCIP_HASHMAP** hm1, SCIP_HASHMAP** hm2)
+{
+   SCIP_HASHMAP* hm3; /* local for swap */
+    hm3 = *hm2;
+    *hm2 = *hm1;
+    *hm1= hm3;
+}
 
 static
-LIST* rowindices_list(SCIP* scip)
+LIST* rowindices_list(SCIP* scip, DEC_DETECTORDATA* detectordata)
 {
    //create the rowindices list
    int i;
@@ -777,16 +790,14 @@ LIST* rowindices_list(SCIP* scip)
    int ncons; //number of constraints of the problem
    int nconsvars; //number of variables in a constraint
    int* probindices;
-   SCIP_CONS** cons_array; //array of constraints of the problem
    SCIP_CONS* cons; //one constraint of the problem
    SCIP_VAR** consvars; //array of variables that occur in a constraint (unequal zero)
 
    rowindices = list_create_empty();
-   cons_array = SCIPgetConss(scip);
    ncons = SCIPgetNConss(scip);
    for(i = 0; i < ncons; ++i)
    {
-      cons = cons_array[i];
+      cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexcons_old, (void*) (i+1));
       nconsvars = SCIPgetNVarsXXX(scip, cons);
       consvars = SCIPgetVarsXXX(scip, cons);
       //allocate memory for the array of probindices
@@ -794,7 +805,8 @@ LIST* rowindices_list(SCIP* scip)
       //fill the array with the indices of the variables of the current constraint
       for(j = 0; j < nconsvars; ++j)
       {
-         probindices[j] = SCIPvarGetProbindex(consvars[j])+1;
+//         probindices[j] = SCIPvarGetProbindex(consvars[j])+1;
+         probindices[j] = (int*) SCIPhashmapGetImage(detectordata->varindex_old, consvars[j]);
       }
       //sort the elements of probindices ('<')
       qsort(probindices, nconsvars, sizeof(int), compare);
@@ -907,7 +919,7 @@ SCIP_RETCODE RankOrderClustering(
    int ncons;
    int i;
    int position;
-   SCIP_CONS** cons_array;
+   SCIP_CONS* cons;
    SCIP_VAR* var;
 
    assert(scip != NULL);
@@ -916,14 +928,14 @@ SCIP_RETCODE RankOrderClustering(
    nvars = SCIPgetNVars(scip);
    ncons = SCIPgetNConss(scip);
 
-   printf("ncons: %i \n", ncons); //debug
-   printf("nvars: %i \n", nvars); //debug
+//   printf("ncons: %i \n", ncons); //debug
+//   printf("nvars: %i \n", nvars); //debug
    //create a list for the order of the rows ( 1 2 3 ... ncons ) and columns ( 1 2 3 ... nvars )
    roworder = list_int_create(1, ncons);
    columnorder = list_int_create(1, nvars);
 
    //create the rowindices list from the scip object;
-   rowindices = rowindices_list(scip);
+   rowindices = rowindices_list(scip, detectordata);
 //   printf("rowindices:\n");
 //   for(it1 = iterator_begin(rowindices); ! ( iterator_is_equal(it1, iterator_end(rowindices)) ); iterator_next(&it1))
 //   {
@@ -955,6 +967,16 @@ SCIP_RETCODE RankOrderClustering(
    //column ordering
    columnorder = row_ordering(columnorder, rowindices);
 
+//   printf("rowindices rearranged:\n");
+//   for(it1 = iterator_begin(rowindices); ! ( iterator_is_equal(it1, iterator_end(rowindices)) ); iterator_next(&it1))
+//   {
+//      list_prin(it1.node->data, printint);
+//   }
+//   printf("columnindices:\n");
+//   for(it1 = iterator_begin(columnindices); ! ( iterator_is_equal(it1, iterator_end(columnindices)) ); iterator_next(&it1))
+//   {
+//      list_prin(it1.node->data, printint);
+//   }
    printf("row ordering:");
    list_prin(roworder, printint);
    printf("column ordering:");
@@ -964,29 +986,42 @@ SCIP_RETCODE RankOrderClustering(
    //store the row and column ordering in consindex and varindex of data structure detectordata
 //   assert( SCIPhashmapRemoveAll(detectordata->consindex) );
 //   assert( SCIPhashmapRemoveAll(detectordata->varindex) );
-   cons_array = SCIPgetConss(scip);
+//   cons_array = SCIPgetConss(scip);
 
-   //consindex
-   for(it1 = iterator_begin(roworder), i = 0; i < ncons; ++i, iterator_next(&it1))
-   {
-      position = (*(int*)it1.node->data)-1;
-//      assert( ! SCIPhashmapExists(detectordata->consindex, cons_array[position]) );
-//      SCIPhashmapInsert(detectordata->consindex, cons_array[position], (void*) (i+1));
-      assert( SCIPhashmapExists(detectordata->consindex, cons_array[position]) );
-      SCIPhashmapSetImage(detectordata->consindex, cons_array[position], (void*) (i+1));
-   }
-   //varindex
-   for(it1 = iterator_begin(columnorder), i = 0; i < nvars; ++i, iterator_next(&it1))
+   //consindex and indexcons
+   for(it1 = iterator_begin(roworder), i = 0; ! iterator_is_equal(it1, iterator_end(roworder)) && i < ncons; ++i, iterator_next(&it1))
    {
       position = (*(int*)it1.node->data);
-      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->probindex_to_var, (void*) position);
+      cons = SCIPhashmapGetImage(detectordata->indexcons_old, (void*) position);
+      assert ( cons != NULL);
+
+      //consindex
+      assert( SCIPhashmapExists(detectordata->consindex_new, (void*) cons));
+      SCIPhashmapSetImage(detectordata->consindex_new, (void*) cons, (void*) (i+1));
+      //indexcons
+      assert( SCIPhashmapExists(detectordata->indexcons_new, (void*) (i+1) ));
+      SCIPhashmapSetImage(detectordata->indexcons_new, (void*) (i+1), cons);
+   }
+   //varindex and indexvar
+   for(it1 = iterator_begin(columnorder), i = 0; ! iterator_is_equal(it1, iterator_end(columnorder)) &&i < nvars; ++i, iterator_next(&it1))
+   {
+      position = (*(int*)it1.node->data);
+      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_old, (void*) position);
       assert ( var != NULL);
-//      assert( ! SCIPhashmapExists(detectordata->varindex, (void*) var) );
-//      SCIPhashmapInsert( detectordata->varindex, var, (void*) (i+1) );
-      assert( SCIPhashmapExists(detectordata->varindex, (void*) var) );
-      SCIPhashmapSetImage(detectordata->varindex,  var, (void*) (i+1));
+
+      //varindex
+      assert( SCIPhashmapExists(detectordata->varindex_new, (void*) var) );
+      SCIPhashmapSetImage(detectordata->varindex_new, (void*) var, (void*) (i+1));
+      //indexvar
+      assert( SCIPhashmapExists(detectordata->indexvar_new, (void*) (i+1) ));
+      SCIPhashmapSetImage(detectordata->indexvar_new, (void*) (i+1), var);
    }
 
+   //switch between hash maps containing new and old indices
+   ChangePointers(&detectordata->indexvar_old, &detectordata->indexvar_new);
+   ChangePointers(&detectordata->varindex_old, &detectordata->varindex_new);
+   ChangePointers(&detectordata->indexcons_old, &detectordata->indexcons_new);
+   ChangePointers(&detectordata->consindex_old, &detectordata->consindex_new);
 
    //deallocate memory
    list_delete_data(roworder);
@@ -1038,8 +1073,8 @@ SCIP_RETCODE copyDetectorDataToDecomp(
    SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipconss, detectordata->nconsperblock, detectordata->blocks));
    SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipvars, detectordata->nvarsperblock, detectordata->blocks));
 
-   decomp->varindex = detectordata->varindex;
-   decomp->consindex = detectordata->consindex;
+   decomp->varindex = detectordata->varindex_old;
+   decomp->consindex = detectordata->consindex_old;
    decomp->nblocks = detectordata->blocks;
    decomp->type = DEC_STAIRCASE;
    return SCIP_OKAY;
@@ -1077,9 +1112,14 @@ DEC_DECL_INITDETECTOR(initStairheur)
    }
    detectordata->nlinkingconss = 0;
    /* create hash tables */
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->probindex_to_var, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexvar_old, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexvar_new, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex_old, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex_new, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexcons_old, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexcons_new, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex_old, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex_new, SCIPblkmem(scip), nconss));
    return SCIP_OKAY;
 }
 
@@ -1115,6 +1155,14 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    SCIPfreeMemoryArray(scip, &detectordata->nconsperblock);
    SCIPfreeMemoryArray(scip, &detectordata->linkingconss);
    SCIPfreeMemory(scip, &detectordata);
+   //free deep copied hash maps
+   //DO NOT FREE varindex_old and consindex_old because they are only shallow copied and contain the final permuation
+   SCIPhashmapFree(&detectordata->indexvar_old);
+   SCIPhashmapFree(&detectordata->indexvar_new);
+   SCIPhashmapFree(&detectordata->varindex_new);
+   SCIPhashmapFree(&detectordata->indexcons_old);
+   SCIPhashmapFree(&detectordata->indexcons_new);
+   SCIPhashmapFree(&detectordata->consindex_new);
    return SCIP_OKAY;
 }
 
@@ -1128,6 +1176,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_VAR** vars_array;
    SCIP_VAR* var;
    SCIP_CONS** cons_array;
+   SCIP_CONS* cons;
    DEC_DETECTOR* stairheur;
    DEC_DETECTORDATA* detectordata;
 
@@ -1143,38 +1192,53 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    vars_array = SCIPgetVars(scip);
    cons_array = SCIPgetConss(scip);
 
-   //create a hashmap probindex_to_var: key: probindex, value: variable with this probindex
+   //initialize hash maps for variables: indexvar_old, indexvar_new, varindex_old, varindex_new
    for(i = 0; i < nvars; ++i)
    {
       var = vars_array[i];
       //careful: probindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      probindex = (SCIPvarGetProbindex(var)+1);
-      assert( ! SCIPhashmapExists(detectordata->probindex_to_var, (void*) probindex));
-      SCIPhashmapInsert(detectordata->probindex_to_var, (void*) probindex, (void*) var);
-   }
-   //varindex, consindex
-   //store the row and column ordering in consindex and varindex of data structure detectordata
-   //consindex
-   for(i = 0; i < ncons; ++i)
-   {
-      assert( ! SCIPhashmapExists(detectordata->consindex, cons_array[i]) );
-      SCIPhashmapInsert(detectordata->consindex, cons_array[i], (void*) (i+1));
-   }
-   //varindex
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      probindex = SCIPvarGetProbindex(var);
-      assert ( var != NULL);
-      assert( ! SCIPhashmapExists(detectordata->varindex, (void*) var) );
-      SCIPhashmapInsert( detectordata->varindex, var, (void*) (probindex + 1) );
+//      probindex = (SCIPvarGetProbindex(var)+1);
+      probindex = i+1;
+      assert( ! SCIPhashmapExists(detectordata->indexvar_old, (void*) probindex));
+      SCIPhashmapInsert(detectordata->indexvar_old, (void*) probindex, (void*) var);
+      assert( ! SCIPhashmapExists(detectordata->indexvar_new, (void*) probindex));
+      SCIPhashmapInsert(detectordata->indexvar_new, (void*) probindex, (void*) var);
+      assert( ! SCIPhashmapExists(detectordata->varindex_old, (void*) var));
+      SCIPhashmapInsert(detectordata->varindex_old, (void*) var, (void*) probindex);
+      assert( ! SCIPhashmapExists(detectordata->varindex_new, (void*) var));
+      SCIPhashmapInsert(detectordata->varindex_new, (void*) var, (void*) probindex);
    }
 
+   //initialize hash maps for constraints: indexcons_old, indexcons_new, consindex_old, consindex_new
+   for(i = 0; i < ncons; ++i)
+   {
+      cons = cons_array[i];
+      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
+      assert( ! SCIPhashmapExists(detectordata->indexcons_old, (void*) (i+1)));
+      SCIPhashmapInsert(detectordata->indexcons_old, (void*) (i+1), (void*) cons);
+      assert( ! SCIPhashmapExists(detectordata->indexcons_new, (void*) (i+1)));
+      SCIPhashmapInsert(detectordata->indexcons_new, (void*) (i+1), (void*) cons);
+      assert( ! SCIPhashmapExists(detectordata->consindex_old, (void*) cons));
+      SCIPhashmapInsert(detectordata->consindex_old, (void*) cons, (void*) (i+1));
+      assert( ! SCIPhashmapExists(detectordata->consindex_new, (void*) cons));
+      SCIPhashmapInsert(detectordata->consindex_new, (void*) cons, (void*) (i+1));
+   }
    //ROC2 algorithm
-   for(i = 0; i < 1; ++i)
+   for(i = 0; i < 10; ++i)
    {
       RankOrderClustering(scip, detectordata);
    }
+//
+//   //debug consindex
+//   for(i = 0; i < ncons; ++i)
+//   {
+//      printf("cons # %i is #%i\n", i, (int*) SCIPhashmapGetImage(detectordata->consindex, cons_array[i]));
+//   }
+//   //debug varindex
+//   for(i = 0; i < nvars; ++i)
+//   {
+//      printf("var # %i is #%i\n", i, (int*) SCIPhashmapGetImage(detectordata->varindex,  vars_array[i]));
+//   }
 
    //fill detectordata for a single block for testing
    detectordata->blocks = 1;
