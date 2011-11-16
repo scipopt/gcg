@@ -25,8 +25,6 @@
 
 #include "heur_gcgfracdiving.h"
 
-/* @todo: remove include of cons_masterbranch */
-#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 
@@ -96,85 +94,6 @@ struct SCIP_HeurData
 /*
  * local methods
  */
-
-/** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP with pricing. */
-/* TODO: use GCGrelaxPerformProbing() instead */
-static
-SCIP_RETCODE performProbingOnMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   maxpricerounds,     /**< maximum number of price rounds allowed */
-   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of used LP iterations */
-   int*                  npricerounds,       /**< pointer to store the number of used pricing rounds */
-   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
-                                              *   solving process should be stopped (e.g., due to a time limit) */
-   SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
-   )
-{
-   SCIP* masterscip;
-   SCIP_NODE* mprobingnode;
-   SCIP_CONS* mprobingcons;
-   SCIP_LPSOLSTAT lpsolstat;
-   SCIP_Bool feasible;
-   SCIP_Longint oldnlpiters;
-   int oldpricerounds;
-   SCIP_Longint nodelimit;
-
-   assert(scip != NULL);
-
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
-
-   /* create probing node in master problem, propagate and solve it with pricing */
-   SCIP_CALL( SCIPnewProbingNode(masterscip) );
-
-   mprobingnode = SCIPgetCurrentNode(masterscip);
-   assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode,
-         GCGconsMasterbranchGetActiveCons(masterscip)) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
-   SCIP_CALL( SCIPreleaseCons(scip, &mprobingcons) );
-
-   //printf("before propagate\n");
-
-   SCIP_CALL( SCIPgetLongintParam(masterscip, "limits/nodes", &nodelimit) );
-   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit + 1) );
-
-   SCIP_CALL( SCIPpropagateProbing(masterscip, -1, cutoff, NULL) );
-   assert(!(*cutoff));
-
-   //printf("before LP solving\n");
-
-   oldnlpiters = SCIPgetNLPIterations(masterscip);
-   oldpricerounds = SCIPgetNPriceRounds(masterscip);
-   SCIP_CALL( SCIPsolveProbingLPWithPricing( masterscip, FALSE/* pretendroot */, TRUE /*displayinfo*/,
-         maxpricerounds, lperror ) );
-   lpsolstat = SCIPgetLPSolstat(masterscip);
-
-   //printf("after LP solving\n");
-
-   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit) );
-
-   *nlpiterations = SCIPgetNLPIterations(masterscip) - oldnlpiters;
-   *npricerounds = SCIPgetNPriceRounds(masterscip) - oldpricerounds;
-
-   //printf("lperror = %d\n", (*lperror));
-
-   if( !(*lperror) )
-   {
-      //printf("lpsolstat = %d, isRelax = %d\n", lpsolstat, SCIPisLPRelax(masterscip));
-      /* get LP solution status */
-      *cutoff = lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE;
-      if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )//&& SCIPisLPRelax(masterscip) )
-         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-   }
-   else
-   {
-      SCIPdebugMessage("something went wrong, an lp error occurred\n");
-   }
-
-   return SCIP_OKAY;
-}
 
 
 
@@ -275,6 +194,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
+   SCIP_Real lpobj;
    SCIP_Real objval;
    SCIP_Real oldobjval;
    SCIP_Real obj;
@@ -289,7 +209,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    SCIP_Bool mayroundup;
    SCIP_Bool roundup;
    SCIP_Bool lperror;
+   SCIP_Bool lpsolved;
    SCIP_Bool cutoff;
+   SCIP_Bool feasible;
    SCIP_Bool backtracked;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
@@ -306,9 +228,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
    int divedepth;
    int bestcand;
    int c;
-
-   /* TODO: temporary workaround */
-   SCIP_SOL* oldrelaxsol;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
@@ -424,15 +343,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
-   SCIP_CALL( SCIPstartProbing(masterprob) );
-
-   /* TODO: temporary workaround: remember relaxation solution and branching candidates on this node */
-   SCIP_CALL( SCIPcreateSol(scip, &oldrelaxsol, NULL) );
-   for( c = 0; c < SCIPgetNVars(scip); c++ )
-   {
-      var = SCIPgetVars(scip)[c];
-      SCIPsetSolVal(scip, oldrelaxsol, var, SCIPgetRelaxSolVal(scip, var));
-   }
+   SCIP_CALL( GCGrelaxStartProbing(scip) );
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
@@ -652,15 +563,29 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;
-            retstat = performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff);
+            if( maxpricerounds == 0 )
+               retstat = GCGrelaxPerformProbing(scip, maxnlpiterations, &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+            else
+            {
+               retstat = GCGrelaxPerformProbingWithPricing(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds,
+                     &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+               npricerounds = 0;
+            }
             if( retstat != SCIP_OKAY )
             {
                SCIPwarningMessage("Error while solving LP in GCG fracdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
-            SCIP_CALL( performProbingOnMaster(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &nlpiterations, &npricerounds, &lperror, &cutoff) );
+            if( maxpricerounds == 0 )
+               SCIP_CALL( GCGrelaxPerformProbing(scip, maxnlpiterations, &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+            else
+            {
+               SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds,
+                     &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+               npricerounds = 0;
+            }
 #endif
-            if( lperror )
+            if( lperror || !lpsolved )
                break;
 
             /* update iteration count */
@@ -697,7 +622,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
       {
          /* get new objective value */
          oldobjval = objval;
-         objval = SCIPgetLPObjval(masterprob);
+         objval = lpobj;
 
          /* update pseudo cost values */
          if( SCIPisGT(scip, objval, oldobjval) )
@@ -748,24 +673,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
 
    /* end diving */
    SCIP_CALL( SCIPendProbing(scip) );
-   SCIP_CALL( SCIPendProbing(masterprob) );
-
-   /* TODO: temporary workaround: restore relaxation solution and branching candidates */
-   SCIP_CALL( SCIPsetRelaxSolValsSol(scip, oldrelaxsol) );
-   for( c = 0; c < SCIPgetNVars(scip); c++ )
-   {
-      var = SCIPgetVars(scip)[c];
-      SCIPsetSolVal(scip, GCGrelaxGetCurrentOrigSol(scip), var, SCIPgetSolVal(scip, oldrelaxsol, var));
-
-      if( SCIPvarGetType(var) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, var)) )
-      {
-         assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var)));
-         SCIP_CALL( SCIPaddExternBranchCand(scip, var, SCIPgetRelaxSolVal(scip, var)
-               - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, var)), SCIPgetRelaxSolVal(scip, var)) );
-      }
-   }
-   assert(SCIPisFeasEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, GCGrelaxGetCurrentOrigSol(scip))));
-   SCIP_CALL( SCIPfreeSol(scip, &oldrelaxsol) );
+   SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    /* TODO: since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
     * *result != SCIP_FOUNDSOL although a solution has been found */

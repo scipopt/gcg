@@ -460,7 +460,7 @@ SCIP_RETCODE applyProbing(
    SCIP_VAR*             probingvar,         /**< variable to perform probing on */
    SCIP_Bool             probingdir,         /**< value to fix probing variable to */
    SCIP_Bool             solvelp,            /**< value to decide whether pricing loop shall be performed */
-   SCIP_Longint*         nlpiterations,      /**< pointert to store the number of used LP iterations */
+   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of used LP iterations */
    SCIP_Real*            proplbs,            /**< array to store lower bounds after full propagation */
    SCIP_Real*            propubs,            /**< array to store upper bounds after full propagation */
    SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
@@ -568,7 +568,8 @@ SCIP_RETCODE applyProbing(
       //printf("before probing = %lld\n", *nlpiterations);
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
-      SCIP_CALL( GCGrelaxPerformProbing(scip, nlpiterations, lpobjvalue, lpsolved, lperror, cutoff, &feasible) );
+      SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
+            lpobjvalue, lpsolved, lperror, cutoff, &feasible) );
 
       //printf("after probing = %lld\n", *nlpiterations);
    }
