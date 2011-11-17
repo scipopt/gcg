@@ -669,6 +669,10 @@ struct DEC_DetectorData
    int* jmin;   //array, jmin[i]: index of first nonzero column of the i-th row
    int* jmax;   //array, jmax[i]: the last nonzero entry among all rows prior to and including the i-th row
    int* minV;   //array, minV[i]: number of linking variables corresponding to a partitioning after the i-th row
+   int* width;  //array, width[i]: width of the band (of nonzero entries after ROC) at row i
+   int n;   //maximum width of the band (of nonzero entries after ROC)
+   int v;   //minimum width of the band
+   int tau; //approximate number of blocks
    SCIP_Bool found;
    int priority;
 };
@@ -689,6 +693,65 @@ static
 bool compare_int(void* a, void * b)
 {
    return ( *(int*)a == *(int*)b ? true : false );
+}
+
+//int round(double number)
+//{
+//    return (number >= 0) ? (int)(number + 0.5) : (int)(number - 0.5);
+//}
+//
+static
+int maximum(int a, int b)
+{
+   return (a > b ? a : b);
+}
+
+static
+int max_array(int* a, int num_elements)
+{
+   int i;
+   int max;
+   if(num_elements > 0 && a != NULL)
+   {
+      max = a[0];
+      for (i = 1; i<num_elements; i++)
+      {
+         if (a[i] > max)
+         {
+            max = a[i];
+         }
+      }
+      return(max);
+   }
+   //case: empty array
+   else
+   {
+      return 0;
+   }
+}
+
+static
+int min_array(int* a, int num_elements)
+{
+   int i;
+   int min;
+   if(num_elements > 0 && a != NULL)
+   {
+      min = a[0];
+      for (i = 1; i<num_elements; i++)
+      {
+         if (a[i] < min)
+         {
+            min = a[i];
+         }
+      }
+      return(min);
+   }
+   //case: empty array
+   else
+   {
+      return 0;
+   }
 }
 
 static
@@ -1074,6 +1137,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jmin, nconss));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jmax, nconss));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->minV, nconss-1));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->width, nconss));
 
    detectordata->nlinkingconss = 0;
    /* create hash tables */
@@ -1133,6 +1197,7 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    SCIPfreeMemoryArray(scip, &detectordata->jmax);
    SCIPfreeMemoryArray(scip, &detectordata->jmax);
    SCIPfreeMemoryArray(scip, &detectordata->minV);
+   SCIPfreeMemoryArray(scip, &detectordata->width);
 
    //free deep copied hash maps
    //DO NOT FREE varindex_old and consindex_old because they are only shallow copied and contain the final permuation
@@ -1220,7 +1285,40 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       RankOrderClustering(scip, detectordata);
    }
    while(IndexArrayChanges(scip, detectordata));
-
+   //arrays jmin, jmax and minV
+   detectordata->jmin[0] = detectordata->ibegin_new[0];
+   detectordata->jmax[0] = detectordata->iend_new[0];
+   detectordata->width[0] = detectordata->iend_new[0] - detectordata->ibegin_new[0];
+   for(i = 1; i < ncons; ++i)
+   {
+      detectordata->width[i] = detectordata->iend_new[i] - detectordata->ibegin_new[i];
+      detectordata->jmin[i] = detectordata->ibegin_new[i];
+      detectordata->jmax[i] = maximum(detectordata->iend_new[i], detectordata->jmax[i-1]);
+      detectordata->minV[i-1]=1 + (detectordata->jmax[i-1] - detectordata->jmin[i]);
+   }
+   detectordata->n = max_array(detectordata->width, ncons);
+   detectordata->v = min_array(detectordata->width, ncons);
+   detectordata->tau = round((nvars - detectordata->v)/(detectordata->n - detectordata->v));
+   //debug
+   printf("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, detectordata->n, detectordata->v, detectordata->tau);
+   printf("minV = [ ");
+   for(i = 0; i < ncons-1; ++i)
+   {
+      printf("%i ", detectordata->minV[i]);
+   }
+   printf("]\n");
+   printf("jmin = [ ");
+   for(i = 0; i < ncons; ++i)
+   {
+      printf("%i ", detectordata->jmin[i]);
+   }
+   printf("]\n");
+   printf("jmax = [ ");
+   for(i = 0; i < ncons-1; ++i)
+   {
+      printf("%i ", detectordata->jmax[i]);
+   }
+   printf("]\n");
    //fill detectordata for a single block for testing
    detectordata->blocks = 1;
    detectordata->varsperblock[0] = vars_array;
