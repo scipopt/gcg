@@ -10,7 +10,7 @@
 
 /**@file   heur_gcgshifting.c
  * @ingroup PRIMALHEURISTICS
- * @brief  LP gcgrounding heuristic that tries to recover from intermediate infeasibilities and shifts continuous variables
+ * @brief  LP rounding heuristic that tries to recover from intermediate infeasibilities and shifts continuous variables
  * @author Tobias Achterberg
  * @author Christian Puchert
  */
@@ -164,15 +164,18 @@ SCIP_RETCODE updateActivities(
 
          /* update row activity */
          oldactivity = activities[rowpos];
-         newactivity = oldactivity + delta * colvals[r];
-         if( SCIPisInfinity(scip, newactivity) )
-            newactivity = SCIPinfinity(scip);
-         else if( SCIPisInfinity(scip, -newactivity) )
-            newactivity = -SCIPinfinity(scip);
-         activities[rowpos] = newactivity;
+         if( !SCIPisInfinity(scip, -oldactivity) && !SCIPisInfinity(scip, oldactivity) )
+         {
+            newactivity = oldactivity + delta * colvals[r];
+            if( SCIPisInfinity(scip, newactivity) )
+               newactivity = SCIPinfinity(scip);
+            else if( SCIPisInfinity(scip, -newactivity) )
+               newactivity = -SCIPinfinity(scip);
+            activities[rowpos] = newactivity;
 
-         /* update row violation arrays */
-         updateViolations(scip, row, violrows, violrowpos, nviolrows, oldactivity, newactivity);
+            /* update row violation arrays */
+            updateViolations(scip, row, violrows, violrowpos, nviolrows, oldactivity, newactivity);
+         }
       }
    }
 
@@ -242,7 +245,6 @@ SCIP_RETCODE selectShifting(
       SCIP_Bool isinteger;
       SCIP_Bool isfrac;
       SCIP_Bool increase;
-      int probindex;
 
       col = rowcols[c];
       var = SCIPcolGetVar(col);
@@ -253,14 +255,16 @@ SCIP_RETCODE selectShifting(
       isinteger = (SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER);
       isfrac = isinteger && !SCIPisFeasIntegral(scip, solval);
       increase = (direction * val > 0.0);
-      probindex = SCIPvarGetProbindex(var);
 
       /* calculate the score of the shifting (prefer smaller values) */
       if( isfrac )
-         shiftscore = increase ? -1.0 / (SCIPvarGetNLocksUp(var) + 1.0) :
+         shiftscore = increase ? -1.0 / (SCIPvarGetNLocksUp(var) + 1.0) : 
             -1.0 / (SCIPvarGetNLocksDown(var) + 1.0);
       else
       {
+         int probindex;
+         probindex = SCIPvarGetProbindex(var);
+
          if( increase )
             shiftscore = ndecreases[probindex]/increaseweight;
          else
@@ -545,7 +549,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
    SCIP_Longint nsolsfound;
    SCIP_Longint nnodes;
 
-   assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
@@ -740,7 +743,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
          oldsolval, newsolval, SCIPvarGetObj(shiftvar));
 
       /* update row activities of globally valid rows */
-      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows,
+      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows, 
             shiftvar, oldsolval, newsolval) );
       if( nviolrows >= nprevviolrows )
          nnonimprovingshifts++;
@@ -819,10 +822,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
 
       if( stored )
       {
-#ifdef SCIP_DEBUG
          SCIPdebugMessage("found feasible shifted solution:\n");
-         SCIPprintSol(scip, sol, NULL, FALSE);
-#endif
+         SCIPdebug(SCIPprintSol(scip, sol, NULL, FALSE));
          *result = SCIP_FOUNDSOL;
       }
    }

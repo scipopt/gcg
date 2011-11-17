@@ -325,7 +325,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
    maxdivedepth *= 10;
 
    /* get best solution that should guide the search; if this solution lives in the original variable space,
-    * we can not use it since it might violate the global bounds of the current problem
+    * we cannot use it since it might violate the global bounds of the current problem
     */
    if( SCIPsolGetOrigin(SCIPgetBestSol(scip)) == SCIP_SOLORIGIN_ORIGINAL )
       return SCIP_OKAY;
@@ -337,7 +337,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
-   SCIP_CALL( GCGrelaxStartProbing(scip) );
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
@@ -364,7 +363,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
-	  && !SCIPisStopped(scip) )
+      && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
@@ -552,7 +551,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
          {
            /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-             * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
+             * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;

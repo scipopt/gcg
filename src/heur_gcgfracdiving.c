@@ -85,7 +85,6 @@ struct SCIP_HeurData
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    int                   npricerounds;       /**< pricing rounds used in this heuristic */
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
-   int                   nboundmasterconss;  /**< number of masterconss used to enforce bound changes */
 };
 
 
@@ -144,7 +143,6 @@ SCIP_DECL_HEURINIT(heurInitGcgfracdiving) /*lint --e{715}*/
    heurdata->nlpiterations = 0;
    heurdata->npricerounds = 0;
    heurdata->nsuccess = 0;
-   heurdata->nboundmasterconss = 0;
 
    return SCIP_OKAY;
 }
@@ -370,7 +368,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
-         && !SCIPisStopped(scip) )
+      && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
@@ -416,7 +414,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
                }
                else
                   objgain = -frac*obj;
-
 
                /* penalize too small fractions */
                if( frac < 0.01 )
@@ -559,7 +556,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
          {
             /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-             * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
+             * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;

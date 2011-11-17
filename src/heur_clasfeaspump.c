@@ -435,7 +435,7 @@ static
 SCIP_RETCODE addLocalBranchingConstraint(
    SCIP*                 scip,               /**< SCIP data structure of the original problem     */
    SCIP*                 probingscip,        /**< SCIP data structure of the subproblem           */
-   SCIP_HASHMAP*         varmapfw,           /**< mapping of SCIP variables to subSCIP variables */
+   SCIP_HASHMAP*         varmapfw,           /**< mapping of SCIP variables to sub-SCIP variables */
    SCIP_SOL*             bestsol,            /**< SCIP solution                                   */
    SCIP_Real             neighborhoodsize    /**< rhs for LB constraint                           */
    )
@@ -455,7 +455,7 @@ SCIP_RETCODE addLocalBranchingConstraint(
 
    /* get vars data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, NULL, &nbinvars, NULL, NULL, NULL) );
-   /* memory allociation */
+   /* memory allocation */
    SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nbinvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &consvals, nbinvars) );
 
@@ -668,7 +668,7 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
    SCIP_Real* lastalphas;     /* alpha values associated to solutions in lastroundedsols */
 
    SCIP* probingscip;         /* copied SCIP structure, used for round-and-propagate loop of feasibility pump 2.0 */
-   SCIP_HASHMAP* varmapfw;    /* mapping of SCIP variables to subSCIP variables */
+   SCIP_HASHMAP* varmapfw;    /* mapping of SCIP variables to sub-SCIP variables */
 
 
    SCIP_VAR** vars;
@@ -690,7 +690,7 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
    SCIP_Real mindistance;     /* distance of the closest rounded solution from the LP relaxation: used for stage3 */
 
    SCIP_Longint nlpiterations;    /* number of LP iterations done during one pumping round */
-   SCIP_Longint maxnlpiterations; /* maximum number of LP iterations fpr this heuristic */
+   SCIP_Longint maxnlpiterations; /* maximum number of LP iterations for this heuristic */
    SCIP_Longint nsolsfound;       /* number of solutions found by this heuristic */
    SCIP_Longint ncalls;           /* number of calls of this heuristic */
    SCIP_Longint nbestsolsfound;   /* current total number of best solution updates in SCIP */
@@ -1123,7 +1123,7 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
       lpsolstat = SCIPgetLPSolstat(masterprob);
 
       /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-       * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
+       * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
        */
       if( retcode != SCIP_OKAY )
       {
@@ -1232,10 +1232,10 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
    }
 
    /* only do stage 3 if we have not found a solution yet */
-   /* only do stage 3 if the distance of the closest infeasible solution to the polyhedron is below a certain treshold */
+   /* only do stage 3 if the distance of the closest infeasible solution to the polyhedron is below a certain threshold */
    if( heurdata->stage3 && (*result != SCIP_FOUNDSOL) && SCIPisLE(scip, mindistance, (SCIP_Real) heurdata->neighborhoodsize) )
    {
-      /* setup some parameters for the submip */
+      /* setup some parameters for the sub-SCIP */
       SCIP_Real timelimit;
       SCIP_Real memorylimit;
 
@@ -1263,7 +1263,7 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
       SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
       if( !SCIPisInfinity(scip, memorylimit) )
          memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
-      if( timelimit > 10.0 && memorylimit >= 0.0 )
+      if( timelimit > 0.0 && memorylimit > 0.0 )
       {
          /* do not abort subproblem on CTRL-C */
          SCIP_CALL( SCIPsetBoolParam(probingscip, "misc/catchctrlc", FALSE) );
@@ -1278,7 +1278,7 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
          SCIP_CALL( SCIPsetRealParam(probingscip, "limits/time", timelimit) );
          SCIP_CALL( SCIPsetRealParam(probingscip, "limits/memory", memorylimit) );
 
-         /* forbid recursive call of heuristics and separators solving subMIPs */
+         /* forbid recursive call of heuristics and separators solving sub-SCIPs */
          SCIP_CALL( SCIPsetSubscipsOff(probingscip, TRUE) );
 
          /* disable heuristics which aim to feasibility instead of optimality */
@@ -1312,13 +1312,13 @@ SCIP_DECL_HEUREXEC(heurExecClasfeaspump)
          SCIP_CALL( addLocalBranchingConstraint(scip, probingscip, varmapfw, closestsol, mindistance) );
 
          /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-          * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
+          * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
           */
 #ifdef NDEBUG
          retcode = SCIPsolve(probingscip);
          if( retcode != SCIP_OKAY )
          {
-            SCIPwarningMessage("Error while solving subMIP in stage 3 of feasibility pump heuristic; subSCIP terminated with code <%d>\n",
+            SCIPwarningMessage("Error while solving sub-SCIP in stage 3 of feasibility pump heuristic; sub-SCIP terminated with code <%d>\n",
                retcode);
          }
 #else

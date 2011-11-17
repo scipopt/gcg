@@ -133,9 +133,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    int nlpcands;
    int c;
 
-   assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-   assert(scip != NULL);
    assert(result != NULL);
 
    /* get master problem */
