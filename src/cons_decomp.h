@@ -95,6 +95,12 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
       DECDECOMP*    decdecomp /**< decdecom data structure      */
    );
 
+/** interface method to detect the structure */
+SCIP_RETCODE DECdetectStructure(
+   SCIP *scip
+   );
+
+
 #ifdef __cplusplus
 }
 #endif
