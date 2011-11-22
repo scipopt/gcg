@@ -239,10 +239,8 @@ static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
 
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(conshdlr != NULL);
    assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
 
    return SCIP_OKAY;
 }
