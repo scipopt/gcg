@@ -564,7 +564,8 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    /* get (linear) constraints in the original problem that were transferred to the master problem */
    masterconss = GCGrelaxGetLinearOrigMasterConss(scip);
    nmasterconss = GCGrelaxGetNMasterConss(scip);
-   assert(masterconss != NULL);
+
+   assert(masterconss != NULL || nmasterconss == 0 );
 
    /* get original variable data */
 #ifdef SCIP_DEBUG

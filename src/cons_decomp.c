@@ -648,9 +648,12 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT )
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
+
+      if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+         conshdlrdata->hasrun = TRUE;
       return SCIP_OKAY;
    }
 

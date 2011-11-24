@@ -584,13 +584,19 @@ SCIP_RETCODE createMaster(
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
-   assert(npricingprobs >= 0);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
+   relaxdata->npricingprobs = npricingprobs > 0 ? npricingprobs : 0;
+   if( npricingprobs > 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), npricingprobs) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
 
-   /* array for saving convexity constraints belonging to one of the pricing problems */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
+      /* array for saving convexity constraints belonging to one of the pricing problems */
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
+
+      /* create hashmaps for mapping from original to pricing variables */
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->hashorig2pricingvar), npricingprobs) );
+   }
 
    //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", SCIP_VERBLEVEL_FULL) );
 
@@ -643,15 +649,13 @@ SCIP_RETCODE createMaster(
 
    }
 
-   /* create hashmaps for mapping from original to pricing variables */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->hashorig2pricingvar), npricingprobs) );
    for( i = 0; i < npricingprobs; i++ )
    {
       SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2pricingvar[i]),
             SCIPblkmem(scip), SCIPgetNVars(scip)) );
    }
    SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar),
-         SCIPblkmem(scip), 10*SCIPgetNVars(scip)) );
+         SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
@@ -1128,7 +1132,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->convconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->convconss));
 
    /* free master problem */
    SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
@@ -1139,9 +1143,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
       SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
    }
-   SCIPfreeMemoryArray(scip, &(relaxdata->pricingprobs));
-   SCIPfreeMemoryArray(scip, &(relaxdata->blockrepresentative));
-   SCIPfreeMemoryArray(scip, &(relaxdata->nblocksidentical));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->pricingprobs));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->blockrepresentative));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->nblocksidentical));
 
    /* free solutions */
    if( relaxdata->currentorigsol != NULL )
@@ -1313,6 +1317,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->masterconss = NULL;
 
    relaxdata->npricingprobs = -1;
+   relaxdata->pricingprobs = NULL;
    relaxdata->nrelpricingprobs = 0;
    relaxdata->currentorigsol = NULL;
    relaxdata->storedorigsol = NULL;
