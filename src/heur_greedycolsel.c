@@ -39,6 +39,7 @@
 #define HEUR_USESSUBSCIP      FALSE
 
 #define DEFAULT_MINCOLUMNS    200             /**< minimum number of columns to regard in the master problem */
+#define DEFAULT_USEOBJ        FALSE           /**< use objective coefficients as tie breakers */
 
 
 
@@ -50,8 +51,11 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   /* parameters */
    int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
+   SCIP_Bool            useobj;               /**< use objective coefficients as tie breakers                */
 
+   /* data */
    SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
    int                  lastncols;            /**< number of columns in the last call of the heuristic       */
 };
@@ -128,6 +132,7 @@ SCIP_RETCODE getBestMastervar(
       SCIP_Real*              activities,
       int*                    blocknr,
       SCIP_Bool*              ignored,
+      SCIP_Bool               useobj,
       int*                    index,
       int*                    violchange
       )
@@ -142,6 +147,8 @@ SCIP_RETCODE getBestMastervar(
    int i;
 //   int j;
    int tmpviolchange;
+   SCIP_Real tmpobj;
+   SCIP_Real curobj;
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -153,6 +160,7 @@ SCIP_RETCODE getBestMastervar(
 
    *index = -1;
    *violchange = INT_MAX;
+   curobj = SCIPinfinity(scip);
 
 //   j = nmastervars - 1;
 //   do
@@ -187,10 +195,13 @@ SCIP_RETCODE getBestMastervar(
             && !ignored[i])
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);
-         if( tmpviolchange < *violchange )
+         tmpobj = SCIPvarGetObj(mastervar);
+         if( tmpviolchange < *violchange ||
+               (tmpviolchange == *violchange && SCIPisLE(scip, tmpobj, curobj) && useobj) )
          {
             *index = i;
             *violchange = tmpviolchange;
+            curobj = tmpobj;
          }
       }
    }
@@ -542,7 +553,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
-      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
@@ -813,9 +824,12 @@ SCIP_RETCODE SCIPincludeHeurGreedycolsel(
          heurdata) );
 
    /* add greedy column selection primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/greedycolsel/mincolumns",
+   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/mincolumns",
          "minimum number of columns to regard in the master problem",
          &heurdata->mincolumns, FALSE, DEFAULT_MINCOLUMNS, 1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/useobj",
+         "use objective coefficients as tie breakers",
+         &heurdata->useobj, TRUE, DEFAULT_USEOBJ, NULL, NULL) );
 
    return SCIP_OKAY;
 }
