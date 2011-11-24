@@ -592,7 +592,7 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
-   assert(conshdlrData->nstack == 1);
+   assert(conshdlrData->nstack == 1 || SCIPgetNNodes(scip) == 0);
 
    SCIPdebugMessage("exiting masterbranch constraint handler\n");
 

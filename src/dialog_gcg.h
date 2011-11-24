@@ -29,6 +29,10 @@ extern "C" {
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 
+/** dialog execution method for the detect command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
+
 /** standard menu dialog execution method, that displays it's help screen if the remaining command line is empty */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecMenu);

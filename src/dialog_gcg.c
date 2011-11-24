@@ -28,7 +28,7 @@
 #include "dialog_gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-
+#include "cons_decomp.h"
 
 
 /** executes a menu dialog */
@@ -814,6 +814,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem...\n");
    SCIP_CALL( SCIPstartInteraction(GCGrelaxGetMasterprob(scip)) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
+   SCIP_CALL( DECdetectStructure(scip) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -2335,6 +2347,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecSetMaster, NULL, NULL,
             "master", "switch to the interactive shell of the master problem", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* detect */
+   if( !SCIPdialogHasEntry(root, "detect") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDetect, NULL, NULL,
+            "detect", "Detect structure", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

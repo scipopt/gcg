@@ -74,6 +74,7 @@ struct SCIP_ConshdlrData
    int ndetectors;
    int usedetection;
    SCIP_CLOCK* detectorclock;
+   SCIP_Bool hasrun;
 };
 
 
@@ -191,6 +192,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
    decdecompFree(scip, &conshdlrdata->decdecomp);
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
@@ -217,70 +219,17 @@ static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 {
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_RESULT result;
-   int i;
-   SCIP_Real remainingtime;
 
    assert(conshdlr != NULL);
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
-   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
-   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
-
-   if( GCGrelaxGetNPricingprobs(scip) <= 0 )
+   if( !conshdlrdata->hasrun )
    {
-      for( i = 0; i < conshdlrdata->ndetectors; ++i )
-      {
-         DEC_DETECTOR *detector;
-         detector = conshdlrdata->detectors[i];
-         assert(detector != NULL);
-         conshdlrdata->priorities[i] = detector->getPriority(scip);
-      }
-
-      SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
-      SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
-
-      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
-      for( i = 0; i < conshdlrdata->ndetectors; ++i )
-      {
-         DEC_DETECTOR *detector;
-         detector = conshdlrdata->detectors[i];
-         assert(detector != NULL);
-
-         if(detector->initDetection != NULL)
-         {
-            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
-            SCIP_CALL((*detector->initDetection)(scip, detector));
-         }
-
-         (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
-         SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
-         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &result));
-         if( result == SCIP_SUCCESS )
-         {
-            SCIPdebugPrintf("Success!\n");
-            break;
-         }
-         else
-         {
-            SCIPdebugPrintf("Failure!\n");
-         }
-      }
-
-      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
+      SCIP_CALL( DECdetectStructure(scip) );
+      assert( conshdlrdata->hasrun );
    }
-   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
-   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
-   remainingtime = DECgetRemainingTime(scip);
-   if( !SCIPisInfinity(scip, remainingtime) )
-   {
-//      SCIP_CALL(SCIPgetRealParam(scip, "limits/time", &remainingtime));
-//      SCIP_CALL(SCIPsetRealParam(scip, "limits/time", MAX(0,remainingtime-SCIPgetClockTime(scip, conshdlrdata->detectorclock))));
-   }
-
    return SCIP_OKAY;
 }
 
@@ -290,12 +239,9 @@ static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
 
-   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(conshdlr != NULL);
    assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
 
-   SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
    return SCIP_OKAY;
 }
 
@@ -357,6 +303,9 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->ndetectors = 0;
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
+   conshdlrdata->hasrun = FALSE;
+
+   SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
 
    /* TODO: (optional) create constraint handler specific data here */
 
@@ -677,5 +626,88 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
    }
 
    SCIPhashmapFree(&transvar2origvar);
+   return SCIP_OKAY;
+}
+
+
+/** interface method to detect the structure */
+SCIP_RETCODE DECdetectStructure(
+   SCIP *scip
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_RESULT result;
+   int i;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, cannot detect structure!\n");
+
+      if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+         conshdlrdata->hasrun = TRUE;
+      return SCIP_OKAY;
+   }
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
+   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
+   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
+
+   if( GCGrelaxGetNPricingprobs(scip) <= 0 )
+   {
+      for( i = 0; i < conshdlrdata->ndetectors; ++i )
+      {
+         DEC_DETECTOR *detector;
+         detector = conshdlrdata->detectors[i];
+         assert(detector != NULL);
+         conshdlrdata->priorities[i] = detector->getPriority(scip);
+      }
+
+      SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
+      SCIPsortIntPtr(conshdlrdata->priorities, (void**)conshdlrdata->detectors, conshdlrdata->ndetectors);
+
+      SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
+      for( i = 0; i < conshdlrdata->ndetectors; ++i )
+      {
+         DEC_DETECTOR *detector;
+         detector = conshdlrdata->detectors[i];
+         assert(detector != NULL);
+
+         if(detector->initDetection != NULL)
+         {
+            SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
+            SCIP_CALL((*detector->initDetection)(scip, detector));
+         }
+
+         (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
+         SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
+         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &result));
+         if( result == SCIP_SUCCESS )
+         {
+            SCIPdebugPrintf("Success!\n");
+            break;
+         }
+         else
+         {
+            SCIPdebugPrintf("Failure!\n");
+         }
+      }
+
+      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
+   }
+   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
+   SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
+
+   conshdlrdata->hasrun = TRUE;
    return SCIP_OKAY;
 }

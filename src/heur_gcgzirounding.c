@@ -37,10 +37,17 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      FALSE
 
-#define DEFAULT_MAXROUNDINGLOOPS   2      /**< delimits the number of main loops */
+#define DEFAULT_MAXROUNDINGLOOPS   2      /**< delimits the number of main loops, can be set to -1 for no limit */
 #define DEFAULT_STOPZIROUND        TRUE   /**< deactivation check is enabled by default */
 #define DEFAULT_STOPPERCENTAGE     0.02   /**< the tolerance percentage after which zirounding will not be executed anymore */
 #define DEFAULT_MINSTOPNCALLS      1000   /**< number of heuristic calls before deactivation check */
+
+/* enable statistic output by defining macro STATISTIC_INFORMATION */
+#ifdef STATISTIC_INFORMATION
+#define STATISTIC(x)                x
+#else
+#define STATISTIC(x)             /**/
+#endif
 
 /*
  * Data structures
@@ -58,10 +65,10 @@ struct SCIP_HeurData
 };
 
 enum Direction
-{
-   DIRECTION_UP           =  1,
-   DIRECTION_DOWN         = -1
-};
+   {
+      DIRECTION_UP           =  1,
+      DIRECTION_DOWN         = -1
+   };
 typedef enum Direction DIRECTION;
 
 /*
@@ -97,7 +104,7 @@ void calculateBounds(
    SCIP_Real*            upslacks,           /**< array that contains the slacks between row activities and the right hand sides of the rows */
    SCIP_Real*            downslacks,         /**< array that contains lhs slacks */
    int                   nslacks,            /**< current number of slacks */
-   SCIP_Bool*            numericalerror      /**< flag to determine wether a numerical error occurred */
+   SCIP_Bool*            numericalerror      /**< flag to determine whether a numerical error occurred */
    )
 {
    SCIP_COL*      col;
@@ -108,8 +115,8 @@ void calculateBounds(
 
    assert(scip != NULL);
    assert(var != NULL);
-   assert(upslacks != NULL || nslacks == 0);
-   assert(downslacks != NULL || nslacks == 0);
+   assert(upslacks != NULL);
+   assert(downslacks != NULL);
    assert(upperbound != NULL);
    assert(lowerbound != NULL);
 
@@ -143,7 +150,7 @@ void calculateBounds(
     * if one of these values is significantly < 0.0, this will cause the abort of execution of the heuristic so that
     * infeasible solutions are avoided
     */
-   for ( i = 0; i < ncolvals && (*lowerbound > 0.0 || *upperbound > 0.0); ++i )
+   for( i = 0; i < ncolvals && (*lowerbound > 0.0 || *upperbound > 0.0); ++i )
    {
       SCIP_ROW* row;
       int       rowpos;
@@ -157,7 +164,7 @@ void calculateBounds(
 
       assert(0 <= rowpos && rowpos < nslacks);
 
-      /** all bounds and slacks as they are calculated in zirounding always have to be greater euqal zero.
+      /** all bounds and slacks as they are calculated in zirounding always have to be greater equal zero.
        * It might however be due to numerical issues, e.g. with scaling, that they are not. Better abort in this case.
        */
       if( SCIPisFeasLT(scip, *lowerbound, 0.0) || SCIPisFeasLT(scip, *upperbound, 0.0)
@@ -167,6 +174,10 @@ void calculateBounds(
          return;
       }
 
+
+      SCIPdebugMessage("colval: %15.8f, downslack: %15.8f, upslack: %5.2f, lb: %5.2f, ub: %5.2f\n", colvals[i], downslacks[rowpos], upslacks[rowpos],
+         *lowerbound, *upperbound);
+
       /* if coefficient > 0, rounding up might violate up slack and rounding down might violate down slack
        * thus search for the minimum so that no constraint is violated;
        * if coefficient < 0, it is the other way around unless at least one row slack is infinity
@@ -175,34 +186,52 @@ void calculateBounds(
       if( colvals[i] > 0 )
       {
          if( !SCIPisInfinity(scip, upslacks[rowpos]) )
-            *upperbound = MIN(*upperbound, upslacks[rowpos]/colvals[i]);
+         {
+            SCIP_Real upslack;
+            upslack = MAX(upslacks[rowpos], 0.0); /* avoid errors due to numerically slightly infeasible rows */
+            *upperbound = MIN(*upperbound, upslack/colvals[i]);
+         }
 
          if( !SCIPisInfinity(scip, downslacks[rowpos]) )
-            *lowerbound = MIN(*lowerbound, downslacks[rowpos]/colvals[i]);
+         {
+            SCIP_Real downslack;
+            downslack = MAX(downslacks[rowpos], 0.0); /* avoid errors due to numerically slightly infeasible rows */
+            *lowerbound = MIN(*lowerbound, downslack/colvals[i]);
+         }
       }
       else
       {
          assert(colvals[i] != 0.0);
 
          if( !SCIPisInfinity(scip, upslacks[rowpos] ) )
-            *lowerbound = MIN(*lowerbound, -upslacks[rowpos]/colvals[i]);
+         {
+            SCIP_Real upslack;
+            upslack = MAX(upslacks[rowpos], 0.0); /* avoid errors due to numerically slightly infeasible rows */
+            *lowerbound = MIN(*lowerbound, -upslack/colvals[i]);
+         }
 
          if( !SCIPisInfinity(scip, downslacks[rowpos] ) )
-            *upperbound = MIN(*upperbound,-downslacks[rowpos]/colvals[i]);
+         {
+            SCIP_Real downslack;
+            downslack = MAX(downslacks[rowpos], 0.0); /* avoid errors due to numerically slightly infeasible rows */
+            *upperbound = MIN(*upperbound,-downslack/colvals[i]);
+         }
       }
    }
 }
 
 /**  when a variable is shifted, the activities and slacks of all rows it appears in have to be updated */
 static
-void updateSlacks(
+SCIP_RETCODE updateSlacks(
    SCIP*                 scip,               /**< pointer to current SCIP data structure */
    SCIP_SOL*             sol,                /**< working solution */
    SCIP_VAR*             var,                /**< pointer to variable to be modified */
-   SCIP_Real*            shiftvalue,         /**< the value by which the variable is shifted */
+   SCIP_Real             shiftvalue,         /**< the value by which the variable is shifted */
    SCIP_Real*            upslacks,           /**< upslacks of all rows the variable appears in */
    SCIP_Real*            downslacks,         /**< downslacks of all rows the variable appears in */
    SCIP_Real*            activities,         /**< activities of the LP rows */
+   SCIP_VAR**            slackvars,          /**< the slack variables for equality rows */
+   SCIP_Real*            slackcoeffs,        /**< the slack variable coefficients */
    int                   nslacks             /**< size of the arrays */
    )
 {
@@ -226,26 +255,109 @@ void updateSlacks(
    rows     = SCIPcolGetRows(col);
    nrows    = SCIPcolGetNLPNonz(col);
    colvals  = SCIPcolGetVals(col);
-   assert(nrows == 0 || (rows != NULL && colvals!= NULL));
+   assert(nrows == 0 || (rows != NULL && colvals != NULL));
 
-   /** go through all rows the shifted variable appears in */
+   /* go through all rows the shifted variable appears in */
    for( i = 0; i < nrows; ++i )
    {
       int rowpos;
+
       rowpos = SCIProwGetLPPos(rows[i]);
       assert(-1 <= rowpos && rowpos < nslacks);
 
       /* if the row is in the LP, update its activity, up and down slack */
       if( rowpos >= 0 )
       {
-         SCIP_Real  val;
-         val = colvals[i] * (*shiftvalue);
+         SCIP_Real val;
 
-         activities[rowpos]  += val;
-         upslacks[rowpos]    -= val;
-         downslacks[rowpos]  += val;
+         val = colvals[i] * shiftvalue;
+
+         /* if the row is an equation, we update its slack variable instead of its activities */
+         if( SCIPisFeasEQ(scip, SCIProwGetLhs(rows[i]), SCIProwGetRhs(rows[i])) )
+         {
+            SCIP_Real slackvarshiftval;
+            SCIP_Real slackvarsolval;
+
+            assert(slackvars[rowpos] != NULL);
+            assert(!SCIPisFeasZero(scip, slackcoeffs[rowpos]));
+
+            slackvarsolval = SCIPgetSolVal(scip, sol, slackvars[rowpos]);
+            slackvarshiftval = -val / slackcoeffs[rowpos];
+
+            assert(SCIPisFeasGE(scip, slackvarsolval + slackvarshiftval, SCIPvarGetLbGlobal(slackvars[rowpos])));
+            assert(SCIPisFeasLE(scip, slackvarsolval + slackvarshiftval, SCIPvarGetUbGlobal(slackvars[rowpos])));
+
+            SCIP_CALL( SCIPsetSolVal(scip, sol, slackvars[rowpos], slackvarsolval + slackvarshiftval) );
+         }
+         else if( !SCIPisInfinity(scip, -activities[rowpos]) && !SCIPisInfinity(scip, activities[rowpos]) )
+            activities[rowpos] += val;
+
+         /* the slacks of the row now can be updated independently of its type */
+         if( !SCIPisInfinity(scip, upslacks[rowpos]) )
+            upslacks[rowpos] -= val;
+         if( !SCIPisInfinity(scip, -downslacks[rowpos]) )
+            downslacks[rowpos] += val;
+
+         assert(!SCIPisNegative(scip, upslacks[rowpos]));
+         assert(!SCIPisNegative(scip, downslacks[rowpos]));
       }
    }
+   return SCIP_OKAY;
+}
+
+/** finds a continuous slack variable for an equation row, NULL if none exists */
+static
+void rowFindSlackVar(
+   SCIP*                 scip,               /**< pointer to current SCIP data structure */
+   SCIP_ROW*             row,                /**< the row for which a slack variable is searched */
+   SCIP_VAR**            varpointer,         /**< pointer to store the slack variable */
+   SCIP_Real*            coeffpointer        /**< pointer to store the coefficient of the slack variable */
+)
+{
+   int v;
+   SCIP_COL** rowcols;
+   SCIP_Real* rowvals;
+   int nrowvals;
+
+   assert(row != NULL);
+   assert(varpointer != NULL);
+   assert(coeffpointer != NULL);
+
+   rowcols = SCIProwGetCols(row);
+   rowvals = SCIProwGetVals(row);
+   nrowvals = SCIProwGetNNonz(row);
+
+   assert(nrowvals == 0 || rowvals != NULL);
+   assert(nrowvals == 0 || rowcols != NULL);
+
+   /* iterate over the row variables. Stop after the first unfixed continuous variable was found. */
+   for( v = nrowvals - 1; v >= 0; --v )
+   {
+      SCIP_VAR* colvar;
+
+      assert(rowcols[v] != NULL);
+      if( SCIPcolGetLPPos(rowcols[v]) == -1 )
+         continue;
+
+      colvar = SCIPcolGetVar(rowcols[v]);
+
+      if( SCIPvarGetType(colvar) == SCIP_VARTYPE_CONTINUOUS
+         && !SCIPisFeasEQ(scip, SCIPvarGetLbGlobal(colvar), SCIPvarGetUbGlobal(colvar))
+         && SCIPcolGetNLPNonz(rowcols[v]) == 1 )
+      {
+         SCIPdebugMessage("  slack variable for row %s found: %s\n", SCIProwGetName(row), SCIPvarGetName(colvar));
+
+         *coeffpointer = rowvals[v];
+         *varpointer = colvar;
+
+         return;
+      }
+   }
+
+   *varpointer = NULL;
+   *coeffpointer = 0.0;
+
+   SCIPdebugMessage("No slack variable for row %s found. \n", SCIProwGetName(row));
 }
 
 /*
@@ -335,26 +447,28 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    SCIP_SOL*          sol;
    SCIP_VAR**         lpcands;
    SCIP_VAR**         zilpcands;
+   SCIP_VAR**         slackvars;
    SCIP_ROW**         rows;
    SCIP_Real*         lpcandssol;
    SCIP_Real*         solarray;
    SCIP_Real*         upslacks;
    SCIP_Real*         downslacks;
    SCIP_Real*         activities;
+   SCIP_Real*         slackvarcoeffs;
+   SCIP_Bool*         rowneedsslackvar;
 
    SCIP_Longint       nlps;
    int                currentlpcands;
    int                nlpcands;
    int                i;
+   int                c;
    int                nslacks;
    int                nroundings;
 
    SCIP_Bool          improvementfound;
    SCIP_Bool          numericalerror;
 
-   assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-   assert(scip != NULL);
    assert(result != NULL);
 
    /* get master problem */
@@ -411,14 +525,59 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    /* get LP rows data */
    rows    = SCIPgetLPRows(scip);
    nslacks = SCIPgetNLPRows(scip);
-   assert(rows != NULL || nslacks == 0);
+
+   /* cannot do anything if LP is empty */
+   if( nslacks == 0 )
+      return SCIP_OKAY;
+
+   assert(rows != NULL);
+   assert(nslacks > 0);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &upslacks, nslacks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &downslacks, nslacks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &activities, nslacks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &slackvars, nslacks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &slackvarcoeffs, nslacks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &rowneedsslackvar, nslacks) );
+
+   BMSclearMemoryArray(slackvars, nslacks);
+   BMSclearMemoryArray(slackvarcoeffs, nslacks);
+   BMSclearMemoryArray(rowneedsslackvar, nslacks);
 
    numericalerror = FALSE;
    nroundings = 0;
+
+   for( c = 0; c < nlpcands; ++c )
+   {
+      SCIP_VAR* cand;
+      SCIP_ROW** candrows;
+      int r;
+      int ncandrows;
+
+      cand = zilpcands[c];
+      assert(cand != NULL);
+      assert(SCIPcolGetLPPos(SCIPvarGetCol(cand)) >= 0);
+
+      candrows = SCIPcolGetRows(SCIPvarGetCol(cand));
+      ncandrows = SCIPcolGetNLPNonz(SCIPvarGetCol(cand));
+
+      assert(candrows == NULL || ncandrows > 0);
+
+      for( r = 0; r < ncandrows; ++r )
+      {
+         int rowpos;
+
+         assert(candrows != NULL); /* to please flexelint */
+         assert(candrows[r] != NULL);
+         rowpos = SCIProwGetLPPos(candrows[r]);
+
+         if( rowpos >= 0 && SCIPisFeasEQ(scip, SCIProwGetLhs(candrows[r]), SCIProwGetRhs(candrows[r])) )
+         {
+            rowneedsslackvar[rowpos] = TRUE;
+            SCIPdebugMessage("  Row %s needs slack variable for variable %s\n", SCIProwGetName(candrows[r]), SCIPvarGetName(cand));
+         }
+      }
+   }
 
    /* calculate row slacks for every every row that belongs to the current LP and ensure, that the current solution
     * has no violated constraint -- if any constraint is violated, i.e. a slack is significantly smaller than zero,
@@ -443,7 +602,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 //      assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) );
 
       /* in special case if LHS or RHS is (-)infinity slacks have to be initialized as infinity*/
-      if ( SCIPisInfinity(scip, -lhs) )
+      if( SCIPisInfinity(scip, -lhs) )
          downslacks[i] = SCIPinfinity(scip);
       else
          downslacks[i] = activities[i] - lhs;
@@ -453,6 +612,74 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
       else
          upslacks[i] = rhs - activities[i];
 
+      SCIPdebugMessage("lhs:%5.2f <= act:%5.2f <= rhs:%5.2f --> down: %5.2f, up:%5.2f\n", lhs, activities[i], rhs, downslacks[i], upslacks[i]);
+
+      /* row is an equation. Try to find a slack variable in the row, i.e.,
+       * a continuous variable which occurs only in this row. If no such variable exists,
+       * there is no hope for an IP-feasible solution in this round
+       */
+      if( SCIPisFeasEQ(scip, lhs, rhs) && rowneedsslackvar[i] )
+      {
+         /* @todo: This is only necessary for rows containing fractional variables. */
+         rowFindSlackVar(scip, row, &(slackvars[i]), &(slackvarcoeffs[i]));
+
+         if( slackvars[i] == NULL )
+         {
+            SCIPdebugMessage("No slack variable found for equality row %s, terminating ZI Round heuristic\n", SCIProwGetName(row));
+            goto TERMINATE;
+         }
+         else
+         {
+            SCIP_Real ubslackvar;
+            SCIP_Real lbslackvar;
+            SCIP_Real solvalslackvar;
+            SCIP_Real coeffslackvar;
+            SCIP_Real ubgap;
+            SCIP_Real lbgap;
+
+            assert(SCIPvarGetType(slackvars[i]) == SCIP_VARTYPE_CONTINUOUS);
+            solvalslackvar = SCIPgetSolVal(scip, sol, slackvars[i]);
+            ubslackvar = SCIPvarGetUbGlobal(slackvars[i]);
+            lbslackvar = SCIPvarGetLbGlobal(slackvars[i]);
+
+            coeffslackvar = slackvarcoeffs[i];
+            assert(!SCIPisFeasZero(scip, coeffslackvar));
+
+            ubgap = ubslackvar - solvalslackvar;
+            lbgap = solvalslackvar - lbslackvar;
+
+            if( SCIPisFeasZero(scip, ubgap) )
+              ubgap = 0.0;
+            if( SCIPisFeasZero(scip, lbgap) )
+              lbgap = 0.0;
+
+            if( SCIPisFeasPositive(scip, coeffslackvar) )
+            {
+              if( !SCIPisInfinity(scip, lbslackvar) )
+                upslacks[i] += coeffslackvar * lbgap;
+              else
+                upslacks[i] = SCIPinfinity(scip);
+              if( !SCIPisInfinity(scip, ubslackvar) )
+                downslacks[i] += coeffslackvar * ubgap;
+              else
+                downslacks[i] = SCIPinfinity(scip);
+            }
+            else
+            {
+               if( !SCIPisInfinity(scip, lbslackvar) )
+                  upslacks[i] -= coeffslackvar * ubgap;
+               else
+                  upslacks[i] = SCIPinfinity(scip);
+               if( !SCIPisInfinity(scip, ubslackvar) )
+                  downslacks[i] -= coeffslackvar * lbgap;
+               else
+                  downslacks[i] = SCIPinfinity(scip);
+            }
+            SCIPdebugMessage("  Slack variable for row %s at pos %d: %g <= %s = %g <= %g; Coeff %g, upslack = %g, downslack = %g  \n",
+               SCIProwGetName(row), SCIProwGetLPPos(row), lbslackvar, SCIPvarGetName(slackvars[i]), solvalslackvar, ubslackvar, coeffslackvar,
+               upslacks[i], downslacks[i]);
+         }
+      }
       /* due to numerical inaccuracies, the rows might be feasible, even if the slacks are
        * significantly smaller than zero -> terminate
        */
@@ -470,10 +697,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    /* check if fractional rounding candidates are left in each round,
     * whereas number of rounds is limited by parameter maxroundingloops
     */
-   while( currentlpcands > 0 && improvementfound && nroundings < heurdata->maxroundingloops )
-   {
-      int c;
-
+   while( currentlpcands > 0 && improvementfound && (heurdata->maxroundingloops == -1 || nroundings < heurdata->maxroundingloops) )
+   {  /*lint --e{850}*/
       improvementfound = FALSE;
       nroundings++;
       SCIPdebugMessage("GCG zirounding enters while loop for %d time with %d candidates left. \n", nroundings, currentlpcands);
@@ -509,7 +734,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
          if( numericalerror )
             goto TERMINATE;
 
-         /* calculate the the possible values after shifting */
+         /* calculate the possible values after shifting */
          up   = oldsolval + upperbound;
          down = oldsolval - lowerbound;
 
@@ -543,15 +768,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
                direction = DIRECTION_UP;
 
             /* once a possible shifting direction and value have been found, variable value is updated */
-            shiftval = (direction == DIRECTION_UP ? up-oldsolval : down-oldsolval);
+            shiftval = (direction == DIRECTION_UP ? up - oldsolval : down - oldsolval);
 
             /* update the solution */
             solarray[c] = oldsolval + shiftval;
             SCIP_CALL( SCIPsetSolVal(scip, sol, var, solarray[c]) );
 
             /* update the rows activities and slacks */
-            updateSlacks(scip, sol, var, &shiftval, upslacks,
-               downslacks, activities, nslacks);
+            SCIP_CALL( updateSlacks(scip, sol, var, shiftval, upslacks,
+                  downslacks, activities, slackvars, slackvarcoeffs, nslacks) );
 
             SCIPdebugMessage("GCG zirounding update step : %d var index, oldsolval=%g, shiftval=%g \n ",
                SCIPvarGetIndex(var), oldsolval, shiftval);
@@ -585,18 +810,24 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    {
       SCIP_Bool stored;
       SCIP_CALL(SCIPtrySol(scip, sol, FALSE, FALSE, TRUE, FALSE, &stored));
-      if ( stored )
+      if( stored )
       {
 #ifdef SCIP_DEBUG
          SCIPdebugMessage("found feasible rounded solution:\n");
          SCIP_CALL( SCIPprintSol(scip, sol, NULL, FALSE) );
 #endif
+         STATISTIC(
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "  ZI Round solution value: %g \n", SCIPgetSolOrigObj(scip, sol));
+            )
          *result = SCIP_FOUNDSOL;
       }
    }
 
    /* free memory for all locally allocated data */
  TERMINATE:
+   SCIPfreeBufferArray(scip, &rowneedsslackvar);
+   SCIPfreeBufferArray(scip, &slackvarcoeffs);
+   SCIPfreeBufferArray(scip, &slackvars);
    SCIPfreeBufferArray(scip, &activities);
    SCIPfreeBufferArray(scip, &downslacks);
    SCIPfreeBufferArray(scip, &upslacks);

@@ -221,11 +221,28 @@ SCIP_RETCODE GCGrelaxStartProbing(
    );
 
 /** for a probing node in the original problem, create a corresponding probing node in the master problem,
- *  propagate domains and solve the LP with pricing. */
+ *  propagate domains and solve the LP without pricing. */
 extern
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Longint*         nlpiterations,      /**< pointert to store the number of used LP iterations */
+   SCIP_Longint          maxlpiterations,    /**< maximum number of lp iterations allowed */
+   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
+   SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
+   SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
+   SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the
+                                              *   solving process should be stopped (e.g., due to a time limit) */
+   SCIP_Bool*            cutoff,             /**< pointer to store whether the probing direction is infeasible */
+   SCIP_Bool*            feasible            /**< pointer to store whether the probing solution is feasible */
+   );
+
+/** for a probing node in the original problem, create a corresponding probing node in the master problem,
+ *  propagate domains and solve the LP with pricing. */
+extern
+SCIP_RETCODE GCGrelaxPerformProbingWithPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
+   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
+   int*                  npricerounds,       /**< pointer to store the number of performed pricing rounds (or NULL) */
    SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
    SCIP_Bool*            lperror,            /**< pointer to store whether an unresolved LP error occured or the

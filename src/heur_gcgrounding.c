@@ -37,6 +37,9 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      FALSE
 
+#define DEFAULT_SUCCESSFACTOR 100            /**< number of calls per found solution that are considered as standard success, 
+                                              * a higher factor causes the heuristic to be called more often 
+                                              */
 
 
 /* locally defined heuristic data */
@@ -44,6 +47,9 @@ struct SCIP_HeurData
 {
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
+   int                   successfactor;      /**< number of calls per found solution that are considered as standard success, 
+                                              * a higher factor causes the heuristic to be called more often 
+                                              */
 };
 
 
@@ -161,15 +167,18 @@ SCIP_RETCODE updateActivities(
 
          /* update row activity */
          oldactivity = activities[rowpos];
-         newactivity = oldactivity + delta * colvals[r];
-         if( SCIPisInfinity(scip, newactivity) )
-            newactivity = SCIPinfinity(scip);
-         else if( SCIPisInfinity(scip, -newactivity) )
-            newactivity = -SCIPinfinity(scip);
-         activities[rowpos] = newactivity;
+         if( !SCIPisInfinity(scip, -oldactivity) && !SCIPisInfinity(scip, oldactivity) )
+         {
+            newactivity = oldactivity + delta * colvals[r];
+            if( SCIPisInfinity(scip, newactivity) )
+               newactivity = SCIPinfinity(scip);
+            else if( SCIPisInfinity(scip, -newactivity) )
+               newactivity = -SCIPinfinity(scip);
+            activities[rowpos] = newactivity;
 
-         /* update row violation arrays */
-         updateViolations(scip, row, violrows, violrowpos, nviolrows, oldactivity, newactivity);
+            /* update row violation arrays */
+            updateViolations(scip, row, violrows, violrowpos, nviolrows, oldactivity, newactivity);
+         }
       }
    }
 
@@ -414,13 +423,13 @@ SCIP_DECL_HEURINIT(heurInitGcgrounding) /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-   assert(SCIPheurGetData(heur) == NULL);
+
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
 
    /* create heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
    heurdata->lastlp = -1;
-   SCIPheurSetData(heur, heurdata);
 
    return SCIP_OKAY;
 }
@@ -437,8 +446,6 @@ SCIP_DECL_HEUREXIT(heurExitGcgrounding) /*lint --e{715}*/
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
-   SCIPfreeMemory(scip, &heurdata);
-   SCIPheurSetData(heur, NULL);
 
    return SCIP_OKAY;
 }
@@ -490,10 +497,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    SCIP_Longint nsolsfound;
    SCIP_Longint nnodes;
 
-   /**@todo try to shift continuous variables to stay feasible */
-   /**@todo improve rounding heuristic */
-
-   assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
@@ -527,7 +530,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    ncalls = SCIPheurGetNCalls(heur);
    nsolsfound = 10*SCIPheurGetNBestSolsFound(heur) + SCIPheurGetNSolsFound(heur);
    nnodes = SCIPgetNNodes(scip);
-   if( nnodes % ((ncalls/100)/(nsolsfound+1)+1) != 0 )  /*?????????? /10000 */
+   if( nnodes % ((ncalls/heurdata->successfactor)/(nsolsfound+1)+1) != 0 )
       return SCIP_OKAY;
 
    /* get fractional variables, that should be integral */
@@ -603,7 +606,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
       SCIPdebugMessage("GCG rounding heuristic: nfrac=%d, nviolrows=%d, obj=%g (best possible obj: %g)\n",
          nfrac, nviolrows, SCIPgetSolOrigObj(scip, sol), SCIPretransformObj(scip, minobj));
 
-      assert(minobj < SCIPgetCutoffbound(scip)); /* otherwise, the rounding variable selection should have returned NULL */
+      /* minobj < SCIPgetCutoffbound(scip) should be true, otherwise the rounding variable selection
+       * should have returned NULL. Due to possible cancellation we use SCIPisLE. */
+      assert( SCIPisLE(scip, minobj, SCIPgetCutoffbound(scip)) );
 
       /* choose next variable to process:
        *  - if a violated row exists, round a variable decreasing the violation, that has least impact on other rows
@@ -710,12 +715,23 @@ SCIP_RETCODE SCIPincludeHeurGcgrounding(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_HEURDATA* heurdata;
+
+   /* create heuristic data */
+   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+
    /* include heuristic */
    SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
-         heurCopyGcgrounding, heurFreeGcgrounding, heurInitGcgrounding, heurExitGcgrounding,
+         heurCopyGcgrounding,
+         heurFreeGcgrounding, heurInitGcgrounding, heurExitGcgrounding,
          heurInitsolGcgrounding, heurExitsolGcgrounding, heurExecGcgrounding,
-         NULL) );
+         heurdata) );
+
+   /* add rounding primal heuristic parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/successfactor",
+         "number of calls per found solution that are considered as standard success, a higher factor causes the heuristic to be called more often",
+         &heurdata->successfactor, TRUE, DEFAULT_SUCCESSFACTOR, -1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
