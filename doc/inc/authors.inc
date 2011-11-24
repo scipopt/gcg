@@ -44,9 +44,9 @@
 	      </td>
 	      <td>
                 Student assistant
-              </td>
+          </td>
 	    </tr>
-            <tr>
+        <tr>
 	      <td>
 		Mathias Luers
 	      </td>
@@ -54,6 +54,15 @@
 		Student assistant (Staircase Detection)
 	      </td>
 	    </tr>
+        <tr>
+	      <td>
+		Marcel Schmickerath
+	      </td>
+	      <td>
+		Student assistant (Primal Heuristics)
+	      </td>
+	    </tr>
+
 	</table>
 </div>
 
