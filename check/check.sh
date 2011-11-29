@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
@@ -8,7 +8,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id$
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
@@ -16,11 +15,14 @@ BINID=$4
 TIMELIMIT=$5
 NODELIMIT=$6
 MEMLIMIT=$7
-FEASTOL=$8
-DISPFREQ=$9
-CONTINUE=${10}
-LOCK=${11}
-VERSION=${12}
+THREADS=$8
+FEASTOL=$9
+DISPFREQ=${10}
+CONTINUE=${11}
+LOCK=${12}
+VERSION=${13}
+LPS=${14}
+VALGRIND=${15}
 
 SETDIR=../settings
 
@@ -33,9 +35,9 @@ then
     mkdir locks
 fi
 
-LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.lock
-RUNFILE=locks/$TSTNAME.$SETNAME.$VERSION.run.$BINID
-DONEFILE=locks/$TSTNAME.$SETNAME.$VERSION.done
+LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.lock
+RUNFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.run.$BINID
+DONEFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.done
 
 OUTFILE=results/check.$TSTNAME.$BINID.$SETNAME.out
 ERRFILE=results/check.$TSTNAME.$BINID.$SETNAME.err
@@ -46,22 +48,22 @@ SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.set
 
 SETTINGS=$SETDIR/$SETNAME.set
 
-if test "$LOCK" == "true"
+if test "$LOCK" = "true"
 then
     if test -e $DONEFILE
     then
-	echo skipping test due to existing done file $DONEFILE
-	exit
+        echo skipping test due to existing done file $DONEFILE
+        exit
     fi
     if test -e $LOCKFILE
     then
-	if test -e $RUNFILE
+        if test -e $RUNFILE
         then
-	    echo continuing aborted run with run file $RUNFILE
-	else
-	    echo skipping test due to existing lock file $LOCKFILE
-	    exit
-	fi
+            echo continuing aborted run with run file $RUNFILE
+        else
+            echo skipping test due to existing lock file $LOCKFILE
+            exit
+        fi
     fi
     date > $LOCKFILE
     date > $RUNFILE
@@ -72,7 +74,7 @@ then
     CONTINUE=false
 fi
 
-if test "$CONTINUE" == "true"
+if test "$CONTINUE" = "true"
 then
     MVORCP=cp
 else
@@ -89,9 +91,9 @@ then
     $MVORCP $ERRFILE $ERRFILE.old-$DATEINT
 fi
 
-if test "$CONTINUE" == "true"
+if test "$CONTINUE" = "true"
 then
-    LASTPROB=`getlastprob.awk $OUTFILE`
+    LASTPROB=`awk -f getlastprob.awk $OUTFILE`
     echo Continuing benchmark. Last solved instance: $LASTPROB
     echo "" >> $OUTFILE
     echo "----- Continuing from here. Last solved: $LASTPROB -----" >> $OUTFILE
@@ -105,79 +107,98 @@ uname -a >>$ERRFILE
 date >>$OUTFILE
 date >>$ERRFILE
 
-HARDTIMELIMIT=`echo "($TIMELIMIT*1.2)+10" | bc`
-HARDMEMLIMIT=`echo "($MEMLIMIT*1.1+10)*1024" | bc`
+# we add 10% to the hard time limit and additional 10 seconds in case of small time limits
+HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 10\` + \`expr $TIMELIMIT / 10\``
+
+# we add 10% to the hard memory limit and additional 100mb to the hard memory limit
+HARDMEMLIMIT=`expr \`expr $MEMLIMIT + 1000\` + \`expr $MEMLIMIT / 10\``
+HARDMEMLIMIT=`expr $HARDMEMLIMIT \* 1024`
 
 echo "hard time limit: $HARDTIMELIMIT s" >>$OUTFILE
 echo "hard mem limit: $HARDMEMLIMIT k" >>$OUTFILE
 
-for i in `cat $TSTNAME.test` DONE
+VALGRINDCMD=
+if test "$VALGRIND" = "true"
+then
+   VALGRINDCMD="valgrind --log-fd=1 --leak-check=full"
+fi
+
+for i in `cat testset/$TSTNAME.test` DONE
 do
-    if test "$i" == "DONE"
+    if test "$i" = "DONE"
     then
-	date > $DONEFILE
-	break
+        date > $DONEFILE
+        break
     fi
 
-    if test "$LASTPROB" == ""
+    if test "$LASTPROB" = ""
     then
 #	blkfile=`echo $i | sed 's/lp/blk/g'`
-	LASTPROB=""
-	if test -f $i
-	then
-	    echo @01 $i ===========
+        LASTPROB=""
+        if test -f $i
+        then
+            echo @01 $i ===========
 #	    echo @01 $blkfile ===========
-	    echo @01 $i ===========      >> $ERRFILE
-	    echo set load $SETTINGS                >  $TMPFILE
-	    if test $FEASTOL != "default"
-	    then
-		echo set numerics feastol $FEASTOL    >> $TMPFILE
-	    fi
-	    echo set limits time $TIMELIMIT        >> $TMPFILE
-	    echo set limits nodes $NODELIMIT       >> $TMPFILE
-	    echo set limits memory $MEMLIMIT       >> $TMPFILE
-	    echo set timing clocktype 1            >> $TMPFILE
-	    echo set display verblevel 4           >> $TMPFILE
-	    echo set display freq $DISPFREQ        >> $TMPFILE
-	    echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
-	    echo set save $SETFILE                 >> $TMPFILE
-	    echo read $i                           >> $TMPFILE
+            echo @01 $i ===========                >> $ERRFILE
+            echo > $TMPFILE
+            if test "$SETNAME" != "default"
+            then
+                echo set load $SETTINGS            >>  $TMPFILE
+            fi
+            if test "$FEASTOL" != "default"
+            then
+                echo set numerics feastol $FEASTOL >> $TMPFILE
+            fi
+            echo set limits time $TIMELIMIT        >> $TMPFILE
+            echo set limits nodes $NODELIMIT       >> $TMPFILE
+            echo set limits memory $MEMLIMIT       >> $TMPFILE
+            echo set lp advanced threads $THREADS  >> $TMPFILE
+            echo set timing clocktype 1            >> $TMPFILE
+            echo set display verblevel 4           >> $TMPFILE
+            echo set display freq $DISPFREQ        >> $TMPFILE
+            echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
+            if test "$LPS" = "none"      
+            then
+                echo set lp solvefreq -1           >> $TMPFILE # avoid solving LPs in case of LPS=none
+            fi
+            echo set save $SETFILE                 >> $TMPFILE
+            echo read $i                           >> $TMPFILE
+#            echo write genproblem cipreadparsetest.cip >> $TMPFILE
+#            echo read cipreadparsetest.cip         >> $TMPFILE
 #	    echo read $blkfile                     >> $TMPFILE
-	    echo optimize                          >> $TMPFILE
-	    echo display statistics                >> $TMPFILE
-#	    echo display solution                  >> $TMPFILE
-	    echo checksol                          >> $TMPFILE
-	    echo quit                              >> $TMPFILE
-
-#	    waitcplex.sh # ??????????????????
-
-	    echo -----------------------------
-	    date
-	    date >>$ERRFILE
-	    echo -----------------------------
-	    date +"@03 %s"
-	    tcsh -c "limit cputime $HARDTIMELIMIT s; limit memoryuse $HARDMEMLIMIT k; limit filesize 200 M; ../$2 < $TMPFILE" 2>>$ERRFILE
-	    date +"@04 %s"
-	    echo -----------------------------
-	    date
-	    date >>$ERRFILE
-	    echo -----------------------------
-	    echo
-	    echo =ready=
-	else
-	    echo @02 FILE NOT FOUND: $i ===========
-	    echo @02 FILE NOT FOUND: $i =========== >>$ERRFILE
-	fi
+            echo optimize                          >> $TMPFILE
+            echo display statistics                >> $TMPFILE
+#           echo display solution                  >> $TMPFILE
+            echo checksol                          >> $TMPFILE
+            echo quit                              >> $TMPFILE
+            echo -----------------------------
+            date
+            date >>$ERRFILE
+            echo -----------------------------
+            date +"@03 %s"
+            bash -c " ulimit -t $HARDTIMELIMIT s; ulimit -v $HARDMEMLIMIT k; ulimit -f 200000; $VALGRINDCMD ../$BINNAME < $TMPFILE" 2>>$ERRFILE
+            date +"@04 %s"
+            echo -----------------------------
+            date
+            date >>$ERRFILE
+            echo -----------------------------
+            echo
+            echo =ready=
+        else
+            echo @02 FILE NOT FOUND: $i ===========
+            echo @02 FILE NOT FOUND: $i =========== >>$ERRFILE
+        fi
     else
-	echo skipping $i
-	if test "$LASTPROB" == "$i"
-	then
-	    LASTPROB=""
+        echo skipping $i
+        if test "$LASTPROB" = "$i"
+        then
+            LASTPROB=""
         fi
     fi
 done | tee -a $OUTFILE
 
 rm -f $TMPFILE
+rm -f cipreadparsetest.cip
 
 date >>$OUTFILE
 date >>$ERRFILE
@@ -185,9 +206,9 @@ date >>$ERRFILE
 if test -e $DONEFILE
 then
     ./evalcheck.sh $OUTFILE
-
-    if test "$LOCK" == "true"
+    
+    if test "$LOCK" = "true"
     then
-	rm -f $RUNFILE
+        rm -f $RUNFILE
     fi
 fi
