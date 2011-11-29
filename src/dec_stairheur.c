@@ -1107,6 +1107,7 @@ SCIP_RETCODE RankOrderClustering(
 static
 void rowsWithConstriction(DEC_DETECTORDATA* detectordata)
 {
+   //if blocking is performed after row i+1; local minima
    int i;
    int* data;
    for(i = 1; i < detectordata->nRelevantConss - 2; ++i)
@@ -1115,28 +1116,33 @@ void rowsWithConstriction(DEC_DETECTORDATA* detectordata)
       if(detectordata->minV[i] < detectordata->minV[i-1] && detectordata->minV[i] < detectordata->minV[i+1])
       {
          data = (int*) malloc(sizeof(int));
-         *data = i;
+         *data = i+1;
          list_push_back(detectordata->rowsWithConstrictions, data);
       }
    }
 }
 
 static
-void assignVarsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_var_index, int first_linkingvar_index, int last_linkingvar_index)
+void assignVarsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_var, int last_var, int first_linkingvar)
 {
+   /**first_var: index of first variable in the block
+    * last_var: index of last variable in the block
+    * first_linkingvar: index of first linking variable
+    * first_var to first_linkingvar-1 are assigned to subscipvar, first_linkingvar to last_var to linkingvars
+    */
    int i;
    int j;
    SCIP_VAR* var;
    //assign the subscipvars (=nonlinking vars)
-   detectordata->nvarsperblock[block-1] = first_linkingvar_index - first_var_index;
-   for(i = first_var_index, j = 0; j < detectordata->nvarsperblock[block-1]; ++i, ++j)
+   detectordata->nvarsperblock[block-1] = first_linkingvar - first_var;
+   for(i = first_var, j = 0; i < first_linkingvar; ++i, ++j)
    {
       var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_new, (void*) i);
       assert(var != NULL);
       detectordata->varsperblock[block-1][j] = var;
    }
    //assign linking vars
-   for(i = first_linkingvar_index; i <= last_linkingvar_index; ++i)
+   for(i = first_linkingvar; i <= last_var; ++i)
    {
       var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_new, (void*) i);
       assert(var != NULL);
@@ -1149,7 +1155,7 @@ static
 int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
 {
    //some pointer arithmetic
-   return max_array(detectordata->ibegin_new + (from_row -1), to_row - from_row + 1);
+   return max_array(detectordata->iend_new + (from_row -1), to_row - from_row + 1);
 }
 
 static
@@ -1174,27 +1180,54 @@ void blocking(DEC_DETECTORDATA* detectordata, int nvars)
    blocked_to_row = 0;
    max_col_index_im1 = 0;
    it1 = iterator_begin(detectordata->rowsWithConstrictions);
+   current_row = * (int*) (it1.node->data);
    //are more than M/tau rows left?
    while( (detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / detectordata->tau )
    {
       //does a blocking to the next row forming a constriction comprise more than M/2tau rows?
-      while( * (int*) (it1.node->data) - blocked_to_row < (detectordata->nRelevantConss / (2*detectordata->tau)) )
+      //are there more rows with constrictions?
+      while( ! iterator_is_equal(it1, iterator_end(detectordata->rowsWithConstrictions))
+            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*detectordata->tau)) )
       {
          iterator_next(&it1);
+//         //has the iterator reached the end of list rowsWithConstrictions
+//         if(iterator_is_equal(it1, iterator_end(detectordata->rowsWithConstrictions)))
+//         {
+//            current_row = detectordata->nRelevantConss;
+//            //debug
+//            printf("current row if: %i\n", current_row);
+//            break;
+//         }
+//         else
+//         {
+//            current_row = * (int*) (it1.node->data);
+//            //debug
+//            printf("current else if: %i\n", current_row);
+//         }
+      }
+      //when there are no more rows with constrictions, break and assign the remaining rows to the last block
+      if(iterator_is_equal(it1, iterator_end(detectordata->rowsWithConstrictions)))
+      {
+         break;
       }
       current_row = * (int*) (it1.node->data);
       max_col_index_i = getMaxColIndex(detectordata, blocked_to_row + 1, current_row);
       min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
+      printf("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, current_row);
+      printf("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
       //assign the variables and constraints to block
-      assignVarsToBlock(detectordata, block, max_col_index_im1+1, min_col_index_ip1, max_col_index_i);
-//      assignConsToBlock(max_col_index_im1+1, min_col_index_ip1, max_col_index_i);
+      assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
+//      assignConsToBlock();
       //update variables in the while loop
       max_col_index_im1 = max_col_index_i;
       blocked_to_row = current_row;
       ++block;
    }
    //assign the remaining (< M/2tau) cons and vars to the last block; no new linking vars are added
-   assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars+1, 0);
+   //debug
+   printf("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, detectordata->nRelevantConss);
+   printf("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
+   assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
    detectordata->blocks = block;
 }
 
@@ -1481,9 +1514,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    rowsWithConstriction(detectordata);
    printf("rows with constriction:");
    list_prin(detectordata->rowsWithConstrictions, printint); //debug
-   blocking(detectordata, nvars);
 
-
+   //BLOCKING
+   if(! list_empty(detectordata->rowsWithConstrictions))
+   {
+      blocking(detectordata, nvars);
+   }
+   printf("BLOCKING DONE.\n");
 
    //fill detectordata for a single block for testing
    detectordata->blocks = 1;
