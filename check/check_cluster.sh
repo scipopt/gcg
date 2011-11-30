@@ -124,7 +124,7 @@ then
 fi
 
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
-echo > $EVALFILE
+touch $EVALFILE
 
 # counter to define file names for a test set uniquely 
 COUNT=1
@@ -235,7 +235,7 @@ do
 #	  sed -i "s,,," runcluster_tmp.sh
 
 #	  less runcluster_aachen.sh
-	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -N SCIP$SHORTFILENAME  runcluster_tmp.sh
+	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -N SCIP$SHORTFILENAME -o /dev/null -e /dev/null  runcluster_tmp.sh
 #	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -q $QUEUE -N SCIP$SHORTFILENAME  runcluster_tmp.sh
       else
           # -V to copy all environment variables

@@ -779,7 +779,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0fs ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0f ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
                remainingtime,
                tempfile,
                detectordata->blocks,
