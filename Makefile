@@ -138,7 +138,8 @@ $(BINDIR):
 		@-mkdir -p $(BINDIR)
 
 # include target to detect the current git hash
--include make.detectgithash
+-include make/local/make.detectgithash
+-include make/local/make.targets
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
