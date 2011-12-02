@@ -26,8 +26,10 @@
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 #include "relax_gcg.h"
+#include "sepa_master.h"
 
 #include "scip/cons_linear.h"
+#include "scip/lpi.h"
 #include "scip/scipdefplugins.h"
 
 
@@ -50,7 +52,7 @@
 #define DEFAULT_SHIFTRATE        0.05   /**< percentage of variables to be shifted in case of a 1-cycle */
 
 #define MINLPITER                5000  /**< minimal number of LP iterations allowed in each LP solving call */
-#define M_PENALTY                100
+#define BIG_M                    100   /**< penalty coefficient for objective funtion */
 
 
 
@@ -88,106 +90,642 @@ struct SCIP_HeurData
  * Local methods
  */
 
-#if 0
-/** set objective values for master diving LP */
+/*
+ * Methods for LP solving, using the LP interface of SCIP
+ */
+
+/** copy the master LP to a new SCIP_LPI instance */
 static
-SCIP_RETCODE setMasterDivingObjectives(
+SCIP_RETCODE initializeLP(
    SCIP*                 scip,
-   SCIP_HEURDATA*        heurdata
+   SCIP_LPI*             divinglp,
+   int**                 col2idx,
+   int**                 idx2col
    )
 {
    SCIP* masterprob;
 
-   SCIP_VAR** origvars;
-   int norigvars;
+   SCIP_ROW** masterrows;
+   int nmasterrows;
+   SCIP_COL** mastercols;
+   int nmastercols;
+
    SCIP_VAR** mastervars;
-   SCIP_Real* masterobjs;
    int nmastervars;
 
-   int i;
+   /* LP row data */
+   SCIP_Real* lhs;
+   SCIP_Real* rhs;
+   char** rownames;
 
+   /* LP column data */
+   SCIP_Real* obj;
+   SCIP_Real* lb;
+   SCIP_Real* ub;
+   char** colnames;
+   int ncolnonz;
+   int* colbeg;
+   int* colind;
+   SCIP_Real* colval;
+
+   int i;
+   int j;
+
+   assert(divinglp != NULL);
+
+   /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
-   assert(heurdata != NULL);
+   /* get master LP rows and columns */
+   masterrows = SCIPgetLPRows(masterprob);
+   nmasterrows = SCIPgetNLPRows(masterprob);
+   assert(nmasterrows >= 0);
+   mastercols = SCIPgetLPCols(masterprob);
+   nmastercols = SCIPgetNLPCols(masterprob);
+   assert(mastercols != NULL);
+   assert(nmastercols >= 0);
 
-   SCIP_CALL( SCIPgetVarsData(scip, &origvars, &norigvars, NULL, NULL, NULL, NULL) );
+   /* get master variables' data */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   assert(nmastercols <= nmastervars);
 
-   assert(origvars != NULL);
-   assert(norigvars > 0);
-   assert(mastervars != NULL);
-   assert(nmastervars > 0);
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, col2idx, nmastervars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, idx2col, nmastercols) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &masterobjs, nmastervars) );
+   /* allocate memory for rows */
+   SCIP_CALL( SCIPallocBufferArray(scip, &lhs, nmasterrows) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &rhs, nmasterrows) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &rownames, nmasterrows) );
 
-   GCGrelaxTransformOrigvalsToMastervals(scip, origvars, heurdata->origobjs, norigvars, mastervars, masterobjs, nmastervars);
-
-   for( i = 0; i < nmastervars; i++ )
+   /* get the master LP rows and store them to the new LP
+    * (columns are added below) */
+   for( i = 0; i < nmasterrows; ++i )
    {
-      SCIP_CALL( SCIPchgVarObjDive(masterprob, mastervars[i], masterobjs[i]) );
+      SCIP_ROW* row;
+
+      /* get row */
+      row = masterrows[i];
+      assert(row != NULL);
+
+      /* store lhs, rhs and name */
+      lhs[i] = SCIProwGetLhs(row);
+      rhs[i] = SCIProwGetRhs(row);
+      rownames[i] = (char*) SCIProwGetName(row);
    }
 
-   SCIPfreeBufferArray(scip, &masterobjs);
+   /* store the rows in the new LP */
+   SCIP_CALL( SCIPlpiAddRows(divinglp, nmasterrows, lhs, rhs, rownames, 0, NULL, NULL, NULL) );
+
+   /* free memory for rows */
+   SCIPfreeBufferArray(scip, &lhs);
+   SCIPfreeBufferArray(scip, &rhs);
+   SCIPfreeBufferArray(scip, &rownames);
+
+   /* allocate memory for columns */
+   SCIP_CALL( SCIPallocBufferArray(scip, &obj, nmastercols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &lb, nmastercols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &ub, nmastercols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &colnames, nmastercols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &colbeg, nmastercols) );
+   colind = NULL;
+   colval = NULL;
+   ncolnonz = 0;
+
+   /* initialize mapping from variable index to diving lp index */
+   for( i = 0; i < nmastervars; ++i)
+      (*col2idx)[i] = -1;
+
+   /* copy the master LP columns */
+   for( i = 0; i < nmastercols; ++i)
+   {
+      SCIP_COL* col;
+      int colidx;
+      SCIP_ROW** colrows;
+      SCIP_Real* colvals;
+      int ncolrows;
+
+      /* get column and its index in the LP */
+      col = mastercols[i];
+      assert(col != NULL);
+      colidx = SCIPcolGetIndex(col);
+      assert(colidx != -1);
+
+      /* get the rows which contain this column */
+      ncolrows = SCIPcolGetNNonz(col);
+      assert(ncolrows >= 0);
+      if( ncolrows > 0 )
+      {
+         colrows = SCIPcolGetRows(col);
+         colvals = SCIPcolGetVals(col);
+         assert(colrows != NULL);
+         assert(colvals != NULL);
+      }
+
+      /* get objective coefficient, lower bound and upper bound, and name */
+      obj[i] = SCIPcolGetObj(col);
+      lb[i] = SCIPcolGetLb(col);
+      ub[i] = SCIPcolGetUb(col);
+      colnames[i] = (char*) SCIPvarGetName(SCIPcolGetVar(col));
+      colbeg[i] = ncolnonz;
+
+      /* map indices */
+      (*col2idx)[colidx] = i;
+      (*idx2col)[i] = colidx;
+
+      /* allocate new memory */
+      if( ncolrows > 0 )
+      {
+         if( ncolnonz == 0 )
+         {
+            assert(colind == NULL);
+            assert(colval == NULL);
+            SCIP_CALL( SCIPallocBufferArray(scip, &colind, ncolrows) );
+            SCIP_CALL( SCIPallocBufferArray(scip, &colval, ncolrows) );
+         }
+         else
+         {
+            assert(colind != NULL);
+            assert(colval != NULL);
+            SCIP_CALL( SCIPreallocBufferArray(scip, &colind, ncolnonz + ncolrows) );
+            SCIP_CALL( SCIPreallocBufferArray(scip, &colval, ncolnonz + ncolrows) );
+         }
+      }
+
+      /* store each entry in the coefficient matrix */
+      for( j = 0; j < ncolrows; ++j )
+      {
+         colind[ncolnonz + j] = SCIProwGetIndex(colrows[j]);
+         colval[ncolnonz + j] = colvals[j];
+      }
+      ncolnonz += ncolrows;
+   }
+
+   /* store the columns to the new LP */
+   SCIP_CALL( SCIPlpiAddCols(divinglp, nmastercols, obj, lb, ub, colnames, ncolnonz, colbeg, colind, colval) );
+
+   /* free memory for columns */
+   SCIPfreeBufferArray(scip, &obj);
+   SCIPfreeBufferArray(scip, &lb);
+   SCIPfreeBufferArray(scip, &ub);
+   SCIPfreeBufferArray(scip, &colnames);
+   SCIPfreeBufferArray(scip, &colbeg);
+   SCIPfreeBufferArrayNull(scip, &colind);
+   SCIPfreeBufferArrayNull(scip, &colval);
 
    return SCIP_OKAY;
 }
-#endif
 
-/** solve a diving LP on the master problem */
+/** add new variables (columns) to the copied master LP */
 static
-SCIP_RETCODE performDivingOnMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   maxlpiterations,    /**< maximum number of LP iterations allowed */
-   SCIP_Longint*         nlpiterations,      /**< pointer to store the number of used LP iterations */
-   SCIP_Bool*            lperror            /**< pointer to store whether an unresolved LP error occured or the
-                                              *   solving process should be stopped (e.g., due to a time limit) */
-//   SCIP_Bool*            cutoff              /**< pointer to store whether the diving direction is infeasible */
+SCIP_RETCODE addVariables(
+   SCIP*                scip,
+   SCIP_LPI*            divinglp,
+   int**                col2idx,
+   int**                idx2col,
+   SCIP_VAR**           newvars,
+   int                  nnewvars
    )
 {
-   SCIP* masterscip;
-   SCIP_LPSOLSTAT lpsolstat;
-   SCIP_Bool feasible;
-   SCIP_Longint oldnlpiters;
-//   SCIP_Longint nodelimit;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+   SCIP_ROW** mastercuts;
+   int nmastercuts;
 
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
+   int nrows;
+   int ncols;
 
-//   SCIP_CALL( SCIPgetLongintParam(masterscip, "limits/nodes", &nodelimit) );
-//   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit + 1) );
+   /* LP column data */
+   SCIP_Real* obj;
+   SCIP_Real* lb;
+   SCIP_Real* ub;
+   char** names;
+   int nnonz;
+   int* beg;
+   int* ind;
+   SCIP_Real* val;
 
-   //printf("before LP solving\n");
+   int i;
+   int j;
+   int k;
 
-   oldnlpiters = SCIPgetNLPIterations(masterscip);
-   SCIP_CALL( SCIPsolveDiveLP(masterscip, maxlpiterations, lperror) );
-   lpsolstat = SCIPgetLPSolstat(masterscip);
+   /* do not try to add variables if there aren't any */
+   if ( nnewvars == 0 )
+      return SCIP_OKAY;
 
-   //printf("after LP solving\n");
+   assert(divinglp != NULL);
+   assert(col2idx != NULL);
+   assert(idx2col != NULL);
+   assert(newvars != NULL);
+   assert(nnewvars >= 1);
 
-//   SCIP_CALL( SCIPsetLongintParam(masterscip, "limits/nodes", nodelimit) );
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
 
-   *nlpiterations = SCIPgetNLPIterations(masterscip) - oldnlpiters;
+   /* get linear master constraints and cuts */
+   masterconss = GCGrelaxGetMasterConss(scip);
+   nmasterconss = GCGrelaxGetNMasterConss(scip);
+   assert(masterconss != NULL);
+   assert(nmasterconss >= 0);
+   mastercuts = GCGsepaGetMastercuts(masterprob);
+   nmastercuts = GCGsepaGetNMastercuts(masterprob);
+   assert(mastercuts != NULL);
+   assert(nmastercuts >= 0);
 
-   //printf("lperror = %d\n", (*lperror));
+   /* get number of rows in copied LP */
+   SCIP_CALL( SCIPlpiGetNRows(divinglp, &nrows) );
+   assert(nrows <= nmasterconss + nmastercuts + GCGrelaxGetNPricingprobs(scip));
 
-   if( !(*lperror) )
+   /* get number of columns in copied LP */
+   SCIP_CALL( SCIPlpiGetNCols(divinglp, &ncols) );
+   assert(ncols >= 0);
+
+   /* reallocate memory for mappings */
+   SCIP_CALL( SCIPreallocBufferArray(scip, col2idx, SCIPgetNVars(masterprob)) );
+   SCIP_CALL( SCIPreallocBufferArray(scip, idx2col, ncols + nnewvars) );
+
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &obj, nnewvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &lb, nnewvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &ub, nnewvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &names, nnewvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &beg, nnewvars) );
+   ind = NULL;
+   val = NULL;
+   nnonz = 0;
+
+   /* for each new master variable, get the coefficients in the master constraints and master cuts
+    * and add the to the diving LP */
+   for( i = 0; i < nnewvars; ++i )
    {
-      //printf("lpsolstat = %d, isRelax = %d\n", lpsolstat, SCIPisLPRelax(masterscip));
-      /* get LP solution status */
-//      *cutoff = lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE;
-      if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )//&& SCIPisLPRelax(masterscip) )
-         SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+      SCIP_VAR* newvar;
+      int varidx;
+      int block;
+
+      newvar = newvars[i];
+      assert(newvar != NULL);
+      assert(GCGvarIsMaster(newvar));
+
+      varidx = SCIPvarGetProbindex(newvars[i]);
+      assert(varidx != -1);
+
+      block = GCGvarGetBlock(newvar);
+      assert(block >= 0 && block < GCGrelaxGetNPricingprobs(scip));
+
+      /* get objective coefficient, lower bound and upper bound, and name */
+      obj[i] = SCIPvarGetObj(newvar);
+      lb[i] = SCIPvarGetLbLocal(newvar);
+      ub[i] = SCIPvarGetUbLocal(newvar);
+      names[i] = (char*) SCIPvarGetName(newvar);
+      beg[i] = nnonz;
+
+      /* allocate new memory */
+      if( nnonz == 0 )
+      {
+         assert(ind == NULL);
+         assert(val == NULL);
+         SCIP_CALL( SCIPallocBufferArray(scip, &ind, nrows) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &val, nrows) );
+      }
+      else
+      {
+         assert(ind != NULL);
+         assert(val != NULL);
+         SCIP_CALL( SCIPreallocBufferArray(scip, &ind, nnonz + nrows) );
+         SCIP_CALL( SCIPreallocBufferArray(scip, &val, nnonz + nrows) );
+      }
+
+      /* get coefficients for master constraints */
+      for( j = 0; j < nmasterconss; ++j )
+      {
+         SCIP_CONS* cons;
+         SCIP_VAR** consvars;
+         SCIP_Real* consvals;
+         int nconsvars;
+
+         SCIP_ROW* row;
+         int idx;
+
+         /* get constraint;
+          * @todo: what if the constraint has been upgraded? */
+         cons = masterconss[j];
+         assert(SCIPconsGetHdlr(cons) != NULL);
+         assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0);
+
+         /* get entries in the constraint */
+         nconsvars = SCIPgetNVarsLinear(scip, cons);
+         assert(nconsvars >= 0);
+         if( nconsvars > 0 )
+         {
+            consvars = SCIPgetVarsLinear(scip, cons);
+            consvals = SCIPgetValsLinear(scip, cons);
+            assert(consvars != NULL);
+            assert(consvals != NULL);
+         }
+
+         /* search variable in the constraint */
+         for( k = nconsvars - 1; k >= 0; --k )
+         {
+            if( consvars[k] == newvars[i] )
+               break;
+         }
+
+         /* if the new variable is in the constraint, add a coefficient for the LP */
+         if( k != -1 && !SCIPisZero(scip, consvals[k]) )
+         {
+            row = SCIPgetRowLinear(scip, cons);
+            assert(row != NULL);
+            idx = SCIProwGetLPPos(row);
+
+            ind[nnonz] = idx;
+            val[nnonz] = consvals[k];
+            ++nnonz;
+         }
+      }
+
+      /* get coefficient in the right convexity constraint */
+      if( !GCGmasterVarIsRay(newvar) )
+      {
+         SCIP_CONS* cons;
+         SCIP_ROW* row;
+         int idx;
+
+         cons = GCGrelaxGetConvCons(scip, block);
+         assert(cons != NULL);
+         row = SCIPgetRowLinear(scip, cons);
+         assert(row != NULL);
+         idx = SCIProwGetLPPos(row);
+         assert(idx >= 0);
+
+         ind[nnonz] = idx;
+         val[nnonz] = 1.0;
+         ++nnonz;
+      }
+
+      /* get coefficients for the master cuts */
+      for( j = 0; j < nmastercuts; ++j )
+      {
+         SCIP_ROW* row;
+         SCIP_COL** rowcols;
+         SCIP_Real* rowvals;
+         int nrowcols;
+
+         SCIP_VAR* var;
+         int idx;
+
+         /* get entries in the cut */
+         row = mastercuts[j];
+         rowcols = SCIProwGetCols(row);
+         assert(nrowcols >= 0);
+         if( nrowcols > 0 )
+         {
+            rowvals = SCIProwGetVals(row);
+            nrowcols = SCIProwGetNNonz(row);
+            assert(rowcols != NULL);
+            assert(rowvals != NULL);
+         }
+
+         /* search variable in the cut */
+         for( k = nrowcols - 1; k >= 0; --k)
+         {
+            var = SCIPcolGetVar(rowcols[k]);
+            assert(var != NULL);
+            if( var == newvars[i] )
+               break;
+         }
+
+         /* if the new variable is in the cut, add a coefficient for the LP */
+         if( k != -1 && !SCIPisZero(scip, rowvals[k]) )
+         {
+            idx = SCIProwGetLPPos(row);
+
+            ind[nnonz] = idx;
+            val[nnonz] = rowvals[k];
+            ++nnonz;
+         }
+      }
+
+      /* map variable index to column index in diving LP */
+      (*col2idx)[varidx] = ncols + i;
+      (*idx2col)[ncols + i] = varidx;
    }
-   else
+
+   /* add new columns to the diving LP */
+   SCIP_CALL( SCIPlpiAddCols(divinglp, nnewvars, obj, lb, ub, names, nnonz, beg, ind, val) );
+
+   /* solve the LP again */
+   SCIP_CALL( SCIPlpiSolvePrimal(divinglp) );
+
+   /* free memory */
+   SCIPfreeBufferArray(scip, &obj);
+   SCIPfreeBufferArray(scip, &lb);
+   SCIPfreeBufferArray(scip, &ub);
+   SCIPfreeBufferArray(scip, &names);
+   SCIPfreeBufferArray(scip, &beg);
+   SCIPfreeBufferArrayNull(scip, &ind);
+   SCIPfreeBufferArrayNull(scip, &val);
+
+   return SCIP_OKAY;
+}
+
+/** set new objective coefficients for the LP columns */
+static
+SCIP_RETCODE setObjectives(
+   SCIP*                scip,
+   SCIP_LPI*            divinglp,
+   int*                 idx2col,
+   SCIP_Real*           objectives
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   int nmastervars;
+
+   int ncols;
+   int* ind;
+   SCIP_Real* obj;
+
+   int i;
+
+   assert(divinglp != NULL);
+   assert(idx2col != NULL);
+   assert(objectives != NULL);
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variables */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   /* get number of LP columns */
+   SCIP_CALL ( SCIPlpiGetNCols(divinglp, &ncols) );
+   assert(ncols <= nmastervars);
+
+   if( ncols == 0 )
+      return SCIP_OKAY;
+
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &ind, ncols) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &obj, ncols) );
+
+   /* for each master variable which is in the LP, get the new objective */
+   for( i = 0; i < ncols; ++i )
    {
-      SCIPdebugMessage("something went wrong, an lp error occurred\n");
+      int idx;
+
+      idx = idx2col[i];
+      assert(idx >= 0 && idx < nmastervars);
+
+      ind[i] = i;
+      obj[i] = objectives[idx];
+   }
+
+   /* change objectives */
+   SCIP_CALL( SCIPlpiChgObj(divinglp, ncols, ind, obj) );
+
+   /* free memory */
+   SCIPfreeBufferArray(scip, &ind);
+   SCIPfreeBufferArray(scip, &obj);
+
+   return SCIP_OKAY;
+}
+
+/** solve the LP, and store the result into a SCIP_SOL */
+static
+SCIP_RETCODE solveLP(
+   SCIP*                scip,
+   SCIP_LPI*            divinglp,
+   int*                 col2idx,
+   SCIP_HEUR*           heur,
+   SCIP_SOL**           lpsol,
+   SCIP_Bool*           solved
+   )
+{
+   SCIP* masterprob;
+
+   SCIP_VAR** mastervars;
+   SCIP_Real* solvals;
+   int nmastervars;
+
+   SCIP_Real* primsol;
+   SCIP_Real objval;
+   int ncols;
+
+   int i;
+
+   assert(divinglp != NULL);
+   assert(col2idx != NULL);
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variables' data */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   SCIP_CALL( SCIPlpiGetNCols(divinglp, &ncols) );
+   assert(ncols <= nmastervars);
+
+   /* free previous lp solution */
+   if( *lpsol != NULL )
+   {
+      SCIP_CALL( SCIPfreeSol(masterprob, lpsol));
+      *lpsol = NULL;
+   }
+
+   /* solve the LP */
+   SCIP_CALL( SCIPlpiSolvePrimal(divinglp) );
+
+   /* if the LP was solved, store the obtained solution */
+   if( *solved
+         && !SCIPlpiIsPrimalInfeasible(divinglp)
+         && !SCIPlpiIsPrimalUnbounded(divinglp) )
+   {
+      SCIP_CALL( SCIPcreateSol(masterprob, lpsol, heur) );
+
+      /* allocate memory for storing the solution values */
+      SCIP_CALL( SCIPallocBufferArray(scip, &primsol, ncols) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nmastervars) );
+
+      /* get solution and objective value */
+      SCIPlpiGetSol(divinglp, &objval, primsol, NULL, NULL, NULL);
+
+      /* get solution values for the master variables */
+      for( i = 0; i < nmastervars; ++i)
+      {
+         int idx;
+
+         idx = col2idx[i];
+         assert(-1 <= idx && idx < ncols);
+         if( idx != -1 )
+            solvals[i] = primsol[idx];
+         else
+            solvals[i] = 0.0;
+      }
+
+      /* store the solution values */
+      SCIP_CALL( SCIPsetSolVals(masterprob, *lpsol, nmastervars, mastervars, solvals) );
+
+      /* free memory */
+      SCIPfreeBufferArray(scip, &primsol);
+      SCIPfreeBufferArray(scip, &solvals);
    }
 
    return SCIP_OKAY;
 }
+
+
+/*
+ * further local methods
+ */
+
+
+/** for a given solution, calculate the number of fractional variables that should be integral */
+static
+SCIP_RETCODE getNSolFracs(
+   SCIP*                scip,
+   SCIP_SOL*            relaxsol,
+   int*                 nfracs
+   )
+{
+   SCIP_VAR** vars;
+   SCIP_Real* solvals;
+   int nvars;
+
+   int i;
+
+   *nfracs = 0;
+
+   /* get variables */
+   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+
+   /* get solution values */
+   SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nvars) );
+   SCIP_CALL( SCIPgetSolVals(scip, relaxsol, nvars, vars, solvals) );
+
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIP_VARTYPE vartype;
+      SCIP_Real frac;
+
+      vartype = SCIPvarGetType(vars[i]);
+      frac = SCIPfeasFrac(scip, solvals[i]);
+
+      if( vartype <= SCIP_VARTYPE_INTEGER && !SCIPisFeasZero(scip, frac) )
+         ++(*nfracs);
+   }
+
+   /* free memory */
+   SCIPfreeBufferArray(scip, &solvals);
+
+   return SCIP_OKAY;
+}
+
 
 /** solve the subproblems with a distance objective function */
 static
@@ -278,9 +816,9 @@ SCIP_RETCODE solvePricingProblems(
                   lb = SCIPvarGetLbLocal(origvar);
                   ub = SCIPvarGetUbLocal(origvar);
                   if( SCIPisFeasEQ(scip, solval, lb) )
-                     newobjcoeff = M_PENALTY;
+                     newobjcoeff = BIG_M;
                   else if( SCIPisFeasEQ(scip, solval, ub) )
-                     newobjcoeff = -M_PENALTY;
+                     newobjcoeff = -BIG_M;
                   else
                      newobjcoeff = 0.0;
                }
@@ -292,9 +830,11 @@ SCIP_RETCODE solvePricingProblems(
                   nlocksdown = heurdata->masterlocksdown[idx];
 
                   if( nlocksup > nlocksdown )
-                     newobjcoeff = - (SCIP_Real) nlocksup / (SCIP_Real) (nlocksup + nlocksdown);
+                     newobjcoeff = (SCIP_Real) nlocksup / (SCIP_Real) (nlocksup + nlocksdown)
+                                    * (SCIPfeasCeil(scip, solval) - solval);
                   else if ( nlocksdown > nlocksup )
-                     newobjcoeff = (SCIP_Real) nlocksdown / (SCIP_Real) (nlocksup + nlocksdown);
+                     newobjcoeff = - (SCIP_Real) nlocksdown / (SCIP_Real) (nlocksup + nlocksdown)
+                                    * (solval - SCIPfeasFloor(scip, solval));
                   else
                      newobjcoeff = 0.0;
                }
@@ -542,12 +1082,7 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    SCIP* masterprob;
    SCIP_HEURDATA* heurdata;
 
-   SCIP_CONS** masterconss;
-   int nmasterconss;
-
-#ifdef SCIP_DEBUG
    SCIP_VAR** origvars;
-#endif
    int nvars;
 
    int i;
@@ -561,86 +1096,81 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
-   /* get (linear) constraints in the original problem that were transferred to the master problem */
-   masterconss = GCGrelaxGetLinearOrigMasterConss(scip);
-   nmasterconss = GCGrelaxGetNMasterConss(scip);
-
-   assert(masterconss != NULL || nmasterconss == 0 );
-
    /* get original variable data */
-#ifdef SCIP_DEBUG
    SCIP_CALL( SCIPgetVarsData(scip, &origvars, &nvars, NULL, NULL, NULL, NULL) );
-#else
-   nvars = SCIPgetNVars(scip);
-#endif
 
    /* allocate memory, initialize heuristic's data */
    SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->masterlocksup, nvars) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->masterlocksdown, nvars) );
+
    heurdata->nvars = nvars;
+
+   /* for each variable, calculate the number of locks */
    for( i = 0; i < nvars; ++i )
    {
+      SCIP_VAR* var;
+      SCIP_CONS** linkingconss;
+      SCIP_Real* coefs;
+      int ncoefs;
+
       heurdata->masterlocksup[i] = 0;
       heurdata->masterlocksdown[i] = 0;
-   }
 
-   /* for each master constraint, get the LP row in the original problem and check if there are
-    * locks for the variables in this row */
-   for( i = 0; i < nmasterconss; ++i )
-   {
-      SCIP_CONS* cons;
-      SCIP_VAR** vars;
-      SCIP_Real* vals;
-      int nnonz;
-      SCIP_Real lhs;
-      SCIP_Real rhs;
+      var = origvars[i];
+      assert(GCGvarIsOriginal(var));
 
-      /* get constraint; the constraint must be linear */
-      cons = masterconss[i];
-      assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0);
-
-      /* get the variables of this constraints, their coefficients, the lhs and the rhs */
-      vars = SCIPgetVarsLinear(scip, cons);
-      vals = SCIPgetValsLinear(scip, cons);
-      nnonz = SCIPgetNVarsLinear(scip, cons);
-      lhs = SCIPgetLhsLinear(scip, cons);
-      rhs = SCIPgetRhsLinear(scip, cons);
-
-      /* for each entry, get the variable and determine whether there is a lock */
-      for( j = 0; j < nnonz; ++j )
+      /* get constraints transferred to the master problem
+       * in which the variable is contained */
+      ncoefs = GCGoriginalVarGetNCoefs(var);
+      assert(ncoefs >= 0);
+      if( ncoefs > 0)
       {
-         int idx;
-         SCIP_Real coef;
+         linkingconss = GCGoriginalVarGetLinkingCons(var);
+         coefs = GCGoriginalVarGetCoefs(var);
+         assert(linkingconss != NULL);
+         assert(coefs != NULL);
+      }
 
-         /* get variable index and coefficient */
-         idx = SCIPvarGetProbindex(vars[j]);
-         coef = vals[j];
+      /* for each constraint, check whether there is a lock */
+      for( j = 0; j < ncoefs; ++j )
+      {
+         SCIP_CONS* cons;
+         SCIP_Real coef;
+         SCIP_Real lhs;
+         SCIP_Real rhs;
+
+         /* get constraint;
+          * @todo: what if the constraint has been upgraded? */
+         cons = linkingconss[j];
+         assert(cons != NULL);
+         assert(SCIPconsGetHdlr(cons) != NULL);
+         assert(strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0);
+
+         /* get coefficient of variable, lhs and rhs */
+         coef = coefs[j];
+         lhs = SCIPgetLhsLinear(scip, cons);
+         rhs = SCIPgetRhsLinear(scip, cons);
 
          /* compute the locks */
          if( SCIPisPositive(scip, coef) )
          {
             if( !SCIPisInfinity(scip, -lhs) )
-               ++heurdata->masterlocksdown[idx];
+               ++heurdata->masterlocksdown[i];
             if( !SCIPisInfinity(scip, rhs) )
-               ++heurdata->masterlocksup[idx];
+               ++heurdata->masterlocksup[i];
          }
          if( SCIPisNegative(scip, coef) )
          {
             if( !SCIPisInfinity(scip, -lhs) )
-               ++heurdata->masterlocksup[idx];
+               ++heurdata->masterlocksup[i];
             if( !SCIPisInfinity(scip, rhs) )
-               ++heurdata->masterlocksdown[idx];
+               ++heurdata->masterlocksdown[i];
          }
       }
-   }
 
-#ifdef SCIP_DEBUG
-   for( i = 0; i < nvars; ++i )
-   {
-      SCIPdebugMessage("Variable %s: nlocksup=%d, nlocksdown=%d\n", SCIPvarGetName(origvars[i]),
-                            heurdata->masterlocksup[i], heurdata->masterlocksdown[i]);
+//      SCIPdebugMessage("Variable %s: nlocksup=%d, nlocksdown=%d\n", SCIPvarGetName(origvars[i]),
+//                            heurdata->masterlocksup[i], heurdata->masterlocksdown[i]);
    }
-#endif
 
    return SCIP_OKAY;
 }
@@ -689,29 +1219,35 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 {  /*lint --e{715}*/
    SCIP* masterprob;
    SCIP_HEURDATA* heurdata;
-   SCIP_LPSOLSTAT lpsolstat;  /* status of the LP solution */
+   SCIP_LPI* divinglp;           /* diving LP */
+//   SCIP_LPSOLSTAT lpsolstat;     /* status of the LP solution */
    SCIP_RETCODE retcode;
    SCIP_SOL** lastsols;
+   SCIP_SOL* mastersol;
    SCIP_SOL* relaxsol;
-   SCIP_SOL* sol;
+   SCIP_SOL* intsol;
    SCIP_SOL* tmpsol;
    SCIP_VAR** mastervars;
    SCIP_VAR** vars;
-   SCIP_Bool lperror;
+   SCIP_Bool solved;
    SCIP_Bool success;
    SCIP_Real alpha;
    SCIP_Real objnorm;         /* Euclidean norm of the objective function, used for scaling */
    SCIP_Real scalingfactor;   /* factor to scale the original objective function with */
    SCIP_Real objfactor;
    SCIP_Real* lastalphas;
+   SCIP_Real* masterobjs;
    SCIP_Real* pricingobjs;
    SCIP_Real* solvals;
    SCIP_Longint nlpiterations;    /* number of LP iterations done during one pumping round */
    SCIP_Longint maxnlpiterations; /* maximum number of LP iterations fpr this heuristic */
    SCIP_Longint nsolsfound;       /* number of solutions found by this heuristic */
    SCIP_Longint ncalls;           /* number of calls of this heuristic */
+   int* col2idx;                  /* mapping from variable/column index to column index in diving LP */
+   int* idx2col;                  /* mapping from diving LP column index to master variable index */
    int bestnfracs;
    int cycle;
+   int lastiterations;
    int maxloops;
    int maxstallloops;
    int nfracs;
@@ -722,6 +1258,8 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 //   int nshifts;
    int nstallloops;
    int nvars;
+
+   char probname[SCIP_MAXSTRLEN];
 
    int i;
    int j;
@@ -758,10 +1296,6 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    }
 
    assert(SCIPhasCurrentNodeLP(masterprob));
-
-   /* only call heuristic, if the LP solution is basic (which allows fast resolve in diving) */
-   if( !SCIPisLPSolBasic(masterprob) )
-      return SCIP_OKAY;
 
    /* don't dive two times at the same node */
    if( SCIPgetLastDivenode(masterprob) == SCIPgetNNodes(masterprob) && SCIPgetDepth(masterprob) > 0 )
@@ -814,6 +1348,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    maxstallloops = (heurdata->maxstallloops == -1 ? INT_MAX : heurdata->maxstallloops);
 
    /* allocate further memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &masterobjs, nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &pricingobjs, nvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nvars) );
 
@@ -826,15 +1361,46 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    }
 
    /* initialize working solutions */
+   mastersol = NULL;
+   tmpsol = NULL;
    SCIP_CALL( SCIPcreateSol(scip, &relaxsol, heur) );
-   SCIP_CALL( SCIPcreateSol(scip, &sol, heur) );
+   SCIP_CALL( SCIPlinkRelaxSol(scip, relaxsol) );
+   SCIP_CALL( SCIPcreateSol(scip, &intsol, heur) );
 
-   /* start diving */
-   SCIP_CALL( SCIPstartDive(masterprob) );
+   /* create a copy of the master LP */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_divingLP", SCIPgetProbName(scip));
+   SCIP_CALL( SCIPlpiCreate(&divinglp, probname, SCIPgetObjsense(masterprob)) );
+   SCIP_CALL( initializeLP(scip, divinglp, &col2idx, &idx2col) );
 
-   /* lp was solved optimal */
-   lperror = FALSE;
-   lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
+   /* in debug mode, check whether the copied master LP yields the same solution */
+#ifndef NDEBUG
+   SCIP_CALL( solveLP(scip, divinglp, col2idx, heur, &mastersol, &solved) );
+   SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, mastersol, &tmpsol) );
+
+//   SCIPdebugMessage("objectives: relaxsol=%g, divinglpsol=%g\n",
+//      SCIPsolGetOrigObj(relaxsol), SCIPsolGetOrigObj(tmpsol));
+
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIP_Real val1;
+      SCIP_Real val2;
+
+      val1 = SCIPgetSolVal(scip, relaxsol, vars[i]);
+      val2 = SCIPgetSolVal(scip, tmpsol, vars[i]);
+      if( !SCIPisEQ(scip, val1, val2) )
+      {
+         SCIPdebugMessage("WARNING: different values for var %s: relaxsol=%g, divinglpsol=%g\n",
+               SCIPvarGetName(vars[i]), val1, val2);
+      }
+   }
+
+   SCIP_CALL( SCIPfreeSol(scip, &tmpsol) );
+   tmpsol = NULL;
+#endif
+
+   /* lp was solved to optimality */
+   solved = TRUE;
+//   lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
 
    /* change objectives in the master problem */
    /* scale distance function and original objective to the same norm */
@@ -844,6 +1410,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
    nfracs = SCIPgetNExternBranchCands(scip);
    bestnfracs = nfracs;
+   lastiterations = 0;
    nloops = 0;
    nstallloops = 0;
    alpha = 1.0;
@@ -863,21 +1430,21 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
       SCIPdebugMessage("CG Feasibility Pump loop %d: %d fractional variables (alpha: %.4f, stall: %d/%d)\n",
          nloops, nfracs, alpha, nstallloops, maxstallloops);
 
-      /* create solution from diving LP and try to round it */
-      SCIP_CALL( SCIPlinkRelaxSol(scip, relaxsol) );
-      SCIP_CALL( SCIProundSol(scip, relaxsol, &success) );
+      /* try to round diving lp solution */
+      SCIP_CALL( SCIPgetSolVals(scip, relaxsol, nvars, vars, solvals) );
+      SCIP_CALL( SCIPsetSolVals(scip, intsol, nvars, vars, solvals) );
+      SCIP_CALL( SCIProundSol(scip, intsol, &success) );
 
-      /* if the rounded solution is feasible and better, add it to SCIP */
+      /* if the rounded solution is feasible and better, add it to GCG */
       if( success )
       {
-         SCIPdebugMessage("colgen feaspump found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, relaxsol));
-         //         SCIP_CALL( SCIPtrySol(scip, relaxsol, FALSE, FALSE, FALSE, FALSE, &success) );
-#ifdef SCIP_DEBUG
-         SCIP_CALL( SCIPtrySol(scip, relaxsol, TRUE, TRUE, TRUE, TRUE, &success) );
-#else
-         SCIP_CALL( SCIPtrySol(scip, relaxsol, FALSE, TRUE, TRUE, TRUE, &success) );
-#endif
-
+         SCIPdebugMessage(" -> found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, relaxsol));
+         //         SCIP_CALL( SCIPtrySol(scip, intsol, FALSE, FALSE, FALSE, FALSE, &success) );
+//#ifdef SCIP_DEBUG
+//         SCIP_CALL( SCIPtrySol(scip, intsol, TRUE, TRUE, TRUE, TRUE, &success) );
+//#else
+         SCIP_CALL( SCIPtrySol(scip, intsol, FALSE, TRUE, TRUE, TRUE, &success) );
+//#endif
          if( success )
          {
             SCIPdebugMessage(" -> solution was feasible and good enough\n");
@@ -885,15 +1452,13 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          }
       }
 
-      SCIP_CALL( SCIPlinkRelaxSol(scip, relaxsol) );
-
       /* solve all pricing problems and store the result in the current working solution */
       SCIPdebugMessage(" -> solving pricing problem\n");
-      SCIP_CALL( solvePricingProblems(scip, heurdata, alpha, relaxsol, sol, pricingobjs) );
-      SCIPdebugMessage(" -> new integer solution, obj=%g\n", SCIPgetSolOrigObj(scip, sol));
+      SCIP_CALL( solvePricingProblems(scip, heurdata, alpha, relaxsol, intsol, pricingobjs) );
+      SCIPdebugMessage(" -> new integer solution, obj=%g\n", SCIPgetSolOrigObj(scip, intsol));
 
       /* check for cycles */
-      SCIP_CALL( checkCycles(scip, heurdata->cyclelength, nloops, sol, alpha, lastsols, lastalphas, &cycle) );
+      SCIP_CALL( checkCycles(scip, heurdata->cyclelength, nloops, intsol, alpha, lastsols, lastalphas, &cycle) );
 
       /* @todo: What to do when a cycle occurs? */
       if( cycle >= 0 )
@@ -923,7 +1488,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
       }
 
       /* try to add obtained pricing solution to the solution pool; if it is feasible, then stop */
-      SCIP_CALL( SCIPtrySol(scip, sol, FALSE, TRUE, FALSE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, intsol, FALSE, TRUE, FALSE, TRUE, &success) );
       if( success )
       {
          SCIPdebugMessage(" -> solving pricing problem yielded feasible solution.\n");
@@ -932,115 +1497,114 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
       }
       else
       {
-         SCIPdebugMessage(" -> infeasible\n");
+         SCIPdebugMessage(" -> not feasible for the original problem\n");
       }
 
-      /* add new columns to the master problem and update master variables array */
-      /* @todo: this is not allowed in diving mode */
+      /* add new columns to the master problem and diving lp and update master variables array */
       oldnmastervars = nmastervars;
-      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
+      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, intsol) );
       SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+      SCIP_CALL( SCIPreallocBufferArray(scip, &masterobjs, nmastervars) );
+      SCIP_CALL( addVariables(scip, divinglp, &col2idx, &idx2col, &mastervars[oldnmastervars], nmastervars - oldnmastervars) );
       SCIPdebugMessage(" -> added %d new master variables\n", nmastervars - oldnmastervars);
 
 
-      /* change objective coefficients in master problem */
-      for( i = 0; i < nmastervars; i++ )
+      /* compute objective coefficients in master problem:
+       * for each original variable, compute its new objective coefficient (according to the distance function)
+       * and add it to all master variables in which it is contained */
+      for( i = 0; i < nmastervars; ++i )
+         masterobjs[i] = 0.0;
+      for( i = 0; i < nvars; ++i )
       {
-         SCIP_VAR* mastervar;
-         SCIP_VAR** origvars;
-         SCIP_Real* origvals;
-         int norigvars;
+         SCIP_VAR* var;
 
-         SCIP_VAR* origvar;
-         SCIP_Real masterobjcoeff;
+         SCIP_VAR** origmastervars;
+         SCIP_Real* origmastervals;
+         int norigmastervars;
+
+         SCIP_Real intval;
+         SCIP_Real relaxval;
+         SCIP_Real direction;
          SCIP_Real newobjcoeff;
-         SCIP_Real origval;
-//         SCIP_Real relaxval;
-         SCIP_Real solval;
-         SCIP_Real frac;
 
-         mastervar = mastervars[i];
-         masterobjcoeff = 0.0;
-         origvars = GCGmasterVarGetOrigvars(mastervar);
-         origvals = GCGmasterVarGetOrigvals(mastervar);
-         norigvars = GCGmasterVarGetNOrigvars(mastervar);
+         /* get original variable, its solution value and fractionality */
+         var = vars[i];
+         intval = SCIPgetSolVal(scip, intsol, var);
+         relaxval = SCIPgetSolVal(scip, relaxsol, var);
+         direction = intval - relaxval;
 
-         /* for each original variable contained in mastervar, compute newobjcoeff
-          * and add origval * newobjcoeff to objective coefficient of mastervar */
-         for( j = 0; j < norigvars; j++ )
+         /* get master variables which contain this variable */
+         origmastervars = GCGoriginalVarGetMastervars(vars[i]);
+         origmastervals = GCGoriginalVarGetMastervals(vars[i]);
+         norigmastervars = GCGoriginalVarGetNMastervars(vars[i]);
+         assert(origmastervars != NULL);
+         assert(origmastervals != NULL);
+         assert(norigmastervars >= 0);
+
+         /* variables which stayed integral are treated separately */
+         if( SCIPisFeasZero(scip, direction) )
          {
-            origvar = origvars[j];
-            origval = origvals[j];
-            assert(GCGvarIsOriginal(origvar));
+            SCIP_Real lb;
+            SCIP_Real ub;
 
-//            relaxval = SCIPgetSolVal(scip, relaxsol, origvar);
-            solval = SCIPgetSolVal(scip, sol, origvar);
-            frac = SCIPfeasFrac(scip, solval);
-
-            /* variables which are already integral, are treated separately */
-            if( SCIPisFeasZero(scip, frac) )
-            {
-               SCIP_Real lb;
-               SCIP_Real ub;
-
-               /* variables at their bounds should be kept there */
-               lb = SCIPvarGetLbLocal(origvar);
-               ub = SCIPvarGetUbLocal(origvar);
-               if( SCIPisFeasEQ(scip, solval, lb) )
-                  newobjcoeff = 1.0;
-               else if( SCIPisFeasEQ(scip, solval, ub) )
-                  newobjcoeff = -1.0;
-               else
-                  newobjcoeff = 0.0;
-            }
+            /* variables at their bounds should be kept there */
+            lb = SCIPvarGetLbLocal(var);
+            ub = SCIPvarGetUbLocal(var);
+            if( SCIPisFeasEQ(scip, intval, lb) )
+               newobjcoeff = BIG_M;
+            else if( SCIPisFeasEQ(scip, intval, ub) )
+               newobjcoeff = -BIG_M;
             else
-            {
-               if( frac > 0.5 )
-                  newobjcoeff = - 1.0;
-               else
-                  newobjcoeff = 1.0;
-            }
-
-            /* transfer objective coefficient to the master variable */
-            masterobjcoeff += origval * newobjcoeff;
+               newobjcoeff = 0.0;
+         }
+         else
+         {
+            if( SCIPisFeasPositive(scip, direction) )
+               newobjcoeff = - 1.0;
+            else
+               newobjcoeff = 1.0;
          }
 
-         /* change objective coefficient in the master problem */
-         SCIP_CALL( SCIPchgVarObjDive(masterprob, mastervar, masterobjcoeff) );
+         for( j = 0; j < norigmastervars; ++j )
+         {
+            int idx;
+
+            idx = SCIPvarGetProbindex(origmastervars[j]);
+            assert(idx >= 0 && idx < nmastervars);
+            masterobjs[idx] += origmastervals[j] * newobjcoeff;
+         }
       }
 
+      /* set the new objectives */
+      SCIP_CALL( setObjectives(scip, divinglp, idx2col, masterobjs) );
+
       /* the LP with the new (distance) objective is solved */
-      nlpiterations = SCIPgetNLPIterations(scip) + SCIPgetNLPIterations(masterprob);
+      nlpiterations = SCIPgetNLPIterations(scip) + SCIPgetNLPIterations(masterprob) + lastiterations;
       nlpiterationsleft = adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops) - heurdata->nlpiterations;
       iterlimit = MAX((int)nlpiterationsleft, MINLPITER);
       SCIPdebugMessage(" -> solve LP with iteration limit %d\n", iterlimit);
 
-//      SCIP_CALL( setMasterDivingObjectives(scip, heurdata) );
-      retcode = performDivingOnMaster(scip, iterlimit, &nlpiterations, &lperror);
-      lpsolstat = SCIPgetLPSolstat(masterprob);
+      SCIP_CALL( SCIPlpiSetIntpar(divinglp, SCIP_LPPAR_LPITLIM, iterlimit) );
+      retcode = solveLP(scip, divinglp, col2idx, heur, &mastersol, &solved);
 
       /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
        * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
        */
       if( retcode != SCIP_OKAY )
       {
-#ifndef NDEBUG
-         if( lpsolstat != SCIP_LPSOLSTAT_UNBOUNDEDRAY )
-         {
-            SCIP_CALL( retcode );
-         }
-#endif
          SCIPwarningMessage("Error while solving LP in Colgen Feaspump heuristic; LP solve terminated with code <%d>\n", retcode);
          SCIPwarningMessage("This does not affect the remaining solution procedure --> continue\n");
       }
 
-      /* update iteration count */
-      heurdata->nlpiterations += nlpiterations;
-      SCIPdebugMessage(" -> number of iterations: %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", lperror=%u, lpsolstat=%d\n",
-            heurdata->nlpiterations, adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops), lperror, lpsolstat);
+      /* update iteration count;
+       * @todo: the method yields an int and not a long int */
+      SCIP_CALL( SCIPlpiGetIterations(divinglp, &lastiterations) );
+      heurdata->nlpiterations += lastiterations;
+      SCIPdebugMessage(" -> number of iterations: %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", solved=%d\n",
+            heurdata->nlpiterations, adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops), solved);
 
-      /* check whether LP was solved optimal */
-      if( lperror || lpsolstat != SCIP_LPSOLSTAT_OPTIMAL )
+      /* check whether LP was solved to optimality */
+      if( !solved )
          break;
 
       /* swap the last solutions, i.e. store the pricing solution into the lastsols array */
@@ -1050,12 +1614,15 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
          lastsols[i] = lastsols[i-1];
          lastalphas[i] = lastalphas[i-1];
       }
-      lastsols[0] = sol;
+      lastsols[0] = intsol;
       lastalphas[0] = alpha;
-      sol = tmpsol;
+      intsol = tmpsol;
 
-      /* check for improvement in number of fractionals */
-      nfracs = SCIPgetNExternBranchCands(scip);
+      /* translate sol into original variable space
+       * and check for improvement in number of fractionals */
+      SCIP_CALL( SCIPfreeSol(scip, &relaxsol) );
+      SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, mastersol, &relaxsol) );
+      SCIP_CALL( getNSolFracs(scip, relaxsol, &nfracs) );
       if( nfracs < bestnfracs )
       {
          bestnfracs = nfracs;
@@ -1069,19 +1636,18 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    }
 
    /* try final solution, if no more fractional variables are left */
-   if( nfracs == 0 && !lperror && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )
+   if( nfracs == 0 && solved )
    {
       success = FALSE;
 
-      SCIP_CALL( SCIPlinkRelaxSol(scip, relaxsol) );
       SCIPdebugMessage("colgen feaspump found primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, relaxsol));
 
 //      SCIP_CALL( SCIPtrySol(scip, relaxsol, FALSE, FALSE, FALSE, FALSE, &success) );
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPtrySol(scip, relaxsol, TRUE, TRUE, TRUE, TRUE, &success) );
-#else
+//#ifdef SCIP_DEBUG
+//      SCIP_CALL( SCIPtrySol(scip, relaxsol, TRUE, TRUE, TRUE, TRUE, &success) );
+//#else
       SCIP_CALL( SCIPtrySol(scip, relaxsol, FALSE, TRUE, TRUE, TRUE, &success) );
-#endif
+//#endif
 
       if( success )
       {
@@ -1090,16 +1656,22 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
       }
    }
 
-   /* end diving */
-   SCIP_CALL( SCIPendDive(masterprob) );
+   /* free diving LP */
+   SCIP_CALL( SCIPlpiFree(&divinglp) );
 
    /* free memory */
+   SCIPfreeBufferArray(scip, &masterobjs);
    SCIPfreeBufferArray(scip, &pricingobjs);
    SCIPfreeBufferArray(scip, &solvals);
+   SCIPfreeBufferArray(scip, &col2idx);
+   SCIPfreeBufferArray(scip, &idx2col);
 
    /* free working solutions */
-   SCIPfreeSol(scip, &relaxsol);
-   SCIPfreeSol(scip, &sol);
+   if( mastersol != NULL )
+      SCIP_CALL( SCIPfreeSol(masterprob, &mastersol) );
+   if( relaxsol != NULL )
+      SCIP_CALL( SCIPfreeSol(scip, &relaxsol) );
+   SCIP_CALL( SCIPfreeSol(scip, &intsol) );
 
    /* free memory for cycle handling */
    for( i = 0; i < heurdata->cyclelength; i++ )
