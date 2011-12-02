@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -392,7 +392,7 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
    heurdata->lastncols = 0;
 
    /* allocate memory and initialize array with NULL pointers */
-   if(nblocks > 0)
+   if( nblocks > 0 )
       SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->zerovars, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
@@ -582,14 +582,14 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       /* increase master value by one and increase solution values in current original solution accordingly */
       SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, 1.0) );
 
-      /* loop over all original variables contained in the current master variable */
+      /* update original solution accordingly */
       for( i = 0; i < norigvars; i++ )
       {
          assert(GCGvarIsOriginal(origvars[i]));
 
-         /* If the master variable contains a linking variable, we need to pay attention if this linking
-          * variable has already been assigned a value; if the linking var has a wrong value in this point,
-          * the point cannot be used */
+         /* linking variables are treated differently; if the variable already has been assigned a value,
+          * one must check whether the value for the current block is the same (otherwise, the resulting
+          * solution will be infeasible in any case) */
          if( GCGvarIsLinking(origvars[i]) )
          {
             SCIP_VAR** linkingpricingvars;
@@ -600,16 +600,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
             hasvalue = FALSE;
             for( j = 0; j < nblocks; j++ )
-            {
                if( linkingpricingvars[j] != NULL )
-               {
                   if( blocknr[j] > 0 )
                   {
                      hasvalue = TRUE;
                      break;
                   }
-               }
-            }
 
             /* if the linking variable has not been assigned a value yet, assign a value to
              * the variable and the corresponding copy in the master problem */
@@ -618,6 +614,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
                SCIP_VAR* linkingmastervar;
 
                linkingmastervar = GCGoriginalVarGetMastervars(origvars[i])[0];
+               assert(linkingmastervar != NULL);
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], origvals[i]) );
                SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, origvals[i]) );
             }
@@ -761,7 +758,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       if( success && allblocksfull )
       {
          SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
-         assert(masterfeas);
+         if( !masterfeas )
+         {
+            SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");
+         }
       }
 
       /* update number of violated rows and activities array */
