@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include "dec_stairheur.h"
 
@@ -778,6 +779,63 @@ void ChangeIntPointers(int** i1, int** i2)
     *i1= i3;
 }
 
+//debug ?
+static
+void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
+{
+   FILE* output;
+   char datafile[256];
+   char gpfile[256];
+   char pdffile[256];
+   int i;
+   int j;
+   int k;
+   int nvars;
+   int* varindex;
+   int* consindex;
+   SCIP_VAR** vars;
+   SCIP_CONS* cons;
+   //filenames
+   sprintf(datafile, "%s.dat", filename);
+   sprintf(gpfile, "%s.gp", filename);
+   sprintf(pdffile, "%s.pdf", filename);
+   output = fopen(datafile, "w");
+   if (output == NULL)
+   {
+      printf("Can't open file for output!\n");
+   }
+   else
+   {
+      //loop over all blocks
+      for(i = 0; i < detectordata->blocks; ++i)
+      {
+         //loop over all constraints in block
+         for(j = 0; j < detectordata->nconsperblock[i]; ++j)
+         {
+            cons = detectordata->consperblock[i][j];
+            consindex = (int*) SCIPhashmapGetImage(detectordata->consindex_new, (void*) cons);
+            assert(consindex != NULL);
+            nvars = SCIPgetNVarsXXX(scip, cons);
+            vars = SCIPgetVarsXXX(scip, cons);
+            //loop over all vars in constraint
+            for(k = 0; k < nvars; ++k)
+            {
+               varindex = (int*) SCIPhashmapGetImage(detectordata->varindex_new, (void*) vars[k]);
+               assert(varindex != NULL);
+               fprintf(output, "%i %i\n", *varindex, *consindex);
+            }//loop over all vars in constraint
+         }//loop over all constraints in block
+         fprintf(output, "\n");
+      }//loop over all blocks
+   }
+   fclose(output);
+
+   //write Gnuplot file
+   output = fopen(gpfile, "w");
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) lt i pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
+   fclose(output);
+}
+
 static
 void findRelevantConss(SCIP* scip, DEC_DETECTORDATA* detectordata)
 {
@@ -1162,6 +1220,27 @@ void assignVarsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_var,
    }
 }
 
+
+static
+void assignConsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
+{
+   int i;
+   int j;
+   int* hashmapindex;
+   SCIP_CONS* cons;
+   //assign the constraints to the current block
+   detectordata->nconsperblock[block-1] = last_cons - first_cons + 1;
+   for(i = first_cons, j = 0; i <= last_cons; ++i, ++j)
+   {
+      hashmapindex = &detectordata->hashmapindices[i];
+      cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexcons_new, (void*) hashmapindex);
+      assert(cons != NULL);
+      detectordata->consperblock[block-1][j] = cons;
+   }
+}
+
+
+
 static
 int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
 {
@@ -1187,11 +1266,22 @@ void blocking(DEC_DETECTORDATA* detectordata, int nvars)
    int min_col_index_ip1;
    int max_col_index_i;
    ITERATOR it1;
+   //debug
+   printf("Starting Blocking...\n");
    block = 1;
    blocked_to_row = 0;
    max_col_index_im1 = 0;
    it1 = iterator_begin(detectordata->rowsWithConstrictions);
-   current_row = * (int*) (it1.node->data);
+   //list not empty?
+   if( ! iterator_is_equal(it1, iterator_end(detectordata->rowsWithConstrictions)))
+   {
+      current_row = * (int*) (it1.node->data);
+   }
+   //if list is empty
+   else
+   {
+
+   }
    //are more than M/tau rows left?
    while( (detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / detectordata->tau )
    {
@@ -1228,7 +1318,7 @@ void blocking(DEC_DETECTORDATA* detectordata, int nvars)
       printf("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
       //assign the variables and constraints to block
       assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
-//      assignConsToBlock();
+      assignConsToBlock(detectordata, block, blocked_to_row + 1, current_row);
       //update variables in the while loop
       max_col_index_im1 = max_col_index_i;
       blocked_to_row = current_row;
@@ -1239,6 +1329,7 @@ void blocking(DEC_DETECTORDATA* detectordata, int nvars)
    printf("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, detectordata->nRelevantConss);
    printf("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
    assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
+   assignConsToBlock(detectordata, block, blocked_to_row + 1, detectordata->nRelevantConss);
    detectordata->blocks = block;
 }
 
@@ -1473,33 +1564,33 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       SCIPhashmapInsert(detectordata->consindex_new, (void*) cons, (void*) hashmapindex);
    }
    //debug check contents of hashmaps
-   printf("indexvar_old\n");
-   for(i = 0; i < nvars; ++i)
-   {
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      var = SCIPhashmapGetImage(detectordata->indexvar_old, hashmapindex);
-      SCIPprintVar(scip, var, NULL);
-   }
-   printf("indexvar_new\n");
-   for(i = 0; i < nvars; ++i)
-   {
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      var = SCIPhashmapGetImage(detectordata->indexvar_new, hashmapindex);
-      SCIPprintVar(scip, var, NULL);
-   }
-   printf("varindex_old\n");
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_old, var));
-   }
-
-   printf("varindex_new\n");
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_new, var));
-   }
+//   printf("indexvar_old\n");
+//   for(i = 0; i < nvars; ++i)
+//   {
+//      hashmapindex = &detectordata->hashmapindices[i+1];
+//      var = SCIPhashmapGetImage(detectordata->indexvar_old, hashmapindex);
+//      SCIPprintVar(scip, var, NULL);
+//   }
+//   printf("indexvar_new\n");
+//   for(i = 0; i < nvars; ++i)
+//   {
+//      hashmapindex = &detectordata->hashmapindices[i+1];
+//      var = SCIPhashmapGetImage(detectordata->indexvar_new, hashmapindex);
+//      SCIPprintVar(scip, var, NULL);
+//   }
+//   printf("varindex_old\n");
+//   for(i = 0; i < nvars; ++i)
+//   {
+//      var = vars_array[i];
+//      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_old, var));
+//   }
+//
+//   printf("varindex_new\n");
+//   for(i = 0; i < nvars; ++i)
+//   {
+//      var = vars_array[i];
+//      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_new, var));
+//   }
 
 
 
@@ -1518,6 +1609,15 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       RankOrderClustering(scip, detectordata);
    }
    while(IndexArrayChanges(scip, detectordata));
+
+   //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
+#ifdef SCIP_DEBUG
+   for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
+   {
+      assert(detectordata->ibegin_new[i] <= detectordata->ibegin_new[i+1]);
+      assert(detectordata->jbegin_new[i] <= detectordata->jbegin_new[i+1]);
+   }
+#endif
    //arrays jmin, jmax and minV
    printf("calculating index arrays\n");
    detectordata->jmin[0] = detectordata->ibegin_new[0];
@@ -1565,12 +1665,12 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    list_prin(detectordata->rowsWithConstrictions, printint); //debug
 
    //BLOCKING
-   if(! list_empty(detectordata->rowsWithConstrictions))
-   {
-      blocking(detectordata, nvars);
-   }
+   blocking(detectordata, nvars);
    printf("BLOCKING DONE.\n");
 
+   //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
+   char filename[] = "test";
+   plotBlocking(scip, detectordata, filename);
    //fill detectordata for a single block for testing
    detectordata->blocks = 1;
    detectordata->varsperblock[0] = vars_array;
