@@ -68,8 +68,6 @@
  *
  * */
 
-typedef enum { false, true } bool;
-
 struct node {
  void* data;
  struct node* prev;
@@ -96,24 +94,24 @@ typedef struct iterator ITERATOR;
 LIST* SCIPlistCreate(void);
 LIST* SCIPlistCreateInt(int from, int to);
 LIST* SCIPlistCopyShallow(LIST* list);
-bool SCIPlistPushFront(LIST* list, void* data);
-bool SCIPlistPopFront(LIST* list);
-bool SCIPlistPushBack(LIST* list, void* data);
-bool SCIPlistPopBack(LIST* list);
+SCIP_Bool SCIPlistPushFront(LIST* list, void* data);
+SCIP_Bool SCIPlistPopFront(LIST* list);
+SCIP_Bool SCIPlistPushBack(LIST* list, void* data);
+SCIP_Bool SCIPlistPopBack(LIST* list);
 NODE* SCIPlistInsert(ITERATOR* it, void* data);
-bool SCIPlistAssign(ITERATOR* it, void* data);
-bool SCIPlistAssignList(LIST* list1, LIST* list2);
-bool SCIPlistIsEmpty(LIST* list);
-bool SCIPlistErase(ITERATOR* it);
-bool SCIPlistDelete(LIST* list);
-bool SCIPlistDeleteData(LIST* list);
-bool SCIPlistDeleteNested(LIST* list);
-ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, bool (*comp_func)(void* a, void* b));
-bool SCIPlistMove(ITERATOR position, ITERATOR it);
+SCIP_Bool SCIPlistAssign(ITERATOR* it, void* data);
+SCIP_Bool SCIPlistAssignList(LIST* list1, LIST* list2);
+SCIP_Bool SCIPlistIsEmpty(LIST* list);
+SCIP_Bool SCIPlistErase(ITERATOR* it);
+SCIP_Bool SCIPlistDelete(LIST* list);
+SCIP_Bool SCIPlistDeleteData(LIST* list);
+SCIP_Bool SCIPlistDeleteNested(LIST* list);
+ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, SCIP_Bool (*comp_func)(void* a, void* b));
+SCIP_Bool SCIPlistMove(ITERATOR position, ITERATOR it);
 void SCIPlistMoveFront(ITERATOR position);
 void SCIPlistMoveBack(ITERATOR position);
 SCIP_RETCODE SCIPlistRearrange(LIST* list, LIST* order);
-bool SCIPlistForeach(LIST* list, int(*func)(void*));
+SCIP_Bool SCIPlistForeach(LIST* list, int(*func)(void*));
 void SCIPlistPrint(LIST* list, int(*func)(void*));
 
 /**node*/
@@ -122,16 +120,16 @@ NODE* SCIPnodeCreate(void* data);
 /**iteratos*/
 ITERATOR SCIPiteratorBegin(LIST* list);
 ITERATOR SCIPiteratorEnd(LIST* list);
-bool SCIPiteratorNext(ITERATOR* it);
-bool SCIPiteratorPrev(ITERATOR* it);
+SCIP_Bool SCIPiteratorNext(ITERATOR* it);
+SCIP_Bool SCIPiteratorPrev(ITERATOR* it);
 void SCIPiteratorEquals(ITERATOR it1, ITERATOR it2);
-bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2);
+SCIP_Bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2);
 
 /**print, compare callback*/
 int printstring(void *s);
 int printint(void *i);
 static int compare (const void * a, const void * b);
-static bool compare_int(void* a, void * b);
+static SCIP_Bool compare_int(void* a, void * b);
 
 LIST* SCIPlistCreate()
 {
@@ -185,57 +183,57 @@ LIST* SCIPlistCopyShallow(LIST* list)
    }
 }
 
-bool SCIPlistPushFront(LIST* list, void* data)
+SCIP_Bool SCIPlistPushFront(LIST* list, void* data)
 {
    /** adds a node at the front of the list */
    NODE* newnode;
    ITERATOR it = {NULL, NULL};
    //case: list does not exist
-   if(! list) return false;
+   if(! list) return FALSE;
    newnode = SCIPnodeCreate(data);
    //it points to the beginning of list
    it = SCIPiteratorBegin(list);
    SCIPlistInsert(&it, data);
-   return true;
+   return TRUE;
 }
 
-bool SCIPlistPopFront(LIST* list)
+SCIP_Bool SCIPlistPopFront(LIST* list)
 {
    /** removes the node at the front of the list */
    ITERATOR it = {NULL, NULL};
    //case: list does not exist or is empty
-   if( (! list) || (SCIPlistIsEmpty(list)) ) return false;
+   if( (! list) || (SCIPlistIsEmpty(list)) ) return FALSE;
 
    it = SCIPiteratorBegin(list);
    SCIPlistErase(&it);
-   return true;
+   return TRUE;
 }
 
-bool SCIPlistPushBack(LIST* list, void* data)
+SCIP_Bool SCIPlistPushBack(LIST* list, void* data)
 {
    /** adds a node at the back of the list */
    NODE* newnode;
    ITERATOR it = {NULL, NULL};
    //case: list does not exist
-   if(! list) return false;
+   if(! list) return FALSE;
    newnode = SCIPnodeCreate(data);
    //it points to the beginning of list
    it = SCIPiteratorEnd(list);
    SCIPlistInsert(&it, data);
-   return true;
+   return TRUE;
 }
 
-bool SCIPlistPopBack(LIST* list)
+SCIP_Bool SCIPlistPopBack(LIST* list)
 {
    /** removes the node at the back of the list */
    ITERATOR it = {NULL, NULL};
    //case: list does not exist or is empty
-   if( (! list) || (SCIPlistIsEmpty(list)) ) return false;
+   if( (! list) || (SCIPlistIsEmpty(list)) ) return FALSE;
 
    it = SCIPiteratorEnd(list);
    SCIPiteratorPrev(&it);
    SCIPlistErase(&it);
-   return true;
+   return TRUE;
 }
 
 NODE* SCIPlistInsert(ITERATOR* it, void* data)
@@ -260,21 +258,21 @@ NODE* SCIPlistInsert(ITERATOR* it, void* data)
    return newnode;
 }
 
-bool SCIPlistAssign(ITERATOR* it, void* data)
+SCIP_Bool SCIPlistAssign(ITERATOR* it, void* data)
 {
    /** assign new data to 'it->node' */
    if(it && it->node)
    {
       it->node->data=data;
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
-bool SCIPlistAssignList(LIST* target, LIST* origin)
+SCIP_Bool SCIPlistAssignList(LIST* target, LIST* origin)
 {
    /**if target and origin have the same size, this function assigns the data pointers of origin to target */
    ITERATOR it1;
@@ -285,11 +283,11 @@ bool SCIPlistAssignList(LIST* target, LIST* origin)
       {
          SCIPlistAssign(&it1, it2.node->data);
       }
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
@@ -304,18 +302,18 @@ NODE* SCIPnodeCreate(void* data)
    return node;
 }
 
-bool SCIPlistErase(ITERATOR* it)
+SCIP_Bool SCIPlistErase(ITERATOR* it)
 {
    /** removes the node 'it->node' from the list 'it->list'
-    * returns true if 'node' is in 'list'
-    * returns false if 'node' is not in 'list'
+    * returns TRUE if 'node' is in 'list'
+    * returns FALSE if 'node' is not in 'list'
     * the memory the data pointer points to is not deallocated*/
    NODE* successor;
    NODE* predecessor;
    //case: iterator, node or list do not exist or empty list
    if( (! it) || (! it->node) || (! it->list) || SCIPlistIsEmpty(it->list))
    {
-      return false;
+      return FALSE;
    }
    successor = it->node->next;
    predecessor = it->node->prev;
@@ -324,16 +322,16 @@ bool SCIPlistErase(ITERATOR* it)
    free(it->node);
    it->node = successor;
    --it->list->size;
-   return true;
+   return TRUE;
 }
 
-bool SCIPlistDelete(LIST* list)
+SCIP_Bool SCIPlistDelete(LIST* list)
 {
    /** deletes the entire list
     *  for deallocating memory of the list data, call 'list_deleta_data' before */
    if(! list)
    {
-      return false;
+      return FALSE;
    }
    else
    {
@@ -345,17 +343,17 @@ bool SCIPlistDelete(LIST* list)
       free(list->nil);
       free(list);
       list = NULL;
-      return true;
+      return TRUE;
    }
 }
 
-bool SCIPlistDeleteData(LIST* list)
+SCIP_Bool SCIPlistDeleteData(LIST* list)
 {
    /** deallocates the memory the data pointers of the list points to */
    ITERATOR it;
    if(! list)
    {
-      return false;
+      return FALSE;
    }
    else
    {
@@ -363,16 +361,16 @@ bool SCIPlistDeleteData(LIST* list)
       {
          free(it.node->data);
       }
-      return true;
+      return TRUE;
    }
 }
-bool SCIPlistDeleteNested(LIST* list)
+SCIP_Bool SCIPlistDeleteNested(LIST* list)
 {
    /** deallocates all memory for a nested list including the data */
    ITERATOR it1;
    if(! list)
    {
-      return false;
+      return FALSE;
    }
    else
    {
@@ -382,26 +380,26 @@ bool SCIPlistDeleteNested(LIST* list)
             SCIPlistDelete(it1.node->data);
          }
       SCIPlistDelete(list);
-      return true;
+      return TRUE;
    }
 }
 
-bool SCIPlistIsEmpty(LIST* list)
+SCIP_Bool SCIPlistIsEmpty(LIST* list)
 {
-   /** returns true iff list exists and has 0 nodes (only sentinel node)*/
+   /** returns TRUE iff list exists and has 0 nodes (only sentinel node)*/
 //   if( list && list->size == 0)
    //list is empty if the next pointer of the sentinel points to itself
    if( list && list->nil->next == list->nil)
    {
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
-bool SCIPlistForeach(LIST* list, int(*func)(void*))
+SCIP_Bool SCIPlistForeach(LIST* list, int(*func)(void*))
 {
    /** runs the function 'func' for every node of the list 'node' */
    ITERATOR it;
@@ -409,10 +407,10 @@ bool SCIPlistForeach(LIST* list, int(*func)(void*))
    {
       if(func(it.node->data) != 0)
       {
-         return false;
+         return FALSE;
       }
    }
-   return true;
+   return TRUE;
 }
 
 void SCIPlistPrint(LIST* list, int(*func)(void*))
@@ -422,7 +420,7 @@ void SCIPlistPrint(LIST* list, int(*func)(void*))
    printf(")\n");
 }
 
-ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, bool (*comp_func)(void* a, void* b))
+ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, SCIP_Bool (*comp_func)(void* a, void* b))
 {
    for (; ! (SCIPiteratorIsEqual(first, last)); SCIPiteratorNext(&first))
    {
@@ -434,7 +432,7 @@ ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, bool (*comp_fu
    return first;
 }
 
-bool SCIPlistMove(ITERATOR position, ITERATOR it)
+SCIP_Bool SCIPlistMove(ITERATOR position, ITERATOR it)
 {
    /** moves the element at 'position' to the location in front of element 'it'
     * both elements must be in the same list
@@ -448,7 +446,7 @@ bool SCIPlistMove(ITERATOR position, ITERATOR it)
       //case 'it' and 'position' point to the same node or 'it' points to the succeeding node of 'position': no moving
       if(position.node == it.node || position.node->next == it.node)
       {
-         return true;
+         return TRUE;
       }
       //all other cases
       //adjust pointers at the old position
@@ -465,11 +463,11 @@ bool SCIPlistMove(ITERATOR position, ITERATOR it)
       position.node->next = new_successor;
       new_successor->prev = position.node;
 
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
@@ -556,33 +554,33 @@ ITERATOR SCIPiteratorEnd(LIST* list)
 }
 
 
-bool SCIPiteratorNext(ITERATOR* it)
+SCIP_Bool SCIPiteratorNext(ITERATOR* it)
 {
    /** sets it to the next element of the list
     */
    if(it && it->list && it->node)
    {
       it->node = it->node->next;
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
-bool SCIPiteratorPrev(ITERATOR* it)
+SCIP_Bool SCIPiteratorPrev(ITERATOR* it)
 {
    /** sets it to the previous element of the list
     */
    if(it && it->list && it->node)
    {
       it->node = it->node->prev;
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
@@ -593,15 +591,15 @@ void SCIPiteratorEquals(ITERATOR it1, ITERATOR it2)
    it1.node = it2.node;
 }
 
-bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2)
+SCIP_Bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2)
 {
    if(it1.list == it2.list && it1.node == it2.node)
    {
-      return true;
+      return TRUE;
    }
    else
    {
-      return false;
+      return FALSE;
    }
 }
 
@@ -618,6 +616,15 @@ bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2)
 //   SCIP_Real linkingscore;
 //};
 typedef struct Dec_StairheurScores DEC_STAIRHEURSCORES;
+
+struct IndexMap
+{
+   SCIP_HASHMAP* indexcons; // index in problem -> constraint
+   SCIP_HASHMAP* consindex; // constraint -> index in problem
+   SCIP_HASHMAP* indexvar;  // index in problem -> variable
+   SCIP_HASHMAP* varindex;  // variable -> index in problem
+};
+typedef struct IndexMap INDEXMAP;
 
 /** detector data */
 struct DEC_DetectorData
@@ -636,30 +643,19 @@ struct DEC_DetectorData
    int minblocks;
    SCIP_CONS** relevantConss;
    int nRelevantConss;
-   SCIP_HASHMAP* indexvar_old;  // index in problem -> variable
-   SCIP_HASHMAP* indexvar_new;  // index in permuted problem -> variable
-   SCIP_HASHMAP* varindex_old;  // variable -> index in problem
-   SCIP_HASHMAP* varindex_new;  // variable -> index in permuted problem
-   SCIP_HASHMAP* indexcons_old; // index in problem -> constraint
-   SCIP_HASHMAP* indexcons_new; // index in permuted problem -> constraint
-   SCIP_HASHMAP* consindex_old; // constraint -> index in problem
-   SCIP_HASHMAP* consindex_new; // constraint -> index in permuted problem
-   int* ibegin_old; //array, ibegin[i]: index of first nonzero entry in row i before permutation
-   int* iend_old;   //array, iend[i]: index of last nonzero entry in row i before permutation
-   int* jbegin_old; //array, jbegin[j]: index of first nonzero entry in column j before permutation
-   int* jend_old;   //array, jend[j]: index of last nonzero entry in column j before permutation
-   int* ibegin_new; //array, ibegin[i]: index of first nonzero entry in row i after permutation
-   int* iend_new;   //array, iend[i]: index of last nonzero entry in row i after permutation
-   int* jbegin_new; //array, jbegin[j]: index of first nonzero entry in column j after permutation
-   int* jend_new;   //array, jend[j]: index of last nonzero entry in column j after permutation
+   INDEXMAP* indexmap;
+   int* ibegin; //array, ibegin[i]: index of first nonzero entry in row i
+   int* iend;   //array, iend[i]: index of last nonzero entry in row i
+   int* jbegin; //array, jbegin[j]: index of first nonzero entry in column j
+   int* jend;   //array, jend[j]: index of last nonzero entry in column j
    int* jmin;   //array, jmin[i]: index of first nonzero column of the i-th row
    int* jmax;   //array, jmax[i]: the last nonzero entry among all rows prior to and including the i-th row
    int* minV;   //array, minV[i]: number of linking variables corresponding to a partitioning after the i-th row
    int* width;  //array, width[i]: width of the band (of nonzero entries after ROC) at row i
    int* hashmapindices;  //array with integers running from 0 to maximum(nvars, ncons)+1 (for usage of hash maps)
-   int n;   //maximum width of the band (of nonzero entries after ROC)
-   int v;   //minimum width of the band
-   int tau; //approximate number of blocks
+//   int n;   //maximum width of the band (of nonzero entries after ROC)
+//   int v;   //minimum width of the band
+//   int tau; //approximate number of blocks
    LIST* rowsWithConstrictions;
    SCIP_Bool found;
    int priority;
@@ -670,6 +666,34 @@ struct DEC_DetectorData
  */
 
 /* put your local methods here, and declare them static */
+static
+SCIP_RETCODE indexmapCreate(INDEXMAP** indexmap, SCIP* scip, int nconss, int nvars)
+{
+   INDEXMAP* imap;
+   assert(scip != NULL);
+   assert(nconss > 0);
+   assert(nvars > 0);
+   SCIPallocMemory(scip, &imap);
+   assert(imap != NULL);
+
+   SCIP_CALL(SCIPhashmapCreate(&imap->indexvar, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&imap->varindex, SCIPblkmem(scip), nvars));
+   SCIP_CALL(SCIPhashmapCreate(&imap->indexcons, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPhashmapCreate(&imap->consindex, SCIPblkmem(scip), nconss));
+
+   *indexmap = imap;
+   return SCIP_OKAY;
+}
+
+static
+void indexmapFree(SCIP* scip, INDEXMAP* indexmap)
+{
+   SCIPhashmapFree(&indexmap->indexvar);
+   SCIPhashmapFree(&indexmap->varindex);
+   SCIPhashmapFree(&indexmap->indexcons);
+   SCIPhashmapFree(&indexmap->consindex);
+   SCIPfreeMemory(scip, &indexmap);
+}
 
 static
 int compare (const void * a, const void * b)
@@ -678,9 +702,9 @@ int compare (const void * a, const void * b)
 }
 
 static
-bool compare_int(void* a, void * b)
+SCIP_Bool compare_int(void* a, void * b)
 {
-   return ( *(int*)a == *(int*)b ? true : false );
+   return ( *(int*)a == *(int*)b ? TRUE : FALSE );
 }
 
 //int round(double number)
@@ -695,7 +719,7 @@ int maximum(int a, int b)
 }
 
 static
-int max_array(int* a, int num_elements)
+int maxArray(int* a, int num_elements)
 {
    int i;
    int max;
@@ -719,7 +743,7 @@ int max_array(int* a, int num_elements)
 }
 
 static
-int min_array(int* a, int num_elements)
+int minArray(int* a, int num_elements)
 {
    int i;
    int min;
@@ -742,24 +766,32 @@ int min_array(int* a, int num_elements)
    }
 }
 
-static
-void ChangeHashMapPointers(SCIP_HASHMAP** hm1, SCIP_HASHMAP** hm2)
-{
-   SCIP_HASHMAP* hm3; /* local for swap */
-    hm3 = *hm2;
-    *hm2 = *hm1;
-    *hm1= hm3;
-}
+//static
+//void SwitchHashMapPointers(SCIP_HASHMAP** hm1, SCIP_HASHMAP** hm2)
+//{
+//   SCIP_HASHMAP* hm3; /* local for swap */
+//    hm3 = *hm2;
+//    *hm2 = *hm1;
+//    *hm1= hm3;
+//}
+//
+//static
+//void SwitchIntPointers(int** i1, int** i2)
+//{
+//   int* i3; /* local for swap */
+//    i3 = *i2;
+//    *i2 = *i1;
+//    *i1= i3;
+//}
 
 static
-void ChangeIntPointers(int** i1, int** i2)
+void switchPointers(void** p1, void** p2)
 {
-   int* i3; /* local for swap */
-    i3 = *i2;
-    *i2 = *i1;
-    *i1= i3;
+   void* p3; /* local for swap */
+    p3 = *p2;
+    *p2 = *p1;
+    *p1= p3;
 }
-
 //debug ?
 static
 void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
@@ -788,12 +820,12 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
       for(i = 0; i < detectordata->nRelevantConss; ++i)
       {
          cons = detectordata->relevantConss[i];
-         consindex = (int*) SCIPhashmapGetImage(detectordata->consindex_old, (void*) cons);
+         consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
          assert(consindex != NULL);
          for(j = 0; j < SCIPgetNVarsXXX(scip, cons); ++j)
          {
             var = SCIPgetVarsXXX(scip, cons)[j];
-            varindex = (int*) SCIPhashmapGetImage(detectordata->varindex_old, (void*) var);
+            varindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) var);
             assert(varindex != NULL);
             fprintf(output, "%i %i\n", *varindex, *consindex);
          }
@@ -842,14 +874,14 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
          for(j = 0; j < detectordata->nconsperblock[i]; ++j)
          {
             cons = detectordata->consperblock[i][j];
-            consindex = (int*) SCIPhashmapGetImage(detectordata->consindex_new, (void*) cons);
+            consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
             assert(consindex != NULL);
             nvars = SCIPgetNVarsXXX(scip, cons);
             vars = SCIPgetVarsXXX(scip, cons);
             //loop over all vars in constraint
             for(k = 0; k < nvars; ++k)
             {
-               varindex = (int*) SCIPhashmapGetImage(detectordata->varindex_new, (void*) vars[k]);
+               varindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) vars[k]);
                assert(varindex != NULL);
                fprintf(output, "%i %i\n", *varindex, *consindex);
             }//loop over all vars in constraint
@@ -1033,7 +1065,7 @@ LIST* columnindices_list(SCIP* scip, DEC_DETECTORDATA* detectordata, LIST* rowin
 }
 
 static
-LIST* row_ordering(LIST* roworder, LIST* columnindices)
+LIST* rowOrdering(LIST* roworder, LIST* columnindices)
 {
    /** does the row ordering of the ROC2 algortihm */
    LIST* new_roworder;
@@ -1094,39 +1126,58 @@ SCIP_RETCODE formIndexArray(int* begin, int* end, LIST* indices)
    return SCIP_OKAY;
 }
 
+//static
+//SCIP_Bool IndexArrayChanges(SCIP* scip, DEC_DETECTORDATA* detectordata)
+//{
+//   /**returns TRUE if at least one entry of a new index array differs from the corresponding entry of the old index array*/
+//   int i;
+//   //any change in ibegin or iend?
+//   for(i = 0; i < detectordata->nRelevantConss; ++i)
+//   {
+//      if(   detectordata->ibegin_old[i] != detectordata->ibegin_new[i]
+//         || detectordata->iend_old[i] != detectordata->iend_new[i] )
+//      {
+//         return TRUE;
+//      }
+//   }
+//   //any change in jbegin or jend?
+//   for(i = 0; i < SCIPgetNVars(scip); ++i)
+//   {
+//      if(   detectordata->jbegin_old[i] != detectordata->jbegin_new[i]
+//         || detectordata->jend_old[i] != detectordata->jend_new[i] )
+//      {
+//         return TRUE;
+//      }
+//   }
+//   //case: all entries of old and new are equal
+//   return FALSE;
+//}
+
 static
-bool IndexArrayChanges(SCIP* scip, DEC_DETECTORDATA* detectordata)
+SCIP_Bool arraysAreEqual(int* new_array, int* old_array, int num_elements)
 {
-   /**returns true if at least one entry of a new index array differs from the corresponding entry of the old index array*/
+   /**returns FALSE if at least one entry of new_array and old_array are different*/
    int i;
-   //any change in ibegin or iend?
-   for(i = 0; i < detectordata->nRelevantConss; ++i)
+   for(i = 0; i < num_elements; ++i)
    {
-      if(   detectordata->ibegin_old[i] != detectordata->ibegin_new[i]
-         || detectordata->iend_old[i] != detectordata->iend_new[i] )
+      if( new_array[i] != old_array[i] )
       {
-         return true;
-      }
-   }
-   //any change in jbegin or jend?
-   for(i = 0; i < SCIPgetNVars(scip); ++i)
-   {
-      if(   detectordata->jbegin_old[i] != detectordata->jbegin_new[i]
-         || detectordata->jend_old[i] != detectordata->jend_new[i] )
-      {
-         return true;
+         return FALSE;
       }
    }
    //case: all entries of old and new are equal
-   return false;
+   return TRUE;
 }
 
 static
-SCIP_RETCODE RankOrderClustering(
-      SCIP*             scip,       /**< SCIP data structure */
-      DEC_DETECTORDATA*  detectordata /**< presolver data data structure */
+SCIP_RETCODE rankOrderClustering(
+      SCIP*             scip,          /**< SCIP data structure */
+      DEC_DETECTORDATA*  detectordata, /**< presolver data data structure */
+      INDEXMAP* inputmap,
+      INDEXMAP* outputmap
       )
 {
+   /**permutes the order of rows and columns in inputmap and stores the result in outputmap*/
    LIST* roworder;
    LIST* columnorder;
    LIST* rowindices;
@@ -1142,24 +1193,17 @@ SCIP_RETCODE RankOrderClustering(
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-
    nvars = SCIPgetNVars(scip);
    ncons = detectordata->nRelevantConss;
-
    //create a list for the order of the rows ( 1 2 3 ... ncons ) and columns ( 1 2 3 ... nvars )
    roworder = SCIPlistCreateInt(1, ncons);
    columnorder = SCIPlistCreateInt(1, nvars);
-
-   //create the lists containing the positions of nonzero entries
-   rowindices = rowindices_list(scip, detectordata, detectordata->indexcons_old, detectordata->varindex_old);
+   //create the lists containing the positions of nonzero entries; row and column ordering
+   rowindices = rowindices_list(scip, detectordata, inputmap->indexcons, inputmap->varindex);
    columnindices = columnindices_list(scip, detectordata, rowindices);
-
-   //row ordering
-   roworder = row_ordering(roworder, columnindices);
-   //rearrange the rowindices list according to the new rowordering
+   roworder = rowOrdering(roworder, columnindices);
    SCIPlistRearrange(rowindices, roworder);
-   //column ordering
-   columnorder = row_ordering(columnorder, rowindices);
+   columnorder = rowOrdering(columnorder, rowindices);
    //debug
 //   printf("row ordering:");
 //   SCIPlistPrint(roworder, printint);
@@ -1171,58 +1215,32 @@ SCIP_RETCODE RankOrderClustering(
    {
       position = (*(int*)it1.node->data);
       hashmapindex = &detectordata->hashmapindices[position];
-      cons = SCIPhashmapGetImage(detectordata->indexcons_old, (void*) hashmapindex);
+      cons = SCIPhashmapGetImage(inputmap->indexcons, (void*) hashmapindex);
       assert ( cons != NULL);
-
       //consindex
       hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( SCIPhashmapExists(detectordata->consindex_new, (void*) cons));
-      SCIPhashmapSetImage(detectordata->consindex_new, (void*) cons, (void*) hashmapindex);
+      assert( SCIPhashmapExists(outputmap->consindex, (void*) cons));
+      SCIPhashmapSetImage(outputmap->consindex, (void*) cons, (void*) hashmapindex);
       //indexcons
-      assert( SCIPhashmapExists(detectordata->indexcons_new, (void*) hashmapindex ));
-      SCIPhashmapSetImage(detectordata->indexcons_new, (void*) hashmapindex, cons);
+      assert( SCIPhashmapExists(outputmap->indexcons, (void*) hashmapindex ));
+      SCIPhashmapSetImage(outputmap->indexcons, (void*) hashmapindex, cons);
    }
    //varindex and indexvar
    for(it1 = SCIPiteratorBegin(columnorder), i = 0; ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(columnorder)) &&i < nvars; ++i, SCIPiteratorNext(&it1))
    {
       position = (*(int*)it1.node->data);
       hashmapindex = &detectordata->hashmapindices[position];
-      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_old, (void*) hashmapindex);
+      var = (SCIP_VAR*) SCIPhashmapGetImage(inputmap->indexvar, (void*) hashmapindex);
       assert ( var != NULL);
 
       //varindex
       hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( SCIPhashmapExists(detectordata->varindex_new, (void*) var) );
-      SCIPhashmapSetImage(detectordata->varindex_new, (void*) var, (void*) hashmapindex);
+      assert( SCIPhashmapExists(outputmap->varindex, (void*) var) );
+      SCIPhashmapSetImage(outputmap->varindex, (void*) var, (void*) hashmapindex);
       //indexvar
-      assert( SCIPhashmapExists(detectordata->indexvar_new, (void*) hashmapindex ));
-      SCIPhashmapSetImage(detectordata->indexvar_new, (void*) hashmapindex, var);
+      assert( SCIPhashmapExists(outputmap->indexvar, (void*) hashmapindex ));
+      SCIPhashmapSetImage(outputmap->indexvar, (void*) hashmapindex, var);
    }
-
-   //form the new index arrays after the permutation
-   SCIPlistDeleteNested(rowindices);
-   SCIPlistDeleteNested(columnindices);
-   rowindices = rowindices_list(scip, detectordata, detectordata->indexcons_new, detectordata->varindex_new);
-   columnindices = columnindices_list(scip, detectordata, rowindices);
-   formIndexArray(detectordata->ibegin_new, detectordata->iend_new, rowindices);
-   formIndexArray(detectordata->jbegin_new, detectordata->jend_new, columnindices);
-//   //debug
-//   for(i = 0; i < ncons; ++i)
-//   {
-//      printf("ibegin_old, ibegin_new: [%i] [%i]\n", detectordata->ibegin_old[i], detectordata->ibegin_new[i]);
-//      printf("iend_old, iend_new: [%i] [%i]\n", detectordata->iend_old[i], detectordata->iend_new[i]);
-//   }
-   //switch between index arrays containing new and old indices
-   ChangeIntPointers(&detectordata->ibegin_old, &detectordata->ibegin_new);
-   ChangeIntPointers(&detectordata->iend_old, &detectordata->iend_new);
-   ChangeIntPointers(&detectordata->jbegin_old, &detectordata->jbegin_new);
-   ChangeIntPointers(&detectordata->jend_old, &detectordata->jend_new);
-   //switch between hash maps containing new and old indices
-   ChangeHashMapPointers(&detectordata->indexvar_old, &detectordata->indexvar_new);
-   ChangeHashMapPointers(&detectordata->varindex_old, &detectordata->varindex_new);
-   ChangeHashMapPointers(&detectordata->indexcons_old, &detectordata->indexcons_new);
-   ChangeHashMapPointers(&detectordata->consindex_old, &detectordata->consindex_new);
-
    //deallocate memory
    SCIPlistDeleteData(roworder);
    SCIPlistDelete(roworder);
@@ -1268,7 +1286,7 @@ void assignVarsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_var,
    for(i = first_var, j = 0; i < first_linkingvar; ++i, ++j)
    {
       hashmapindex = &detectordata->hashmapindices[i];
-      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_new, (void*) hashmapindex);
+      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexmap->indexvar, (void*) hashmapindex);
       assert(var != NULL);
       detectordata->varsperblock[block-1][j] = var;
    }
@@ -1276,7 +1294,7 @@ void assignVarsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_var,
    for(i = first_linkingvar; i <= last_var; ++i)
    {
       hashmapindex = &detectordata->hashmapindices[i];
-      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexvar_new, (void*) hashmapindex);
+      var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexmap->indexvar, (void*) hashmapindex);
       assert(var != NULL);
       detectordata->linkingvars[detectordata->nlinkingvars] = var;
       ++detectordata->nlinkingvars;
@@ -1296,7 +1314,7 @@ void assignConsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_cons
    for(i = first_cons, j = 0; i <= last_cons; ++i, ++j)
    {
       hashmapindex = &detectordata->hashmapindices[i];
-      cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexcons_new, (void*) hashmapindex);
+      cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
       assert(cons != NULL);
       detectordata->consperblock[block-1][j] = cons;
    }
@@ -1308,18 +1326,18 @@ static
 int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
 {
    //some pointer arithmetic
-   return max_array(detectordata->iend_new + (from_row -1), to_row - from_row + 1);
+   return maxArray(detectordata->iend + (from_row -1), to_row - from_row + 1);
 }
 
 static
 int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
 {
-   return detectordata->ibegin_new[row];
+   return detectordata->ibegin[row];
 }
 
 
 static
-void blocking(DEC_DETECTORDATA* detectordata, int nvars)
+void blocking(DEC_DETECTORDATA* detectordata, int tau, int nvars)
 {
    int block;
    int blocked_to_row;
@@ -1346,12 +1364,12 @@ void blocking(DEC_DETECTORDATA* detectordata, int nvars)
 
    }
    //are more than M/tau rows left?
-   while( (detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / detectordata->tau )
+   while( (detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / tau )
    {
       //does a blocking to the next row forming a constriction comprise more than M/2tau rows?
       //are there more rows with constrictions?
       while( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions))
-            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*detectordata->tau)) )
+            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*tau)) )
       {
          SCIPiteratorNext(&it1);
 //         //has the iterator reached the end of list rowsWithConstrictions
@@ -1426,8 +1444,8 @@ SCIP_RETCODE copyDetectorDataToDecomp(
    SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipconss, detectordata->nconsperblock, detectordata->blocks));
    SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipvars, detectordata->nvarsperblock, detectordata->blocks));
 
-   decomp->varindex = detectordata->varindex_old;
-   decomp->consindex = detectordata->consindex_old;
+   decomp->varindex = detectordata->indexmap->varindex;
+   decomp->consindex = detectordata->indexmap->consindex;
    decomp->nblocks = detectordata->blocks;
    decomp->type = DEC_STAIRCASE;
    return SCIP_OKAY;
@@ -1465,14 +1483,10 @@ DEC_DECL_INITDETECTOR(initStairheur)
       SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->varsperblock[i], nvars));
    }
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->ibegin_old, nconss));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->iend_old, nconss));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jbegin_old, nvars));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jend_old, nvars));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->ibegin_new, nconss));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->iend_new, nconss));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jbegin_new, nvars));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jend_new, nvars));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->ibegin, nconss));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->iend, nconss));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jbegin, nvars));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jend, nvars));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jmin, nconss));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->jmax, nconss));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->minV, nconss-1));
@@ -1487,14 +1501,11 @@ DEC_DECL_INITDETECTOR(initStairheur)
    detectordata->nlinkingvars = 0;
    detectordata->nlinkingconss = 0;
    /* create hash tables */
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexvar_old, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexvar_new, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex_old, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex_new, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexcons_old, SCIPblkmem(scip), nconss));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexcons_new, SCIPblkmem(scip), nconss));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex_old, SCIPblkmem(scip), nconss));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex_new, SCIPblkmem(scip), nconss));
+   indexmapCreate(&detectordata->indexmap, scip, nconss, nvars);
+//   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexvar, SCIPblkmem(scip), nvars));
+//   SCIP_CALL(SCIPhashmapCreate(&detectordata->varindex, SCIPblkmem(scip), nvars));
+//   SCIP_CALL(SCIPhashmapCreate(&detectordata->indexcons, SCIPblkmem(scip), nconss));
+//   SCIP_CALL(SCIPhashmapCreate(&detectordata->consindex, SCIPblkmem(scip), nconss));
    return SCIP_OKAY;
 }
 
@@ -1533,16 +1544,11 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    SCIPfreeMemoryArray(scip, &detectordata->relevantConss);
    SCIPfreeMemory(scip, &detectordata);
 
-   SCIPfreeMemoryArray(scip, &detectordata->ibegin_new);
-   SCIPfreeMemoryArray(scip, &detectordata->iend_new);
-   SCIPfreeMemoryArray(scip, &detectordata->jbegin_new);
-   SCIPfreeMemoryArray(scip, &detectordata->jend_new);
-   SCIPfreeMemoryArray(scip, &detectordata->ibegin_old);
-   SCIPfreeMemoryArray(scip, &detectordata->iend_old);
-   SCIPfreeMemoryArray(scip, &detectordata->jbegin_old);
-   SCIPfreeMemoryArray(scip, &detectordata->jend_old);
+   SCIPfreeMemoryArray(scip, &detectordata->ibegin);
+   SCIPfreeMemoryArray(scip, &detectordata->iend);
+   SCIPfreeMemoryArray(scip, &detectordata->jbegin);
+   SCIPfreeMemoryArray(scip, &detectordata->jend);
    SCIPfreeMemoryArray(scip, &detectordata->jmin);
-   SCIPfreeMemoryArray(scip, &detectordata->jmax);
    SCIPfreeMemoryArray(scip, &detectordata->jmax);
    SCIPfreeMemoryArray(scip, &detectordata->minV);
    SCIPfreeMemoryArray(scip, &detectordata->width);
@@ -1551,13 +1557,11 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    SCIPlistDeleteData(detectordata->rowsWithConstrictions);
    SCIPlistDelete(detectordata->rowsWithConstrictions);
    //free deep copied hash maps
-   //DO NOT FREE varindex_old and consindex_old because they are only shallow copied and contain the final permuation
-   SCIPhashmapFree(&detectordata->indexvar_old);
-   SCIPhashmapFree(&detectordata->indexvar_new);
-   SCIPhashmapFree(&detectordata->varindex_new);
-   SCIPhashmapFree(&detectordata->indexcons_old);
-   SCIPhashmapFree(&detectordata->indexcons_new);
-   SCIPhashmapFree(&detectordata->consindex_new);
+   //DO NOT FREE varindex and consindex because they are only shallow copied and contain the final permuation
+   //debug
+   SCIPhashmapFree(&detectordata->indexmap->indexvar);
+   SCIPhashmapFree(&detectordata->indexmap->indexcons);
+   SCIPfreeMemory(scip, &detectordata->indexmap);
    return SCIP_OKAY;
 }
 
@@ -1576,6 +1580,14 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    DEC_DETECTORDATA* detectordata;
    LIST* rowindices;
    LIST* columnindices;
+   INDEXMAP* indexmap_permuted;
+   int* ibegin_permuted;
+   int* iend_permuted;
+   int* jbegin_permuted;
+   int* jend_permuted;
+   int n;
+   int v;
+   int tau;
 
    assert(scip != NULL);
    stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
@@ -1590,151 +1602,159 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
    cons_array = detectordata->relevantConss;
-   printf("ncons: %i \n", ncons); //debug
-   printf("nvars: %i \n", nvars); //debug
-   printf("initializing hash maps indexvar and varindex\n");
+#ifndef ndebug
+   {
+      printf("ncons: %i \n", ncons);
+      printf("nvars: %i \n", nvars);
+      printf("initializing hash maps");
+   }
+#endif
    //initialize hash maps for variables: indexvar_old, indexvar_new, varindex_old, varindex_new
    for(i = 0; i < nvars; ++i)
    {
       var = vars_array[i];
       //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-//      hashmapindex = (SCIPvarGetProbindex(var)+1);
       hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexvar_old, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexvar_old, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(detectordata->indexvar_new, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexvar_new, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(detectordata->varindex_old, (void*) var));
-      SCIPhashmapInsert(detectordata->varindex_old, (void*) var, (void*) hashmapindex);
-      assert( ! SCIPhashmapExists(detectordata->varindex_new, (void*) var));
-      SCIPhashmapInsert(detectordata->varindex_new, (void*) var, (void*) hashmapindex);
+      assert( ! SCIPhashmapExists(detectordata->indexmap->indexvar, (void*) hashmapindex));
+      SCIPhashmapInsert(detectordata->indexmap->indexvar, (void*) hashmapindex, (void*) var);
+      assert( ! SCIPhashmapExists(detectordata->indexmap->varindex, (void*) var));
+      SCIPhashmapInsert(detectordata->indexmap->varindex, (void*) var, (void*) hashmapindex);
    }
-
-   printf("initializing hash maps indexcons and consindex\n");
    //initialize hash maps for constraints: indexcons_old, indexcons_new, consindex_old, consindex_new
    for(i = 0; i < ncons; ++i)
    {
       cons = cons_array[i];
       //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
       hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexcons_old, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexcons_old, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(detectordata->indexcons_new, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexcons_new, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(detectordata->consindex_old, (void*) cons));
-      SCIPhashmapInsert(detectordata->consindex_old, (void*) cons, (void*) hashmapindex);
-      assert( ! SCIPhashmapExists(detectordata->consindex_new, (void*) cons));
-      SCIPhashmapInsert(detectordata->consindex_new, (void*) cons, (void*) hashmapindex);
+      assert( ! SCIPhashmapExists(detectordata->indexmap->indexcons, (void*) hashmapindex));
+      SCIPhashmapInsert(detectordata->indexmap->indexcons, (void*) hashmapindex, (void*) cons);
+      assert( ! SCIPhashmapExists(detectordata->indexmap->consindex, (void*) cons));
+      SCIPhashmapInsert(detectordata->indexmap->consindex, (void*) cons, (void*) hashmapindex);
    }
+   SCIPdebugMessage("initializing hash maps DONE.\n");
+   SCIPdebugMessage("initializing index arrays...\n");
 #ifndef NDEBUG
    {
    char filename[]= "initial_problem";
    plotInitialProblem(scip, detectordata, filename);
    }
 #endif
-   //debug check contents of hashmaps
-//   printf("indexvar_old\n");
-//   for(i = 0; i < nvars; ++i)
-//   {
-//      hashmapindex = &detectordata->hashmapindices[i+1];
-//      var = SCIPhashmapGetImage(detectordata->indexvar_old, hashmapindex);
-//      SCIPprintVar(scip, var, NULL);
-//   }
-//   printf("indexvar_new\n");
-//   for(i = 0; i < nvars; ++i)
-//   {
-//      hashmapindex = &detectordata->hashmapindices[i+1];
-//      var = SCIPhashmapGetImage(detectordata->indexvar_new, hashmapindex);
-//      SCIPprintVar(scip, var, NULL);
-//   }
-//   printf("varindex_old\n");
-//   for(i = 0; i < nvars; ++i)
-//   {
-//      var = vars_array[i];
-//      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_old, var));
-//   }
-//
-//   printf("varindex_new\n");
-//   for(i = 0; i < nvars; ++i)
-//   {
-//      var = vars_array[i];
-//      printf("index: %i\n", *(int*) SCIPhashmapGetImage(detectordata->varindex_new, var));
-//   }
-
-
-
-
-
-   printf("initializing index arrays\n");
-   //initialize index arrays ibegin_old, iend_old, jbegin_old, jend_old
-   rowindices = rowindices_list(scip, detectordata, detectordata->indexcons_old, detectordata->varindex_old);
+   //initialize index arrays ibegin, iend, jbegin, jend
+   rowindices = rowindices_list(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex);
    columnindices = columnindices_list(scip, detectordata, rowindices);
-   formIndexArray(detectordata->ibegin_old, detectordata->iend_old, rowindices);
-   formIndexArray(detectordata->jbegin_old, detectordata->jend_old, columnindices);
+   formIndexArray(detectordata->ibegin, detectordata->iend, rowindices);
+   formIndexArray(detectordata->jbegin, detectordata->jend, columnindices);
+
+   indexmapCreate(&indexmap_permuted, scip, ncons, nvars);
+   for(i = 0; i < nvars; ++i)
+   {
+      var = vars_array[i];
+      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = &detectordata->hashmapindices[i+1];
+      assert( ! SCIPhashmapExists(indexmap_permuted->indexvar, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap_permuted->indexvar, (void*) hashmapindex, (void*) var);
+      assert( ! SCIPhashmapExists(indexmap_permuted->varindex, (void*) var));
+      SCIPhashmapInsert(indexmap_permuted->varindex, (void*) var, (void*) hashmapindex);
+   }
+   //debug: temporary hash maps: how to initialize???
+   for(i = 0; i < ncons; ++i)
+   {
+      cons = cons_array[i];
+      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = &detectordata->hashmapindices[i+1];
+      assert( ! SCIPhashmapExists(indexmap_permuted->indexcons, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap_permuted->indexcons, (void*) hashmapindex, (void*) cons);
+      assert( ! SCIPhashmapExists(indexmap_permuted->consindex, (void*) cons));
+      SCIPhashmapInsert(indexmap_permuted->consindex, (void*) cons, (void*) hashmapindex);
+   }
+   SCIP_CALL(SCIPallocMemoryArray(scip, &ibegin_permuted, ncons));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &iend_permuted, ncons));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &jbegin_permuted, nvars));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &jend_permuted, nvars));
+
    //ROC2 algorithm
-   printf("starting ROC2 algortihm\n");
+   SCIPdebugMessage("starting ROC2 algortihm\n");
    do
    {
-      RankOrderClustering(scip, detectordata);
+      rankOrderClustering(scip, detectordata, detectordata->indexmap, indexmap_permuted);
+      //form the new index arrays after the permutation
+      SCIPlistDeleteNested(rowindices);
+      SCIPlistDeleteNested(columnindices);
+      rowindices = rowindices_list(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex);
+      columnindices = columnindices_list(scip, detectordata, rowindices);
+      formIndexArray(ibegin_permuted, iend_permuted, rowindices);
+      formIndexArray(jbegin_permuted, jend_permuted, columnindices);
+      //switch between index arrays containing new and old indices
+      switchPointers( (void*) &detectordata->ibegin, (void*) &ibegin_permuted);
+      switchPointers( (void*) &detectordata->iend, (void*) &iend_permuted);
+      switchPointers( (void*) &detectordata->jbegin, (void*) &jbegin_permuted);
+      switchPointers( (void*) &detectordata->jend, (void*) &jend_permuted);
+      //switch between hash maps containing new and old indices
+      switchPointers( (void*) &detectordata->indexmap, (void*) &indexmap_permuted);
    }
-   while(IndexArrayChanges(scip, detectordata));
+   while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
+          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
+          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
+          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)));
 
    //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
 #ifdef SCIP_DEBUG
    for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
    {
-      assert(detectordata->ibegin_new[i] <= detectordata->ibegin_new[i+1]);
-      assert(detectordata->jbegin_new[i] <= detectordata->jbegin_new[i+1]);
+      assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
+      assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
    }
 #endif
    //arrays jmin, jmax and minV
    printf("calculating index arrays\n");
-   detectordata->jmin[0] = detectordata->ibegin_new[0];
-   detectordata->jmax[0] = detectordata->iend_new[0];
-   detectordata->width[0] = detectordata->iend_new[0] - detectordata->ibegin_new[0];
+   detectordata->jmin[0] = detectordata->ibegin[0];
+   detectordata->jmax[0] = detectordata->iend[0];
+   detectordata->width[0] = detectordata->iend[0] - detectordata->ibegin[0];
    for(i = 1; i < ncons; ++i)
    {
-      detectordata->width[i] = detectordata->iend_new[i] - detectordata->ibegin_new[i];
-      detectordata->jmin[i] = detectordata->ibegin_new[i];
-      detectordata->jmax[i] = maximum(detectordata->iend_new[i], detectordata->jmax[i-1]);
+      detectordata->width[i] = detectordata->iend[i] - detectordata->ibegin[i];
+      detectordata->jmin[i] = detectordata->ibegin[i];
+      detectordata->jmax[i] = maximum(detectordata->iend[i], detectordata->jmax[i-1]);
       detectordata->minV[i-1]=1 + (detectordata->jmax[i-1] - detectordata->jmin[i]);
    }
-   detectordata->n = max_array(detectordata->width, ncons);
-   detectordata->v = min_array(detectordata->width, ncons);
-   detectordata->tau = round((nvars - detectordata->v)/(detectordata->n - detectordata->v));
-   //debug
-   printf("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, detectordata->n, detectordata->v, detectordata->tau);
-   printf("minV = [ ");
+   n = maxArray(detectordata->width, ncons);
+   v = minArray(detectordata->width, ncons);
+   tau = round((nvars - v)/(n - v));
+
+#ifndef NDEBUG
+   SCIPdebugMessage("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, n, v, tau);
+   SCIPdebugMessage("minV = [ ");
    for(i = 0; i < ncons-1; ++i)
    {
-      printf("%i ", detectordata->minV[i]);
+      SCIPdebugMessage("%i ", detectordata->minV[i]);
    }
-   printf("]\n");
-   printf("jmin = [ ");
+   SCIPdebugMessage("]\n");
+   SCIPdebugMessage("jmin = [ ");
    for(i = 0; i < ncons; ++i)
    {
-      printf("%i ", detectordata->jmin[i]);
+      SCIPdebugMessage("%i ", detectordata->jmin[i]);
    }
-   printf("]\n");
-   printf("jmax = [ ");
+   SCIPdebugMessage("]\n");
+   SCIPdebugMessage("jmax = [ ");
    for(i = 0; i < ncons; ++i)
    {
-      printf("%i ", detectordata->jmax[i]);
+      SCIPdebugMessage("%i ", detectordata->jmax[i]);
    }
-   printf("]\n");
+   SCIPdebugMessage("]\n");
+#endif
    //continue only if tau >= 2
-   if(detectordata->tau < 2)
+   if(tau < 2)
    {
       *result = SCIP_DIDNOTFIND;
       return SCIP_OKAY;
    }
 
    rowsWithConstriction(detectordata);
-   printf("rows with constriction:");
+   SCIPdebugMessage("rows with constriction:");
    SCIPlistPrint(detectordata->rowsWithConstrictions, printint); //debug
 
    //BLOCKING
-   blocking(detectordata, nvars);
+   blocking(detectordata, tau, nvars);
    printf("BLOCKING DONE.\n");
 
    //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
@@ -1761,7 +1781,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    //deallocate memory
    SCIPlistDeleteNested(rowindices);
    SCIPlistDeleteNested(columnindices);
-
+   indexmapFree(scip, indexmap_permuted);
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
