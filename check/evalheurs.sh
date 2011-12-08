@@ -8,19 +8,16 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id: $
 #
 #@file    evalheurs.sh
 #@brief   Script to generate statistics for GCG Heuristics
 #@author  Christian Puchert
 #
-# Usage: ./evalheurs.sh [ -v heuristics=... ] [ SETFILE(S) ] OUTFILE
+# Usage: ./evalheurs.sh [ masterheurs=... ] [ origheurs=...  ] [ SETFILE(S) ] OUTFILE
 #
 # This script can be called on a GCG output file and will produce a .heu file
-# containing statistics about the running times / calls / found sol's of all included heuristics.
-# If the user provides the names of some heuristics as an input argument, only those will
-# be considered in the statistics (e. g. -v heuristics=gcgrounding,gcgshifting will produce
-# statistics only for those two heuristics).
+# containing statistics about the running times / calls / found sol's of the specified heuristics.
+# The heuristics to be considered are specified by e. g. masterheurs=greedycolsel origheurs=gcgrounding,gcgshifting
 # Additionally, if a settings file is provided, the script will recognize if a heuristic is
 # switched off and ignore it.
 
@@ -33,7 +30,7 @@ for i in $@
 do
     if test ! -e $i
     then
-	     AWKARGS="$AWKARGS $i"
+	     AWKARGS="$AWKARGS -v $i"
     else
     if test `echo $i | gawk -F . '{print $NF}'` != "set" # temporary workaround; try do achieve this without awk
     then

@@ -8,7 +8,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id: $
 #
 #@file    heurs.awk
 #@brief   Check Report Generator for GCG Heuristics
@@ -17,6 +16,16 @@
 function max(x,y)
 {
    return (x) > (y) ? (x) : (y);
+}
+
+function floor(x) {
+   y = int(x)
+   return (y) > (x) ? (y) - 1 : (y);
+}
+ 
+function ceil(x) {
+   y = int(x)
+   return (y) < (x) ? (y) + 1 : (y);
 }
 
 BEGIN {
@@ -28,13 +37,16 @@ BEGIN {
    headerprinted = 0;
    
    nprobs = 0;
-   nheurs = 0;
+   nmheurs = 0;
+   noheurs = 0;
    
-   # temporary hack; if the user passes an argument heuristics=... by the commandline, only those will be considered
-   considerall = 1;
-   nheurs = split(heuristics, heurs, ",");
-   if( nheurs > 0 )
-      considerall = 0;
+   nmheurs = split(masterheurs, mheurs, ",");
+   noheurs = split(origheurs, oheurs, ",");
+   for( i = 1; i <= nmheurs; ++i )
+      heurs[i] = mheurs[i];
+   for( i = 1; i <= noheurs; ++i )
+      heurs[nmheurs + i] = oheurs[i];
+   nheurs = nmheurs + noheurs;
 }
 
 /^IP\// { # TEMPORARY HACK to parse .test files
@@ -84,7 +96,7 @@ BEGIN {
    # Escape _ for TeX
    n = split(prob, a, "_");
    pprob = a[1];
-   for( i = 2; i <= n; i++ )
+   for( i = 2; i <= n; ++i )
       pprob = pprob "\\_" a[i];
       
    aborted = 1;
@@ -100,41 +112,53 @@ BEGIN {
 
 # when reached the heuristics section, collect statistics for each heuristic
 /^Primal Heuristics  :/ {
-   if( inoriginalprob )
+   while( getline > 0 && match($0, /^LP                 :/) == 0 )
    {
-      while( getline > 0 && match($0, /^LP                 :/) == 0 )
-      {
-         heur = $1;
-         sub(/:/, "", heur);
+      heur = $1;
+      sub(/:/, "", heur);
       
-         if( heur != "LP" && heur != "pseudo" && !ignored[heur] )
+      if( heur != "LP" && heur != "pseudo" && !ignored[heur] )
+      {
+
+         # only read statistics if the heuristic was in the input
+         if( inoriginalprob )
          {
-#            for( i = 1; i <= nheurs; i++ )
-#               if( heurs[i] == heur )
-#                  break;
-#            if( i == nheurs+1 && considerall == 1 )
-            if( considerall == 1 && headerprinted == 0 )
+            for( i = 1; i <= noheurs; ++i )
             {
-               heurs[nheurs] = heur;
-               nheurs++;
-            
-               stime[heur] = 0.0;
-               scalls[heur] = 0;
-               sfound[heur] = 0;
-            
-               timegeom[heur] = 0.0;
-               callsgeom[heur] = 0.0;
-               foundgeom[heur] = 0.0;
-            
-               shiftedtimegeom[heur] = timegeomshift;
-               shiftedcallsgeom[heur] = solsgeomshift;
-               shiftedfoundgeom[heur] = solsgeomshift;
+               if( oheurs[i] == heur )
+                  break;
             }
-               
-            time[heur] = $(NF-2);
-            calls[heur] = $(NF-1);
-            found[heur] = $NF;
+            if( i > noheurs )
+               continue;
+            i = nmheurs + i;
          }
+         else
+         {
+            for( i = 1; i <= nmheurs; ++i )
+               if( mheurs[i] == heur )
+                  break;
+            if( i > nmheurs )
+               continue;
+         }
+
+         if( headerprinted == 0 )
+         {
+            stime[i] = 0.0;
+            scalls[i] = 0;
+            sfound[i] = 0;
+            
+            timegeom[i] = 0.0;
+            callsgeom[i] = 0.0;
+            foundgeom[i] = 0.0;
+            
+            shiftedtimegeom[i] = timegeomshift;
+            shiftedcallsgeom[i] = solsgeomshift;
+            shiftedfoundgeom[i] = solsgeomshift;
+         }
+               
+         time[i] = $(NF-2);
+         calls[i] = $(NF-1);
+         found[i] = $NF;
       }
    }
 }
@@ -168,10 +192,49 @@ BEGIN {
      
       if( headerprinted == 0 )
       {
+         if( nheurs >= 1 )
+         {
+            tablehead01 = "                  ";
+            tablehead02 = "                  ";
+            if( nmheurs >= 1 )
+            {
+               for( i = 1; i <= nmheurs; ++i )
+               {
+                  tablehead01 = tablehead01"+-----------------";
+               }
+               tablehead02 = tablehead02"|";
+               for( i = 1; i <= floor((18 * nmheurs - 15) / 2); ++i )
+                  tablehead02 = tablehead02" ";
+               tablehead02 = tablehead02"Master problem";
+               for( i = 1; i <= ceil((18 * nmheurs - 15) / 2); ++i )
+                  tablehead02 = tablehead02" ";
+            }
+            if( noheurs >= 1 )
+            {
+               for( i = 1; i <= noheurs; ++i )
+               {
+                  tablehead01 = tablehead01"+-----------------";
+               }
+               tablehead02 = tablehead02"|";
+               for( i = 1; i <= floor((18 * noheurs - 17) / 2); ++i )
+                  tablehead02 = tablehead02" ";
+               tablehead02 = tablehead02"Original problem";
+               for( i = 1; i <= ceil((18 * noheurs - 17) / 2); ++i )
+                  tablehead02 = tablehead02" ";
+            }
+            tablehead01 = tablehead01"+\n";
+            tablehead02 = tablehead02"|\n";
+
+            printf(tablehead01);
+            printf(tablehead02);
+
+         }
+
          tablehead1 = "------------------+";
          tablehead2 = "Name              |";
          tablehead3 = "------------------+";
-         for( i = 1; i <= nheurs; i++ )
+
+         for( i = 1; i <= nheurs; ++i )
          {
             tablehead1 = tablehead1"-----------------+";
             tablehead2 = sprintf("%s%-17s|", tablehead2, heurs[i]);
@@ -200,34 +263,31 @@ BEGIN {
       allcalls = 0;
       allfound = 0;
       
-      for( i = 1; i <= nheurs; i++ )
+      for( i = 1; i <= nheurs; ++i )
       {
-         heur = heurs[i];
+         stime[i] += time[i];
+         scalls[i] += calls[i];
+         sfound[i] += found[i];
          
-         stime[heur] += time[heur];
-         scalls[heur] += calls[heur];
-         sfound[heur] += found[heur];
+         timegeom[i] = timegeom[i]^((nprobs-1)/nprobs) * max(time[i], 1.0)^(1.0/nprobs);
+         callsgeom[i] = callsgeom[i]^((nprobs-1)/nprobs) * max(calls[i], 1.0)^(1.0/nprobs);
+         foundgeom[i] = foundgeom[i]^((nprobs-1)/nprobs) * max(found[i], 1.0)^(1.0/nprobs);
          
-         timegeom[heur] = timegeom[heur]^((nprobs-1)/nprobs) * max(time[heur], 1.0)^(1.0/nprobs);
-         callsgeom[heur] = callsgeom[heur]^((nprobs-1)/nprobs) * max(calls[heur], 1.0)^(1.0/nprobs);
-         foundgeom[heur] = foundgeom[heur]^((nprobs-1)/nprobs) * max(found[heur], 1.0)^(1.0/nprobs);
+         shiftedtimegeom[i] = shiftedtimegeom[i]^((nprobs-1)/nprobs) * max(time[i]+timegeomshift, 1.0)^(1.0/nprobs);
+         shiftedcallsgeom[i] = shiftedcallsgeom[i]^((nprobs-1)/nprobs) * max(calls[i]+solsgeomshift, 1.0)^(1.0/nprobs);
+         shiftedfoundgeom[i] = shiftedfoundgeom[i]^((nprobs-1)/nprobs) * max(found[i]+solsgeomshift, 1.0)^(1.0/nprobs);
          
-         shiftedtimegeom[heur] = shiftedtimegeom[heur]^((nprobs-1)/nprobs) * max(time[heur]+timegeomshift, 1.0)^(1.0/nprobs);
-         shiftedcallsgeom[heur] = shiftedcallsgeom[heur]^((nprobs-1)/nprobs) * max(calls[heur]+solsgeomshift, 1.0)^(1.0/nprobs);
-         shiftedfoundgeom[heur] = shiftedfoundgeom[heur]^((nprobs-1)/nprobs) * max(found[heur]+solsgeomshift, 1.0)^(1.0/nprobs);
-         
-         alltime += time[heur];
-         allcalls += calls[heur];
-         allfound += found[heur];
+         alltime += time[i];
+         allcalls += calls[i];
+         allfound += found[i];
       }
       
       if( !onlypresolvereductions || origcons > cons || origvars > vars )
       {
          printf("%-18s ", shortprob);
-         for( i = 1; i <= nheurs; i++ )
+         for( i = 1; i <= nheurs; ++i )
          {
-            heur = heurs[i];
-            printf("%7.1f/%4d/%4d ", time[heur], calls[heur], found[heur]);
+            printf("%7.1f/%4d/%4d ", time[i], calls[i], found[i]);
          }
          if( nheurs > 1 )
             printf("%9.1f/%5d/%5d ", alltime, allcalls, allfound);
@@ -237,13 +297,11 @@ BEGIN {
 }
 
 END {
-   for( i = 1; i <= nheurs; i++ )
+   for( i = 1; i <= nheurs; ++i )
    {
-      heur = heurs[i];
-   
-      shiftedtimegeom[heur] -= timegeomshift;
-      shiftedcallsgeom[heur] -= solsgeomshift;
-      shiftedfoundgeom[heur] -= solsgeomshift;
+      shiftedtimegeom[i] -= timegeomshift;
+      shiftedcallsgeom[i] -= solsgeomshift;
+      shiftedfoundgeom[i] -= solsgeomshift;
    }
 
    alltime = 0;
@@ -251,43 +309,39 @@ END {
    allfound = 0;
 
    printf("------------------+");
-   for( i = 1; i <= nheurs; i++ )
-   {
+   for( i = 1; i <= nheurs; ++i )
       printf("-----------------+");
-   }
    if( nheurs > 1)
       printf("---------------------+");
    printf("-----------------+-----------------\n");
    
    printf("Total (%4d)       ", nprobs);
-   for( i = 1; i <= nheurs; i++ )
+   for( i = 1; i <= nheurs; ++i )
    {
-      heur = heurs[i];      
-      printf("%7.1f/%4d/%4d ", stime[heur], scalls[heur], sfound[heur]);
+      printf("%7.1f/%4d/%4d ", stime[i], scalls[i], sfound[i]);
       
-      alltime += stime[heur];
-      allcalls += scalls[heur];
-      allfound += sfound[heur];
+      alltime += stime[i];
+      allcalls += scalls[i];
+      allfound += sfound[i];
 
    }
+
    if( nheurs > 1 )
       printf("%9.1f/%5d/%5d\n", alltime, allcalls, allfound);
    else
       printf("\n");
    
    printf("Geom. Mean         ");
-   for( i = 1; i <= nheurs; i++ )
+   for( i = 1; i <= nheurs; ++i )
    {
-      heur = heurs[i];
-      printf("%7.1f/%4d/%4d ", timegeom[heur], callsgeom[heur], foundgeom[heur]);
+      printf("%7.1f/%4d/%4d ", timegeom[i], callsgeom[i], foundgeom[i]);
    }
    printf("                   \n");   
    
    printf("Shifted Mean       ");
-   for( i = 1; i <= nheurs; i++ )
+   for( i = 1; i <= nheurs; ++i )
    {
-      heur = heurs[i];
-      printf("%7.1f/%4d/%4d ", shiftedtimegeom[heur], shiftedcallsgeom[heur], shiftedfoundgeom[heur]);
+      printf("%7.1f/%4d/%4d ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i]);
    }
    printf("                   \n");
    printf("\n");   
