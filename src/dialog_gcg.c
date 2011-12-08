@@ -266,6 +266,86 @@ SCIP_RETCODE writeProblem(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE writeAllDecompositions(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          dialog,             /**< dialog menu */
+   SCIP_DIALOGHDLR*      dialoghdlr,         /**< dialog handler */
+   SCIP_DIALOG**         nextdialog          /**< pointer to store next dialog to execute */
+   )
+{
+
+   char* filename;
+   SCIP_Bool endoffile;
+   SCIP_RETCODE retcode;
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   if( filename[0] != '\0' )
+   {
+      char* tmpfilename;
+      char* extension;
+      extension = filename;
+      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
+
+      do
+      {
+         retcode = DECwriteAllDecomps(scip, extension);
+
+         if( retcode == SCIP_FILECREATEERROR )
+         {
+            SCIPdialogMessage(scip, NULL, "error creating files\n");
+            SCIPdialoghdlrClearBuffer(dialoghdlr);
+            break;
+         }
+         else if(retcode == SCIP_WRITEERROR )
+         {
+            SCIPdialogMessage(scip, NULL, "error writing files\n");
+            SCIPdialoghdlrClearBuffer(dialoghdlr);
+            break;
+         }
+         else if( retcode == SCIP_PLUGINNOTFOUND )
+         {
+            /* ask user once for a suitable reader */
+            if( extension == NULL )
+            {
+               SCIPdialogMessage(scip, NULL, "no reader for requested output format\n");
+
+               SCIPdialogMessage(scip, NULL, "following readers are avaliable for writing:\n");
+               displayReaders(scip, FALSE, TRUE);
+
+               SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
+                     "select a suitable reader by extension (or return): ", &extension, &endoffile) );
+
+               if( extension[0] == '\0' )
+                  break;
+            }
+            else
+            {
+               SCIPdialogMessage(scip, NULL, "no reader for output in <%s> format\n", extension);
+               extension = NULL;
+            }
+         }
+         else
+         {
+            /* check for unexpected errors */
+            SCIP_CALL( retcode );
+
+            /* print result message if writing was successful */
+            SCIPdialogMessage(scip, NULL, "written all decompositions %s\n", extension);
+            break;
+         }
+      }
+      while (extension != NULL );
+   }
+
+   return SCIP_OKAY;
+}
 
 /** standard menu dialog execution method, that displays it's help screen if the remaining command line is empty */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecMenu)
@@ -1594,6 +1674,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingDirection)
    return SCIP_OKAY;
 }
 
+
 /** dialog execution method for the set branching priority command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingPriority)
 {  /*lint --e{715}*/
@@ -2039,6 +2120,25 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteGenTransproblem)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for writing all known decompositions */
+static
+SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
+{
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PROBLEM )
+   {
+      SCIP_CALL( writeAllDecompositions(scip, dialog, dialoghdlr, nextdialog) );
+   }
+   else
+      SCIPdialogMessage(scip, NULL, "no problem available\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
 /** creates a root dialog */
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2437,7 +2537,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteTransproblem, NULL, NULL,
             "transproblem",
-            "write currend node transformed problem to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
+            "write current node transformed problem to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
@@ -2448,12 +2548,22 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteGenTransproblem, NULL, NULL,
             "gentransproblem",
-            "write currend node transformed problem with generic names to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
+            "write current node transformed problem with generic names to file (format is given by file extension, e.g., trans.{lp,rlp,cip,mps})",
             FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
+   /* write alldecompositions */
+   if( !SCIPdialogHasEntry(submenu, "alldecompositions") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecWriteAllDecompositions, NULL, NULL,
+            "alldecompositions",
+            "write all known decompostions to file (format is given by file extension, e.g., {dec,blk,ref})",
+            FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
 
    return SCIP_OKAY;
 }

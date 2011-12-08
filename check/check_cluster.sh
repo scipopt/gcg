@@ -194,10 +194,18 @@ do
       echo set save $SETFILE                 >> $TMPFILE
       echo read $SCIPPATH/$i                 >> $TMPFILE
 #  echo presolve                         >> $TMPFILE
-      echo optimize                          >> $TMPFILE
-      echo display statistics                >> $TMPFILE
+      if test $MODE = "detect"
+      then
+	  echo presolve                      >> $TMPFILE
+	  echo detect                        >> $TMPFILE
+	  echo display statistics            >> $TMPFILE
+	  echo presolve                      >> $TMPFILE
+      else
+	  echo optimize                      >> $TMPFILE
+	  echo display statistics            >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
-      echo checksol                          >> $TMPFILE
+	  echo checksol                      >> $TMPFILE
+      fi
       echo quit                              >> $TMPFILE
 
       # additional environment variables needed by runcluster.sh
@@ -210,7 +218,7 @@ do
       # check queue type
       if test  "$QUEUETYPE" = "srun"
       then
-	  srun --job-name=SCIP$TSTNAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
+	  srun --job-name=SCIP$SHORTFILENAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
       elif test  "$QUEUETYPE" = "bsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
@@ -223,7 +231,7 @@ do
 	  TLIMIT=`expr $HARDTIMELIMIT / 60`
 
 #	  less runcluster_aachen.sh
-	  bsub -J SCIP$TSTNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT < runcluster_tmp.sh &
+	  bsub -J SCIP$SHORTFILENNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT < runcluster_tmp.sh &
       elif test  "$QUEUETYPE" = "qsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh

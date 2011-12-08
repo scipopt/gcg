@@ -101,6 +101,12 @@ SCIP_RETCODE DECdetectStructure(
    );
 
 
+/** write out all known decompositions **/
+SCIP_RETCODE DECwriteAllDecomps(
+   SCIP* scip,
+   char* extension
+   );
+
 #ifdef __cplusplus
 }
 #endif

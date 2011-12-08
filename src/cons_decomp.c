@@ -711,3 +711,30 @@ SCIP_RETCODE DECdetectStructure(
    conshdlrdata->hasrun = TRUE;
    return SCIP_OKAY;
 }
+
+/** write out all known decompositions **/
+SCIP_RETCODE DECwriteAllDecomps(
+   SCIP* scip,
+   char* extension
+   )
+{
+   int i;
+   char name[SCIP_MAXSTRLEN];
+
+   assert(scip != NULL);
+   assert(extension != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+
+   for ( i = 0; i < conshdrldata->ndecomps; ++i )
+   {
+      SCIP_CALL( SCIPwriteTransProblem(scip, name, extension, FALSE) );
+   }
+
+   return SCIP_OKAY;
+}
