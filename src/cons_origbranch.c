@@ -230,7 +230,6 @@ static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -241,8 +240,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
+   assert(SCIPconsGetData(cons) != NULL);
 
    SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
       conshdlrData->nstack+1);
@@ -270,7 +268,6 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -283,8 +280,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    assert(conshdlrData->nstack > 0);
    assert(conshdlrData->nstack == 1 || cons == conshdlrData->stack[conshdlrData->nstack-1]);
 
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
+   assert(SCIPconsGetData(cons) != NULL);
 
    SCIPdebugMessage("Deactivating branch orig constraint: <%s> [stack size: %d].\n",
       SCIPconsGetName(cons), conshdlrData->nstack-1);

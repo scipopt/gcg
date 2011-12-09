@@ -288,7 +288,6 @@ SCIP_RETCODE writeAllDecompositions(
 
    if( filename[0] != '\0' )
    {
-      char* tmpfilename;
       char* extension;
       extension = filename;
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );

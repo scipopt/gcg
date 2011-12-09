@@ -607,8 +607,8 @@ readBlock(
    int blockid;
    int nvars;
    SCIP_CONS* cons;
-
    SCIP_VAR** vars;
+
    assert(blkinput != NULL);
 
    reader = SCIPfindReader(scip, READER_NAME);
@@ -680,8 +680,9 @@ readBlock(
       {
          SCIP_CALL(SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) blkinput->blocknr)));
       }
+      SCIPfreeMemoryArray(scip, &vars);
    }
-   SCIPfreeMemoryArray(scip, &vars);
+
    return SCIP_OKAY;
 }
 

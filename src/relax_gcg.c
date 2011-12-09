@@ -972,19 +972,19 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 
 
 /** initialization method of relaxator (called after problem was transformed) */
-static
+/*static
 SCIP_DECL_RELAXINIT(relaxInitGcg)
 {
    SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
-
+   assert(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    return SCIP_OKAY;
-}
-
+   }*/
+#define relaxInitGcg NULL
 
 
 /** deinitialization method of relaxator (called before transformed problem is freed) */
@@ -1910,7 +1910,6 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
-   int nblocks;
    int blocknr;
 
    assert(scip != NULL);
@@ -1927,10 +1926,9 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
    blocknr = GCGvarGetBlock(var);
    assert(GCGvarIsOriginal(var));
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
-   assert(nblocks > 0);
-   assert(newblock < nblocks);
-   assert(blocknr >= -2 && blocknr < nblocks);
+   assert(GCGrelaxGetNPricingprobs(scip) > 0);
+   assert(newblock < GCGrelaxGetNPricingprobs(scip));
+   assert(blocknr >= -2 && blocknr < GCGrelaxGetNPricingprobs(scip));
 
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
@@ -2050,6 +2048,7 @@ int GCGrelaxGetNPricingprobs(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   assert(relaxdata->npricingprobs >= -1);
    return relaxdata->npricingprobs;
 }
 
@@ -2667,8 +2666,6 @@ void GCGrelaxTransformOrigvalsToMastervals(
    int                   nmastervars         /** number of master variables */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
    int i;
    int j;
    int k;
@@ -2679,12 +2676,6 @@ void GCGrelaxTransformOrigvalsToMastervals(
    assert(mastervars != NULL);
    assert(mastervals != NULL);
    assert(nmastervars >= 0);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
 
    /* set all values to 0 initially */
    for( i = 0; i < nmastervars; i++ )
@@ -2922,14 +2913,12 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       SCIP_VAR** origvars;
       int norigvars;
       SCIP_Real* origvals;
-      SCIP_Bool isray;
       int blocknr;
 
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
       norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
       origvals = GCGmasterVarGetOrigvals(mastervars[i]);
       blocknr = GCGvarGetBlock(mastervars[i]);
-      isray = GCGmasterVarIsRay(mastervars[i]);
 
       if( SCIPisFeasZero(scip, mastervals[i]) )
       {
@@ -2940,7 +2929,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       while( SCIPisFeasPositive(scip, mastervals[i]) )
       {
          assert(GCGvarIsMaster(mastervars[i]));
-         assert(!isray);
+         assert(!GCGmasterVarIsRay(mastervars[i]));
 
          if( blocknr == -1 )
          {

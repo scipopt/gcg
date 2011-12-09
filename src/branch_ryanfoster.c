@@ -138,7 +138,6 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 {
-   SCIP* origscip;
    SCIP_VAR** vars;
    SCIP_Real val1;
    SCIP_Real val2;
@@ -153,8 +152,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
+   assert(GCGpricerGetOrigprob(scip) != NULL);
 
    SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));

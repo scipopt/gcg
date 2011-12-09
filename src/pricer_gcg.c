@@ -707,7 +707,6 @@ SCIP_RETCODE setPricingObjs(
    SCIP_ROW** mastercuts;
    int nmastercuts;
    SCIP_ROW** origcuts;
-   int norigcuts;
    SCIP_COL** cols;
    SCIP_Real* consvals;
    SCIP_Real dualsol;
@@ -780,9 +779,10 @@ SCIP_RETCODE setPricingObjs(
       for( j = 0; j < nprobvars; j++ )
       {
          SCIP_VAR* origvar;
-         SCIP_VAR** pricingvars;
          SCIP_CONS** linkconss;
-
+#ifndef NDEBUG
+         SCIP_VAR** pricingvars;
+#endif
          origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
 
          assert(GCGvarIsPricing(probvars[j]));
@@ -791,7 +791,9 @@ SCIP_RETCODE setPricingObjs(
          if( !GCGvarIsLinking(origvar) )
             continue;
 
+#ifndef NDEBUG
          pricingvars = GCGlinkingVarGetPricingVars(origvar);
+#endif
          linkconss = GCGlinkingVarGetLinkingConss(origvar);
          assert(pricingvars[i] == probvars[j]);
          assert(linkconss[i] != NULL);
@@ -853,11 +855,10 @@ SCIP_RETCODE setPricingObjs(
    mastercuts = GCGsepaGetMastercuts(scip);
    nmastercuts = GCGsepaGetNMastercuts(scip);
    origcuts = GCGsepaGetOrigcuts(scip);
-   norigcuts = GCGsepaGetNOrigcuts(scip);
 
    assert(mastercuts != NULL);
    assert(origcuts != NULL);
-   assert(norigcuts == nmastercuts);
+   assert(GCGsepaGetNOrigcuts(scip) == nmastercuts);
 
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )
@@ -974,9 +975,12 @@ SCIP_RETCODE addVariableToMasterconstraints(
          /* original variable is a linking variable, just add it to the linkcons */
          if( GCGvarIsLinking(origvars[0]) )
          {
+#ifndef NDEBUG
             SCIP_VAR** pricingvars;
-            linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
             pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+#endif
+            linkconss = GCGlinkingVarGetLinkingConss(origvars[0]);
+
             assert(pricingvars[prob] == solvars[i]);
             assert(linkconss[prob] != NULL);
             SCIP_CALL( SCIPaddCoefLinear(scip, linkconss[prob], newvar, -solvals[i]) );
@@ -1029,7 +1033,6 @@ SCIP_RETCODE addVariableToMastercuts(
    SCIP_ROW** mastercuts;
    int nmastercuts;
    SCIP_ROW** origcuts;
-   int norigcuts;
 
    SCIP_COL** cols;
    SCIP_Real conscoef;
@@ -1049,11 +1052,10 @@ SCIP_RETCODE addVariableToMastercuts(
    mastercuts = GCGsepaGetMastercuts(scip);
    nmastercuts = GCGsepaGetNMastercuts(scip);
    origcuts = GCGsepaGetOrigcuts(scip);
-   norigcuts = GCGsepaGetNOrigcuts(scip);
 
    assert(mastercuts != NULL);
    assert(origcuts != NULL);
-   assert(norigcuts == nmastercuts);
+   assert(GCGsepaGetNOrigcuts(scip) == nmastercuts);
 
    /* compute coef of the variable in the cuts and add it to the cuts */
    for( i = 0; i < nmastercuts; i++ )
@@ -2397,12 +2399,15 @@ GCG_SOLVERDATA* GCGpricerGetSolverdata(
    GCG_SOLVER*           solver
    )
 {
+#ifndef NDEBUG
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
+#endif
 
    assert(scip != NULL);
    assert(solver != NULL);
 
+#ifndef NDEBUG
    pricer = SCIPfindPricer(scip, PRICER_NAME);
    assert(pricer != NULL);
 
@@ -2411,6 +2416,7 @@ GCG_SOLVERDATA* GCGpricerGetSolverdata(
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
+#endif
 
    return solver->solverdata;
 }
@@ -2421,12 +2427,15 @@ void GCGpricerSetSolverdata(
    GCG_SOLVERDATA*       solverdata
    )
 {
+#ifndef NDEBUG
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
+#endif
 
    assert(scip != NULL);
    assert(solver != NULL);
 
+#ifndef NDEBUG
    pricer = SCIPfindPricer(scip, PRICER_NAME);
    assert(pricer != NULL);
 
@@ -2435,6 +2444,7 @@ void GCGpricerSetSolverdata(
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
+#endif
 
    solver->solverdata = solverdata;
 }

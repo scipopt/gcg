@@ -565,7 +565,6 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 {
 
    int i;
-   int nvars;
    int *partition;
    int *origpart;
    int nvertices;
@@ -575,9 +574,13 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
    nvertices = detectordata->nvertices;
    partition = detectordata->partition;
    origpart = detectordata->varpart;
-   nvars = SCIPgetNVars( scip );
-
-   assert(nvertices == nvars);
+#ifndef NDEBUG
+   {
+      int nvars;
+      nvars = SCIPgetNVars( scip );
+      assert(nvertices == nvars);
+   }
+#endif
     /* go through the new vertices */
    for( i = 0; i < nvertices ; ++i )
    {

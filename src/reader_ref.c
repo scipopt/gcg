@@ -722,11 +722,15 @@ SCIP_RETCODE writeREFFile(
    for( i = 0; i < nconss; ++i)
    {
       size_t ind;
+#ifndef NDEBUG
       size_t unconss;
+#endif
       SCIP_CONS* cons;
 
       ind = i+1;
+#ifndef NDEBUG
       unconss = nconss;
+#endif
       assert(ind > 0);
       assert(ind <= unconss);
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
@@ -750,7 +754,9 @@ SCIP_RETCODE writeREFFile(
       for(j = 0; j < readerdata->decdecomp->nsubscipconss[i]; ++j)
       {
          size_t ind;
+#ifndef NDEBUG
          size_t unconss;
+#endif
          SCIP_CONS* cons;
 //         assert(SCIPconsIsTransformed(readerdata->decdecomp->subscipconss[i][j]));
 //         SCIP_CALL(SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons));
@@ -759,7 +765,9 @@ SCIP_RETCODE writeREFFile(
          ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
          SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
 
+#ifndef NDEBUG
          unconss = nconss;
+#endif
          assert(ind > 0); /* shift by 1 */
          assert(ind <= unconss); /* shift by 1 */
          SCIPinfoMessage(scip, file, "%d ", ind-1);

@@ -95,7 +95,6 @@ SCIP_RETCODE checkSolNew(
    SCIP_Bool*            isnew
    )
 {
-   SCIP* origprob;
    SCIP_VAR** probvars;
    int nprobvars;
    SCIP_Real* newvals;
@@ -109,8 +108,7 @@ SCIP_RETCODE checkSolNew(
    assert(sols[idx] != NULL);
    assert(isnew != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
-   assert(origprob != NULL);
+   assert(GCGpricerGetOrigprob(scip) != NULL);
 
    probvars = SCIPgetVars(pricingprob);
    nprobvars = SCIPgetNVars(pricingprob);

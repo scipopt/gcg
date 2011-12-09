@@ -558,15 +558,13 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
 static
 SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 {
-   SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
+   assert(SCIPconshdlrGetData(conshdlr) != NULL);
 
    SCIPdebugMessage("consInitsolMasterbranch()\n");
 
@@ -1452,8 +1450,10 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    SCIP_Bool handled = FALSE;
 #endif
    SCIP_VAR** mastervars;
+#ifndef NDEBUG
    int nmastervars;
    SCIP_Real* mastervals;
+#endif
 
    eventtype = SCIPeventGetType(event);
    var = SCIPeventGetVar(event);
@@ -1466,9 +1466,11 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    assert(GCGvarIsOriginal(var));
    blocknr = GCGvarGetBlock(var);
 
-   nmastervars = GCGoriginalVarGetNMastervars(var);
    mastervars = GCGoriginalVarGetMastervars(var);
+#ifndef NDEBUG
+   nmastervars = GCGoriginalVarGetNMastervars(var);
    mastervals = GCGoriginalVarGetMastervals(var);
+#endif
 
    /* deal with variables present in the pricing */
    if( blocknr >= 0 && GCGrelaxIsPricingprobRelevant(scip, blocknr) )
@@ -1957,10 +1959,12 @@ void GCGconsMasterbranchCheckConsistency(
    )
 {
    SCIP_CONSHDLR*     conshdlr;
-   SCIP_CONS** conss;
-   SCIP_CONSDATA* consdata;
    int nconss;
    int i;
+#ifndef NDEBUG
+   SCIP_CONS** conss;
+   SCIP_CONSDATA* consdata;
+#endif
 
    if( scip == NULL )
       return;
@@ -1973,13 +1977,16 @@ void GCGconsMasterbranchCheckConsistency(
       assert(0);
       return;
    }
-
+#ifndef NDEBUG
    conss = SCIPconshdlrGetConss(conshdlr);
+#endif
    nconss = SCIPconshdlrGetNConss(conshdlr);
 
    for( i = 0; i < nconss; i++ )
    {
+#ifndef NDEBUG
       consdata = SCIPconsGetData(conss[i]);
+#endif 
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));

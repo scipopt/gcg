@@ -68,13 +68,14 @@ struct SCIP_ConsData
 struct SCIP_ConshdlrData
 {
    DECDECOMP* decdecomp;
-
+   DECDECOMP** decdecomps;
    DEC_DETECTOR** detectors;
    int *priorities;
    int ndetectors;
    int usedetection;
    SCIP_CLOCK* detectorclock;
    SCIP_Bool hasrun;
+   int ndecomps;
 };
 
 
@@ -720,7 +721,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 {
    int i;
    char name[SCIP_MAXSTRLEN];
-
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
    assert(extension != NULL);
 
@@ -731,7 +733,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    assert(conshdlrdata != NULL);
 
 
-   for ( i = 0; i < conshdrldata->ndecomps; ++i )
+   for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
       SCIP_CALL( SCIPwriteTransProblem(scip, name, extension, FALSE) );
    }
