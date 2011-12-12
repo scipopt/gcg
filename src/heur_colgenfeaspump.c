@@ -256,7 +256,7 @@ SCIP_RETCODE initializeLP(
       /* store each entry in the coefficient matrix */
       for( j = 0; j < ncolrows; ++j )
       {
-         colind[ncolnonz + j] = SCIProwGetIndex(colrows[j]);
+         colind[ncolnonz + j] = SCIProwGetLPPos(colrows[j]);
          colval[ncolnonz + j] = colvals[j];
       }
       ncolnonz += ncolrows;
@@ -273,6 +273,10 @@ SCIP_RETCODE initializeLP(
    SCIPfreeBufferArray(scip, &colbeg);
    SCIPfreeBufferArrayNull(scip, &colind);
    SCIPfreeBufferArrayNull(scip, &colval);
+
+   /* set parameters */
+   SCIP_CALL( SCIPlpiSetIntpar(divinglp, SCIP_LPPAR_PRICING, SCIP_PRICING_AUTO) );
+   SCIP_CALL( SCIPlpiSetRealpar(divinglp, SCIP_LPPAR_BARRIERCONVTOL, 1e-10) );
 
    return SCIP_OKAY;
 }
@@ -638,14 +642,16 @@ SCIP_RETCODE solveLP(
       *lpsol = NULL;
    }
 
+   *solved = FALSE;
+
    /* solve the LP */
-   SCIP_CALL( SCIPlpiSolvePrimal(divinglp) );
+   SCIP_CALL( SCIPlpiSolveDual(divinglp) );
 
    /* if the LP was solved, store the obtained solution */
-   if( *solved
-         && !SCIPlpiIsPrimalInfeasible(divinglp)
-         && !SCIPlpiIsPrimalUnbounded(divinglp) )
+   if( SCIPlpiIsOptimal(divinglp) )
    {
+      *solved = TRUE;
+
       SCIP_CALL( SCIPcreateSol(masterprob, lpsol, heur) );
 
       /* allocate memory for storing the solution values */
@@ -656,7 +662,7 @@ SCIP_RETCODE solveLP(
       SCIPlpiGetSol(divinglp, &objval, primsol, NULL, NULL, NULL);
 
       /* get solution values for the master variables */
-      for( i = 0; i < nmastervars; ++i)
+      for( i = 0; i < nmastervars; ++i )
       {
          int idx;
 
@@ -1245,6 +1251,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    SCIP_Longint ncalls;           /* number of calls of this heuristic */
    int* col2idx;                  /* mapping from variable/column index to column index in diving LP */
    int* idx2col;                  /* mapping from diving LP column index to master variable index */
+   int* nsolnonz;
    int bestnfracs;
    int cycle;
    int lastiterations;
@@ -1254,6 +1261,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    int nloops;
    int nmastervars;
    int oldnmastervars;
+   int neqnonz;
    int npricingprobs;
 //   int nshifts;
    int nstallloops;
@@ -1351,6 +1359,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    SCIP_CALL( SCIPallocBufferArray(scip, &masterobjs, nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &pricingobjs, nvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &solvals, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsolnonz, npricingprobs) );
 
    /* allocate memory for cycle handling */
    SCIP_CALL( SCIPallocBufferArray(scip, &lastsols, heurdata->cyclelength) );
@@ -1368,31 +1377,55 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    SCIP_CALL( SCIPcreateSol(scip, &intsol, heur) );
 
    /* create a copy of the master LP */
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_divingLP", SCIPgetProbName(scip));
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "diving_0_%s", SCIPgetProbName(scip));
    SCIP_CALL( SCIPlpiCreate(&divinglp, probname, SCIPgetObjsense(masterprob)) );
    SCIP_CALL( initializeLP(scip, divinglp, &col2idx, &idx2col) );
 
    /* in debug mode, check whether the copied master LP yields the same solution */
 #ifndef NDEBUG
+   SCIP_CALL( SCIPwriteLP(masterprob, "masterlp.lp") );
+   SCIP_CALL( SCIPlpiWriteLP(divinglp, "divinglp_0.lp") );
    SCIP_CALL( solveLP(scip, divinglp, col2idx, heur, &mastersol, &solved) );
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, mastersol, &tmpsol) );
 
 //   SCIPdebugMessage("objectives: relaxsol=%g, divinglpsol=%g\n",
 //      SCIPsolGetOrigObj(relaxsol), SCIPsolGetOrigObj(tmpsol));
 
-   for( i = 0; i < nvars; ++i )
+   SCIPdebugMessage("objectives: lpsol=%g, divingsol=%g\n",
+      SCIPgetLPObjval(masterprob), SCIPgetSolTransObj(scip, mastersol));
+
+   for( i = 0; i < nmastervars; ++i )
    {
       SCIP_Real val1;
       SCIP_Real val2;
 
-      val1 = SCIPgetSolVal(scip, relaxsol, vars[i]);
-      val2 = SCIPgetSolVal(scip, tmpsol, vars[i]);
+      val1 = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+      val2 = SCIPgetSolVal(masterprob, mastersol, mastervars[i]);
       if( !SCIPisEQ(scip, val1, val2) )
       {
-         SCIPdebugMessage("WARNING: different values for var %s: relaxsol=%g, divinglpsol=%g\n",
-               SCIPvarGetName(vars[i]), val1, val2);
+         SCIPdebugMessage("WARNING: different values for mastervar %s: lpsol=%g, divingsol=%g\n",
+               SCIPvarGetName(mastervars[i]), val1, val2);
       }
+//      else
+//      {
+//         SCIPdebugMessage("equal values for mastervar %s: lpsol=%g, divingsol=%g\n",
+//                        SCIPvarGetName(mastervars[i]), val1, val2);
+//      }
    }
+
+//   for( i = 0; i < nvars; ++i )
+//   {
+//      SCIP_Real val1;
+//      SCIP_Real val2;
+//
+//      val1 = SCIPgetSolVal(scip, relaxsol, vars[i]);
+//      val2 = SCIPgetSolVal(scip, tmpsol, vars[i]);
+//      if( !SCIPisEQ(scip, val1, val2) )
+//      {
+//         SCIPdebugMessage("WARNING: different values for var %s: relaxsol=%g, divinglpsol=%g\n",
+//               SCIPvarGetName(vars[i]), val1, val2);
+//      }
+//   }
 
    SCIP_CALL( SCIPfreeSol(scip, &tmpsol) );
    tmpsol = NULL;
@@ -1510,73 +1543,102 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
 
 
       /* compute objective coefficients in master problem:
-       * for each original variable, compute its new objective coefficient (according to the distance function)
-       * and add it to all master variables in which it is contained */
-      for( i = 0; i < nmastervars; ++i )
-         masterobjs[i] = 0.0;
+       * for each master variable, compute the Hamming distance between its extreme point
+       * and the current integer solution */
+
+      /* for each block, count how many variables appear nonzero in the integer solution */
+      for( i = 0; i < npricingprobs; ++i )
+         nsolnonz[i] = 0;
       for( i = 0; i < nvars; ++i )
       {
          SCIP_VAR* var;
-
-         SCIP_VAR** origmastervars;
-         SCIP_Real* origmastervals;
-         int norigmastervars;
-
+         int block;
          SCIP_Real intval;
-         SCIP_Real relaxval;
-         SCIP_Real direction;
-         SCIP_Real newobjcoeff;
 
-         /* get original variable, its solution value and fractionality */
          var = vars[i];
+         block = GCGvarGetBlock(var);
+         assert(block >= -2 && block < npricingprobs);
          intval = SCIPgetSolVal(scip, intsol, var);
-         relaxval = SCIPgetSolVal(scip, relaxsol, var);
-         direction = intval - relaxval;
+         if( block >= 0 && !SCIPisZero(scip, intval) )
+            ++nsolnonz[block];
+      }
+      /* compute the hamming distance for each master variable */
+      for( i = 0; i < nmastervars; ++i )
+      {
+         SCIP_VAR* mastervar;
+         int block;
 
-         /* get master variables which contain this variable */
-         origmastervars = GCGoriginalVarGetMastervars(vars[i]);
-         origmastervals = GCGoriginalVarGetMastervals(vars[i]);
-         norigmastervars = GCGoriginalVarGetNMastervars(vars[i]);
-         assert(origmastervars != NULL);
-         assert(origmastervals != NULL);
-         assert(norigmastervars >= 0);
+         SCIP_VAR** origvars;
+         SCIP_Real* origvals;
+         int norigvars;
 
-         /* variables which stayed integral are treated separately */
-         if( SCIPisFeasZero(scip, direction) )
+         mastervar = mastervars[i];
+         assert(GCGvarIsMaster(mastervar));
+         block = GCGvarGetBlock(mastervar);
+         assert(block >= -1 && block < npricingprobs);
+
+         origvars = GCGmasterVarGetOrigvars(mastervar);
+         origvals = GCGmasterVarGetOrigvals(mastervar);
+         norigvars = GCGmasterVarGetNOrigvars(mastervar);
+         assert(origvars != NULL);
+         assert(origvals != NULL);
+         assert(norigvars >= 0);
+
+         masterobjs[i] = 0.0;
+         neqnonz = 0;
+
+         if( block != -1 )
          {
-            SCIP_Real lb;
-            SCIP_Real ub;
+            for( j = 0; j < norigvars; ++j )
+            {
+               SCIP_VAR* origvar;
+               SCIP_Real origval;
+               SCIP_Real intval;
 
-            /* variables at their bounds should be kept there */
-            lb = SCIPvarGetLbLocal(var);
-            ub = SCIPvarGetUbLocal(var);
-            if( SCIPisFeasEQ(scip, intval, lb) )
-               newobjcoeff = BIG_M;
-            else if( SCIPisFeasEQ(scip, intval, ub) )
-               newobjcoeff = -BIG_M;
-            else
-               newobjcoeff = 0.0;
+               origvar = origvars[j];
+               origval = origvals[j];
+               assert(GCGvarIsOriginal(origvar));
+
+               intval = SCIPgetSolVal(scip, intsol, origvar);
+
+               if( !SCIPisZero(scip, origval) )
+               {
+                  if( SCIPisZero(scip, intval) )
+                     masterobjs[i] = masterobjs[i] + 1.0;
+                  else
+                     if( SCIPisEQ(scip, origval, intval) )
+                        ++neqnonz;
+               }
+            }
+            masterobjs[i] = masterobjs[i] + nsolnonz[block] - neqnonz;
          }
          else
          {
-            if( SCIPisFeasPositive(scip, direction) )
-               newobjcoeff = - 1.0;
+            SCIP_VAR* origvar;
+            SCIP_Real origval;
+            SCIP_Real intval;
+
+            assert(norigvars == 1);
+            origvar = origvars[0];
+            origval = origvals[0];
+            assert(GCGvarIsOriginal(origvar));
+
+            intval = SCIPgetSolVal(scip, intsol, origvar);
+
+            if( !SCIPisEQ(scip, origval, intval) )
+               masterobjs[i] = 1.0;
             else
-               newobjcoeff = 1.0;
-         }
-
-         for( j = 0; j < norigmastervars; ++j )
-         {
-            int idx;
-
-            idx = SCIPvarGetProbindex(origmastervars[j]);
-            assert(idx >= 0 && idx < nmastervars);
-            masterobjs[idx] += origmastervals[j] * newobjcoeff;
+               masterobjs[i] = 0.0;
          }
       }
 
       /* set the new objectives */
       SCIP_CALL( setObjectives(scip, divinglp, idx2col, masterobjs) );
+
+#ifndef NDEBUG
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "divinglp_%d.lp", nloops);
+      SCIP_CALL( SCIPlpiWriteLP(divinglp, probname) );
+#endif
 
       /* the LP with the new (distance) objective is solved */
       nlpiterations = SCIPgetNLPIterations(scip) + SCIPgetNLPIterations(masterprob) + lastiterations;
@@ -1663,6 +1725,7 @@ SCIP_DECL_HEUREXEC(heurExecColgenfeaspump)
    SCIPfreeBufferArray(scip, &masterobjs);
    SCIPfreeBufferArray(scip, &pricingobjs);
    SCIPfreeBufferArray(scip, &solvals);
+   SCIPfreeBufferArray(scip, &nsolnonz);
    SCIPfreeBufferArray(scip, &col2idx);
    SCIPfreeBufferArray(scip, &idx2col);
 
