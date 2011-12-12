@@ -35,7 +35,7 @@
 #include "scip_misc.h"
 #include "scip/clock.h"
 #include "pub_gcgvar.h"
-
+#include "pub_decomp.h"
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
 #define CONSHDLR_DESC          "constraint handler template"
@@ -87,76 +87,6 @@ struct SCIP_ConshdlrData
 
 /* put your local methods here, and declare them static */
 
-/** initializes the decdecomp structure to absolutely nothing */
-static
-SCIP_RETCODE decdecompCreate(
-   SCIP* scip,           /**< Pointer to the SCIP instance */
-   DECDECOMP** decomp    /**< Pointer to the decdecomp instance */
-   )
-{
-   assert(scip != NULL);
-   assert(decomp != NULL);
-   SCIP_CALL( SCIPallocMemory(scip, decomp) );
-
-   (*decomp)->type = DEC_UNKNOWN;
-   (*decomp)->constoblock = NULL;
-   (*decomp)->vartoblock = NULL;
-   (*decomp)->subscipvars = NULL;
-   (*decomp)->subscipconss = NULL;
-   (*decomp)->nsubscipconss = NULL;
-   (*decomp)->nsubscipvars = NULL;
-   (*decomp)->linkingconss = NULL;
-   (*decomp)->nlinkingconss = 0;
-   (*decomp)->linkingvars = NULL;
-   (*decomp)->nlinkingvars = 0;
-   (*decomp)->nblocks = 0;
-   (*decomp)->consindex = NULL;
-   (*decomp)->varindex = NULL;
-
-   return SCIP_OKAY;
-}
-
-/** frees the decdecomp structure */
-static
-void decdecompFree(
-   SCIP* scip,           /**< Pointer to the SCIP instance */
-   DECDECOMP** decdecomp /**< Pointer to the decdecomp instance */
-   )
-{
-   DECDECOMP* decomp;
-   int i;
-
-   assert( scip!= NULL );
-   assert( decdecomp != NULL);
-   decomp = *decdecomp;
-
-   assert(decomp != NULL);
-
-   for( i = 0; i < decomp->nblocks; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &decomp->subscipvars[i]);
-      SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
-   }
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
-
-   /* free hashmaps if they are not NULL */
-   if( decomp->constoblock != NULL )
-      SCIPhashmapFree(&decomp->constoblock);
-   if( decomp->vartoblock != NULL )
-      SCIPhashmapFree(&decomp->vartoblock);
-   if( decomp->varindex != NULL )
-      SCIPhashmapFree(&decomp->varindex);
-   if( decomp->consindex != NULL )
-      SCIPhashmapFree(&decomp->consindex);
-
-   SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
-
-   SCIPfreeMemory(scip, decdecomp);
-}
 
 /*
  * Callback methods of constraint handler
@@ -194,7 +124,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    assert(conshdlrdata != NULL);
 
    SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
-   decdecompFree(scip, &conshdlrdata->decdecomp);
+   DECdecdecompFree(scip, &conshdlrdata->decdecomp);
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -239,10 +169,21 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
-
+   SCIP_CONSHDLRDATA* conshdlrdata;
    assert(conshdlr != NULL);
    assert(scip != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
+   if( conshdlrdata->decdecomps != NULL )
+   {
+      int i;
+      for( i = 0; i < conshdlrdata->ndecomps; ++i )
+      {
+         DECdecdecompFree(scip, &conshdlrdata->decdecomps[i]);
+      }
+      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
+   }
    return SCIP_OKAY;
 }
 
@@ -301,6 +242,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    assert(conshdlrdata != NULL);
 
    conshdlrdata->decdecomp = NULL;
+   conshdlrdata->decdecomps = NULL;
+   conshdlrdata->ndecomps = 0;
    conshdlrdata->ndetectors = 0;
    conshdlrdata->priorities = NULL;
    conshdlrdata->detectors = NULL;
@@ -326,7 +269,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
          conshdlrdata) );
 
-   SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
+   SCIP_CALL(DECdecdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
    reader = SCIPfindReader(scip, "refreader");
    if( reader != NULL)
@@ -680,7 +623,11 @@ SCIP_RETCODE DECdetectStructure(
       SCIPdebugMessage("Trying %d detectors.\n", conshdlrdata->ndetectors);
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
-         DEC_DETECTOR *detector;
+         DEC_DETECTOR* detector;
+         DECDECOMP** decdecomps;
+         int ndecdecomps;
+
+         ndecdecomps = -1;
          detector = conshdlrdata->detectors[i];
          assert(detector != NULL);
 
@@ -692,10 +639,18 @@ SCIP_RETCODE DECdetectStructure(
 
          (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
-         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &result));
+         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  &result));
          if( result == SCIP_SUCCESS )
          {
-            SCIPdebugPrintf("Success!\n");
+            assert(ndecdecomps >= 0);
+            assert(decdecomps != NULL || ndecdecomps == 0);
+            SCIPdebugPrintf("we have %d decompositions!\n", ndecdecomps);
+
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+ndecdecomps) );
+            BMScopyMemoryArray(&conshdlrdata->decdecomps[conshdlrdata->ndecomps], decdecomps, ndecdecomps);
+            SCIPfreeMemoryArray(scip, &decdecomps);
+            conshdlrdata->ndecomps += ndecdecomps;
+
             break;
          }
          else
@@ -704,7 +659,12 @@ SCIP_RETCODE DECdetectStructure(
          }
       }
 
-      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp));
+      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomps[0]));
+/*    for( i = 0; i < conshdlrdata->ndecomps; ++i)
+      {
+         DECdecdecompFree(scip, &(conshdlrdata->decdecomps[i]));
+      }
+*/
    }
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));

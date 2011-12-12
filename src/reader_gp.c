@@ -86,12 +86,12 @@ SCIP_RETCODE writeDecompositionHeader(
    assert(scip != NULL);
    assert(file != NULL);
    assert(decdecomp != NULL);
-   if(decdecomp == NULL || decdecomp->type == DEC_UNKNOWN || decdecomp->nblocks == 0)
+   if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
    {
       return SCIP_OKAY;
    }
 
-   if(decdecomp->type == DEC_ARROWHEAD || decdecomp->type == DEC_BORDERED)
+   if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED)
    {
       startx = 0;
       starty = 0;
@@ -162,13 +162,13 @@ SCIP_RETCODE writeData(
 
    if(decdecomp != NULL)
    {
-      assert(decdecomp->type == DEC_ARROWHEAD
-               || decdecomp->type == DEC_BORDERED
-               || decdecomp->type == DEC_DIAGONAL
-               || decdecomp->type == DEC_UNKNOWN
-               || decdecomp->type == DEC_STAIRCASE);
+      assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
+               || decdecomp->type == DEC_DECTYPE_BORDERED
+               || decdecomp->type == DEC_DECTYPE_DIAGONAL
+               || decdecomp->type == DEC_DECTYPE_UNKNOWN
+               || decdecomp->type == DEC_DECTYPE_STAIRCASE);
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
-      if(decdecomp->type == DEC_ARROWHEAD || decdecomp->type == DEC_BORDERED || decdecomp->type == DEC_DIAGONAL)
+      if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL)
       {
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
@@ -222,7 +222,7 @@ SCIP_RETCODE writeData(
          }
          */
       }
-      else if(decdecomp->type == DEC_STAIRCASE)
+      else if(decdecomp->type == DEC_DECTYPE_STAIRCASE)
       {
          varindexmap = decdecomp->varindex;
          consindexmap = decdecomp->consindex;
@@ -248,7 +248,7 @@ SCIP_RETCODE writeData(
            // continue;
          }
          /* if there is no decomposition, output the presolved model! */
-         if(decdecomp == NULL || decdecomp->type == DEC_UNKNOWN)
+         if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN)
          {
             SCIPinfoMessage(scip, file, "%d, %d\n", SCIPvarGetIndex(vars[j]), i);
          }
@@ -270,7 +270,7 @@ SCIP_RETCODE writeData(
    }
    /* SCIPinfoMessage(scip, NULL, "varindex: %d, consindex: %d", varindex, consindex); */
 
-   if(decdecomp != NULL && decdecomp->type != DEC_STAIRCASE)
+   if(decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE)
    {
       SCIPhashmapFree(&varindexmap);
       SCIPhashmapFree(&consindexmap);

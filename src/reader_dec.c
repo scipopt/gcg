@@ -28,6 +28,7 @@
 #endif
 #include <ctype.h>
 #include <struct_decomp.h>
+#include <type_decomp.h>
 
 #include "reader_dec.h"
 #include "relax_gcg.h"
@@ -768,7 +769,7 @@ fillDecompStruct(
     */
 
    decomp->nblocks = blkinput->nblocks;
-   decomp->type = DEC_ARROWHEAD;
+   decomp->type = DEC_DECTYPE_ARROWHEAD;
 
    nconss = SCIPgetNConss(scip);
    //nvars
@@ -1166,11 +1167,11 @@ writeData(
    assert(file != NULL);
    assert(decdecomp != NULL);
 
-   assert(decdecomp->type == DEC_ARROWHEAD
-           || decdecomp->type == DEC_BORDERED
-           || decdecomp->type == DEC_DIAGONAL
-           || decdecomp->type == DEC_UNKNOWN
-           || decdecomp->type == DEC_STAIRCASE);
+   assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
+           || decdecomp->type == DEC_DECTYPE_BORDERED
+           || decdecomp->type == DEC_DECTYPE_DIAGONAL
+           || decdecomp->type == DEC_DECTYPE_UNKNOWN
+           || decdecomp->type == DEC_DECTYPE_STAIRCASE);
    SCIPdebugMessage("DECDECOMP Type: %d\n",decdecomp->type);
    
    /* if we don't have staicase, but something else, go through the blocks and create the indices */

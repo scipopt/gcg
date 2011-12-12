@@ -79,6 +79,7 @@ MAINOBJ		=	reader_blk.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \
+			decomp.o \
 			dec_arrowheur.o \
 			dec_borderheur.o \
 			cons_connected.o \

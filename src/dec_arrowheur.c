@@ -259,9 +259,9 @@ SCIP_RETCODE copyDetectorDataToDecomp(
       )
 {
    int i;
-   assert(scip != 0);
-   assert(detectordata != 0);
-   assert(decomp != 0);
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(decomp != NULL);
 
    SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars, detectordata->blocks));
    SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss, detectordata->blocks));
@@ -283,7 +283,7 @@ SCIP_RETCODE copyDetectorDataToDecomp(
    decomp->constoblock = detectordata->constoblock;
    decomp->vartoblock = detectordata->varstoblock;
    decomp->nblocks = detectordata->blocks;
-   decomp->type = DEC_ARROWHEAD;
+   decomp->type = DEC_DECTYPE_ARROWHEAD;
    return SCIP_OKAY;
 }
 
@@ -1193,7 +1193,6 @@ static SCIP_RETCODE buildTransformedProblem(
 
    }
    SCIPfreeMemoryArray(scip, &isVarHandled);
-   detectordata->nlinkingvars = nlinkingvars;
    detectordata->nlinkingconss = nlinkingconss;
    /* do some elimentary checks and report errors */
 
@@ -1205,6 +1204,7 @@ static SCIP_RETCODE buildTransformedProblem(
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
       }
    }
+
    return SCIP_OKAY;
 }
 
@@ -1390,16 +1390,10 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
    SCIP_ARROWHEURSCORES score;
    int i;
-   DEC_DETECTOR* arrowheur;
-   DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
-
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(arrowheur);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(arrowheur), DEC_DETECTORNAME) == 0);
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
 
    /* build the hypergraph structure from the original problem */

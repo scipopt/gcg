@@ -368,7 +368,7 @@ SCIP_RETCODE copyToDecdecomp(
    if( !conshdlrdata->blockdiagonal )
       return SCIP_OKAY;
 
-   assert(decdecomp->type == DEC_UNKNOWN);
+   assert(decdecomp->type == DEC_DECTYPE_UNKNOWN);
 
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
@@ -391,7 +391,7 @@ SCIP_RETCODE copyToDecdecomp(
    decdecomp->nlinkingcuts = 0;
    decdecomp->nlinkingconss = 0;
    decdecomp->nblocks = conshdlrdata->nblocks;
-   decdecomp->type = DEC_DIAGONAL;
+   decdecomp->type = DEC_DECTYPE_DIAGONAL;
 
    assert(decdecomp->constoblock == NULL);
    assert(decdecomp->vartoblock == NULL);
@@ -561,7 +561,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
       conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
    }
    /* apparently, there is a structure, which means we don't try to detect one */
-   if( conshdlrdata->decdecomp->type != DEC_UNKNOWN )
+   if( conshdlrdata->decdecomp->type != DEC_DECTYPE_UNKNOWN )
    {
       return SCIP_OKAY;
    }

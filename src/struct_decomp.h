@@ -8,12 +8,7 @@
 #ifndef STRUCT_DECOMP_H_
 #define STRUCT_DECOMP_H_
 #include "scip/scip.h"
-enum DecDecompType
-{
-   DEC_ARROWHEAD, DEC_STAIRCASE, DEC_DIAGONAL, DEC_BORDERED, DEC_UNKNOWN
-};
-
-typedef enum DecDecompType DECDECOMPTYPE;
+#include "type_decomp.h"
 
 struct DecDecomp
 {
@@ -33,7 +28,7 @@ struct DecDecomp
    SCIP_HASHMAP*  constoblock;
    SCIP_HASHMAP*  varindex;
    SCIP_HASHMAP*  consindex;
-   DECDECOMPTYPE  type;
+   DEC_DECTYPE  type;
 };
 
 #endif /* STRUCT_DECOMP_H_ */
