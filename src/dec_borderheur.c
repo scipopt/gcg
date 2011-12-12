@@ -747,7 +747,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
    SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
    DECdecdecompSetVartoblock(decdecomp, vartoblock);
-   DECdecdecompSetConstoblock(decdecomp, vartoblock);
+   DECdecdecompSetConstoblock(decdecomp, constoblock);
 
    /* free all local data */
    for( i = 0; i < nblocks; ++i )
@@ -966,6 +966,10 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
       }
+      else
+      {
+         detectordata->found = TRUE;
+      }
       /* deduce the partitions for the original variables */
       SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
 
@@ -980,6 +984,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    }
 
    SCIPsortRealPtr(cumscores, *decdecomps, *ndecdecomps);
+
+   SCIPfreeMemoryArray(scip, &cumscores);
+   SCIPfreeMemoryArray(scip, &scores);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

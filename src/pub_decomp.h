@@ -101,7 +101,6 @@ int*  DECdecdecompGetNSubscipconss(
    DECDECOMP* decdecomp       /**< DECDECOMP data structure */
    );
 
-
 /** Copies the input linkingconss array to the given decdecomp structure */
 SCIP_RETCODE DECdecdecompSetLinkingconss(
    SCIP* scip,                 /**< SCIP data structure */
@@ -117,6 +116,24 @@ SCIP_CONS**  DECdecdecompGetLinkingconss(
 
 /** Returns the nlinkingconss array of the given decdecomp structure */
 int  DECdecdecompGetNLinkingconss(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   );
+
+/** Copies the input linkingvars array to the given decdecomp structure */
+SCIP_RETCODE DECdecdecompSetLinkingvars(
+   SCIP* scip,                 /**< SCIP data structure */
+   DECDECOMP* decdecomp,       /**< DECDECOMP data structure */
+   SCIP_VAR** linkingvars,    /**< Linkingvars array  */
+   int nlinkingvars          /**< number of linkingvars per block */
+   );
+
+/** Returns the linkingvars array of the given decdecomp structure */
+SCIP_VAR**  DECdecdecompGetLinkingvars(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   );
+
+/** Returns the nlinkingvars array of the given decdecomp structure */
+int  DECdecdecompGetNLinkingvars(
    DECDECOMP* decdecomp       /**< DECDECOMP data structure */
    );
 

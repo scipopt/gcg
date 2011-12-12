@@ -260,7 +260,6 @@ SCIP_RETCODE DECdecdecompSetLinkingconss(
 
    decdecomp->nlinkingconss = nlinkingconss;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->linkingconss, nlinkingconss) );
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );
 
    return SCIP_OKAY;
@@ -283,6 +282,48 @@ int  DECdecdecompGetNLinkingconss(
    assert(decdecomp != NULL);
    assert(decdecomp->nlinkingconss >= 0);
    return decdecomp->nlinkingconss;
+}
+
+/** Copies the input linkingvars array to the given decdecomp structure */
+SCIP_RETCODE DECdecdecompSetLinkingvars(
+   SCIP* scip,                 /**< SCIP data structure */
+   DECDECOMP* decdecomp,       /**< DECDECOMP data structure */
+   SCIP_VAR** linkingvars,    /**< Linkingvars array  */
+   int nlinkingvars          /**< number of linkingvars per block */
+   )
+{
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(linkingvars != NULL);
+   assert(nlinkingvars > 0);
+
+   assert(decdecomp->linkingvars == NULL);
+   assert(decdecomp->nlinkingvars == 0);
+
+   decdecomp->nlinkingvars = nlinkingvars;
+
+   SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
+
+   return SCIP_OKAY;
+}
+
+/** Returns the linkingvars array of the given decdecomp structure */
+SCIP_VAR**  DECdecdecompGetLinkingvars(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->linkingvars;
+}
+
+/** Returns the nlinkingvars array of the given decdecomp structure */
+int  DECdecdecompGetNLinkingvars(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(decdecomp->nlinkingvars >= 0);
+   return decdecomp->nlinkingvars;
 }
 
 /** Sets the vartoblock hashmap of the given decdecomp structure */

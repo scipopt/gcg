@@ -2245,8 +2245,8 @@ $(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  src/type_decomp.h src/cons_decomp.h src/type_detector.h \
- src/struct_decomp.h src/scip_misc.h lib/scip/src/scip/cons_linear.h \
- lib/scip/src/scip/cons_setppc.h
+ src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_setppc.h
 $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
