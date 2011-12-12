@@ -936,7 +936,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    DEC_BORDERHEURSCORES* scores;
    SCIP_Real* cumscores;
    int i;
-   int j;
    int ndecs;
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -955,8 +954,16 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    /* build the hypergraph structure from the original problem */
    SCIP_CALL(buildGraphStructure(scip, detectordata));
 
-   for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i, ++j )
+   for(i = 0; i < ndecs; ++i)
    {
+      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+   }
+
+   for( i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
+   {
+      int j;
+      j = i - detectordata->minblocks;
+
       detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
       SCIP_CALL(callMetis(scip, detectordata, result));
@@ -972,8 +979,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       }
       /* deduce the partitions for the original variables */
       SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
-
-      SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[j]) );
 
       SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i,  &scores[j]) );
       SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
