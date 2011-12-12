@@ -577,8 +577,13 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
    //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "presolving/probing/maxrounds", 0) );
 
+
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvars", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvarsroot", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcols", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
    SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1.0) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "timing/clocktype", 2) );
 

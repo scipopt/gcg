@@ -58,6 +58,8 @@
 
 #define MAXBEST 1000
 
+#define EVENTHDLR_NAME         "probdatavardeleted"
+#define EVENTHDLR_DESC         "event handler for variable deleted event"
 
 #define GCGpricerPrintInfo(scip,pricerdata, ...) do { \
    if( pricerdata->dispinfos ) { \
@@ -120,6 +122,9 @@ struct SCIP_PricerData
    /* solver data */
    GCG_SOLVER**     solvers;
    int              nsolvers;
+
+   /* event handler */
+   SCIP_EVENTHDLR* eventhdlr;
 
    /** parameter values */
    SCIP_VARTYPE vartype;           /* vartype of created master variables */
@@ -255,6 +260,87 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
    return SCIP_OKAY;
 }
 
+
+/*
+ * Callback methods of event handler
+ */
+
+/** destructor of event handler to free user data (called when SCIP is exiting) */
+#define eventFreeVardeleted NULL
+
+/** initialization method of event handler (called after problem was transformed) */
+#define eventInitVardeleted NULL
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+#define eventExitVardeleted NULL
+
+/** solving process initialization method of event handler (called when branch and bound process is about to begin) */
+#define eventInitsolVardeleted NULL
+
+/** solving process deinitialization method of event handler (called before branch and bound process data is freed) */
+#define eventExitsolVardeleted NULL
+
+/** frees specific event data */
+#define eventDeleteVardeleted NULL
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecVardeleted)
+{
+   SCIP_VAR* var;
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   SCIP_VAR** origvars;
+   int i;
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_VARDELETED);
+   var = SCIPeventGetVar(event);
+   assert(var != NULL);
+
+   SCIPdebugMessage("remove master variable %s from pricerdata and corresponding original variables\n", SCIPvarGetName(var));
+
+   assert(GCGvarIsMaster(var));
+   origvars = GCGmasterVarGetOrigvars(var);
+   assert(origvars != NULL);
+
+   /* remove master variable from corresponding pricing original variables */
+   for( i = 0; i < GCGmasterVarGetNOrigvars(var); ++i )
+   {
+      SCIP_CALL( GCGoriginalVarRemoveMasterVar(scip, origvars[i], var) );
+   }
+
+   /* remove variable from array of stored priced variables */
+   for( i = 0; i < pricerdata->npricedvars; ++i )
+   {
+      if( pricerdata->pricedvars[i] == var )
+      {
+         /* drop vardeleted event on variable */
+         SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->pricedvars[i], SCIP_EVENTTYPE_VARDELETED,
+               pricerdata->eventhdlr, NULL, -1) );
+
+         SCIP_CALL( SCIPreleaseVar(scip, &(pricerdata->pricedvars[i])) );
+         (pricerdata->npricedvars)--;
+         pricerdata->pricedvars[i] = pricerdata->pricedvars[pricerdata->npricedvars];
+
+         break;
+      }
+   }
+   assert(i <= pricerdata->npricedvars);
+#ifndef NDEBUG
+   for( ; i < pricerdata->npricedvars; ++i )
+   {
+      assert(pricerdata->pricedvars[i] != var);
+   }
+#endif
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -972,6 +1058,9 @@ SCIP_RETCODE addVariableToMastercuts(
    /* compute coef of the variable in the cuts and add it to the cuts */
    for( i = 0; i < nmastercuts; i++ )
    {
+      if( !SCIProwIsInLP(mastercuts[i]) )
+         continue;
+
       /* get columns of the cut and their coefficients */
       cols = SCIProwGetCols(origcuts[i]);
       consvals = SCIProwGetVals(origcuts[i]);
@@ -1161,6 +1250,12 @@ SCIP_RETCODE createNewMasterVar(
 
    SCIP_CALL( GCGcreateMasterVar(scip, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
          pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
+
+   SCIPvarMarkDeletable(newvar);
+
+   SCIP_CALL( SCIPcatchVarEvent(scip, newvar, SCIP_EVENTTYPE_VARDELETED,
+         pricerdata->eventhdlr, NULL, NULL) );
+
 
    SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost);
 
@@ -1924,6 +2019,9 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
+      SCIP_CALL( SCIPdropVarEvent(scip, pricerdata->pricedvars[i], SCIP_EVENTTYPE_VARDELETED,
+            pricerdata->eventhdlr, NULL, -1) );
+
       SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->pricedvars[i]) );
    }
    SCIPfreeMemoryArray(scip, &pricerdata->pricedvars);
@@ -2052,6 +2150,15 @@ SCIP_RETCODE SCIPincludePricerGcg(
          pricerInitsolGcg, pricerExitsolGcg, pricerRedcostGcg, pricerFarkasGcg,
          pricerdata) );
 
+   /* include event handler into master SCIP */
+   SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
+         NULL, eventFreeVardeleted, eventInitVardeleted, eventExitVardeleted,
+         eventInitsolVardeleted, eventExitsolVardeleted, eventDeleteVardeleted, eventExecVardeleted,
+         NULL) );
+
+   pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+
+
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsuccessfulmipsredcost",
          "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
          &pricerdata->maxsuccessfulmipsredcost, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, NULL) );
@@ -2065,7 +2172,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "maximal number of variables created in one redcost pricing round at the root node",
          &pricerdata->maxvarsroundredcostroot, FALSE, DEFAULT_MAXVARSROUNDREDCOSTROOT, 0, INT_MAX,
          paramChgdOnlybestMaxvars, (SCIP_PARAMDATA*)pricerdata) );
-
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",

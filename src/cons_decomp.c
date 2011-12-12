@@ -178,7 +178,7 @@ void decdecompFree(
 #define consDeactiveDecomp NULL
 #define consEnableDecomp NULL
 #define consDisableDecomp NULL
-#define consDelvarDecomp NULL
+#define consDelvarsDecomp NULL
 #define consPrintDecomp NULL
 #define consCopyDecomp NULL
 #define consParseDecomp NULL
@@ -321,8 +321,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consSepalpDecomp, consSepasolDecomp, consEnfolpDecomp, consEnfopsDecomp, consCheckDecomp,
          consPropDecomp, consPresolDecomp, consRespropDecomp, consLockDecomp,
          consActiveDecomp, consDeactiveDecomp,
-         consEnableDecomp, consDisableDecomp, consDelvarDecomp,
-         consPrintDecomp, consCopyDecomp, consParseDecomp,
+         consEnableDecomp, consDisableDecomp,
+         consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
          conshdlrdata) );
 
    SCIP_CALL(decdecompCreate(scip, &(conshdlrdata->decdecomp)));
