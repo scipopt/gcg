@@ -193,6 +193,9 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
+      if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+         continue;
+
       ncurvars = SCIPgetNVarsXXX(scip, cons);
       curvars = SCIPgetVarsXXX(scip, cons);
       assert(ncurvars >= 0);
@@ -306,6 +309,10 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
+      if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+         continue;
+
+
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
@@ -379,6 +386,7 @@ SCIP_RETCODE copyToDecdecomp(
    SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, conshdlrdata->nblocks);
    SCIPallocMemoryArray(scip, &decdecomp->subscipconss, conshdlrdata->nblocks);
    SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, conshdlrdata->nblocks);
+   SCIPallocMemoryArray(scip, &decdecomp->linkingconss, nconss);
 
    for( i = 0; i < conshdlrdata->nblocks; ++i)
    {
@@ -404,6 +412,12 @@ SCIP_RETCODE copyToDecdecomp(
       size_t consblock;
       if( isConsGCGCons(conss[i]) )
          continue;
+      if( SCIPconsGetType(conss[i]) == setcovering || SCIPconsGetType(conss[i]) == setpartitioning || SCIPconsGetType(conss[i]) == logicor )
+      {
+         decdecomp->linkingconss[decdecomp->nlinkingconss] = conss[i];
+         ++(decdecomp->nlinkingconss);
+         continue;
+      }
 
       consblock = (size_t) SCIPhashmapGetImage(decdecomp->constoblock, conss[i]);
       assert(consblock > 0);
@@ -431,7 +445,7 @@ SCIP_RETCODE copyToDecdecomp(
       SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipvars[i], decdecomp->nsubscipvars[i]) );
       SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[i], decdecomp->nsubscipconss[i]) );
    }
-
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->linkingconss, decdecomp->nlinkingconss) );
    conshdlrdata->vartoblock = NULL;
    conshdlrdata->constoblock = NULL;
 
