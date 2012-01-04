@@ -342,6 +342,42 @@ DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
    return conshdlrdata->decdecomp;
 }
 
+/** returns the decomposition structure **/
+extern
+DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->decdecomps;
+}
+
+/** returns the decomposition structure **/
+extern
+int SCIPconshdlrDecompGetNDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
+)
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert( conshdlr != NULL );
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->ndecomps;
+}
+
 /** returns the data of the provided detector */
 extern
 DEC_DETECTORDATA* DECdetectorGetData(
@@ -681,6 +717,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 {
    int i;
    char name[SCIP_MAXSTRLEN];
+   const char *pname;
+
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    assert(scip != NULL);
@@ -692,9 +730,16 @@ SCIP_RETCODE DECwriteAllDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-
+   pname = strrchr(SCIPgetProbName(scip), '/');
+   if( pname == NULL )
+      pname = SCIPgetProbName(scip);
+ 
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
+      FILE* file;
+      SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      file = SCIPfopen(name, "w");
+      assert(file != NULL);
       SCIP_CALL( SCIPwriteTransProblem(scip, name, extension, FALSE) );
    }
 

@@ -1176,7 +1176,7 @@ writeData(
    
    /* if we don't have staicase, but something else, go through the blocks and create the indices */
    //cons
-   assert(decdecomp->constoblock!=NULL);
+   //   assert(decdecomp->constoblock != NULL);
    assert(decdecomp->nsubscipconss != NULL);
    assert(decdecomp->subscipconss != NULL);
    //linking cons

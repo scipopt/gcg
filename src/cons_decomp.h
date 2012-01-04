@@ -50,6 +50,18 @@ DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
    SCIP *scip                                /**< SCIP data structure */
    );
 
+/** returns the decomposition structure **/
+extern
+DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
+   );
+
+/** returns the decomposition structure **/
+extern
+int SCIPconshdlrDecompGetNDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
+   );
+
 /** returns the data of the provided detector */
 extern
 DEC_DETECTORDATA* DECdetectorGetData(
