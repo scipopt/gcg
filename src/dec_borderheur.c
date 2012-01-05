@@ -526,7 +526,8 @@ static SCIP_RETCODE buildTransformedProblem(
    DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
    DECDECOMP*               decdecomp,      /**< decdecomp data structure */
    int                      nblocks,        /**< number of blocks for this decomposition */
-   DEC_BORDERHEURSCORES*    score           /**< scores */
+   DEC_BORDERHEURSCORES*    score,          /**< scores */
+   SCIP_RESULT*             result          /**< indicates whether a structure was found*/
    )
 {
    SCIP_Bool *isVarHandled;
@@ -546,6 +547,7 @@ static SCIP_RETCODE buildTransformedProblem(
    int nconss;
    SCIP_VAR **vars;
    int nvars;
+   SCIP_Bool emptyblocks = FALSE;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -725,11 +727,10 @@ static SCIP_RETCODE buildTransformedProblem(
       subscipvars[partitionOfVar][nsubscipvars[partitionOfVar]] = vars[i];
       ++nsubscipvars[partitionOfVar];
 
-
    }
 
    SCIPfreeMemoryArray(scip, &isVarHandled);
-   
+
    /* do some elimentary checks and report errors */
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
    for( i = 0; i < detectordata->blocks; ++i )
@@ -737,18 +738,21 @@ static SCIP_RETCODE buildTransformedProblem(
       if( nsubscipconss[i] == 0 )
       {
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
       }
    }
 
-   /* copy the local data to the decomp structure */
-   DECdecdecompSetNBlocks(decdecomp, nblocks);
-   DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED); 
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-   DECdecdecompSetVartoblock(decdecomp, vartoblock);
-   DECdecdecompSetConstoblock(decdecomp, constoblock);
-
+   if( !emptyblocks )
+   {
+      /* copy the local data to the decomp structure */
+      DECdecdecompSetNBlocks(decdecomp, nblocks);
+      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+      SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      DECdecdecompSetVartoblock(decdecomp, vartoblock);
+      DECdecdecompSetConstoblock(decdecomp, constoblock);
+   }
    /* free all local data */
    for( i = 0; i < nblocks; ++i )
    {
@@ -762,7 +766,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIPfreeBufferArray(scip, &nsubscipvars);
    SCIPfreeBufferArray(scip, &linkingconss);
 
-
+   *result = emptyblocks? SCIP_DIDNOTFIND:SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
@@ -936,6 +940,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    DEC_BORDERHEURSCORES* scores;
    SCIP_Real* cumscores;
    int i;
+   int j;
    int ndecs;
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -959,11 +964,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
-   for( i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
-   {
-      int j;
-      j = i - detectordata->minblocks;
 
+   for(j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
+   {
       detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
       SCIP_CALL(callMetis(scip, detectordata, result));
@@ -980,12 +983,16 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       /* deduce the partitions for the original variables */
       SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
 
-      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i,  &scores[j]) );
-      SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
-      SCIP_CALL( printBorderheurScores(scip, detectordata, &scores[j]) );
+      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, &scores[j], result) );
+      if( *result == SCIP_SUCCESS )
+      {
+         SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
+         SCIP_CALL( printBorderheurScores(scip, detectordata, &scores[j]) );
 
-      cumscores[j] = scores[j].borderscore*scores[j].linkingscore*scores[j].densityscore;
-      *ndecdecomps += 1;
+         cumscores[j] = scores[j].borderscore*scores[j].linkingscore*scores[j].densityscore;
+         *ndecdecomps += 1;
+         ++j;
+      }
    }
 
    SCIPsortRealPtr(cumscores, *decdecomps, *ndecdecomps);
