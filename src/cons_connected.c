@@ -97,6 +97,55 @@ SCIP_Bool isConsGCGCons(
 }
 
 static
+SCIP_Bool isConsMaster(
+   SCIP*      scip,
+   SCIP_CONS* cons
+   )
+{
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int i;
+   int nvars;
+   SCIP_Bool relevant = TRUE;
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
+
+   if(SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor)   
+   {
+      SCIPdebugPrintf("setcov, part or logicor.\n");
+      return TRUE;
+   }
+   vars = SCIPgetVarsXXX(scip, cons);
+   vals = SCIPgetValsXXX(scip, cons);
+   nvars = SCIPgetNVarsXXX(scip, cons);
+
+   /* check vars and vals for integrality */
+   for(i = 0; i < nvars && relevant; ++i)
+   {
+      if( !SCIPvarIsIntegral(vars[i]) && !SCIPvarIsBinary(vars[i]) )
+      {
+         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+         relevant = FALSE;
+      }
+      if( !SCIPisEQ(scip, vals[i], 1.0) )
+      {
+         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
+         relevant = FALSE;
+      }
+   }
+
+
+   SCIPfreeMemoryArray(scip, &vals);
+   SCIPfreeMemoryArray(scip, &vars);
+
+   SCIPdebugPrintf("%sin master\n", relevant?"": "not ");
+   return relevant;
+}
+
+
+static
 SCIP_RETCODE findConnectedComponents(
    SCIP* scip,
    SCIP_CONSHDLRDATA* conshdlrdata,
@@ -164,6 +213,7 @@ SCIP_RETCODE findConnectedComponents(
    assert(nextblock >= 1);
    SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)nextblock) );
 
+   /* initialize variables */
    for( j = 0; j < ncurvars; ++j)
    {
       SCIP_VAR* probvar;
@@ -193,7 +243,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+      if( isConsMaster(scip, cons) )
          continue;
 
       ncurvars = SCIPgetNVarsXXX(scip, cons);
@@ -258,7 +308,7 @@ SCIP_RETCODE findConnectedComponents(
          {
             /* if variable is free, assign it to the new block for this constraint */
             varblock = consblock;
-            assert(varblock >= 0);
+            assert(varblock > 0);
             assert(varblock <= nextblock);
             vartoblock[varindex] = varblock;
          }
@@ -309,7 +359,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+      if( isConsMaster(scip, cons) )
          continue;
 
 
@@ -332,12 +382,16 @@ SCIP_RETCODE findConnectedComponents(
       assert(varindex < nvars);
 
       assert(vartoblock[varindex] < nextblock);
+      if(vartoblock[varindex] < 0)
+         continue;
+
       varblock = blockrepresentative[vartoblock[varindex]];
-      assert(varblock == -1 || varblock > 0);
+      assert(varblock == -1 || varblock >= 0);
       if(varblock > 0)
       {
          assert(varblock < tempblock);
-         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]), (void*)(size_t)(varblock)) );
+         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]), 
+               (void*)(size_t)(varblock)) );
       }
    }
 
@@ -412,7 +466,7 @@ SCIP_RETCODE copyToDecdecomp(
       size_t consblock;
       if( isConsGCGCons(conss[i]) )
          continue;
-      if( SCIPconsGetType(conss[i]) == setcovering || SCIPconsGetType(conss[i]) == setpartitioning || SCIPconsGetType(conss[i]) == logicor )
+      if( isConsMaster(scip, conss[i]) )
       {
          decdecomp->linkingconss[decdecomp->nlinkingconss] = conss[i];
          ++(decdecomp->nlinkingconss);
