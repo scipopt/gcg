@@ -65,6 +65,7 @@ struct SCIP_ConshdlrData
    SCIP_CLOCK* clock;
    int nblocks;
    SCIP_Bool enable;
+   SCIP_Bool *consismaster;
 };
 
 
@@ -109,7 +110,7 @@ SCIP_Bool isConsMaster(
 
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
 
-   if(SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor)   
+   if(SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor)
    {
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;
@@ -134,10 +135,10 @@ SCIP_Bool isConsMaster(
    }
 
    /* free temporary data  */
-   SCIPfreeMemoryArray(scip, &vals);
-   SCIPfreeMemoryArray(scip, &vars);
+   SCIPfreeMemoryArrayNull(scip, &vals);
+   SCIPfreeMemoryArrayNull(scip, &vars);
 
-   SCIPdebugPrintf("%sin master\n", relevant?"": "not ");
+   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
 }
 
@@ -200,41 +201,15 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
 
-   /* process the first constraint */
-   cons = conss[0];
-   ncurvars = SCIPgetNVarsXXX(scip, cons);
-   curvars = SCIPgetVarsXXX(scip, cons);
-   assert(ncurvars >= 0);
-   assert(ncurvars <= nvars);
-   assert(curvars != NULL || ncurvars == 0);
+   /* in a first preprocessing step, indicate which constraints should go in the master */
 
-   assert(nextblock >= 1);
-   SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)nextblock) );
-
-   /* initialize variables */
-   for( j = 0; j < ncurvars; ++j)
+   for ( i = 0; i < nconss; ++i )
    {
-      SCIP_VAR* probvar;
-      int varindex;
-      assert(curvars != NULL);
-
-      probvar = SCIPvarGetProbvar(curvars[j]);
-      assert(probvar != NULL);
-
-      varindex = SCIPvarGetProbindex(probvar);
-      assert(varindex >= 0);
-      assert(varindex < nvars);
-      vartoblock[varindex] = 1;
+      conshdlrdata->consismaster[i] = isConsMaster(scip, conss[i]);
    }
 
-   /* prepare consblock for the next costraint */
-   ++nextblock;
-
-   /* free temporay data */
-   SCIPfreeMemoryArrayNull(scip, &curvars);
-
    /* go through the remaining constraints */
-   for( i = 1; i < nconss; ++i )
+   for( i = 0; i < nconss; ++i )
    {
       int consblock;
       cons = conss[i];
@@ -242,7 +217,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( isConsMaster(scip, cons) )
+      if( conshdlrdata->consismaster[i] )
          continue;
 
       ncurvars = SCIPgetNVarsXXX(scip, cons);
@@ -363,7 +338,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( isConsMaster(scip, cons) )
+      if( conshdlrdata->consismaster[i] )
          continue;
 
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
@@ -393,7 +368,7 @@ SCIP_RETCODE findConnectedComponents(
       if(varblock > 0)
       {
          assert(varblock < tempblock);
-         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]), 
+         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]),
                (void*)(size_t)(varblock)) );
       }
    }
@@ -471,7 +446,7 @@ SCIP_RETCODE copyToDecdecomp(
       size_t consblock;
       if( isConsGCGCons(conss[i]) )
          continue;
-      if( isConsMaster(scip, conss[i]) )
+      if( conshdlrdata->consismaster[i] )
       {
          decdecomp->linkingconss[decdecomp->nlinkingconss] = conss[i];
          ++(decdecomp->nlinkingconss);
@@ -594,6 +569,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->consismaster, SCIPgetNConss(scip)) );
 
    SCIP_CALL( findConnectedComponents(scip, conshdlrdata, &result) );
 
@@ -612,6 +588,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       SCIPdebugMessage("No block diagonal structure found.\n");
    }
+   SCIPfreeMemoryArray(scip, &conshdlrdata->consismaster);
 
    return SCIP_OKAY;
 }
@@ -696,6 +673,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
    conshdlrdata->nblocks = 0;
    conshdlrdata->enable = TRUE;
    conshdlrdata->decdecomp = NULL;
+   conshdlrdata->consismaster = NULL;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
