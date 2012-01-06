@@ -736,7 +736,7 @@ SCIP_RETCODE DECwriteAllDecomps(
  
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      FILE* file;
+      SCIP_FILE* file;
       SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
       file = SCIPfopen(name, "w");
       assert(file != NULL);

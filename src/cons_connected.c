@@ -32,8 +32,8 @@
 #define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
 #define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ             -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ             -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
+#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
+#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ          100 /**< frequency for using all instead of only the useful constraints in separation,
                                           *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
 #define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
@@ -45,13 +45,9 @@
 #define CONSHDLR_PROP_TIMING       SCIP_PROPTIMING_BEFORELP
 
 
-
-
 /*
  * Data structures
  */
-
-/* TODO: fill in the necessary constraint data */
 
 /** constraint data for connected constraints */
 struct SCIP_ConsData
@@ -72,17 +68,16 @@ struct SCIP_ConshdlrData
 };
 
 
-
-
 /*
  * Local methods
  */
 
 /* put your local methods here, and declare them static */
 
+/* returns whether the constraint belongs to GCG or not */
 static
 SCIP_Bool isConsGCGCons(
-   SCIP_CONS* cons
+   SCIP_CONS* cons   /**< constraint to check */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -96,10 +91,12 @@ SCIP_Bool isConsGCGCons(
    return FALSE;
 }
 
+
+/* returns true if the constraint should be a master constraint and false otherwise */
 static
 SCIP_Bool isConsMaster(
-   SCIP*      scip,
-   SCIP_CONS* cons
+   SCIP*      scip,  /**< SCIP data structure */
+   SCIP_CONS* cons   /**< constraint to check */
    )
 {
    SCIP_VAR** vars;
@@ -136,7 +133,7 @@ SCIP_Bool isConsMaster(
       }
    }
 
-
+   /* free temporary data  */
    SCIPfreeMemoryArray(scip, &vals);
    SCIPfreeMemoryArray(scip, &vars);
 
@@ -145,11 +142,12 @@ SCIP_Bool isConsMaster(
 }
 
 
+/** looks for connected components in the constraints in conshdlrdata */
 static
 SCIP_RETCODE findConnectedComponents(
-   SCIP* scip,
-   SCIP_CONSHDLRDATA* conshdlrdata,
-   SCIP_RESULT* result
+   SCIP*              scip,         /**< SCIP data structure */
+   SCIP_CONSHDLRDATA* conshdlrdata, /**< constraint handler data structure */
+   SCIP_RESULT*       result        /**< result pointer to indicate success oder failuer */
    )
 {
    SCIP_VAR** vars;
@@ -174,8 +172,8 @@ SCIP_RETCODE findConnectedComponents(
    assert(conshdlrdata != NULL);
    assert(result != NULL);
 
-
    SCIPdebugMessage("Trying to detect block diagonal matrix.\n");
+
    /* initialize data structures */
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
@@ -232,6 +230,7 @@ SCIP_RETCODE findConnectedComponents(
    /* prepare consblock for the next costraint */
    ++nextblock;
 
+   /* free temporay data */
    SCIPfreeMemoryArrayNull(scip, &curvars);
 
    /* go through the remaining constraints */
@@ -281,6 +280,7 @@ SCIP_RETCODE findConnectedComponents(
          {
             if(consblock == nextblock)
                consblock = varblock;
+
             /* if variable is assigned to a different block, merge the blocks */
             if( varblock != consblock  )
             {
@@ -295,6 +295,7 @@ SCIP_RETCODE findConnectedComponents(
                assert(blockrepresentative[varblock] >= 1);
                assert(blockrepresentative[varblock] <= nextblock);
             }
+
             /* assign all previous variables of this constraint to this block */
             for (k = j; k >= 0; --k)
             {
@@ -314,6 +315,7 @@ SCIP_RETCODE findConnectedComponents(
          }
       }
 
+      /* if the constraint belongs to a new block, mark it as such */
       if( consblock == nextblock )
       {
          blockrepresentative[consblock] = consblock;
@@ -325,6 +327,8 @@ SCIP_RETCODE findConnectedComponents(
       SCIPfreeMemoryArrayNull(scip, &curvars);
       assert(consblock >= 1);
       assert(consblock <= nextblock);
+
+      /* store the constraint block */
       SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
    }
 
@@ -361,7 +365,6 @@ SCIP_RETCODE findConnectedComponents(
 
       if( isConsMaster(scip, cons) )
          continue;
-
 
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
@@ -409,11 +412,13 @@ SCIP_RETCODE findConnectedComponents(
    return SCIP_OKAY;
 }
 
+
+/* copy conshdldata data to decdecomp */
 static
 SCIP_RETCODE copyToDecdecomp(
-   SCIP* scip,
-   SCIP_CONSHDLRDATA* conshdlrdata,
-   DECDECOMP* decdecomp
+   SCIP*              scip,         /**< SCIP data structure */
+   SCIP_CONSHDLRDATA* conshdlrdata, /**< constraint handler data structure */
+   DECDECOMP*         decdecomp     /**< decdecomp data structure */
    )
 {
    SCIP_CONS** conss;
@@ -511,19 +516,30 @@ SCIP_RETCODE copyToDecdecomp(
  * Callback methods of constraint handler
  */
 
-/** copy method for constraint handler plugins (called when SCIP copies plugins) */
-#if 0
-static
-SCIP_DECL_CONSHDLRCOPY(conshdlrCopyConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
+/* unneeded methods */
 
-   return SCIP_OKAY;
-}
-#else
 #define conshdlrCopyConnected NULL
-#endif
+#define consDeleteConnected NULL
+#define consTransConnected NULL
+#define consInitlpConnected NULL
+#define consSepalpConnected NULL
+#define consSepasolConnected NULL
+#define consPropConnected NULL
+#define consPresolConnected NULL
+#define consRespropConnected NULL
+#define consActiveConnected NULL
+#define consDeactiveConnected NULL
+#define consEnableConnected NULL
+#define consDisableConnected NULL
+#define consDelvarConnected NULL
+#define consPrintConnected NULL
+#define consCopyConnected NULL
+#define consParseConnected NULL
+#define consInitConnected NULL
+#define consExitConnected NULL
+#define consInitpreConnected NULL
+#define consExitpreConnected NULL
+
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -543,66 +559,6 @@ SCIP_DECL_CONSFREE(consFreeConnected)
    return SCIP_OKAY;
 
 }
-
-
-/** initialization method of constraint handler (called after problem was transformed) */
-#if 0
-static
-SCIP_DECL_CONSINIT(consInitConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consInitConnected NULL
-#endif
-
-
-/** deinitialization method of constraint handler (called before transformed problem is freed) */
-#if 0
-static
-SCIP_DECL_CONSEXIT(consExitConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consExitConnected NULL
-#endif
-
-
-/** presolving initialization method of constraint handler (called when presolving is about to begin) */
-#if 0
-static
-SCIP_DECL_CONSINITPRE(consInitpreConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consInitpreConnected NULL
-#endif
-
-
-/** presolving deinitialization method of constraint handler (called after presolving has been finished) */
-#if 0
-static
-SCIP_DECL_CONSEXITPRE(consExitpreConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consExitpreConnected NULL
-#endif
 
 
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
@@ -681,58 +637,6 @@ SCIP_DECL_CONSEXITSOL(consExitsolConnected)
 }
 
 
-/** frees specific constraint data */
-#if 0
-static
-SCIP_DECL_CONSDELETE(consDeleteConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consDeleteConnected NULL
-#endif
-
-
-/** transforms constraint data into data belonging to the transformed problem */
-#if 0
-static
-SCIP_DECL_CONSTRANS(consTransConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consTransConnected NULL
-#endif
-
-
-/** LP initialization method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSINITLP(consInitlpConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consInitlpConnected NULL
-#endif
-
-
-/** separation method of constraint handler for LP solutions */
-#define consSepalpConnected NULL
-
-/** separation method of constraint handler for arbitrary primal solutions */
-#define consSepasolConnected NULL
-
-
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpConnected)
@@ -759,40 +663,6 @@ SCIP_DECL_CONSCHECK(consCheckConnected)
    return SCIP_OKAY;
 }
 
-
-/** domain propagation method of constraint handler */
-#define consPropConnected NULL
-
-/** presolving method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSPRESOL(consPresolConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consPresolConnected NULL
-#endif
-
-
-/** propagation conflict resolving method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSRESPROP(consRespropConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consRespropConnected NULL
-#endif
-
-
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockConnected)
@@ -800,114 +670,6 @@ SCIP_DECL_CONSLOCK(consLockConnected)
 
    return SCIP_OKAY;
 }
-
-
-/** constraint activation notification method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSACTIVE(consActiveConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consActiveConnected NULL
-#endif
-
-
-/** constraint deactivation notification method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSDEACTIVE(consDeactiveConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consDeactiveConnected NULL
-#endif
-
-
-/** constraint enabling notification method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSENABLE(consEnableConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consEnableConnected NULL
-#endif
-
-
-/** constraint disabling notification method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSDISABLE(consDisableConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consDisableConnected NULL
-#endif
-
-#define consDelvarConnected NULL
-
-/** constraint display method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSPRINT(consPrintConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consPrintConnected NULL
-#endif
-
-
-/** constraint copying method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSCOPY(consCopyConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consCopyConnected NULL
-#endif
-
-
-/** constraint parsing method of constraint handler */
-#if 0
-static
-SCIP_DECL_CONSPARSE(consParseConnected)
-{  /*lint --e{715}*/
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define consParseConnected NULL
-#endif
-
-
 
 
 /*
@@ -953,7 +715,6 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
          conshdlrdata) );
 
    /* add connected constraint handler parameters */
-   /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */
    SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/enable", "Controls whether block diagonal detection is enabled", &conshdlrdata->enable, FALSE, FALSE, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -966,7 +727,6 @@ SCIP_RETCODE SCIPcreateConsConnected(
    const char*           name                /**< name of constraint */
    )
 {
-   /* TODO: (optional) modify the definition of the SCIPcreateConsConnected() call, if you don't need all the information */
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
@@ -993,26 +753,6 @@ SCIP_RETCODE SCIPcreateConsConnected(
    return SCIP_OKAY;
 }
 
-void SCIPconsConnectedSetDecomp(
-   SCIP* scip,
-   DECDECOMP* decdecomp
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA *conshdlrdata;
-
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, "CONSHDLR_NAME");
-   assert(conshdlr != NULL);
-
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-   conshdlrdata->decdecomp = decdecomp;
-}
 
 /** returns whether a block diagonal structure was found */
 extern
