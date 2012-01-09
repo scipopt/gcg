@@ -36,7 +36,7 @@
 #define HEUR_NAME             "extremepoints"
 #define HEUR_DESC             "heuristic that performs a crossover on the extreme points of a relaxation solution"
 #define HEUR_DISPCHAR         'X'
-#define HEUR_PRIORITY         -1101500
+#define HEUR_PRIORITY         -1000500
 #define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
@@ -739,6 +739,10 @@ static SCIP_RETCODE fixVariables(
       SCIP_Real* origvals;
       int norigvars;
 
+      /* ignore blocks represented by others */
+      if( !GCGrelaxIsPricingprobRelevant(scip, i) )
+         continue;
+
       /* use the first extreme point as reference point, set fixvals to its values */
       assert(selection[i * nusedpts] != -1);
 
@@ -816,6 +820,10 @@ static SCIP_RETCODE fixVariables(
       assert(GCGvarIsOriginal(var));
       block = GCGvarGetBlock(var);
 
+      /* if the variable is represented by another one, it is not treated here */
+      if( block >= 0 && !GCGrelaxIsPricingprobRelevant(scip, block))
+         continue;
+
       /* we still need to treat variable belonging to no block (as they did not appear in any extreme point) */
       /* if the variable belongs to no block, fix it in a RENS-like fashion */
       if( block == -1 )
@@ -877,12 +885,41 @@ static SCIP_RETCODE fixVariables(
        */
       if( fixable[i] )
       {
-         SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], fixvals[i]) );
-         SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], fixvals[i]) );
-         fixingcounter++;
+         SCIP_VAR* pricingvar;
+         SCIP_VAR** origpricingvars;
+         int norigpricingvars;
 
-         if ( SCIPisZero(scip, fixvals[i]) )
-            zerocounter++;
+         pricingvar = GCGoriginalVarGetPricingVar(var);
+         assert(GCGvarIsPricing(pricingvar));
+         origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+         norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+         assert(origpricingvars != NULL);
+         assert(norigpricingvars >= 0);
+
+         if( block >= 0 )
+         {
+            /* fix the variable and all other variables represented by it */
+            for( j = 0; j < norigpricingvars; ++j )
+            {
+               idx = SCIPvarGetProbindex(origpricingvars[j]);
+               SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[idx], fixvals[i]) );
+               SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[idx], fixvals[i]) );
+            }
+            fixingcounter += norigpricingvars;
+
+            if ( SCIPisZero(scip, fixvals[i]) )
+               zerocounter += norigpricingvars;
+         }
+         else
+         {
+            SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], fixvals[i]) );
+            SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], fixvals[i]) );
+
+            fixingcounter++;
+
+            if ( SCIPisZero(scip, fixvals[i]) )
+               zerocounter++;
+         }
       }
    }
 
