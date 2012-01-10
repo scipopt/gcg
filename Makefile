@@ -66,6 +66,7 @@ MAINOBJ		=	reader_blk.o \
 			heur_greedycolsel.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_xprins.o \
 			branch_master.o \
 			branch_relpsprob.o \
 			masterplugins.o \
