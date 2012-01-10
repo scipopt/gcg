@@ -50,6 +50,7 @@ PPN=${16}
 CLIENTTMPDIR=${17}
 NOWAITCLUSTER=${18}
 EXCLUSIVE=${19}
+MODE='solve'
 
 # check all variables defined
 if [ -z ${EXCLUSIVE} ]
@@ -124,7 +125,7 @@ then
 fi
 
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
-touch $EVALFILE
+echo > $EVALFILE
 
 # counter to define file names for a test set uniquely 
 COUNT=1
@@ -231,7 +232,7 @@ do
 	  TLIMIT=`expr $HARDTIMELIMIT / 60`
 
 #	  less runcluster_aachen.sh
-	  bsub -J SCIP$SHORTFILENNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT < runcluster_tmp.sh &
+	  bsub -J SCIP$SHORTFILENAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
       elif test  "$QUEUETYPE" = "qsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
