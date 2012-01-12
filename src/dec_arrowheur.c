@@ -708,7 +708,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,

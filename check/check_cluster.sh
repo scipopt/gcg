@@ -223,16 +223,22 @@ do
       elif test  "$QUEUETYPE" = "bsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
-	  sed -i 's/$CLIENTTMPDIR/$TMP/' runcluster_tmp.sh
+	  TLIMIT=`expr $HARDTIMELIMIT / 60`
+	  sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
 	  sed -i "s,\$BASENAME,$BASENAME," runcluster_tmp.sh
 	  sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
 	  sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
+	  sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
+	  sed -i "s,\$SHORTFILENAME,$SHORTFILENAME," runcluster_tmp.sh
+	  sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
 	  sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
 #	  sed -i "s,,," runcluster_tmp.sh
-	  TLIMIT=`expr $HARDTIMELIMIT / 60`
+
 
 #	  less runcluster_aachen.sh
-	  bsub -J SCIP$SHORTFILENAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
+#	  bsub -J SCIP$SHORTFILENAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
+	  bsub -q $QUEUE < runcluster_tmp.sh &
+#	  bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
       elif test  "$QUEUETYPE" = "qsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
@@ -242,7 +248,6 @@ do
 	  sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
 	  sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
 #	  sed -i "s,,," runcluster_tmp.sh
-
 #	  less runcluster_aachen.sh
 	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -N SCIP$SHORTFILENAME -o /dev/null -e /dev/null  runcluster_tmp.sh
 #	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -q $QUEUE -N SCIP$SHORTFILENAME  runcluster_tmp.sh
