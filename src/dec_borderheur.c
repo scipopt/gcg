@@ -1009,24 +1009,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    return SCIP_OKAY;
 }
 
-/** set the decomp structure */
-static
-DEC_DECL_SETSTRUCTDECOMP(BorderheurSetDecomp)
-{
-   DEC_DETECTOR* borderheur;
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(borderheur);
-   assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
-   SCIPdebugMessage("Setting decdecomp\n");
-   /*   detectordata->decdecomp = decdecomp; */
-
-}
-
+/** gets the priority of the detector */
 static
 DEC_DECL_GETPRIORITY(getPriority)
 {
@@ -1057,7 +1041,7 @@ SCIP_RETCODE SCIPincludeDetectionBorderheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, BorderheurSetDecomp, initBorderheur, exitBorderheur, getPriority));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur, getPriority));
 
    /* add borderheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));

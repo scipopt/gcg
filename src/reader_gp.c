@@ -256,13 +256,13 @@ SCIP_RETCODE writeData(
          else
          {
 
-            assert(SCIPhashmapGetImage(varindexmap, vars[j]) != NULL);
+            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
             SCIPinfoMessage(scip, file, "%d, %d\n",
-                  SCIPhashmapGetImage(varindexmap, vars[j]),
-                  SCIPhashmapGetImage(consindexmap, conss[i])
-                  );
+               SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
+               SCIPhashmapGetImage(consindexmap, conss[i])
+               );
 
          }
       }
@@ -327,8 +327,9 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
-
-   SCIP_CALL(SCIPwriteGp(scip, file, readerdata->decdecomp, TRUE));
+   //   if(readerdata->decdecomp != NULL && readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
+   //   readerdata->decdecomp = DECgetBestDecomp(scip);
+   SCIP_CALL(SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -339,33 +340,11 @@ SCIP_DECL_READERWRITE(readerWriteGp)
  * reader specific interface methods
  */
 
-SCIP_RETCODE SCIPReaderGpSetDecomp(
-   SCIP* scip,
-   DECDECOMP* decdecomp
-   )
-{
-   SCIP_READER* reader;
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-
-   assert(decdecomp != NULL);
-
-   reader = SCIPfindReader(scip, READER_NAME);
-   assert(reader != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   readerdata->decdecomp = decdecomp;
-
-   return SCIP_OKAY;
-}
-
 SCIP_RETCODE SCIPwriteGp(
    SCIP* scip,                                /**< SCIP data structure */
    FILE* file,                                /**< File pointer to write to */
    DECDECOMP* decdecomp,                      /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition                  /**< whether to write decomposed problem */
+   SCIP_Bool writeDecomposition               /**< whether to write decomposed problem */
    )
 {
    char outname[SCIP_MAXSTRLEN];

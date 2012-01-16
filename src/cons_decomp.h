@@ -88,7 +88,6 @@ SCIP_RETCODE DECincludeDetector(
    const char *name,                               /**< name of the detector */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
-   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),   /**< interface method to tell detector where to store structure information (must not be NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
    DEC_DECL_GETPRIORITY((*getPriority))            /**< interface method to get priority of detector (must not be NULL) */
@@ -118,6 +117,13 @@ SCIP_RETCODE DECwriteAllDecomps(
    SCIP* scip,
    char* extension
    );
+
+/** returns the best known decomposition, if available and NULL otherwise */
+extern
+DECDECOMP* DECgetBestDecomp(
+   SCIP* scip   /**< SCIP data structure */
+   );
+
 
 #ifdef __cplusplus
 }

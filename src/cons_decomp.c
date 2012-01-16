@@ -235,7 +235,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_READER* reader;
 
    /* create decomp constraint handler data */
    SCIP_CALL(SCIPallocMemory(scip, &conshdlrdata));
@@ -250,8 +249,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->hasrun = FALSE;
 
    SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
-
-   /* TODO: (optional) create constraint handler specific data here */
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
@@ -271,20 +268,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL(DECdecdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
-   reader = SCIPfindReader(scip, "refreader");
-   if( reader != NULL)
-   {
-      SCIP_CALL(SCIPReaderREFSetDecomp(scip, reader, conshdlrdata->decdecomp));
-   }
-   reader = SCIPfindReader(scip,"decreader");
-   if(reader!=NULL)
-   {
-      SCIP_CALL(SCIPReaderDecSetDecomp(scip, conshdlrdata->decdecomp));
-   }
-   SCIP_CALL(SCIPReaderGpSetDecomp(scip, conshdlrdata->decdecomp));
-
    /* add decomp constraint handler parameters */
-   /* TODO: (optional) add constraint handler specific parameters with SCIPaddTypeParam() here */
    SCIP_CALL(SCIPaddIntParam(scip, "cons/decomp/usedetection", "Which detection scheme should be used 0 = arrowhead (default), 1 = bordered, 2 = staircase.\n", &conshdlrdata->usedetection, FALSE, DEFAULT_DETECTION, 0, 2, NULL, NULL ));
    return SCIP_OKAY;
 }
@@ -438,7 +422,6 @@ SCIP_RETCODE DECincludeDetector(
    const char *name,                               /**< name of the detector */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
-   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),   /**< interface method to tell detector where to store structure information (must not be NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
    DEC_DECL_GETPRIORITY((*getPriority))            /**< interface method to get priority of detector (must not be NULL) */
@@ -459,7 +442,6 @@ SCIP_RETCODE DECincludeDetector(
    }
 
    assert(detectStructure != NULL);
-   assert(setStructDecomp != NULL);
    assert(getPriority != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -480,7 +462,6 @@ SCIP_RETCODE DECincludeDetector(
    detector->detectStructure = detectStructure;
 
    detector->initDetection = initDetector;
-   detector->setStructDecomp = setStructDecomp;
    detector->exitDetection = exitDetector;
    detector->getPriority = getPriority;
    detector->i = conshdlrdata->ndetectors;
@@ -673,7 +654,6 @@ SCIP_RETCODE DECdetectStructure(
             SCIP_CALL((*detector->initDetection)(scip, detector));
          }
 
-         (*detector->setStructDecomp)(scip, conshdlrdata->decdecomp);
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
          SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  &result));
          if( result == SCIP_SUCCESS )
@@ -704,7 +684,7 @@ SCIP_RETCODE DECdetectStructure(
    }
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
-
+   SCIP_CALL(SCIPwriteTransProblem(scip, "prob.dec", "dec", FALSE));
    conshdlrdata->hasrun = TRUE;
    return SCIP_OKAY;
 }
@@ -721,6 +701,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   DECDECOMP *tmp;
    assert(scip != NULL);
    assert(extension != NULL);
 
@@ -733,15 +714,38 @@ SCIP_RETCODE DECwriteAllDecomps(
    pname = strrchr(SCIPgetProbName(scip), '/');
    if( pname == NULL )
       pname = SCIPgetProbName(scip);
- 
+   else
+      pname = pname+1;
+   tmp = conshdlrdata->decdecomps[0];
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIP_FILE* file;
-      SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
-      file = SCIPfopen(name, "w");
-      assert(file != NULL);
+      SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d.%s\0", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
       SCIP_CALL( SCIPwriteTransProblem(scip, name, extension, FALSE) );
    }
+   conshdlrdata->decdecomps[0] = tmp;
 
    return SCIP_OKAY;
+}
+
+/** returns the best known decomposition, if available and NULL otherwise */
+extern
+DECDECOMP* DECgetBestDecomp(
+   SCIP* scip   /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->ndecomps > 0 )
+      return conshdlrdata->decdecomps[0];
+   else
+      return NULL;
 }

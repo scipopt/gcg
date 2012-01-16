@@ -1068,7 +1068,9 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   SCIP_CALL(SCIPwriteDecomp(scip, file, readerdata->decdecomp, TRUE));
+   //   if(readerdata->decdecomp == NULL || readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
+   //   readerdata->decdecomp = DECgetBestDecomp(scip);
+   SCIP_CALL(SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE));
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -1254,26 +1256,3 @@ SCIPwriteDecomp(
 /*
  * reader specific interface methods
  */
-
-SCIP_RETCODE
-SCIPReaderDecSetDecomp(
-        SCIP* scip,
-        DECDECOMP * decdecomp
-        )
-{
-   SCIP_READER* reader;
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-
-   assert(decdecomp != NULL);
-
-   reader = SCIPfindReader(scip, READER_NAME);
-   assert(reader != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   readerdata->decdecomp = decdecomp;
-
-   return SCIP_OKAY;
-}

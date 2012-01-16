@@ -924,27 +924,3 @@ SCIP_RETCODE SCIPreadRef(
 
    return SCIP_OKAY;
 }
-
-/** set the decomp structure */
-extern
-SCIP_RETCODE SCIPReaderREFSetDecomp(
-   SCIP*       scip,       /**< SCIP data structure */
-   SCIP_READER* reader,    /**< Reader data structure */
-   DECDECOMP*  decdecomp   /**< DECOMP data structure */
-   )
-{
-
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-   assert(reader != NULL);
-
-   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   readerdata = SCIPreaderGetData(reader);
-
-   assert(readerdata != NULL);
-
-   readerdata->decdecomp = decdecomp;
-
-   return SCIP_OKAY;
-}
