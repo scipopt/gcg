@@ -368,7 +368,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if(!SCIPisInfinity(scip, remainingtime))
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0f ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f; hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -391,6 +391,11 @@ SCIP_RETCODE callMetis(
    SCIP_CALL(SCIPresetClock(scip, detectordata->metisclock));
    SCIP_CALL(SCIPstartClock(scip, detectordata->metisclock));
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
+/*   extern char **environ;
+   char **env;
+   for (env = environ; *env; ++env)
+        printf("%s\n", *env);
+*/
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));

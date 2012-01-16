@@ -35,7 +35,12 @@ TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
 #then
 #    cp /home/mb322053/bin/hmetis $CLIENTTMPDIR/
 #fi
+if test -f $CLIENTTMPDIR/hmetis
+then
+     rm $CLIENTTMPDIR/hmetis
+fi
 
+export PATH=$PATH:/home/mb322053/bin/
 cd $CLIENTTMPDIR
 
 uname -a                            > $OUTFILE

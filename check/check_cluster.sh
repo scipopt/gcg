@@ -237,7 +237,7 @@ do
 
 #	  less runcluster_aachen.sh
 #	  bsub -J SCIP$SHORTFILENAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
-	  bsub -q $QUEUE -e error/error_%J_%I.txt -o /dev/null < runcluster_tmp.sh &
+	  bsub -q $QUEUE -o error/out_$SHORTFILENAME_%I_%J.txt < runcluster_tmp.sh &
 #	  bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
       elif test  "$QUEUETYPE" = "qsub"
       then
