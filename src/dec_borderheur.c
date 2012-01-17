@@ -998,7 +998,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       }
    }
 
-   SCIPsortRealPtr(cumscores, *decdecomps, *ndecdecomps);
+   SCIPsortRealPtr(cumscores,  (void**) *decdecomps, *ndecdecomps);
 
    SCIPfreeMemoryArray(scip, &cumscores);
    SCIPfreeMemoryArray(scip, &scores);

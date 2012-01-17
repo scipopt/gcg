@@ -1402,7 +1402,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       }
    }
 
-   SCIPsortRealPtr(cumscores, *decdecomps, *ndecdecomps);
+   SCIPsortRealPtr(cumscores, (void**) *decdecomps, *ndecdecomps);
 
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
