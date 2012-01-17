@@ -255,7 +255,7 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
       pricerdata->maxbestsols = pricerdata->maxvarsroundredcost;
    }
 
-    SCIPdebugMessage("paramchanged\n");
+   SCIPdebugMessage("paramchanged\n");
 
    return SCIP_OKAY;
 }
@@ -1772,6 +1772,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP* origprob;
    SCIP_VAR** vars;
    int nvars;
+   int norigvars;
    int v;
    SCIP_Bool discretization;
    SCIP_CONS** masterconss;
@@ -1819,7 +1820,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->permu), pricerdata->npricingprobs) );
 
    /* alloc memory for solution values of variables in pricing problems */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), SCIPgetNOrigVars(origprob)) );
+   norigvars = SCIPgetNOrigVars(origprob);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), norigvars) );
 
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->redcostclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkasclock)) );

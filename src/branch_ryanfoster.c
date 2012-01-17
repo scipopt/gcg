@@ -206,14 +206,14 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
           * and the current master variable has different values for both of them, fix the variable to 0 */
          if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
          {
-            SCIPchgVarUb(scip, vars[i], 0.0);
+            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
             propcount++;
          }
          /* if branching enforces that both original vars must be in different mastervars, fix all
           * master variables to 0 that contain both */
          if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val1, 1.0) )
          {
-            SCIPchgVarUb(scip, vars[i], 0.0);
+            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
             propcount++;
          }
       }
@@ -260,6 +260,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {
+   /*lint --e{715}*/
    SCIPdebugMessage("Execlp method of ryanfoster branching\n");
 //   printf("Execlp method of ryanfoster branching\n");
 
@@ -272,6 +273,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 {
+   /*lint --e{715}*/
    SCIP* masterscip;
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -347,8 +349,8 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
     */
    ovar1 = NULL;
    ovar2 = NULL;
-
-   feasible = FALSE;
+   mvar1 = NULL;
+   feasible = FALSE; 
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
    {
       mvar1 = branchcands[v1];
@@ -448,6 +450,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    assert(ovar1 != NULL);
    assert(ovar2 != NULL);
+   assert(mvar1 != NULL);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childsame, 0.0, SCIPgetLocalTransEstimate(scip)) );

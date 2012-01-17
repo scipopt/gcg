@@ -46,13 +46,7 @@
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
 #define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
-#define DEFAULT_CONSWEIGHT_SETCOV         5     /**< weight for constraint hyperedges that are setcovering constraints */
-#define DEFAULT_CONSWEIGHT_SETPACK        5     /**< weight for constraint hyperedges that are setpacking constraints */
-#define DEFAULT_CONSWEIGHT_SETPART        5     /**< weight for constraint hyperedges that are setpartitioning constraints */
 #define DEFAULT_CONSWEIGHT_SETPPC         5     /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
-#define DEFAULT_FORCE_SETPART_MASTER      FALSE /**< whether to force setpart constraints in the master */
-#define DEFAULT_FORCE_SETPACK_MASTER      FALSE /**< whether to force setpack constraints in the master */
-#define DEFAULT_FORCE_SETCOV_MASTER       FALSE /**< whether to force setcov constraints in the master */
 #define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_ALPHA                     0.0   /**< factor for standard deviation of constraint weights */
@@ -100,9 +94,6 @@ struct DEC_DetectorData
    SCIP_HASHMAP *constolpid;
 
    SCIP_Bool tidy;
-   SCIP_Bool callgcg;
-   SCIP_Bool visualize;
-   SCIP_Bool decouplevariables;
    int blocks;
    int maxblocks;
    int minblocks;
@@ -317,6 +308,9 @@ int computeHyperedgeWeight(
       case SCIP_SETPPCTYPE_PARTITIONING:
          *cost = detectordata->consWeightSetppc;
          break;
+      case SCIP_SETPPCTYPE_PACKING:
+         *cost = detectordata->consWeightSetppc;
+         break;
       default:
          *cost = detectordata->consWeight;
          break;
@@ -352,7 +346,8 @@ int computeHyperedgeWeight(
       {
          for( j = 0; j < ncurvars; ++j )
          {
-            variance += pow((vals[j] - mean), 2) / (ncurvars-1);
+            assert(ncurvars > 1);
+            variance += pow((vals[j] - mean), 2.0) / (ncurvars-1);
          }
       }
       assert(variance >= 0);
@@ -363,11 +358,11 @@ int computeHyperedgeWeight(
       if( SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons), SCIPgetLhsXXX(scip, cons)) )
       {
          /* we are dealing with an equality*/
-         *cost = SCIPceil(scip, detectordata->beta*2*detectordata->consWeight+detectordata->alpha*stddev);
+         *cost = SCIPceil(scip, detectordata->beta*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
       else
       {
-         *cost = SCIPceil(scip, (1.0-detectordata->beta)*2*detectordata->consWeight+detectordata->alpha*stddev);
+         *cost = SCIPceil(scip, (1.0-detectordata->beta)*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
 
    }
@@ -652,7 +647,7 @@ SCIP_RETCODE callMetis(
 
    hedges = detectordata->hedges;
    nvertices = detectordata->nvertices;
-   ndummyvertices = detectordata->dummynodes*nvertices;
+   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
 
    SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
@@ -1172,14 +1167,14 @@ SCIP_RETCODE evaluateDecomposition(
       )
 {
    char name[SCIP_MAXSTRLEN];
-   unsigned int matrixarea;
-   unsigned int borderarea;
+   long int matrixarea;
+   long int borderarea;
    int nvars;
    int nconss;
    int i;
    int j;
    int k;
-   int blockarea;
+   /*   int blockarea; */
    SCIP_Real varratio;
    int* nzblocks;
    int nblocks;
@@ -1302,17 +1297,15 @@ SCIP_RETCODE evaluateDecomposition(
    }
 
    /* calculate border area */
-   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars;
-
    borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars+DECdecdecompGetNLinkingvars(decdecomp)*(nconss-DECdecdecompGetNLinkingconss(decdecomp));
 
-   blockarea = 0;
+   /*   blockarea = 0; */
    density = 1E20;
    varratio = 1.0;
    for( i = 0; i < nblocks; ++i )
    {
       /* calculate block area */
-      blockarea += blocksizes[i];
+      /* blockarea += blocksizes[i]; */
 
 
       /* calculate density */
@@ -1338,6 +1331,7 @@ SCIP_RETCODE evaluateDecomposition(
    SCIPfreeMemoryArray(scip, &blockdensities);
    SCIPfreeMemoryArray(scip, &blocksizes);
    SCIPfreeMemoryArray(scip, &nvarsblocks);
+
    return SCIP_OKAY;
 
 }

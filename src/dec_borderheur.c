@@ -49,8 +49,6 @@
 
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 
-#define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
-
 /*
  * Data structures
  */
@@ -300,7 +298,7 @@ SCIP_RETCODE callMetis(
 
    SCIP_FILE *zfile;
    FILE* file;
-   int temp_filedes = -1;
+   int temp_filedes;
    SCIP_Real remainingtime;
 
    assert(scip != NULL);
@@ -784,8 +782,8 @@ SCIP_RETCODE evaluateDecomposition(
       )
 {
    char name[SCIP_MAXSTRLEN];
-   unsigned int matrixarea;
-   unsigned int borderarea;
+   long int matrixarea;
+   long int borderarea;
    int nvars;
    int nconss;
    int i;

@@ -148,7 +148,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(conshdlr != NULL);
@@ -191,7 +191,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
    return SCIP_OKAY;
 }
@@ -200,7 +200,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpDecomp)
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsDecomp)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
    return SCIP_OKAY;
 }
@@ -210,7 +210,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsDecomp)
 static
 SCIP_DECL_CONSCHECK(consCheckDecomp)
 {
-
+   /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
    return SCIP_OKAY;
 }
@@ -220,7 +220,7 @@ SCIP_DECL_CONSCHECK(consCheckDecomp)
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockDecomp)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -308,7 +308,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 }
 
 /** returns the decomposition structure **/
-extern
 DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
       SCIP *scip                             /**< SCIP data structure */
 )
@@ -327,7 +326,6 @@ DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
 }
 
 /** returns the decomposition structure **/
-extern
 DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
       SCIP *scip                             /**< SCIP data structure */
 )
@@ -345,7 +343,6 @@ DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
 }
 
 /** returns the decomposition structure **/
-extern
 int SCIPconshdlrDecompGetNDecdecomps(
       SCIP *scip                             /**< SCIP data structure */
 )
@@ -363,7 +360,6 @@ int SCIPconshdlrDecompGetNDecdecomps(
 }
 
 /** returns the data of the provided detector */
-extern
 DEC_DETECTORDATA* DECdetectorGetData(
    DEC_DETECTOR*  detector                   /**< detector data structure */
    )
@@ -374,7 +370,6 @@ DEC_DETECTORDATA* DECdetectorGetData(
 }
 
 /** returns the name of the provided detector */
-extern
 const char* DECdetectorGetName(
    DEC_DETECTOR*  detector
    )
@@ -384,7 +379,6 @@ const char* DECdetectorGetName(
 }
 
 /** Searches for the detector and returns it or returns NULL if detector is not found*/
-extern
 DEC_DETECTOR* DECfindDetector(
    SCIP *scip,                               /**< SCIP data structure */
    const char *name                          /**< Name of the detector to return */
@@ -416,7 +410,6 @@ DEC_DETECTOR* DECfindDetector(
 }
 
 /** includes the detector */
-extern
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
    const char *name,                               /**< name of the detector */
@@ -476,7 +469,6 @@ SCIP_RETCODE DECincludeDetector(
 }
 
 /** returns the remaning time of scip that the decomposition may use */
-extern
 SCIP_Real DECgetRemainingTime(
    SCIP* scip                    /**< SCIP data structure */
    )
@@ -491,7 +483,6 @@ SCIP_Real DECgetRemainingTime(
 
 
 /** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
-extern
 SCIP_RETCODE DECOMPconvertStructToGCG(
       SCIP*         scip,     /**< SCIP data structure          */
       DECDECOMP*    decdecomp /**< decdecom data structure      */
@@ -729,7 +720,6 @@ SCIP_RETCODE DECwriteAllDecomps(
 }
 
 /** returns the best known decomposition, if available and NULL otherwise */
-extern
 DECDECOMP* DECgetBestDecomp(
    SCIP* scip   /**< SCIP data structure */
    )

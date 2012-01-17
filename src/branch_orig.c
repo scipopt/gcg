@@ -476,6 +476,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {
+   /*lint --e{715}*/
    SCIPdebugMessage("Execlp method of orig branching\n");
    //printf("Execlp method of orig branching\n");
 

@@ -42,7 +42,7 @@
 #include "scip_misc.h"
 
 #include "pub_gcgvar.h"
-
+#include "cons_decomp.h"
 
 #define READER_NAME             "decreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -54,9 +54,6 @@
  */
 #define BLK_MAX_LINELEN       65536
 #define BLK_MAX_PUSHEDTOKENS  2
-#define BLK_INIT_COEFSSIZE    8192
-#define BLK_MAX_PRINTLEN      561       /**< the maximum length of any line is 560 + '\\0' = 561*/
-#define BLK_MAX_NAMELEN       256       /**< the maximum length for any name is 255 + '\\0' = 256 */
 #define BLK_PRINTLEN          100
 
 /** Section in BLK File */
@@ -108,10 +105,10 @@ struct SCIP_ReaderData
       int* usedcons;
     */
    SCIP_HASHMAP* constoblock;
-   int nlinkingblocks;
    int nlinkingcons;
    int nlinkingvars;
 };
+
 static const int NOVALUE = - 1;
 static const int LINKINGVALUE = - 2;
 static const char delimchars[] = " \f\n\r\t\v";
@@ -667,9 +664,7 @@ readBlock(
       blockid = blkinput->blocknr;
       consindex = readerdata->nblockcons[blockid];
       readerdata->blockcons[blkinput->blocknr][consindex] = cons;
-      blockid = readerdata->nblockcons[blkinput->blocknr];
       readerdata->nblockcons[blkinput->blocknr] = readerdata->nblockcons[blkinput->blocknr] + 1;
-      blockid = readerdata->nblockcons[blkinput->blocknr];
 
 
       if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*) (size_t) LINKINGVALUE )
@@ -880,7 +875,6 @@ fillDecompStruct(
          ind = decomp->nsubscipconss[i];
          decomp->subscipconss[i][ind] = readerdata->blockcons[i][j];
          decomp->nsubscipconss[i] ++;
-         ind = decomp->nsubscipconss[i];
          //hashmap
          //TODO besser machen?
          SCIP_CALL(SCIPhashmapRemove(decomp->constoblock, readerdata->blockcons[i][j]));
@@ -1060,7 +1054,7 @@ SCIP_DECL_READERREAD(readerReadDec)
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteDec)
-{
+{   /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
    assert(scip != NULL);
    assert(reader != NULL);
@@ -1085,7 +1079,7 @@ SCIP_RETCODE
 SCIPincludeReaderDec(
         SCIP * scip /**< SCIP data structure */
         )
-{
+{  /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
 
    /* create blk reader data */

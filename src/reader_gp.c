@@ -292,6 +292,28 @@ SCIP_RETCODE writeFileTrailer(
    return SCIP_OKAY;
 }
 
+
+/** returns the sanitized problem name (without paths) */
+static
+const char* getSanitizedProbName(SCIP* scip)
+{
+   const char* name;
+   const char* tname;
+
+   assert(scip != NULL);
+
+   name = SCIPgetProbName(scip);
+   assert(name != NULL);
+   tname = strrchr(name, '/');
+
+   if(tname != NULL)
+      return tname+1;
+   else
+      return name;
+
+}
+
+
 /*
  * Callback methods of reader
  */
@@ -362,11 +384,11 @@ SCIP_RETCODE SCIPwriteGp(
    /* print header */
    if(decdecomp == NULL)
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", getSanitizedProbName(scip));
    }
    else
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", getSanitizedProbName(scip), decdecomp->nblocks);
    }
    SCIP_CALL(writeFileHeader(scip, file, outname));
 

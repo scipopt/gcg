@@ -543,7 +543,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    SCIP_CONSHDLRDATA *conshdlrdata;
    SCIP_RESULT result;
-
+   
    assert(scip != NULL);
    assert(conshdlr != NULL);
 
@@ -567,9 +567,11 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    assert(conshdlrdata->decdecomp != NULL);
 
+   nconss = SCIPgetNConss(scip);
+
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->consismaster, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->consismaster, nconss) );
 
    SCIP_CALL( findConnectedComponents(scip, conshdlrdata, &result) );
 

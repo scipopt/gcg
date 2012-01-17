@@ -43,10 +43,6 @@
  */
 #define REF_MAX_LINELEN       65536
 #define REF_MAX_PUSHEDTOKENS  2
-#define REF_INIT_COEFSSIZE    8192
-#define REF_MAX_PRINTLEN      561       /**< the maximum length of any line is 560 + '\\0' = 561*/
-#define REF_MAX_NAMELEN       256       /**< the maximum length for any name is 255 + '\\0' = 256 */
-#define REF_PRINTLEN          100
 
 /** Section in REF File */
 enum RefSection
@@ -815,7 +811,7 @@ SCIP_DECL_READERREAD(readerReadRef)
 static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
-
+   /*lint --e{715}*/
    SCIP_CALL(writeREFFile(scip, reader, file));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

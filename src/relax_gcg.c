@@ -1840,7 +1840,7 @@ void GCGrelaxPrintVar(
          pricingvars = GCGlinkingVarGetPricingVars(var);
          nblocks = GCGlinkingVarGetNBlocks(var);
          printf("Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
-         for( i = 0, j = 0; j < nblocks; ++i)
+         for( i = 0, j = 0; j < nblocks; ++i)  /*lint --e{440}*/
          {
             if( pricingvars[i] != NULL )
             {
