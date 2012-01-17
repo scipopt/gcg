@@ -256,11 +256,11 @@ SCIP_RETCODE writeData(
          else
          {
 
-            assert(SCIPhashmapGetImage(varindexmap, vars[j]) != NULL);
+            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
             SCIPinfoMessage(scip, file, "%d, %d\n",
-                  SCIPhashmapGetImage(varindexmap, vars[j]),
+                  SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
                   SCIPhashmapGetImage(consindexmap, conss[i])
                   );
 
