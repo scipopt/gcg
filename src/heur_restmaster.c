@@ -251,7 +251,11 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
 
    /* try to add new solution to origprob and free it immediately */
+#ifdef SCIP_DEBUG
    SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, success) );
+#else
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+#endif
    SCIP_CALL( SCIPfreeSol(scip, &newmastersol) );
 
    SCIPfreeBufferArray(scip, &restmastervals);

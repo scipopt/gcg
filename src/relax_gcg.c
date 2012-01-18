@@ -637,7 +637,9 @@ SCIP_RETCODE createMaster(
 
       /* disable output to console */
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_NONE) );
-
+#if SCIP_VERSION > 210
+      SCIP_CALL( SCIPsetBoolParam(relaxdata->pricingprobs[i], "misc/printreason", FALSE) );
+#endif
       /* disable solution store */
       //SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "limits/maxorigsol", 0) );
 
@@ -2602,10 +2604,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, FALSE, &stored) );
          if( !stored )
          {
-            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, FALSE, &stored) );
          }
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
@@ -2634,10 +2636,14 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
       SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
-
+#ifdef SCIP_DEBUG
       SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
+#else
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
+#endif
       if( !stored )
       {
+
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
       /** @todo: Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.

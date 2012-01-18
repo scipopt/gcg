@@ -831,7 +831,11 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
        * also add the corresponding master solution */
       if( success && allblocksfull )
       {
+#ifdef SCIP_DEBUG
          SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+#else
+         SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+#endif
          if( !masterfeas )
          {
             SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");

@@ -2604,8 +2604,10 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
 #endif
    }
 
-#if 1
+#ifdef SCIP_DEBUG
    SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, &added) );
+#else
+   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif
 
    /* free memory for storing variables and solution values from the solution */

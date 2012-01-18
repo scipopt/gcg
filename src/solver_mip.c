@@ -399,10 +399,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          {
            SCIPdebugMessage("unbounded solution\n");
          }
-         //#ifndef NDEBUG
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
-         //assert(feasible);
-         //#endif
+
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, TRUE) );
 
          /* check whether the solution is equal to one of the previous solutions */
          if( solverdata->checksols )
@@ -520,13 +518,12 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
       for( s = 0; s < nprobsols; s++ )
       {
-         //#ifndef NDEBUG
          SCIP_Bool feasible;
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, TRUE) );
+
          if( !feasible )
             SCIPdebugMessage("heur: %s\n", SCIPheurGetName(SCIPsolGetHeur(probsols[s])));
          assert(feasible);
-         //#endif
 
          if( solverdata->checksols )
          {
