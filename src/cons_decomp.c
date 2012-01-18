@@ -481,7 +481,6 @@ SCIP_Real DECgetRemainingTime(
    return timelimit;
 }
 
-
 /** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
 SCIP_RETCODE DECOMPconvertStructToGCG(
       SCIP*         scip,     /**< SCIP data structure          */
@@ -581,7 +580,6 @@ SCIP_RETCODE DECOMPconvertStructToGCG(
    return SCIP_OKAY;
 }
 
-
 /** interface method to detect the structure */
 SCIP_RETCODE DECdetectStructure(
    SCIP *scip
@@ -667,11 +665,6 @@ SCIP_RETCODE DECdetectStructure(
       }
 
       SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomps[0]));
-/*    for( i = 0; i < conshdlrdata->ndecomps; ++i)
-      {
-         DECdecdecompFree(scip, &(conshdlrdata->decdecomps[i]));
-      }
-*/
    }
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
@@ -707,6 +700,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       pname = SCIPgetProbName(scip);
    else
       pname = pname+1;
+   /** @todo: This is a giant hack, but it works quite well */
    tmp = conshdlrdata->decdecomps[0];
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
