@@ -46,7 +46,7 @@
 //#define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
 //#define DEFAULT_DUMMYNODES	              0.2   /**< percentage of dummy vertices*/
 
-#define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MAXBLOCKS                 20    /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
 
 //#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
@@ -876,7 +876,7 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
 
    //write Gnuplot file
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset xrange [0:%i]\nset yrange[%i:0]\nplot '%s' lt 0 pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, datafile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot '%s' lt 0 pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, datafile);
    fclose(output);
 }
 
@@ -937,7 +937,7 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 
    //write Gnuplot file
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) lt i pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) lt i pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
    fclose(output);
 }
 
@@ -1458,7 +1458,8 @@ void blocking(
    int max_col_index_i;
    ITERATOR it1;
    //debug
-   printf("Starting Blocking...\n");
+   SCIPdebugMessage("Starting Blocking...\n");
+   SCIPdebugMessage("Max blocks: %i\n", detectordata->maxblocks);
    block = 1;
    blocked_to_row = 0;
    max_col_index_im1 = 0;
@@ -1474,14 +1475,14 @@ void blocking(
 
    }
    //are more than M/tau rows left?
-   while( (detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / tau )
+   //is the number of blocks less or equal maxblocks?
+   while( ( detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / tau
+            && block < detectordata->maxblocks )
    {
       //does a blocking to the next row forming a constriction comprise more than M/2tau rows?
       //are there more rows with constrictions?
-      //is the number of blocks less or equal maxblocks?
       while( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions))
-            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*tau))
-            && block <= detectordata->maxblocks )
+            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*tau)) )
       {
          SCIPiteratorNext(&it1);
 //         //has the iterator reached the end of list rowsWithConstrictions
