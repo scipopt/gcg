@@ -15,7 +15,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -924,7 +924,7 @@ static SCIP_RETCODE buildTransformedProblem(
    score->minkequicutscore = 0;
    score->equicutscorenormalized = 0;
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &isVarHandled, nvars));
+   SCIP_CALL(SCIPallocBufferArray(scip, &isVarHandled, nvars));
    for( i = 0; i < nvars; ++i )
    {
       isVarHandled[i] = FALSE;
@@ -1116,7 +1116,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
    }
 
-   SCIPfreeMemoryArray(scip, &isVarHandled);
+   SCIPfreeBufferArray(scip, &isVarHandled);
 
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
    for( i = 0; i < detectordata->blocks; ++i )
@@ -1152,7 +1152,9 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIPfreeBufferArray(scip, &subscipvars);
    SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &nsubscipvars);
+
    SCIPfreeBufferArray(scip, &linkingconss);
+   SCIPfreeBufferArray(scip, &linkingvars);
 
    *result = emptyblocks? SCIP_DIDNOTFIND:SCIP_SUCCESS;
    return SCIP_OKAY;

@@ -2604,10 +2604,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
          assert(SCIPisEQ(scip, SCIPgetRelaxSolObj(scip), SCIPgetSolTransObj(scip, relaxdata->currentorigsol)));
 
-         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, FALSE, &stored) );
+         SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
          if( !stored )
          {
-            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, TRUE, TRUE, TRUE, FALSE, &stored) );
+            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, FALSE, TRUE, TRUE, TRUE, &stored) );
          }
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
