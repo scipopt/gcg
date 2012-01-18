@@ -182,8 +182,8 @@ SCIP_RETCODE findConnectedComponents(
    conss = SCIPgetConss(scip);
    nextblock = 1; /* start at 1 in order to see whether the hashmap has a key*/
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &vartoblock, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &blockrepresentative, nconss+1) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &vartoblock, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockrepresentative, nconss+1) );
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->constoblock, SCIPblkmem(scip), nconss) );
 
@@ -374,8 +374,8 @@ SCIP_RETCODE findConnectedComponents(
    }
 
    /* free method data */
-   SCIPfreeMemoryArray(scip, &vartoblock);
-   SCIPfreeMemoryArray(scip, &blockrepresentative);
+   SCIPfreeBufferArray(scip, &vartoblock);
+   SCIPfreeBufferArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
    conshdlrdata->nblocks = tempblock-1;
 
@@ -571,7 +571,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
    SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->consismaster, nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &conshdlrdata->consismaster, nconss) );
 
    SCIP_CALL( findConnectedComponents(scip, conshdlrdata, &result) );
 
@@ -590,7 +590,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       SCIPdebugMessage("No block diagonal structure found.\n");
    }
-   SCIPfreeMemoryArray(scip, &conshdlrdata->consismaster);
+   SCIPfreeBufferArray(scip, &conshdlrdata->consismaster);
 
    return SCIP_OKAY;
 }

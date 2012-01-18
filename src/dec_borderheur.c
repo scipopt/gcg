@@ -586,7 +586,7 @@ static SCIP_RETCODE buildTransformedProblem(
    score->minkequicutscore = 0;
    score->equicutscorenormalized = 0;
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &isVarHandled, nvars));
+   SCIP_CALL(SCIPallocBufferArray(scip, &isVarHandled, nvars));
    for( i = 0; i < nvars; ++i )
    {
       isVarHandled[i] = FALSE;
@@ -732,7 +732,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
    }
 
-   SCIPfreeMemoryArray(scip, &isVarHandled);
+   SCIPfreeBufferArray(scip, &isVarHandled);
 
    /* do some elimentary checks and report errors */
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
@@ -816,11 +816,11 @@ SCIP_RETCODE evaluateDecomposition(
             detectordata->dummynodes)
       );
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nzblocks, nblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nlinkvarsblocks, nblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &blockdensities, nblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &blocksizes, nblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nvarsblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
    /*
     * 3 Scores
     *
@@ -840,7 +840,7 @@ SCIP_RETCODE evaluateDecomposition(
       int nvarsblock;
       SCIP_Bool *ishandled;
 
-      SCIP_CALL(SCIPallocMemoryArray(scip, &ishandled, nvars));
+      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
@@ -903,7 +903,7 @@ SCIP_RETCODE evaluateDecomposition(
       }
 
       assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
-      SCIPfreeMemoryArray(scip, &ishandled);
+      SCIPfreeBufferArray(scip, &ishandled);
    }
 
    /* calculate border area */
@@ -926,11 +926,11 @@ SCIP_RETCODE evaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
-   SCIPfreeMemoryArray(scip, &nzblocks);
-   SCIPfreeMemoryArray(scip, &nlinkvarsblocks);
-   SCIPfreeMemoryArray(scip, &blockdensities);
-   SCIPfreeMemoryArray(scip, &blocksizes);
-   SCIPfreeMemoryArray(scip, &nvarsblocks);
+   SCIPfreeBufferArray(scip, &nzblocks);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &nvarsblocks);
    return SCIP_OKAY;
 
 }
@@ -956,8 +956,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &scores, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &cumscores, ndecs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &scores, ndecs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &cumscores, ndecs) );
 
    /* build the hypergraph structure from the original problem */
    SCIP_CALL(buildGraphStructure(scip, detectordata));
@@ -1000,8 +1000,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 
    SCIPsortRealPtr(cumscores,  (void**) *decdecomps, *ndecdecomps);
 
-   SCIPfreeMemoryArray(scip, &cumscores);
-   SCIPfreeMemoryArray(scip, &scores);
+   SCIPfreeBufferArray(scip, &cumscores);
+   SCIPfreeBufferArray(scip, &scores);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
