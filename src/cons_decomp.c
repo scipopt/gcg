@@ -36,6 +36,7 @@
 #include "scip/clock.h"
 #include "pub_gcgvar.h"
 #include "pub_decomp.h"
+
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"
 #define CONSHDLR_DESC          "constraint handler template"
@@ -51,8 +52,6 @@
 #define CONSHDLR_DELAYPROP         TRUE /**< should propagation method be delayed, if other propagators found reductions? */
 #define CONSHDLR_DELAYPRESOL       TRUE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
-
-#define DEFAULT_DETECTION             1 /**< Which detection scheme should be used as default 0 = arrowhead, 1 = bordered, 2 = staircase */
 
 
 /*
@@ -77,8 +76,6 @@ struct SCIP_ConshdlrData
    SCIP_Bool hasrun;
    int ndecomps;
 };
-
-
 
 
 /*
@@ -268,8 +265,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
    SCIP_CALL(DECdecdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
-   /* add decomp constraint handler parameters */
-   SCIP_CALL(SCIPaddIntParam(scip, "cons/decomp/usedetection", "Which detection scheme should be used 0 = arrowhead (default), 1 = bordered, 2 = staircase.\n", &conshdlrdata->usedetection, FALSE, DEFAULT_DETECTION, 0, 2, NULL, NULL ));
    return SCIP_OKAY;
 }
 

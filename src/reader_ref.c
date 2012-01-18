@@ -37,7 +37,6 @@
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
 #define READER_EXTENSION        "txt"
 
-#define GCG_NATIVE_LINKINGVARS
 /*
  * Data structures
  */
@@ -395,15 +394,6 @@ SCIP_RETCODE readStart(
 
    getNextToken(refinput);
 
-//   /* everything before first section is treated as comment */
-//   do
-//   {
-//      /* get token */
-//      if( !getNextToken(refinput) )
-//         return SCIP_OKAY;
-//   }
-//   while( !isNewSection(scip, refinput) );
-
    return SCIP_OKAY;
 }
 
@@ -480,12 +470,6 @@ SCIP_RETCODE readBlocks(
    SCIP_CONS** conss;
    SCIP_CONS* cons;
    SCIP_VAR* var;
-#ifndef GCG_NATIVE_LINKINGVARS
-   SCIP_VAR** copyvars;
-   SCIP_VAR* varcopy;
-   int ncopyvars;
-#endif
-//   int val;
    int consctr;
    int v;
 
@@ -522,10 +506,7 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    constraint of unknown type.\n");
                continue;
             }
-#ifndef GCG_NATIVE_LINKINGVARS
-            SCIP_CALL( SCIPallocBufferArray(scip, &copyvars, nvars));
-            ncopyvars = 0;
-#endif
+
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
@@ -533,72 +514,9 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
                /* set the block number of the variable to the number of the current block */
-#ifdef GCG_NATIVE_LINKINGVARS
                SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                refinput->nassignedvars++;
-#else
-               if( GCGvarGetBlock(var) == -1 )
-               {
-                  /* set the block number of the variable to the number of the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
-                  refinput->nassignedvars++;
-               }
-               else if( GCGvarGetBlock(var) != refinput->blocknr )
-               {
-                  copyvars[ncopyvars] = var;
-                  ncopyvars++;
-               }
-#endif
             }
-#ifndef GCG_NATIVE_LINKINGVARS
-            /* create copies for variables that are already assigned to another block */
-            for( v = 0; v < ncopyvars; v++)
-            {
-               char newvarname[SCIP_MAXSTRLEN];
-
-               var = copyvars[v];
-
-               /* the variable already appears in another block, so we may need to copy it */
-               (void) SCIPsnprintf(newvarname, SCIP_MAXSTRLEN, "%s_%d", SCIPvarGetName(var), refinput->blocknr + 1);
-               varcopy = SCIPfindVar(scip, newvarname);
-               if( varcopy == NULL )
-               {
-                  SCIP_CONS* couplingcons;
-                  char consname[SCIP_MAXSTRLEN];
-
-                  /* create and add a copy of the variable */
-                  /* IMPORTANT: Do not take the original variable objective value as we might add it a couple of times */
-                  SCIP_CALL( SCIPcreateVar(scip, &varcopy, newvarname, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var),
-                        0, SCIPvarGetType(var), SCIPvarIsInitial(var), SCIPvarIsRemovable(var),
-                        NULL, NULL, NULL, NULL, NULL) );
-                  SCIP_CALL( SCIPaddVar(scip, varcopy) );
-                  SCIP_CALL( GCGrelaxCreateOrigVardata(scip, varcopy) );
-
-                  /* assign the copy to the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, varcopy, refinput->blocknr) );
-
-                  /* create a coupling constraint between the variable and its copy */
-                  (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "coupling_%s_%s", SCIPvarGetName(var), newvarname);
-                  SCIP_CALL( SCIPcreateConsLinear(scip, &couplingcons, consname, 0, NULL, NULL,
-                        0, 0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-                  SCIP_CALL( SCIPaddCoefLinear(scip, couplingcons, var, 1.0) );
-                  SCIP_CALL( SCIPaddCoefLinear(scip, couplingcons, varcopy, -1.0) );
-                  SCIP_CALL( SCIPaddCons(scip, couplingcons) );
-
-                  /* the coupling constraint must be put into the master problem */
-                  SCIP_CALL( SCIPreallocBufferArray(scip, &refinput->markedmasterconss, refinput->nmarkedmasterconss + 1) );
-                  refinput->markedmasterconss[refinput->nmarkedmasterconss] = couplingcons;
-                  refinput->nmarkedmasterconss++;
-
-                  SCIPdebugMessage("    -> copied variable %s to %s\n", SCIPvarGetName(var), newvarname);
-               }
-
-               /* replace variable by its copy in the current constraint */
-               SCIP_CALL( SCIPaddCoefLinear(scip, cons, var, -val) );
-               SCIP_CALL( SCIPaddCoefLinear(scip, cons, varcopy, val) );
-            }
-            SCIPfreeBufferArray(scip, &copyvars);
-#endif
             consctr++;
             refinput->totalreadconss++;
          }
