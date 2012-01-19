@@ -579,6 +579,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
       conshdlrdata->blockdiagonal = TRUE;
+      SCIP_CALL(DECdecdecompCreate(scip, &conshdlrdata->decdecomp));
       SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
       SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );
    }
@@ -608,6 +609,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolConnected)
 
    if( conshdlrdata->clock != NULL )
       SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->clock) );
+
    return SCIP_OKAY;
 }
 
@@ -663,14 +665,14 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
 
    SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
    assert(conshdlrdata != NULL);
-
+   conshdlrdata->clock = NULL;
    conshdlrdata->constoblock = NULL;
    conshdlrdata->vartoblock = NULL;
    conshdlrdata->blockdiagonal = FALSE;
 
    conshdlrdata->nblocks = 0;
    conshdlrdata->enable = TRUE;
-   SCIP_CALL(DECdecdecompCreate(scip, &conshdlrdata->decdecomp));
+   conshdlrdata->decdecomp = NULL;
    conshdlrdata->consismaster = NULL;
 
    /* include constraint handler */

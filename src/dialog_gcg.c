@@ -901,10 +901,25 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
+   long long int nnodes;
+
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
-   SCIP_CALL( DECdetectStructure(scip) );
+   SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nnodes) );
+   if( SCIPgetStage(scip) > SCIP_STAGE_INIT)
+   {
+      if(SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+         SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", 0) );
+      SCIP_CALL( SCIPsolve(scip) );
+   }
+   else
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists");
+
+   /*    SCIP_CALL( DECdetectStructure(scip) ); */
+
+   SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", nnodes) );
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
