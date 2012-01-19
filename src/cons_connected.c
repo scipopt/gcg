@@ -25,6 +25,8 @@
 #include "scip_misc.h"
 #include "struct_decomp.h"
 #include "scip/clock.h"
+#include "pub_decomp.h"
+#include "cons_decomp.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "connected"
@@ -555,17 +557,11 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    if( !conshdlrdata->enable )
       return SCIP_OKAY;
 
-   if( conshdlrdata->decdecomp == NULL )
-   {
-      conshdlrdata->decdecomp = SCIPconshdlrDecompGetDecdecomp(scip);
-   }
    /* apparently, there is a structure, which means we don't try to detect one */
-   if( conshdlrdata->decdecomp->type != DEC_DECTYPE_UNKNOWN )
+   if( SCIPconshdlrDecompGetNDecdecomps(scip) > 0 )
    {
       return SCIP_OKAY;
    }
-
-   assert(conshdlrdata->decdecomp != NULL);
 
    nconss = SCIPgetNConss(scip);
 
@@ -584,7 +580,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
       SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
       conshdlrdata->blockdiagonal = TRUE;
       SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
-      SCIP_CALL( DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomp) );
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );
    }
    else
    {
@@ -674,7 +670,7 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
 
    conshdlrdata->nblocks = 0;
    conshdlrdata->enable = TRUE;
-   conshdlrdata->decdecomp = NULL;
+   SCIP_CALL(DECdecdecompCreate(scip, &conshdlrdata->decdecomp));
    conshdlrdata->consismaster = NULL;
 
    /* include constraint handler */

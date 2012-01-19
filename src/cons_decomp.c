@@ -66,7 +66,6 @@ struct SCIP_ConsData
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DECDECOMP* decdecomp;
    DECDECOMP** decdecomps;
    DEC_DETECTOR** detectors;
    int *priorities;
@@ -83,6 +82,107 @@ struct SCIP_ConshdlrData
  */
 
 /* put your local methods here, and declare them static */
+
+
+/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+static
+SCIP_RETCODE convertStructToGCG(
+      SCIP*         scip,     /**< SCIP data structure          */
+      DECDECOMP*    decdecomp /**< decdecom data structure      */
+   )
+{
+   int i;
+   int j;
+   int k;
+   int v;
+   int nvars;
+   SCIP_VAR** origvars;
+   SCIP_HASHMAP* transvar2origvar;
+
+   assert(decdecomp != NULL);
+   assert(decdecomp->linkingconss != NULL || decdecomp->nlinkingconss == 0);
+   assert(decdecomp->nsubscipvars != 0);
+   assert(decdecomp->subscipvars != NULL);
+
+   origvars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
+
+   SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
+   GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+
+   /* set master constraints */
+   for( i = 0; i < decdecomp->nlinkingconss; ++i )
+   {
+      assert(decdecomp->linkingconss[i] != NULL);
+      SCIP_CALL(GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]));
+   }
+
+   /* prepare the map from transformed to original variables */
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIP_VAR* transvar;
+      SCIP_CALL(SCIPgetTransformedVar(scip, origvars[i], &transvar));
+      assert(transvar != NULL);
+      SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
+   }
+
+   for( i = 0; i < decdecomp->nblocks; ++i )
+   {
+      assert(decdecomp->subscipvars[i] != NULL);
+      for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
+      {
+         assert(decdecomp->subscipvars[i][j] != NULL);
+         assert(isVarRelevant(decdecomp->subscipvars[i][j]));
+         if(SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]) != NULL)
+         {
+            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
+         }
+         else
+         {
+            SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
+            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
+         }
+      }
+   }
+   for( i = 0; i < decdecomp->nlinkingvars; ++i )
+   {
+      if( SCIPvarGetData(decdecomp->linkingvars[i]) == NULL)
+      {
+         int found;
+         SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->linkingvars[i])));
+         /* HACK; TODO: find out constraint blocks */
+         for( j = 0; j < decdecomp->nblocks; ++j )
+         {
+            found = FALSE;
+            for( k = 0; k < decdecomp->nsubscipconss[j]; ++k )
+            {
+               SCIP_VAR** curvars;
+               int        ncurvars;
+               curvars = SCIPgetVarsXXX(scip, decdecomp->subscipconss[j][k]);
+               ncurvars = SCIPgetNVarsXXX(scip, decdecomp->subscipconss[j][k]);
+
+               for( v = 0; v < ncurvars; ++v )
+               {
+                  if( SCIPvarGetProbvar(curvars[v]) == decdecomp->linkingvars[i] )
+                  {
+                     SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j));
+                     found = TRUE;
+                     break;
+                  }
+               }
+               SCIPfreeMemoryArray(scip, &curvars);
+               if( found )
+                  break;
+            }
+         }
+      }
+   }
+
+   SCIPhashmapFree(&transvar2origvar);
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -121,7 +221,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    assert(conshdlrdata != NULL);
 
    SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
-   DECdecdecompFree(scip, &conshdlrdata->decdecomp);
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -135,8 +234,19 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       }
    }
 
+   if( conshdlrdata->ndecomps > 0 )
+   {
+      for( i = 0; i < conshdlrdata->ndecomps; ++i )
+      {
+         DECdecdecompFree(scip, &conshdlrdata->decdecomps[i]);
+      }
+      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
+   }
+
+
    SCIPfreeMemoryArray(scip, &conshdlrdata->priorities);
    SCIPfreeMemoryArray(scip, &conshdlrdata->detectors);
+   SCIPfreeMemoryArrayNull(scip, &conshdlrdata->decdecomps);
    SCIPfreeMemory(scip, &conshdlrdata);
 
    return SCIP_OKAY;
@@ -172,7 +282,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if( conshdlrdata->decdecomps != NULL )
+   if( conshdlrdata->ndecomps > 0 )
    {
       int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
@@ -180,6 +290,8 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
          DECdecdecompFree(scip, &conshdlrdata->decdecomps[i]);
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
+      conshdlrdata->decdecomps = NULL;
+      conshdlrdata->ndecomps = 0;
    }
    return SCIP_OKAY;
 }
@@ -237,7 +349,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL(SCIPallocMemory(scip, &conshdlrdata));
    assert(conshdlrdata != NULL);
 
-   conshdlrdata->decdecomp = NULL;
    conshdlrdata->decdecomps = NULL;
    conshdlrdata->ndecomps = 0;
    conshdlrdata->ndetectors = 0;
@@ -262,8 +373,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consEnableDecomp, consDisableDecomp,
          consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
          conshdlrdata) );
-
-   SCIP_CALL(DECdecdecompCreate(scip, &(conshdlrdata->decdecomp)));
 
    return SCIP_OKAY;
 }
@@ -302,9 +411,10 @@ SCIP_RETCODE SCIPcreateConsDecomp(
    return SCIP_OKAY;
 }
 
-/** returns the decomposition structure **/
-DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
-      SCIP *scip                             /**< SCIP data structure */
+/** sets (and adds) the decomposition structure **/
+SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
+   SCIP *scip,                            /**< SCIP data structure */
+   DECDECOMP *decdecomp                    /**< DECDECOMP data structure */
 )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -315,10 +425,23 @@ DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-   assert(conshdlrdata->decdecomp != NULL);
 
-   return conshdlrdata->decdecomp;
+   if(conshdlrdata->ndecomps == 0)
+   {
+      assert(conshdlrdata->decdecomps == NULL);
+      SCIP_CALL(SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) );
+      conshdlrdata->decdecomps[0] = decdecomp;
+      conshdlrdata->ndecomps = 1;
+   }
+   else
+   {
+      SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
+      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = decdecomp;
+      conshdlrdata->ndecomps += 1;
+   }
+   return SCIP_OKAY;
 }
+
 
 /** returns the decomposition structure **/
 DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
@@ -476,105 +599,6 @@ SCIP_Real DECgetRemainingTime(
    return timelimit;
 }
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
-SCIP_RETCODE DECOMPconvertStructToGCG(
-      SCIP*         scip,     /**< SCIP data structure          */
-      DECDECOMP*    decdecomp /**< decdecom data structure      */
-   )
-{
-   int i;
-   int j;
-   int k;
-   int v;
-   int nvars;
-   SCIP_VAR** origvars;
-   SCIP_HASHMAP* transvar2origvar;
-
-   assert(decdecomp != NULL);
-   assert(decdecomp->linkingconss != NULL || decdecomp->nlinkingconss == 0);
-   assert(decdecomp->nsubscipvars != 0);
-   assert(decdecomp->subscipvars != NULL);
-
-   origvars = SCIPgetOrigVars(scip);
-   nvars = SCIPgetNOrigVars(scip);
-
-   SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
-   GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
-   SCIP_CALL( GCGcreateOrigVarsData(scip) );
-
-   /* set master constraints */
-   for( i = 0; i < decdecomp->nlinkingconss; ++i )
-   {
-      assert(decdecomp->linkingconss[i] != NULL);
-      SCIP_CALL(GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]));
-   }
-
-   /* prepare the map from transformed to original variables */
-   for( i = 0; i < nvars; ++i )
-   {
-      SCIP_VAR* transvar;
-      SCIP_CALL(SCIPgetTransformedVar(scip, origvars[i], &transvar));
-      assert(transvar != NULL);
-      SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
-   }
-
-   for( i = 0; i < decdecomp->nblocks; ++i )
-   {
-      assert(decdecomp->subscipvars[i] != NULL);
-      for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
-      {
-         assert(decdecomp->subscipvars[i][j] != NULL);
-         assert(isVarRelevant(decdecomp->subscipvars[i][j]));
-         if(SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]) != NULL)
-         {
-            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
-         }
-         else
-         {
-            SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
-            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
-         }
-      }
-   }
-   for( i = 0; i < decdecomp->nlinkingvars; ++i )
-   {
-      if( SCIPvarGetData(decdecomp->linkingvars[i]) == NULL)
-      {
-         int found;
-         SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->linkingvars[i])));
-         /* HACK; TODO: find out constraint blocks */
-         for( j = 0; j < decdecomp->nblocks; ++j )
-         {
-            found = FALSE;
-            for( k = 0; k < decdecomp->nsubscipconss[j]; ++k )
-            {
-               SCIP_VAR** curvars;
-               int        ncurvars;
-               curvars = SCIPgetVarsXXX(scip, decdecomp->subscipconss[j][k]);
-               ncurvars = SCIPgetNVarsXXX(scip, decdecomp->subscipconss[j][k]);
-
-               for( v = 0; v < ncurvars; ++v )
-               {
-                  if( SCIPvarGetProbvar(curvars[v]) == decdecomp->linkingvars[i] )
-                  {
-                     SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
-                     SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j));
-                     found = TRUE;
-                     break;
-                  }
-               }
-               SCIPfreeMemoryArray(scip, &curvars);
-               if( found )
-                  break;
-            }
-         }
-      }
-   }
-
-   SCIPhashmapFree(&transvar2origvar);
-   return SCIP_OKAY;
-}
-
 /** interface method to detect the structure */
 SCIP_RETCODE DECdetectStructure(
    SCIP *scip
@@ -608,7 +632,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
    SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
 
-   if( GCGrelaxGetNPricingprobs(scip) <= 0 )
+   if( conshdlrdata->ndecomps == 0)
    {
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
@@ -658,10 +682,10 @@ SCIP_RETCODE DECdetectStructure(
             SCIPdebugPrintf("Failure!\n");
          }
       }
-
-      SCIP_CALL(DECOMPconvertStructToGCG(scip, conshdlrdata->decdecomps[0]));
    }
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
+   SCIP_CALL(convertStructToGCG(scip, conshdlrdata->decdecomps[0]));
+
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
    SCIP_CALL(SCIPwriteTransProblem(scip, "prob.dec", "dec", FALSE));
    conshdlrdata->hasrun = TRUE;

@@ -46,12 +46,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
 /** returns the decomposition structure **/
 extern
-DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
-   SCIP *scip                                /**< SCIP data structure */
-   );
-
-/** returns the decomposition structure **/
-extern
 DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
       SCIP *scip                             /**< SCIP data structure */
    );
@@ -99,23 +93,24 @@ SCIP_Real DECgetRemainingTime(
    SCIP* scip                    /**< SCIP data structure */
    );
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+/** sets (and adds) the decomposition structure **/
 extern
-SCIP_RETCODE DECOMPconvertStructToGCG(
-      SCIP*         scip,     /**< SCIP data structure          */
-      DECDECOMP*    decdecomp /**< decdecom data structure      */
+SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
+   SCIP *scip,                            /**< SCIP data structure */
+   DECDECOMP *decdecomp                   /**< DECDECOMP data structure */
    );
 
 /** interface method to detect the structure */
+extern
 SCIP_RETCODE DECdetectStructure(
-   SCIP *scip
+   SCIP *scip                             /**< SCIP data structure */
    );
 
 
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(
-   SCIP* scip,
-   char* extension
+   SCIP* scip,                            /**< SCIP data structure */
+   char* extension                        /**< the file extension for the export */
    );
 
 /** returns the best known decomposition, if available and NULL otherwise */
