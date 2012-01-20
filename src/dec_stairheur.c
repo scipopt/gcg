@@ -33,7 +33,9 @@
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
+#include "pub_decomp.h"
 #include "scip_misc.h"
+#include "scip/pub_misc.h"
 #include "scip/struct_var.h"
 
 #define DEC_DETECTORNAME      "stairheur"       /**< name of the detector */
@@ -64,8 +66,7 @@
 #include <stdlib.h>
 
 /** TODO:
- * deallocate all memory (lists, iterators, data stored in lists...)
- *cd gcg
+ * currently, all vars from the first column where a linking var appears until the end of the block are considered as linking vars, although there might be empty columns. This could be changed so that these empty columns are considered as subscipvars and not linking vars.
  * */
 
 struct node {
@@ -1473,6 +1474,7 @@ void assignVarsToBlock(
    int* hashmapindex;
    SCIP_VAR* var;
    //assign the subscipvars (=nonlinking vars)
+   assert(first_linkingvar > first_var);
    detectordata->nvarsperblock[block-1] = first_linkingvar - first_var;
    for(i = first_var, j = 0; i < first_linkingvar; ++i, ++j)
    {
@@ -1527,6 +1529,100 @@ int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
    return detectordata->ibegin[row];
 }
 
+/** determines if a blocking at 'block_at_row' is a valid blocking
+ *
+ * @param detectordata detectordata data structure
+ * @param prev_block_first_row first row of the previous block
+ * @param prev_block_last_row last row of the previous block
+ * @param block_at_row the row for which you want to determine if the blocking is valid
+ * @return TRUE if blocking is valid, else FALSE
+ */
+static
+SCIP_Bool isValidBlocking(DEC_DETECTORDATA* detectordata, int prev_block_first_row, int prev_block_last_row, int block_at_row)
+{
+   int last_column_prev_block;
+   int first_column_current_block;
+
+   last_column_prev_block = getMaxColIndex(detectordata, prev_block_first_row, prev_block_last_row);
+   first_column_current_block = getMinColIndex(detectordata, block_at_row);
+   return ( first_column_current_block > last_column_prev_block ? TRUE : FALSE);
+}
+
+/** this functions looks for rows to block at, which creates block of size min_block_size or bigger
+ *
+ * @param it_constrictions Iterator pointing to a list of constraints (detectordata->rowsWithConstrictions)
+ * @param min_block_size minimum number of rows to be in a block
+ * @param prev_block_last_row the last row of the preceding block
+ * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no candidate was found
+ */
+static
+ITERATOR findBlockingCandidate(ITERATOR it_constrictions, int min_block_size, int prev_block_last_row)
+{
+   for(;;)
+   {
+      //end of the list?
+      if( SCIPiteratorIsEqual(it_constrictions, SCIPiteratorEnd(it_constrictions.list)))
+      {
+         return it_constrictions;
+      }
+      //does a blocking to the next row forming a constriction comprise more rows than min_block_size
+      if( (* (int*) (it_constrictions.node->data) - prev_block_last_row) >= min_block_size )
+      {
+         return it_constrictions;
+      }
+      //advance iterator to next element
+      SCIPiteratorNext(&it_constrictions);
+   }
+}
+
+/** this functions determines the next row to block at
+ *
+ * @param detectordata detectordata data structure
+ * @param it_constrictions Iterator pointing to a list of constraints (detectordata->rowsWithConstrictions)
+ * @param min_block_size minimum number of rows to be in a block
+ * @param prev_block_first_row the first row of the preceding block
+ * @param prev_block_last_row the last row of the preceding block
+ * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no row was found
+ */
+static
+ITERATOR nextRowToBlockAt(DEC_DETECTORDATA* detectordata, ITERATOR it_constrictions, int min_block_size, int prev_block_first_row, int prev_block_last_row)
+{
+   assert(it_constrictions.list != NULL);
+   assert(it_constrictions.node != NULL);
+
+   //end of the constriction list?
+   if( SCIPiteratorIsEqual(it_constrictions, SCIPiteratorEnd(it_constrictions.list)))
+   {
+      return it_constrictions;
+   }
+
+   for(;;)
+   {
+      //find a blocking candidate
+      it_constrictions = findBlockingCandidate(it_constrictions, min_block_size, prev_block_last_row);
+      //case: no candidate found
+      if( SCIPiteratorIsEqual(it_constrictions, SCIPiteratorEnd(it_constrictions.list)))
+      {
+         break;
+      }
+      //case: candidate found
+      else
+      {
+         //valid blocking
+         if(isValidBlocking(detectordata, prev_block_first_row, prev_block_last_row, *(int*) it_constrictions.node->data))
+         {
+            break;
+         }
+         //invalid blocking
+         else
+         {
+            SCIPiteratorNext(&it_constrictions);
+         }
+      }
+   }
+   return it_constrictions;
+}
+
 /** Tries to divide the problem into subproblems (blocks)*/
 static
 void blocking(
@@ -1537,8 +1633,10 @@ void blocking(
       )
 {
    int block;
-   int blocked_to_row;
+   int prev_block_first_row;
+   int prev_block_last_row;
    int current_row;
+   int min_block_size;
    //notation: i=current block; im1=i-1=previous block; ip1=i+1=next block
    int max_col_index_im1;
    int min_col_index_ip1;
@@ -1548,58 +1646,79 @@ void blocking(
    SCIPdebugMessage("Starting Blocking...\n");
    SCIPdebugMessage("Max blocks: %i\n", detectordata->maxblocks);
    block = 1;
-   blocked_to_row = 0;
+   prev_block_first_row = 0;
+   prev_block_last_row = 0;
    max_col_index_im1 = 0;
+   min_col_index_ip1 = 1;
+   min_block_size = round( (float) detectordata->nRelevantConss / (2 * tau ));
    it1 = SCIPiteratorBegin(detectordata->rowsWithConstrictions);
-   //list not empty?
-   if( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
-   {
-      current_row = * (int*) (it1.node->data);
-   }
-   //if list is empty
-   else
-   {
 
-   }
-   //are more than M/tau rows left?
-   //is the number of blocks less or equal maxblocks?
-   while( ( detectordata->nRelevantConss - blocked_to_row) > (float) detectordata->nRelevantConss / tau
-            && block < detectordata->maxblocks )
+   for( it1 = nextRowToBlockAt(detectordata, it1, min_block_size, prev_block_first_row, prev_block_last_row);
+         ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(it1.list));
+         it1 = nextRowToBlockAt(detectordata, it1, min_block_size, prev_block_first_row, prev_block_last_row) )
    {
-      //does a blocking to the next row forming a constriction comprise more than M/2tau rows?
-      //are there more rows with constrictions?
-      while( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions))
-            && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*tau)) )
-      {
-         SCIPiteratorNext(&it1);
-      }
-      //when there are no more rows with constrictions, break and assign the remaining rows to the last block
-      if(SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
-      {
-         break;
-      }
       current_row = * (int*) (it1.node->data);
-      max_col_index_i = getMaxColIndex(detectordata, blocked_to_row + 1, current_row);
+      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
       min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
-      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, current_row);
+      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
       SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
       //assign the variables and constraints to block
       assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
-      assignConsToBlock(scip, detectordata, block, blocked_to_row + 1, current_row);
+      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
       //update variables in the while loop
       max_col_index_im1 = max_col_index_i;
-      blocked_to_row = current_row;
+      prev_block_first_row = prev_block_last_row + 1;
+      prev_block_last_row = current_row;
       ++block;
    }
+
+//
+//   it1 = SCIPiteratorBegin(detectordata->rowsWithConstrictions);
+//   //list not empty?
+//   if( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
+//   {
+//      current_row = * (int*) (it1.node->data);
+//   }
+//   //if list is empty
+//   else
+//   {
+//
+//   }
+//   //are more than 2 * min_block_size rows left?
+//   //is the number of blocks less or equal maxblocks?
+//   while( (float) ( detectordata->nRelevantConss - prev_block_last_row) > (2 * min_block_size)
+//            && block < detectordata->maxblocks)
+//   {
+//      it1 = nextRowToBlockAt(it1, min_block_size, prev_block_last_row);
+//
+//      //when there are no more rows with constrictions, break and assign the remaining rows to the last block
+//      if(SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
+//      {
+//         break;
+//      }
+//      current_row = * (int*) (it1.node->data);
+//      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
+//      min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
+//      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+//      SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
+//      //assign the variables and constraints to block
+//      assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
+//      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
+//      //update variables in the while loop
+//      max_col_index_im1 = max_col_index_i;
+//      prev_block_last_row = current_row;
+//      ++block;
+//   }
    //assign the remaining (< M/2tau) cons and vars to the last block; no new linking vars are added
    //debug
-   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, detectordata->nRelevantConss);
+   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, detectordata->nRelevantConss);
    SCIPdebugMessage("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
    assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
-   assignConsToBlock(scip, detectordata, block, blocked_to_row + 1, detectordata->nRelevantConss);
+   assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss);
    SCIPlistPopBack(scip, detectordata->blockedAfterrow);
    detectordata->blocks = block;
 }
+
 
 /** copies the variable and block information to the decomp structure */
 static
@@ -1634,7 +1753,7 @@ SCIP_RETCODE copyDetectorDataToDecomp(
    decomp->varindex = detectordata->indexmap->varindex;
    decomp->consindex = detectordata->indexmap->consindex;
    decomp->nblocks = detectordata->blocks;
-   decomp->type = DEC_STAIRCASE;
+   decomp->type = DEC_DECTYPE_STAIRCASE;
    return SCIP_OKAY;
 }
 
@@ -1767,8 +1886,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_VAR* var;
    SCIP_CONS** cons_array;
    SCIP_CONS* cons;
-   DEC_DETECTOR* stairheur;
-   DEC_DETECTORDATA* detectordata;
+//   DEC_DETECTOR* stairheur;
+//   DEC_DETECTORDATA* detectordata;
    LIST* rowindices;
    LIST* columnindices;
    INDEXMAP* indexmap_permuted;
@@ -1782,15 +1901,15 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    int ROC_iterations;
 
    assert(scip != NULL);
-   stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(stairheur);
+//   stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
+//   detectordata = DECdetectorGetData(stairheur);
    assert(detectordata != NULL);
-   assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
+//   assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
    SCIPdebugMessage("%s\n", SCIPgetProbName(scip));
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
-   // SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
+   SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
    nvars = SCIPgetNVars(scip);
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
@@ -2071,26 +2190,12 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIPfreeMemoryArray(scip, &jbegin_permuted);
    SCIPfreeMemoryArray(scip, &jend_permuted);
 
-   //SCIP_CALL(SCIPconshdlrDecompAddDecomp(scip, detectordata->decdecomp));
+   //debug Ein Hack von Martin
+   SCIP_CALL(SCIPallocMemoryArray(scip, decdecomps, 1));
+   (*decdecomps)[0] = detectordata->decdecomp;
+   *ndecdecomps = 1;
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
-}
-
-/** set the decomp structure */
-static
-DEC_DECL_SETSTRUCTDECOMP(StairheurSetDecomp)
-{
-   DEC_DETECTOR* stairheur;
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-   stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(stairheur);
-   assert(detectordata != NULL);
-
-   assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
-   SCIPdebugMessage("Setting decdecomp\n");
-   detectordata->decdecomp = decdecomp;
 }
 
 static
@@ -2121,7 +2226,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
    detectordata->decdecomp = NULL;
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildStair, StairheurSetDecomp, initStairheur, exitStairheur, getPriority));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildStair, initStairheur, exitStairheur, getPriority));
 
    /* add stairheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));
