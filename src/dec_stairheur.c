@@ -676,6 +676,8 @@ struct DEC_DetectorData
    int* width;  //array, width[i]: width of the band (of nonzero entries after ROC) at row i
    int* hashmapindices;  //array with integers running from 0 to maximum(nvars, ncons)+1 (for usage of hash maps)
    LIST* rowsWithConstrictions;
+   LIST* blockedAfterrow;
+   SCIP_CLOCK* clock;
    SCIP_Bool found;
    int priority;
 };
@@ -801,23 +803,37 @@ int minArray(int* a, int num_elements)
    }
 }
 
-//static
-//void SwitchHashMapPointers(SCIP_HASHMAP** hm1, SCIP_HASHMAP** hm2)
-//{
-//   SCIP_HASHMAP* hm3; /* local for swap */
-//    hm3 = *hm2;
-//    *hm2 = *hm1;
-//    *hm1= hm3;
-//}
-//
-//static
-//void SwitchIntPointers(int** i1, int** i2)
-//{
-//   int* i3; /* local for swap */
-//    i3 = *i2;
-//    *i2 = *i1;
-//    *i1= i3;
-//}
+/** Returns the value of the minimum in the list between the iterators it1 and it2
+ *
+ *  Or -1 if a is empty or invalid. */
+static
+int minList(ITERATOR first, ITERATOR last)
+{
+   int min;
+   //first is valid
+   if(first.list && first.node && ! SCIPlistIsEmpty(first.list))
+   {
+      min = *(int*)first.node->data;
+      SCIPiteratorNext(&first);
+      for (;
+           //first != last AND end of list is not reached yet
+           ! (SCIPiteratorIsEqual(first, last)) && ! (SCIPiteratorIsEqual(first, SCIPiteratorEnd(first.list)));
+           SCIPiteratorNext(&first)
+           )
+      {
+         if ( *(int*)first.node->data < min )
+         {
+            min = *(int*)first.node->data;
+         }
+      }
+      return min;
+   }
+   //first invalid
+   else
+   {
+      return -1;
+   }
+}
 
 /** Switches the data the pointers p1 and p2 points to. */
 static
@@ -854,7 +870,7 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
    output = fopen(datafile, "w");
    if (output == NULL)
    {
-      printf("Can't open file for output in plotProblem!\n");
+      SCIPinfoMessage(scip, NULL, "Can't open file for output in plotProblem!\n");
    }
    else
    {
@@ -907,7 +923,7 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    output = fopen(datafile, "w");
    if (output == NULL)
    {
-      printf("Can't open file for output in plotBlocking!\n");
+      SCIPinfoMessage(scip, NULL, "Can't open file for output in plotBlocking!\n");
    }
    else
    {
@@ -946,34 +962,109 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
 static
-void plotMinV(DEC_DETECTORDATA* detectordata, char* filename)
+void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 {
    FILE* output;
    char datafile[256];
+   char blockingfile[256];
    char gpfile[256];
    char pdffile[256];
    int i;
+   ITERATOR it1;
    //filenames
    sprintf(datafile, "%s.dat", filename);
+   sprintf(blockingfile, "%s_blocked_at.dat", filename);
    sprintf(gpfile, "%s.gp", filename);
    sprintf(pdffile, "%s.pdf", filename);
+
+   //datafile
    output = fopen(datafile, "w");
    if (output == NULL)
    {
-      printf("Can't open file for output in plotMinV!\n");
+      SCIPinfoMessage(scip, NULL, "Can't open file for output in plotMinV!\n");
    }
    else
    {
+      //write data to datafile
       for(i = 0; i < detectordata->nRelevantConss -1; ++i)
       {
          fprintf(output, "%i\n", detectordata->minV[i]);
       }
    }
    fclose(output);
+
+   //blocking points
+   output = fopen(blockingfile, "w");
+   if (output == NULL)
+   {
+      SCIPinfoMessage(scip, NULL, "Can't open file for blocking output in plotMinV!\n");
+   }
+   else
+   {
+      //write data to blockingfile
+      for(it1 = SCIPiteratorBegin(detectordata->blockedAfterrow); ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->blockedAfterrow)); SCIPiteratorNext(&it1))
+      {
+         fprintf(output, "%i %i\n", *(int*)it1.node->data - 1, detectordata->minV[*(int*)it1.node->data-1]);
+      }
+   }
+   fclose(output);
    //write Gnuplot file
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nplot '%s' title 'minV' with lines", pdffile, datafile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nplot '%s' title '# verb. Variablen' with lines, \\\n '%s' lt 0 pt 4 with points title \"Blockgrenze\"", pdffile, datafile, blockingfile);
    fclose(output);
+}
+
+
+static
+void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, int ROC_iterations, int tau, double time)
+{
+   FILE* output;
+   int i;
+   int nvars;
+   int ncons;
+   int nonzeros;
+   int zeros;
+   float sparsity;
+   int minimum_linking_vars;
+   output=fopen(paramfile, "w");
+   if (output == NULL)
+   {
+      SCIPinfoMessage(scip, NULL, "Can't open file for output in plotMinV!\n");
+   }
+   else
+   {
+      nvars = SCIPgetNOrigVars(scip);
+//      ncons = SCIPgetNConss(scip);
+      ncons = detectordata->nRelevantConss;
+      nonzeros = 0;
+      for(i = 0; i < ncons; ++i)
+      {
+         nonzeros += SCIPgetNVarsXXX(scip,  SCIPgetConss(scip)[i]);
+      }
+      zeros = nvars*ncons - nonzeros;
+      sparsity = (float) nonzeros / (nvars*ncons);
+      SCIPdebugMessage("minList.\n");
+      minimum_linking_vars = minList(SCIPiteratorBegin(detectordata->rowsWithConstrictions), SCIPiteratorEnd(detectordata->rowsWithConstrictions));
+      SCIPdebugMessage("minList.\n");
+      fprintf(output, "# of rows\n%i\n", ncons);
+      fprintf(output, "# of columns\n%i\n", nvars);
+      fprintf(output, "# of nonzeros\n%i\n", nonzeros);
+      fprintf(output, "# of zeros\n%i\n", zeros);
+      fprintf(output, "# sparsity\n%f\n", sparsity);
+      fprintf(output, "# detection time in seconds\n%f\n", time);
+      fprintf(output, "# tau\n%i\n", tau);
+      fprintf(output, "# of blocks\n%i\n", detectordata->blocks);
+      fprintf(output, "# of iterations\n%i\n", ROC_iterations);
+      fprintf(output, "# of minimum linking vars\n%i\n", minimum_linking_vars);
+      fprintf(output, "# of linking vars\n%i\n", detectordata->nlinkingvars);
+      for(i = 0; i < detectordata->blocks; ++i)
+      {
+         fprintf(output, "block # %i\n", i+1);
+         fprintf(output, "# nonlinking vars\n%i\n", detectordata->nvarsperblock[i]);
+         fprintf(output, "# cons per block\n%i\n", detectordata->nconsperblock[i]);
+      }
+      fclose(output);
+   }
 }
 
 /** Scans all constraints of the constraint array of the scip object,
@@ -999,15 +1090,14 @@ SCIP_RETCODE findRelevantConss(SCIP* scip, DEC_DETECTORDATA* detectordata)
          SCIPlistPushBack(scip, relevantConssIndices, data);
       }
    }
-   SCIPlistPrint(relevantConssIndices, printint);
+   //debug
+//   SCIPlistPrint(relevantConssIndices, printint);
    //allocate memory for detectordata->relevantConss and store pointers of relevant conss
    detectordata->nRelevantConss = relevantConssIndices->size;
-   printf("nRelevantConss: %i \n", detectordata->nRelevantConss);
+   SCIPdebugMessage("nRelevantConss: %i \n", detectordata->nRelevantConss);
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->relevantConss, detectordata->nRelevantConss));
    for(i = 0, it1 = SCIPiteratorBegin(relevantConssIndices); i < detectordata->nRelevantConss; ++i, SCIPiteratorNext(&it1))
    {
-      //debug
-//      printf("i, *(int*)it1.node->data: %i, %i \n", i, *(int*)it1.node->data);
       detectordata->relevantConss[i] = cons_array[*(int*)it1.node->data];
    }
    SCIPlistDeleteData(scip, relevantConssIndices);
@@ -1307,11 +1397,6 @@ SCIP_RETCODE rankOrderClustering(
    roworder = rowOrdering(scip, columnindices, ncons);
    SCIPlistRearrange(scip, rowindices, roworder);
    columnorder = rowOrdering(scip, rowindices, nvars);
-   //debug
-//   printf("row ordering:");
-//   SCIPlistPrint(roworder, printint);
-//   printf("column ordering:");
-//   SCIPlistPrint(columnorder, printint);
 
    //consindex and indexcons
    for(it1 = SCIPiteratorBegin(roworder), i = 0; ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(roworder)) && i < ncons; ++i, SCIPiteratorNext(&it1))
@@ -1409,7 +1494,7 @@ void assignVarsToBlock(
 
 /** assigns constraints in the interval [first_cons, last_cons] to 'block' */
 static
-void assignConsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
+void assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
 {
    int i;
    int j;
@@ -1424,6 +1509,7 @@ void assignConsToBlock(DEC_DETECTORDATA* detectordata, int block, int first_cons
       assert(cons != NULL);
       detectordata->consperblock[block-1][j] = cons;
    }
+   SCIPlistPushBack(scip, detectordata->blockedAfterrow, &detectordata->hashmapindices[last_cons]);
 }
 
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
@@ -1444,6 +1530,7 @@ int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
 /** Tries to divide the problem into subproblems (blocks)*/
 static
 void blocking(
+      SCIP* scip,                      /**< scip object */
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
       int tau,                         /**< desired number of blocks */
       int nvars                        /**< number of variables in the problem*/
@@ -1485,20 +1572,6 @@ void blocking(
             && (float) (* (int*) (it1.node->data) - blocked_to_row) < ((float)detectordata->nRelevantConss / (2*tau)) )
       {
          SCIPiteratorNext(&it1);
-//         //has the iterator reached the end of list rowsWithConstrictions
-//         if(SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
-//         {
-//            current_row = detectordata->nRelevantConss;
-//            //debug
-//            printf("current row if: %i\n", current_row);
-//            break;
-//         }
-//         else
-//         {
-//            current_row = * (int*) (it1.node->data);
-//            //debug
-//            printf("current else if: %i\n", current_row);
-//         }
       }
       //when there are no more rows with constrictions, break and assign the remaining rows to the last block
       if(SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
@@ -1508,11 +1581,11 @@ void blocking(
       current_row = * (int*) (it1.node->data);
       max_col_index_i = getMaxColIndex(detectordata, blocked_to_row + 1, current_row);
       min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
-      printf("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, current_row);
-      printf("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
+      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, current_row);
+      SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
       //assign the variables and constraints to block
       assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
-      assignConsToBlock(detectordata, block, blocked_to_row + 1, current_row);
+      assignConsToBlock(scip, detectordata, block, blocked_to_row + 1, current_row);
       //update variables in the while loop
       max_col_index_im1 = max_col_index_i;
       blocked_to_row = current_row;
@@ -1520,10 +1593,11 @@ void blocking(
    }
    //assign the remaining (< M/2tau) cons and vars to the last block; no new linking vars are added
    //debug
-   printf("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, detectordata->nRelevantConss);
-   printf("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
+   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, blocked_to_row + 1, detectordata->nRelevantConss);
+   SCIPdebugMessage("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
    assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
-   assignConsToBlock(detectordata, block, blocked_to_row + 1, detectordata->nRelevantConss);
+   assignConsToBlock(scip, detectordata, block, blocked_to_row + 1, detectordata->nRelevantConss);
+   SCIPlistPopBack(scip, detectordata->blockedAfterrow);
    detectordata->blocks = block;
 }
 
@@ -1573,18 +1647,12 @@ DEC_DECL_INITDETECTOR(initStairheur)
    int nconss;
    DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
-
-
-#ifdef SCIP_DEBUG
-   //debug permute problem
-//   SCIP_CALL( SCIPpermuteProb(scip, 1, TRUE, TRUE, TRUE, TRUE, TRUE) );
-#endif
-
-
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
+   SCIP_CALL(SCIPcreateWallClock(scip, &detectordata->clock));
+   SCIP_CALL(SCIPstartClock(scip, detectordata->clock));
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
@@ -1617,6 +1685,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
       detectordata->hashmapindices[i] = i;
    }
    detectordata->rowsWithConstrictions = SCIPlistCreate(scip);
+   detectordata->blockedAfterrow = SCIPlistCreate(scip);
 
    detectordata->nlinkingvars = 0;
    detectordata->nlinkingconss = 0;
@@ -1672,11 +1741,13 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    SCIPfreeMemoryArray(scip, &detectordata->minV);
    SCIPfreeMemoryArray(scip, &detectordata->width);
    SCIPfreeMemoryArray(scip, &detectordata->hashmapindices);
+   SCIP_CALL(SCIPfreeClock(scip, &detectordata->clock));
    //delete lists
    //data had to be deleted before because of SCIP memory management
    SCIPlistDelete(scip, detectordata->rowsWithConstrictions);
+   SCIPlistDelete(scip, detectordata->blockedAfterrow);
    //free deep copied hash maps
-   //DO NOT FREE varindex and consindex because they are only shallow copied and contain the final permuation
+   //DO NOT FREE varindex and consindex because they are only shallow copied and contain the final permutation
    //debug
    SCIPhashmapFree(&detectordata->indexmap->indexvar);
    SCIPhashmapFree(&detectordata->indexmap->indexcons);
@@ -1708,25 +1779,59 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    int n;
    int v;
    int tau;
+   int ROC_iterations;
 
    assert(scip != NULL);
    stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
    detectordata = DECdetectorGetData(stairheur);
    assert(detectordata != NULL);
    assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
+   SCIPdebugMessage("%s\n", SCIPgetProbName(scip));
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
-
+   // SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
    nvars = SCIPgetNVars(scip);
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
    cons_array = detectordata->relevantConss;
-#ifndef ndebug
+#ifdef SCIP_DEBUG
    {
-      printf("ncons: %i \n", ncons);
-      printf("nvars: %i \n", nvars);
-      printf("initializing hash maps");
+      //remove '/' from problem name
+//      const char* pname;
+//      const char* ext;
+//      char fname[256];
+//      pname = strrchr(SCIPgetProbName(scip), '/');
+//      if( pname == NULL )
+//      {
+//         pname = SCIPgetProbName(scip);
+//      }
+//      else
+//      {
+//         pname = pname+1;
+//      }
+//      ext = strrchr(SCIPgetProbName(scip), '.');
+//      if( ext == NULL )
+//      {
+//         strcpy(fname, pname);
+//      }
+//      else
+//      {
+//         strncpy(fname, pname, ext-pname);
+//         fname[ext-pname]='\0';
+//      }
+//      strcat(fname, "_permuted.lp");
+//      sprintf(fname, "permuted_%s", pname);
+//
+//      SCIPdebugMessage("Writing Orig Problem to %s\n", fname);
+//      SCIPwriteOrigProblem  (scip, fname, "lp", TRUE);
+//      SCIPdebugMessage("Writing Trans Problem\n");
+//      SCIPwriteTransProblem  (scip, fname, "lp", TRUE);
+
+
+      SCIPdebugMessage("ncons: %i \n", ncons);
+      SCIPdebugMessage("nvars: %i \n", nvars);
+      SCIPdebugMessage("initializing hash maps\n");
    }
 #endif
    //initialize hash maps for variables: indexvar_old, indexvar_new, varindex_old, varindex_new
@@ -1755,8 +1860,20 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIPdebugMessage("initializing index arrays...\n");
 #ifndef NDEBUG
    {
-   char filename[]= "initial_problem";
-   plotInitialProblem(scip, detectordata, filename);
+      //remove '/' from problem name
+      const char* pname;
+      char filename[256];
+      pname = strrchr(SCIPgetProbName(scip), '/');
+      if( pname == NULL )
+      {
+         pname = SCIPgetProbName(scip);
+      }
+      else
+      {
+         pname = pname+1;
+      }
+      sprintf(filename, "%s_initial_problem", pname);
+      plotInitialProblem(scip, detectordata, filename);
    }
 #endif
    //initialize index arrays ibegin, iend, jbegin, jend
@@ -1794,15 +1911,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
    //ROC2 algorithm
    SCIPdebugMessage("starting ROC2 algortihm\n");
-#ifdef SCIP_DEBUG
    i = 0;
-#endif
    do
    {
-      #ifdef SCIP_DEBUG
-      SCIPdebugMessage("Iteration # %i of ROC2\n", i);
       ++i;
-      #endif
+      SCIPdebugMessage("Iteration # %i of ROC2\n", i);
       rankOrderClustering(scip, detectordata, detectordata->indexmap, indexmap_permuted);
       //form the new index arrays after the permutation
       SCIPlistDeleteNested(scip, rowindices);
@@ -1823,11 +1936,23 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
           && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
           && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
           && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)));
-
+   ROC_iterations = i;
 #ifndef NDEBUG
    {
-   char filename[]= "ROC";
-   plotInitialProblem(scip, detectordata, filename);
+      //remove '/' from problem name
+      const char* pname;
+      char filename[256];
+      pname = strrchr(SCIPgetProbName(scip), '/');
+      if( pname == NULL )
+      {
+         pname = SCIPgetProbName(scip);
+      }
+      else
+      {
+         pname = pname+1;
+      }
+      sprintf(filename, "%s_ROC", pname);
+      plotInitialProblem(scip, detectordata, filename);
    }
 #endif
    //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
@@ -1839,7 +1964,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
 #endif
    //arrays jmin, jmax and minV
-   printf("calculating index arrays\n");
+   SCIPdebugMessage("calculating index arrays\n");
    detectordata->jmin[0] = detectordata->ibegin[0];
    detectordata->jmax[0] = detectordata->iend[0];
    detectordata->width[0] = detectordata->iend[0] - detectordata->ibegin[0];
@@ -1859,25 +1984,25 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
 
 #ifndef NDEBUG
-   printf("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, n, v, tau);
-   printf("minV = [ ");
-   for(i = 0; i < ncons-1; ++i)
-   {
-      printf("%i ", detectordata->minV[i]);
-   }
-   printf("]\n");
-   printf("jmin = [ ");
-   for(i = 0; i < ncons; ++i)
-   {
-      printf("%i ", detectordata->jmin[i]);
-   }
-   printf("]\n");
-   printf("jmax = [ ");
-   for(i = 0; i < ncons; ++i)
-   {
-      printf("%i ", detectordata->jmax[i]);
-   }
-   printf("]\n");
+   SCIPdebugMessage("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, n, v, tau);
+//   printf("minV = [ ");
+//   for(i = 0; i < ncons-1; ++i)
+//   {
+//      printf("%i ", detectordata->minV[i]);
+//   }
+//   printf("]\n");
+//   printf("jmin = [ ");
+//   for(i = 0; i < ncons; ++i)
+//   {
+//      printf("%i ", detectordata->jmin[i]);
+//   }
+//   printf("]\n");
+//   printf("jmax = [ ");
+//   for(i = 0; i < ncons; ++i)
+//   {
+//      printf("%i ", detectordata->jmax[i]);
+//   }
+//   printf("]\n");
 #endif
    //continue only if tau >= 2
    if(tau < 2)
@@ -1887,21 +2012,40 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
 
    rowsWithConstriction(scip, detectordata);
-   SCIPdebugMessage("rows with constriction:");
-   SCIPlistPrint(detectordata->rowsWithConstrictions, printint); //debug
+//   SCIPdebugMessage("rows with constriction:");
+//   SCIPlistPrint(detectordata->rowsWithConstrictions, printint); //debug
 
    //BLOCKING
-   blocking(detectordata, tau, nvars);
-   printf("BLOCKING DONE.\n");
+   blocking(scip, detectordata, tau, nvars);
+   SCIPdebugMessage("BLOCKING DONE.\n");
 
    //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
 #ifndef NDEBUG
    {
-   char filename1[] = "blocking";
-   char filename2[] = "minV";
-
+   //remove '/' from problem name
+   const char* pname;
+   char filename1[256];
+   char filename2[256];
+   char paramfile[256];
+   pname = strrchr(SCIPgetProbName(scip), '/');
+   if( pname == NULL )
+   {
+      pname = SCIPgetProbName(scip);
+   }
+   else
+   {
+      pname = pname+1;
+   }
+   sprintf(filename1, "%s_blocking", pname);
+   sprintf(filename2, "%s_minV", pname);
+   sprintf(paramfile, "%s.params", pname);
+   SCIPdebugMessage("plotBlocking.\n");
    plotBlocking(scip, detectordata, filename1);
-   plotMinV(detectordata, filename2);
+   SCIPdebugMessage("plotMinV.\n");
+   plotMinV(scip, detectordata, filename2);
+   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
+   SCIPdebugMessage("writing Params.\n");
+   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
    }
 #endif
    //fill detectordata for a single block for testing
@@ -1917,6 +2061,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
    //deallocate memory
    SCIPlistDeleteData(scip, detectordata->rowsWithConstrictions);
+//   SCIPlistDeleteData(scip, detectordata->blockedAfterrow);
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
    indexmapFree(scip, indexmap_permuted);
@@ -1925,6 +2070,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIPfreeMemoryArray(scip, &iend_permuted);
    SCIPfreeMemoryArray(scip, &jbegin_permuted);
    SCIPfreeMemoryArray(scip, &jend_permuted);
+
+   //SCIP_CALL(SCIPconshdlrDecompAddDecomp(scip, detectordata->decdecomp));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
