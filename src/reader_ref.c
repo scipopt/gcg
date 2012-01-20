@@ -547,7 +547,7 @@ SCIP_RETCODE readREFFile(
    int i;
    assert(refinput != NULL);
 
-   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) ); */
 
    /* open file */
    refinput->file = SCIPfopen(filename, "r");

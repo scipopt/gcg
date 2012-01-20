@@ -109,7 +109,7 @@ SCIP_RETCODE convertStructToGCG(
 
    SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
-   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) );*/
 
    /* set master constraints */
    for( i = 0; i < decdecomp->nlinkingconss; ++i )
@@ -143,6 +143,7 @@ SCIP_RETCODE convertStructToGCG(
             SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
             SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
          }
+         assert(SCIPvarGetData(decdecomp->subscipvars[i][j]) != NULL);
       }
    }
    for( i = 0; i < decdecomp->nlinkingvars; ++i )
@@ -151,6 +152,7 @@ SCIP_RETCODE convertStructToGCG(
       {
          int found;
          SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->linkingvars[i])));
+
          /* HACK; TODO: find out constraint blocks */
          for( j = 0; j < decdecomp->nblocks; ++j )
          {
