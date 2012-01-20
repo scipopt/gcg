@@ -67,7 +67,7 @@ typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 struct GCG_MasterVarData
 {
    int                   norigvars;               /**< number of variables in the original program corresponding to  the current variable */
-   SCIP_VAR**            origvars;                /**< variables in the original program corresponding to  the current variable */
+   SCIP_VAR**            origvars;                /**< variables in the original program corresponding to the current variable */
    SCIP_Real*            origvals;                /**< this variable represents vals[i] times the variable origvars[i] in the
                                                    *   original program */
    SCIP_Bool             isray;                   /**< does this variable represent a ray or an extreme point? */

@@ -11,6 +11,8 @@
 /**@file   gcgvar.c
  * @brief  GCG variable access functions
  * @author Martin Bergner
+ *
+ * @todo: capture and release variables stored in other variable's data?
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -91,8 +93,8 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
    /*lint -e715 */
    assert((*vardata)->vartype == GCG_VARTYPE_MASTER);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvals), (*vardata)->data.mastervardata.norigvars);
-   SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.mastervardata.origvars), (*vardata)->data.mastervardata.norigvars);
+   SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvals));
+   SCIPfreeMemoryArray(scip, &((*vardata)->data.mastervardata.origvars));
 
    SCIPfreeBlockMemory(scip, vardata);
 
@@ -770,7 +772,7 @@ SCIP_Bool GCGisLinkingVarInBlock(
 
 }
 
-/* informs an original variable, that a variable in the master problem was created,
+/** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
  * @todo this method needs a little love
@@ -812,6 +814,55 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars] = var;
    vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars] = val;
    vardata->data.origvardata.nmastervars++;
+
+   return SCIP_OKAY;
+}
+
+/** informs an original variable, that a variable in the master problem was deleted,
+ * that contains a part of the original variable.
+ * Update the information in the original variable's data
+ * @todo this method needs a little love
+ */
+SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
+   SCIP*                 scip,                  /**< SCIP data structure                */
+   SCIP_VAR*             origvar,               /**< Original variable                  */
+   SCIP_VAR*             var                    /**< Master variable                    */
+   )
+{
+   SCIP_VARDATA* vardata;
+   int i;
+
+   assert(scip != NULL);
+   assert(origvar != NULL);
+   assert(var != NULL);
+
+   vardata = SCIPvarGetData(origvar);
+
+   assert(vardata != NULL);
+   assert(GCGvarIsOriginal(origvar));
+   assert(vardata->data.origvardata.mastervars != NULL);
+   assert(vardata->data.origvardata.mastervals != NULL);
+   assert(vardata->data.origvardata.nmastervars > 0);
+   assert(vardata->data.origvardata.maxmastervars >= vardata->data.origvardata.nmastervars);
+
+   for( i = 0; i < vardata->data.origvardata.nmastervars; ++i )
+   {
+      if( vardata->data.origvardata.mastervars[i] == var )
+      {
+         vardata->data.origvardata.mastervars[i] = vardata->data.origvardata.mastervars[vardata->data.origvardata.nmastervars - 1];
+         vardata->data.origvardata.mastervals[i] = vardata->data.origvardata.mastervals[vardata->data.origvardata.nmastervars - 1];
+         (vardata->data.origvardata.nmastervars)--;
+
+         break;
+      }
+   }
+   assert(i <= vardata->data.origvardata.nmastervars);
+#ifndef NDEBUG
+   for( ; i < vardata->data.origvardata.nmastervars; ++i )
+   {
+      assert(vardata->data.origvardata.mastervars[i] != var);
+   }
+#endif
 
    return SCIP_OKAY;
 }
@@ -961,11 +1012,10 @@ SCIP_RETCODE GCGcreateMasterVar(
       trivialsol = TRUE;
    }
 
-   /** @todo: switch from block memory to normal memory */
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.norigvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.norigvars) );
    }
    else
    {
@@ -1059,8 +1109,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    newvardata->data.mastervardata.norigvars = 1;
 
    /* save corresoponding origvar */
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) );
    newvardata->data.mastervardata.origvars[0] = var;
    newvardata->data.mastervardata.origvals[0] = 1.0;
 

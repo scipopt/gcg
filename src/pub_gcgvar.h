@@ -253,6 +253,19 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    SCIP_Real             val                    /**< Fraction of the original variable  */
    );
 
+/* informs an original variable, that a variable in the master problem was deleted,
+ * that contains a part of the original variable.
+ * Update the information in the original variable's data
+ * @todo this method needs a little love
+ */
+extern
+SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
+   SCIP*                 scip,                  /**< SCIP data structure                */
+   SCIP_VAR*             origvar,               /**< Original variable                  */
+   SCIP_VAR*             var                    /**< Master variable                    */
+   );
+
+
 
 /** creates the corresponding pricing variable for the given original variable */
 extern

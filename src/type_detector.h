@@ -27,7 +27,6 @@
 extern "C" {
 #endif
 
-
 /**
  * initialize data for a detector
  *
@@ -44,7 +43,7 @@ extern "C" {
 #define DEC_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTOR* detector)
 
 /** detects the structure of a the problem */
-#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* decdata, SCIP_RESULT* result)
+#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DECDECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
 
 /**
  * get detector priority

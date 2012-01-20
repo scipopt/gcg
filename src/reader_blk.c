@@ -698,6 +698,7 @@ SCIP_DECL_READERREAD(readerReadBlk)
 static
 SCIP_DECL_READERWRITE(readerWriteBlk)
 {
+ /*lint --e{715}*/
    return SCIP_OKAY;
 }
 

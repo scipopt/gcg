@@ -27,7 +27,6 @@ extern "C" {
 struct DEC_Detector {
 
    DEC_DECL_INITDETECTOR((*initDetection));
-   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp));
    DEC_DECL_DETECTSTRUCTURE((*detectStructure));
    DEC_DECL_EXITDETECTOR((*exitDetection));
    DEC_DECL_GETPRIORITY((*getPriority));

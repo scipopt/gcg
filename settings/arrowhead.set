@@ -1,0 +1,34 @@
+# SCIP version 2.0.1.4
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# default clock type (1: CPU user seconds, 2: wall clock time)
+# [type: int, range: [1,2], default: 1]
+timing/clocktype = 2
+
+# maximal number of presolving rounds (-1: unlimited, 0: off)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrounds = -1
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# should discretization (TRUE) or convexification (FALSE) approach be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/discretization = FALSE
+
+arrowheur/minblocks = 2
+arrowheur/maxblocks = 5
+arrowheur/ubfactor = 0.1
+arrowheur/metisverbose = FALSE
+arrowheur/priority = 0
+
+borderheur/minblocks = 2
+borderheur/maxblocks = 20
+borderheur/ubfactor = 0.1
+borderheur/metisverbose = FALSE
+borderheur/priority = 100
+

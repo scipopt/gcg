@@ -142,7 +142,6 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
 static
 SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
 {
-   SCIP* origscip;
    SCIP_SEPADATA* sepadata;
    int i;
 
@@ -150,8 +149,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
    assert(sepadata != NULL);
    assert(sepadata->nmastercuts == sepadata->norigcuts);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
+   assert(GCGpricerGetOrigprob(scip) != NULL);
 
    for( i = 0; i < sepadata->nmastercuts; i++ )
    {

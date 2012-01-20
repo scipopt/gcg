@@ -1,21 +1,13 @@
 #!/bin/bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program and library             *
+#*                  This file is part of the program                         *
+#*          GCG --- Generic Column Generation                                *
+#*                  a Dantzig-Wolfe decomposition based extension            *
+#*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#*    Copyright (C) 2002-2007 Tobias Achterberg                              *
-#*                                                                           *
-#*                  2002-2007 Konrad-Zuse-Zentrum                            *
-#*                            fuer Informationstechnik Berlin                *
-#*                                                                           *
-#*  SCIP is distributed under the terms of the ZIB Academic License.         *
-#*                                                                           *
-#*  You should have received a copy of the ZIB Academic License              *
-#*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      *
-#*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id$
 
 export LANG=C
 
@@ -31,6 +23,8 @@ do
     fi
 done
 
+export LC_NUMERIC=C
+
 for i in $FILES
 do
     NAME=`basename $i .out`
@@ -40,25 +34,25 @@ do
     TEXFILE=$DIR/$NAME.tex
     PAVFILE=$DIR/$NAME.pav
 
-    TSTNAME=`echo $NAME | sed 's/check.\([a-zA-Z0-9_]*\).*/\1/g'`
+    TSTNAME=`echo $NAME | sed 's/check.\([a-zA-Z0-9_-]*\).*/\1/g'`
 
-    if test -f $TSTNAME.test
+    if test -f testset/$TSTNAME.test
     then
-	TESTFILE=$TSTNAME.test
+	TESTFILE=testset/$TSTNAME.test
     else
 	TESTFILE=""
     fi
 
-    if test -f $TSTNAME.solu
+    if test -f testset/$TSTNAME.solu
     then
-	SOLUFILE=$TSTNAME.solu
-    else if test -f all.solu
+	SOLUFILE=testset/$TSTNAME.solu
+    else if test -f testset/all.solu
     then
-	SOLUFILE=all.solu
+	SOLUFILE=testset/all.solu
     else
         SOLUFILE=""
     fi
     fi
 
-    gawk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
+    awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
 done

@@ -33,6 +33,7 @@ SCIP_VAR* getRelevantVariable(
    )
 {
    SCIP_VAR *newvar;
+   newvar = NULL;
    assert(var != NULL);
    if(!isVarRelevant(var))
    {
@@ -56,11 +57,10 @@ SCIP_VAR* getRelevantVariable(
    return newvar;
 }
 
-consType SCIPconsGetType( SCIP* scip, SCIP_CONS *cons )
+consType SCIPconsGetType( SCIP_CONS *cons )
 {
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
-   assert(scip != NULL);
    assert(cons != NULL);
    conshdlr = SCIPconsGetHdlr(cons);
    assert(conshdlr != NULL);
@@ -72,7 +72,7 @@ consType SCIPconsGetType( SCIP* scip, SCIP_CONS *cons )
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
-      switch ( SCIPgetTypeSetppc(scip, cons) ) {
+      switch ( SCIPgetTypeSetppc(NULL, cons) ) {
       case SCIP_SETPPCTYPE_COVERING:
          return setcovering;
       case SCIP_SETPPCTYPE_PACKING:

@@ -230,7 +230,6 @@ static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -241,8 +240,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
 
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
+   assert(SCIPconsGetData(cons) != NULL);
 
    SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
       conshdlrData->nstack+1);
@@ -270,7 +268,6 @@ static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 {
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -283,8 +280,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
    assert(conshdlrData->nstack > 0);
    assert(conshdlrData->nstack == 1 || cons == conshdlrData->stack[conshdlrData->nstack-1]);
 
-   consdata = SCIPconsGetData(cons);
-   assert(consdata != NULL);
+   assert(SCIPconsGetData(cons) != NULL);
 
    SCIPdebugMessage("Deactivating branch orig constraint: <%s> [stack size: %d].\n",
       SCIPconsGetName(cons), conshdlrData->nstack-1);
@@ -347,7 +343,7 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consSepasolOrigbranch NULL
 #define consEnableOrigbranch NULL
 #define consDisableOrigbranch NULL
-#define consDelvarOrigbranch NULL
+#define consDelvarsOrigbranch NULL
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
@@ -384,8 +380,8 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          consSepalpOrigbranch, consSepasolOrigbranch, consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
          consPropOrigbranch, consPresolOrigbranch, consRespropOrigbranch, consLockOrigbranch,
          consActiveOrigbranch, consDeactiveOrigbranch,
-         consEnableOrigbranch, consDisableOrigbranch, consDelvarOrigbranch,
-         consPrintOrigbranch, consCopyOrigbranch, consParseOrigbranch,
+         consEnableOrigbranch, consDisableOrigbranch,
+         consDelvarsOrigbranch, consPrintOrigbranch, consCopyOrigbranch, consParseOrigbranch,
          conshdlrData) );
 
    return SCIP_OKAY;
@@ -687,7 +683,7 @@ void GCGconsOrigbranchCheckConsistency(
 }
 
 /** adds a bound change on an original variable found by propagation in the original problem
- *  to the given origbranch constraint so that is will be transferred to the master problem */
+ *  to the given origbranch constraint so that it will be transferred to the master problem */
 SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< origbranch constraint to which the bound change is added */

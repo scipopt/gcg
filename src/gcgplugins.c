@@ -160,6 +160,7 @@
 #include "heur_gcgsimplerounding.h"
 #include "heur_gcgveclendiving.h"
 #include "heur_gcgzirounding.h"
+#include "heur_xprins.h"
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -287,6 +288,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
+   SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
    //SCIP_CALL( SCIPincludeDialogDefault(scip) );

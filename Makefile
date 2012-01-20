@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-
+VERSION         :=	0.9.0.2
 SCIPDIR         =       lib/scip
 
 
@@ -66,6 +66,7 @@ MAINOBJ		=	reader_blk.o \
 			heur_greedycolsel.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_xprins.o \
 			branch_master.o \
 			branch_relpsprob.o \
 			masterplugins.o \
@@ -78,6 +79,7 @@ MAINOBJ		=	reader_blk.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \
+			decomp.o \
 			dec_arrowheur.o \
 			dec_borderheur.o \
 			dec_stairheur.o \
@@ -139,7 +141,8 @@ $(BINDIR):
 		@-mkdir -p $(BINDIR)
 
 # include target to detect the current git hash
--include make.detectgithash
+-include make/local/make.detectgithash
+-include make/local/make.targets
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon

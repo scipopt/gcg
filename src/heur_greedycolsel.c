@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 
 #include <assert.h>
 
@@ -39,6 +39,7 @@
 #define HEUR_USESSUBSCIP      FALSE
 
 #define DEFAULT_MINCOLUMNS    200             /**< minimum number of columns to regard in the master problem */
+#define DEFAULT_USEOBJ        FALSE           /**< use objective coefficients as tie breakers */
 
 
 
@@ -50,8 +51,11 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   /* parameters */
    int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
+   SCIP_Bool            useobj;               /**< use objective coefficients as tie breakers                */
 
+   /* data */
    SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
    int                  lastncols;            /**< number of columns in the last call of the heuristic       */
 };
@@ -128,6 +132,7 @@ SCIP_RETCODE getBestMastervar(
       SCIP_Real*              activities,
       int*                    blocknr,
       SCIP_Bool*              ignored,
+      SCIP_Bool               useobj,
       int*                    index,
       int*                    violchange
       )
@@ -142,6 +147,8 @@ SCIP_RETCODE getBestMastervar(
    int i;
 //   int j;
    int tmpviolchange;
+   SCIP_Real tmpobj;
+   SCIP_Real curobj;
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -153,6 +160,7 @@ SCIP_RETCODE getBestMastervar(
 
    *index = -1;
    *violchange = INT_MAX;
+   curobj = SCIPinfinity(scip);
 
 //   j = nmastervars - 1;
 //   do
@@ -187,10 +195,13 @@ SCIP_RETCODE getBestMastervar(
             && !ignored[i])
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);
-         if( tmpviolchange < *violchange )
+         tmpobj = SCIPvarGetObj(mastervar);
+         if( tmpviolchange < *violchange ||
+               (tmpviolchange == *violchange && SCIPisLE(scip, tmpobj, curobj) && useobj) )
          {
             *index = i;
             *violchange = tmpviolchange;
+            curobj = tmpobj;
          }
       }
    }
@@ -381,7 +392,7 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
    heurdata->lastncols = 0;
 
    /* allocate memory and initialize array with NULL pointers */
-   if(nblocks > 0)
+   if( nblocks > 0 )
       SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->zerovars, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
@@ -542,7 +553,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
-      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
@@ -571,14 +582,14 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       /* increase master value by one and increase solution values in current original solution accordingly */
       SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, 1.0) );
 
-      /* loop over all original variables contained in the current master variable */
+      /* update original solution accordingly */
       for( i = 0; i < norigvars; i++ )
       {
          assert(GCGvarIsOriginal(origvars[i]));
 
-         /* If the master variable contains a linking variable, we need to pay attention if this linking
-          * variable has already been assigned a value; if the linking var has a wrong value in this point,
-          * the point cannot be used */
+         /* linking variables are treated differently; if the variable already has been assigned a value,
+          * one must check whether the value for the current block is the same (otherwise, the resulting
+          * solution will be infeasible in any case) */
          if( GCGvarIsLinking(origvars[i]) )
          {
             SCIP_VAR** linkingpricingvars;
@@ -589,16 +600,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
             hasvalue = FALSE;
             for( j = 0; j < nblocks; j++ )
-            {
                if( linkingpricingvars[j] != NULL )
-               {
                   if( blocknr[j] > 0 )
                   {
                      hasvalue = TRUE;
                      break;
                   }
-               }
-            }
 
             /* if the linking variable has not been assigned a value yet, assign a value to
              * the variable and the corresponding copy in the master problem */
@@ -607,6 +614,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
                SCIP_VAR* linkingmastervar;
 
                linkingmastervar = GCGoriginalVarGetMastervars(origvars[i])[0];
+               assert(linkingmastervar != NULL);
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origvars[i], origvals[i]) );
                SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, origvals[i]) );
             }
@@ -749,8 +757,15 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
        * also add the corresponding master solution */
       if( success && allblocksfull )
       {
+#ifdef SCIP_DEBUG
          SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
-         assert(masterfeas);
+#else
+         SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+#endif
+         if( !masterfeas )
+         {
+            SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");
+         }
       }
 
       /* update number of violated rows and activities array */
@@ -813,9 +828,12 @@ SCIP_RETCODE SCIPincludeHeurGreedycolsel(
          heurdata) );
 
    /* add greedy column selection primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/greedycolsel/mincolumns",
+   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/mincolumns",
          "minimum number of columns to regard in the master problem",
          &heurdata->mincolumns, FALSE, DEFAULT_MINCOLUMNS, 1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/useobj",
+         "use objective coefficients as tie breakers",
+         &heurdata->useobj, TRUE, DEFAULT_USEOBJ, NULL, NULL) );
 
    return SCIP_OKAY;
 }

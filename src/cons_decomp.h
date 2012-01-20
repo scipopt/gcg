@@ -46,8 +46,14 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
 /** returns the decomposition structure **/
 extern
-DECDECOMP* SCIPconshdlrDecompGetDecdecomp(
-   SCIP *scip                                /**< SCIP data structure */
+DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
+   );
+
+/** returns the decomposition structure **/
+extern
+int SCIPconshdlrDecompGetNDecdecomps(
+      SCIP *scip                             /**< SCIP data structure */
    );
 
 /** returns the data of the provided detector */
@@ -76,7 +82,6 @@ SCIP_RETCODE DECincludeDetector(
    const char *name,                               /**< name of the detector */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
-   DEC_DECL_SETSTRUCTDECOMP((*setStructDecomp)),   /**< interface method to tell detector where to store structure information (must not be NULL) */
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
    DEC_DECL_GETPRIORITY((*getPriority))            /**< interface method to get priority of detector (must not be NULL) */
@@ -88,16 +93,30 @@ SCIP_Real DECgetRemainingTime(
    SCIP* scip                    /**< SCIP data structure */
    );
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+/** sets (and adds) the decomposition structure **/
 extern
-SCIP_RETCODE DECOMPconvertStructToGCG(
-      SCIP*         scip,     /**< SCIP data structure          */
-      DECDECOMP*    decdecomp /**< decdecom data structure      */
+SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
+   SCIP *scip,                            /**< SCIP data structure */
+   DECDECOMP *decdecomp                   /**< DECDECOMP data structure */
    );
 
 /** interface method to detect the structure */
+extern
 SCIP_RETCODE DECdetectStructure(
-   SCIP *scip
+   SCIP *scip                             /**< SCIP data structure */
+   );
+
+
+/** write out all known decompositions **/
+SCIP_RETCODE DECwriteAllDecomps(
+   SCIP* scip,                            /**< SCIP data structure */
+   char* extension                        /**< the file extension for the export */
+   );
+
+/** returns the best known decomposition, if available and NULL otherwise */
+extern
+DECDECOMP* DECgetBestDecomp(
+   SCIP* scip   /**< SCIP data structure */
    );
 
 

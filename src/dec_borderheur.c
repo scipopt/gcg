@@ -26,7 +26,9 @@
 
 #include "cons_decomp.h"
 #include "struct_decomp.h"
+#include "pub_decomp.h"
 #include "scip_misc.h"
+#include "scip/pub_misc.h"
 
 #define DEC_DETECTORNAME      "borderheur"   /**< name of the detector */
 #define DEC_PRIORITY          0              /**< priority of the detector */
@@ -46,8 +48,6 @@
 #define DEFAULT_PRIORITY                  DEC_PRIORITY
 
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
-
-#define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
 
 /*
  * Data structures
@@ -75,17 +75,6 @@ typedef struct Dec_BorderheurScores DEC_BORDERHEURSCORES;
 /** detector data */
 struct DEC_DetectorData
 {
-   DECDECOMP* decdecomp;
-   SCIP_VAR*** varsperblock;
-   int* nvarsperblock;
-   SCIP_CONS*** consperblock;
-   int *nconsperblock;
-   SCIP_CONS** linkingconss;
-   int nlinkingconss;
-
-   SCIP_HASHMAP* constoblock;
-   SCIP_HASHMAP* varstoblock;
-
    /* Graph stuff for hmetis */
    HyperEdge *hedges;
    int *partition;
@@ -155,31 +144,15 @@ DEC_DECL_INITDETECTOR(initBorderheur)
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
    /* initialize variables and constraints per block structures*/
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->consperblock, detectordata->maxblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->varsperblock, detectordata->maxblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->nconsperblock, detectordata->maxblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->nvarsperblock, detectordata->maxblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->linkingconss, nconss));
    SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->varpart, nvars));
    for( i = 0; i < nvars; ++i )
    {
       detectordata->varpart[i] = -1;
    }
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->hedges, nconss));
-   for( i = 0; i < detectordata->maxblocks; ++i )
-   {
-      detectordata->nvarsperblock[i] = 0;
-      detectordata->nconsperblock[i] = 0;
-      SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->consperblock[i], nconss));
-      SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->varsperblock[i], nvars));
-   }
 
-   detectordata->nlinkingconss = 0;
    detectordata->nhyperedges = 0;
-   /* create variable and constraint hash tables */
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->varstoblock, SCIPblkmem(scip), nvars));
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), nconss));
    SCIP_CALL(SCIPhashmapCreate(&detectordata->constolpid, SCIPblkmem(scip), nconss));
+   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->hedges, nconss));
 
    /* initialise consttolpid hashmap and hyper edges array */
    for( i = 0; i < nconss; ++i )
@@ -188,43 +161,9 @@ DEC_DECL_INITDETECTOR(initBorderheur)
       detectordata->hedges[i].cost = 0;
       detectordata->hedges[i].cons = NULL;
    }
+
    SCIP_CALL(SCIPcreateWallClock(scip, &detectordata->metisclock));
 
-   return SCIP_OKAY;
-}
-
-/** copies the variable and block information to the decomp structure */
-static
-SCIP_RETCODE copyDetectorDataToDecomp(
-      SCIP*             scip,       /**< SCIP data structure */
-      DEC_DETECTORDATA*  detectordata, /**< presolver data data structure */
-      DECDECOMP*        decomp      /**< DECOMP data structure */
-      )
-{
-   int i;
-   assert(scip != 0);
-   assert(detectordata != 0);
-   assert(decomp != 0);
-
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss, detectordata->blocks));
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->linkingconss, detectordata->linkingconss, detectordata->nlinkingconss));
-   decomp->nlinkingconss = detectordata->nlinkingconss;
-
-   for( i = 0; i < detectordata->blocks; ++i )
-   {
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipconss[i], detectordata->consperblock[i], detectordata->nconsperblock[i]));
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipvars[i], detectordata->varsperblock[i], detectordata->nvarsperblock[i]));
-   }
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipconss, detectordata->nconsperblock, detectordata->blocks));
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipvars, detectordata->nvarsperblock, detectordata->blocks));
-
-   decomp->constoblock = detectordata->constoblock;
-   decomp->vartoblock = detectordata->varstoblock;
-   decomp->nblocks = detectordata->blocks;
-   decomp->type = DEC_BORDERED;
    return SCIP_OKAY;
 }
 
@@ -232,8 +171,6 @@ SCIP_RETCODE copyDetectorDataToDecomp(
 static
 DEC_DECL_EXITDETECTOR(exitBorderheur)
 {
-
-   int i;
    DEC_DETECTORDATA* detectordata;
 
    assert(scip != NULL);
@@ -250,26 +187,11 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
       return SCIP_OKAY;
    }
 
-   /* free presolver data */
-   for( i = 0; i < detectordata->maxblocks; ++i)
-   {
-      SCIPfreeMemoryArray(scip, &detectordata->consperblock[i]);
-      SCIPfreeMemoryArray(scip, &detectordata->varsperblock[i]);
-   }
-   SCIPfreeMemoryArray(scip, &detectordata->varsperblock);
-   SCIPfreeMemoryArray(scip, &detectordata->nvarsperblock);
-   SCIPfreeMemoryArray(scip, &detectordata->consperblock);
-   SCIPfreeMemoryArray(scip, &detectordata->nconsperblock);
-   SCIPfreeMemoryArray(scip, &detectordata->linkingconss);
    SCIPfreeMemoryArray(scip, &detectordata->partition);
    SCIPfreeMemoryArray(scip, &detectordata->varpart);
 
    /* free hash map */
    SCIPhashmapFree(&detectordata->constolpid);
-   /* TODO: Hashmap is not copied! but shallow copied, so do not free here!
-   SCIPhashmapFree(&detectordata->varstoblock);
-   SCIPhashmapFree(&detectordata->constoblock);
-   */
 
    SCIP_CALL(SCIPfreeClock(scip, &detectordata->metisclock));
    SCIPfreeMemoryArray(scip, &detectordata->hedges);
@@ -356,9 +278,9 @@ static SCIP_RETCODE buildGraphStructure(
 /** Will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(
-      SCIP*             scip,       /**< SCIP data struture */
+      SCIP*              scip,          /**< SCIP data struture */
       DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
-      SCIP_RESULT *result
+      SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
       )
 {
    char metiscall[SCIP_MAXSTRLEN];
@@ -376,7 +298,7 @@ SCIP_RETCODE callMetis(
 
    SCIP_FILE *zfile;
    FILE* file;
-   int temp_filedes = -1;
+   int temp_filedes;
    SCIP_Real remainingtime;
 
    assert(scip != NULL);
@@ -444,7 +366,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if(!SCIPisInfinity(scip, remainingtime))
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "timeout %.0fs ./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f; hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -455,7 +377,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "./hmetis %s %d -seed %d -ptype %s -ufactor %f %s",
+      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -467,7 +389,11 @@ SCIP_RETCODE callMetis(
    SCIP_CALL(SCIPresetClock(scip, detectordata->metisclock));
    SCIP_CALL(SCIPstartClock(scip, detectordata->metisclock));
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
-
+/*   extern char **environ;
+   char **env;
+   for (env = environ; *env; ++env)
+        printf("%s\n", *env);
+*/
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
@@ -566,7 +492,6 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 {
 
    int i;
-   int nvars;
    int *partition;
    int *origpart;
    int nvertices;
@@ -576,9 +501,13 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
    nvertices = detectordata->nvertices;
    partition = detectordata->partition;
    origpart = detectordata->varpart;
-   nvars = SCIPgetNVars( scip );
-
-   assert(nvertices == nvars);
+#ifndef NDEBUG
+   {
+      int nvars;
+      nvars = SCIPgetNVars( scip );
+      assert(nvertices == nvars);
+   }
+#endif
     /* go through the new vertices */
    for( i = 0; i < nvertices ; ++i )
    {
@@ -597,8 +526,11 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 /** Builds the transformed problem in the new scip instance */
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                    scip,           /**< SCIP data structure */
-   DEC_DETECTORDATA*      detectordata,  /**< presolver data data structure */
-   DEC_BORDERHEURSCORES*    score           /**< scores */
+   DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
+   DECDECOMP*               decdecomp,      /**< decdecomp data structure */
+   int                      nblocks,        /**< number of blocks for this decomposition */
+   DEC_BORDERHEURSCORES*    score,          /**< scores */
+   SCIP_RESULT*             result          /**< indicates whether a structure was found*/
    )
 {
    SCIP_Bool *isVarHandled;
@@ -615,40 +547,53 @@ static SCIP_RETCODE buildTransformedProblem(
    int i;
    int j;
    SCIP_CONS **conss;
-   int ncons;
+   int nconss;
    SCIP_VAR **vars;
    int nvars;
+   SCIP_Bool emptyblocks = FALSE;
+
    assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(score != NULL);
 
-   subscipconss = detectordata->consperblock;
-   subscipvars = detectordata->varsperblock;
-
-   nsubscipconss = detectordata->nconsperblock;
-   nsubscipvars = detectordata->nvarsperblock;
-
-   linkingconss = detectordata->linkingconss;
-   nlinkingconss = detectordata->nlinkingconss;
-
-   constoblock = detectordata->constoblock;
-   vartoblock = detectordata->varstoblock;
-
-   ncons = SCIPgetNConss( scip );
+   nconss = SCIPgetNConss( scip );
    nvars = SCIPgetNVars( scip );
 
    conss = SCIPgetConss( scip );
    vars = SCIPgetVars( scip );
 
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
+
+   for (i = 0; i < nblocks; ++i )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
+
+      nsubscipconss[i] = 0;
+      nsubscipvars[i] = 0;
+   }
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   nlinkingconss = 0;
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nconss) );
+
    score->minkequicutscore = 0;
    score->equicutscorenormalized = 0;
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &isVarHandled, nvars));
+   SCIP_CALL(SCIPallocBufferArray(scip, &isVarHandled, nvars));
    for( i = 0; i < nvars; ++i )
    {
       isVarHandled[i] = FALSE;
    }
 
    /* go through all of the constraints */
-   for( i = 0; i < ncons; i++ )
+   for( i = 0; i < nconss; i++ )
    {
       long int consblock = -1;
 
@@ -785,33 +730,60 @@ static SCIP_RETCODE buildTransformedProblem(
       subscipvars[partitionOfVar][nsubscipvars[partitionOfVar]] = vars[i];
       ++nsubscipvars[partitionOfVar];
 
-
    }
-   SCIPfreeMemoryArray(scip, &isVarHandled);
-   detectordata->nlinkingconss = nlinkingconss;
-   /* do some elimentary checks and report errors */
 
+   SCIPfreeBufferArray(scip, &isVarHandled);
+
+   /* do some elimentary checks and report errors */
    /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
    for( i = 0; i < detectordata->blocks; ++i )
    {
       if( nsubscipconss[i] == 0 )
       {
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
       }
    }
+
+   if( !emptyblocks )
+   {
+      /* copy the local data to the decomp structure */
+      DECdecdecompSetNBlocks(decdecomp, nblocks);
+      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+      SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      DECdecdecompSetVartoblock(decdecomp, vartoblock);
+      DECdecdecompSetConstoblock(decdecomp, constoblock);
+   }
+   /* free all local data */
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIPfreeBufferArray(scip, &subscipconss[i]);
+      SCIPfreeBufferArray(scip, &subscipvars[i]);
+   }
+
+   SCIPfreeBufferArray(scip, &subscipconss);
+   SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeBufferArray(scip, &linkingconss);
+
+   *result = emptyblocks? SCIP_DIDNOTFIND:SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
 static
 SCIP_RETCODE evaluateDecomposition(
       SCIP*                 scip,           /**< SCIP data structure */
-      DEC_DETECTORDATA*   detectordata,  /**< presolver data data structure */
+      DEC_DETECTORDATA*     detectordata,   /**< presolver data data structure */
+      DECDECOMP*            decdecomp,      /**< decomposition data structure */
       DEC_BORDERHEURSCORES* score           /**< returns the score of the decomposition */
       )
 {
    char name[SCIP_MAXSTRLEN];
-   unsigned int matrixarea;
-   unsigned int borderarea;
+   long int matrixarea;
+   long int borderarea;
    int nvars;
    int nconss;
    int i;
@@ -820,6 +792,7 @@ SCIP_RETCODE evaluateDecomposition(
    int blockarea;
    SCIP_Real varratio;
    int* nzblocks;
+   int nblocks;
    int* nlinkvarsblocks;
    int* nvarsblocks;
    SCIP_Real* blockdensities;
@@ -833,19 +806,21 @@ SCIP_RETCODE evaluateDecomposition(
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
+   nblocks = DECdecdecompGetNBlocks(decdecomp);
+
    /* get the right name */
    SCIPsnprintf(name, SCIP_MAXSTRLEN,
          DWSOLVER_REFNAME(SCIPgetProbName(scip),
-                          detectordata->blocks,
-                          detectordata->consWeight,
-                          detectordata->dummynodes)
-                                  );
+            nblocks,
+            detectordata->consWeight,
+            detectordata->dummynodes)
+      );
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nzblocks, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nlinkvarsblocks, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &blockdensities, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &blocksizes, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nvarsblocks, detectordata->blocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
    /*
     * 3 Scores
     *
@@ -858,14 +833,14 @@ SCIP_RETCODE evaluateDecomposition(
    matrixarea = nvars*nconss;
 
    /* calculate slave sizes, nonzeros and linkingvars */
-   for( i = 0; i < detectordata->blocks; ++i )
+   for( i = 0; i < nblocks; ++i )
    {
       SCIP_CONS** curconss;
       int ncurconss;
       int nvarsblock;
       SCIP_Bool *ishandled;
 
-      SCIP_CALL(SCIPallocMemoryArray(scip, &ishandled, nvars));
+      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
@@ -873,8 +848,8 @@ SCIP_RETCODE evaluateDecomposition(
       {
          ishandled[j] = FALSE;
       }
-      curconss = detectordata->consperblock[i];
-      ncurconss = detectordata->nconsperblock[i];
+      curconss = DECdecdecompGetSubscipconss(decdecomp)[i];
+      ncurconss = DECdecdecompGetNSubscipconss(decdecomp)[i];
 
       for( j = 0; j < ncurconss; ++j )
       {
@@ -895,10 +870,10 @@ SCIP_RETCODE evaluateDecomposition(
             assert(SCIPvarIsActive(var));
             assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
-            assert(SCIPhashmapExists(detectordata->varstoblock, var));
-            block = (long int) SCIPhashmapGetImage(detectordata->varstoblock, var);
+            assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
+            block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
 
-            if( block == detectordata->blocks + 1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
+            if( block == nblocks + 1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
             {
                ++(nlinkvarsblocks[i]);
             }
@@ -928,16 +903,16 @@ SCIP_RETCODE evaluateDecomposition(
       }
 
       assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
-      SCIPfreeMemoryArray(scip, &ishandled);
+      SCIPfreeBufferArray(scip, &ishandled);
    }
 
    /* calculate border area */
-   borderarea = detectordata->nlinkingconss*nvars;
+   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars;
 
    blockarea = 0;
    density = 1E20;
    varratio = 1.0;
-   for( i = 0; i < detectordata->blocks; ++i )
+   for( i = 0; i < nblocks; ++i )
    {
       /* calculate block area */
       blockarea += blocksizes[i];
@@ -951,11 +926,11 @@ SCIP_RETCODE evaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
-   SCIPfreeMemoryArray(scip, &nzblocks);
-   SCIPfreeMemoryArray(scip, &nlinkvarsblocks);
-   SCIPfreeMemoryArray(scip, &blockdensities);
-   SCIPfreeMemoryArray(scip, &blocksizes);
-   SCIPfreeMemoryArray(scip, &nvarsblocks);
+   SCIPfreeBufferArray(scip, &nzblocks);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &nvarsblocks);
    return SCIP_OKAY;
 
 }
@@ -965,136 +940,75 @@ static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 {
 
-   DEC_BORDERHEURSCORES score;
+   DEC_BORDERHEURSCORES* scores;
+   SCIP_Real* cumscores;
    int i;
-   DEC_DETECTOR* borderheur;
-   DEC_DETECTORDATA* detectordata;
+   int j;
+   int ndecs;
    assert(scip != NULL);
-
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(borderheur);
    assert(detectordata != NULL);
+   assert(decdecomps != NULL);
+   assert(ndecdecomps != NULL);
 
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   ndecs = detectordata->maxblocks-detectordata->minblocks+1;
+   *ndecdecomps = 0;
+   /* allocate space for output data */
+   assert(detectordata->maxblocks >= detectordata->minblocks);
+   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &scores, ndecs) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &cumscores, ndecs) );
 
    /* build the hypergraph structure from the original problem */
    SCIP_CALL(buildGraphStructure(scip, detectordata));
 
-   if( detectordata->minblocks == detectordata->maxblocks)
+   for(i = 0; i < ndecs; ++i)
    {
-      detectordata->blocks = detectordata->minblocks;
-     /* get the partitions for the new variables from metis */
-     SCIP_CALL(callMetis(scip, detectordata, result));
-
-     if( *result != SCIP_SUCCESS )
-     {
-        *result = SCIP_DIDNOTFIND;
-        return SCIP_OKAY;
-     }
-
-     /* deduce the partitions for the original variables */
-     SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
-
-     SCIP_CALL(buildTransformedProblem(scip, detectordata, &score));
-     SCIP_CALL(evaluateDecomposition(scip, detectordata, &score));
-
-     detectordata->found = TRUE;
-     SCIP_CALL(printBorderheurScores(scip, detectordata, &score));
+      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
-   else
+
+
+   for(j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
-      SCIP_Real bestscore = 1E20;
-      int bestsetting = -1;
-      for( i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
-      {
-         SCIP_Real cumscore;
-         detectordata->blocks = i;
-
-         /* get the partitions for the new variables from metis */
-         SCIP_CALL(callMetis(scip, detectordata, result));
-
-         if( *result != SCIP_SUCCESS )
-         {
-            *result = SCIP_DIDNOTFIND;
-            return SCIP_OKAY;
-         }
-         /* deduce the partitions for the original variables */
-         SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
-
-         SCIP_CALL(buildTransformedProblem(scip, detectordata,  &score));
-         SCIP_CALL(evaluateDecomposition(scip, detectordata, &score));
-
-         cumscore = score.borderscore*score.linkingscore*score.densityscore;
-         if( cumscore < bestscore )
-         {
-            bestscore = cumscore;
-            bestsetting = i;
-         }
-
-         SCIPhashmapFree(&detectordata->varstoblock);
-         SCIPhashmapFree(&detectordata->constoblock);
-         SCIP_CALL(SCIPhashmapCreate(&detectordata->varstoblock, SCIPblkmem(scip), SCIPgetNVars(scip)));
-         SCIP_CALL(SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)));
-         for( i = 0; i < SCIPgetNVars(scip); ++i )
-         {
-            detectordata->varpart[i] = -1;
-         }
-
-         for( i = 0; i < detectordata->blocks; ++i )
-         {
-            detectordata->nvarsperblock[i] = 0;
-            detectordata->nconsperblock[i] = 0;
-         }
-
-         detectordata->nlinkingconss = 0;
-      }
-
-      detectordata->found = TRUE;
-      assert(bestsetting >= 0);
-      detectordata->blocks = bestsetting;
-
+      detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
       SCIP_CALL(callMetis(scip, detectordata, result));
+
       if( *result != SCIP_SUCCESS )
       {
          *result = SCIP_DIDNOTFIND;
          return SCIP_OKAY;
       }
+      else
+      {
+         detectordata->found = TRUE;
+      }
       /* deduce the partitions for the original variables */
-      SCIP_CALL(assignBlocksToOriginalVariables( scip, detectordata));
+      SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
 
-      SCIP_CALL(buildTransformedProblem(scip, detectordata, &score));
-      SCIP_CALL(evaluateDecomposition(scip, detectordata, &score));
+      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, &scores[j], result) );
+      if( *result == SCIP_SUCCESS )
+      {
+         SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
+         SCIP_CALL( printBorderheurScores(scip, detectordata, &scores[j]) );
 
-      detectordata->found = TRUE;
-      SCIP_CALL(printBorderheurScores(scip, detectordata, &score));
+         cumscores[j] = scores[j].borderscore*scores[j].linkingscore*scores[j].densityscore;
+         *ndecdecomps += 1;
+         ++j;
+      }
    }
 
-   SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, detectordata->decdecomp));
+   SCIPsortRealPtr(cumscores,  (void**) *decdecomps, *ndecdecomps);
+
+   SCIPfreeBufferArray(scip, &cumscores);
+   SCIPfreeBufferArray(scip, &scores);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
-/** set the decomp structure */
-static
-DEC_DECL_SETSTRUCTDECOMP(BorderheurSetDecomp)
-{
-   DEC_DETECTOR* borderheur;
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-   borderheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(borderheur);
-   assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(borderheur), DEC_DETECTORNAME) == 0);
-   SCIPdebugMessage("Setting decdecomp\n");
-   detectordata->decdecomp = decdecomp;
-
-}
-
+/** gets the priority of the detector */
 static
 DEC_DECL_GETPRIORITY(getPriority)
 {
@@ -1125,7 +1039,7 @@ SCIP_RETCODE SCIPincludeDetectionBorderheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, BorderheurSetDecomp, initBorderheur, exitBorderheur, getPriority));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur, getPriority));
 
    /* add borderheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));

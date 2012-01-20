@@ -86,12 +86,12 @@ SCIP_RETCODE writeDecompositionHeader(
    assert(scip != NULL);
    assert(file != NULL);
    assert(decdecomp != NULL);
-   if(decdecomp == NULL || decdecomp->type == DEC_UNKNOWN || decdecomp->nblocks == 0)
+   if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
    {
       return SCIP_OKAY;
    }
 
-   if(decdecomp->type == DEC_ARROWHEAD || decdecomp->type == DEC_BORDERED)
+   if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED)
    {
       startx = 0;
       starty = 0;
@@ -162,13 +162,13 @@ SCIP_RETCODE writeData(
 
    if(decdecomp != NULL)
    {
-      assert(decdecomp->type == DEC_ARROWHEAD
-               || decdecomp->type == DEC_BORDERED
-               || decdecomp->type == DEC_DIAGONAL
-               || decdecomp->type == DEC_UNKNOWN
-               || decdecomp->type == DEC_STAIRCASE);
+      assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
+               || decdecomp->type == DEC_DECTYPE_BORDERED
+               || decdecomp->type == DEC_DECTYPE_DIAGONAL
+               || decdecomp->type == DEC_DECTYPE_UNKNOWN
+               || decdecomp->type == DEC_DECTYPE_STAIRCASE);
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
-      if(decdecomp->type == DEC_ARROWHEAD || decdecomp->type == DEC_BORDERED || decdecomp->type == DEC_DIAGONAL)
+      if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL)
       {
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
@@ -222,7 +222,7 @@ SCIP_RETCODE writeData(
          }
          */
       }
-      else if(decdecomp->type == DEC_STAIRCASE)
+      else if(decdecomp->type == DEC_DECTYPE_STAIRCASE)
       {
          varindexmap = decdecomp->varindex;
          consindexmap = decdecomp->consindex;
@@ -248,7 +248,7 @@ SCIP_RETCODE writeData(
            // continue;
          }
          /* if there is no decomposition, output the presolved model! */
-         if(decdecomp == NULL || decdecomp->type == DEC_UNKNOWN)
+         if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN)
          {
             SCIPinfoMessage(scip, file, "%d, %d\n", SCIPvarGetIndex(vars[j]), i);
          }
@@ -256,13 +256,13 @@ SCIP_RETCODE writeData(
          else
          {
 
-            assert(SCIPhashmapGetImage(varindexmap, vars[j]) != NULL);
+            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
             SCIPinfoMessage(scip, file, "%d, %d\n",
-                  SCIPhashmapGetImage(varindexmap, vars[j]),
-                  SCIPhashmapGetImage(consindexmap, conss[i])
-                  );
+               SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
+               SCIPhashmapGetImage(consindexmap, conss[i])
+               );
 
          }
       }
@@ -270,7 +270,7 @@ SCIP_RETCODE writeData(
    }
    /* SCIPinfoMessage(scip, NULL, "varindex: %d, consindex: %d", varindex, consindex); */
 
-   if(decdecomp != NULL && decdecomp->type != DEC_STAIRCASE)
+   if(decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE)
    {
       SCIPhashmapFree(&varindexmap);
       SCIPhashmapFree(&consindexmap);
@@ -291,6 +291,28 @@ SCIP_RETCODE writeFileTrailer(
    SCIPinfoMessage(scip, file, "e\n");
    return SCIP_OKAY;
 }
+
+
+/** returns the sanitized problem name (without paths) */
+static
+const char* getSanitizedProbName(SCIP* scip)
+{
+   const char* name;
+   const char* tname;
+
+   assert(scip != NULL);
+
+   name = SCIPgetProbName(scip);
+   assert(name != NULL);
+   tname = strrchr(name, '/');
+
+   if(tname != NULL)
+      return tname+1;
+   else
+      return name;
+
+}
+
 
 /*
  * Callback methods of reader
@@ -327,8 +349,9 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
-
-   SCIP_CALL(SCIPwriteGp(scip, file, readerdata->decdecomp, TRUE));
+   //   if(readerdata->decdecomp != NULL && readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
+   //   readerdata->decdecomp = DECgetBestDecomp(scip);
+   SCIP_CALL(SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -339,33 +362,11 @@ SCIP_DECL_READERWRITE(readerWriteGp)
  * reader specific interface methods
  */
 
-SCIP_RETCODE SCIPReaderGpSetDecomp(
-   SCIP* scip,
-   DECDECOMP* decdecomp
-   )
-{
-   SCIP_READER* reader;
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-
-   assert(decdecomp != NULL);
-
-   reader = SCIPfindReader(scip, READER_NAME);
-   assert(reader != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   readerdata->decdecomp = decdecomp;
-
-   return SCIP_OKAY;
-}
-
 SCIP_RETCODE SCIPwriteGp(
    SCIP* scip,                                /**< SCIP data structure */
    FILE* file,                                /**< File pointer to write to */
    DECDECOMP* decdecomp,                      /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition                  /**< whether to write decomposed problem */
+   SCIP_Bool writeDecomposition               /**< whether to write decomposed problem */
    )
 {
    char outname[SCIP_MAXSTRLEN];
@@ -383,11 +384,11 @@ SCIP_RETCODE SCIPwriteGp(
    /* print header */
    if(decdecomp == NULL)
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", getSanitizedProbName(scip));
    }
    else
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", getSanitizedProbName(scip), decdecomp->nblocks);
    }
    SCIP_CALL(writeFileHeader(scip, file, outname));
 

@@ -37,16 +37,11 @@
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
 #define READER_EXTENSION        "txt"
 
-#define GCG_NATIVE_LINKINGVARS
 /*
  * Data structures
  */
 #define REF_MAX_LINELEN       65536
 #define REF_MAX_PUSHEDTOKENS  2
-#define REF_INIT_COEFSSIZE    8192
-#define REF_MAX_PRINTLEN      561       /**< the maximum length of any line is 560 + '\\0' = 561*/
-#define REF_MAX_NAMELEN       256       /**< the maximum length for any name is 255 + '\\0' = 256 */
-#define REF_PRINTLEN          100
 
 /** Section in REF File */
 enum RefSection
@@ -399,15 +394,6 @@ SCIP_RETCODE readStart(
 
    getNextToken(refinput);
 
-//   /* everything before first section is treated as comment */
-//   do
-//   {
-//      /* get token */
-//      if( !getNextToken(refinput) )
-//         return SCIP_OKAY;
-//   }
-//   while( !isNewSection(scip, refinput) );
-
    return SCIP_OKAY;
 }
 
@@ -484,12 +470,6 @@ SCIP_RETCODE readBlocks(
    SCIP_CONS** conss;
    SCIP_CONS* cons;
    SCIP_VAR* var;
-#ifndef GCG_NATIVE_LINKINGVARS
-   SCIP_VAR** copyvars;
-   SCIP_VAR* varcopy;
-   int ncopyvars;
-#endif
-//   int val;
    int consctr;
    int v;
 
@@ -526,10 +506,7 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    constraint of unknown type.\n");
                continue;
             }
-#ifndef GCG_NATIVE_LINKINGVARS
-            SCIP_CALL( SCIPallocBufferArray(scip, &copyvars, nvars));
-            ncopyvars = 0;
-#endif
+
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
@@ -537,72 +514,9 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
                /* set the block number of the variable to the number of the current block */
-#ifdef GCG_NATIVE_LINKINGVARS
                SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                refinput->nassignedvars++;
-#else
-               if( GCGvarGetBlock(var) == -1 )
-               {
-                  /* set the block number of the variable to the number of the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
-                  refinput->nassignedvars++;
-               }
-               else if( GCGvarGetBlock(var) != refinput->blocknr )
-               {
-                  copyvars[ncopyvars] = var;
-                  ncopyvars++;
-               }
-#endif
             }
-#ifndef GCG_NATIVE_LINKINGVARS
-            /* create copies for variables that are already assigned to another block */
-            for( v = 0; v < ncopyvars; v++)
-            {
-               char newvarname[SCIP_MAXSTRLEN];
-
-               var = copyvars[v];
-
-               /* the variable already appears in another block, so we may need to copy it */
-               (void) SCIPsnprintf(newvarname, SCIP_MAXSTRLEN, "%s_%d", SCIPvarGetName(var), refinput->blocknr + 1);
-               varcopy = SCIPfindVar(scip, newvarname);
-               if( varcopy == NULL )
-               {
-                  SCIP_CONS* couplingcons;
-                  char consname[SCIP_MAXSTRLEN];
-
-                  /* create and add a copy of the variable */
-                  /* IMPORTANT: Do not take the original variable objective value as we might add it a couple of times */
-                  SCIP_CALL( SCIPcreateVar(scip, &varcopy, newvarname, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var),
-                        0, SCIPvarGetType(var), SCIPvarIsInitial(var), SCIPvarIsRemovable(var),
-                        NULL, NULL, NULL, NULL, NULL) );
-                  SCIP_CALL( SCIPaddVar(scip, varcopy) );
-                  SCIP_CALL( GCGrelaxCreateOrigVardata(scip, varcopy) );
-
-                  /* assign the copy to the current block */
-                  SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, varcopy, refinput->blocknr) );
-
-                  /* create a coupling constraint between the variable and its copy */
-                  (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "coupling_%s_%s", SCIPvarGetName(var), newvarname);
-                  SCIP_CALL( SCIPcreateConsLinear(scip, &couplingcons, consname, 0, NULL, NULL,
-                        0, 0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
-                  SCIP_CALL( SCIPaddCoefLinear(scip, couplingcons, var, 1.0) );
-                  SCIP_CALL( SCIPaddCoefLinear(scip, couplingcons, varcopy, -1.0) );
-                  SCIP_CALL( SCIPaddCons(scip, couplingcons) );
-
-                  /* the coupling constraint must be put into the master problem */
-                  SCIP_CALL( SCIPreallocBufferArray(scip, &refinput->markedmasterconss, refinput->nmarkedmasterconss + 1) );
-                  refinput->markedmasterconss[refinput->nmarkedmasterconss] = couplingcons;
-                  refinput->nmarkedmasterconss++;
-
-                  SCIPdebugMessage("    -> copied variable %s to %s\n", SCIPvarGetName(var), newvarname);
-               }
-
-               /* replace variable by its copy in the current constraint */
-               SCIP_CALL( SCIPaddCoefLinear(scip, cons, var, -val) );
-               SCIP_CALL( SCIPaddCoefLinear(scip, cons, varcopy, val) );
-            }
-            SCIPfreeBufferArray(scip, &copyvars);
-#endif
             consctr++;
             refinput->totalreadconss++;
          }
@@ -722,11 +636,15 @@ SCIP_RETCODE writeREFFile(
    for( i = 0; i < nconss; ++i)
    {
       size_t ind;
+#ifndef NDEBUG
       size_t unconss;
+#endif
       SCIP_CONS* cons;
 
       ind = i+1;
+#ifndef NDEBUG
       unconss = nconss;
+#endif
       assert(ind > 0);
       assert(ind <= unconss);
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
@@ -750,7 +668,9 @@ SCIP_RETCODE writeREFFile(
       for(j = 0; j < readerdata->decdecomp->nsubscipconss[i]; ++j)
       {
          size_t ind;
+#ifndef NDEBUG
          size_t unconss;
+#endif
          SCIP_CONS* cons;
 //         assert(SCIPconsIsTransformed(readerdata->decdecomp->subscipconss[i][j]));
 //         SCIP_CALL(SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons));
@@ -759,7 +679,9 @@ SCIP_RETCODE writeREFFile(
          ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
          SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
 
+#ifndef NDEBUG
          unconss = nconss;
+#endif
          assert(ind > 0); /* shift by 1 */
          assert(ind <= unconss); /* shift by 1 */
          SCIPinfoMessage(scip, file, "%d ", ind-1);
@@ -807,7 +729,7 @@ SCIP_DECL_READERREAD(readerReadRef)
 static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
-
+   /*lint --e{715}*/
    SCIP_CALL(writeREFFile(scip, reader, file));
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -913,30 +835,6 @@ SCIP_RETCODE SCIPreadRef(
    {
       *result = SCIP_SUCCESS;
    }
-
-   return SCIP_OKAY;
-}
-
-/** set the decomp structure */
-extern
-SCIP_RETCODE SCIPReaderREFSetDecomp(
-   SCIP*       scip,       /**< SCIP data structure */
-   SCIP_READER* reader,    /**< Reader data structure */
-   DECDECOMP*  decdecomp   /**< DECOMP data structure */
-   )
-{
-
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-   assert(decdecomp != NULL);
-   assert(reader != NULL);
-
-   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   readerdata = SCIPreaderGetData(reader);
-
-   assert(readerdata != NULL);
-
-   readerdata->decdecomp = decdecomp;
 
    return SCIP_OKAY;
 }

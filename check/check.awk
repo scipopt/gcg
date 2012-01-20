@@ -50,6 +50,7 @@ BEGIN {
    useshortnames = 1;           # should problem name be truncated to fit into column?
    writesolufile = 0;           # should a solution file be created from the results
    printsoltimes = 0;           # should the times until first and best solution be shown
+   checksol = 1;                # should the solution check of SCIP be parsed and counted as a fail if best solution is not feasible?
    NEWSOLUFILE = "new_solufile.solu";
    infty = +1e+20;
    headerprinted = 0;
@@ -104,6 +105,8 @@ BEGIN {
    lpsversion = "?";
    scipversion = "?";
    gcgversion = "?";
+   githash = "?";
+   gcggithash = "?";
    conftottime = 0.0;
    overheadtottime = 0.0;
    timelimit = 0.0;
@@ -121,7 +124,6 @@ BEGIN {
 /=opt=/  { solstatus[$2] = "opt"; sol[$2] = $3; }   # get optimum
 /=inf=/  { solstatus[$2] = "inf"; }                 # problem infeasible (no feasible solution exists)
 /=best=/ { solstatus[$2] = "best"; sol[$2] = $3; }  # get best known solution value
-/=feas=/ { solstatus[$2] = "feas"; }                # no feasible solution known
 /=unkn=/ { solstatus[$2] = "unkn"; }                # no feasible solution known
 #
 # problem name
@@ -138,7 +140,7 @@ BEGIN {
       prob = prob "." b[i];
 
    if( useshortnames && length(prob) > 12 )
-      shortprob = substr(prob, 0, 12);
+      shortprob = substr(prob, length(prob)-11, 12);
    else
       shortprob = prob;
 
@@ -188,12 +190,16 @@ BEGIN {
    gapreached = 0;
    sollimitreached = 0;
    memlimitreached = 0;
+   nodelimitreached = 0;
    starttime = 0.0;
    endtime = 0.0;
    timelimit = 0.0;
    inoriginalprob = 1;
    inmasterprob = 1;
    incons = 0;
+   valgrinderror = 0;
+   valgrindleaks = 0;
+   bestsolfeas = 1;
 }
 
 /@03/ { starttime = $2; }
@@ -202,6 +208,12 @@ BEGIN {
 /^GCG version/ {
    # get GCG version
    gcgversion = $3;
+   
+      # get git hash 
+   if( $(NF-1) == "[GitHash:" ) {
+      split($NF, v, "]");
+      gcggithash = v[1];
+   }
 }
 
 /^SCIP version/ {
@@ -232,6 +244,12 @@ BEGIN {
    if( NF >= 14 ) {
       split($14, v, "]");
       lpsversion = v[1];
+   }
+
+   # get git hash 
+   if( $(NF-1) == "[GitHash:" ) {
+      split($NF, v, "]");
+      githash = v[1];
    }
 }
 /^SCIP> SCIP> / { $0 = substr($0, 13, length($0)-12); }
@@ -396,7 +414,10 @@ BEGIN {
 /gap limit reached/ { gapreached = 1; }
 /solution limit reached/ { sollimitreached = 1; }
 /memory limit reached/ { memlimitreached = 1; }
+/node limit reached/ { nodelimitreached = 1; }
 /problem is solved/ { timeout = 0; }
+/best solution is not feasible in original problem/  { bestsolfeas = 0; }
+
 /^  First Solution   :/ {
    timetofirst = $11;
    firstpb = $4;
@@ -443,10 +464,17 @@ BEGIN {
 /^Solving Time       :/ { tottime = $4 } # for older scip version ( < 2.0.1.3 )
 /^  solving          :/ { tottime = $3 } 
 #
+# valgrind check
+#
+/^==[0-9]*== ERROR SUMMARY:/       { valgrinderror = $4 }
+/^==[0-9]*==    definitely lost:/  { valgrindleaks += $4 }
+/^==[0-9]*==    indirectly lost:/  { valgrindleaks += $4 }
+/^==[0-9]*==    possibly lost:/    { valgrindleaks += $4 }
+#
 # solver status overview (in order of priority): 
 # 1) solver broke before returning solution => abort
 # 2) solver cut off the optimal solution (solu-file-value is not between primal and dual bound) => fail
-#    (especially of problem is claimed to be solved but solution is not the optimal solution)
+#    (especially if problem is claimed to be solved but solution is not the optimal solution)
 # 3) solver solved problem with the value in solu-file (if existing) => ok
 # 4) solver solved problem which has no (optimal) value in solu-file => solved
 #    (since we here don't detect the direction of optimization, it is possible 
@@ -547,6 +575,10 @@ BEGIN {
       if ( objsense == -1 && pb >= +infty )
 	 pb = -1.0 * pb;
 
+      # modify dual bound for infeasible maximization problems
+      if ( objsense == -1 && db >= +infty )
+	 db = -1.0 * db;
+
       nprobs++;
 
       optimal = 0;
@@ -558,6 +590,8 @@ BEGIN {
       }
       else if( abs(db) < 1e-06 )
          gap = -1.0;
+      else if( abs(pb) < 1e-06 )
+         gap = -1.0;
       else if( pb*db < 0.0 )
          gap = -1.0;
       else if( abs(db) >= +infty )
@@ -565,7 +599,7 @@ BEGIN {
       else if( abs(pb) >= +infty )
          gap = -1.0;
       else
-         gap = 100.0*abs((pb-db)/db);
+         gap = 100.0*abs((pb-db)/min(abs(db),abs(pb)));
       if( gap < 0.0 )
          gapstr = "  --  ";
       else if( gap < 1e+04 )
@@ -597,8 +631,9 @@ BEGIN {
          aborted = 0;
          tottime = endtime - starttime;
       }
-      else if( gapreached || sollimitreached )
+      else if( gapreached || sollimitreached || memlimitreached || nodelimitreached )
          timeout = 0;
+
       if( aborted && tottime == 0.0 )
          tottime = timelimit;
       if( timelimit > 0.0 )
@@ -668,6 +703,12 @@ BEGIN {
          failtime += tottime;
          fail++;
       }
+
+      else if( checksol && !bestsolfeas ) {
+         status = "fail";
+         failtime += tottime;
+         fail++;
+      }
       else if( solstatus[prob] == "opt" ) {
          reltol = 1e-5 * max(abs(pb),1.0);
          abstol = 1e-4;
@@ -679,13 +720,19 @@ BEGIN {
             fail++;
          }
          else {
-            if( timeout || gapreached || sollimitreached ) {
+            if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) 
+	    {
                if( timeout )
                   status = "timeout";
                else if( gapreached )
                   status = "gaplimit";
                else if( sollimitreached )
                   status = "sollimit";
+               else if( memlimitreached )
+                  status = "memlimit";
+               else if( nodelimitreached )
+                  status = "nodelimit";
+
                timeouttime += tottime;
                timeouts++;
             }
@@ -713,7 +760,7 @@ BEGIN {
             fail++;
          }
          else {
-            if( timeout || gapreached || sollimitreached ) {
+            if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) {
                if( (objsense == 1 && sol[prob]-pb > reltol) || (objsense == -1 && pb-sol[prob] > reltol) ) {
                   status = "better";
                   timeouttime += tottime;
@@ -726,6 +773,10 @@ BEGIN {
                      status = "gaplimit";
                   else if( sollimitreached )
                      status = "sollimit";
+                  else if( memlimitreached )
+                     status = "memlimit";
+                  else if( nodelimitreached )
+                     status = "nodelimit";
                   timeouttime += tottime;
                   timeouts++;
                }
@@ -749,58 +800,48 @@ BEGIN {
       else if( solstatus[prob] == "unkn" ) {
          reltol = 1e-5 * max(abs(pb),1.0);
          abstol = 1e-4;
-         
-         if( abs(pb - db) <= max(abstol, reltol) ) {
-            status = "solved not verified";
-            pass++;
-         }
-         else {
+
+	 if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) {
             if( abs(pb) < infty ) {
                status = "better";
                timeouttime += tottime;
                timeouts++;
             }
-            else {
-               if( timeout || gapreached || sollimitreached ) {
-                  if( timeout )
-                     status = "timeout";
-                  else if( gapreached )
-                     status = "gaplimit";
-                  else if( sollimitreached )
-                     status = "sollimit";
-                  timeouttime += tottime;
-                  timeouts++;
-               }
-               else 
-                  status = "unknown";
-            }
+	    else {
+	       if( timeout )
+		  status = "timeout";
+	       else if( gapreached )
+		  status = "gaplimit";
+	       else if( sollimitreached )
+		  status = "sollimit";
+	       else if( memlimitreached )
+		  status = "memlimit";
+	       else if( nodelimitreached )
+		  status = "nodelimit";
+	       timeouttime += tottime;
+	       timeouts++;
+	    }
+	 }
+         else if( abs(pb - db) <= max(abstol, reltol) ) {
+            status = "solved not verified";
+            pass++;
+         }
+         else {
+	    status = "unknown";
          }
       }
       else if( solstatus[prob] == "inf" ) {
          if( !feasible ) {
-            if( timeout ) {
-               status = "timeout";
-               timeouttime += tottime;
-               timeouts++;
-            }
-            else {
-               status = "ok";
-               pass++;
-            }
-         }
-         else {
-            status = "fail";
-            failtime += tottime;
-            fail++;
-         }
-      }
-      else if( solstatus[prob] == "feas" ) {
-         if( feasible ) {
-            if( timeout ) {
-               status = "timeout";
-               timeouttime += tottime;
-               timeouts++;
-            }
+	    if( timeout || memlimitreached || nodelimitreached ) {
+	       if( timeout )
+		  status = "timeout";
+	       else if( memlimitreached )
+		  status = "memlimit";
+	       else if( nodelimitreached )
+		  status = "nodelimit";
+	       timeouttime += tottime;
+	       timeouts++;
+	    }
             else {
                status = "ok";
                pass++;
@@ -816,24 +857,37 @@ BEGIN {
          reltol = 1e-5 * max(abs(pb),1.0);
          abstol = 1e-4;
 
-         if( abs(pb - db) < max(abstol,reltol) ) {
+         if( timeout || gapreached || sollimitreached || memlimit || nodelimit ) {
+	    if( timeout )
+	       status = "timeout";
+	    else if( gapreached )
+	       status = "gaplimit";
+	    else if( sollimitreached )
+	       status = "sollimit";
+	    else if( memlimitreached )
+	       status = "memlimit";
+	    else if( nodelimitreached )
+	       status = "nodelimit";
+	    timeouttime += tottime;
+	    timeouts++;
+	 }
+         else if( abs(pb - db) < max(abstol,reltol) ) {
             status = "solved not verified";
             pass++;
          }
          else {
-            if( timeout || gapreached || sollimitreached ) {
-               if( timeout )
-                  status = "timeout";
-               else if( gapreached )
-                  status = "gaplimit";
-               else if( sollimitreached )
-                  status = "sollimit";
-               timeouttime += tottime;
-               timeouts++;
-            }
-            else
                status = "unknown";
          }
+      }
+
+      if( valgrinderror > 0 ) {
+         status = "fail"
+         failtime += tottime;
+         fail++;
+      } else if( valgrindleaks > 0 ) {
+         status = "fail"
+         failtime += tottime;
+         fail++;
       }
 
       if( writesolufile ) {
@@ -845,7 +899,6 @@ BEGIN {
             printf("=best= %-18s %16.9g\n",prob,pb)>NEWSOLUFILE;
          else
             printf("=unkn= %-18s\n",prob)>NEWSOLUFILE;
-         #=feas= cannot happen since the problem is reported with an objective value
       }
 
       #write output to both the tex file and the console depending on whether printsoltimes is activated or not
@@ -880,7 +933,7 @@ BEGIN {
          } else if( status == "gaplimit" || status == "better" ) {
             modelstat = 8;
             solverstat = 1;
-         } else if( status == "ok" || status == "solved" || status == "solved not verified" ) {
+         } else if( status == "ok" || status == "solved not verified" ) {
             modelstat = 1;
             solverstat = 1;
          } else {

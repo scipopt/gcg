@@ -2,3 +2,4 @@ instances
 locks/
 results/
 *.tex
+runcluster_tmp.sh

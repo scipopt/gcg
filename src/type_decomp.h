@@ -20,6 +20,12 @@
 #define __SCIP_TYPE_DECDECOMP_H__
 
 typedef struct DecDecomp DECDECOMP;
+enum Dectype
+{
+   DEC_DECTYPE_ARROWHEAD, DEC_DECTYPE_STAIRCASE, DEC_DECTYPE_DIAGONAL, DEC_DECTYPE_BORDERED, DEC_DECTYPE_UNKNOWN
+};
+
+typedef enum Dectype DEC_DECTYPE;
 
 #ifdef __cplusplus
 extern "C" {
