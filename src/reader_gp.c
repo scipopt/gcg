@@ -27,6 +27,7 @@
 #include "reader_gp.h"
 #include "scip_misc.h"
 #include "struct_decomp.h"
+#include "cons_decomp.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for matrix visualization"

@@ -109,7 +109,7 @@ SCIP_RETCODE convertStructToGCG(
 
    SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
-   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) );*/
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
    /* set master constraints */
    for( i = 0; i < decdecomp->nlinkingconss; ++i )
@@ -134,16 +134,24 @@ SCIP_RETCODE convertStructToGCG(
       {
          assert(decdecomp->subscipvars[i][j] != NULL);
          assert(isVarRelevant(decdecomp->subscipvars[i][j]));
+
          if(SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]) != NULL)
          {
-            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]), i));
+            SCIP_VAR* origvar;
+
+            origvar = SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]);
+            assert(SCIPvarGetData(origvar) != NULL);
+
+            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, origvar, i));
          }
          else
          {
-            SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
+            if(SCIPvarGetData(getRelevantVariable(decdecomp->subscipvars[i][j])) == NULL)
+               SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
+
             SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
          }
-         assert(SCIPvarGetData(decdecomp->subscipvars[i][j]) != NULL);
+         assert(SCIPvarGetData(decdecomp->subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(decdecomp->subscipvars[i][j])) != NULL);
       }
    }
    for( i = 0; i < decdecomp->nlinkingvars; ++i )
@@ -151,7 +159,6 @@ SCIP_RETCODE convertStructToGCG(
       if( SCIPvarGetData(decdecomp->linkingvars[i]) == NULL)
       {
          int found;
-         SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->linkingvars[i])));
 
          /* HACK; TODO: find out constraint blocks */
          for( j = 0; j < decdecomp->nblocks; ++j )
@@ -169,6 +176,7 @@ SCIP_RETCODE convertStructToGCG(
                   if( SCIPvarGetProbvar(curvars[v]) == decdecomp->linkingvars[i] )
                   {
                      SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     assert(SCIPvarGetData(decdecomp->linkingvars[i]) != NULL);
                      SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j));
                      found = TRUE;
                      break;
