@@ -954,7 +954,7 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 
    //write Gnuplot file
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) lt i pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset style line 1 lt 0 lw 1 pt 5\nset style line 2 lt 9 lw 1 pt 5\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) linestyle (i%%2+1) notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
    fclose(output);
 }
 
@@ -1011,7 +1011,7 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    fclose(output);
    //write Gnuplot file
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nplot '%s' title '# verb. Variablen' with lines, \\\n '%s' lt 0 pt 4 with points title \"Blockgrenze\"", pdffile, datafile, blockingfile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nset style line 1 lt 1 lc rgb \"black\"\nplot '%s' title '# verb. Variablen' ls 1 with lines, \\\n '%s' lt 0 pt 4 with points title \"Blockgrenze\"", pdffile, datafile, blockingfile);
    fclose(output);
 }
 
@@ -1671,44 +1671,6 @@ void blocking(
       prev_block_last_row = current_row;
       ++block;
    }
-
-//
-//   it1 = SCIPiteratorBegin(detectordata->rowsWithConstrictions);
-//   //list not empty?
-//   if( ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
-//   {
-//      current_row = * (int*) (it1.node->data);
-//   }
-//   //if list is empty
-//   else
-//   {
-//
-//   }
-//   //are more than 2 * min_block_size rows left?
-//   //is the number of blocks less or equal maxblocks?
-//   while( (float) ( detectordata->nRelevantConss - prev_block_last_row) > (2 * min_block_size)
-//            && block < detectordata->maxblocks)
-//   {
-//      it1 = nextRowToBlockAt(it1, min_block_size, prev_block_last_row);
-//
-//      //when there are no more rows with constrictions, break and assign the remaining rows to the last block
-//      if(SCIPiteratorIsEqual(it1, SCIPiteratorEnd(detectordata->rowsWithConstrictions)))
-//      {
-//         break;
-//      }
-//      current_row = * (int*) (it1.node->data);
-//      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
-//      min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
-//      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
-//      SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
-//      //assign the variables and constraints to block
-//      assignVarsToBlock(detectordata, block, max_col_index_im1+1, max_col_index_i, min_col_index_ip1);
-//      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
-//      //update variables in the while loop
-//      max_col_index_im1 = max_col_index_i;
-//      prev_block_last_row = current_row;
-//      ++block;
-//   }
    //assign the remaining (< M/2tau) cons and vars to the last block; no new linking vars are added
    //debug
    SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, detectordata->nRelevantConss);
