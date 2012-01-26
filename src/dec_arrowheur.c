@@ -69,16 +69,6 @@
  * Data structures
  */
 
-/** score data structure **/
-struct SCIP_ArrowheurScores
-{
-   SCIP_Real borderscore;
-   SCIP_Real minkequicutscore;
-   SCIP_Real equicutscorenormalized;
-   SCIP_Real densityscore;
-   SCIP_Real linkingscore;
-};
-typedef struct SCIP_ArrowheurScores SCIP_ARROWHEURSCORES;
 /** presolver data */
 struct DEC_DetectorData
 {
@@ -143,36 +133,7 @@ typedef struct hyperedge HyperEdge;
 
 /* put your local methods here, and declare them static */
 
-/** Prints the score of the decomposition */
-static
-SCIP_RETCODE printArrowheurScores(
-      SCIP*                 scip,
-      DEC_DETECTORDATA*   detectordata,
-      SCIP_ARROWHEURSCORES* scores
-      )
-{
-   char name[SCIP_MAXSTRLEN];
-   SCIPsnprintf(name, SCIP_MAXSTRLEN, DWSOLVER_REFNAME(SCIPgetProbName(scip),
-         detectordata->blocks,
-         detectordata->varWeightContinous,
-         detectordata->varWeightInteger,
-         detectordata->consWeight,
-         detectordata->dummynodes,
-         detectordata->alpha,
-         detectordata->beta,
-         detectordata->consWeightSetppc));
-
-   SCIPdebugMessage("SCORES:\t%s\t%s\t%f\t%f\t%f\t%f\t%f\n",
-         SCIPgetProbName(scip), name,
-         scores->borderscore,
-         scores->densityscore,
-         scores->linkingscore,
-         scores->minkequicutscore,
-         scores->equicutscorenormalized);
-
-   return SCIP_OKAY;
-}
-
+/** Detector initialization method */
 static
 DEC_DECL_INITDETECTOR(initArrowheur)
 {
@@ -475,9 +436,8 @@ static SCIP_RETCODE buildGraphStructure(
 
          /* if the variable is inactive, skip it */
          if( !isVarRelevant(vars[j]) )
-         {
             continue;
-         }
+
          var = SCIPvarGetProbvar(vars[j]);
          assert(var != NULL);
          varIndex = SCIPvarGetProbindex(var);
@@ -864,7 +824,6 @@ static SCIP_RETCODE buildTransformedProblem(
    DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
    DECDECOMP*               decdecomp,      /**< decdecomp data structure */
    int                      nblocks,        /**< number of blocks for this decomposition */
-   SCIP_ARROWHEURSCORES*    score,           /**< scores */
    SCIP_RESULT*             result
    )
 {
@@ -890,7 +849,6 @@ static SCIP_RETCODE buildTransformedProblem(
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(score != NULL);
 
    nconss = SCIPgetNConss( scip );
    nvars = SCIPgetNVars( scip );
@@ -921,9 +879,6 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nconss) );
 
-   score->minkequicutscore = 0;
-   score->equicutscorenormalized = 0;
-
    SCIP_CALL(SCIPallocBufferArray(scip, &isVarHandled, nvars));
    for( i = 0; i < nvars; ++i )
    {
@@ -943,10 +898,8 @@ static SCIP_RETCODE buildTransformedProblem(
          SCIP_VAR* var;
          long int varblock = -1;
          if( !isVarRelevant(curvars[j]) )
-         {
-//            SCIPprintVar(scip, curvars[j], NULL);
             continue;
-         }
+
          var = SCIPvarGetProbvar(curvars[j]);
 
          assert(var != NULL);
@@ -1069,31 +1022,8 @@ static SCIP_RETCODE buildTransformedProblem(
    for( i = 0; i < nvars; i++ )
    {
       int partitionOfVar;
-      if( detectordata->varpart[i] < 0 )
-      {
-         switch(SCIPvarGetType(SCIPvarGetProbvar(vars[i])))
-         {
-         case SCIP_VARTYPE_BINARY:
-            score->minkequicutscore += detectordata->varWeightBinary;
-            break;
-         case SCIP_VARTYPE_CONTINUOUS:
-            score->minkequicutscore += detectordata->varWeightContinous;
-            break;
-         case SCIP_VARTYPE_IMPLINT:
-            score->minkequicutscore += detectordata->varWeightImplint;
-            break;
-         case SCIP_VARTYPE_INTEGER:
-            score->minkequicutscore += detectordata->varWeightInteger;
-            break;
-         default:
-            break;
-         }
-      }
       if( isVarHandled[i] )
-      {
          continue;
-
-      }
 
       partitionOfVar = -1;
       if( detectordata->varpart[i] >= 0 )
@@ -1161,190 +1091,8 @@ static SCIP_RETCODE buildTransformedProblem(
 }
 
 static
-SCIP_RETCODE evaluateDecomposition(
-      SCIP*                 scip,           /**< SCIP data structure */
-      DEC_DETECTORDATA*     detectordata,   /**< presolver data data structure */
-      DECDECOMP*            decdecomp,      /**< decomposition data structure */
-      SCIP_ARROWHEURSCORES* score           /**< returns the score of the decomposition */
-      )
-{
-   char name[SCIP_MAXSTRLEN];
-   long int matrixarea;
-   long int borderarea;
-   int nvars;
-   int nconss;
-   int i;
-   int j;
-   int k;
-   /*   int blockarea; */
-   SCIP_Real varratio;
-   int* nzblocks;
-   int nblocks;
-   int* nlinkvarsblocks;
-   int* nvarsblocks;
-   SCIP_Real* blockdensities;
-   int* blocksizes;
-   SCIP_Real density;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(score != NULL);
-
-   nvars = SCIPgetNVars(scip);
-   nconss = SCIPgetNConss(scip);
-
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
-
-   /* get the right name */
-   SCIPsnprintf(name, SCIP_MAXSTRLEN,
-         DWSOLVER_REFNAME(SCIPgetProbName(scip),
-                          nblocks,
-                          detectordata->varWeightContinous,
-                          detectordata->varWeightInteger,
-            detectordata->consWeight,
-                          detectordata->dummynodes,
-                          detectordata->alpha,
-                          detectordata->beta,
-                          detectordata->consWeightSetppc)
-      );
-
-   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
-   /*
-    * 3 Scores
-    *
-    * - Area percentage (min)
-    * - block density (max)
-    * - \pi_b {v_b|v_b is linking}/#vb (min)
-    */
-
-   /* calculate matrix area */
-   matrixarea = nvars*nconss;
-
-   /* calculate slave sizes, nonzeros and linkingvars */
-   for( i = 0; i < nblocks; ++i )
-   {
-      SCIP_CONS** curconss;
-      int ncurconss;
-      int nvarsblock;
-      SCIP_Bool *ishandled;
-
-      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
-      nvarsblock = 0;
-      nzblocks[i] = 0;
-      nlinkvarsblocks[i] = 0;
-      for( j = 0; j < nvars; ++j )
-      {
-         ishandled[j] = FALSE;
-      }
-      curconss = DECdecdecompGetSubscipconss(decdecomp)[i];
-      ncurconss = DECdecdecompGetNSubscipconss(decdecomp)[i];
-
-      for( j = 0; j < ncurconss; ++j )
-      {
-         SCIP_VAR** curvars;
-         SCIP_VAR* var;
-         int ncurvars;
-
-         curvars = SCIPgetVarsXXX(scip, curconss[j]);
-         ncurvars = SCIPgetNVarsXXX(scip, curconss[j]);
-         for( k = 0; k < ncurvars; ++k )
-         {
-            long int block;
-            if( !isVarRelevant(curvars[k]) )
-               continue;
-
-            var = SCIPvarGetProbvar(curvars[k]);
-            assert(var != NULL);
-            assert(SCIPvarIsActive(var));
-            assert(!SCIPvarIsDeleted(var));
-            ++(nzblocks[i]);
-            assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-            block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
-
-            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
-            {
-               ++(nlinkvarsblocks[i]);
-            }
-            ishandled[SCIPvarGetProbindex(var)] = TRUE;
-         }
-
-         SCIPfreeMemoryArray(scip, &curvars);
-      }
-
-      for( j = 0; j < nvars; ++j )
-      {
-         if( ishandled[j] )
-         {
-            ++nvarsblock;
-         }
-      }
-
-      blocksizes[i] = nvarsblock*ncurconss;
-      nvarsblocks[i] = nvarsblock;
-      if(blocksizes[i] > 0)
-      {
-         blockdensities[i] = 1.0*nzblocks[i]/blocksizes[i];
-      }
-      else
-      {
-         blockdensities[i] = 0.0;
-      }
-
-      assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
-      SCIPfreeBufferArray(scip, &ishandled);
-   }
-
-   /* calculate border area */
-   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars+DECdecdecompGetNLinkingvars(decdecomp)*(nconss-DECdecdecompGetNLinkingconss(decdecomp));
-
-   /*   blockarea = 0; */
-   density = 1E20;
-   varratio = 1.0;
-   for( i = 0; i < nblocks; ++i )
-   {
-      /* calculate block area */
-      /* blockarea += blocksizes[i]; */
-
-
-      /* calculate density */
-      density = MIN(density, blockdensities[i]);
-
-      /* calculate linking var ratio */
-      if( DECdecdecompGetNLinkingvars(decdecomp) > 0 )
-      {
-         varratio *= 1.0*nlinkvarsblocks[i]/DECdecdecompGetNLinkingvars(decdecomp);
-      }
-      else
-      {
-         varratio = 0;
-      }
-   }
-
-   score->linkingscore = (0.5+0.5*varratio);
-   score->borderscore = (1.0*(borderarea)/matrixarea);
-   score->densityscore = (1-density);
-
-   SCIPfreeBufferArray(scip, &nzblocks);
-   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
-   SCIPfreeBufferArray(scip, &blockdensities);
-   SCIPfreeBufferArray(scip, &blocksizes);
-   SCIPfreeBufferArray(scip, &nvarsblocks);
-
-   return SCIP_OKAY;
-
-}
-
-
-static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 {
-
-   SCIP_ARROWHEURSCORES* scores;
-   SCIP_Real* cumscores;
    int i;
    int j;
    int ndecs;
@@ -1361,8 +1109,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &scores, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &cumscores, ndecs) );
 
    /* build the hypergraph structure from the original problem */
    SCIP_CALL(buildGraphStructure(scip, detectordata));
@@ -1371,7 +1117,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    {
       SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
-
 
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
@@ -1392,19 +1137,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       /* deduce the partitions for the original variables */
       SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
 
-      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, &scores[j], result) );
+      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, result) );
       if( *result == SCIP_SUCCESS )
       {
-         SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
-         SCIP_CALL( printArrowheurScores(scip, detectordata, &scores[j]) );
-
-         cumscores[j] = scores[j].borderscore*scores[j].linkingscore*scores[j].densityscore;
          *ndecdecomps += 1;
          ++j;
       }
    }
-
-   SCIPsortRealPtr(cumscores, (void**) *decdecomps, *ndecdecomps);
 
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
@@ -1412,8 +1151,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    }
 
    SCIP_CALL(SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps));
-   SCIPfreeMemoryArray(scip, &cumscores);
-   SCIPfreeMemoryArray(scip, &scores);
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

@@ -58,6 +58,18 @@
  * Data structures
  */
 
+/** score data structure **/
+struct SCIP_DecompositionScores
+{
+   SCIP_Real borderscore;
+   SCIP_Real minkequicutscore;
+   SCIP_Real equicutscorenormalized;
+   SCIP_Real densityscore;
+   SCIP_Real linkingscore;
+   SCIP_Real totalscore;
+};
+typedef struct SCIP_DecompositionScores SCIP_DECOMPOSITIONSCORES;
+
 /** constraint data for decomp constraints */
 struct SCIP_ConsData
 {
@@ -83,6 +95,188 @@ struct SCIP_ConshdlrData
 
 /* put your local methods here, and declare them static */
 
+
+static
+SCIP_RETCODE evaluateDecomposition(
+      SCIP*                      scip,           /**< SCIP data structure */
+      DECDECOMP*                 decdecomp,      /**< decomposition data structure */
+      SCIP_DECOMPOSITIONSCORES*  score           /**< returns the score of the decomposition */
+      )
+{
+   long int matrixarea;
+   long int borderarea;
+   int nvars;
+   int nconss;
+   int i;
+   int j;
+   int k;
+   /*   int blockarea; */
+   SCIP_Real varratio;
+   int* nzblocks;
+   int nblocks;
+   int* nlinkvarsblocks;
+   int* nvarsblocks;
+   SCIP_Real* blockdensities;
+   int* blocksizes;
+   SCIP_Real density;
+
+   assert(scip != NULL);
+   assert(score != NULL);
+
+   nvars = SCIPgetNVars(scip);
+   nconss = SCIPgetNConss(scip);
+
+   nblocks = DECdecdecompGetNBlocks(decdecomp);
+
+   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
+   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
+   /*
+    * 3 Scores
+    *
+    * - Area percentage (min)
+    * - block density (max)
+    * - \pi_b {v_b|v_b is linking}/#vb (min)
+    */
+
+   /* calculate matrix area */
+   matrixarea = nvars*nconss;
+
+   /* calculate slave sizes, nonzeros and linkingvars */
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIP_CONS** curconss;
+      int ncurconss;
+      int nvarsblock;
+      SCIP_Bool *ishandled;
+
+      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
+      nvarsblock = 0;
+      nzblocks[i] = 0;
+      nlinkvarsblocks[i] = 0;
+      for( j = 0; j < nvars; ++j )
+      {
+         ishandled[j] = FALSE;
+      }
+      curconss = DECdecdecompGetSubscipconss(decdecomp)[i];
+      ncurconss = DECdecdecompGetNSubscipconss(decdecomp)[i];
+
+      for( j = 0; j < ncurconss; ++j )
+      {
+         SCIP_VAR** curvars;
+         SCIP_VAR* var;
+         int ncurvars;
+
+         curvars = SCIPgetVarsXXX(scip, curconss[j]);
+         ncurvars = SCIPgetNVarsXXX(scip, curconss[j]);
+         for( k = 0; k < ncurvars; ++k )
+         {
+            long int block;
+            if( !isVarRelevant(curvars[k]) )
+               continue;
+
+            var = SCIPvarGetProbvar(curvars[k]);
+            assert(var != NULL);
+            assert(SCIPvarIsActive(var));
+            assert(!SCIPvarIsDeleted(var));
+            ++(nzblocks[i]);
+            assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
+            block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+
+            if(block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
+            {
+               ++(nlinkvarsblocks[i]);
+            }
+            ishandled[SCIPvarGetProbindex(var)] = TRUE;
+         }
+
+         SCIPfreeMemoryArray(scip, &curvars);
+      }
+
+      for( j = 0; j < nvars; ++j )
+      {
+         if( ishandled[j] )
+         {
+            ++nvarsblock;
+         }
+      }
+
+      blocksizes[i] = nvarsblock*ncurconss;
+      nvarsblocks[i] = nvarsblock;
+      if(blocksizes[i] > 0)
+      {
+         blockdensities[i] = 1.0*nzblocks[i]/blocksizes[i];
+      }
+      else
+      {
+         blockdensities[i] = 0.0;
+      }
+
+      assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
+      SCIPfreeBufferArray(scip, &ishandled);
+   }
+
+   /* calculate border area */
+   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars+DECdecdecompGetNLinkingvars(decdecomp)*(nconss-DECdecdecompGetNLinkingconss(decdecomp));
+
+   /*   blockarea = 0; */
+   density = 1E20;
+   varratio = 1.0;
+   for( i = 0; i < nblocks; ++i )
+   {
+      /* calculate block area */
+      /* blockarea += blocksizes[i]; */
+
+
+      /* calculate density */
+      density = MIN(density, blockdensities[i]);
+
+      /* calculate linking var ratio */
+      if( DECdecdecompGetNLinkingvars(decdecomp) > 0 )
+      {
+         varratio *= 1.0*nlinkvarsblocks[i]/DECdecdecompGetNLinkingvars(decdecomp);
+      }
+      else
+      {
+         varratio = 0;
+      }
+   }
+
+   score->linkingscore = (0.5+0.5*varratio);
+   score->borderscore = (1.0*(borderarea)/matrixarea);
+   score->densityscore = (1-density);
+
+   switch(DECdecdecompGetType(decdecomp))
+   {
+   case DEC_DECTYPE_ARROWHEAD:
+      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      break;
+   case DEC_DECTYPE_BORDERED:
+      score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
+      break;
+   case DEC_DECTYPE_UNKNOWN:
+      SCIPerrorMessage("Decomposition type is unknown, cannot compute score");
+      assert(FALSE);
+      score->totalscore = 0.0;
+      break;
+   default:
+      SCIPerrorMessage("No rule for this decomposition type, cannot compute score");
+      assert(FALSE);
+      score->totalscore = 0.0;
+      break;
+   }
+
+   SCIPfreeBufferArray(scip, &nzblocks);
+   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
+   SCIPfreeBufferArray(scip, &blockdensities);
+   SCIPfreeBufferArray(scip, &blocksizes);
+   SCIPfreeBufferArray(scip, &nvarsblocks);
+
+   return SCIP_OKAY;
+
+}
 
 /** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
 static
@@ -617,6 +811,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
+   SCIP_Real *scores;
    int i;
 
    assert(scip != NULL);
@@ -693,11 +888,25 @@ SCIP_RETCODE DECdetectStructure(
          }
       }
    }
+   /* evaluate all decompositions and sort them by score */
+   SCIP_CALL(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps));
+   for( i = 0; i < conshdlrdata->ndecomps; ++i)
+   {
+      SCIP_DECOMPOSITIONSCORES score;
+      SCIP_CALL(evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score));
+      scores[i] = score.totalscore;
+   }
+
+   SCIPsortRealPtr(scores, (void**)conshdlrdata->decdecomps, conshdlrdata->ndecomps);
+   SCIPfreeBufferArray(scip, &scores);
+
+
    SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
    SCIP_CALL(convertStructToGCG(scip, conshdlrdata->decdecomps[0]));
 
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
-   SCIP_CALL(SCIPwriteTransProblem(scip, "prob.dec", "dec", FALSE));
+
+   /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
    return SCIP_OKAY;
 }
