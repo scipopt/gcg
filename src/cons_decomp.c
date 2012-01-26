@@ -19,7 +19,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 #include <assert.h>
 
 #include "cons_decomp.h"
@@ -879,8 +879,6 @@ SCIP_RETCODE DECdetectStructure(
             BMScopyMemoryArray(&conshdlrdata->decdecomps[conshdlrdata->ndecomps], decdecomps, ndecdecomps);
             SCIPfreeMemoryArray(scip, &decdecomps);
             conshdlrdata->ndecomps += ndecdecomps;
-
-            break;
          }
          else
          {

@@ -675,6 +675,7 @@ SCIP_RETCODE callMetis(
    SCIP_CALL(SCIPresetClock(scip, detectordata->metisclock));
    SCIP_CALL(SCIPstartClock(scip, detectordata->metisclock));
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\033[31G %d", detectordata->blocks );
    status = system( metiscall );
 
    SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
@@ -1067,7 +1068,10 @@ static SCIP_RETCODE buildTransformedProblem(
       SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
       SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
       if( nlinkingvars > 0 )
+      {
+         DECdecdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
          SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      }
       DECdecdecompSetVartoblock(decdecomp, vartoblock);
       DECdecdecompSetConstoblock(decdecomp, constoblock);
    }
@@ -1118,6 +1122,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\nDetecting Arrowhead structure: ");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
       detectordata->blocks = i;
@@ -1144,7 +1149,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
          ++j;
       }
    }
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\033[31G done, %d decompositions found.\n",  *ndecdecomps);
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
       DECdecdecompFree(scip, &((*decdecomps)[i]) );
