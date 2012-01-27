@@ -418,11 +418,11 @@ SCIP_RETCODE copyToDecdecomp(
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
 
-   SCIPallocMemoryArray(scip, &decdecomp->subscipvars, conshdlrdata->nblocks);
-   SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, conshdlrdata->nblocks);
-   SCIPallocMemoryArray(scip, &decdecomp->subscipconss, conshdlrdata->nblocks);
-   SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, conshdlrdata->nblocks);
-   SCIPallocMemoryArray(scip, &decdecomp->linkingconss, nconss);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipvars, conshdlrdata->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, conshdlrdata->nblocks) ) ;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipconss, conshdlrdata->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, conshdlrdata->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->linkingconss, nconss) );
 
    for( i = 0; i < conshdlrdata->nblocks; ++i)
    {
@@ -574,10 +574,10 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->clock) );
 
    SCIPdebugMessage("Detection took %f s.\n", SCIPclockGetTime(conshdlrdata->clock));
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting blockdiagonal structure:");
    if(result == SCIP_SUCCESS)
    {
-      SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", conshdlrdata->nblocks);
       conshdlrdata->blockdiagonal = TRUE;
       SCIP_CALL( DECdecdecompCreate(scip, &conshdlrdata->decdecomp) );
       SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
@@ -585,7 +585,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    }
    else
    {
-      SCIPdebugMessage("No block diagonal structure found.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
    SCIPfreeBufferArray(scip, &conshdlrdata->consismaster);
 

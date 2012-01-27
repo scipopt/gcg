@@ -362,7 +362,7 @@ SCIP_RETCODE callMetis(
    SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
    SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) );
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\033[30G %d", detectordata->blocks );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", detectordata->blocks );
 /*   extern char **environ;
    char **env;
    for (env = environ; *env; ++env)
@@ -763,7 +763,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
       SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\nDetecting bordered structure: ");
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting bordered structure:");
    for(j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
       detectordata->blocks = i;
@@ -789,7 +789,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
          ++j;
       }
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\033[30G: done, %d decompositions found", *ndecdecomps );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n", *ndecdecomps );
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
