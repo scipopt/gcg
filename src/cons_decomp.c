@@ -256,6 +256,9 @@ SCIP_RETCODE evaluateDecomposition(
    case DEC_DECTYPE_BORDERED:
       score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
       break;
+   case DEC_DECTYPE_DIAGONAL:
+      score->totalscore = 0.0;
+      break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is unknown, cannot compute score");
       assert(FALSE);
@@ -837,7 +840,8 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
 
-   if( conshdlrdata->ndecomps == 0)
+   /*   if( conshdlrdata->ndecomps == 0) */
+   if( TRUE )
    {
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
@@ -900,6 +904,9 @@ SCIP_RETCODE DECdetectStructure(
 
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
+
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n", 
+      DECdecdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecdecompGetType(conshdlrdata->decdecomps[0])));
    SCIP_CALL( convertStructToGCG(scip, conshdlrdata->decdecomps[0]) );
 
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));

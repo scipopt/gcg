@@ -25,6 +25,18 @@
 #include "struct_decomp.h"
 
 #include <assert.h>
+
+/** Converts the DEC_DECTYPE enum to a string */
+const char *DECgetStrType(
+   DEC_DECTYPE type
+   )
+{
+   const char * names[] = {"arrowhead", "staircase", "diagonal", "bordered", "unknown"};
+   assert((int)type >= 0);
+   assert((unsigned int)type < sizeof(names));
+   return names[type];
+}
+
 /** initializes the decdecomp structure to absolutely nothing */
 SCIP_RETCODE DECdecdecompCreate(
    SCIP* scip,           /**< Pointer to the SCIP instance */

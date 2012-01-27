@@ -10,7 +10,7 @@ timing/clocktype = 2
 
 # maximal number of presolving rounds (-1: unlimited, 0: off)
 # [type: int, range: [-1,2147483647], default: -1]
-presolving/maxrounds = 0
+presolving/maxrounds = -1
 
 # maximal number of restarts (-1: unlimited)
 # [type: int, range: [-1,2147483647], default: -1]

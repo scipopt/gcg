@@ -31,6 +31,11 @@
 extern "C" {
 #endif
 
+/** Converts the DEC_DECTYPE enum to a string */
+const char *DECgetStrType(
+   DEC_DECTYPE type
+   );
+
 /** initializes the decdecomp structure to absolutely nothing */
 SCIP_RETCODE DECdecdecompCreate(
    SCIP* scip,           /**< Pointer to the SCIP instance */
