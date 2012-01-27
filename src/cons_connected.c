@@ -579,7 +579,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    {
       SCIPdebugMessage("Found block diagonal structure with %d blocks.\n", conshdlrdata->nblocks);
       conshdlrdata->blockdiagonal = TRUE;
-      SCIP_CALL(DECdecdecompCreate(scip, &conshdlrdata->decdecomp));
+      SCIP_CALL( DECdecdecompCreate(scip, &conshdlrdata->decdecomp) );
       SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
       SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );
    }

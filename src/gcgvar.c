@@ -550,8 +550,8 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    if( blocknr > -1 )
    {
       SCIP_CALL( SCIPallocMemory(scip, &vardata->data.origvardata.linkingvardata) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks));
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks));
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->pricingvars, nblocks) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardata->data.origvardata.linkingvardata->linkconss, nblocks) );
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->pricingvars, nblocks);
       BMSclearMemoryArray(vardata->data.origvardata.linkingvardata->linkconss, nblocks);
 

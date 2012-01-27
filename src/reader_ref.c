@@ -632,7 +632,7 @@ SCIP_RETCODE writeREFFile(
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss));
+   SCIP_CALL( SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss) );
    for( i = 0; i < nconss; ++i)
    {
       size_t ind;
@@ -650,7 +650,7 @@ SCIP_RETCODE writeREFFile(
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
 
       SCIPdebugMessage("cons added: %zu\t%p\t%s\n",ind, cons, SCIPconsGetName(cons));
-      SCIP_CALL(SCIPhashmapInsert(cons2origindex, cons, (void*)(ind))); /* shift by 1 to enable error checking */
+      SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(ind)) ); /* shift by 1 to enable error checking */
 
    }
 
@@ -673,7 +673,7 @@ SCIP_RETCODE writeREFFile(
 #endif
          SCIP_CONS* cons;
 //         assert(SCIPconsIsTransformed(readerdata->decdecomp->subscipconss[i][j]));
-//         SCIP_CALL(SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons));
+//         SCIP_CALL( SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons) );
 //         assert(cons != NULL);
          cons = SCIPfindCons(scip, SCIPconsGetName(readerdata->decdecomp->subscipconss[i][j]));
          ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
@@ -730,7 +730,7 @@ static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
    /*lint --e{715}*/
-   SCIP_CALL(writeREFFile(scip, reader, file));
+   SCIP_CALL( writeREFFile(scip, reader, file) );
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -747,7 +747,7 @@ SCIP_RETCODE SCIPincludeReaderRef(
    SCIP_READERDATA* readerdata;
 
    /* create blk reader data */
-   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
 
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
@@ -805,7 +805,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL));
+   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
 
    for( i = 0; i < nvars; i++ )
    {

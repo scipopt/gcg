@@ -128,11 +128,11 @@ SCIP_RETCODE evaluateDecomposition(
 
    nblocks = DECdecdecompGetNBlocks(decdecomp);
 
-   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
+   SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockdensities, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocksizes, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nvarsblocks, nblocks) );
    /*
     * 3 Scores
     *
@@ -152,7 +152,7 @@ SCIP_RETCODE evaluateDecomposition(
       int nvarsblock;
       SCIP_Bool *ishandled;
 
-      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
+      SCIP_CALL( SCIPallocBufferArray(scip, &ishandled, nvars) );
       nvarsblock = 0;
       nzblocks[i] = 0;
       nlinkvarsblocks[i] = 0;
@@ -301,7 +301,7 @@ SCIP_RETCODE convertStructToGCG(
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars));
+   SCIP_CALL( SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars) );
    GCGrelaxSetNPricingprobs(scip, decdecomp->nblocks);
    SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
@@ -309,14 +309,14 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < decdecomp->nlinkingconss; ++i )
    {
       assert(decdecomp->linkingconss[i] != NULL);
-      SCIP_CALL(GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]));
+      SCIP_CALL( GCGrelaxMarkConsMaster(scip, decdecomp->linkingconss[i]) );
    }
 
    /* prepare the map from transformed to original variables */
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* transvar;
-      SCIP_CALL(SCIPgetTransformedVar(scip, origvars[i], &transvar));
+      SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
       SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
    }
@@ -336,14 +336,14 @@ SCIP_RETCODE convertStructToGCG(
             origvar = SCIPhashmapGetImage(transvar2origvar, decdecomp->subscipvars[i][j]);
             assert(SCIPvarGetData(origvar) != NULL);
 
-            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, origvar, i));
+            SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, origvar, i) );
          }
          else
          {
             if(SCIPvarGetData(getRelevantVariable(decdecomp->subscipvars[i][j])) == NULL)
-               SCIP_CALL(GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])));
+               SCIP_CALL( GCGorigVarCreateData(scip, getRelevantVariable(decdecomp->subscipvars[i][j])) );
 
-            SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i));
+            SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, getRelevantVariable(decdecomp->subscipvars[i][j]), i) );
          }
          assert(SCIPvarGetData(decdecomp->subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(decdecomp->subscipvars[i][j])) != NULL);
       }
@@ -371,7 +371,7 @@ SCIP_RETCODE convertStructToGCG(
                   {
                      SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(decdecomp->linkingvars[i]) != NULL);
-                     SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j));
+                     SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, decdecomp->linkingvars[i], j) );
                      found = TRUE;
                      break;
                   }
@@ -424,7 +424,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL(SCIPfreeClock(scip, &conshdlrdata->detectorclock));
+   SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->detectorclock) );
 
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
@@ -434,7 +434,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       if( detector->exitDetection != NULL)
       {
          SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
-         SCIP_CALL((*detector->exitDetection)(scip, detector));
+         SCIP_CALL( (*detector->exitDetection)(scip, detector) );
       }
    }
 
@@ -550,7 +550,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CONSHDLRDATA* conshdlrdata;
 
    /* create decomp constraint handler data */
-   SCIP_CALL(SCIPallocMemory(scip, &conshdlrdata));
+   SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
    assert(conshdlrdata != NULL);
 
    conshdlrdata->decdecomps = NULL;
@@ -560,7 +560,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    conshdlrdata->detectors = NULL;
    conshdlrdata->hasrun = FALSE;
 
-   SCIP_CALL(SCIPcreateWallClock(scip, &conshdlrdata->detectorclock));
+   SCIP_CALL( SCIPcreateWallClock(scip, &conshdlrdata->detectorclock) );
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
@@ -633,13 +633,13 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    if(conshdlrdata->ndecomps == 0)
    {
       assert(conshdlrdata->decdecomps == NULL);
-      SCIP_CALL(SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) );
       conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps = 1;
    }
    else
    {
-      SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
       conshdlrdata->decdecomps[conshdlrdata->ndecomps] = decdecomp;
       conshdlrdata->ndecomps += 1;
    }
@@ -762,7 +762,7 @@ SCIP_RETCODE DECincludeDetector(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIP_CALL(SCIPallocBlockMemory(scip, &detector));
+   SCIP_CALL( SCIPallocBlockMemory(scip, &detector) );
    assert(detector != NULL);
 
    SCIPdebugMessage("Adding detector %i: %s\n", conshdlrdata->ndetectors+1, name);
@@ -780,8 +780,8 @@ SCIP_RETCODE DECincludeDetector(
    detector->exitDetection = exitDetector;
    detector->getPriority = getPriority;
    detector->i = conshdlrdata->ndetectors;
-   SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1));
-   SCIP_CALL(SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1));
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1) );
 
    conshdlrdata->detectors[conshdlrdata->ndetectors] = detector;
    conshdlrdata->ndetectors = conshdlrdata->ndetectors+1;
@@ -834,8 +834,8 @@ SCIP_RETCODE DECdetectStructure(
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
-   SCIP_CALL(SCIPresetClock(scip, conshdlrdata->detectorclock));
-   SCIP_CALL(SCIPstartClock(scip, conshdlrdata->detectorclock));
+   SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
+   SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
 
    if( conshdlrdata->ndecomps == 0)
    {
@@ -864,11 +864,11 @@ SCIP_RETCODE DECdetectStructure(
          if(detector->initDetection != NULL)
          {
             SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
-            SCIP_CALL((*detector->initDetection)(scip, detector));
+            SCIP_CALL( (*detector->initDetection)(scip, detector) );
          }
 
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
-         SCIP_CALL((*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  &result));
+         SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  &result) );
          if( result == SCIP_SUCCESS )
          {
             assert(ndecdecomps >= 0);
@@ -887,11 +887,11 @@ SCIP_RETCODE DECdetectStructure(
       }
    }
    /* evaluate all decompositions and sort them by score */
-   SCIP_CALL(SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps));
+   SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i)
    {
       SCIP_DECOMPOSITIONSCORES score;
-      SCIP_CALL(evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score));
+      SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
       scores[i] = score.totalscore;
    }
 
@@ -899,8 +899,8 @@ SCIP_RETCODE DECdetectStructure(
    SCIPfreeBufferArray(scip, &scores);
 
 
-   SCIP_CALL(SCIPstopClock(scip, conshdlrdata->detectorclock));
-   SCIP_CALL(convertStructToGCG(scip, conshdlrdata->decdecomps[0]));
+   SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
+   SCIP_CALL( convertStructToGCG(scip, conshdlrdata->decdecomps[0]) );
 
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 

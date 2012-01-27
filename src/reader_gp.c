@@ -158,8 +158,8 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)));
-   SCIP_CALL(SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)));
+   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if(decdecomp != NULL)
    {
@@ -182,14 +182,14 @@ SCIP_RETCODE writeData(
             for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
             {
                assert(decdecomp->subscipvars[i][j] != NULL);
-               SCIP_CALL(SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex));
+               SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
                varindex++;
             }
             for( j = 0; j < decdecomp->nsubscipconss[i]; ++j)
             {
    //            SCIPinfoMessage(scip, NULL, "%d, %d, %d; ", i, j, decdecomp->nsubscipconss[i] );
                assert(decdecomp->subscipconss[i][j] != NULL);
-               SCIP_CALL(SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex));
+               SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex) );
                consindex++;
             }
          }
@@ -201,13 +201,13 @@ SCIP_RETCODE writeData(
          for( j = 0; j < decdecomp->nlinkingvars; ++j)
          {
             assert(decdecomp->linkingvars[j]);
-            SCIP_CALL(SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex));
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
          }
          for( j = 0; j < decdecomp->nlinkingconss; ++j)
          {
             assert(decdecomp->linkingconss[j]);
-            SCIP_CALL(SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex));
+            SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
             consindex++;
          }
 
@@ -217,7 +217,7 @@ SCIP_RETCODE writeData(
          {
             if(SCIPhashmapGetImage(varindexmap, SCIPgetVars(scip)[j]) == NULL)
             {
-               SCIP_CALL(SCIPhashmapInsert(varindexmap, SCIPgetVars(scip)[j], (void*)varindex));
+               SCIP_CALL( SCIPhashmapInsert(varindexmap, SCIPgetVars(scip)[j], (void*)varindex) );
                varindex++;
             }
          }
@@ -352,7 +352,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    assert(readerdata != NULL);
    //   if(readerdata->decdecomp != NULL && readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
    //   readerdata->decdecomp = DECgetBestDecomp(scip);
-   SCIP_CALL(SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE));
+   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE) );
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -391,23 +391,23 @@ SCIP_RETCODE SCIPwriteGp(
    {
       SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", getSanitizedProbName(scip), decdecomp->nblocks);
    }
-   SCIP_CALL(writeFileHeader(scip, file, outname));
+   SCIP_CALL( writeFileHeader(scip, file, outname) );
 
    /* write decomp information such as rectangles */
    if(writeDecomposition)
    {
-      SCIP_CALL(writeDecompositionHeader(scip, file, decdecomp));
+      SCIP_CALL( writeDecompositionHeader(scip, file, decdecomp) );
    }
 
    /* write the plot header*/
-   SCIP_CALL(writePlotCommands(scip, file));
+   SCIP_CALL( writePlotCommands(scip, file) );
 
 
    /* write data */
-   SCIP_CALL(writeData(scip, file, decdecomp));
+   SCIP_CALL( writeData(scip, file, decdecomp) );
 
    /* write file end */
-   SCIP_CALL(writeFileTrailer(scip, file));
+   SCIP_CALL( writeFileTrailer(scip, file) );
    return SCIP_OKAY;
 }
 
@@ -419,7 +419,7 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP_READERDATA* readerdata;
 
    /* create gp reader data */
-   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
    readerdata->decdecomp = NULL;
    readerdata->vartoindex = NULL;
 

@@ -638,7 +638,7 @@ SCIP_RETCODE solveLP(
    /* free previous lp solution */
    if( *lpsol != NULL )
    {
-      SCIP_CALL( SCIPfreeSol(masterprob, lpsol));
+      SCIP_CALL( SCIPfreeSol(masterprob, lpsol) );
       *lpsol = NULL;
    }
 

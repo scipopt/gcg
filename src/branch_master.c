@@ -76,7 +76,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyMaster)
    assert(branchrule != NULL);
    assert(scip != NULL);
    SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL(GCGincludeMasterCopyPlugins(scip));
+   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }

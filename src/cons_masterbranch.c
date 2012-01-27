@@ -722,7 +722,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* if the node is activated the first time, we first have to setup the constraint data */
    if( !consdata->created )
    {
-      SCIP_CALL(GCGconsMasterbranchCreateConsData(scip, origscip, consdata, conshdlrData, cons));
+      SCIP_CALL( GCGconsMasterbranchCreateConsData(scip, origscip, consdata, conshdlrData, cons) );
       assert(consdata->created);
    }
 
@@ -787,12 +787,12 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
              * we have to adjust the bound of the corresponding variable in the pricing problem */
             if( conshdlrData->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
-               SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i])),
+               SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i]) ),
                      conshdlrData->pendingvars[i], conshdlrData->pendingnewbnds[i]) );
             }
             else
             {
-               SCIP_CALL( SCIPchgVarUbGlobal(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i])),
+               SCIP_CALL( SCIPchgVarUbGlobal(GCGrelaxGetPricingprob(origscip, GCGvarGetBlock(conshdlrData->pendingvars[i]) ),
                      conshdlrData->pendingvars[i], conshdlrData->pendingnewbnds[i]) );
             }
          }
@@ -833,7 +833,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             if(pricingvars[j] == NULL)
                continue;
 
-            SCIP_CALL(GCGtightenPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j));
+            SCIP_CALL( GCGtightenPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j) );
          }
       }
       else
@@ -939,7 +939,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
 
             /* reset corresponding bound in the pricing problem */
-            SCIP_CALL(GCGresetPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j));
+            SCIP_CALL( GCGresetPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j) );
          }
       }
       else

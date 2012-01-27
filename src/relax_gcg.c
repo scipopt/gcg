@@ -416,7 +416,7 @@ SCIP_RETCODE checkIdenticalBlocks(
                assert(GCGvarIsOriginal(origvar));
                assert(GCGoriginalVarGetPricingVar(origvar) != NULL);
                GCGoriginalVarSetPricingVar(origvar, pricingvar);
-               SCIP_CALL(GCGpricingVarAddOrigVar(relaxdata->pricingprobs[blocknr], pricingvar, origvar));
+               SCIP_CALL( GCGpricingVarAddOrigVar(relaxdata->pricingprobs[blocknr], pricingvar, origvar) );
             }
 
          }
@@ -901,7 +901,7 @@ SCIP_RETCODE createMaster(
       vals = SCIPgetValsLinear(scip, relaxdata->linearmasterconss[i]);
       for( v = 0; v < nvars; v++ )
       {
-         SCIP_CALL(GCGoriginalVarAddCoef(scip, vars[v], vals[v], relaxdata->masterconss[i]));
+         SCIP_CALL( GCGoriginalVarAddCoef(scip, vars[v], vals[v], relaxdata->masterconss[i]) );
       }
    }
 
@@ -1072,7 +1072,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
             SCIP_CONS* tempcons;
             if( linkconss[j] != NULL )
             {
-               SCIP_CALL(SCIPtransformCons(masterprob, linkconss[j], &(tempcons)));
+               SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
                GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
             }
          }
@@ -1222,7 +1222,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
             /* give the master 2% more time then the original scip has left */
             mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
-            SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit));
+            SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
 
             SCIPdebugMessage("Orig left: %f, limit for master %f, left %f\n",
                   timelimit - SCIPgetSolvingTime(scip),
@@ -1257,7 +1257,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
          {
             double tilim;
-            SCIP_CALL(SCIPgetRealParam(masterprob, "limits/time", &tilim));
+            SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
             if(tilim-SCIPgetSolvingTime(masterprob) < 0)
             {
                *result = SCIP_DIDNOTRUN;
@@ -1277,7 +1277,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL
       && SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
-      SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)),
+      SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
             GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
    }
 
@@ -1772,7 +1772,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    /* add coefs of the original variables in the constraint to their variable data */
    for( v = 0; v < nconsvars; v++ )
    {
-      SCIP_CALL(GCGoriginalVarAddCoef(scip, consvars[v], consvals[v], mastercons));
+      SCIP_CALL( GCGoriginalVarAddCoef(scip, consvars[v], consvals[v], mastercons) );
    }
 
    /* add master variables to the corresponding master constraint */
@@ -1942,7 +1942,7 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
       if(!GCGvarIsLinking(var))
          relaxdata->nlinkingvars++;
 
-      SCIP_CALL(GCGoriginalVarAddBlock(scip, var, newblock));
+      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
       assert(GCGisLinkingVarInBlock(var, newblock));
    }
    blocknr = GCGvarGetBlock(var);

@@ -297,13 +297,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
    {
       int ind;
-      SCIP_CALL(checkSolsForInfinity(pricingprob, &solisinvalid, &ind));
+      SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
 
       if (solisinvalid)
       {
          SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
          SCIP_CALL( SCIPfreeTransform(pricingprob) );
-         SCIP_CALL( adjustPricingObj(pricingprob, ind, up));
+         SCIP_CALL( adjustPricingObj(pricingprob, ind, up) );
          SCIP_CALL( SCIPtransformProb(pricingprob) );
          SCIP_CALL( SCIPsolve(pricingprob) );
 

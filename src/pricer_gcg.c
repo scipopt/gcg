@@ -582,11 +582,11 @@ SCIP_RETCODE solvePricingProblem(
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optfarkasclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optfarkasclock) );
          }
          else
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optredcostclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optredcostclock) );
          }
 
          SCIP_CALL( pricerdata->solvers[i]->solversolve(scip, pricerdata->solvers[i],
@@ -595,13 +595,13 @@ SCIP_RETCODE solvePricingProblem(
 
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optfarkasclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optfarkasclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->optfarkascalls++;
          }
          else
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optredcostclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optredcostclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->optredcostcalls++;
          }
@@ -655,11 +655,11 @@ SCIP_RETCODE solvePricingProblemHeur(
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurfarkasclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurfarkasclock) );
          }
          else
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurredcostclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurredcostclock) );
          }
 
          SCIP_CALL( pricerdata->solvers[i]->solversolveheur(scip, pricerdata->solvers[i],
@@ -669,13 +669,13 @@ SCIP_RETCODE solvePricingProblemHeur(
 
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurfarkasclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurfarkasclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->heurfarkascalls++;
          }
          else
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurredcostclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurredcostclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->heurredcostcalls++;
          }
@@ -1276,9 +1276,9 @@ SCIP_RETCODE createNewMasterVar(
    pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
    pricerdata->npricedvars++;
 
-   SCIP_CALL(addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars));
+   SCIP_CALL( addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars) );
 
-   SCIP_CALL(addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars));
+   SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
    if( !solisray )
