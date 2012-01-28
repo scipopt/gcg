@@ -214,11 +214,15 @@ SCIP_RETCODE selectExtremePoints(
    int nblocks;
 
    SCIP_VAR** mastervars;
+   SCIP_Real* mastervals;
    int nmastervars;
 
    int nusedpts;
    int block;
    int nidentblocks;
+   int* blocknrs;
+   int* identblock;
+   SCIP_Real* blockvalue;
    SCIP_Real value;
    SCIP_Real* selvalue;
 
@@ -242,13 +246,89 @@ SCIP_RETCODE selectExtremePoints(
    assert(mastervars != NULL);
    assert(nmastervars >= 0);
 
+   /* get master LP solution values */
+   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
+   SCIP_CALL( SCIPgetSolVals(masterprob, NULL, nmastervars, mastervars, mastervals) );
+
    /* get number of extreme points per block */
    nusedpts = heurdata->nusedpts;
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBufferArray(scip, &selvalue, nblocks * nusedpts) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &identblock, nblocks) );
+
+   /* initialize the block values for the pricing problems */
+   for( i = 0; i < nblocks; i++ )
+   {
+      blockvalue[i] = 0.0;
+      blocknrs[i] = 0;
+      identblock[i] = i;
+   }
 
    *success = FALSE;
+
+   /* loop over all given master variables;
+    * this loop treats master variables that have value one or greater
+    * (in particular important if blocks are represented by others) */
+   for( i = 0; i < nmastervars; i++ )
+   {
+      SCIP_VAR* mastervar;
+
+      mastervar = mastervars[i];
+      assert(GCGvarIsMaster(mastervar));
+
+      /* get block information and solution value */
+      block = GCGvarGetBlock(mastervar);
+      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+      value = SCIPgetSolVal(masterprob, NULL, mastervar);
+
+      /* @todo: handle infinite master solution values */
+      assert(!SCIPisInfinity(scip, value));
+
+      /* ignore irrelevant extreme points */
+      if( SCIPisZero(scip, value) )
+         continue;
+
+      /* ignore rays
+       * @todo: do it smarter */
+      if( GCGmasterVarIsRay(mastervar) )
+         continue;
+
+      /* variables belonging to no block are not treated here */
+      if( block == -1 )
+         continue;
+
+      /* ignore "empty" master variables, i.e. variables representing the zero vector */
+//      if( norigvars == 0 )
+//         continue;
+
+      while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
+      {
+         /* insert the extreme point in the selection (should be the only point for this block) */
+         j = identblock[block] * nusedpts;
+         assert(selection[j] == -1);
+
+         SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
+            identblock[block]+1, i, 1.0, j % nusedpts);
+         selection[j] = i;
+         selvalue[j] = mastervals[i];
+
+         mastervals[i] = mastervals[i] - 1.0;
+         blocknrs[block]++;
+
+         /* search the next block to be considered */
+         for( j = identblock[block] + 1; j < nblocks; ++j )
+            if( GCGrelaxGetBlockRepresentative(scip, j) == block )
+            {
+               identblock[block] = j;
+               break;
+            }
+
+         assert(blocknrs[block] >= nidentblocks || j < nblocks);
+      }
+   }
 
    /* loop over all given master variables */
    for( i = 0; i < nmastervars; i++ )
@@ -283,26 +363,53 @@ SCIP_RETCODE selectExtremePoints(
 //      if( norigvars == 0 )
 //         continue;
 
-      value = value / nidentblocks;
+      assert(SCIPisFeasGE(scip, mastervals[i], 0.0) && SCIPisFeasLT(scip, mastervals[i], 1.0));
 
-      /* check if the extreme point is good enough to be inserted in the selection */
-      for( j = block * nusedpts; j < (block + 1) * nusedpts; ++j )
+      while( SCIPisFeasPositive(scip, mastervals[i]) )
       {
-         /* if the extreme point is better than a point in the selection
-          * or there are < nusedpts, insert it */
-         if( selection[j] == -1 || SCIPisGT(scip, value, selvalue[j]) )
+         value = MIN(mastervals[i], 1.0 - blockvalue[block]);
+
+         /* check if the extreme point is good enough to be inserted in the selection */
+         for( j = identblock[block] * nusedpts; j < (identblock[block] + 1) * nusedpts; ++j )
          {
-//            SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
-//                  block+1, i, value, j % nusedpts);
-            for( k = (block + 1) * nusedpts - 1; k > j; --k )
+            /* if the extreme point is better than a point in the selection
+             * or there are < nusedpts, insert it */
+            if( selection[j] == -1 || SCIPisGT(scip, value, selvalue[j]) )
             {
-//               SCIPdebugMessage("  shift point %d from pos %d to pos %d\n", selection[k-1], (k-1) % nusedpts, k % nusedpts);
-               selection[k] = selection[k-1];
-               selvalue[k] = selvalue[k-1];
+               SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
+                     identblock[block]+1, i, value, j % nusedpts);
+               for( k = (identblock[block] + 1) * nusedpts - 1; k > j; --k )
+               {
+                  SCIPdebugMessage("  shift point %d from pos %d to pos %d\n", selection[k-1], (k-1) % nusedpts, k % nusedpts);
+                  selection[k] = selection[k-1];
+                  selvalue[k] = selvalue[k-1];
+               }
+               selection[j] = i;
+               selvalue[j] = value;
+               break;
             }
-            selection[j] = i;
-            selvalue[j] = value;
-            break;
+         }
+
+         mastervals[i] = mastervals[i] - value;
+         if( SCIPisFeasZero(scip, mastervals[i]) )
+            mastervals[i] = 0.0;
+         blockvalue[block] += value;
+
+         /* if the value assigned to the block is equal to 1, this block is full and we consider the next block */
+         if( SCIPisFeasGE(scip, blockvalue[block], 1.0) )
+         {
+            blockvalue[block] = 0.0;
+            blocknrs[block]++;
+
+            /* search the next block to be considered */
+            for( j = identblock[block] + 1; j < nblocks; ++j )
+               if( GCGrelaxGetBlockRepresentative(scip, j) == block )
+               {
+                  identblock[block] = j;
+                  break;
+               }
+
+            assert(blocknrs[block] >= nidentblocks || j < nblocks);
          }
       }
    }
@@ -317,6 +424,11 @@ SCIP_RETCODE selectExtremePoints(
       *success = TRUE;
    }
 
+   /* free memory */
+   SCIPfreeBufferArray(scip, &mastervals);
+   SCIPfreeBufferArray(scip, &identblock);
+   SCIPfreeBufferArray(scip, &blocknrs);
+   SCIPfreeBufferArray(scip, &blockvalue);
    SCIPfreeBufferArray(scip, &selvalue);
 
    return SCIP_OKAY;
@@ -740,16 +852,12 @@ static SCIP_RETCODE fixVariables(
       SCIP_Real* origvals;
       int norigvars;
 
-      /* ignore blocks represented by others */
-      if( !GCGrelaxIsPricingprobRelevant(scip, i) )
-         continue;
-
       /* use the first extreme point as reference point, set fixvals to its values */
       assert(selection[i * nusedpts] != -1);
 
       /* get master variable */
       mastervar = mastervars[selection[i * nusedpts]];
-      assert(GCGvarGetBlock(mastervar) == i);
+      assert(GCGvarGetBlock(mastervar) == GCGrelaxGetBlockRepresentative(scip, i));
 
       /* get extreme point */
       origvars = GCGmasterVarGetOrigvars(mastervar);
@@ -760,24 +868,44 @@ static SCIP_RETCODE fixVariables(
        * and increase its counter if it is nonzero */
       for( k = 0; k < norigvars; ++k )
       {
+         SCIP_VAR* origvar;
+         SCIP_VAR* pricingvar;
+         SCIP_VAR** origpricingvars;
+         int norigpricingvars;
+
          if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
             continue;
 
-         idx = SCIPvarGetProbindex(origvars[k]);
+         pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+         assert(GCGvarIsPricing(pricingvar));
+         norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+         origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+         /* search the right original variable */
+         origvar = NULL;
+         for( j = 0; j < norigpricingvars; ++j  )
+            if( GCGvarGetBlock(origpricingvars[j]) == i )
+            {
+               origvar = origpricingvars[j];
+               break;
+            }
+         assert(origvar != NULL);
+
+         idx = SCIPvarGetProbindex(origvar);
          assert(idx < nbinvars + nintvars);
          j = 0;
 
          /* for linking variables, check first whether this is
           * the first block the variable appears in */
-         if( GCGvarIsLinking(origvars[k]) )
+         if( GCGvarIsLinking(origvar) )
          {
             SCIP_VAR** linkingpricingvars;
-            linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+            linkingpricingvars = GCGlinkingVarGetPricingVars(origvar);
             for( j = 0; j < i; ++j )
                if( linkingpricingvars[j] != NULL )
                   break;
          }
-         if( !GCGvarIsLinking(origvars[k]) || j == i)
+         if( !GCGvarIsLinking(origvar) || j == i)
             fixvals[idx] = origvals[k];
          else
             if( fixable[idx] && !SCIPisEQ(scip, fixvals[idx], origvals[k]) )
@@ -793,7 +921,7 @@ static SCIP_RETCODE fixVariables(
          {
             /* get master variable */
             mastervar = mastervars[selection[i * nusedpts + j]];
-            assert(GCGvarGetBlock(mastervar) == i);
+            assert(GCGvarGetBlock(mastervar) == GCGrelaxGetBlockRepresentative(scip, i));
 
             /* get extreme point */
             origvars = GCGmasterVarGetOrigvars(mastervar);
@@ -802,10 +930,30 @@ static SCIP_RETCODE fixVariables(
 
             for( k = 0; k < norigvars; ++k )
             {
+               SCIP_VAR* origvar;
+               SCIP_VAR* pricingvar;
+               SCIP_VAR** origpricingvars;
+               int norigpricingvars;
+
                if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                   continue;
 
-               idx = SCIPvarGetProbindex(origvars[k]);
+               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+               assert(GCGvarIsPricing(pricingvar));
+               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+               origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+               /* search the right original variable */
+               origvar = NULL;
+               for( j = 0; j < norigpricingvars; ++j  )
+                  if( GCGvarGetBlock(origpricingvars[j]) == i )
+                  {
+                     origvar = origpricingvars[j];
+                     break;
+                  }
+               assert(origvar != NULL);
+
+               idx = SCIPvarGetProbindex(origvar);
                assert(idx < nbinvars + nintvars);
                /* the variable can not be be fixed if its value differs in the extreme points */
                if( fixable[idx] && !SCIPisEQ(scip, fixvals[idx], origvals[k]) )
@@ -828,10 +976,6 @@ static SCIP_RETCODE fixVariables(
       var = vars[i];
       assert(GCGvarIsOriginal(var));
       block = GCGvarGetBlock(var);
-
-      /* if the variable is represented by another one, it is not treated here */
-      if( block >= 0 && !GCGrelaxIsPricingprobRelevant(scip, block))
-         continue;
 
       /* we still need to treat variables belonging to no block (as they did not appear in any extreme point) */
       /* if the variable belongs to no block, fix it in a RENS-like fashion */
@@ -888,47 +1032,19 @@ static SCIP_RETCODE fixVariables(
 //                  SCIPvarGetName(var), block+1, fixvals[i], ptcounter[i], fixable[i]);
 
       /* the variable can be fixed if it has not been marked unfixable and
-       *  - it was directly transferred to the master problem or
+       *  - it was directly transferred to the master problem and has integer value or
        *  - it appeared zero in all extreme points
        *  - it did not appear zero in some extreme pts and nonzero in other extreme pts
        */
       if( fixable[i] )
       {
-         SCIP_VAR* pricingvar;
-         SCIP_VAR** origpricingvars;
-         int norigpricingvars;
+         SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], fixvals[i]) );
+         SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], fixvals[i]) );
 
-         pricingvar = GCGoriginalVarGetPricingVar(var);
-         assert(GCGvarIsPricing(pricingvar));
-         origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-         norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-         assert(origpricingvars != NULL);
-         assert(norigpricingvars >= 0);
+         fixingcounter++;
 
-         if( block >= 0 )
-         {
-            /* fix the variable and all other variables represented by it */
-            for( j = 0; j < norigpricingvars; ++j )
-            {
-               idx = SCIPvarGetProbindex(origpricingvars[j]);
-               SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[idx], fixvals[i]) );
-               SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[idx], fixvals[i]) );
-            }
-            fixingcounter += norigpricingvars;
-
-            if ( SCIPisZero(scip, fixvals[i]) )
-               zerocounter += norigpricingvars;
-         }
-         else
-         {
-            SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], fixvals[i]) );
-            SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], fixvals[i]) );
-
-            fixingcounter++;
-
-            if ( SCIPisZero(scip, fixvals[i]) )
-               zerocounter++;
-         }
+         if ( SCIPisZero(scip, fixvals[i]) )
+            zerocounter++;
       }
    }
 

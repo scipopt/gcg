@@ -166,6 +166,15 @@ SCIP_Bool GCGrelaxIsPricingprobRelevant(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
+/**
+ *  for a given block, return the block by which it is represented
+ */
+extern
+int GCGrelaxGetBlockRepresentative(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
 /** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
 extern

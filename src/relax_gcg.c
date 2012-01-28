@@ -2076,6 +2076,32 @@ SCIP_Bool GCGrelaxIsPricingprobRelevant(
 
 }
 
+/**
+ *  for a given block, return the block by which it is represented
+ */
+int GCGrelaxGetBlockRepresentative(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   assert(relaxdata->nblocksidentical[pricingprobnr] >= 0);
+   assert((relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr)
+      == (relaxdata->nblocksidentical[pricingprobnr] > 0));
+
+   return relaxdata->blockrepresentative[pricingprobnr];
+}
+
 /** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
 int GCGrelaxGetNIdenticalBlocks(
