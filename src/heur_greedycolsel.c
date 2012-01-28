@@ -17,7 +17,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-/* #define SCIP_DEBUG */
+//define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -737,6 +737,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             SCIP_VAR* zeromastervar;
 
             /* fill the block with the zero solution */
+            zeromastervar = NULL;
             getZeroMastervar(scip, heurdata, i, &zeromastervar);
             if( zeromastervar != NULL )
             {

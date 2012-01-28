@@ -8,7 +8,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id$
 #
 #@file    check.awk
 #@brief   SCIP Check Report Generator
@@ -360,6 +359,9 @@ BEGIN {
 /^Matrix has / {
    blocks = $3;
    rel = $5;
+}
+/^GCG                : Performing Dantzig-Wolfe with [0-9]+ blocks./ {
+   blocks = $6;
 }
 /^  mip              :/ {
    npriceprobs = $4 + $6;

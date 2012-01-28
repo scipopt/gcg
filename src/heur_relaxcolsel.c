@@ -811,6 +811,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             SCIP_VAR* zeromastervar;
 
             /* fill the block with the zero solution */
+            zeromastervar = NULL;
             getZeroMastervar(scip, heurdata, i, &zeromastervar);
             if( zeromastervar != NULL )
             {
