@@ -539,7 +539,7 @@ SCIP_RETCODE readNBlocks(
          if( blkinput->nblocks == -1 )
          {
             blkinput->nblocks = nblocks;
-            GCGrelaxSetNPricingprobs(scip, nblocks);
+            //GCGrelaxSetNPricingprobs(scip, nblocks);
          }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
@@ -577,7 +577,7 @@ SCIP_RETCODE readBlock(
       }
 
       /* set the block number of the variable to the number of the current block */
-      SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
+      // SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
    }
 
    return SCIP_OKAY;
@@ -610,7 +610,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          /* set the block number of the variable to the number of the current block */
-         SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
+         // SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
       }
    }
 

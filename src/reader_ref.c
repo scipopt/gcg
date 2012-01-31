@@ -417,7 +417,7 @@ SCIP_RETCODE readNBlocks(
          {
             refinput->nblocks = nblocks;
             SCIP_CALL( SCIPallocBufferArray(scip, &refinput->blocksizes, nblocks) );
-            GCGrelaxSetNPricingprobs(scip, nblocks);
+            // GCGrelaxSetNPricingprobs(scip, nblocks);
          }
          SCIPdebugMessage("Number of blocks = %d\n", refinput->nblocks);
       }
@@ -514,7 +514,7 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
                /* set the block number of the variable to the number of the current block */
-               SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
+               // SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
                refinput->nassignedvars++;
             }
             consctr++;
@@ -593,7 +593,7 @@ SCIP_RETCODE readREFFile(
 
    for (i = 0; i < refinput->nmarkedmasterconss; ++i)
    {
-      SCIP_CALL( GCGrelaxMarkConsMaster(scip, refinput->markedmasterconss[i]) );
+      // SCIP_CALL( GCGrelaxMarkConsMaster(scip, refinput->markedmasterconss[i]) );
    }
    return SCIP_OKAY;
 }
