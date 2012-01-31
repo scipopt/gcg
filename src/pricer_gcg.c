@@ -1854,22 +1854,24 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       SCIP_Real* coefs;
       int blocknr;
       int ncoefs;
+      SCIP_VAR* var;
 
-      blocknr = GCGvarGetBlock(vars[v]);
-      coefs = GCGoriginalVarGetCoefs(vars[v]);
-      ncoefs = GCGoriginalVarGetNCoefs(vars[v]);
+      var = SCIPvarGetProbvar(vars[v]);
+      blocknr = GCGvarGetBlock(var);
+      coefs = GCGoriginalVarGetCoefs(var);
+      ncoefs = GCGoriginalVarGetNCoefs(var);
 
-      assert(GCGvarIsOriginal(vars[v]));
+      assert(GCGvarIsOriginal(var));
       if( blocknr < 0 )
       {
          SCIP_CONS** linkconss;
          SCIP_VAR* newvar;
-         linkconss = GCGoriginalVarGetLinkingCons(vars[v]);
+         linkconss = GCGoriginalVarGetLinkingCons(var);
 
-         SCIP_CALL( GCGcreateInitialMasterVar(scip, vars[v], &newvar) );
+         SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, vars[v], newvar, 1.0) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
 
          /* add variable in the master to the master constraints it belongs to */
          for( i = 0; i < ncoefs; i++ )
@@ -1882,10 +1884,10 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          }
 
          /* we copied a linking variable into the master, add it to the linkcons */
-         if( GCGvarIsLinking(vars[v]) )
+         if( GCGvarIsLinking(var) )
          {
             SCIP_CONS** linkingconss;
-            linkingconss = GCGlinkingVarGetLinkingConss(vars[v]);
+            linkingconss = GCGlinkingVarGetLinkingConss(var);
 
             for( i = 0; i < pricerdata->npricingprobs; i++ )
             {

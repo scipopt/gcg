@@ -487,15 +487,13 @@ SCIP_Bool consIsInBlock(
    {
       /* check whether bounded variable is contained in block */
       var = SCIPgetVarVarbound(scip, cons);
-      if( SCIPvarIsNegated(var) )
-         var = SCIPvarGetNegationVar(var);
+      var = SCIPvarGetProbvar(var);
       if( !SCIPhashmapExists(varmap, (void*) var) )
          return FALSE;
 
       /* check whether bounding variable is contained in block */
       var = SCIPgetVbdvarVarbound(scip, cons);
-      if( SCIPvarIsNegated(var) )
-         var = SCIPvarGetNegationVar(var);
+      var = SCIPvarGetProbvar(var);
       if( !SCIPhashmapExists(varmap, (void*) var) )
          return FALSE;
 
@@ -512,10 +510,7 @@ SCIP_Bool consIsInBlock(
    for( i = 0; i < nvars; i++ )
    {
       var = vars[i];
-      if( SCIPvarIsNegated(var) )
-      {
-         var = SCIPvarGetNegationVar(var);
-      }
+      var = SCIPvarGetProbvar(vars[i]);
       if( !SCIPhashmapExists(varmap, (void*) var) )
       {
          return FALSE;
@@ -674,26 +669,29 @@ SCIP_RETCODE createMaster(
    for( v = 0; v < nvars; v++ )
    {
       int blocknr;
-      blocknr = GCGvarGetBlock(vars[v]);
+      SCIP_VAR* var;
+      var = SCIPvarGetProbvar(vars[v]);
+      blocknr = GCGvarGetBlock(var);
+
       /* variable belongs to exactly one block --> create corresponding pricing variable*/
       if( blocknr >= 0 )
       {
-         assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
+         assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
-         SCIP_CALL( GCGrelaxCreatePricingVar(scip, vars[v]) );
-         assert(GCGoriginalVarGetPricingVar(vars[v]) != NULL);
+         SCIP_CALL( GCGrelaxCreatePricingVar(scip, var) );
+         assert(GCGoriginalVarGetPricingVar(var) != NULL);
 
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[blocknr], (void*)(vars[v]),
-               (void*)(GCGoriginalVarGetPricingVar(vars[v])) ));
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(vars[v]), (void*)(vars[v])) );
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[blocknr], (void*)(var),
+               (void*)(GCGoriginalVarGetPricingVar(var)) ));
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
       /* variable is a linking variable --> create corresponding pricing variable in all linked blocks
        * and create corresponding linking constraints */
-      else if( GCGvarIsLinking(vars[v]) )
+      else if( GCGvarIsLinking(var) )
       {
          SCIP_VAR** pricingvars;
 
-         assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
+         assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
 #ifndef NDEBUG
          /* checks that GCGrelaxSetOriginalVarBlockNr() worked correctly */
@@ -702,9 +700,9 @@ SCIP_RETCODE createMaster(
             int nblocks;
             SCIP_CONS** linkconss;
 
-            pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
-            linkconss = GCGlinkingVarGetLinkingConss(vars[v]);
-            nblocks = GCGlinkingVarGetNBlocks(vars[v]);
+            pricingvars = GCGlinkingVarGetPricingVars(var);
+            linkconss = GCGlinkingVarGetLinkingConss(var);
+            nblocks = GCGlinkingVarGetNBlocks(var);
 
             count = 0;
             for( i = 0; i < npricingprobs; i++ )
@@ -719,7 +717,7 @@ SCIP_RETCODE createMaster(
             assert(nblocks == count);
          }
 #endif
-         SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, vars[v]) );
+         SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, var) );
 #ifndef NDEBUG
          /* checks that GCGrelaxCreateLinkingPricingVars() worked correctly */
          {
@@ -727,9 +725,9 @@ SCIP_RETCODE createMaster(
             int nblocks;
             SCIP_CONS** linkconss;
 
-            pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
-            linkconss = GCGlinkingVarGetLinkingConss(vars[v]);
-            nblocks = GCGlinkingVarGetNBlocks(vars[v]);
+            pricingvars = GCGlinkingVarGetPricingVars(var);
+            linkconss = GCGlinkingVarGetLinkingConss(var);
+            nblocks = GCGlinkingVarGetNBlocks(var);
 
             count = 0;
             for( i = 0; i < npricingprobs; i++ )
@@ -746,25 +744,25 @@ SCIP_RETCODE createMaster(
             assert(nblocks == count);
          }
 #endif
-         assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
+         assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
-         pricingvars = GCGlinkingVarGetPricingVars(vars[v]);
+         pricingvars = GCGlinkingVarGetPricingVars(var);
 
          for( i = 0; i < npricingprobs; i++ )
          {
             if( pricingvars[i] != NULL)
             {
-               SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[i], (void*)(vars[v]),
+               SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[i], (void*)(var),
                      (void*)(pricingvars[i])) );
             }
          }
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(vars[v]), (void*)(vars[v])) );
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
       else
       {
-         assert(GCGvarGetBlock(vars[v]) == -1);
-         assert(GCGoriginalVarGetPricingVar(vars[v]) == NULL);
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(vars[v]), (void*)(vars[v])) );
+         assert(GCGvarGetBlock(var) == -1);
+         assert(GCGoriginalVarGetPricingVar(var) == NULL);
+         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
    }
 
@@ -827,6 +825,8 @@ SCIP_RETCODE createMaster(
             /* if it is not marked, try to copy the constraints into one of the pricing blocks */
             if( !marked )
             {
+               SCIP_Bool copied;
+               copied = FALSE;
                for( b = 0; b < npricingprobs && !success; b++ )
                {
                   /* check whether constraint belongs to this block */
@@ -838,6 +838,8 @@ SCIP_RETCODE createMaster(
                            relaxdata->hashorig2pricingvar[b], NULL, name,
                            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
 
+                     SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(bufconss[c]), b);
+                     copied = TRUE;
                      /* constraint was successfully copied */
                      assert(success);
 
@@ -846,6 +848,7 @@ SCIP_RETCODE createMaster(
                      SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
                   }
                }
+               assert(copied);
             }
             else
             {
@@ -892,9 +895,11 @@ SCIP_RETCODE createMaster(
    nvars = SCIPgetNVars(scip);
    for( v = 0; v < nvars; v++ )
    {
-      assert(GCGvarIsOriginal(vars[v]));
-      assert(GCGoriginalVarGetCoefs(vars[v]) == NULL);
-      GCGoriginalVarSetNCoefs(vars[v], 0);
+      SCIP_VAR* var;
+      var = SCIPvarGetProbvar(vars[v]);
+      assert(GCGvarIsOriginal(var));
+      assert(GCGoriginalVarGetCoefs(var) == NULL);
+      GCGoriginalVarSetNCoefs(var, 0);
    }
 
    /* save coefs */
@@ -1024,22 +1029,21 @@ SCIP_RETCODE setPricingObjsOriginal(
    assert(probs != NULL);
    assert(nprobs > 0);
 
-   nvars = SCIPgetNOrigVars(scip);
-   vars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
 
    for( v = 0; v < nvars; ++v )
    {
       SCIP_VAR* pricingvar;
       SCIP_Real objvalue;
       assert(GCGvarIsOriginal(vars[v]));
-      pricingvar = GCGoriginalVarGetPricingVar(vars[v]);
-      origvar = vars[v];
+      origvar = SCIPvarGetProbvar(vars[v]);
+      pricingvar = GCGoriginalVarGetPricingVar(origvar);
+      assert(pricingvar != NULL);
+
       objvalue = SCIPvarGetObj(origvar);
-      SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));
-      if(SCIPgetObjsense(scip) == SCIP_OBJSENSE_MAXIMIZE)
-         SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  -SCIPvarGetObj(origvar)) );
-      else
-         SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  SCIPvarGetObj(origvar)) );
+      /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
+      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  SCIPvarGetObj(origvar)) );
    }
    return SCIP_OKAY;
 }
@@ -1076,9 +1080,8 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIPinfoMessage(scip, NULL, "solving pricing %i", i);
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_FULL) );
-
+      SCIPinfoMessage(scip, NULL, "Solving pricing %i.\n", i);
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_NONE) );
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
@@ -1132,10 +1135,10 @@ SCIP_RETCODE solveDiagonalBlocks(
    else
       *lowerbound = objvalue;
 
-   SCIP_CALL( SCIPcheckSol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPcheckSol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &isfeasible) );
    assert(isfeasible);
 
-   SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
+   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
    /* maybe add a constraint to the node to indicate that it has been decomposed */
 
