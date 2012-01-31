@@ -118,14 +118,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    );
 
 
-/* sets the number of the block, the given original variable belongs to */
-extern
-SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to set the block number for */
-   int                   blocknr             /**< number of the block, the variable belongs to */
-   );
-
 /** marks the constraint to be a master constraint */
 extern
 SCIP_RETCODE GCGrelaxMarkConsMaster(
@@ -150,12 +142,6 @@ SCIP* GCGrelaxGetPricingprob(
 extern
 int GCGrelaxGetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/* sets the number of pricing problems */
-void GCGrelaxSetNPricingprobs(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   npricingprobs       /**< the number of pricing problems */
    );
 
 /** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
@@ -314,6 +300,12 @@ extern
 void GCGrelaxSetOrigPrimalSol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             sol                 /**< solution */
+   );
+
+/** sets the structure information */
+void GCGsetStructDecdecomp(
+   SCIP*       scip,       /**< SCIP data structure */
+   DECDECOMP*  decdecomp   /**< decomposition data structure */
    );
 
 #endif

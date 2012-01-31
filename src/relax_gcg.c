@@ -34,6 +34,9 @@
 #include "masterplugins.h"
 #include "nodesel_master.h"
 #include "pub_gcgvar.h"
+#include "pub_decomp.h"
+#include "type_decomp.h"
+#include "scip_misc.h"
 
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
@@ -104,11 +107,248 @@ struct SCIP_RelaxData
 
    /* structure information */
    SCIP_Bool        hasblockdetection;   /* indicates whether the block detection code is present */
+   DECDECOMP*       decdecomp;           /* structure information */
 };
 
 /*
  * Local methods
  */
+
+
+/* sets the number of the block, the given original variable belongs to */
+static
+SCIP_RETCODE setOriginalVarBlockNr(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< variable to set the block number for */
+   int                   newblock            /**< number of the block, the variable belongs to */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   int blocknr;
+
+   assert(scip != NULL);
+   assert(var != NULL);
+   assert(newblock >= 0);
+   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   blocknr = GCGvarGetBlock(var);
+   assert(GCGvarIsOriginal(var));
+
+   assert(GCGrelaxGetNPricingprobs(scip) > 0);
+   assert(newblock < GCGrelaxGetNPricingprobs(scip));
+   assert(blocknr >= -2 && blocknr < GCGrelaxGetNPricingprobs(scip));
+
+   /* var belongs to no block so far, just set the new block number */
+   if( blocknr == -1 )
+      GCGvarSetBlock(var, newblock);
+
+   /* if var already belongs to another block, it is a linking variable */
+   else if ( blocknr != newblock )
+   {
+      if(!GCGvarIsLinking(var))
+         relaxdata->nlinkingvars++;
+
+      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
+      assert(GCGisLinkingVarInBlock(var, newblock));
+   }
+   blocknr = GCGvarGetBlock(var);
+   assert(blocknr == -2 || blocknr == newblock);
+
+   return SCIP_OKAY;
+}
+
+/* marks the constraint to be transferred to the master problem */
+static
+SCIP_RETCODE markConsMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+#ifndef NDEBUG
+   int i;
+#endif
+   assert(scip != NULL);
+   assert(cons != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* allocate array, if not yet done */
+   if( relaxdata->markedmasterconss == NULL )
+   {
+      int nconss;
+      nconss = SCIPgetNConss(scip);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
+      relaxdata->nmarkedmasterconss = 0;
+   }
+   assert(relaxdata->nmarkedmasterconss < SCIPgetNConss(scip));
+
+#ifndef NDEBUG
+   /* check that constraints are not marked more than one time */
+   for( i = 0; i < relaxdata->nmarkedmasterconss; i++ )
+      assert(relaxdata->markedmasterconss[i] != cons);
+#endif
+
+   /* save constraint */
+   relaxdata->markedmasterconss[relaxdata->nmarkedmasterconss] = cons;
+   relaxdata->nmarkedmasterconss++;
+
+   return SCIP_OKAY;
+}
+
+
+/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+static
+SCIP_RETCODE convertStructToGCG(
+      SCIP*         scip,     /**< SCIP data structure          */
+      SCIP_RELAX*   relax,    /**< relaxator data structure     */
+      DECDECOMP*    decdecomp /**< decdecom data structure      */
+
+   )
+{
+   int i;
+   int j;
+   int k;
+   int v;
+   int nblocks;
+   int nvars;
+   SCIP_VAR** origvars;
+   SCIP_HASHMAP* transvar2origvar;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_CONS** linkingconss;
+   int nlinkingconss;
+   SCIP_VAR** linkingvars;
+   int nlinkingvars;
+   SCIP_VAR*** subscipvars;
+   int* nsubscipvars;
+   SCIP_CONS*** subscipconss;
+   int* nsubscipconss;
+
+   assert(decdecomp != NULL);
+   assert(relax != NULL);
+   assert(scip != NULL);
+
+   assert(DECdecdecompGetLinkingconss(decdecomp) != NULL || DECdecdecompGetNLinkingconss(decdecomp) == 0);
+   assert(DECdecdecompGetNSubscipvars(decdecomp) != 0);
+   assert(DECdecdecompGetSubscipvars(decdecomp) != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   origvars = SCIPgetOrigVars(scip);
+   nvars = SCIPgetNOrigVars(scip);
+   linkingconss = DECdecdecompGetLinkingconss(decdecomp);
+   nlinkingconss = DECdecdecompGetNLinkingconss(decdecomp);
+   linkingvars = DECdecdecompGetLinkingvars(decdecomp);
+   nlinkingvars = DECdecdecompGetNLinkingvars(decdecomp);
+   subscipvars = DECdecdecompGetSubscipvars(decdecomp);
+   nsubscipvars = DECdecdecompGetNSubscipvars(decdecomp);
+
+   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
+   nblocks = DECdecdecompGetNBlocks(decdecomp);
+
+   SCIP_CALL( SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars) );
+   relaxdata->npricingprobs = nblocks;
+   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+
+   /* set master constraints */
+   for( i = 0; i < nlinkingconss; ++i )
+   {
+      assert(linkingconss[i] != NULL);
+      SCIP_CALL( markConsMaster(scip, linkingconss[i]) );
+   }
+
+   /* prepare the map from transformed to original variables */
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIP_VAR* transvar;
+      SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
+      assert(transvar != NULL);
+      SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
+   }
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      assert(subscipvars[i] != NULL);
+      for( j = 0; j < nsubscipvars[i]; ++j )
+      {
+         assert(subscipvars[i][j] != NULL);
+         assert(isVarRelevant(subscipvars[i][j]));
+
+         if(SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL)
+         {
+            SCIP_VAR* origvar;
+
+            origvar = SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]);
+            assert(SCIPvarGetData(origvar) != NULL);
+
+            SCIP_CALL( setOriginalVarBlockNr(scip, origvar, i) );
+         }
+         else
+         {
+            if(SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) == NULL)
+               SCIP_CALL( GCGorigVarCreateData(scip, getRelevantVariable(subscipvars[i][j])) );
+
+            SCIP_CALL( setOriginalVarBlockNr(scip, getRelevantVariable(subscipvars[i][j]), i) );
+         }
+         assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) != NULL);
+      }
+   }
+   for( i = 0; i < nlinkingvars; ++i )
+   {
+      if( SCIPvarGetData(linkingvars[i]) == NULL)
+      {
+         int found;
+
+         /* HACK; TODO: find out constraint blocks */
+         for( j = 0; j < nblocks; ++j )
+         {
+            found = FALSE;
+            for( k = 0; k < nsubscipconss[j]; ++k )
+            {
+               SCIP_VAR** curvars;
+               int        ncurvars;
+               curvars = SCIPgetVarsXXX(scip, subscipconss[j][k]);
+               ncurvars = SCIPgetNVarsXXX(scip, subscipconss[j][k]);
+
+               for( v = 0; v < ncurvars; ++v )
+               {
+                  if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] )
+                  {
+                     SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     assert(SCIPvarGetData(linkingvars[i]) != NULL);
+                     SCIP_CALL( setOriginalVarBlockNr(scip, linkingvars[i], j) );
+                     found = TRUE;
+                     break;
+                  }
+               }
+               SCIPfreeMemoryArray(scip, &curvars);
+               if( found )
+                  break;
+            }
+         }
+      }
+   }
+
+   SCIPhashmapFree(&transvar2origvar);
+   return SCIP_OKAY;
+}
+
+
 
 /* ensures size of masterconss array */
 static
@@ -522,6 +762,8 @@ SCIP_RETCODE createMaster(
    assert(relaxdata != NULL);
 
    SCIPdebugMessage("Creating master problem...\n");
+
+   SCIP_CALL( convertStructToGCG(scip, relax, relaxdata->decdecomp) );
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 5;
@@ -1139,24 +1381,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    return SCIP_OKAY;
 }
 
-
-
-/** initialization method of relaxator (called after problem was transformed) */
-/*static
-SCIP_DECL_RELAXINIT(relaxInitGcg)
-{
-   SCIP_RELAXDATA* relaxdata;
-
-   assert(scip != NULL);
-   assert(
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   return SCIP_OKAY;
-   }*/
-#define relaxInitGcg NULL
-
-
 /** deinitialization method of relaxator (called before transformed problem is freed) */
 
 static
@@ -1486,7 +1710,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 }
 
 #define relaxCopyGcg NULL
-
+#define relaxInitGcg NULL
 
 
 /*
@@ -2090,99 +2314,6 @@ void GCGrelaxPrintVar(
       printf("%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
 }
-
-/* sets the number of the block, the given original variable belongs to */
-SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to set the block number for */
-   int                   newblock            /**< number of the block, the variable belongs to */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-
-   int blocknr;
-
-   assert(scip != NULL);
-   assert(var != NULL);
-   assert(newblock >= 0);
-   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   blocknr = GCGvarGetBlock(var);
-   assert(GCGvarIsOriginal(var));
-
-   assert(GCGrelaxGetNPricingprobs(scip) > 0);
-   assert(newblock < GCGrelaxGetNPricingprobs(scip));
-   assert(blocknr >= -2 && blocknr < GCGrelaxGetNPricingprobs(scip));
-
-   /* var belongs to no block so far, just set the new block number */
-   if( blocknr == -1 )
-      GCGvarSetBlock(var, newblock);
-
-   /* if var already belongs to another block, it is a linking variable */
-   else if ( blocknr != newblock )
-   {
-      if(!GCGvarIsLinking(var))
-         relaxdata->nlinkingvars++;
-
-      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
-      assert(GCGisLinkingVarInBlock(var, newblock));
-   }
-   blocknr = GCGvarGetBlock(var);
-   assert(blocknr == -2 || blocknr == newblock);
-
-   return SCIP_OKAY;
-}
-
-/* marks the constraint to be transferred to the master problem */
-SCIP_RETCODE GCGrelaxMarkConsMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-#ifndef NDEBUG
-   int i;
-#endif
-   assert(scip != NULL);
-   assert(cons != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* allocate array, if not yet done */
-   if( relaxdata->markedmasterconss == NULL )
-   {
-      int nconss;
-      nconss = SCIPgetNConss(scip);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
-      relaxdata->nmarkedmasterconss = 0;
-   }
-   assert(relaxdata->nmarkedmasterconss < SCIPgetNConss(scip));
-
-#ifndef NDEBUG
-   /* check that constraints are not marked more than one time */
-   for( i = 0; i < relaxdata->nmarkedmasterconss; i++ )
-      assert(relaxdata->markedmasterconss[i] != cons);
-#endif
-
-   /* save constraint */
-   relaxdata->markedmasterconss[relaxdata->nmarkedmasterconss] = cons;
-   relaxdata->nmarkedmasterconss++;
-
-   return SCIP_OKAY;
-}
-
 
 /** returns the master problem */
 SCIP* GCGrelaxGetMasterprob(
@@ -3265,3 +3396,23 @@ void GCGrelaxSetOrigPrimalSol(
    relaxdata->origprimalsol = sol;
 }
 
+/** sets the structure information */
+void GCGsetStructDecdecomp(
+   SCIP*       scip,       /**< SCIP data structure */
+   DECDECOMP*  decdecomp   /**< decomposition data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   relaxdata->decdecomp = decdecomp;
+}
