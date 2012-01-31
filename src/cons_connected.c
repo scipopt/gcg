@@ -214,7 +214,7 @@ SCIP_RETCODE findConnectedComponents(
 
    }
 
-   /* go through the remaining constraints */
+   /* go through the all constraints */
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
@@ -420,9 +420,6 @@ SCIP_RETCODE copyToDecdecomp(
    assert(conshdlrdata != NULL);
    assert(decdecomp != NULL);
 
-   if( !conshdlrdata->blockdiagonal )
-      return SCIP_OKAY;
-
    assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
 
    nconss = SCIPgetNConss(scip);
@@ -447,7 +444,6 @@ SCIP_RETCODE copyToDecdecomp(
    }
 
    DECdecdecompSetNBlocks(decdecomp, nblocks);
-   DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    DECdecdecompSetConstoblock(decdecomp, conshdlrdata->constoblock);
    DECdecdecompSetVartoblock(decdecomp, conshdlrdata->vartoblock);
 
@@ -488,6 +484,10 @@ SCIP_RETCODE copyToDecdecomp(
    {
       SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+   }
+   else
+   {
+      DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    }
    SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
    SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
@@ -608,7 +608,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
       if(result == SCIP_SUCCESS)
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", conshdlrdata->nblocks);
-         conshdlrdata->blockdiagonal = TRUE;
+         conshdlrdata->blockdiagonal = !conshdlrdata->setppcinmaster;
          SCIP_CALL( DECdecdecompCreate(scip, &conshdlrdata->decdecomp) );
          SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
          SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );

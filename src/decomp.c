@@ -56,6 +56,8 @@ SCIP_RETCODE DECdecdecompCreate(
    (*decomp)->nsubscipvars = NULL;
    (*decomp)->linkingconss = NULL;
    (*decomp)->nlinkingconss = 0;
+   (*decomp)->linkingcuts = NULL;
+   (*decomp)->nlinkingcuts = 0;
    (*decomp)->linkingvars = NULL;
    (*decomp)->nlinkingvars = 0;
    (*decomp)->nblocks = 0;

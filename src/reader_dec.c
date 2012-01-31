@@ -1127,7 +1127,7 @@ SCIP_RETCODE writeData(
 
    /* linking cons */
    assert(decdecomp->nlinkingconss >= 0 && decdecomp->nlinkingconss < SCIPgetNConss(scip));
-   assert(decdecomp->linkingconss != NULL);
+   assert(decdecomp->linkingconss != NULL || decdecomp->nlinkingconss == 0 );
 
    SCIPinfoMessage(scip, file, "NBLOCKS\n");
    SCIPinfoMessage(scip, file, "%d\n", decdecomp->nblocks);

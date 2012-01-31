@@ -260,7 +260,7 @@ SCIP_RETCODE evaluateDecomposition(
       score->totalscore = 0.0;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("Decomposition type is unknown, cannot compute score");
+      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
       assert(FALSE);
       score->totalscore = 0.0;
       break;
@@ -840,8 +840,9 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
 
+
    /*   if( conshdlrdata->ndecomps == 0) */
-   if( TRUE )
+   if( conshdlrdata->ndecomps == 0 )
    {
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
