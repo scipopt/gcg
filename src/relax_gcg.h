@@ -126,27 +126,27 @@ SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
    int                   blocknr             /**< number of the block, the variable belongs to */
    );
 
-/* marks the constraint to be a master constraint */
+/** marks the constraint to be a master constraint */
 extern
 SCIP_RETCODE GCGrelaxMarkConsMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
    );
 
-/* returns the master problem */
+/** returns the master problem */
 extern
 SCIP* GCGrelaxGetMasterprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the pricing problem of the given number */
+/** returns the pricing problem of the given number */
 extern
 SCIP* GCGrelaxGetPricingprob(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
-/* returns the number of pricing problems */
+/** returns the number of pricing problems */
 extern
 int GCGrelaxGetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
@@ -183,26 +183,26 @@ int GCGrelaxGetNIdenticalBlocks(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
-/* returns the number of constraints in the master problem */
+/** returns the number of constraints in the master problem */
 extern
 int GCGrelaxGetNMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the contraints in the master problem */
+/** returns the contraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the contraints in the original problem that correspond to the constraints in the master problem */
+/** returns the contraints in the original problem that correspond to the constraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
-/* returns the linear counterpart of the contraints in the original problem that correspond
+/** returns the linear counterpart of the contraints in the original problem that correspond
  * to the constraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
@@ -303,13 +303,13 @@ void GCGrelaxPrintVar(
    SCIP_VAR*             var                 /**< variable that shpuld be printed */
    );
 
-/* returns the stored primal solution of the original problem  */
+/** returns the stored primal solution of the original problem  */
 extern
 SCIP_SOL* GCGrelaxGetOrigPrimalSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* sets the stored primal solution of the original problem  */
+/** sets the stored primal solution of the original problem  */
 extern
 void GCGrelaxSetOrigPrimalSol(
    SCIP*                 scip,               /**< SCIP data structure */

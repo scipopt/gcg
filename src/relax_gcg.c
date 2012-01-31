@@ -8,7 +8,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* #define SCIP_DEBUG */
-//#define CHECKCONSISTENCY
+/* #define CHECKCONSISTENCY */
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -346,7 +346,9 @@ SCIP_RETCODE pricingprobsAreIdentical(
    return SCIP_OKAY;
 }
 
-/** checks whether there are identical pricing blocks */
+/** checks whether there are identical pricing blocks
+  * @todo we should really use something more sophisticated such as graph isomorphisms or similar
+  */
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -462,48 +464,8 @@ SCIP_Bool consIsInBlock(
    nvars = 0; /* fix potential problems */
    vars = NULL;
 
-   /* TODO: maybe change that to SCIPgetNVarsXXX/SCIPgetNConssXXX */
-   if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "linear") == 0 )
-   {
-      vars = SCIPgetVarsLinear(scip, cons);
-      nvars = SCIPgetNVarsLinear(scip, cons);
-   }
-   else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "setppc") == 0 )
-   {
-      vars = SCIPgetVarsSetppc(scip, cons);
-      nvars = SCIPgetNVarsSetppc(scip, cons);
-   }
-   else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "knapsack") == 0 )
-   {
-      vars = SCIPgetVarsKnapsack(scip, cons);
-      nvars = SCIPgetNVarsKnapsack(scip, cons);
-   }
-   else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "logicor") == 0 )
-   {
-      vars = SCIPgetVarsLogicor(scip, cons);
-      nvars = SCIPgetNVarsLogicor(scip, cons);
-   }
-   else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons)), "varbound") == 0 )
-   {
-      /* check whether bounded variable is contained in block */
-      var = SCIPgetVarVarbound(scip, cons);
-      var = SCIPvarGetProbvar(var);
-      if( !SCIPhashmapExists(varmap, (void*) var) )
-         return FALSE;
-
-      /* check whether bounding variable is contained in block */
-      var = SCIPgetVbdvarVarbound(scip, cons);
-      var = SCIPvarGetProbvar(var);
-      if( !SCIPhashmapExists(varmap, (void*) var) )
-         return FALSE;
-
-      /* both variables are in the block, return TRUE */
-      return TRUE;
-   }
-   else
-   {
-      SCIPerrorMessage("constraint %s of unknown type <%s>!\n", SCIPconsGetName(cons), SCIPconshdlrGetName(SCIPconsGetHdlr(cons)));
-   }
+   nvars = SCIPgetNVarsXXX(scip, cons);
+   vars = SCIPgetVarsXXX(scip, cons);
 
    assert(vars != NULL || nvars == 0);
 
@@ -511,12 +473,15 @@ SCIP_Bool consIsInBlock(
    {
       var = vars[i];
       var = SCIPvarGetProbvar(vars[i]);
+
       if( !SCIPhashmapExists(varmap, (void*) var) )
       {
+         SCIPfreeMemoryArray(scip, &vars);
          return FALSE;
       }
    }
 
+   SCIPfreeMemoryArray(scip, &vars);
    return TRUE;
 
 }
@@ -839,9 +804,10 @@ SCIP_RETCODE createMaster(
                            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
 
                      SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(bufconss[c]), b);
-                     copied = TRUE;
+
                      /* constraint was successfully copied */
                      assert(success);
+                     copied = TRUE;
 
                      SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
 
@@ -1041,19 +1007,21 @@ SCIP_RETCODE setPricingObjsOriginal(
       pricingvar = GCGoriginalVarGetPricingVar(origvar);
       assert(pricingvar != NULL);
 
+
       objvalue = SCIPvarGetObj(origvar);
       /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
-      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar,  SCIPvarGetObj(origvar)) );
+      SCIP_CALL( SCIPchgVarObj(probs[GCGvarGetBlock(origvar)], pricingvar, objvalue) );
    }
    return SCIP_OKAY;
 }
 
+/** solves the blocks diagonal and individually */
 static
 SCIP_RETCODE solveDiagonalBlocks(
-   SCIP* scip,
-   SCIP_RELAXDATA* relaxdata,
-   SCIP_RESULT *result,
-   SCIP_Real *lowerbound
+   SCIP*             scip,       /**< SCIP data structure */
+   SCIP_RELAXDATA*   relaxdata,  /**< relaxator data structure */
+   SCIP_RESULT*      result,     /**< result pointer to indicate success or failure */
+   SCIP_Real*        lowerbound  /**< lower bound pointer to return the lower bound */
    )
 {
    int i;
@@ -2216,7 +2184,7 @@ SCIP_RETCODE GCGrelaxMarkConsMaster(
 }
 
 
-/* returns the master problem */
+/** returns the master problem */
 SCIP* GCGrelaxGetMasterprob(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -2235,7 +2203,7 @@ SCIP* GCGrelaxGetMasterprob(
    return relaxdata->masterprob;
 }
 
-/* returns the pricing problem of the given number */
+/** returns the pricing problem of the given number */
 SCIP* GCGrelaxGetPricingprob(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
@@ -2255,7 +2223,7 @@ SCIP* GCGrelaxGetPricingprob(
    return relaxdata->pricingprobs[pricingprobnr];
 }
 
-/* returns the number of pricing problems */
+/** returns the number of pricing problems */
 int GCGrelaxGetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -2370,7 +2338,7 @@ void GCGrelaxSetNPricingprobs(
    relaxdata->npricingprobs = npricingprobs;
 }
 
-/* returns the number of constraints in the master problem */
+/** returns the number of constraints in the master problem */
 int GCGrelaxGetNMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -2389,7 +2357,7 @@ int GCGrelaxGetNMasterConss(
    return relaxdata->nmasterconss;
 }
 
-/* returns the contraints in the master problem */
+/** returns the contraints in the master problem */
 SCIP_CONS** GCGrelaxGetMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -2408,7 +2376,7 @@ SCIP_CONS** GCGrelaxGetMasterConss(
    return relaxdata->masterconss;
 }
 
-/* returns the linking constraints in the original problem that correspond to the constraints in the master problem */
+/** returns the linking constraints in the original problem that correspond to the constraints in the master problem */
 SCIP_CONS** GCGrelaxGetOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -2427,7 +2395,7 @@ SCIP_CONS** GCGrelaxGetOrigMasterConss(
    return relaxdata->origmasterconss;
 }
 
-/* returns the linear counterpart of the contraints in the original problem that correspond
+/** returns the linear counterpart of the contraints in the original problem that correspond
  * to the constraints in the master problem */
 SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2447,7 +2415,7 @@ SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
    return relaxdata->linearmasterconss;
 }
 
-/* returns the convexity constraint for the given block */
+/** returns the convexity constraint for the given block */
 SCIP_CONS* GCGrelaxGetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   blocknr             /**< the number of the block for which we
@@ -2470,7 +2438,7 @@ SCIP_CONS* GCGrelaxGetConvCons(
    return relaxdata->convconss[blocknr];
 }
 
-/* returns the current solution for the original problem */
+/** returns the current solution for the original problem */
 SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -3258,7 +3226,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
 }
 
-/* returns the stored primal solution of the original problem  */
+/** returns the stored primal solution of the original problem  */
 SCIP_SOL* GCGrelaxGetOrigPrimalSol(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -3277,7 +3245,7 @@ SCIP_SOL* GCGrelaxGetOrigPrimalSol(
    return relaxdata->origprimalsol;
 }
 
-/* sets the stored primal solution of the original problem  */
+/** sets the stored primal solution of the original problem  */
 void GCGrelaxSetOrigPrimalSol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             sol                 /**< solution */

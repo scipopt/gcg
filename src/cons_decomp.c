@@ -840,8 +840,6 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectorclock) );
    SCIP_CALL( SCIPstartClock(scip, conshdlrdata->detectorclock) );
 
-
-   /*   if( conshdlrdata->ndecomps == 0) */
    if( conshdlrdata->ndecomps == 0 )
    {
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
