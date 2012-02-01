@@ -20,6 +20,7 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+#include "type_decomp.h"
 
 /** creates the gcg relaxator and includes it in SCIP */
 extern
@@ -79,20 +80,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
-   );
-
-/** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
-extern
-SCIP_RETCODE GCGrelaxCreatePricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding variable in the original program */
-   );
-
-/** creates a variable in each of the pricing problems linked by given original variable */
-extern
-SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
    );
 
 /** creates the data for a variable of the original program */

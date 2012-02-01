@@ -67,8 +67,6 @@ struct SCIP_RelaxData
    int              nvarlinkconss;       /* number of constraints that ensure that copies of linking variables have the same value */
 
    /* hashmaps for transformation */
-   SCIP_HASHMAP**   hashorig2pricingvar; /* hashmap mapping original variables to corresponding
-                                          * pricing variables */
    SCIP_HASHMAP*    hashorig2origvar;    /* hashmap mapping original variables to themselves */
 
    /* constraint data */
@@ -729,11 +727,100 @@ SCIP_RETCODE setPricingProblemParameters(SCIP* scip)
    return SCIP_OKAY;
 }
 
+
+/** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
+static
+SCIP_RETCODE createPricingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             origvar             /**< corresponding variable in the original program */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VAR* var;
+   int pricingprobnr;
+
+   assert(scip != NULL);
+   assert(origvar != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   pricingprobnr = GCGvarGetBlock(origvar);
+
+   SCIP_CALL( GCGoriginalVarCreatePricingVar(relaxdata->pricingprobs[pricingprobnr], origvar, &var) );
+   assert(var != NULL);
+
+   GCGoriginalVarSetPricingVar(origvar, var);
+   SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
+
+   /* because the variable was added to the problem,
+    * it is captured by SCIP and we can safely release it right now
+    */
+   SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[pricingprobnr], &var) );
+
+   return SCIP_OKAY;
+}
+
+/** creates a variable in each of the pricing problems linked by given original variable */
+static
+SCIP_RETCODE createLinkingPricingVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_VAR* var;
+   int pricingprobnr;
+   SCIP_CONS* linkcons;
+   SCIP_VAR** pricingvars;
+
+   assert(scip != NULL);
+   assert(origvar != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   /* get variable data of the original variable */
+   assert(GCGvarIsOriginal(origvar));
+   assert(GCGvarIsLinking(origvar));
+   pricingvars = GCGlinkingVarGetPricingVars(origvar);
+
+   for( pricingprobnr = 0; pricingprobnr < relaxdata->npricingprobs; pricingprobnr++ )
+   {
+      if( pricingvars[pricingprobnr] == NULL )
+         continue;
+
+      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
+            relaxdata->pricingprobs[pricingprobnr], pricingprobnr, origvar, &var, &linkcons) );
+      GCGlinkingVarSetPricingVar(origvar, pricingprobnr, var);
+
+      SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
+      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
+      relaxdata->nvarlinkconss++;
+
+      /* because the variable was added to the problem,
+       * it is captured by SCIP and we can safely release it right now
+       */
+      SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[pricingprobnr], &var) );
+   }
+
+   return SCIP_OKAY;
+}
+
 /** create pricing problem variables */
 static
 SCIP_RETCODE createPricingVariables(
-   SCIP*             scip,       /**< SCIP data structure */
-   SCIP_RELAXDATA*   relaxdata   /**< relaxator data data structure */
+   SCIP*             scip,                /**< SCIP data structure */
+   SCIP_RELAXDATA*   relaxdata,           /**< relaxator data data structure */
+   SCIP_HASHMAP**    hashorig2pricingvar  /**< hashmap mapping original variables to pricing variables */
    )
 {
    SCIP_VAR** vars;
@@ -744,17 +831,12 @@ SCIP_RETCODE createPricingVariables(
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
+   assert(hashorig2pricingvar != NULL);
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
    npricingprobs = relaxdata->npricingprobs;
-
-   for( i = 0; i < npricingprobs; i++ )
-   {
-      SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   }
-   SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
 
    for( v = 0; v < nvars; v++ )
    {
@@ -768,10 +850,11 @@ SCIP_RETCODE createPricingVariables(
       {
          assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
-         SCIP_CALL( GCGrelaxCreatePricingVar(scip, var) );
+         SCIP_CALL( createPricingVar(scip, var) );
          assert(GCGoriginalVarGetPricingVar(var) != NULL);
+         assert(hashorig2pricingvar[blocknr] != NULL);
 
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[blocknr], (void*)(var),
+         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(var),
                (void*)(GCGoriginalVarGetPricingVar(var)) ));
          SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
@@ -807,9 +890,9 @@ SCIP_RETCODE createPricingVariables(
             assert(nblocks == count);
          }
 #endif
-         SCIP_CALL( GCGrelaxCreateLinkingPricingVars(scip, var) );
+         SCIP_CALL( createLinkingPricingVars(scip, var) );
 #ifndef NDEBUG
-         /* checks that GCGrelaxCreateLinkingPricingVars() worked correctly */
+         /* checks that createLinkingPricingVars() worked correctly */
          {
             int count;
             int nblocks;
@@ -842,7 +925,7 @@ SCIP_RETCODE createPricingVariables(
          {
             if( pricingvars[i] != NULL)
             {
-               SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2pricingvar[i], (void*)(var),
+               SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(var),
                      (void*)(pricingvars[i])) );
             }
          }
@@ -855,7 +938,6 @@ SCIP_RETCODE createPricingVariables(
          SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
    }
-
 
    return SCIP_OKAY;
 }
@@ -948,6 +1030,7 @@ SCIP_RETCODE createMaster(
 {
    SCIP_RELAXDATA* relaxdata;
    int npricingprobs;
+   SCIP_HASHMAP** hashorig2pricingvar;
 
    char name[SCIP_MAXSTRLEN];
    SCIP_CONSHDLR** conshdlrs;
@@ -1007,6 +1090,10 @@ SCIP_RETCODE createMaster(
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
    relaxdata->npricingprobs = npricingprobs > 0 ? npricingprobs : 0;
+   hashorig2pricingvar = NULL;
+
+   SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
+
    if( npricingprobs > 0 )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
@@ -1017,7 +1104,12 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
 
       /* create hashmaps for mapping from original to pricing variables */
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->hashorig2pricingvar), npricingprobs) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(hashorig2pricingvar), npricingprobs) );
+      for( i = 0; i < npricingprobs; i++ )
+      {
+         SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) );
+      }
+
    }
 
    /* create the pricing problem */
@@ -1039,7 +1131,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* create pricing variables */
-   SCIP_CALL( createPricingVariables(scip, relaxdata) );
+   SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
 
    /* ------- copy constraints of the original problem into master/pricing problems ------- */
    conshdlrs = SCIPgetConshdlrs(scip);
@@ -1105,12 +1197,12 @@ SCIP_RETCODE createMaster(
                for( b = 0; b < npricingprobs && !success; b++ )
                {
                   /* check whether constraint belongs to this block */
-                  if( consIsInBlock(scip, relaxdata->hashorig2pricingvar[b], bufconss[c]) )
+                  if( consIsInBlock(scip, hashorig2pricingvar[b], bufconss[c]) )
                   {
                      /* copy the constraint */
                      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(bufconss[c]));
                      SCIP_CALL( SCIPgetConsCopy(scip, relaxdata->pricingprobs[b], bufconss[c], &newcons, conshdlrs[i],
-                           relaxdata->hashorig2pricingvar[b], NULL, name,
+                           hashorig2pricingvar[b], NULL, name,
                            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, &success) );
 
                      SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(bufconss[c]), b);
@@ -1213,6 +1305,16 @@ SCIP_RETCODE createMaster(
    /* display statistics */
    if( relaxdata->dispinfos )
       SCIP_CALL( displayPricingStatistics(scip, relaxdata) );
+
+   if( hashorig2pricingvar != NULL)
+   {
+      for( i = 0; i < npricingprobs; i++ )
+      {
+         SCIPhashmapFree(&(hashorig2pricingvar[i]));
+      }
+      SCIPfreeBufferArray(scip, &(hashorig2pricingvar));
+   }
+
 
    return SCIP_OKAY;
 }
@@ -1544,16 +1646,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* free hashmaps for mapping from original to pricing variables */
-   if( relaxdata->hashorig2pricingvar != NULL )
-   {
-      for( i = 0; i < relaxdata->npricingprobs; i++ )
-      {
-         SCIPhashmapFree(&(relaxdata->hashorig2pricingvar[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->hashorig2pricingvar));
-      relaxdata->hashorig2pricingvar = NULL;
-   }
    if( relaxdata->hashorig2origvar != NULL )
    {
       SCIPhashmapFree(&(relaxdata->hashorig2origvar));
@@ -1781,7 +1873,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->blockrepresentative = NULL;
    relaxdata->convconss = NULL;
    relaxdata->hashorig2origvar = NULL;
-   relaxdata->hashorig2pricingvar = NULL;
    relaxdata->lastsolvednodenr = 0;
 
    relaxdata->linearmasterconss = NULL;
@@ -2081,92 +2172,6 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
    }
 
    assert(i < relaxdata->nbranchrules);
-
-   return SCIP_OKAY;
-}
-
-
-/** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
-SCIP_RETCODE GCGrelaxCreatePricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding variable in the original program */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP_VAR* var;
-   int pricingprobnr;
-
-   assert(scip != NULL);
-   assert(origvar != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   pricingprobnr = GCGvarGetBlock(origvar);
-
-   SCIP_CALL( GCGoriginalVarCreatePricingVar(relaxdata->pricingprobs[pricingprobnr], origvar, &var) );
-   assert(var != NULL);
-
-   GCGoriginalVarSetPricingVar(origvar, var);
-   SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
-
-   /* because the variable was added to the problem,
-    * it is captured by SCIP and we can safely release it right now
-    */
-   SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[pricingprobnr], &var) );
-
-   return SCIP_OKAY;
-}
-
-/** creates a variable in each of the pricing problems linked by given original variable */
-SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP_VAR* var;
-   int pricingprobnr;
-   SCIP_CONS* linkcons;
-   SCIP_VAR** pricingvars;
-
-   assert(scip != NULL);
-   assert(origvar != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* get variable data of the original variable */
-   assert(GCGvarIsOriginal(origvar));
-   assert(GCGvarIsLinking(origvar));
-   pricingvars = GCGlinkingVarGetPricingVars(origvar);
-
-   for( pricingprobnr = 0; pricingprobnr < relaxdata->npricingprobs; pricingprobnr++ )
-   {
-      if( pricingvars[pricingprobnr] == NULL )
-         continue;
-
-      SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
-            relaxdata->pricingprobs[pricingprobnr], pricingprobnr, origvar, &var, &linkcons) );
-      GCGlinkingVarSetPricingVar(origvar, pricingprobnr, var);
-
-      SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
-      SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
-      relaxdata->nvarlinkconss++;
-
-      /* because the variable was added to the problem,
-       * it is captured by SCIP and we can safely release it right now
-       */
-      SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[pricingprobnr], &var) );
-   }
 
    return SCIP_OKAY;
 }
