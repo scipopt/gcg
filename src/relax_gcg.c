@@ -117,32 +117,25 @@ struct SCIP_RelaxData
 static
 SCIP_RETCODE setOriginalVarBlockNr(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    SCIP_VAR*             var,                /**< variable to set the block number for */
    int                   newblock            /**< number of the block, the variable belongs to */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-
    int blocknr;
 
    assert(scip != NULL);
    assert(var != NULL);
    assert(newblock >= 0);
    assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    blocknr = GCGvarGetBlock(var);
    assert(GCGvarIsOriginal(var));
 
-   assert(GCGrelaxGetNPricingprobs(scip) > 0);
-   assert(newblock < GCGrelaxGetNPricingprobs(scip));
-   assert(blocknr >= -2 && blocknr < GCGrelaxGetNPricingprobs(scip));
+   assert(relaxdata->npricingprobs > 0);
+   assert(newblock < relaxdata->npricingprobs);
+   assert(blocknr >= -2 && blocknr < relaxdata->npricingprobs);
 
    /* var belongs to no block so far, just set the new block number */
    if( blocknr == -1 )
@@ -167,21 +160,15 @@ SCIP_RETCODE setOriginalVarBlockNr(
 static
 SCIP_RETCODE markConsMaster(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
 #ifndef NDEBUG
    int i;
 #endif
    assert(scip != NULL);
    assert(cons != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    /* allocate array, if not yet done */
@@ -211,9 +198,9 @@ SCIP_RETCODE markConsMaster(
 /** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
 static
 SCIP_RETCODE convertStructToGCG(
-      SCIP*         scip,     /**< SCIP data structure          */
-      SCIP_RELAX*   relax,    /**< relaxator data structure     */
-      DECDECOMP*    decdecomp /**< decdecom data structure      */
+      SCIP*             scip,       /**< SCIP data structure          */
+      SCIP_RELAXDATA*   relaxdata,  /**< relaxator data structure     */
+      DECDECOMP*        decdecomp   /**< decdecom data structure      */
 
    )
 {
@@ -225,7 +212,6 @@ SCIP_RETCODE convertStructToGCG(
    int nvars;
    SCIP_VAR** origvars;
    SCIP_HASHMAP* transvar2origvar;
-   SCIP_RELAXDATA* relaxdata;
    SCIP_CONS** linkingconss;
    int nlinkingconss;
    SCIP_VAR** linkingvars;
@@ -236,15 +222,12 @@ SCIP_RETCODE convertStructToGCG(
    int* nsubscipconss;
 
    assert(decdecomp != NULL);
-   assert(relax != NULL);
+   assert(relaxdata != NULL);
    assert(scip != NULL);
 
    assert(DECdecdecompGetLinkingconss(decdecomp) != NULL || DECdecdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecdecompGetNSubscipvars(decdecomp) != 0);
    assert(DECdecdecompGetSubscipvars(decdecomp) != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
 
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
@@ -267,7 +250,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nlinkingconss; ++i )
    {
       assert(linkingconss[i] != NULL);
-      SCIP_CALL( markConsMaster(scip, linkingconss[i]) );
+      SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
    }
 
    /* prepare the map from transformed to original variables */
@@ -294,14 +277,14 @@ SCIP_RETCODE convertStructToGCG(
             origvar = SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]);
             assert(SCIPvarGetData(origvar) != NULL);
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, origvar, i) );
+            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
          }
          else
          {
             if(SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) == NULL)
                SCIP_CALL( GCGorigVarCreateData(scip, getRelevantVariable(subscipvars[i][j])) );
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, getRelevantVariable(subscipvars[i][j]), i) );
+            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, getRelevantVariable(subscipvars[i][j]), i) );
          }
          assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) != NULL);
       }
@@ -329,7 +312,7 @@ SCIP_RETCODE convertStructToGCG(
                   {
                      SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                     SCIP_CALL( setOriginalVarBlockNr(scip, linkingvars[i], j) );
+                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, linkingvars[i], j) );
                      found = TRUE;
                      break;
                   }
@@ -590,11 +573,9 @@ SCIP_RETCODE pricingprobsAreIdentical(
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAX*           relax               /**< the relaxator */
+   SCIP_RELAXDATA*       relaxdata           /**< the relaxator data data structure*/
    )
 {
-   SCIP_RELAXDATA* relaxdata;
-
    SCIP_HASHMAP* varmap;
    SCIP_VAR** vars;
    SCIP_VAR* origvar;
@@ -610,9 +591,6 @@ SCIP_RETCODE checkIdenticalBlocks(
 
 
    assert(scip != NULL);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -731,23 +709,15 @@ SCIP_RETCODE setPricingProblemParameters(SCIP* scip)
 /** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
 static
 SCIP_RETCODE createPricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    SCIP_VAR*             origvar             /**< corresponding variable in the original program */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
    SCIP_VAR* var;
    int pricingprobnr;
 
-   assert(scip != NULL);
-   assert(origvar != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+   assert(origvar != NULL);
 
    pricingprobnr = GCGvarGetBlock(origvar);
 
@@ -768,24 +738,16 @@ SCIP_RETCODE createPricingVar(
 /** creates a variable in each of the pricing problems linked by given original variable */
 static
 SCIP_RETCODE createLinkingPricingVars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
    SCIP_VAR* var;
    int pricingprobnr;
    SCIP_CONS* linkcons;
    SCIP_VAR** pricingvars;
 
-   assert(scip != NULL);
    assert(origvar != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    /* get variable data of the original variable */
@@ -850,7 +812,7 @@ SCIP_RETCODE createPricingVariables(
       {
          assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
-         SCIP_CALL( createPricingVar(scip, var) );
+         SCIP_CALL( createPricingVar(relaxdata, var) );
          assert(GCGoriginalVarGetPricingVar(var) != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
 
@@ -890,7 +852,7 @@ SCIP_RETCODE createPricingVariables(
             assert(nblocks == count);
          }
 #endif
-         SCIP_CALL( createLinkingPricingVars(scip, var) );
+         SCIP_CALL( createLinkingPricingVars(relaxdata, var) );
 #ifndef NDEBUG
          /* checks that createLinkingPricingVars() worked correctly */
          {
@@ -1025,10 +987,9 @@ SCIP_Bool consIsInBlock(
 static
 SCIP_RETCODE createMaster(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAX*           relax               /**< the relaxator */
+   SCIP_RELAXDATA*       relaxdata           /**< the relaxator data data structure */
    )
 {
-   SCIP_RELAXDATA* relaxdata;
    int npricingprobs;
    SCIP_HASHMAP** hashorig2pricingvar;
 
@@ -1051,14 +1012,11 @@ SCIP_RETCODE createMaster(
    int b;
 
    assert(scip != NULL);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
    SCIPdebugMessage("Creating master problem...\n");
 
-   SCIP_CALL( convertStructToGCG(scip, relax, relaxdata->decdecomp) );
+   SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
    /* initialize relaxator data */
    relaxdata->maxmasterconss = 5;
@@ -1283,7 +1241,7 @@ SCIP_RETCODE createMaster(
    }
 
    /* check for identity of blocks */
-   SCIP_CALL( checkIdenticalBlocks(scip, relax) );
+   SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -1578,7 +1536,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   SCIP_CALL( createMaster(scip, relax) );
+   SCIP_CALL( createMaster(scip, relaxdata) );
 
    relaxdata->lastsolvednodenr = -1;
 
