@@ -35,7 +35,6 @@
 #include "nodesel_master.h"
 #include "pub_gcgvar.h"
 #include "pub_decomp.h"
-#include "type_decomp.h"
 #include "scip_misc.h"
 
 #define RELAX_NAME             "gcg"

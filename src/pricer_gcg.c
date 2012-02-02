@@ -1297,15 +1297,13 @@ SCIP_RETCODE createNewMasterVar(
 /** compute the ojective value of the best solution */
 static
 SCIP_Real computeSolObjValue(
-   SCIP*       scip,          /**< SCIP data structure                  */
    int         nsolvars,      /**< number of variables in the solution  */
-   double*     solvals,       /**< Array of solution values             */
-   SCIP_VAR**  solvars        /**< Array of solution variables          */
+   SCIP_VAR**  solvars,       /**< Array of solution variables          */
+   double*     solvals        /**< Array of solution values             */
 )
 {
    int j;
    SCIP_Real bestsolval;
-   assert(scip != NULL);
    assert(nsolvars >= 0);
    assert(solvals != NULL);
    assert(solvars != NULL);
@@ -1318,8 +1316,8 @@ SCIP_Real computeSolObjValue(
       assert(solvars[j] != NULL);
       bestsolval += solvals[j] * SCIPvarGetObj(solvars[j]);
    }
-   return bestsolval;
 
+   return bestsolval;
 }
 
 /**
@@ -1614,13 +1612,7 @@ SCIP_RETCODE performPricing(
          if( nsols > 0 )
          {
             /* compute the ojective value of the best solution */
-            bestsolval = 0.0;
-
-            for( j = 0; j < nsolvars[0]; j++ )
-            {
-               /* TODO: round solution values??? */
-               bestsolval += solvals[0][j] * SCIPvarGetObj(solvars[0][j]);
-            }
+            bestsolval = computeSolObjValue(nsolvars[0], solvars[0], solvals[0]);
 
             /* TODO: ensure that the first solution is really the best one and that its objective value is the best reduced cost */
             if( SCIPisSumNegative(scip, bestsolval - pricerdata->dualsolconv[prob]) )
