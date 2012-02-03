@@ -86,6 +86,7 @@ MAINOBJ		=	reader_blk.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
+			misc.o \
 			gcgvar.o \
 			main.o
 

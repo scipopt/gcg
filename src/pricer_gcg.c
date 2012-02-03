@@ -1952,6 +1952,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    return SCIP_OKAY;
 }
 
+
 /** solving process deinitialization method of variable pricer (called before branch and bound process data is freed) */
 static
 SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
@@ -2044,8 +2045,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 }
 
 
-
-
 /** reduced cost pricing method of variable pricer for feasible LPs */
 static
 SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
@@ -2094,8 +2093,6 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    return retcode;
 }
-
-
 
 
 static
@@ -2444,8 +2441,6 @@ void GCGpricerSetSolverdata(
 
    solver->solverdata = solverdata;
 }
-
-
 
 
 void GCGpricerPrintStatistics(
