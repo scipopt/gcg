@@ -1186,7 +1186,8 @@ SCIP_RETCODE createMaster(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
-   SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
+   if(relaxdata->decdecomp != NULL)
+      SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
    npricingprobs = relaxdata->npricingprobs;
    hashorig2pricingvar = NULL;
@@ -1215,12 +1216,14 @@ SCIP_RETCODE createMaster(
    }
 
    /* create pricing variables */
-   SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
+   if( relaxdata->decdecomp != NULL )
+   {
+      SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
 
-   /* create master and pricing problem constraints */
-   SCIP_CALL( createMasterprobConss(scip, relaxdata) );
-   SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-
+      /* create master and pricing problem constraints */
+      SCIP_CALL( createMasterprobConss(scip, relaxdata) );
+      SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
+   }
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
 
