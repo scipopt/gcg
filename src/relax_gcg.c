@@ -983,6 +983,89 @@ SCIP_Bool consIsInBlock(
 }
 
 
+/** allocates initial problem specific data */
+static
+SCIP_RETCODE initRelaxProblemdata(
+   SCIP*             scip,       /**< SCIP data structure */
+   SCIP_RELAXDATA*   relaxdata   /**< relaxatordata data structure */
+   )
+{
+   assert(scip != NULL);
+   assert(relaxdata != NULL);
+
+   /* initialize relaxator data */
+   relaxdata->maxmasterconss = 5;
+   relaxdata->nmasterconss = 0;
+
+   /* arrays of constraints belonging to the master problems */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
+
+   if( relaxdata->npricingprobs > 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), npricingprobs) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
+
+      /* array for saving convexity constraints belonging to one of the pricing problems */
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
+   }
+
+   SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
+
+   return SCIP_OKAY;
+}
+
+
+/** creates the master problem with the specified name */
+static
+SCIP_RETCODE createMasterProblem(
+   SCIP* masterscip,
+   const char* name
+   )
+{
+   assert(masterscip != NULL);
+   assert(name != NULL);
+
+   SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+   SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
+
+   /* set parameters */
+   //SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/probing/maxrounds", 0) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvarsroot", INT_MAX) );
+   //SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvars", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvarsroot", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcols", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcolsroot", TRUE) );
+   SCIP_CALL( SCIPsetRealParam(masterscip, "pricing/abortfac", 1.0) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", 2) );
+
+   return SCIP_OKAY;
+}
+
+
+/** creates the pricing problem with the specified name */
+static
+SCIP_RETCODE createPricingProblem(
+   SCIP**      pricingscip,   /**< Pricing scip data structure */
+   const char* name           /**< name of the pricing problem */
+   ) 
+{
+   assert(pricingscip != NULL);
+   assert(name != NULL);
+
+   SCIP_CALL( SCIPcreate(pricingscip) );
+   SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip) );
+   SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+
 /** creates the master problem and the pricing problems and copies the constraints into them */
 static
 SCIP_RETCODE createMaster(
@@ -1014,78 +1097,33 @@ SCIP_RETCODE createMaster(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
+
    SCIPdebugMessage("Creating master problem...\n");
 
    SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
+   SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
-   /* initialize relaxator data */
-   relaxdata->maxmasterconss = 5;
-   relaxdata->nmasterconss = 0;
-
-   /* arrays of constraints belonging to the master problems */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->masterconss), relaxdata->maxmasterconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->origmasterconss), relaxdata->maxmasterconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->linearmasterconss), relaxdata->maxmasterconss) );
-
-   /* create the problem in the master scip instance */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-
-   SCIP_CALL( SCIPcreateProb(relaxdata->masterprob, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-
-   /* activate the pricer */
-   SCIP_CALL( SCIPactivatePricer(relaxdata->masterprob, SCIPfindPricer(relaxdata->masterprob, "gcg")) );
-   //SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "presolving/probing/maxrounds", 0) );
-
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvars", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvarsroot", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcols", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
-   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1.0) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "timing/clocktype", 2) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name) );
 
    /* ----- initialize the pricing problems ----- */
    npricingprobs = relaxdata->npricingprobs;
-   relaxdata->npricingprobs = npricingprobs > 0 ? npricingprobs : 0;
    hashorig2pricingvar = NULL;
-
-   SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
 
    if( npricingprobs > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), npricingprobs) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), npricingprobs) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), npricingprobs) );
-
-      /* array for saving convexity constraints belonging to one of the pricing problems */
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), npricingprobs) );
-
       /* create hashmaps for mapping from original to pricing variables */
       SCIP_CALL( SCIPallocBufferArray(scip, &(hashorig2pricingvar), npricingprobs) );
-      for( i = 0; i < npricingprobs; i++ )
-      {
-         SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) );
-      }
-
    }
 
-   /* create the pricing problem */
+   /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
    {
       relaxdata->convconss[i] = NULL;
-
-      /* initializing the scip data structure for the pricing problem */
-      SCIP_CALL( SCIPcreate(&(relaxdata->pricingprobs[i])) );
-      SCIP_CALL( SCIPincludeDefaultPlugins(relaxdata->pricingprobs[i]) );
-
-      /* set the parameters for the pricing problem */
-      SCIP_CALL( setPricingProblemParameters(relaxdata->pricingprobs[i]) );
-
-      /* create the pricing submip */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
-      SCIP_CALL( SCIPcreateProb(relaxdata->pricingprobs[i], name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name) );
+      SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) );
    }
 
    /* create pricing variables */
