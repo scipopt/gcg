@@ -48,12 +48,11 @@
 #define DEFAULT_MINFIXINGRATE 0.0       /* minimum percentage of integer variables that have to be fixed       */
 #define DEFAULT_NODESQUOT     0.1       /* subproblem nodes in relation to nodes of the original problem       */
 #define DEFAULT_NWAITINGNODES 200       /* number of nodes without incumbent change that heuristic should wait */
-#define DEFAULT_USELPROWS     TRUE      /* should subproblem be created out of the rows in the LP rows,
+#define DEFAULT_USELPROWS     FALSE     /* should subproblem be created out of the rows in the LP rows,
                                          * otherwise, the copy constructors of the constraints handlers are used */
 #define DEFAULT_COPYCUTS      TRUE      /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                          * of the original scip be copied to constraints of the subscip
                                          */
-#define DEFAULT_USEGCG        FALSE     /* should the subproblem be solved with GCG?                           */
 
 
 /*
@@ -75,7 +74,6 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
-   SCIP_Bool             usegcg;            /**< should the subproblem be solved with GCG?                           */
 };
 
 /*
@@ -399,78 +397,41 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    /* create the variable mapping hash map */
    SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
 
-   if( heurdata->usegcg )
-   {
-      if( heurdata->uselprows )
-      {
-         char probname[SCIP_MAXSTRLEN];
-
-         /* copy all plugins */
-         SCIP_CALL( SCIPincludeGcgPlugins(subscip) );
-
-         /* get name of the original problem and add the string "_rinssub" */
-         (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_rinssub", SCIPgetProbName(scip));
-
-         /* create the subproblem */
-         SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-
-         /* copy all variables */
-         SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
-      }
-      else
-      {
-         SCIP_Bool valid;
-         valid = FALSE;
-
-         SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "rins", TRUE, FALSE, &valid) );
-
-         if( heurdata->copycuts )
-         {
-            /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-            SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
-         }
-
-         SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
-      }
-
-      // TODO: copy the matrix structure here
-      *result = SCIP_DIDNOTFIND;
-      return SCIP_OKAY;
-   }
-   else
+   if( heurdata->uselprows )
    {
       char probname[SCIP_MAXSTRLEN];
 
       /* copy all plugins */
       SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
-      /* get name of the original problem and add the string "_rinssub" */
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_rinssub", SCIPgetProbName(scip));
+      /* get name of the original problem and add the string "_gcgrinssub" */
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_gcgrinssub", SCIPgetProbName(scip));
 
       /* create the subproblem */
       SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
       SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+   }
+   else
+   {
+      SCIP_Bool valid;
 
-      /* if the lp rows are not used, also copy the constraints */
-      if( !heurdata->uselprows )
+      valid = FALSE;
+
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrins", TRUE, FALSE, &valid) );
+
+      if( heurdata->copycuts )
       {
-         SCIP_Bool valid;
-         valid = FALSE;
-
-         SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
-         if( heurdata->copycuts )
-         {
-            /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-            SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
-         }
-         SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
+         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
       }
+
+      SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
    }
 
    for( i = 0; i < nvars; i++ )
-     subvars[i] = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, vars[i]);
+      subvars[i] = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, vars[i]);
 
    /* free hash map */
    SCIPhashmapFree(&varmapfw);
@@ -655,10 +616,6 @@ SCIP_RETCODE SCIPincludeHeurGcgrins(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usegcg",
-         "should the subproblem be solved with GCG?",
-         &heurdata->usegcg, TRUE, DEFAULT_USEGCG, NULL, NULL) );
 
    return SCIP_OKAY;
 }

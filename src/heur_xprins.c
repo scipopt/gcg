@@ -33,10 +33,10 @@
 
 
 #define HEUR_NAME             "xprins"
-#define HEUR_DESC             "heuristic that performs a neighborhood search on the relaxation and the extreme points"
+#define HEUR_DESC             "Extreme Point RINS"
 #define HEUR_DISPCHAR         'Y'
-#define HEUR_PRIORITY         -100600
-#define HEUR_FREQ             -1
+#define HEUR_PRIORITY         -1100600
+#define HEUR_FREQ             0
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
@@ -46,15 +46,18 @@
 #define DEFAULT_MAXNODES      1000LL        /* maximum number of nodes to regard in the subproblem                 */
 #define DEFAULT_MINIMPROVE    0.01          /* factor by which xprins should at least improve the incumbent        */
 #define DEFAULT_MINNODES      200LL         /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.4           /* minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_MINFIXINGRATE 0.5           /* minimum percentage of integer variables that have to be fixed       */
 #define DEFAULT_NODESOFS      200LL         /* number of nodes added to the contingent of the total nodes          */
 #define DEFAULT_NODESQUOT     0.1           /* subproblem nodes in relation to nodes of the original problem       */
 #define DEFAULT_NUSEDPTS      -1            /* number of extreme pts per block that will be taken into account     */
 #define DEFAULT_NWAITINGNODES 200LL         /* number of nodes without incumbent change heuristic should wait      */
 #define DEFAULT_RANDOMIZATION FALSE         /* should the choice which sols to take be randomized?                 */
 #define DEFAULT_DONTWAITATROOT FALSE        /* should the nwaitingnodes parameter be ignored at the root node?     */
-#define DEFAULT_USELPROWS     TRUE           /* should subproblem be created out of the rows in the LP rows,
-                                              * otherwise, the copy constructors of the constraints handlers are used */
+#define DEFAULT_USELPROWS     FALSE         /* should subproblem be created out of the rows in the LP rows,
+                                             * otherwise, the copy constructors of the constraints handlers are used */
+#define DEFAULT_COPYCUTS      TRUE          /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+                                             * of the original scip be copied to constraints of the subscip
+                                             */
 
 
 
@@ -82,6 +85,9 @@ struct SCIP_HeurData
    SCIP_Bool             randomization;     /**< should the choice which sols to take be randomized?               */
    SCIP_Bool             dontwaitatroot;    /**< should the nwaitingnodes parameter be ignored at the root node?   */
    SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?      */
+   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                             *   to constraints in subproblem?
+                                             */
    unsigned int          randseed;          /**< seed value for random number generator                            */
 };
 
@@ -414,6 +420,11 @@ SCIP_RETCODE initializeSubproblem(
       valid = FALSE;
 
       SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
+      if( heurdata->copycuts )
+      {
+         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
+      }
       SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
    }
 
@@ -972,7 +983,7 @@ SCIP_RETCODE createNewSol(
 
    if( *success )
    {
-      SCIPdebugMessage("GCG extreme points crossover: new solution added.\n");
+      SCIPdebugMessage("Extreme Point RINS: new solution added.\n");
    }
 
    SCIPfreeBufferArray(scip, &subsolvals);
@@ -1418,6 +1429,10 @@ SCIP_RETCODE SCIPincludeHeurXprins(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+         "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
+         &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

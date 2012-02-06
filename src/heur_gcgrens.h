@@ -40,8 +40,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_Longint          maxnodes,           /**< maximum number of  nodes for the subproblem                    */
    SCIP_Longint          nstallnodes,        /**< number of stalling nodes for the subproblem                    */
    SCIP_Bool             binarybounds,       /**< should general integers get binary bounds [floor(.),ceil(.)]?  */
-   SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
-   SCIP_Bool             usegcg              /**< should the subproblem be solved with GCG as well?              */
+   SCIP_Bool             uselprows           /**< should subproblem be created out of the rows in the LP rows?   */
    );
 
 #ifdef __cplusplus
