@@ -1652,6 +1652,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    SCIP_Bool cutoff;
    SCIP_Longint oldnnodes;
    SCIP_Real timelimit;
+   SCIP_Real memorylimit;
    SCIP_Bool feasible;
 
    assert(scip != NULL);
@@ -1693,6 +1694,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       while( !SCIPisStopped(scip))
       {
          double mastertimelimit = SCIPinfinity(scip);
+
+         /* set memorylimit for master */
+         SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
+         if( !SCIPisInfinity(scip, memorylimit) )
+            memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
+
+         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
+
          SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
          if( !SCIPisInfinity(scip, timelimit) )
          {
@@ -1708,7 +1717,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
          /* if we have a blockdetection, see whether the node is block diagonal */
-
          if( relaxdata->hasblockdetection && SCIPisMatrixBlockDiagonal(scip) )
          {
             SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
