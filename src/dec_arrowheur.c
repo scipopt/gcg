@@ -36,26 +36,26 @@
 #define DEC_PRIORITY          1000          /**< priority of the detector */
 
 /* Default parameter settings */
-#define DEFAULT_BLOCKS                    2     /**< number of blocks */
-#define DEFAULT_VARWEIGHT                 1     /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN              2     /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT              2     /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT             1     /**< weight for continous variable nodes */
-#define DEFAULT_VARWEIGHTIMPL             2     /**< weight for implicit integer variable nodes */
-#define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
-#define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
-#define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
-#define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
-#define DEFAULT_CONSWEIGHT_SETPPC         5     /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
-#define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_ALPHA                     0.0   /**< factor for standard deviation of constraint weights */
-#define DEFAULT_BETA                      0.5   /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
-#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
-#define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
-#define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_PRIORITY                  DEC_PRIORITY
-
+#define DEFAULT_PRIORITY                  DEC_PRIORITY /**< Priority of the detector */
+#define DEFAULT_BLOCKS                    2            /**< number of blocks */
+#define DEFAULT_VARWEIGHT                 1            /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN              2            /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT              2            /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT             1            /**< weight for continous variable nodes */
+#define DEFAULT_VARWEIGHTIMPL             2            /**< weight for implicit integer variable nodes */
+#define DEFAULT_CONSWEIGHT                5            /**< weight for constraint hyperedges */
+#define DEFAULT_RANDSEED                  1            /**< random seed for the hmetis call */
+#define DEFAULT_TIDY                      TRUE         /**< whether to clean up afterwards */
+#define DEFAULT_DUMMYNODES                0.2          /**< percentage of dummy vertices*/
+#define DEFAULT_CONSWEIGHT_SETPPC         5            /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
+#define DEFAULT_MAXBLOCKS                 10           /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MINBLOCKS                 2            /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_ALPHA                     0.0          /**< factor for standard deviation of constraint weights */
+#define DEFAULT_BETA                      0.5          /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
+#define DEFAULT_METIS_UBFACTOR            5.0          /**< default unbalance factor given to metis on the commandline */
+#define DEFAULT_METIS_VERBOSE             FALSE        /**< should metis be verbose */
+#define DEFAULT_METISUSEPTYPE_RB          TRUE         /**< Should metis use the rb or kway partitioning algorithm */
+#define DEFAULT_ISENABLED                 TRUE         /**< Should the detector be run */
 
 #define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
    "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
@@ -105,6 +105,7 @@ struct DEC_DetectorData
    SCIP_Bool metisuseptyperb;
    SCIP_CLOCK *metisclock;
    int priority;
+   SCIP_Bool enabled;
 };
 
 enum htype
@@ -1166,15 +1167,20 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 static
 DEC_DECL_GETPRIORITY(getPriority)
 {
-   DEC_DETECTOR* arrowheur;
-   DEC_DETECTORDATA* detectordata;
    assert(scip != NULL);
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(arrowheur);
    assert(detectordata != NULL);
 
-   assert(strcmp(DECdetectorGetName(arrowheur), DEC_DETECTORNAME) == 0);
    return detectordata->priority;
+}
+
+/** return whether the detector is enabled or disabled */
+static
+DEC_DECL_GETISENABLED(getIsEnabled)
+{
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   return detectordata->enabled;
 }
 
 /** creates the arrowheur presolver and includes it in SCIP */
@@ -1193,7 +1199,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur, getPriority) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur, getPriority, getIsEnabled) );
 
 
    /* add arrowheur presolver parameters */
@@ -1215,6 +1221,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP_CALL( SCIPaddBoolParam(scip, "arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
    SCIP_CALL( SCIPaddBoolParam(scip, "arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "arrowheur/priority", "random seed for hmetis", &detectordata->priority, FALSE, DEFAULT_PRIORITY, INT_MIN, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "arrowheur/enabled", "Should the detector run the detection", &detectordata->enabled, FALSE, DEFAULT_ISENABLED, NULL, NULL ) );
 
    return SCIP_OKAY;
 }

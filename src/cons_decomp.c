@@ -631,7 +631,8 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
-   DEC_DECL_GETPRIORITY((*getPriority))            /**< interface method to get priority of detector (must not be NULL) */
+   DEC_DECL_GETPRIORITY((*getPriority)),           /**< interface method to get priority of detector (must not be NULL) */
+   DEC_DECL_GETISENABLED((*getIsEnabled))          /**< interface method to get enable status of detector (must not be NULL) */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -671,6 +672,7 @@ SCIP_RETCODE DECincludeDetector(
    detector->initDetection = initDetector;
    detector->exitDetection = exitDetector;
    detector->getPriority = getPriority;
+   detector->getIsEnabled = getIsEnabled;
    detector->i = conshdlrdata->ndetectors;
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1) );
@@ -736,7 +738,7 @@ SCIP_RETCODE DECdetectStructure(
          DEC_DETECTOR *detector;
          detector = conshdlrdata->detectors[i];
          assert(detector != NULL);
-         conshdlrdata->priorities[i] = detector->getPriority(scip);
+         conshdlrdata->priorities[i] = (*detector->getPriority)(scip, detector->decdata);
       }
 
       SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
@@ -752,7 +754,8 @@ SCIP_RETCODE DECdetectStructure(
          ndecdecomps = -1;
          detector = conshdlrdata->detectors[i];
          assert(detector != NULL);
-
+         if( !(*detector->getIsEnabled)(scip, detector->decdata) )
+            continue;
          if(detector->initDetection != NULL)
          {
             SCIPdebugMessage("Calling initDetection of %s\n", detector->name);

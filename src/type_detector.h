@@ -45,10 +45,11 @@ extern "C" {
 /** detects the structure of a the problem */
 #define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DECDECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
 
-/**
- * get detector priority
- */
-#define DEC_DECL_GETPRIORITY(x) int x (SCIP* scip)
+/** get detector priority */
+#define DEC_DECL_GETPRIORITY(x) int x (SCIP* scip, DEC_DETECTORDATA* detectordata)
+
+/** get detector enable/disable status */
+#define DEC_DECL_GETISENABLED(x) int x (SCIP* scip, DEC_DETECTORDATA* detectordata)
 
 #ifdef __cplusplus
 }
