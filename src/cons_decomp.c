@@ -181,8 +181,15 @@ SCIP_RETCODE evaluateDecomposition(
             assert(SCIPvarIsActive(var));
             assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
-            assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-            block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+            if( !SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var) )
+            {
+               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
+            }
+            else
+            {
+               assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
+               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+            }
 
             if(block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
             {

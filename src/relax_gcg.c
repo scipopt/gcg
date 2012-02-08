@@ -1097,6 +1097,7 @@ SCIP_RETCODE createMasterprobConss(
    {
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0)
          continue;
+
       success = FALSE;
       /* copy the constraint (dirty trick, we only need lhs and rhs, because variables are added later) */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "linear_%s", SCIPconsGetName(masterconss[c]));
@@ -1121,7 +1122,7 @@ SCIP_RETCODE createMasterprobConss(
       relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
       relaxdata->nmasterconss++;
    }
-   assert(relaxdata->nmasterconss+1 == nmasterconss);
+   assert(relaxdata->nmasterconss == nmasterconss);
    SCIP_CALL( saveOriginalVarMastercoeffs(scip, SCIPgetVars(scip), SCIPgetNVars(scip), relaxdata->nmasterconss, relaxdata->linearmasterconss, relaxdata->masterconss) );
 
    return SCIP_OKAY;

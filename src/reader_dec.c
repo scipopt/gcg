@@ -607,16 +607,12 @@ SCIP_RETCODE readBlock(
          syntaxError(scip, decinput, "unknown variable in block section");
          break;
       }
+
       /* get all vars for  the specific constraint */
       vars = SCIPgetVarsXXX(scip, cons);
       nvars = SCIPgetNVarsXXX(scip, cons);
       for( i = 0; i < nvars; i ++ )
       {
-         /*
-          * set each var to the current block
-          */
-         /*         SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, vars[i], decinput->blocknr) ); */
-         
          /*
           * saving for dedecomp
           */
