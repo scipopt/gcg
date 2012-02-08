@@ -990,7 +990,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
          /* for each coef, add coef * solval to the coef of the new variable for the corresponding constraint */
          for( c = 0; c < ncoefs; c++ )
          {
-            linkconss = GCGoriginalVarGetLinkingCons(origvars[0]);
+            linkconss = GCGoriginalVarGetMasterconss(origvars[0]);
             assert(!SCIPisZero(scip, coefs[c]));
             SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
 
@@ -1858,12 +1858,14 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       {
          SCIP_CONS** linkconss;
          SCIP_VAR* newvar;
-         linkconss = GCGoriginalVarGetLinkingCons(var);
 
          SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
+
+
+         linkconss = GCGoriginalVarGetMasterconss(var);
 
          /* add variable in the master to the master constraints it belongs to */
          for( i = 0; i < ncoefs; i++ )

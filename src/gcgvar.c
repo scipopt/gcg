@@ -72,9 +72,9 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       if((*vardata)->data.origvardata.ncoefs > 0)
       {
          assert((*vardata)->data.origvardata.coefs != NULL);
-         assert((*vardata)->data.origvardata.linkconss != NULL);
+         assert((*vardata)->data.origvardata.masterconss != NULL);
          SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.coefs));
-         SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.linkconss));
+         SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.masterconss));
       }
    }
    if( (*vardata)->vartype == GCG_VARTYPE_PRICING )
@@ -237,7 +237,7 @@ SCIP_RETCODE GCGorigVarCreateData(
    vardata->blocknr = -1;
    vardata->data.origvardata.pricingvar = NULL;
    vardata->data.origvardata.coefs = NULL;
-   vardata->data.origvardata.linkconss = NULL;
+   vardata->data.origvardata.masterconss = NULL;
    vardata->data.origvardata.ncoefs = 0;
    vardata->data.origvardata.nmastervars = 0;
    vardata->data.origvardata.maxmastervars = STARTMAXMASTERVARS;
@@ -491,19 +491,19 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
    if( vardata->data.origvardata.ncoefs == 0 )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.linkconss), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), 1) );
    }
    else
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), vardata->data.origvardata.ncoefs+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.linkconss), vardata->data.origvardata.ncoefs+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), vardata->data.origvardata.ncoefs+1) );
    }
 
    assert(vardata->data.origvardata.coefs != NULL);
-   assert(vardata->data.origvardata.linkconss != NULL);
+   assert(vardata->data.origvardata.masterconss != NULL);
 
    vardata->data.origvardata.coefs[vardata->data.origvardata.ncoefs] = val;
-   vardata->data.origvardata.linkconss[vardata->data.origvardata.ncoefs] = cons;
+   vardata->data.origvardata.masterconss[vardata->data.origvardata.ncoefs] = cons;
    vardata->data.origvardata.ncoefs++;
 
    return SCIP_OKAY;
@@ -511,7 +511,7 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
 
 
 /** Returns the fraction of master variables the original variable is contained in */
-SCIP_CONS** GCGoriginalVarGetLinkingCons(
+SCIP_CONS** GCGoriginalVarGetMasterconss(
    SCIP_VAR* var
    )
 {
@@ -522,8 +522,7 @@ SCIP_CONS** GCGoriginalVarGetLinkingCons(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   assert(vardata->data.origvardata.linkconss != NULL);
-   return vardata->data.origvardata.linkconss;
+   return vardata->data.origvardata.masterconss;
 }
 
 /** adds variable to a new block, making a linkingvariable out of it, if necessary */
@@ -1090,7 +1089,6 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 
    blocknr = GCGvarGetBlock(var);
    assert( blocknr == -1 || blocknr == -2);
-   assert(GCGoriginalVarGetPricingVar(var) == NULL);
 
    if( blocknr == -1)
    {

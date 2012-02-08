@@ -116,7 +116,7 @@ SCIP_Real* GCGoriginalVarGetCoefs(
 
 /** Returns the fraction of master variables the original variable is contained in */
 extern
-SCIP_CONS** GCGoriginalVarGetLinkingCons(
+SCIP_CONS** GCGoriginalVarGetMasterconss(
    SCIP_VAR* var
    );
 

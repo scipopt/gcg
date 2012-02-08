@@ -148,6 +148,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
 
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
       assert(GCGisLinkingVarInBlock(var, newblock));
+      assert(GCGvarIsLinking(var));
    }
    blocknr = GCGvarGetBlock(var);
    assert(blocknr == -2 || blocknr == newblock);
@@ -244,10 +245,13 @@ SCIP_RETCODE convertStructToGCG(
    relaxdata->npricingprobs = nblocks;
    SCIP_CALL( GCGcreateOrigVarsData(scip) );
 
+   SCIPdebugMessage("Copying structure with %d blocks, %d linking vars and %d linking constraints.\n", nblocks, nlinkingvars, nlinkingconss);
+
    /* set master constraints */
    for( i = 0; i < nlinkingconss; ++i )
    {
       assert(linkingconss[i] != NULL);
+      SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
       SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
    }
 
@@ -262,6 +266,7 @@ SCIP_RETCODE convertStructToGCG(
 
    for( i = 0; i < nblocks; ++i )
    {
+      SCIPdebugMessage("\tProcessing block %d.\n", i);
       assert(subscipvars[i] != NULL);
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
@@ -287,12 +292,14 @@ SCIP_RETCODE convertStructToGCG(
          assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) != NULL);
       }
    }
+   SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
-      if( SCIPvarGetData(linkingvars[i]) == NULL)
+
+      if( !GCGvarIsLinking(linkingvars[i]) )
       {
          int found;
-
+         SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
          /* HACK; TODO: find out constraint blocks */
          for( j = 0; j < nblocks; ++j )
          {
@@ -308,7 +315,7 @@ SCIP_RETCODE convertStructToGCG(
                {
                   if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] )
                   {
-                     SCIPdebugMessage("%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
                      SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, linkingvars[i], j) );
                      found = TRUE;
@@ -739,9 +746,13 @@ SCIP_RETCODE createLinkingPricingVars(
    )
 {
    SCIP_VAR* var;
-   int pricingprobnr;
    SCIP_CONS* linkcons;
+#ifndef NDEBUG
+   SCIP_CONS** linkconss;
+#endif
    SCIP_VAR** pricingvars;
+   int i;
+   int nblocks;
 
    assert(origvar != NULL);
    assert(relaxdata != NULL);
@@ -750,25 +761,68 @@ SCIP_RETCODE createLinkingPricingVars(
    assert(GCGvarIsOriginal(origvar));
    assert(GCGvarIsLinking(origvar));
    pricingvars = GCGlinkingVarGetPricingVars(origvar);
-
-   for( pricingprobnr = 0; pricingprobnr < relaxdata->npricingprobs; pricingprobnr++ )
+   nblocks = GCGlinkingVarGetNBlocks(origvar);
+#ifndef NDEBUG
+   /* checks that GCGrelaxSetOriginalVarBlockNr() worked correctly */
    {
-      if( pricingvars[pricingprobnr] == NULL )
+      int count;
+
+      linkconss = GCGlinkingVarGetLinkingConss(origvar);
+      count = 0;
+      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      {
+         if( pricingvars[i] != NULL)
+         {
+            count++;
+            //assert(pricingvars[i] == vars[v]);
+         }
+         assert(linkconss[i] == NULL);
+      }
+      assert(nblocks == count);
+   }
+#endif
+
+   for( i = 0; i < relaxdata->npricingprobs; ++i )
+   {
+      if( pricingvars[i] == NULL )
          continue;
 
       SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
-            relaxdata->pricingprobs[pricingprobnr], pricingprobnr, origvar, &var, &linkcons) );
-      GCGlinkingVarSetPricingVar(origvar, pricingprobnr, var);
-
-      SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
+            relaxdata->pricingprobs[i], i, origvar, &var, &linkcons) );
+      GCGlinkingVarSetPricingVar(origvar, i, var);
+      GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
+      SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
       relaxdata->nvarlinkconss++;
 
       /* because the variable was added to the problem,
        * it is captured by SCIP and we can safely release it right now
        */
-      SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[pricingprobnr], &var) );
+      SCIP_CALL( SCIPreleaseVar(relaxdata->pricingprobs[i], &var) );
    }
+
+#ifndef NDEBUG
+   /* checks that createLinkingPricingVars() worked correctly */
+   {
+      int count;
+
+      linkconss = GCGlinkingVarGetLinkingConss(origvar);
+      count = 0;
+      for( i = 0; i < relaxdata->npricingprobs; i++ )
+      {
+         if( pricingvars[i] != NULL)
+         {
+            count++;
+            assert(GCGvarIsPricing(pricingvars[i]));
+            assert(linkconss[i] != NULL);
+         }
+         else
+            assert(linkconss[i] == NULL);
+      }
+      assert(nblocks == count);
+   }
+#endif
+
 
    return SCIP_OKAY;
 }
@@ -822,61 +876,9 @@ SCIP_RETCODE createPricingVariables(
       {
          SCIP_VAR** pricingvars;
 
-         assert(GCGoriginalVarGetPricingVar(var) == NULL);
-
-#ifndef NDEBUG
-         /* checks that GCGrelaxSetOriginalVarBlockNr() worked correctly */
-         {
-            int count;
-            int nblocks;
-            SCIP_CONS** linkconss;
-
-            pricingvars = GCGlinkingVarGetPricingVars(var);
-            linkconss = GCGlinkingVarGetLinkingConss(var);
-            nblocks = GCGlinkingVarGetNBlocks(var);
-
-            count = 0;
-            for( i = 0; i < npricingprobs; i++ )
-            {
-               if( pricingvars[i] != NULL)
-               {
-                  count++;
-                  //assert(pricingvars[i] == vars[v]);
-               }
-               assert(linkconss[i] == NULL);
-            }
-            assert(nblocks == count);
-         }
-#endif
          SCIP_CALL( createLinkingPricingVars(relaxdata, var) );
-#ifndef NDEBUG
-         /* checks that createLinkingPricingVars() worked correctly */
-         {
-            int count;
-            int nblocks;
-            SCIP_CONS** linkconss;
 
-            pricingvars = GCGlinkingVarGetPricingVars(var);
-            linkconss = GCGlinkingVarGetLinkingConss(var);
-            nblocks = GCGlinkingVarGetNBlocks(var);
-
-            count = 0;
-            for( i = 0; i < npricingprobs; i++ )
-            {
-               if( pricingvars[i] != NULL)
-               {
-                  count++;
-                  assert(GCGvarIsPricing(pricingvars[i]));
-                  assert(linkconss[i] != NULL);
-               }
-               else
-                  assert(linkconss[i] == NULL);
-            }
-            assert(nblocks == count);
-         }
-#endif
-         assert(GCGoriginalVarGetPricingVar(var) == NULL);
-
+         /*         assert(GCGoriginalVarGetPricingVar(var) == NULL);*/
          pricingvars = GCGlinkingVarGetPricingVars(var);
 
          for( i = 0; i < npricingprobs; i++ )
@@ -1010,7 +1012,7 @@ static
 SCIP_RETCODE createPricingProblem(
    SCIP**      pricingscip,   /**< Pricing scip data structure */
    const char* name           /**< name of the pricing problem */
-   ) 
+   )
 {
    assert(pricingscip != NULL);
    assert(name != NULL);
@@ -1060,7 +1062,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
       SCIP_VAR** vars;
       SCIP_Real* vals;
       int nvars;
-      
+
       vars = SCIPgetVarsLinear(scip, linearmasterconss[i]);
       nvars = SCIPgetNVarsLinear(scip, linearmasterconss[i]);
       vals = SCIPgetValsLinear(scip, linearmasterconss[i]);

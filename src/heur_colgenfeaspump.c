@@ -1131,7 +1131,7 @@ SCIP_DECL_HEURINITSOL(heurInitsolColgenfeaspump)
       assert(ncoefs >= 0);
       if( ncoefs > 0)
       {
-         linkingconss = GCGoriginalVarGetLinkingCons(var);
+         linkingconss = GCGoriginalVarGetMasterconss(var);
          coefs = GCGoriginalVarGetCoefs(var);
          assert(linkingconss != NULL);
          assert(coefs != NULL);
