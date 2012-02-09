@@ -164,6 +164,20 @@ SCIP_HASHMAP*  DECdecdecompGetConstoblock(
    DECDECOMP* decdecomp       /**< DECDECOMP data structure */
    );
 
+
+/** completely initializes decdecomp from the values of the hashmaps */
+SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECDECOMP*            decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_VAR**            vars,               /**< variable array */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< constraint array */
+   int                   nconss              /**< number of constraints */
+   );
+
 #ifdef __cplusplus
 }
 #endif

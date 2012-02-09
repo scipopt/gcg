@@ -154,8 +154,8 @@ $(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h lib/scip/src/scip/scip
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/type_decomp.h src/relax_gcg.h \
- src/type_branchgcg.h src/struct_decomp.h lib/scip/src/scip/cons_linear.h \
- src/pub_gcgvar.h
+ src/type_branchgcg.h lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/cons_decomp.h src/type_detector.h
 $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
