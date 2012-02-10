@@ -623,10 +623,15 @@ SCIP_RETCODE readBlock(
          varvalue = readerdata->varstoblock[varvalueindex ];
          if( varvalue == NOVALUE )
          {
+            SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(vars[i]), decinput->blocknr);
             readerdata->varstoblock[varvalueindex ] = decinput->blocknr;
          }
-         else if( varvalue != NOVALUE || varvalue != LINKINGVALUE )
+         else if( (varvalue != NOVALUE || varvalue != LINKINGVALUE) && varvalue != decinput->blocknr )
          {
+
+            SCIPdebugMessage("\tVar %s is linking (old %d != %d new).\n", SCIPvarGetName(vars[i]), varvalue, decinput->blocknr);
+            assert(varvalue != decinput->blocknr);
+
             readerdata->varstoblock[varvalueindex ] = LINKINGVALUE;
             /* decrease the value again if it is a linking var */
             readerdata->nblockvars[decinput->blocknr] = readerdata->nblockvars[decinput->blocknr] - 1;
