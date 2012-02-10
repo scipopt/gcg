@@ -1847,7 +1847,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       int ncoefs;
       SCIP_VAR* var;
 
-      var = SCIPvarGetProbvar(vars[v]);
+      /*      var = SCIPvarGetProbvar(vars[v]);*/
+      var = vars[v];
       blocknr = GCGvarGetBlock(var);
       coefs = GCGoriginalVarGetCoefs(var);
       ncoefs = GCGoriginalVarGetNCoefs(var);

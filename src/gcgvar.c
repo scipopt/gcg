@@ -283,7 +283,7 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
       for (i = 0; i < vardata->data.origvardata.linkingvardata->nblocks; ++i)
       {
          if(vardata->data.origvardata.linkingvardata->pricingvars[i] != NULL)
-            assert(GCGvarIsPricing(vardata->data.origvardata.linkingvardata->pricingvars[i]));
+            assert(GCGvarIsPricing(vardata->data.origvardata.linkingvardata->pricingvars[i]) || SCIPvarIsOriginal(vardata->data.origvardata.linkingvardata->pricingvars[i]));
       }
    }
 #endif
