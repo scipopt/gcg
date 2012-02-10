@@ -582,11 +582,11 @@ SCIP_RETCODE solvePricingProblem(
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optfarkasclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optfarkasclock) );
          }
          else
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optredcostclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->optredcostclock) );
          }
 
          SCIP_CALL( pricerdata->solvers[i]->solversolve(scip, pricerdata->solvers[i],
@@ -595,13 +595,13 @@ SCIP_RETCODE solvePricingProblem(
 
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optfarkasclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optfarkasclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->optfarkascalls++;
          }
          else
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optredcostclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->optredcostclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->optredcostcalls++;
          }
@@ -655,11 +655,11 @@ SCIP_RETCODE solvePricingProblemHeur(
       {
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurfarkasclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurfarkasclock) );
          }
          else
          {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurredcostclock));
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->solvers[i]->heurredcostclock) );
          }
 
          SCIP_CALL( pricerdata->solvers[i]->solversolveheur(scip, pricerdata->solvers[i],
@@ -669,13 +669,13 @@ SCIP_RETCODE solvePricingProblemHeur(
 
          if( pricetype == GCG_PRICETYPE_FARKAS )
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurfarkasclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurfarkasclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->heurfarkascalls++;
          }
          else
          {
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurredcostclock));
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->solvers[i]->heurredcostclock) );
             if( *status != SCIP_STATUS_UNKNOWN )
                pricerdata->solvers[i]->heurredcostcalls++;
          }
@@ -783,11 +783,10 @@ SCIP_RETCODE setPricingObjs(
 #ifndef NDEBUG
          SCIP_VAR** pricingvars;
 #endif
-         origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
-
          assert(GCGvarIsPricing(probvars[j]));
          assert(GCGvarGetBlock(probvars[j]) == i);
 
+         origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
          if( !GCGvarIsLinking(origvar) )
             continue;
 
@@ -990,7 +989,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
          /* for each coef, add coef * solval to the coef of the new variable for the corresponding constraint */
          for( c = 0; c < ncoefs; c++ )
          {
-            linkconss = GCGoriginalVarGetLinkingCons(origvars[0]);
+            linkconss = GCGoriginalVarGetMasterconss(origvars[0]);
             assert(!SCIPisZero(scip, coefs[c]));
             SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
 
@@ -1276,9 +1275,9 @@ SCIP_RETCODE createNewMasterVar(
    pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
    pricerdata->npricedvars++;
 
-   SCIP_CALL(addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars));
+   SCIP_CALL( addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars) );
 
-   SCIP_CALL(addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars));
+   SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
    if( !solisray )
@@ -1297,15 +1296,13 @@ SCIP_RETCODE createNewMasterVar(
 /** compute the ojective value of the best solution */
 static
 SCIP_Real computeSolObjValue(
-   SCIP*       scip,          /**< SCIP data structure                  */
    int         nsolvars,      /**< number of variables in the solution  */
-   double*     solvals,       /**< Array of solution values             */
-   SCIP_VAR**  solvars        /**< Array of solution variables          */
+   SCIP_VAR**  solvars,       /**< Array of solution variables          */
+   double*     solvals        /**< Array of solution values             */
 )
 {
    int j;
    SCIP_Real bestsolval;
-   assert(scip != NULL);
    assert(nsolvars >= 0);
    assert(solvals != NULL);
    assert(solvars != NULL);
@@ -1318,8 +1315,8 @@ SCIP_Real computeSolObjValue(
       assert(solvars[j] != NULL);
       bestsolval += solvals[j] * SCIPvarGetObj(solvars[j]);
    }
-   return bestsolval;
 
+   return bestsolval;
 }
 
 /**
@@ -1614,13 +1611,7 @@ SCIP_RETCODE performPricing(
          if( nsols > 0 )
          {
             /* compute the ojective value of the best solution */
-            bestsolval = 0.0;
-
-            for( j = 0; j < nsolvars[0]; j++ )
-            {
-               /* TODO: round solution values??? */
-               bestsolval += solvals[0][j] * SCIPvarGetObj(solvars[0][j]);
-            }
+            bestsolval = computeSolObjValue(nsolvars[0], solvars[0], solvals[0]);
 
             /* TODO: ensure that the first solution is really the best one and that its objective value is the best reduced cost */
             if( SCIPisSumNegative(scip, bestsolval - pricerdata->dualsolconv[prob]) )
@@ -1854,22 +1845,27 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       SCIP_Real* coefs;
       int blocknr;
       int ncoefs;
+      SCIP_VAR* var;
 
-      blocknr = GCGvarGetBlock(vars[v]);
-      coefs = GCGoriginalVarGetCoefs(vars[v]);
-      ncoefs = GCGoriginalVarGetNCoefs(vars[v]);
+      /*      var = SCIPvarGetProbvar(vars[v]);*/
+      var = vars[v];
+      blocknr = GCGvarGetBlock(var);
+      coefs = GCGoriginalVarGetCoefs(var);
+      ncoefs = GCGoriginalVarGetNCoefs(var);
 
-      assert(GCGvarIsOriginal(vars[v]));
+      assert(GCGvarIsOriginal(var));
       if( blocknr < 0 )
       {
          SCIP_CONS** linkconss;
          SCIP_VAR* newvar;
-         linkconss = GCGoriginalVarGetLinkingCons(vars[v]);
 
-         SCIP_CALL( GCGcreateInitialMasterVar(scip, vars[v], &newvar) );
+         SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, vars[v], newvar, 1.0) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
+
+
+         linkconss = GCGoriginalVarGetMasterconss(var);
 
          /* add variable in the master to the master constraints it belongs to */
          for( i = 0; i < ncoefs; i++ )
@@ -1882,10 +1878,10 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          }
 
          /* we copied a linking variable into the master, add it to the linkcons */
-         if( GCGvarIsLinking(vars[v]) )
+         if( GCGvarIsLinking(var) )
          {
             SCIP_CONS** linkingconss;
-            linkingconss = GCGlinkingVarGetLinkingConss(vars[v]);
+            linkingconss = GCGlinkingVarGetLinkingConss(var);
 
             for( i = 0; i < pricerdata->npricingprobs; i++ )
             {
@@ -1957,6 +1953,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    return SCIP_OKAY;
 }
+
 
 /** solving process deinitialization method of variable pricer (called before branch and bound process data is freed) */
 static
@@ -2050,8 +2047,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 }
 
 
-
-
 /** reduced cost pricing method of variable pricer for feasible LPs */
 static
 SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
@@ -2100,8 +2095,6 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    return retcode;
 }
-
-
 
 
 static
@@ -2450,8 +2443,6 @@ void GCGpricerSetSolverdata(
 
    solver->solverdata = solverdata;
 }
-
-
 
 
 void GCGpricerPrintStatistics(

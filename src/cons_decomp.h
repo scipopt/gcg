@@ -84,7 +84,8 @@ SCIP_RETCODE DECincludeDetector(
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
    DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
-   DEC_DECL_GETPRIORITY((*getPriority))            /**< interface method to get priority of detector (must not be NULL) */
+   DEC_DECL_GETPRIORITY((*getPriority)),           /**< interface method to get priority of detector (must not be NULL) */
+   DEC_DECL_GETISENABLED((*getIsEnabled))          /**< interface method to get enable status of detector (must not be NULL) */
    );
 
 /** returns the remaning time of scip that the decomposition may use */

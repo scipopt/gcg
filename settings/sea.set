@@ -32,3 +32,4 @@ borderheur/metisverbose = FALSE
 arrowheur/metisverbose = FALSE
 #arrowheur/metisuseptyperb = TRUE
 constraints/connected/enable = TRUE
+constraints/connected/setppcinmaster = TRUE

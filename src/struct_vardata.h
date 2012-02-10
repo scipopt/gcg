@@ -42,7 +42,7 @@ typedef struct GCG_LinkingVarData GCG_LINKINGVARDATA;
 struct GCG_OrigVarData
 {
    SCIP_VAR*             pricingvar;              /**< corresponding variable in the pricing program */
-   SCIP_CONS**           linkconss;               /**< linking constraints of the original program in which the variable has a nonzero entry */
+   SCIP_CONS**           masterconss;             /**< master constraints of the original program in which the variable has a nonzero entry */
    SCIP_Real*            coefs;                   /**< coefficiants in the linking constraints of the original program */
    int                   ncoefs;                  /**< number of coefficiants */
    SCIP_VAR**            mastervars;              /**< variables in the master problem that contain the variable */

@@ -264,11 +264,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDispGcg(scip) );
 
    /* martin's decomp stuff */
-   SCIP_CALL(SCIPincludeReaderGp(scip));
-   SCIP_CALL(SCIPincludeConshdlrConnected(scip));
-   SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
-   SCIP_CALL(SCIPincludeDetectionBorderheur(scip));
-   SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
+   SCIP_CALL( SCIPincludeReaderGp(scip) );
+   SCIP_CALL( SCIPincludeConshdlrConnected(scip) );
+   SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
+   SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );

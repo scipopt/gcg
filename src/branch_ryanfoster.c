@@ -206,14 +206,14 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
           * and the current master variable has different values for both of them, fix the variable to 0 */
          if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
          {
-            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
          /* if branching enforces that both original vars must be in different mastervars, fix all
           * master variables to 0 that contain both */
          if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val1, 1.0) )
          {
-            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
       }
