@@ -295,4 +295,9 @@ void GCGsetStructDecdecomp(
    DECDECOMP*  decdecomp   /**< decomposition data structure */
    );
 
+/** gets the structure information */
+DECDECOMP* GCGgetStructDecdecomp(
+   SCIP*       scip        /**< SCIP data structure */
+   );
+
 #endif

@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   decomp.h
- * @ingroup CONSHDLRS
+ * @ingroup DECOMP
  * @brief  private methods for working with decomp structures
  * @author Martin Bergner
  *

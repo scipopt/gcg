@@ -178,6 +178,9 @@ SCIP_RETCODE evaluateDecomposition(
 
             var = SCIPvarGetProbvar(curvars[k]);
             assert(var != NULL);
+            if( !isVarRelevant(var) )
+               continue;
+
             assert(SCIPvarIsActive(var));
             assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
@@ -793,6 +796,7 @@ SCIP_RETCODE DECdetectStructure(
    for( i = 0; i < conshdlrdata->ndecomps; ++i)
    {
       SCIP_DECOMPOSITIONSCORES score;
+
       SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
       scores[i] = score.totalscore;
    }

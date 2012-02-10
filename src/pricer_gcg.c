@@ -783,11 +783,10 @@ SCIP_RETCODE setPricingObjs(
 #ifndef NDEBUG
          SCIP_VAR** pricingvars;
 #endif
-         origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
-
          assert(GCGvarIsPricing(probvars[j]));
          assert(GCGvarGetBlock(probvars[j]) == i);
 
+         origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
          if( !GCGvarIsLinking(origvar) )
             continue;
 

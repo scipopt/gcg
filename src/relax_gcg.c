@@ -729,7 +729,7 @@ SCIP_RETCODE createPricingVar(
 
    GCGoriginalVarSetPricingVar(origvar, var);
    SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[pricingprobnr], var) );
-
+   assert(GCGvarIsPricing(var));
    /* because the variable was added to the problem,
     * it is captured by SCIP and we can safely release it right now
     */
@@ -789,8 +789,11 @@ SCIP_RETCODE createLinkingPricingVars(
 
       SCIP_CALL( GCGlinkingVarCreatePricingVar(relaxdata->masterprob,
             relaxdata->pricingprobs[i], i, origvar, &var, &linkcons) );
+
       GCGlinkingVarSetPricingVar(origvar, i, var);
       GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
+
+      assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
       relaxdata->nvarlinkconss++;
@@ -868,6 +871,8 @@ SCIP_RETCODE createPricingVariables(
 
          SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(var),
                (void*)(GCGoriginalVarGetPricingVar(var)) ));
+
+         assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blocknr], var)));
          SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(var), (void*)(var)) );
       }
       /* variable is a linking variable --> create corresponding pricing variable in all linked blocks
@@ -878,13 +883,14 @@ SCIP_RETCODE createPricingVariables(
 
          SCIP_CALL( createLinkingPricingVars(relaxdata, var) );
 
-         /*         assert(GCGoriginalVarGetPricingVar(var) == NULL);*/
+         assert(GCGlinkingVarGetPricingVars(var) != NULL);
          pricingvars = GCGlinkingVarGetPricingVars(var);
 
          for( i = 0; i < npricingprobs; i++ )
          {
             if( pricingvars[i] != NULL)
             {
+               assert(GCGvarIsPricing(pricingvars[i]));
                SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(var),
                      (void*)(pricingvars[i])) );
             }
@@ -1153,6 +1159,25 @@ SCIP_RETCODE createPricingprobConss(
    {
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
+#ifndef NDEBUG
+         {
+            SCIP_VAR** curvars;
+            int ncurvars;
+            int i;
+
+            curvars = SCIPgetVarsXXX(scip, subscipconss[b][c]);
+            ncurvars = SCIPgetNVarsXXX(scip, subscipconss[b][c]);
+
+            for( i = 0; i < ncurvars; ++i )
+            {
+               assert(SCIPhashmapExists(hashorig2pricingvar[b], curvars[i]));
+               assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[b], curvars[i])));
+            }
+
+            SCIPfreeMemoryArrayNull(scip, &curvars);
+         }
+#endif
+
          /* copy the constraint */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(subscipconss[b][c]));
          SCIP_CALL( SCIPgetConsCopy(scip, relaxdata->pricingprobs[b], subscipconss[b][c], &newcons, SCIPconsGetHdlr(subscipconss[b][c]),
@@ -1165,7 +1190,22 @@ SCIP_RETCODE createPricingprobConss(
          assert(success);
 
          SCIP_CALL( SCIPaddCons(relaxdata->pricingprobs[b], newcons) );
+#ifndef NDEBUG
+         {
+            SCIP_VAR** curvars;
+            int ncurvars;
+            int i;
 
+            curvars = SCIPgetVarsXXX(scip, newcons);
+            ncurvars = SCIPgetNVarsXXX(scip, newcons);
+            for( i = 0; i < ncurvars; ++i )
+            {
+               assert(GCGvarIsPricing(curvars[i]));
+            }
+
+            SCIPfreeMemoryArray(scip, &curvars);
+         }
+#endif
          SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
       }
    }
@@ -2956,4 +2996,23 @@ void GCGsetStructDecdecomp(
    assert(relaxdata != NULL);
 
    relaxdata->decdecomp = decdecomp;
+}
+
+/** gets the structure information */
+DECDECOMP* GCGgetStructDecdecomp(
+   SCIP*       scip        /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->decdecomp;
 }

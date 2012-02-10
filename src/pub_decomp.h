@@ -163,7 +163,7 @@ void  DECdecdecompSetConstoblock(
 SCIP_HASHMAP*  DECdecdecompGetConstoblock(
    DECDECOMP* decdecomp       /**< DECDECOMP data structure */
    );
-   
+
 #ifdef __cplusplus
 }
 #endif

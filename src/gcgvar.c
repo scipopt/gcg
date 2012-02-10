@@ -173,6 +173,8 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    //   assert(vardata->data.origvardata.pricingvar != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
    assert(!GCGvarIsLinking(var));
+   if(vardata->data.origvardata.pricingvar != NULL)
+      assert(GCGvarIsPricing(vardata->data.origvardata.pricingvar));
    return vardata->data.origvardata.pricingvar;
 }
 
@@ -275,7 +277,16 @@ SCIP_VAR** GCGlinkingVarGetPricingVars(
    assert(vardata != NULL);
    assert(vardata->data.origvardata.linkingvardata != NULL);
    assert(vardata->data.origvardata.linkingvardata->pricingvars != NULL);
-
+#ifndef NDEBUG
+   {
+      int i;
+      for (i = 0; i < vardata->data.origvardata.linkingvardata->nblocks; ++i)
+      {
+         if(vardata->data.origvardata.linkingvardata->pricingvars[i] != NULL)
+            assert(GCGvarIsPricing(vardata->data.origvardata.linkingvardata->pricingvars[i]));
+      }
+   }
+#endif
    return vardata->data.origvardata.linkingvardata->pricingvars;
 }
 
@@ -417,7 +428,6 @@ SCIP_Real* GCGoriginalVarGetMastervals(
 }
 
 /** Returns the fraction of master variables the original variable is contained in */
-
 SCIP_Real* GCGoriginalVarGetCoefs(
    SCIP_VAR* var
    )

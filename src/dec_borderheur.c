@@ -566,10 +566,15 @@ static SCIP_RETCODE buildTransformedProblem(
    for( i = 0; i < nconss; i++ )
    {
       long int consblock = -1;
+      int ncurvars;
+      SCIP_VAR **curvars = SCIPgetVarsXXX( scip, conss[i] );
+
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0)
+         continue;
 
       /* sort the variables into corresponding buckets */
-      int ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
-      SCIP_VAR **curvars = SCIPgetVarsXXX( scip, conss[i] );
+      ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
+      curvars = SCIPgetVarsXXX( scip, conss[i] );
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
@@ -714,10 +719,14 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       /* copy the local data to the decomp structure */
       DECdecdecompSetNBlocks(decdecomp, nblocks);
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
       SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
       SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      if( nlinkingconss > 0)
+      {
+         SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+         DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      }
       DECdecdecompSetVartoblock(decdecomp, vartoblock);
       DECdecdecompSetConstoblock(decdecomp, constoblock);
    }
