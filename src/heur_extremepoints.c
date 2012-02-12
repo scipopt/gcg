@@ -810,7 +810,7 @@ static SCIP_RETCODE fixVariables(
 
    SCIP_VAR** vars;                          /* original scip variables                */
    SCIP_Real fixingrate;                     /* percentage of variables that are fixed */
-
+   
    int nblocks;                              /* number of blocks                                   */
    int nusedpts;                             /* number of extreme points per block                 */
    int nvars;                                /* number of original variables                       */
@@ -856,7 +856,7 @@ static SCIP_RETCODE fixVariables(
       ptcounter[i] = 0;
    }
 
-   SCIPdebugMessage(" -> comparing extreme points...\n");
+   SCIPdebugMessage("comparing extreme points...\n");
 
    /* for each block, compare the selected extreme points */
    for( i = 0; i < nblocks; ++i )
@@ -891,46 +891,62 @@ static SCIP_RETCODE fixVariables(
             {
                SCIP_VAR* origvar;
                SCIP_VAR* pricingvar;
-               SCIP_VAR** origpricingvars;
-               int norigpricingvars;
+               SCIP_VAR** pricingorigvars;
+               int npricingorigvars;
+               SCIP_Bool firstblock;
 
                if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                   continue;
 
-               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-               assert(GCGvarIsPricing(pricingvar));
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-               origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+               /* get the corresponding pricing variable;
+                  check whether this is the first block in which this variable appears;
+                  search for the right original variable (in case of aggregation) */
+               if( GCGvarIsLinking(origvars[k]) )
+               {
+                  SCIP_VAR** linkingpricingvars;
 
-               /* search the right original variable (in case of aggregation) */
-               origvar = NULL;
-               for( l = 0; l < norigpricingvars; ++l  )
-                  if( GCGvarGetBlock(origpricingvars[l]) == i )
-                  {
-                     origvar = origpricingvars[l];
-                     break;
-                  }
-               assert(origvar != NULL);
+                  linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+                  pricingvar = linkingpricingvars[blockrep];
+                  assert(pricingvar != NULL);
+                  assert(GCGvarIsPricing(pricingvar));                  
+
+                  /* for linking variables, also check whether this is
+                     the first block the variable appears in */
+                  for( l = 0; l < blockrep; ++l )
+                     if( linkingpricingvars[l] != NULL )
+                        break;
+                  firstblock = (l == blockrep);
+
+                  /* @todo: can there be aggregated linking variables? */
+                  origvar = origvars[k];
+               }
+               else
+               {
+                  pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+                  assert(pricingvar != NULL);
+                  assert(GCGvarIsPricing(pricingvar));
+
+                  firstblock = TRUE;
+
+                  /* search the right original variable (in case of aggregation) */
+                  npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+                  pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+                  origvar = NULL;
+                  for( l = 0; l < npricingorigvars; ++l  )
+                     if( GCGvarGetBlock(pricingorigvars[l]) == i )
+                     {
+                        origvar = pricingorigvars[l];
+                        break;
+                     }
+                  assert(origvar != NULL);
+               }
 
                /* get the variable index */
                idx = SCIPvarGetProbindex(origvar);
                assert(idx < nbinvars + nintvars);
-               l = blockrep;
-
-               /* for linking variables, check first whether this is
-                * the first block the variable appears in */
-               if( j == 0 && GCGvarIsLinking(origvar) )
-               {
-                  SCIP_VAR** linkingpricingvars;
-                  linkingpricingvars = GCGlinkingVarGetPricingVars(origvar);
-                  for( l = 0; l < blockrep; ++l )
-                     if( linkingpricingvars[l] != NULL )
-                        break;
-                  assert(linkingpricingvars[l] != NULL);
-               }
 
                /* the first extreme point serves as a reference point */
-               if( j == 0 && (!GCGvarIsLinking(origvar) || l == blockrep))
+               if( j == 0 && firstblock )
                   fixvals[idx] = origvals[k];
                /* the variable can not be be fixed if its value differs in the extreme points */
                else
@@ -1319,7 +1335,7 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
    {
-      SCIPdebugMessage("skipping Extreme Point RINS: master LP not solved to optimality.\n");
+      SCIPdebugMessage("skipping Extreme Point Crossover: master LP not solved to optimality.\n");
       return SCIP_OKAY;
    }
 
@@ -1464,7 +1480,7 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
    retstat = SCIPsolve(subscip);
    if( retstat != SCIP_OKAY )
    {
-      SCIPwarningMessage("Error while solving subMIP in GCG extreme points crossover heuristic; subSCIP terminated with code <%d>\n",
+      SCIPwarningMessage("Error while solving subMIP in Extreme Point Crossover heuristic; subSCIP terminated with code <%d>\n",
             retstat);
    }
 #else
@@ -1481,7 +1497,7 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
       int nsubsols;
       int solindex;                             /* index of the solution created by crossover          */
 
-      SCIPdebugMessage("Extreme points crossover found %i feasible solution(s).\n", SCIPgetNSols(subscip));
+      SCIPdebugMessage(" -> found %i feasible solution(s).\n", SCIPgetNSols(subscip));
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
@@ -1503,7 +1519,7 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
    {
       /* if no new solution was found, run was a failure */
       updateFailureStatistic(scip, heurdata);
-      SCIPdebugMessage("GCG extreme points crossover: no subMIP solution found - ");
+      SCIPdebugMessage(" -> no subMIP solution found - ");
       switch ( SCIPgetStatus(subscip) ) {
       case SCIP_STATUS_INFEASIBLE:
          SCIPdebugPrintf("subMIP infeasible.\n");

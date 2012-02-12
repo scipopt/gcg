@@ -663,27 +663,40 @@ static SCIP_RETCODE fixVariables(
          for( k = 0; k < norigvars; ++k )
          {
             SCIP_VAR* pricingvar;
-            SCIP_VAR** origpricingvars;
-            int norigpricingvars;
+            SCIP_VAR** pricingorigvars;
+            int npricingorigvars;
 
             if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                continue;
 
-            pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-            assert(GCGvarIsPricing(pricingvar));
-            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-            assert(origpricingvars != NULL);
-            assert(norigpricingvars >= 0);
+            /* get the corresponding pricing variable */
+            if( GCGvarIsLinking(origvars[k]) )
+            {
+               SCIP_VAR** linkingpricingvars;
 
-            for( l = 0; l < norigpricingvars; ++l )
+               linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+               pricingvar = linkingpricingvars[block];
+            }
+            else
+               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+          
+            assert(pricingvar != NULL);
+            assert(GCGvarIsPricing(pricingvar));
+
+            /* get all origvars represented by the current origvar */
+            pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+            npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(pricingorigvars != NULL);
+            assert(npricingorigvars >= 0);
+
+            for( l = 0; l < npricingorigvars; ++l )
             {
                int idx;
                SCIP_Real solval;
 
-               idx = SCIPvarGetProbindex(origpricingvars[l]);
+               idx = SCIPvarGetProbindex(pricingorigvars[l]);
                assert(idx < nbinvars + nintvars);
-               solval = SCIPgetRelaxSolVal(scip, origpricingvars[l]);
+               solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
 
                if( SCIPisZero(scip, solval) )
                {
@@ -735,27 +748,40 @@ static SCIP_RETCODE fixVariables(
                for( k = 0; k < norigvars; ++k )
                {
                   SCIP_VAR* pricingvar;
-                  SCIP_VAR** origpricingvars;
-                  int norigpricingvars;
+                  SCIP_VAR** pricingorigvars;
+                  int npricingorigvars;
 
                   if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                      continue;
 
-                  pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-                  assert(GCGvarIsPricing(pricingvar));
-                  origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-                  assert(origpricingvars != NULL);
-                  assert(norigpricingvars >= 0);
+                  /* get the corresponding pricing variable */
+                  if( GCGvarIsLinking(origvars[k]) )
+                  {
+                     SCIP_VAR** linkingpricingvars;
 
-                  for( l = 0; l < norigpricingvars; ++l )
+                     linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+                     pricingvar = linkingpricingvars[i];
+                  }
+                  else
+                     pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+          
+                  assert(pricingvar != NULL);
+                  assert(GCGvarIsPricing(pricingvar));
+
+                  /* get all origvars represented by the current origvar */
+                  pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+                  npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+                  assert(pricingorigvars != NULL);
+                  assert(npricingorigvars >= 0);
+
+                  for( l = 0; l < npricingorigvars; ++l )
                   {
                      int idx;
                      SCIP_Real solval;
 
-                     idx = SCIPvarGetProbindex(origpricingvars[l]);
+                     idx = SCIPvarGetProbindex(pricingorigvars[l]);
                      assert(idx < nbinvars + nintvars);
-                     solval = SCIPgetRelaxSolVal(scip, origpricingvars[l]);
+                     solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
 
                      if( SCIPisZero(scip, solval) )
                      {
@@ -1296,7 +1322,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
       int nsubsols;
       int solindex;                             /* index of the solution created by crossover          */
 
-      SCIPdebugMessage("Extreme Point RINS found %i feasible solution(s).\n", SCIPgetNSols(subscip));
+      SCIPdebugMessage("  -> found %i feasible solution(s).\n", SCIPgetNSols(subscip));
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
@@ -1318,7 +1344,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    {
       /* if no new solution was found, run was a failure */
       updateFailureStatistic(scip, heurdata);
-      SCIPdebugMessage("Extreme Point RINS: no subMIP solution found - ");
+      SCIPdebugMessage(" -> no subMIP solution found - ");
       switch ( SCIPgetStatus(subscip) ) {
       case SCIP_STATUS_INFEASIBLE:
          SCIPdebugPrintf("subMIP infeasible.\n");
