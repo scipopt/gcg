@@ -304,6 +304,47 @@ void GCGlinkingVarSetPricingVar(
    vardata->data.origvardata.linkingvardata->pricingvars[pricingprobnr] = var;
 }
 
+/** returns the blocks the linking variable is in */
+SCIP_RETCODE GCGlinkingVarGetBlocks(
+   SCIP_VAR* var, /**< SCIP variable structure */
+   int nblocks,   /**< number of blocks the linking variable is in */
+   int* blocks    /**< array to store the blocks of the linking variable */
+   )
+{
+   SCIP_VARDATA* vardata;
+   int i;
+   int j;
+
+   assert(var != NULL);
+
+   assert(GCGvarIsLinking(var));
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata != NULL);
+   assert(vardata->data.origvardata.linkingvardata->nblocks > 0);
+
+   /* the blocks array must be large enough to hold all block numbers */
+   if( nblocks < vardata->data.origvardata.linkingvardata->nblocks )
+   {
+      SCIPerrorMessage("array too small to store all block numbers!\n");
+      return SCIP_INVALIDDATA;
+   }
+   assert(nblocks >= vardata->data.origvardata.linkingvardata->nblocks);
+
+   /* fill the blocks array */
+   j = -1;
+   for( i = 0; i < vardata->data.origvardata.linkingvardata->nblocks; ++i )
+   {
+      /* search the next block the linking variable is contained in */
+      do
+         ++j;
+      while ( vardata->data.origvardata.linkingvardata->pricingvars[j] == NULL );
+      blocks[i] = j;
+   }
+
+   return SCIP_OKAY;
+}
+
 /** returns the number of blocks the linking variable is in */
 int GCGlinkingVarGetNBlocks(
    SCIP_VAR* var /**< SCIP variable structure */

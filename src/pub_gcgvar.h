@@ -152,6 +152,14 @@ void GCGlinkingVarSetLinkingCons(
    int i
    );
 
+/** returns the blocks the linking variable is in */
+extern
+SCIP_RETCODE GCGlinkingVarGetBlocks(
+   SCIP_VAR* var, /**< SCIP variable structure */
+   int nblocks,   /**< number of blocks the linking variable is in */
+   int* blocks    /**< array to store the blocks of the linking variable */
+   );
+
 /** returns the number of blocks the linking variable is in */
 extern
 int GCGlinkingVarGetNBlocks(

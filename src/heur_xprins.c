@@ -158,7 +158,6 @@ SCIP_RETCODE selectExtremePoints(
 
       /* get block information and solution value */
       block = GCGvarGetBlock(mastervar);
-      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
       value = SCIPgetSolVal(masterprob, NULL, mastervar);
 
       /* @todo: handle infinite master solution values */
@@ -180,6 +179,10 @@ SCIP_RETCODE selectExtremePoints(
       /* ignore "empty" master variables, i.e. variables representing the zero vector */
 //      if( norigvars == 0 )
 //         continue;
+
+      /* get number of blocks that are identical to this block */
+      assert(block >= 0);
+      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
 
       value = value / nidentblocks;
 

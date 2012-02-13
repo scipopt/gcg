@@ -265,9 +265,36 @@ SCIP_RETCODE branchExtern(
       {
          assert(GCGvarIsOriginal(branchcands[i]));
 
-         /* variable belongs to no block or the block is not unique */
-         if( GCGvarGetBlock(branchcands[i]) == -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         /* variable belongs to no block */
+         if( GCGvarGetBlock(branchcands[i]) == -1 )
             continue;
+
+         /* block is not unique (non-linking variables) */
+         if( !GCGvarIsLinking(branchcands[i]) && GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+            continue;
+
+         /* block is not unique (linking variables) */
+         if( GCGvarIsLinking(branchcands[i]) )
+         {
+            int nvarblocks;
+            int* varblocks;
+            SCIP_Bool unique;
+            int j;
+
+            nvarblocks = GCGlinkingVarGetNBlocks(branchcands[i]);
+            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( GCGlinkingVarGetBlocks(branchcands[i], nvarblocks, varblocks) );
+
+            unique = TRUE;
+            for( j = 0; j < nvarblocks; ++j )
+               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+                  unique = FALSE;
+
+            SCIPfreeBufferArray(scip, &varblocks);
+
+            if( !unique )
+               continue;
+         }
 
          /* use pseudocost variable selection rule */
          if( usepseudocosts )
