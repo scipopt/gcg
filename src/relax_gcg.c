@@ -2410,10 +2410,11 @@ int GCGrelaxGetNIdenticalBlocks(
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
    assert(relax != NULL);
+   assert(pricingprobnr >= 0);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
-
+   assert(pricingprobnr <= relaxdata->npricingprobs);
    assert(relaxdata->nblocksidentical[pricingprobnr] >= 0);
    assert((relaxdata->blockrepresentative[pricingprobnr] == pricingprobnr)
       == (relaxdata->nblocksidentical[pricingprobnr] > 0));
