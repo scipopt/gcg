@@ -826,7 +826,8 @@ SCIP_RETCODE DECwriteAllDecomps(
 {
    int i;
    char name[SCIP_MAXSTRLEN];
-   const char *pname;
+   char outname[SCIP_MAXSTRLEN];
+   char *pname;
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -840,18 +841,16 @@ SCIP_RETCODE DECwriteAllDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   pname = strrchr(SCIPgetProbName(scip), '/');
-   if( pname == NULL )
-      pname = SCIPgetProbName(scip);
-   else
-      pname = pname+1;
+   SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
+   SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
+
    /** @todo: This is a giant hack, but it works quite well */
    tmp = conshdlrdata->decdecomps[0];
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_%d.%s\0", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s\0", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
       conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
-      SCIP_CALL( SCIPwriteTransProblem(scip, name, extension, FALSE) );
+      SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
    conshdlrdata->decdecomps[0] = tmp;
 
