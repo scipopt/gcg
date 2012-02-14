@@ -56,7 +56,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
-/** perform popagation method of the given branchrule for the given branchdata */
+/** perform propagation method of the given branchrule for the given branchdata */
 extern
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP*                 scip,               /**< SCIP data structure */

@@ -334,7 +334,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 
 /* returns the array of original cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetOrigcuts(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
@@ -353,7 +353,7 @@ SCIP_ROW** GCGsepaGetOrigcuts(
 
 /* returns the number of original cuts saved in the separator data */
 int GCGsepaGetNOrigcuts(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
@@ -372,7 +372,7 @@ int GCGsepaGetNOrigcuts(
 
 /* returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetMastercuts(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
@@ -391,7 +391,7 @@ SCIP_ROW** GCGsepaGetMastercuts(
 
 /* returns the number of master cuts saved in the separator data */
 int GCGsepaGetNMastercuts(
-   SCIP*                 scip
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
