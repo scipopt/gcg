@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 typedef struct GCG_BranchData GCG_BRANCHDATA;   /**< branching data */
-typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching data */
+typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching rule */
 
 
 /** activation method for branchrule, called when a node in the master problem is activated,
