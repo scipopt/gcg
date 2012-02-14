@@ -824,7 +824,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          int npricingprobs;
          SCIP_VAR** pricingvars;
 
-         npricingprobs = GCGrelaxGetNPricingprobs(scip);
+         npricingprobs = GCGrelaxGetNPricingprobs(origscip);
          pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
          SCIPdebugMessage("adjusting bound of linking pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
@@ -926,7 +926,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          /* if the variable is linking, we have to perform the same step as above for every existing block*/
          assert(GCGvarIsLinking(consdata->boundchgvars[i]));
          pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
-         npricingprobs = GCGrelaxGetNPricingprobs(scip);
+         npricingprobs = GCGrelaxGetNPricingprobs(origscip);
 
          /* reset corresponding bound in the pricing problem */
          /* lower bound was changed */
@@ -1003,7 +1003,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( !consdata->needprop && GCGconsOrigbranchGetNPropBoundChgs(origscip, consdata->origcons) == 0)
+   if( !consdata->needprop && GCGconsOrigbranchGetNPropBoundChgs(origscip, consdata->origcons) == 0 )
    {
 #ifdef CHECKPROPAGATEDVARS
       SCIP_Bool consistent;
@@ -1037,7 +1037,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    /* iterate over all master variables and apply global bound changes */
    if( conshdlrData->npendingbnds > 0 && conshdlrData->pendingbndsactivated )
    {
-      for( i = 0; i < nvars; i++)
+      for( i = 0; i < nvars; i++ )
       {
          SCIP_Bool ismastervariablerelevant;
          SCIP_VAR** origvars;
@@ -1056,27 +1056,26 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
 //         fixed = FALSE;
 
+         /* only look at master variables not globally fixed to zero that belong to a block */
          ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
          ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0]));
-         /* only look at master variables not globally fixed to zero that belong to a block */
          if( !ismastervariablerelevant )
-         {
             continue;
-         }
 
          /* iterate over global bound changes that were not yet checked for the master variables */
-//         for( k = 0; k < conshdlrData->npendingbnds && !fixed; k++ )
          for( k = 0; k < conshdlrData->npendingbnds; k++ )
-
          {
             SCIP_Bool ismastervarrelevant;
             SCIP_VAR** pricingvars;
             int bndchgblocknr;
             SCIP_VAR** bndchgorigvars;
+
             assert(!GCGvarIsOriginal(conshdlrData->pendingvars[k]));
+
             bndchgblocknr = GCGvarGetBlock(conshdlrData->pendingvars[k]);
             bndchgorigvars = GCGpricingVarGetOrigvars(conshdlrData->pendingvars[k]);
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
+
             /* LINK: mb: this might work  */
             /* the boundchange was performed on a variable in another block, continue */
 
@@ -1084,7 +1083,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             ismastervarrelevant = (bndchgblocknr == blocknr);
             /* if we are dealing with a linking master variable but it has nothing to do with the
              * boundchangevar's block, skip it, too */
-            if( (origvars != NULL) )
+            if( origvars != NULL )
             {
                if( GCGvarIsLinking(origvars[0]) )
                {
@@ -1147,7 +1146,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    }
 
    /* iterate over all master variables created after the current node was left the last time */
-   for( i = consdata->propagatedvars; i < nvars; i++)
+   for( i = consdata->propagatedvars; i < nvars; i++ )
    {
       SCIP_VAR** origvars;
       int norigvars;
@@ -1212,10 +1211,10 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             /* TODO: LINK: mb: This needs to be changed */
             /* the boundchage was performed on a variable in another block, continue */
 
-            if(origvars == NULL)
+            if( origvars == NULL )
                continue;
 
-            if( bndchgblocknr != blocknr || origvars[0] == NULL || (GCGvarIsLinking(origvars[0]) && !GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)))
+            if( bndchgblocknr != blocknr || origvars[0] == NULL || (GCGvarIsLinking(origvars[0]) && !GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)) )
                continue;
 
             assert(bndchgblocknr != -1);
@@ -1290,8 +1289,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    {
 
       assert(GCGvarIsOriginal(propvars[i]));
-      assert(GCGvarGetBlock(propvars[i]) == -1); /* TODO: LINK: mb: this might not work */
-      assert(GCGoriginalVarGetNMastervars(propvars[i]) == 1);
+      assert(GCGvarGetBlock(propvars[i]) < 0); /* TODO: LINK: mb: this might not work */
+      assert(GCGoriginalVarGetNMastervars(propvars[i]) >= 1);
       mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
 
       if( propboundtypes[i] == SCIP_BOUNDTYPE_LOWER )
@@ -1551,7 +1550,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
       pricingvars = GCGlinkingVarGetPricingVars(var);
       npricingprobs = GCGrelaxGetNPricingprobs(scip);
 
-      assert(nmastervars == 1);
+      assert(nmastervars >= 1);
       assert(mastervals[0] == 1);
       assert(mastervars[0] != NULL);
 
