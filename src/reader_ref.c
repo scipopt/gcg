@@ -617,12 +617,12 @@ SCIP_RETCODE readREFFile(
    return SCIP_OKAY;
 }
 
-/** writes a BLK file */
+/** writes a Ref file */
 static
 SCIP_RETCODE writeREFFile(
    SCIP*                 scip,              /**< SCIP data structure */
-   SCIP_READER*          reader,
-   FILE*                 file
+   SCIP_READER*          reader,            /**< ref reader */
+   FILE*                 file               /**< target file */
 
    )
 {
@@ -767,14 +767,14 @@ SCIP_DECL_READERWRITE(readerWriteRef)
  * reader specific interface methods
  */
 
-/** includes the blk file reader in SCIP */
+/** includes the ref file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderRef(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_READERDATA* readerdata;
 
-   /* create blk reader data */
+   /* create ref reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
 
    /* include lp reader */
