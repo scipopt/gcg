@@ -67,6 +67,10 @@
 
 /** TODO:
  * currently, all vars from the first column where a linking var appears until the end of the block are considered as linking vars, although there might be empty columns. This could be changed so that these empty columns are considered as subscipvars and not linking vars.
+ *
+ * In some cases a block can consist of linking vars exclusively. This makes no real sense.
+ *
+ * For some instances the assertion regarding the consistency of the arrays ibegin and jbegin fails
  * */
 
 struct node {
@@ -1474,7 +1478,7 @@ void assignVarsToBlock(
    int* hashmapindex;
    SCIP_VAR* var;
    //assign the subscipvars (=nonlinking vars)
-   assert(first_linkingvar > first_var);
+   assert(first_linkingvar >= first_var);
    detectordata->nvarsperblock[block-1] = first_linkingvar - first_var;
    for(i = first_var, j = 0; i < first_linkingvar; ++i, ++j)
    {
@@ -1654,7 +1658,7 @@ void blocking(
    it1 = SCIPiteratorBegin(detectordata->rowsWithConstrictions);
 
    for( it1 = nextRowToBlockAt(detectordata, it1, min_block_size, prev_block_first_row, prev_block_last_row);
-         ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(it1.list));
+         ! SCIPiteratorIsEqual(it1, SCIPiteratorEnd(it1.list)) && block < detectordata->maxblocks;
          it1 = nextRowToBlockAt(detectordata, it1, min_block_size, prev_block_first_row, prev_block_last_row) )
    {
       current_row = * (int*) (it1.node->data);
@@ -2041,6 +2045,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
    {
       assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
+   }
+   for(i = 0; i < nvars - 1; ++i)
+   {
       assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
    }
 #endif
