@@ -1028,7 +1028,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
    propcount = 0;
 
-
    /* propagate all bound changes or only the branching bound changes, depending on the setting for the enforcement of proper variables */
    nboundchanges = (conshdlrData->enforceproper ? consdata->nboundchanges : consdata->nbranchingchanges);
 
@@ -1164,9 +1163,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
       /* only look at variables not already fixed to 0 or that belong to no block */
       if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
-      {
          continue;
-      }
 
       /* the variable was copied from original to master */
       if( blocknr == -1 )
@@ -1205,16 +1202,22 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             SCIP_Bool handled = FALSE;
 #endif
             int bndchgblocknr;
+
+            /* get the block the original variable is in */
             bndchgblocknr = GCGvarGetBlock(consdata->boundchgvars[k]);
             assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
-            /* TODO: LINK: mb: This needs to be changed */
-            /* the boundchage was performed on a variable in another block, continue */
 
-            if( origvars == NULL )
+            /* TODO: LINK: mb: This needs to be changed */
+
+            /* ignore variables that contain no original variables */
+            /* @todo: move this statement one for loop higher? */
+            if( origvars == NULL || origvars[0] == NULL )
                continue;
 
-            if( bndchgblocknr != blocknr || origvars[0] == NULL || (GCGvarIsLinking(origvars[0]) && !GCGisLinkingVarInBlock(origvars[0], bndchgblocknr)) )
+            /* the boundchange was performed on a variable in another block, continue */
+            if( (!GCGvarIsLinking(consdata->boundchgvars[k]) && bndchgblocknr != blocknr) ||
+               (GCGvarIsLinking(consdata->boundchgvars[k]) && !GCGisLinkingVarInBlock(consdata->boundchgvars[k], blocknr)) )
                continue;
 
             assert(bndchgblocknr != -1);
@@ -1227,7 +1230,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             /* iterate over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; j++ )
             {
-               /* TODO: LINK: mb: the assertion will fail in any case */
                assert(GCGvarGetBlock(origvars[j]) == blocknr || GCGisLinkingVarInBlock(origvars[j], blocknr));
 
                /* check whether the original variable contained in the master variable equals the variable
@@ -1270,7 +1272,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                break;
             }
 #ifdef SCIP_DEBUG
-            if(contained || !handled)
+            if( contained || !handled )
             {
                SCIPdebugMessage("orig var %s is contained in %s but not handled val = %f \n", SCIPvarGetName(consdata->boundchgvars[k]), SCIPvarGetName(vars[i]), val);
 
