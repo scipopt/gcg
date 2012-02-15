@@ -32,6 +32,8 @@
 
 #define DEC_DETECTORNAME      "borderheur"   /**< name of the detector */
 #define DEC_PRIORITY          0              /**< priority of the detector */
+#define DEC_DECCHAR           'b'           /**< display character of detector */
+#define DEC_ENABLED           TRUE          /**< should detector be called by default */
 
 /* Default parameter settings */
 #define DEFAULT_PRIORITY                  DEC_PRIORITY /**< Priority of the detector */
@@ -88,8 +90,6 @@ struct DEC_DetectorData
    SCIP_Bool metisverbose;
    SCIP_Bool metisuseptyperb;
    SCIP_CLOCK *metisclock;
-   int priority;
-   SCIP_Bool enabled;
 };
 
 
@@ -805,27 +805,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 }
 
 
-/** gets the priority of the detector */
-static
-DEC_DECL_GETPRIORITY(getPriority)
-{
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
-   return detectordata->priority;
-}
-
-/** return whether the detector is enabled or disabled */
-static
-DEC_DECL_GETISENABLED(getIsEnabled)
-{
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
-   return detectordata->enabled;
-}
-
-
 /** creates the borderheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionBorderheur(
    SCIP*                 scip              /**< SCIP data structure */
@@ -842,19 +821,18 @@ SCIP_RETCODE SCIPincludeDetectionBorderheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur, getPriority, getIsEnabled) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur) );
 
    /* add borderheur presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "borderheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "borderheur/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "borderheur/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "borderheur/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "borderheur/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip, "borderheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "borderheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "borderheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "borderheur/priority", "random seed for hmetis", &detectordata->priority, FALSE, DEFAULT_PRIORITY, INT_MIN, INT_MAX, NULL, NULL) );
-SCIP_CALL( SCIPaddBoolParam(scip, "borderheur/enabled", "Should the detector run the detection", &detectordata->enabled, FALSE, DEFAULT_ISENABLED, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/borderheur/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/borderheur/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/borderheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/borderheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/borderheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+
    return SCIP_OKAY;
 }

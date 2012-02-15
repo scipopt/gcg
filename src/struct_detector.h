@@ -29,15 +29,15 @@ extern "C" {
  * @todo: add priority and enabled flag (bug #7)
  */
 struct DEC_Detector {
+   const char *name;                            /**< name of the detector */
+   DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */
+   char decchar;                                /**< display character of detector */
+   int priority;                                /**< detector priority */
+   SCIP_Bool enabled;                           /**< flag to indicate whether detector is enabled */
 
    DEC_DECL_INITDETECTOR((*initDetection));     /**< initialization method of detector */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure));/**< structure detection method of detector */
    DEC_DECL_EXITDETECTOR((*exitDetection));     /**< deinitialization method of detector */
-   DEC_DECL_GETPRIORITY((*getPriority));        /**< getter method for the priority */
-   DEC_DECL_GETISENABLED((*getIsEnabled));      /**< getter method to check whether the detector is enabled */
-   DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */
-   const char *name;                            /**< name of the detector */
-   char decchar;                                /**< display character of detector */
 };
 
 

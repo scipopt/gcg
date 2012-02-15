@@ -637,17 +637,21 @@ DEC_DETECTOR* DECfindDetector(
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
    const char* name,                               /**< name of the detector */
+   const char decchar,                             /**< display character of the detector */
+   int priority,                                   /**< priority of the detector */
+   SCIP_Bool enabled,                              /**< whether the detector should be enabled by default */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
-   DEC_DECL_GETPRIORITY((*getPriority)),           /**< interface method to get priority of detector (must not be NULL) */
-   DEC_DECL_GETISENABLED((*getIsEnabled))          /**< interface method to get enable status of detector (must not be NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector))          /**< deinitialization method of detector (or NULL) */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    DEC_DETECTOR *detector;
+   char setstr[SCIP_MAXSTRLEN];
+   char descstr[SCIP_MAXSTRLEN];
+
    assert(scip != NULL);
    assert(name != NULL);
    assert(detectStructure != NULL);
@@ -660,7 +664,6 @@ SCIP_RETCODE DECincludeDetector(
    }
 
    assert(detectStructure != NULL);
-   assert(getPriority != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
@@ -681,8 +684,19 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->initDetection = initDetector;
    detector->exitDetection = exitDetector;
-   detector->getPriority = getPriority;
-   detector->getIsEnabled = getIsEnabled;
+   detector->decchar = decchar;
+
+   detector->priority = priority;
+   detector->enabled = enabled;
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/priority", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
+   SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->priority), FALSE, priority, INT_MIN, INT_MAX, NULL, NULL) );
+
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1) );
 
@@ -747,7 +761,7 @@ SCIP_RETCODE DECdetectStructure(
          DEC_DETECTOR *detector;
          detector = conshdlrdata->detectors[i];
          assert(detector != NULL);
-         conshdlrdata->priorities[i] = (*detector->getPriority)(scip, detector->decdata);
+         conshdlrdata->priorities[i] = detector->priority;
       }
 
       SCIPdebugMessage("Sorting %i detectors\n", conshdlrdata->ndetectors);
@@ -763,7 +777,7 @@ SCIP_RETCODE DECdetectStructure(
          ndecdecomps = -1;
          detector = conshdlrdata->detectors[i];
          assert(detector != NULL);
-         if( !(*detector->getIsEnabled)(scip, detector->decdata) )
+         if( !detector->enabled )
             continue;
          if(detector->initDetection != NULL)
          {
