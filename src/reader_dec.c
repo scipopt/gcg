@@ -7,11 +7,10 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 /**@file   reader_dec.c
  * @brief  DEC file reader
- * @ingroup FILEREADERS
  * @author Lukas Kirchhart
- *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -56,13 +55,14 @@
 #define DEC_MAX_PUSHEDTOKENS  2
 #define DEC_PRINTLEN          100
 
-/** Section in DEC File */
+/** section in DEC File */
 enum DecSection
 {
    DEC_START, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
+/** exponent indicator of the a value */
 enum DecExpType
 {
    DEC_EXP_NONE, DEC_EXP_UNSIGNED, DEC_EXP_SIGNED
@@ -72,33 +72,33 @@ typedef enum DecExpType DECEXPTYPE;
 /** DEC reading data */
 struct DecInput
 {
-   SCIP_FILE* file;
-   char linebuf[DEC_MAX_LINELEN];
-   char* token;
-   char* tokenbuf;
-   char* pushedtokens[DEC_MAX_PUSHEDTOKENS];
-   int npushedtokens;
-   int linenumber;
-   int linepos;
-   int nblocks;
-   int blocknr;               /**< number of the currentblock between 0 and Nblocks-1*/
-   DECSECTION section;
-   SCIP_Bool haserror;
+   SCIP_FILE* file;                          /**< file to read */
+   char linebuf[DEC_MAX_LINELEN];            /**< line buffer */
+   char* token;                              /**< current token */
+   char* tokenbuf;                           /**< token buffer */
+   char* pushedtokens[DEC_MAX_PUSHEDTOKENS]; /**< token stack */
+   int npushedtokens;                        /**< size of token buffer */
+   int linenumber;                           /**< current line number */
+   int linepos;                              /**< current line position (column) */
+   int nblocks;                              /**< number of blocks */
+   int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
+   DECSECTION section;                       /**< current section */
+   SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
 };
 typedef struct DecInput DECINPUT;
 
 /** data for gp reader */
 struct SCIP_ReaderData
 {
-   DECDECOMP* decdecomp;
-   SCIP_HASHMAP *vartoindex;
+   DECDECOMP* decdecomp;      /**< decomposition data structure*/
+   SCIP_HASHMAP* vartoindex;  /**< hashmap which var is at which index*/
    int* varstoblock;          /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
-   int* nblockvars;           /**< n variable per block that are no linkingvars*/
-   SCIP_CONS*** blockcons;    /**< [decnr][consid]  */
-   int* nblockcons;
-   SCIP_HASHMAP* constoblock;
-   int nlinkingcons;
-   int nlinkingvars;
+   int* nblockvars;           /**< n variable per block that are not linkingvars*/
+   SCIP_CONS*** blockcons;    /**< array of assignments from constraints to their blocks [blocknr][consid]  */
+   int* nblockcons;           /**< number of block-constraints for blockID*/
+   SCIP_HASHMAP* constoblock; /**< hashmap key=constaint value=block*/
+   int nlinkingcons;          /**< number of linking constraints*/
+   int nlinkingvars;          /**< number of linking vars*/
 };
 
 static const int NOVALUE = - 1;
@@ -1017,7 +1017,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE
 SCIPincludeReaderDec(
-        SCIP * scip /**< SCIP data structure */
+        SCIP * scip       /**< SCIP data structure */
         )
 {  /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
@@ -1141,11 +1141,12 @@ SCIP_RETCODE writeData(
    return SCIP_OKAY;
 }
 
+/** write a DEC file for a given decomposition */
 SCIP_RETCODE SCIPwriteDecomp(
-   SCIP* scip,                   /**< SCIP data structure */
-   FILE* file,                   /**< File pointer to write to */
-   DECDECOMP* decdecomp,         /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition  /**< whether to write decomposed problem */
+   SCIP* scip,                  /**< SCIP data structure */
+   FILE* file,                  /**< File pointer to write to */
+   DECDECOMP* decdecomp,        /**< Decomposition pointer */
+   SCIP_Bool writeDecomposition /**< whether to write decomposed problem */
    )
 {
    char outname[SCIP_MAXSTRLEN];

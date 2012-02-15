@@ -10,7 +10,6 @@
 //#define SCIP_DEBUG
 /**@file   reader_blk.c
  * @brief  BLK file reader
- * @ingroup FILEREADERS
  * @author Gerald Gamrath
  *
  */
@@ -59,6 +58,7 @@ enum BlkSection
 };
 typedef enum BlkSection BLKSECTION;
 
+/** exponent indicator of the a value */
 enum BlkExpType
 {
    BLK_EXP_NONE, BLK_EXP_UNSIGNED, BLK_EXP_SIGNED
@@ -69,18 +69,18 @@ typedef enum BlkExpType BLKEXPTYPE;
 /** BLK reading data */
 struct BlkInput
 {
-   SCIP_FILE*           file;
-   char                 linebuf[BLK_MAX_LINELEN];
-   char*                token;
-   char*                tokenbuf;
-   char*                pushedtokens[BLK_MAX_PUSHEDTOKENS];
-   int                  npushedtokens;
-   int                  linenumber;
-   int                  linepos;
-   int                  nblocks;
-   int                  blocknr;
-   BLKSECTION           section;
-   SCIP_Bool            haserror;
+   SCIP_FILE* file;                          /**< file to read */
+   char linebuf[BLK_MAX_LINELEN];            /**< line buffer */
+   char* token;                              /**< current token */
+   char* tokenbuf;                           /**< token buffer */
+   char* pushedtokens[BLK_MAX_PUSHEDTOKENS]; /**< token stack */
+   int npushedtokens;                        /**< size of token buffer */
+   int linenumber;                           /**< current line number */
+   int linepos;                              /**< current line position (column) */
+   int nblocks;                              /**< number of blocks */
+   int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
+   BLKSECTION section;                       /**< current section */
+   SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
 };
 typedef struct BlkInput BLKINPUT;
 
@@ -99,7 +99,7 @@ static const char commentchars[] = "\\";
 static
 void syntaxError(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*              blkinput,            /**< BLK reading data */
+   BLKINPUT*              blkinput,          /**< BLK reading data */
    const char*           msg                 /**< error message */
    )
 {
