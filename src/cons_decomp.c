@@ -60,12 +60,12 @@
 /** score data structure **/
 struct SCIP_DecompositionScores
 {
-   SCIP_Real borderscore;
-   SCIP_Real minkequicutscore;
-   SCIP_Real equicutscorenormalized;
-   SCIP_Real densityscore;
-   SCIP_Real linkingscore;
-   SCIP_Real totalscore;
+   SCIP_Real borderscore;              /**< score of the border */
+   SCIP_Real minkequicutscore;         /**< minimal k-equi cut score */
+   SCIP_Real equicutscorenormalized;   /**< normalized equi-cut score */
+   SCIP_Real densityscore;             /**< score of block densities */
+   SCIP_Real linkingscore;             /**< score related to interlinking blocks */
+   SCIP_Real totalscore;               /**< accumulated score */
 };
 typedef struct SCIP_DecompositionScores SCIP_DECOMPOSITIONSCORES;
 
@@ -77,14 +77,14 @@ struct SCIP_ConsData
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DECDECOMP** decdecomps;
-   DEC_DETECTOR** detectors;
-   int *priorities;
-   int ndetectors;
-   int usedetection;
-   SCIP_CLOCK* detectorclock;
-   SCIP_Bool hasrun;
-   int ndecomps;
+   DECDECOMP**    decdecomps;          /**< array of decomposition structures */
+   DEC_DETECTOR** detectors;           /**< array of structure detectors */
+   int*           priorities;          /**< priorities of the detectors */
+   int            ndetectors;          /**< number of detectors */
+   int            usedetection;        /**< flag to indicate whether to detect or not */
+   SCIP_CLOCK*    detectorclock;       /**< clock to measure detection time */
+   SCIP_Bool      hasrun;              /**< flag to indicate whether we have already detected */
+   int            ndecomps;            /**< number of decomposition structures  */
 };
 
 
@@ -94,12 +94,12 @@ struct SCIP_ConshdlrData
 
 /* put your local methods here, and declare them static */
 
-
+/** computes the score of the given decomposition */
 static
 SCIP_RETCODE evaluateDecomposition(
-      SCIP*                      scip,           /**< SCIP data structure */
-      DECDECOMP*                 decdecomp,      /**< decomposition data structure */
-      SCIP_DECOMPOSITIONSCORES*  score           /**< returns the score of the decomposition */
+      SCIP*                     scip,        /**< SCIP data structure */
+      DECDECOMP*                decdecomp,   /**< decomposition data structure */
+      SCIP_DECOMPOSITIONSCORES* score        /**< returns the score of the decomposition */
       )
 {
    long int matrixarea;
@@ -446,7 +446,7 @@ SCIP_DECL_CONSLOCK(consLockDecomp)
 
 /** creates the handler for decomp constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -485,9 +485,9 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
 
 /** creates and captures a decomp constraint */
 SCIP_RETCODE SCIPcreateConsDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name               /**< name of constraint */
+   SCIP*       scip,          /**< SCIP data structure */
+   SCIP_CONS** cons,          /**< pointer to hold the created constraint */
+   const char* name           /**< name of constraint */
    )
 {
    /* TODO: (optional) modify the definition of the SCIPcreateConsDecomp() call, if you don't need all the information */
@@ -519,9 +519,9 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
 /** sets (and adds) the decomposition structure **/
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
-   SCIP *scip,                            /**< SCIP data structure */
-   DECDECOMP *decdecomp                    /**< DECDECOMP data structure */
-)
+   SCIP*      scip,           /**< SCIP data structure */
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -551,8 +551,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 
 /** returns the decomposition structure **/
 DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
-      SCIP *scip                             /**< SCIP data structure */
-)
+      SCIP* scip              /**< SCIP data structure */
+   )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -568,8 +568,8 @@ DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
 
 /** returns the decomposition structure **/
 int SCIPconshdlrDecompGetNDecdecomps(
-      SCIP *scip                             /**< SCIP data structure */
-)
+      SCIP* scip              /**< SCIP data structure */
+   )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
@@ -585,7 +585,7 @@ int SCIPconshdlrDecompGetNDecdecomps(
 
 /** returns the data of the provided detector */
 DEC_DETECTORDATA* DECdetectorGetData(
-   DEC_DETECTOR*  detector                   /**< detector data structure */
+   DEC_DETECTOR*  detector    /**< detector data structure */
    )
 {
    assert(detector != NULL);
@@ -595,17 +595,17 @@ DEC_DETECTORDATA* DECdetectorGetData(
 
 /** returns the name of the provided detector */
 const char* DECdetectorGetName(
-   DEC_DETECTOR*  detector
+   DEC_DETECTOR*  detector    /**< detector data structure */
    )
 {
    assert(detector != NULL);
    return detector->name;
 }
 
-/** Searches for the detector and returns it or returns NULL if detector is not found*/
+/** searches for the detector and returns it or returns NULL if detector is not found*/
 DEC_DETECTOR* DECfindDetector(
-   SCIP *scip,                               /**< SCIP data structure */
-   const char *name                          /**< Name of the detector to return */
+   SCIP*       scip,          /**< SCIP data structure */
+   const char* name           /**< name of the detector */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -636,7 +636,7 @@ DEC_DETECTOR* DECfindDetector(
 /** includes the detector */
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
-   const char *name,                               /**< name of the detector */
+   const char* name,                               /**< name of the detector */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
@@ -695,7 +695,7 @@ SCIP_RETCODE DECincludeDetector(
 
 /** returns the remaning time of scip that the decomposition may use */
 SCIP_Real DECgetRemainingTime(
-   SCIP* scip                    /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_Real timelimit;
@@ -708,13 +708,13 @@ SCIP_Real DECgetRemainingTime(
 
 /** interface method to detect the structure */
 SCIP_RETCODE DECdetectStructure(
-   SCIP *scip
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_RESULT result;
-   SCIP_Real *scores;
+   SCIP_Real* scores;
    int i;
 
    assert(scip != NULL);
@@ -806,7 +806,7 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n", 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
       DECdecdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecdecompGetType(conshdlrdata->decdecomps[0])));
    GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
 
@@ -817,10 +817,13 @@ SCIP_RETCODE DECdetectStructure(
    return SCIP_OKAY;
 }
 
-/** write out all known decompositions **/
+/** write out all known decompositions
+ *
+ * @todo use detector character to distinguish
+ */
 SCIP_RETCODE DECwriteAllDecomps(
-   SCIP* scip,
-   char* extension
+   SCIP* scip,                /**< SCIP data structure */
+   char* extension            /**< extension for decompositions */
    )
 {
    int i;
@@ -858,7 +861,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
 /** returns the best known decomposition, if available and NULL otherwise */
 DECDECOMP* DECgetBestDecomp(
-   SCIP* scip   /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
