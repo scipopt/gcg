@@ -2747,4 +2747,5 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/sepa_mcf.h lib/scip/src/scip/sepa_oddcycle.h \
  lib/scip/src/scip/sepa_rapidlearning.h lib/scip/src/scip/sepa_strongcg.h \
  lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
- lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h src/gcggithash.h
+ lib/scip/src/nlpi/nlpi_ipopt.h src/gcgplugins.h src/gcggithash.h \
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h

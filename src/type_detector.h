@@ -23,9 +23,13 @@
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
 #include "type_decomp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct DEC_Detector DEC_DETECTOR;
+typedef struct DEC_DetectorData DEC_DETECTORDATA;
 
 /**
  * initialize data for a detector

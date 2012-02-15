@@ -18,12 +18,8 @@
 #ifndef __SCIP_CONS_DECOMP_H__
 #define __SCIP_CONS_DECOMP_H__
 
-
 #include "scip/scip.h"
 #include "type_detector.h"
-
-typedef struct DEC_Detector DEC_DETECTOR;
-typedef struct DEC_DetectorData DEC_DETECTORDATA;
 
 
 #ifdef __cplusplus
@@ -58,7 +54,7 @@ int SCIPconshdlrDecompGetNDecdecomps(
 
 /** returns the data of the provided detector */
 extern
-const char* DECdetectorGetName(
+DEC_DETECTORDATA* DECdetectorGetData(
    DEC_DETECTOR* detector     /**< Detector data structure */
    );
 
