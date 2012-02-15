@@ -62,26 +62,26 @@ typedef enum RefExpType REFEXPTYPE;
 /** REF reading data */
 struct RefInput
 {
-   SCIP_FILE*           file;
-   char                 linebuf[REF_MAX_LINELEN];
-   char*                token;
-   char*                tokenbuf;
-   char*                pushedtokens[REF_MAX_PUSHEDTOKENS];
-   int                  npushedtokens;
-   int                  linenumber;
-   int                  linepos;
-   int                  nblocks;
-   int                  blocknr;
-   int                  nassignedvars;
-   int*                 blocksizes;
-   int                  totalconss;
-   int                  totalreadconss;
-   SCIP_CONS**          markedmasterconss;
-   int                  nmarkedmasterconss;
-   REFSECTION           section;
-   SCIP_Bool            haserror;
-   SCIP_HASHMAP*        vartoblock;
-   SCIP_HASHMAP*        constoblock;
+   SCIP_FILE*    file;                                /**< file to read */
+   char          linebuf[REF_MAX_LINELEN];            /**< line buffer */
+   char*         token;                               /**< current token */
+   char*         tokenbuf;                            /**< token buffer */
+   char*         pushedtokens[REF_MAX_PUSHEDTOKENS];  /**< token stack */
+   int           npushedtokens;                       /**< size of token stack */
+   int           linenumber;                          /**< current line number */
+   int           linepos;                             /**< current line position (column) */
+   int           nblocks;                             /**< number of blocks */
+   int           blocknr;                             /**< current block number */
+   int           nassignedvars;                       /**< number of assigned variables */
+   int*          blocksizes;                          /**< array of block sizes */
+   int           totalconss;                          /**< total number of constraints */
+   int           totalreadconss;                      /**< total number of read constraints */
+   SCIP_CONS**   markedmasterconss;                   /**< array of constraints to be in the master */
+   int           nmarkedmasterconss;                  /**< number of constraints to be in the master */
+   REFSECTION    section;                             /**< current section */
+   SCIP_Bool     haserror;                            /**< flag to indicate an error occurence */
+   SCIP_HASHMAP* vartoblock;                          /**< hashmap mapping variables to blocks (1..nblocks) */
+   SCIP_HASHMAP* constoblock;                         /**< hashmap mapping constraints to blocks (1..nblocks) */
 };
 typedef struct RefInput REFINPUT;
 
@@ -89,6 +89,8 @@ static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
 
+
+/** private reader data, not needed */
 struct SCIP_ReaderData
 {
 
@@ -103,9 +105,9 @@ struct SCIP_ReaderData
 /** issues an error message and marks the REF data to have errors */
 static
 void syntaxError(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,            /**< REF reading data */
-   const char*           msg                 /**< error message */
+   SCIP*       scip,          /**< SCIP data structure */
+   REFINPUT*   refinput,      /**< REF reading data */
+   const char* msg            /**< error message */
    )
 {
    char formatstr[256];
@@ -131,7 +133,7 @@ void syntaxError(
 /** returns whether a syntax error was detected */
 static
 SCIP_Bool hasError(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    assert(refinput != NULL);
@@ -142,7 +144,7 @@ SCIP_Bool hasError(
 /** returns whether the given character is a token delimiter */
 static
 SCIP_Bool isDelimChar(
-   char                  c                   /**< input character */
+   char c                     /**< input character */
    )
 {
    return (c == '\0') || (strchr(delimchars, c) != NULL);
@@ -151,7 +153,7 @@ SCIP_Bool isDelimChar(
 /** returns whether the given character is a single token */
 static
 SCIP_Bool isTokenChar(
-   char                  c                   /**< input character */
+   char c                     /**< input character */
    )
 {
    return (strchr(tokenchars, c) != NULL);
@@ -160,11 +162,11 @@ SCIP_Bool isTokenChar(
 /** returns whether the current character is member of a value string */
 static
 SCIP_Bool isValueChar(
-   char                  c,                  /**< input character */
-   char                  nextc,              /**< next input character */
-   SCIP_Bool             firstchar,          /**< is the given character the first char of the token? */
-   SCIP_Bool*            hasdot,             /**< pointer to update the dot flag */
-   REFEXPTYPE*           exptype             /**< pointer to update the exponent type */
+   char        c,             /**< input character */
+   char        nextc,         /**< next input character */
+   SCIP_Bool   firstchar,     /**< is the given character the first char of the token? */
+   SCIP_Bool*  hasdot,        /**< pointer to update the dot flag */
+   REFEXPTYPE* exptype        /**< pointer to update the exponent type */
    )
 {
    assert(hasdot != NULL);
@@ -204,7 +206,7 @@ SCIP_Bool isValueChar(
  */
 static
 SCIP_Bool getNextLine(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int i;
@@ -248,7 +250,7 @@ SCIP_Bool getNextLine(
 /** reads the next token from the input file into the token buffer; returns whether a token was read */
 static
 SCIP_Bool getNextToken(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    SCIP_Bool hasdot;
@@ -358,9 +360,9 @@ SCIP_Bool getNextToken(
 /** returns whether the current token is a value */
 static
 SCIP_Bool isInt(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,           /**< REF reading data */
-   int*                  value               /**< pointer to store the value (unchanged, if token is no value) */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput,        /**< REF reading data */
+   int*      value            /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
    assert(refinput != NULL);
@@ -390,8 +392,8 @@ SCIP_Bool isInt(
 /** reads the header of the file */
 static
 SCIP_RETCODE readStart(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    assert(refinput != NULL);
@@ -404,8 +406,8 @@ SCIP_RETCODE readStart(
 /** reads the nblocks section */
 static
 SCIP_RETCODE readNBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int nblocks;
@@ -439,8 +441,8 @@ SCIP_RETCODE readNBlocks(
 /** reads the blocksizes section */
 static
 SCIP_RETCODE readBlockSizes(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int blocknr;
@@ -467,8 +469,8 @@ SCIP_RETCODE readBlockSizes(
 /** reads the blocks section */
 static
 SCIP_RETCODE readBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    SCIP_CONS** conss;
@@ -558,10 +560,10 @@ SCIP_RETCODE readBlocks(
 /** reads an REF file */
 static
 SCIP_RETCODE readREFFile(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,           /**< REF reading data */
-   DECDECOMP*            decdecomp,          /**< decomposition structure */
-   const char*           filename            /**< name of the input file */
+   SCIP*       scip,          /**< SCIP data structure */
+   REFINPUT*   refinput,      /**< REF reading data */
+   DECDECOMP*  decdecomp,     /**< decomposition structure */
+   const char* filename       /**< name of the input file */
    )
 {
    assert(refinput != NULL);
@@ -620,9 +622,9 @@ SCIP_RETCODE readREFFile(
 /** writes a Ref file */
 static
 SCIP_RETCODE writeREFFile(
-   SCIP*                 scip,              /**< SCIP data structure */
-   SCIP_READER*          reader,            /**< ref reader */
-   FILE*                 file               /**< target file */
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< ref reader */
+   FILE*        file          /**< target file */
 
    )
 {
@@ -769,7 +771,7 @@ SCIP_DECL_READERWRITE(readerWriteRef)
 
 /** includes the ref file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderRef(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_READERDATA* readerdata;
@@ -787,10 +789,10 @@ SCIP_RETCODE SCIPincludeReaderRef(
 
 /* reads problem from file */
 SCIP_RETCODE SCIPreadRef(
-   SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
-   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< the file reader itself */
+   const char*  filename,     /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT* result        /**< pointer to store the result of the file reading call */
    )
 {
    REFINPUT refinput;

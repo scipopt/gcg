@@ -28,17 +28,17 @@
 /** includes the ref file reader into SCIP */
 extern
 SCIP_RETCODE SCIPincludeReaderRef(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 
 /* reads problem from file */
 extern
 SCIP_RETCODE SCIPreadRef(
-   SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
-   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< the file reader itself */
+   const char*  filename,     /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT* result        /**< pointer to store the result of the file reading call */
    );
 
 #endif
