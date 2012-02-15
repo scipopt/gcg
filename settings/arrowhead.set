@@ -20,15 +20,15 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/discretization = FALSE
 
-arrowheur/minblocks = 2
-arrowheur/maxblocks = 5
-arrowheur/ubfactor = 0.1
-arrowheur/metisverbose = FALSE
-arrowheur/priority = 0
+detectors/arrowheur/minblocks = 2
+detectors/arrowheur/maxblocks = 5
+detectors/arrowheur/ubfactor = 0.1
+detectors/arrowheur/metisverbose = FALSE
+detectors/arrowheur/priority = 0
 
-borderheur/minblocks = 2
-borderheur/maxblocks = 20
-borderheur/ubfactor = 0.1
-borderheur/metisverbose = FALSE
-borderheur/priority = 100
+detectors/borderheur/minblocks = 2
+detectors/borderheur/maxblocks = 20
+detectors/borderheur/ubfactor = 0.1
+detectors/borderheur/metisverbose = FALSE
+detectors/borderheur/priority = 100
 

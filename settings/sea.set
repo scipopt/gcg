@@ -20,16 +20,16 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/discretization = FALSE
 
-#arrowheur/minblocks = 2
-#arrowheur/maxblocks = 20
+#detectors/arrowheur/minblocks = 2
+#detectors/arrowheur/maxblocks = 20
 
-borderheur/minblocks = 2
-borderheur/maxblocks = 20
-borderheur/ubfactor = 0.1
-borderheur/metisverbose = FALSE
+detectors/borderheur/minblocks = 2
+detectors/borderheur/maxblocks = 20
+detectors/borderheur/ubfactor = 0.1
+detectors/borderheur/metisverbose = FALSE
 
-#arrowheur/ubfactor = 0.1
-arrowheur/metisverbose = FALSE
-#arrowheur/metisuseptyperb = TRUE
+#detectors/arrowheur/ubfactor = 0.1
+detectors/arrowheur/metisverbose = FALSE
+#detectors/arrowheur/metisuseptyperb = TRUE
 constraints/connected/enable = TRUE
 constraints/connected/setppcinmaster = TRUE

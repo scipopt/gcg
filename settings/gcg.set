@@ -12,9 +12,9 @@ presolving/maxrounds = 0
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
-arrowheur/minblocks = 10
-arrowheur/maxblocks = 10
+detectors/arrowheur/minblocks = 10
+detectors/arrowheur/maxblocks = 10
 
-arrowheur/ubfactor = 10.0
-arrowheur/metisverbose = TRUE
-arrowheur/metisuseptyperb = FALSE
+detectors/arrowheur/ubfactor = 10.0
+detectors/arrowheur/metisverbose = TRUE
+detectors/arrowheur/metisuseptyperb = FALSE
