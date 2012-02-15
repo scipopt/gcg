@@ -8,8 +8,9 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_borderheur.h
- * @brief  borderheur presolver
+/**@file   pub_gcgvar.h
+ * @ingroup PUBLICMETHODS
+ * @brief  public methods for GCG variables
  * @author Martin Bergner
  */
 
@@ -25,227 +26,227 @@
 extern "C" {
 #endif
 
-/** Returns TRUE or FALSE whether variable is a pricing variable or not */
+/** returns TRUE or FALSE whether variable is a pricing variable or not */
 extern
 SCIP_Bool GCGvarIsPricing(
-   SCIP_VAR* var          /**< SCIP variable */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Returns TRUE or FALSE whether variable is a original variable or not */
+/** returns TRUE or FALSE whether variable is a original variable or not */
 extern
 SCIP_Bool GCGvarIsOriginal(
-   SCIP_VAR* var          /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Returns TRUE or FALSE whether variable is a master variable or not */
+/** returns TRUE or FALSE whether variable is a master variable or not */
 extern
 SCIP_Bool GCGvarIsMaster(
-   SCIP_VAR* var          /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Returns TRUE or FALSE whether variable is a linking variable or not */
+/** returns TRUE or FALSE whether variable is a linking variable or not */
 extern
 SCIP_Bool GCGvarIsLinking(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Returns the original var of a pricing variable */
+/** returns the original var of a pricing variable */
 extern
 SCIP_VAR* GCGpricingVarGetOriginalVar(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Adds the original var to the pricing variable */
+/** adds the original var to the pricing variable */
 extern
 SCIP_RETCODE GCGpricingVarAddOrigVar(
-   SCIP* scip, /**< SCIP variable structure */
-   SCIP_VAR* pricingvar,
-   SCIP_VAR* origvar
+   SCIP*     scip,            /**< SCIP variable structure */
+   SCIP_VAR* pricingvar,      /**< pricing variable */
+   SCIP_VAR* origvar          /**< original pricing variable */
    );
 
-/** Returns the pricing var of an original variable */
+/** returns the pricing var of an original variable */
 extern
 SCIP_VAR* GCGoriginalVarGetPricingVar(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the pricing var of an original variable */
+/** returns the pricing var of an original variable */
 extern
 void GCGoriginalVarSetPricingVar(
-   SCIP_VAR* var, /**< SCIP variable structure */
-   SCIP_VAR* pricingvar /**< SCIP variable structure */
+   SCIP_VAR* var,             /**< SCIP variable structure */
+   SCIP_VAR* pricingvar       /**< SCIP variable structure */
    );
 
-/** Returns the pricing variables of an linking variable */
+/** returns the pricing variables of an linking variable */
 extern
 SCIP_VAR** GCGlinkingVarGetPricingVars(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
 /** sets the pricing var of the corresponding linking variable at the specified position */
 extern
 void GCGlinkingVarSetPricingVar(
-   SCIP_VAR* origvar,
-   int pricingprobnr,
-   SCIP_VAR* var
+   SCIP_VAR* origvar,         /**< original variable */
+   int       pricingprobnr,   /**< number of pricing problem */
+   SCIP_VAR* var              /**< pricing variable */
    );
 
-/** Returns the number of master variables the original variable is contained in */
+/** returns the number of master variables the original variable is contained in */
 extern
 int GCGoriginalVarGetNMastervars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the master variables the original variable is contained in */
+/** returns the master variables the original variable is contained in */
 extern
 SCIP_VAR** GCGoriginalVarGetMastervars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the fraction of master variables the original variable is contained in */
+/** returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_Real* GCGoriginalVarGetMastervals(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the fraction of master variables the original variable is contained in */
+/** returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_Real* GCGoriginalVarGetCoefs(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the fraction of master variables the original variable is contained in */
+/** returns the fraction of master variables the original variable is contained in */
 extern
 SCIP_CONS** GCGoriginalVarGetMasterconss(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
 /** adds a coefficient of the master variable to the coefs array for the resp. constraint */
 extern
 SCIP_RETCODE GCGoriginalVarAddCoef(
-   SCIP* scip,         /**< SCIP data structure */
-   SCIP_VAR* var,      /**< variable to add coef */
-   SCIP_Real val,      /**< coefficent to set */
-   SCIP_CONS* cons     /**< constraint the variable is in */
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_VAR*  var,            /**< variable to add coef */
+   SCIP_Real  val,            /**< coefficent to set */
+   SCIP_CONS* cons            /**< constraint the variable is in */
    );
 
 /** adds variable to a new block, making a linkingvariable out of it, if necessary */
 extern
 SCIP_RETCODE GCGoriginalVarAddBlock(
-   SCIP* scip,    /**< SCIP data structure */
-   SCIP_VAR* var, /**< var that is added to a block */
-   int newblock   /**< The new block the variable will be in */
+   SCIP*     scip,            /**< SCIP data structure */
+   SCIP_VAR* var,             /**< var that is added to a block */
+   int       newblock         /**< the new block the variable will be in */
    );
 
 
-/** Returns the fraction of master variables the original variable is contained in */
+/** returns the linking constraints */
 extern
 SCIP_CONS** GCGlinkingVarGetLinkingConss(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the fraction of master variables the original variable is contained in */
+/** sets the linking constraints*/
 extern
 void GCGlinkingVarSetLinkingCons(
-   SCIP_VAR* var,
-   SCIP_CONS* cons,
-   int i
+   SCIP_VAR*  var,            /**< variable data structure */
+   SCIP_CONS* cons,           /**< linking constraint */
+   int        i               /**< index of pricing problem */
    );
 
 /** returns the blocks the linking variable is in */
 extern
 SCIP_RETCODE GCGlinkingVarGetBlocks(
-   SCIP_VAR* var, /**< SCIP variable structure */
-   int nblocks,   /**< number of blocks the linking variable is in */
-   int* blocks    /**< array to store the blocks of the linking variable */
+   SCIP_VAR* var,             /**< SCIP variable structure */
+   int       nblocks,         /**< number of blocks the linking variable is in */
+   int*      blocks           /**< array to store the blocks of the linking variable */
    );
 
 /** returns the number of blocks the linking variable is in */
 extern
 int GCGlinkingVarGetNBlocks(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Returns the number of master variables the original variable is contained in */
+/** returns the number of coefficients of master constraints the original variable is contained in */
 extern
 int GCGoriginalVarGetNCoefs(
-   SCIP_VAR* var /**< SCIP variable structure */
+   SCIP_VAR* var              /**< SCIP variable structure */
    );
 
-/** Sets the number of master variables the original variable is contained in */
+/** sets the number of master variables the original variable is contained in */
 extern
 void GCGoriginalVarSetNCoefs(
-   SCIP_VAR* var, /**< SCIP variable structure      */
-   int coef       /**< number of coefficient to set */
+   SCIP_VAR* var,             /**< SCIP variable structure */
+   int       coef             /**< number of coefficient to set */
    );
 
-/** Returns whether the  master variable is a ray */
+/** returns whether the master variable is a ray */
 extern
 SCIP_Bool GCGmasterVarIsRay(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the number of original variables the master variable is contained in */
+/** returns the number of original variables the master variable is contained in */
 extern
 int GCGmasterVarGetNOrigvars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the original variables the master variable is contained in */
+/** returns the original variables the master variable is contained in */
 extern
 SCIP_VAR** GCGmasterVarGetOrigvars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the fraction of original variables the master variable is contained in */
+/** returns the fraction of original variables the master variable is contained in */
 extern
 SCIP_Real* GCGmasterVarGetOrigvals(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the number of original variables the pricing variable is contained in */
+/** returns the number of original variables the pricing variable is contained in */
 extern
 int GCGpricingVarGetNOrigvars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the original variables the pricing variable is contained in */
+/** returns the original variables the pricing variable is contained in */
 extern
 SCIP_VAR** GCGpricingVarGetOrigvars(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Returns the block of the variable */
+/** returns the block of the variable */
 extern
 int GCGvarGetBlock(
-   SCIP_VAR* var
+   SCIP_VAR* var              /**< variable data structure */
    );
 
-/** Sets the block of the variable */
+/** sets the block of the variable */
 extern
 void GCGvarSetBlock(
-   SCIP_VAR* var, /**< Variable to set block for */
-   int block      /**< block to set */
+   SCIP_VAR* var,             /**< variable to set block for */
+   int       block            /**< block to set */
    );
 
 /** creates the data for all variables of the original program */
 extern
 SCIP_RETCODE GCGcreateOrigVarsData(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 /** creates the data for a variable of the original program */
 extern
 SCIP_RETCODE GCGorigVarCreateData(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var                 /**< pointer to variable object */
+   SCIP*     scip,            /**< SCIP data structure */
+   SCIP_VAR* var              /**< pointer to variable object */
    );
 
-/** Returns TRUE if the linking variable is in the block, FALSE otherwise */
+/** returns TRUE if the linking variable is in the block, FALSE otherwise */
 extern
 SCIP_Bool GCGisLinkingVarInBlock(
-   SCIP_VAR* var,
-   int block
+   SCIP_VAR* var,             /**< variabel data structure */
+   int       block            /**< pricing problem number */
    );
 
 /* informs an original variable, that a variable in the master problem was created,
@@ -255,10 +256,10 @@ SCIP_Bool GCGisLinkingVarInBlock(
  */
 extern
 SCIP_RETCODE GCGoriginalVarAddMasterVar(
-   SCIP*                 scip,                  /**< SCIP data structure                */
-   SCIP_VAR*             origvar,               /**< Original variable                  */
-   SCIP_VAR*             var,                   /**< Master variable                    */
-   SCIP_Real             val                    /**< Fraction of the original variable  */
+   SCIP*     scip,            /**< SCIP data structure */
+   SCIP_VAR* origvar,         /**< original variable */
+   SCIP_VAR* var,             /**< master variable */
+   SCIP_Real val              /**< fraction of the original variable */
    );
 
 /* informs an original variable, that a variable in the master problem was deleted,
@@ -268,53 +269,52 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
  */
 extern
 SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
-   SCIP*                 scip,                  /**< SCIP data structure                */
-   SCIP_VAR*             origvar,               /**< Original variable                  */
-   SCIP_VAR*             var                    /**< Master variable                    */
+   SCIP*     scip,            /**< SCIP data structure */
+   SCIP_VAR* origvar,         /**< original variable */
+   SCIP_VAR* var              /**< master variable */
    );
-
 
 
 /** creates the corresponding pricing variable for the given original variable */
 extern
 SCIP_RETCODE GCGoriginalVarCreatePricingVar(
-   SCIP* scip,
-   SCIP_VAR* origvar,
-   SCIP_VAR** var
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_VAR*  origvar,        /**< original variable */
+   SCIP_VAR** var             /**< pricing variable */
    );
 
 /** creates the corresponding pricing variable for the given original variable */
 extern
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP* masterscip,
-   SCIP* pricingscip,
-   int pricingprobnr,
-   SCIP_VAR* origvar,
-   SCIP_VAR** var,
-   SCIP_CONS** linkcons
+   SCIP*       masterscip,    /**< msater problem SCIP data structure */
+   SCIP*       pricingscip,   /**< pricing problem SCIP data structure */
+   int         pricingprobnr, /**< number of the pricing problem */
+   SCIP_VAR*   origvar,       /**< original variable */
+   SCIP_VAR**  var,           /**< pointer to store new pricing variable */
+   SCIP_CONS** linkcons       /**< constraint linking pricing variables */
    );
 
 /** creates the master var and initializes the vardata */
 extern
 SCIP_RETCODE GCGcreateMasterVar(
-   SCIP* scip,
-   SCIP* pricingscip,
-   SCIP_VAR** newvar,
-   char* varname,
-   SCIP_Real objcoeff,
-   SCIP_VARTYPE vartype,
-   SCIP_Bool solisray,
-   int prob,
-   int nsolvars,
-   SCIP_Real* solvals,
-   SCIP_VAR** solvars
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP*        pricingscip,  /**< pricing problem SCIP data structure */
+   SCIP_VAR**   newvar,       /**< pointer to store new master variable */
+   char*        varname,      /**< new variable name */
+   SCIP_Real    objcoeff,     /**< new objective coeffient */
+   SCIP_VARTYPE vartype,      /**< new variable type */
+   SCIP_Bool    solisray,     /**< indicates whether new variable is a ray */
+   int          prob,         /**< number of pricing problem that created this variable */
+   int          nsolvars,     /**< number of variables in the solution */
+   SCIP_Real*   solvals,      /**< values of variables in the solution */
+   SCIP_VAR**   solvars       /**< variables with non zero coefficient in the solution */
    );
 
 /** creates initial master variables and the vardata */
 SCIP_RETCODE GCGcreateInitialMasterVar(
-   SCIP* scip,
-   SCIP_VAR* var,
-   SCIP_VAR** newvar
+   SCIP*       scip,          /**< SCIP data structure */
+   SCIP_VAR*   var,           /**< original variable */
+   SCIP_VAR**  newvar         /**< pointer to store new variable */
    );
 
 
