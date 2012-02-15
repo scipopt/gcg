@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_detector.h
- * @brief  datastructures for branching rules
+ * @brief  data structures for detectors
  * @author Martin Bergner
  */
 
@@ -24,16 +24,20 @@
 extern "C" {
 #endif
 
+/** detector data structure
+ *
+ * @todo: add priority and enabled flag (bug #7)
+ */
 struct DEC_Detector {
 
-   DEC_DECL_INITDETECTOR((*initDetection));
-   DEC_DECL_DETECTSTRUCTURE((*detectStructure));
-   DEC_DECL_EXITDETECTOR((*exitDetection));
-   DEC_DECL_GETPRIORITY((*getPriority));
-   DEC_DECL_GETISENABLED((*getIsEnabled));
-   DEC_DETECTORDATA* decdata;
-   int i;
-   const char *name;
+   DEC_DECL_INITDETECTOR((*initDetection));     /**< initialization method of detector */
+   DEC_DECL_DETECTSTRUCTURE((*detectStructure));/**< structure detection method of detector */
+   DEC_DECL_EXITDETECTOR((*exitDetection));     /**< deinitialization method of detector */
+   DEC_DECL_GETPRIORITY((*getPriority));        /**< getter method for the priority */
+   DEC_DECL_GETISENABLED((*getIsEnabled));      /**< getter method to check whether the detector is enabled */
+   DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */
+   const char *name;                            /**< name of the detector */
+   char decchar;                                /**< display character of detector */
 };
 
 

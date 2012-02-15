@@ -683,7 +683,6 @@ SCIP_RETCODE DECincludeDetector(
    detector->exitDetection = exitDetector;
    detector->getPriority = getPriority;
    detector->getIsEnabled = getIsEnabled;
-   detector->i = conshdlrdata->ndetectors;
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1) );
 

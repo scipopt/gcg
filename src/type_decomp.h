@@ -10,7 +10,7 @@
 
 /**@file   type_decomp.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for branching rules in gcg projects
+ * @brief  type definitions for decomposition information in GCG projects
  * @author Martin Bergner
  */
 
@@ -19,17 +19,23 @@
 #ifndef __SCIP_TYPE_DECDECOMP_H__
 #define __SCIP_TYPE_DECDECOMP_H__
 
-typedef struct DecDecomp DECDECOMP;
-enum Dectype
-{
-   DEC_DECTYPE_ARROWHEAD, DEC_DECTYPE_STAIRCASE, DEC_DECTYPE_DIAGONAL, DEC_DECTYPE_BORDERED, DEC_DECTYPE_UNKNOWN
-};
-
-typedef enum Dectype DEC_DECTYPE;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct DecDecomp DECDECOMP; /**< decomposition structure */
+
+/** type of the decomposition */
+enum Dectype
+{
+   DEC_DECTYPE_UNKNOWN,    /**< unknown structure (used for initialization) */
+   DEC_DECTYPE_ARROWHEAD,  /**< arrowhead structure (linking variables and constraints) */
+   DEC_DECTYPE_STAIRCASE,  /**< staircase structure (linking variables between consecutive blocks) */
+   DEC_DECTYPE_DIAGONAL,   /**< block diagonal structure (no linking variables and constraints) */
+   DEC_DECTYPE_BORDERED    /**< bordered block diagonal structure (linking constraints only) */
+};
+
+typedef enum Dectype DEC_DECTYPE; /**< decomposition type */
 
 #ifdef __cplusplus
 }
