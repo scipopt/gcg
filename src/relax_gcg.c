@@ -55,56 +55,56 @@
 struct SCIP_RelaxData
 {
    /* problems and convexity constraints */
-   SCIP*            masterprob;          /* the master problem */
-   SCIP**           pricingprobs;        /* the array of pricing problems */
-   int              npricingprobs;       /* the number of pricing problems */
-   int              nrelpricingprobs;    /* the number of relevantpricing problems */
-   int*             blockrepresentative; /* number of the pricing problem, that represents the i-th problem */
-   int*             nblocksidentical;    /* number of pricing blocks represented by the i-th pricing problem */
-   SCIP_CONS**      convconss;           /* array of convexity constraints, one for each block */
-   int              nlinkingvars;        /* number of linking variables */
-   int              nvarlinkconss;       /* number of constraints that ensure that copies of linking variables have the same value */
+   SCIP*            masterprob;          /**< the master problem */
+   SCIP**           pricingprobs;        /**< the array of pricing problems */
+   int              npricingprobs;       /**< the number of pricing problems */
+   int              nrelpricingprobs;    /**< the number of relevantpricing problems */
+   int*             blockrepresentative; /**< number of the pricing problem, that represents the i-th problem */
+   int*             nblocksidentical;    /**< number of pricing blocks represented by the i-th pricing problem */
+   SCIP_CONS**      convconss;           /**< array of convexity constraints, one for each block */
+   int              nlinkingvars;        /**< number of linking variables */
+   int              nvarlinkconss;       /**< number of constraints that ensure that copies of linking variables have the same value */
 
    /* hashmaps for transformation */
-   SCIP_HASHMAP*    hashorig2origvar;    /* hashmap mapping original variables to themselves */
+   SCIP_HASHMAP*    hashorig2origvar;    /**< hashmap mapping original variables to themselves */
 
    /* constraint data */
-   SCIP_CONS**      masterconss;         /* array of constraints in the master problem */
-   SCIP_CONS**      origmasterconss;     /* array of constraints in the original problem that belong to the
+   SCIP_CONS**      masterconss;         /**< array of constraints in the master problem */
+   SCIP_CONS**      origmasterconss;     /**< array of constraints in the original problem that belong to the
                                           * master problem */
-   SCIP_CONS**      linearmasterconss;   /* array of linear constraints equivalent to the cons in
+   SCIP_CONS**      linearmasterconss;   /**< array of linear constraints equivalent to the cons in
                                           * the original problem that belong to the master problem */
-   int              maxmasterconss;      /* length of the array mastercons */
-   int              nmasterconss;        /* number of constraints saved in mastercons */
+   int              maxmasterconss;      /**< length of the array mastercons */
+   int              nmasterconss;        /**< number of constraints saved in mastercons */
 
-   SCIP_SOL*        currentorigsol;      /* current lp solution transformed into the original space */
-   SCIP_Longint     lastmasterlpiters;   /* number of lp iterations when currentorigsol was updated the last time */
-   SCIP_SOL*        lastmastersol;       /* last feasible master solution that was added to the original problem */
-   SCIP_CONS**      markedmasterconss;   /* array of conss that are marked to be in the master */
-   int              nmarkedmasterconss;  /* number of elements in array of conss that are marked to be in the master */
-   SCIP_Longint     lastsolvednodenr;    /* node number of the node that was solved at the last call of the relaxator */
+   SCIP_SOL*        currentorigsol;      /**< current lp solution transformed into the original space */
+   SCIP_Longint     lastmasterlpiters;   /**< number of lp iterations when currentorigsol was updated the last time */
+   SCIP_SOL*        lastmastersol;       /**< last feasible master solution that was added to the original problem */
+   SCIP_CONS**      markedmasterconss;   /**< array of conss that are marked to be in the master */
+   int              nmarkedmasterconss;  /**< number of elements in array of conss that are marked to be in the master */
+   SCIP_Longint     lastsolvednodenr;    /**< node number of the node that was solved at the last call of the relaxator */
 
    /* branchrule data */
-   GCG_BRANCHRULE** branchrules;         /* branching rules registered in the relaxator */
-   int              nbranchrules;        /* number of branching rules registered in the relaxator */
+   GCG_BRANCHRULE** branchrules;         /**< branching rules registered in the relaxator */
+   int              nbranchrules;        /**< number of branching rules registered in the relaxator */
 
    /* parameter data */
-   SCIP_Bool        discretization;      /* TRUE: use discretization approach; FALSE: use convexification approach */
-   SCIP_Bool        mergeidenticalblocks;/* should identical blocks be merged (only for discretization approach)? */
-   SCIP_Bool        masterissetpart;     /* is the master a set partitioning problem? */
-   SCIP_Bool        masterissetcover;    /* is the master a set covering problem? */
-   SCIP_Bool        dispinfos;           /* should additional information be displayed? */
+   SCIP_Bool        discretization;      /**< TRUE: use discretization approach; FALSE: use convexification approach */
+   SCIP_Bool        mergeidenticalblocks;/**< should identical blocks be merged (only for discretization approach)? */
+   SCIP_Bool        masterissetpart;     /**< is the master a set partitioning problem? */
+   SCIP_Bool        masterissetcover;    /**< is the master a set covering problem? */
+   SCIP_Bool        dispinfos;           /**< should additional information be displayed? */
 
    /* data for probing */
-   SCIP_Bool        masterinprobing;     /* is the master problem in probing mode? */
-   SCIP_SOL*        storedorigsol;       /* orig solution that was stored from before the probing */
+   SCIP_Bool        masterinprobing;     /**< is the master problem in probing mode? */
+   SCIP_SOL*        storedorigsol;       /**< orig solution that was stored from before the probing */
 
    /* solution data */
-   SCIP_SOL*        origprimalsol;       /* best original primal solution */
+   SCIP_SOL*        origprimalsol;       /**< best original primal solution */
 
    /* structure information */
-   SCIP_Bool        hasblockdetection;   /* indicates whether the block detection code is present */
-   DECDECOMP*       decdecomp;           /* structure information */
+   SCIP_Bool        hasblockdetection;   /**< indicates whether the block detection code is present */
+   DECDECOMP*       decdecomp;           /**< structure information */
 };
 
 /*
@@ -2055,7 +2055,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    return SCIP_OKAY;
 }
 
-/** perform popagation method of the given branchrule for the given branchdata */
+/** perform propagation method of the given branchrule for the given branchdata */
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
