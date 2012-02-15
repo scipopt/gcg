@@ -19,6 +19,7 @@
 #define STRUCT_DECOMP_H_
 #include "scip/scip.h"
 #include "type_decomp.h"
+#include "type_detector.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,7 @@ struct DecDecomp
    SCIP_HASHMAP*  varindex;      /**< hashmap mapping variables to indeces for a visual ordering */
    SCIP_HASHMAP*  consindex;     /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE    type;          /**< type of the decomposition */
+   DEC_DETECTOR*  detector;      /**< detector that found this decomposition */
 };
 
 #ifdef __cplusplus

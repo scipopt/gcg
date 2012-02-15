@@ -730,6 +730,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_RESULT result;
    SCIP_Real* scores;
    int i;
+   int j;
 
    assert(scip != NULL);
 
@@ -792,7 +793,10 @@ SCIP_RETCODE DECdetectStructure(
             assert(ndecdecomps >= 0);
             assert(decdecomps != NULL || ndecdecomps == 0);
             SCIPdebugPrintf("we have %d decompositions!\n", ndecdecomps);
-
+            for (j = 0; j < ndecdecomps; ++j)
+            {
+               DECdecdecompSetDetector(decdecomps[j], detector);
+            }
             SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+ndecdecomps) );
             BMScopyMemoryArray(&conshdlrdata->decdecomps[conshdlrdata->ndecomps], decdecomps, ndecdecomps);
             SCIPfreeMemoryArray(scip, &decdecomps);
@@ -844,10 +848,13 @@ SCIP_RETCODE DECwriteAllDecomps(
    char name[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
    char *pname;
+   char decchar;
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    DECDECOMP *tmp;
+   DEC_DETECTOR *detector;
+
    assert(scip != NULL);
    assert(extension != NULL);
 
@@ -862,10 +869,20 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    /** @todo: This is a giant hack, but it works quite well */
    tmp = conshdlrdata->decdecomps[0];
+
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s\0", pname, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+
       conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
+
+      detector = DECdecdecompGetDetector(conshdlrdata->decdecomps[i]);
+      if(detector == NULL)
+         decchar = '?';
+      else
+         decchar = detector->decchar;
+
+      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s\0", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
    conshdlrdata->decdecomps[0] = tmp;
