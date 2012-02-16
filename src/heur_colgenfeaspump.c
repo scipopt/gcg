@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_colgenfeaspump.c
- * @ingroup PRIMALHEURISTICS
  * @brief  column generation based feasibility pump primal heuristic
  * @author Christian Puchert
  */
@@ -97,10 +96,10 @@ struct SCIP_HeurData
 /** copy the master LP to a new SCIP_LPI instance */
 static
 SCIP_RETCODE initializeLP(
-   SCIP*                 scip,
-   SCIP_LPI*             divinglp,
-   int**                 col2idx,
-   int**                 idx2col
+   SCIP*                 scip,               /**< SCIP data structure                                            */
+   SCIP_LPI*             divinglp,           /**< LPI structure of the diving LP                                 */
+   int**                 col2idx,            /**< mapping from column indices to indices of diving LP columns    */
+   int**                 idx2col             /**< mapping from diving LP columns back to column indices          */
    )
 {
    SCIP* masterprob;
@@ -284,12 +283,12 @@ SCIP_RETCODE initializeLP(
 /** add new variables (columns) to the copied master LP */
 static
 SCIP_RETCODE addVariables(
-   SCIP*                scip,
-   SCIP_LPI*            divinglp,
-   int**                col2idx,
-   int**                idx2col,
-   SCIP_VAR**           newvars,
-   int                  nnewvars
+   SCIP*                scip,                /**< SCIP data structure                                            */
+   SCIP_LPI*            divinglp,            /**< LPI structure of the diving LP                                 */
+   int**                col2idx,             /**< mapping from column indices to indices of diving LP columns    */
+   int**                idx2col,             /**< mapping from diving LP columns back to column indices          */
+   SCIP_VAR**           newvars,             /**< newly created master variables to be added to the diving LP    */
+   int                  nnewvars             /**< number of newly created master variables                       */
    )
 {
    SCIP* masterprob;
@@ -539,10 +538,10 @@ SCIP_RETCODE addVariables(
 /** set new objective coefficients for the LP columns */
 static
 SCIP_RETCODE setObjectives(
-   SCIP*                scip,
-   SCIP_LPI*            divinglp,
-   int*                 idx2col,
-   SCIP_Real*           objectives
+   SCIP*                scip,                /**< SCIP data structure                                            */
+   SCIP_LPI*            divinglp,            /**< LPI structure of the diving LP                                 */
+   int*                 idx2col,             /**< mapping from diving LP columns back to column indices          */
+   SCIP_Real*           objectives           /**< new objective coefficients to be set                           */
    )
 {
    SCIP* masterprob;
@@ -602,12 +601,12 @@ SCIP_RETCODE setObjectives(
 /** solve the LP, and store the result into a SCIP_SOL */
 static
 SCIP_RETCODE solveLP(
-   SCIP*                scip,
-   SCIP_LPI*            divinglp,
-   int*                 col2idx,
-   SCIP_HEUR*           heur,
-   SCIP_SOL**           lpsol,
-   SCIP_Bool*           solved
+   SCIP*                scip,                /**< SCIP data structure                                            */
+   SCIP_LPI*            divinglp,            /**< LPI structure of the diving LP                                 */
+   int*                 col2idx,             /**< mapping from column indices to indices of diving LP columns    */
+   SCIP_HEUR*           heur,                /**< data structure of this primal heuristic                        */
+   SCIP_SOL**           lpsol,               /**< diving LP solution to be created and stored                    */
+   SCIP_Bool*           solved               /**< pointer to store whether the LP has been solved to optimality  */
    )
 {
    SCIP* masterprob;
@@ -694,9 +693,9 @@ SCIP_RETCODE solveLP(
 /** for a given solution, calculate the number of fractional variables that should be integral */
 static
 SCIP_RETCODE getNSolFracs(
-   SCIP*                scip,
-   SCIP_SOL*            relaxsol,
-   int*                 nfracs
+   SCIP*                scip,                /**< SCIP data structure                                            */
+   SCIP_SOL*            relaxsol,            /**< the current LP feasible solution                               */
+   int*                 nfracs               /**< pointer to store the number of fractional variables            */
    )
 {
    SCIP_VAR** vars;
@@ -736,12 +735,12 @@ SCIP_RETCODE getNSolFracs(
 /** solve the subproblems with a distance objective function */
 static
 SCIP_RETCODE solvePricingProblems(
-      SCIP*             scip,
-      SCIP_HEURDATA*    heurdata,
-      SCIP_Real         alpha,
-      SCIP_SOL*         relaxsol,
-      SCIP_SOL*         sol,
-      SCIP_Real*        pricingobjs
+      SCIP*             scip,                /**< SCIP data structure                                            */
+      SCIP_HEURDATA*    heurdata,            /**< primal heuristic data                                          */
+      SCIP_Real         alpha,               /**< factor by which the original objective is taken into account   */
+      SCIP_SOL*         relaxsol,            /**< the current LP feasible solution                               */
+      SCIP_SOL*         sol,                 /**< the resulting integer feasible solution                        */
+      SCIP_Real*        pricingobjs          /**< the objective coefficients of the solved pricing problems      */
       )
 {
    SCIP* masterprob;
@@ -911,14 +910,14 @@ SCIP_RETCODE solvePricingProblems(
 /** check if there are cycles, i. e. if a solution has already been visited before */
 static
 SCIP_RETCODE checkCycles(
-      SCIP*             scip,
-      int               cyclelength,
-      int               nloops,
-      SCIP_SOL*         sol,
-      SCIP_Real         alpha,
-      SCIP_SOL**        lastsols,
-      SCIP_Real*        lastalphas,
-      int*              cycle
+      SCIP*             scip,                /**< SCIP data structure                                            */
+      int               cyclelength,         /**< maximum length of a cycle that can be detected                 */
+      int               nloops,              /**< number of already performed feaspump loops                     */
+      SCIP_SOL*         sol,                 /**< current integer solution to be checked                         */
+      SCIP_Real         alpha,               /**< factor by which the original objective is taken into account   */
+      SCIP_SOL**        lastsols,            /**< array of last integer solutions                                */
+      SCIP_Real*        lastalphas,          /**< array of last alpha coefficients                               */
+      int*              cycle                /**< pointer to store the length of the detected cycle, or -1       */
       )
 {
    SCIP_VAR** vars;
@@ -958,11 +957,11 @@ SCIP_RETCODE checkCycles(
 // TODO: how to calculate scores; in particular, a reasonable weighting between nLocks and nVarshifts
 static
 SCIP_RETCODE shiftSol(
-      SCIP*             scip,
-      SCIP_SOL*         sol,
-      SCIP_Real         shiftrate,
-      SCIP_Real*        pricingobjs,
-      int*              nshifts
+      SCIP*             scip,                /**< SCIP data structure                                            */
+      SCIP_SOL*         sol,                 /**< current integer solution to be modified by shifting            */
+      SCIP_Real         shiftrate,           /**< maximum percentage of variables whose values are shifted       */
+      SCIP_Real*        pricingobjs,         /**< objective coefficients of the last solved pricing problems     */
+      int*              nshifts              /**< pointer to store the number of performed shifts                */
       )
 {
    SCIP_VAR** vars;

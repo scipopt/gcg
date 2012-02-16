@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_relaxcolsel.c
- * @ingroup PRIMALHEURISTICS
  * @brief  relaxation based column selection primal heuristic
  * @author Christian Puchert
  */

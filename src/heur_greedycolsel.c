@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_greedycolsel.c
- * @ingroup PRIMALHEURISTICS
  * @brief  greedy column selection primal heuristic
  * @author Christian Puchert
  */

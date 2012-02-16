@@ -11,6 +11,8 @@
 /**@file   heur_gcgrens.h
  * @brief  GCG RENS primal heuristic
  * @author Timo Berthold
+ * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

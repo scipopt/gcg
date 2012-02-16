@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcglinesdiving.c
- * @ingroup PRIMALHEURISTICS
  * @brief  GCG linesearchdiving primal heuristic
  * @author Tobias Achterberg
  * @author Christian Puchert

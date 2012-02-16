@@ -9,8 +9,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgzirounding.c
- * @ingroup PRIMALHEURISTICS
  * @brief  zirounding primal heuristic
+ * @author Tobias Achterberg
  * @author Gregor Hendel
  * @author Christian Puchert
  */

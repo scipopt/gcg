@@ -11,6 +11,9 @@
 /**@file   heur_clasfeaspump.h
  * @brief  (classical) feaspump primal heuristic
  * @author Timo Berthold
+ * @author Domenico Salvagnin
+ * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

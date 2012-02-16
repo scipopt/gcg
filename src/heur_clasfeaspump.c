@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_clasfeaspump.c
- * @ingroup PRIMALHEURISTICS
  * @brief  (classical) feasibility pump primal heuristic
  * @author Timo Berthold
  * @author Domenico Salvagnin
@@ -381,7 +380,7 @@ SCIP_RETCODE performDivingOnMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   maxlpiterations,    /**< maximum number of LP iterations allowed */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of used LP iterations */
-   SCIP_Bool*            lperror            /**< pointer to store whether an unresolved LP error occured or the
+   SCIP_Bool*            lperror             /**< pointer to store whether an unresolved LP error occured or the
                                               *   solving process should be stopped (e.g., due to a time limit) */
 //   SCIP_Bool*            cutoff              /**< pointer to store whether the diving direction is infeasible */
    )

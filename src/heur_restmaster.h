@@ -11,6 +11,7 @@
 /**@file   heur_restmaster.h
  * @brief  restricted master primal heuristic
  * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
