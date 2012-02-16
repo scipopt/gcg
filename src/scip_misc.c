@@ -1,17 +1,26 @@
-/*
- * scip_misc.cpp
- *
- *  Created on: Apr 8, 2010
- *      Author: mbergner
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
+/*         SCIP --- Solving Constraint Integer Programs                      */
+/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/**@file    scip_misc.c
+ * @brief   various SCIP helper methods
+ * @author  Martin Bergner
  */
 
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
 #include <string.h>
 
-/**< returns TRUE if variable is relevant, FALSE otherwise */
+/** returns TRUE if variable is relevant, FALSE otherwise */
 SCIP_Bool SCIPisVarRelevant(
    SCIP_VAR* var              /**< variable to test */
    )
