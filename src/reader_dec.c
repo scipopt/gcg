@@ -609,8 +609,14 @@ SCIP_RETCODE readBlock(
       }
 
       /* get all vars for  the specific constraint */
-      vars = SCIPgetVarsXXX(scip, cons);
       nvars = SCIPgetNVarsXXX(scip, cons);
+      vars = NULL;
+      if( nvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      }
+
       for( i = 0; i < nvars; i ++ )
       {
          /*
@@ -657,7 +663,7 @@ SCIP_RETCODE readBlock(
       {
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) decinput->blocknr)) );
       }
-      SCIPfreeMemoryArray(scip, &vars);
+      SCIPfreeBufferArrayNull(scip, &vars);
    }
 
    return SCIP_OKAY;

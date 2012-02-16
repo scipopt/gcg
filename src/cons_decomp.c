@@ -167,18 +167,19 @@ SCIP_RETCODE evaluateDecomposition(
          SCIP_VAR** curvars;
          SCIP_VAR* var;
          int ncurvars;
-
-         curvars = SCIPgetVarsXXX(scip, curconss[j]);
          ncurvars = SCIPgetNVarsXXX(scip, curconss[j]);
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, curconss[j], curvars, ncurvars) );
+
          for( k = 0; k < ncurvars; ++k )
          {
             long int block;
-            if( !isVarRelevant(curvars[k]) )
+            if( !SCIPisVarRelevant(curvars[k]) )
                continue;
 
             var = SCIPvarGetProbvar(curvars[k]);
             assert(var != NULL);
-            if( !isVarRelevant(var) )
+            if( !SCIPisVarRelevant(var) )
                continue;
 
             assert(SCIPvarIsActive(var));
@@ -201,7 +202,7 @@ SCIP_RETCODE evaluateDecomposition(
             ishandled[SCIPvarGetProbindex(var)] = TRUE;
          }
 
-         SCIPfreeMemoryArray(scip, &curvars);
+         SCIPfreeBufferArray(scip, &curvars);
       }
 
       for( j = 0; j < nvars; ++j )

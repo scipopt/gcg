@@ -117,9 +117,16 @@ SCIP_Bool isConsMaster(
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;
    }
-   vars = SCIPgetVarsXXX(scip, cons);
-   vals = SCIPgetValsXXX(scip, cons);
    nvars = SCIPgetNVarsXXX(scip, cons);
+   vars = NULL;
+   vals = NULL;
+   if( nvars > 0)
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      SCIP_CALL( SCIPgetValsXXX(scip, cons, vals, nvars) );
+   }
 
    /* check vars and vals for integrality */
    for(i = 0; i < nvars && relevant; ++i)
@@ -137,8 +144,8 @@ SCIP_Bool isConsMaster(
    }
 
    /* free temporary data  */
-   SCIPfreeMemoryArrayNull(scip, &vals);
-   SCIPfreeMemoryArrayNull(scip, &vars);
+   SCIPfreeBufferArrayNull(scip, &vals);
+   SCIPfreeBufferArrayNull(scip, &vars);
 
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
@@ -227,7 +234,12 @@ SCIP_RETCODE findConnectedComponents(
          continue;
 
       ncurvars = SCIPgetNVarsXXX(scip, cons);
-      curvars = SCIPgetVarsXXX(scip, cons);
+      curvars = NULL;
+      if( ncurvars > 0)
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
+      }
       assert(ncurvars >= 0);
       assert(ncurvars <= nvars);
       assert(curvars != NULL || ncurvars == 0);
@@ -305,7 +317,7 @@ SCIP_RETCODE findConnectedComponents(
          ++nextblock;
       }
 
-      SCIPfreeMemoryArrayNull(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
       assert(consblock >= 1);
       assert(consblock <= nextblock);
 
