@@ -304,6 +304,7 @@ SCIP_DECL_CONSPROP(consPropOrigbranch)
    return SCIP_OKAY;
 }
 
+/** lp solution enforcement method */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
 {
@@ -312,6 +313,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
    return SCIP_OKAY;
 }
 
+/** pseudo solution enforcement method */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
 {
@@ -320,6 +322,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
    return SCIP_OKAY;
 }
 
+/** solution check method */
 static
 SCIP_DECL_CONSCHECK(consCheckOrigbranch)
 {
@@ -328,6 +331,7 @@ SCIP_DECL_CONSCHECK(consCheckOrigbranch)
    return SCIP_OKAY;
 }
 
+/** variable lock method */
 static
 SCIP_DECL_CONSLOCK(consLockOrigbranch)
 {
@@ -392,7 +396,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
 }
 
 
-/** creates and captures a origbranch constraint*/
+/** creates and captures a origbranch constraint */
 SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
