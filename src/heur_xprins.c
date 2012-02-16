@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_xprins.c
- * @ingroup PRIMALHEURISTICS
  * @brief  Extreme Point RINS
  * @author Christian Puchert
  */
@@ -42,20 +41,20 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      TRUE
 
-#define DEFAULT_EQUALITYRATE  0.5           /* minimum percentage of coincidence of relaxation and extreme pts     */
-#define DEFAULT_MAXNODES      1000LL        /* maximum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINIMPROVE    0.01          /* factor by which xprins should at least improve the incumbent        */
-#define DEFAULT_MINNODES      200LL         /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.5           /* minimum percentage of integer variables that have to be fixed       */
-#define DEFAULT_NODESOFS      200LL         /* number of nodes added to the contingent of the total nodes          */
-#define DEFAULT_NODESQUOT     0.1           /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_NUSEDPTS      -1            /* number of extreme pts per block that will be taken into account     */
-#define DEFAULT_NWAITINGNODES 200LL         /* number of nodes without incumbent change heuristic should wait      */
-#define DEFAULT_RANDOMIZATION FALSE         /* should the choice which sols to take be randomized?                 */
-#define DEFAULT_DONTWAITATROOT FALSE        /* should the nwaitingnodes parameter be ignored at the root node?     */
-#define DEFAULT_USELPROWS     FALSE         /* should subproblem be created out of the rows in the LP rows,
+#define DEFAULT_EQUALITYRATE  0.5           /**< minimum percentage of coincidence of relaxation and extreme pts     */
+#define DEFAULT_MAXNODES      1000LL        /**< maximum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINIMPROVE    0.01          /**< factor by which xprins should at least improve the incumbent        */
+#define DEFAULT_MINNODES      200LL         /**< minimum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINFIXINGRATE 0.5           /**< minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_NODESOFS      200LL         /**< number of nodes added to the contingent of the total nodes          */
+#define DEFAULT_NODESQUOT     0.1           /**< subproblem nodes in relation to nodes of the original problem       */
+#define DEFAULT_NUSEDPTS      -1            /**< number of extreme pts per block that will be taken into account     */
+#define DEFAULT_NWAITINGNODES 200LL         /**< number of nodes without incumbent change heuristic should wait      */
+#define DEFAULT_RANDOMIZATION FALSE         /**< should the choice which sols to take be randomized?                 */
+#define DEFAULT_DONTWAITATROOT FALSE        /**< should the nwaitingnodes parameter be ignored at the root node?     */
+#define DEFAULT_USELPROWS     FALSE         /**< should subproblem be created out of the rows in the LP rows,
                                              * otherwise, the copy constructors of the constraints handlers are used */
-#define DEFAULT_COPYCUTS      TRUE          /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+#define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
 
@@ -224,7 +223,7 @@ SCIP_RETCODE selectExtremePoints(
 }
 
 
-/** select extreme points (represented by mastervars) randomly*/
+/** select extreme points (represented by mastervars) randomly */
 static
 SCIP_RETCODE selectExtremePointsRandomized(
    SCIP*                 scip,              /**< original SCIP data structure                                    */
