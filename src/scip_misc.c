@@ -11,31 +11,25 @@
 #include "scip/scipdefplugins.h"
 #include <string.h>
 
-/**
- * Returns the rhs of an arbitrary SCIP constraint
- * @param scip the scip instance
- * @param cons the constraint
- * @return
- */
-
-extern
-SCIP_Bool isVarRelevant(
-   SCIP_VAR* var
+/**< returns TRUE if variable is relevant, FALSE otherwise */
+SCIP_Bool SCIPisVarRelevant(
+   SCIP_VAR* var              /**< variable to test */
    )
 {
    assert(var != NULL);
    return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
 }
 
-extern
-SCIP_VAR* getRelevantVariable(
-   SCIP_VAR *var
+
+/** returns the relevant variable, if possible */
+SCIP_VAR* SCIPgetRelevantVariable(
+   SCIP_VAR* var              /**< variable to test */
    )
 {
    SCIP_VAR *newvar;
    newvar = NULL;
    assert(var != NULL);
-   if(!isVarRelevant(var))
+   if(!SCIPisVarRelevant(var))
    {
       return NULL;
    }

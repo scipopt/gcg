@@ -226,7 +226,7 @@ static SCIP_RETCODE buildGraphStructure(
       curvars = SCIPgetVarsXXX(scip, conss[i] );
       for(j = 0; j < ncurvars; ++j)
       {
-         if( isVarRelevant(curvars[j]) )
+         if( SCIPisVarRelevant(curvars[j]) )
          {
             valid = TRUE;
             break;
@@ -579,7 +579,7 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          SCIP_VAR* var;
          long int varblock;
-         if( !isVarRelevant(curvars[j]) )
+         if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
          var = SCIPvarGetProbvar(curvars[j]);

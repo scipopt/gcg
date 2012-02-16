@@ -14,14 +14,16 @@ typedef enum  {
    linear, knapsack, varbound, setpacking, setcovering, setpartitioning, logicor, sos1, sos2, unknown, nconsTypeItems
 } consType;
 
+/** returns TRUE if variable is relevant, FALSE otherwise */
 extern
-SCIP_Bool isVarRelevant(
-   SCIP_VAR* var
+SCIP_Bool SCIPisVarRelevant(
+   SCIP_VAR* var              /**< variable to test */
    );
 
+/** returns the relevant variable, if possible */
 extern
-SCIP_VAR* getRelevantVariable(
-   SCIP_VAR *var
+SCIP_VAR* SCIPgetRelevantVariable(
+   SCIP_VAR* var              /**< variable to test */
    );
 
 consType SCIPconsGetType( SCIP_CONS *cons );

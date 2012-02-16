@@ -270,8 +270,11 @@ SCIP_RETCODE convertStructToGCG(
       assert(subscipvars[i] != NULL);
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
+         SCIP_VAR* relevantvar;
          assert(subscipvars[i][j] != NULL);
-         assert(isVarRelevant(subscipvars[i][j]));
+         assert(SCIPisVarRelevant(subscipvars[i][j]));
+
+         relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
 
          if(SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL)
          {
@@ -284,12 +287,12 @@ SCIP_RETCODE convertStructToGCG(
          }
          else
          {
-            if(SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) == NULL)
-               SCIP_CALL( GCGorigVarCreateData(scip, getRelevantVariable(subscipvars[i][j])) );
+            if( SCIPvarGetData(relevantvar) == NULL )
+               SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, getRelevantVariable(subscipvars[i][j]), i) );
+            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
          }
-         assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) != NULL);
+         assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(relevantvar) != NULL);
       }
    }
    SCIPdebugMessage("\tProcessing linking variables.\n");
@@ -317,7 +320,7 @@ SCIP_RETCODE convertStructToGCG(
                   {
                      SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, getRelevantVariable(linkingvars[i]), j) );
+                  SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
                      found = TRUE;
                      break;
                   }

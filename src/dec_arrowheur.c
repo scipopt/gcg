@@ -436,7 +436,7 @@ static SCIP_RETCODE buildGraphStructure(
          int varIndex;
 
          /* if the variable is inactive, skip it */
-         if( !isVarRelevant(vars[j]) )
+         if( !SCIPisVarRelevant(vars[j]) )
             continue;
 
          var = SCIPvarGetProbvar(vars[j]);
@@ -904,7 +904,7 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          SCIP_VAR* var;
          long int varblock = -1;
-         if( !isVarRelevant(curvars[j]) )
+         if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
          var = SCIPvarGetProbvar(curvars[j]);

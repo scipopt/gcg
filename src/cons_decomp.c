@@ -173,12 +173,12 @@ SCIP_RETCODE evaluateDecomposition(
          for( k = 0; k < ncurvars; ++k )
          {
             long int block;
-            if( !isVarRelevant(curvars[k]) )
+            if( !SCIPisVarRelevant(curvars[k]) )
                continue;
 
             var = SCIPvarGetProbvar(curvars[k]);
             assert(var != NULL);
-            if( !isVarRelevant(var) )
+            if( !SCIPisVarRelevant(var) )
                continue;
 
             assert(SCIPvarIsActive(var));
