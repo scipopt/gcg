@@ -76,12 +76,13 @@ extern
 SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
    const char* name,                               /**< name of the detector */
+   const char decchar,                             /**< display character of the detector */
+   int priority,                                   /**< priority of the detector */
+   SCIP_Bool enabled,                              /**< whether the detector should be enabled by default */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)),   /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),         /**< initialization method of detector (or NULL) */
-   DEC_DECL_EXITDETECTOR((*exitDetector)),         /**< deinitialization method of detector (or NULL) */
-   DEC_DECL_GETPRIORITY((*getPriority)),           /**< interface method to get priority of detector (must not be NULL) */
-   DEC_DECL_GETISENABLED((*getIsEnabled))          /**< interface method to get enable status of detector (must not be NULL) */
+   DEC_DECL_EXITDETECTOR((*exitDetector))          /**< deinitialization method of detector (or NULL) */
    );
 
 /** returns the remaning time of scip that the decomposition may use */

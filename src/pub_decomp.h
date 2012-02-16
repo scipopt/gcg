@@ -27,6 +27,7 @@
 #include "scip/type_var.h"
 #include "scip/type_cons.h"
 #include "scip/type_misc.h"
+#include "type_detector.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -177,6 +178,17 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int           nvars,       /**< number of variables */
    SCIP_CONS**   conss,       /**< constraint array */
    int           nconss       /**< number of constraints */
+   );
+
+/** sets the detector for the given decdecomp structure */
+void DECdecdecompSetDetector(
+   DECDECOMP*    decdecomp,   /**< decdecomp instance */
+   DEC_DETECTOR* detector     /**< detector data structure */
+   );
+
+/** gets the detector for the given decdecomp structure */
+DEC_DETECTOR* DECdecdecompGetDetector(
+   DECDECOMP* decdecomp       /**< decdecomp instance */
    );
 
 #ifdef __cplusplus

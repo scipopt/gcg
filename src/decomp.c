@@ -524,3 +524,25 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    return SCIP_OKAY;
 }
+
+/** sets the detector for the given decdecomp structure */
+void DECdecdecompSetDetector(
+   DECDECOMP*    decdecomp,   /**< decdecomp instance */
+   DEC_DETECTOR* detector     /**< detector data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(detector != NULL);
+
+   decdecomp->detector = detector;
+}
+
+/** gets the detector for the given decdecomp structure */
+DEC_DETECTOR* DECdecdecompGetDetector(
+   DECDECOMP* decdecomp       /**< decdecomp instance */
+   )
+{
+   assert(decdecomp != NULL);
+
+   return decdecomp->detector;
+}
