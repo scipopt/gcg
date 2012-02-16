@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dialog_gcg.c
- * @ingroup DIALOGS
  * @brief  gcg user interface dialog
  * @author Tobias Achterberg
  * @author Timo Berthold
@@ -266,6 +265,7 @@ SCIP_RETCODE writeProblem(
    return SCIP_OKAY;
 }
 
+/** writes out all decompositions currently known to cons_decomp */
 static
 SCIP_RETCODE writeAllDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -899,6 +899,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
    long long int nnodes;
