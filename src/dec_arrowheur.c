@@ -291,7 +291,12 @@ int computeHyperedgeWeight(
 
       mean = 0.0;
       variance = 0.0;
-      vals = SCIPgetValsXXX(scip, cons);
+      vals = NULL;
+      if(ncurvars > 0)
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &vals, ncurvars) );
+         SCIP_CALL( SCIPgetValsXXX(scip, cons, vals, ncurvars) );
+      }
 
       *cost = detectordata->consWeight;
 
@@ -314,7 +319,7 @@ int computeHyperedgeWeight(
       }
       assert(variance >= 0);
       stddev = sqrt(variance);
-      SCIPfreeMemoryArray(scip, &vals);
+      SCIPfreeBufferArrayNull(scip, &vals);
 
       // TODO: MAGIC NUMBER 2
       if( SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons), SCIPgetLhsXXX(scip, cons)) )
@@ -413,7 +418,8 @@ static SCIP_RETCODE buildGraphStructure(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      vars = SCIPgetVarsXXX( scip, conss[i] );
+      SCIP_CALL( SCIPallocBufferArray(scip, &vars, ncurvars) );
+      SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, ncurvars) );
 
       /* TODO: skip all variables that have a zero coeffient or where all coefficients add to zero */
       /* TODO: Do more then one entry per variable actually work? */
@@ -427,7 +433,7 @@ static SCIP_RETCODE buildGraphStructure(
       SCIP_CALL( computeHyperedgeWeight(scip, detectordata, conss[i], &(hedge->cost)) );
 
       /* lets collect the variable ids of the variables */
-      SCIP_CALL( SCIPallocMemoryArray(scip, &varids, ncurvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &varids, ncurvars) );
       hedge->nvariableIds = 0;
 
       for( j = 0; j < ncurvars; ++j )
@@ -436,7 +442,7 @@ static SCIP_RETCODE buildGraphStructure(
          int varIndex;
 
          /* if the variable is inactive, skip it */
-         if( !isVarRelevant(vars[j]) )
+         if( !SCIPisVarRelevant(vars[j]) )
             continue;
 
          var = SCIPvarGetProbvar(vars[j]);
@@ -491,8 +497,8 @@ static SCIP_RETCODE buildGraphStructure(
       {
          SCIPfreeMemory(scip, &hedge);
       }
-      SCIPfreeMemoryArray(scip, &varids);
-      SCIPfreeMemoryArray(scip, &vars);
+      SCIPfreeBufferArray(scip, &varids);
+      SCIPfreeBufferArray(scip, &vars);
    }
 
    /* build variable hyperedges */
@@ -899,12 +905,18 @@ static SCIP_RETCODE buildTransformedProblem(
 
       /* sort the variables into corresponding buckets */
       ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
-      curvars = SCIPgetVarsXXX( scip, conss[i] );
+      curvars = NULL;
+      if(ncurvars > 0)
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX( scip, conss[i], curvars, ncurvars) );
+      }
+
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
          long int varblock = -1;
-         if( !isVarRelevant(curvars[j]) )
+         if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
          var = SCIPvarGetProbvar(curvars[j]);
@@ -993,7 +1005,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
          }
       }
-      SCIPfreeMemoryArrayNull(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
 
       /*
        *  sort the constraints into the corresponding bucket

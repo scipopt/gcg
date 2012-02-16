@@ -270,8 +270,11 @@ SCIP_RETCODE convertStructToGCG(
       assert(subscipvars[i] != NULL);
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
+         SCIP_VAR* relevantvar;
          assert(subscipvars[i][j] != NULL);
-         assert(isVarRelevant(subscipvars[i][j]));
+         assert(SCIPisVarRelevant(subscipvars[i][j]));
+
+         relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
 
          if(SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL)
          {
@@ -284,48 +287,55 @@ SCIP_RETCODE convertStructToGCG(
          }
          else
          {
-            if(SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) == NULL)
-               SCIP_CALL( GCGorigVarCreateData(scip, getRelevantVariable(subscipvars[i][j])) );
+            if( SCIPvarGetData(relevantvar) == NULL )
+               SCIP_CALL( GCGorigVarCreateData(scip, relevantvar) );
 
-            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, getRelevantVariable(subscipvars[i][j]), i) );
+            SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, relevantvar, i) );
          }
-         assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(getRelevantVariable(subscipvars[i][j])) != NULL);
+         assert(SCIPvarGetData(subscipvars[i][j]) != NULL || SCIPvarGetData(relevantvar) != NULL);
       }
    }
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
+      int found;
 
-      if( !GCGvarIsLinking(linkingvars[i]) )
+      if( GCGvarIsLinking(linkingvars[i]) )
+         continue;
+
+      SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
+      /* HACK; TODO: find out constraint blocks */
+      for( j = 0; j < nblocks; ++j )
       {
-         int found;
-         SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
-         /* HACK; TODO: find out constraint blocks */
-         for( j = 0; j < nblocks; ++j )
+         found = FALSE;
+         for( k = 0; k < nsubscipconss[j]; ++k )
          {
-            found = FALSE;
-            for( k = 0; k < nsubscipconss[j]; ++k )
+            SCIP_VAR** curvars;
+            int        ncurvars;
+            ncurvars = SCIPgetNVarsXXX(scip, subscipconss[j][k]);
+            curvars = NULL;
+            if( ncurvars > 0 )
             {
-               SCIP_VAR** curvars;
-               int        ncurvars;
-               curvars = SCIPgetVarsXXX(scip, subscipconss[j][k]);
-               ncurvars = SCIPgetNVarsXXX(scip, subscipconss[j][k]);
-
-               for( v = 0; v < ncurvars; ++v )
-               {
-                  if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i])
-                  {
-                     SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
-                     assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, getRelevantVariable(linkingvars[i]), j) );
-                     found = TRUE;
-                     break;
-                  }
-               }
-               SCIPfreeMemoryArray(scip, &curvars);
-               if( found )
-                  break;
+               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[j][k], curvars, ncurvars) );
             }
+
+            for( v = 0; v < ncurvars; ++v )
+            {
+               if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i])
+               {
+                  SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                  assert(SCIPvarGetData(linkingvars[i]) != NULL);
+                  SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
+                  found = TRUE;
+                  break;
+               }
+            }
+
+            SCIPfreeBufferArrayNull(scip, &curvars);
+
+            if( found )
+               break;
          }
       }
    }
@@ -1171,11 +1181,8 @@ SCIP_RETCODE createPricingprobConss(
 
    for( b = 0; b < nblocks; ++b )
    {
-
-
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
-
          SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(subscipconss[b][c]), b);
          if(!SCIPconsIsActive( subscipconss[b][c]))
             continue;
@@ -1188,8 +1195,13 @@ SCIP_RETCODE createPricingprobConss(
             int ncurvars;
             int i;
 
-            curvars = SCIPgetVarsXXX(scip, subscipconss[b][c]);
             ncurvars = SCIPgetNVarsXXX(scip, subscipconss[b][c]);
+            curvars = NULL;
+            if(ncurvars > 0)
+            {
+               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[b][c], curvars, ncurvars) );
+            }
 
             for( i = 0; i < ncurvars; ++i )
             {
@@ -1197,7 +1209,7 @@ SCIP_RETCODE createPricingprobConss(
                assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[b], curvars[i])));
             }
 
-            SCIPfreeMemoryArrayNull(scip, &curvars);
+            SCIPfreeBufferArrayNull(scip, &curvars);
          }
 #endif
 
@@ -1217,14 +1229,20 @@ SCIP_RETCODE createPricingprobConss(
             int ncurvars;
             int i;
 
-            curvars = SCIPgetVarsXXX(scip, newcons);
             ncurvars = SCIPgetNVarsXXX(scip, newcons);
+            curvars = NULL;
+            if(ncurvars > 0)
+            {
+               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPgetVarsXXX(scip, newcons, curvars, ncurvars) );
+            }
+
             for( i = 0; i < ncurvars; ++i )
             {
                assert(GCGvarIsPricing(curvars[i]));
             }
 
-            SCIPfreeMemoryArray(scip, &curvars);
+            SCIPfreeBufferArrayNull(scip, &curvars);
          }
 #endif
          SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
