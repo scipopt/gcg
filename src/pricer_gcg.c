@@ -1007,7 +1007,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
    {
       if( !SCIPisZero(scip, mastercoefs[i]) )
       {
-         assert(!SCIPisInfinity(scip, mastercoefs[i]));
+         assert(!SCIPisInfinity(scip, mastercoefs[i]) && !SCIPisInfinity(scip, -mastercoefs[i]));
          SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[i], newvar, mastercoefs[i]) );
       }
    }

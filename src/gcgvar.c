@@ -221,8 +221,12 @@ SCIP_RETCODE GCGcreateOrigVarsData(
    /* loop over the variables in the original problem */
    for( i = 0; i < nvars; i++ )
    {
+      SCIP_VAR* relvar;
       assert(vars[i] != NULL);
       SCIP_CALL( GCGorigVarCreateData(scip, vars[i]) );
+      relvar = SCIPvarGetProbvar(vars[i]);
+      if(SCIPisVarRelevant(relvar) && SCIPvarGetData(relvar) == NULL)
+         SCIP_CALL( GCGorigVarCreateData(scip, relvar) );
    }
 
    return SCIP_OKAY;
