@@ -413,7 +413,24 @@ SCIP_RETCODE selectEssentialRounding(
 #define heurCopyGcgrounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
-#define heurFreeGcgrounding NULL
+static
+SCIP_DECL_HEURFREE(heurFreeGcgrounding) /*lint --e{715}*/
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(heur != NULL);
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+   assert(scip != NULL);
+
+   /* free heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+   SCIPfreeMemory(scip, &heurdata);
+   SCIPheurSetData(heur, NULL);
+
+   return SCIP_OKAY;
+}
+
 
 
 /** initialization method of primal heuristic (called after problem was transformed) */
