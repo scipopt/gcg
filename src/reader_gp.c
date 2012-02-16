@@ -220,8 +220,14 @@ SCIP_RETCODE writeData(
 
    for( i = 0; i < nconss; i++)
    {
-      vars = SCIPgetVarsXXX(scip, conss[i]);
       nvars = SCIPgetNVarsXXX(scip, conss[i]);
+      vars = NULL;
+
+      if( nvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray( scip, &vars, nvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, nvars) );
+      }
 
       for( j = 0; j < nvars; j++)
       {
@@ -251,7 +257,7 @@ SCIP_RETCODE writeData(
          }
       }
 
-      SCIPfreeMemoryArrayNull(scip, &vars);
+      SCIPfreeBufferArrayNull(scip, &vars);
    }
 
    if(decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE)

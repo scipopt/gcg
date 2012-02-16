@@ -26,18 +26,56 @@ SCIP_VAR* SCIPgetRelevantVariable(
    SCIP_VAR* var              /**< variable to test */
    );
 
-consType SCIPconsGetType( SCIP_CONS *cons );
+/** returns the type of an arbitrary SCIP constraint */
+extern
+consType SCIPconsGetType(
+   SCIP_CONS* cons            /**< constraint to get type for */
+   );
 
-SCIP_Real SCIPgetRhsXXX(SCIP * scip, SCIP_CONS * cons);
+/** returns the rhs of an arbitrary SCIP constraint */
+extern
+SCIP_Real SCIPgetRhsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   );
 
-SCIP_Real SCIPgetLhsXXX(SCIP * scip, SCIP_CONS * cons);
+/** Returns the lhs of an arbitrary SCIP constraint */
+extern
+SCIP_Real SCIPgetLhsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   );
 
-int SCIPgetNVarsXXX(SCIP * scip, SCIP_CONS * cons);
+/** Returns the number of variables in an arbitrary SCIP constraint */
+extern
+int SCIPgetNVarsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get number of variables */
+   );
 
-SCIP_Real SCIPgetDualsolXXX(SCIP * scip, SCIP_CONS * cons);
+/** Returns the variable array of an arbitrary SCIP constraint */
+SCIP_RETCODE SCIPgetVarsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons,           /**< constraint to get variables from */
+   SCIP_VAR** vars,           /**< array where variables are stored */
+   int        nvars           /**< size of storage array */
+   );
 
-SCIP_VAR ** SCIPgetVarsXXX(SCIP * scip, SCIP_CONS * cons);
+/** Returns the dual solution value of an arbitrary SCIP constraint */
+SCIP_Real SCIPgetDualsolXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get dual solution */
+   );
 
-SCIP_Real * SCIPgetValsXXX(SCIP * scip, SCIP_CONS * cons);
 
+/**
+ * Returns the value array of an arbitrary SCIP constraint
+ * @todo SOS1 & SOS2 not implemented yet
+ */
+SCIP_RETCODE SCIPgetValsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons,           /**< constraint to get values from */
+   SCIP_Real* vals,           /**< array where values are stored */
+   int        nvals           /**< size of storage array */
+   );
 #endif /* SCIP_MISC_H_ */

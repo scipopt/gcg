@@ -223,7 +223,13 @@ static SCIP_RETCODE buildGraphStructure(
 
 
       ncurvars = SCIPgetNVarsXXX(scip, conss[i] );
-      curvars = SCIPgetVarsXXX(scip, conss[i] );
+      curvars = NULL;
+      if( ncurvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
+      }
+
       for(j = 0; j < ncurvars; ++j)
       {
          if( SCIPisVarRelevant(curvars[j]) )
@@ -241,7 +247,7 @@ static SCIP_RETCODE buildGraphStructure(
       SCIP_CALL( computeHyperedgeWeight(scip, detectordata, conss[i], &(detectordata->hedges[i].cost)) );
 
       detectordata->hedges[i].cons = conss[i];
-      SCIPfreeMemoryArray(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
       valid = FALSE;
 
    }
@@ -318,7 +324,13 @@ SCIP_RETCODE callMetis(
          continue;
       SCIPinfoMessage(scip, file, "%d ", hedge.cost);
       ncurvars = SCIPgetNVarsXXX(scip, hedge.cons);
-      curvars = SCIPgetVarsXXX(scip, hedge.cons);
+      curvars = NULL;
+      if( ncurvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, hedge.cons, curvars, ncurvars) );
+      }
+
       for( j = 0; j < ncurvars; ++j )
       {
          int ind = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
@@ -326,7 +338,7 @@ SCIP_RETCODE callMetis(
          if( ind >= 0)
             SCIPinfoMessage(scip, file, "%d ", ind + 1 );
       }
-      SCIPfreeMemoryArray(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
       SCIPinfoMessage(scip, file, "\n");
    }
    status = fclose(file);
@@ -567,14 +579,20 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       long int consblock = -1;
       int ncurvars;
-      SCIP_VAR **curvars = SCIPgetVarsXXX( scip, conss[i] );
+      SCIP_VAR **curvars;
 
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0)
          continue;
 
       /* sort the variables into corresponding buckets */
       ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
-      curvars = SCIPgetVarsXXX( scip, conss[i] );
+      curvars = NULL;
+      if( ncurvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
+      }
+
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
@@ -652,7 +670,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
          }
       }
-      SCIPfreeMemoryArrayNull(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
 
       /*
        *  sort the constraints into the corresponding bucket
