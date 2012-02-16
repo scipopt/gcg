@@ -281,8 +281,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
-   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-//   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
