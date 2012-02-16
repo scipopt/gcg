@@ -9,8 +9,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_borderheur.h
- * @brief  borderheur presolver
+ * @brief  borderheur detector
  * @author Martin Bergner
+ * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

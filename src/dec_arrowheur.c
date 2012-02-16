@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_arrowheur.c
- * @ingroup DETECTORS
  * @brief  arrowheur presolver
  * @author Martin Bergner
  */
@@ -32,32 +31,31 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 
-#define DEC_DETECTORNAME      "arrowheur"   /**< name of the detector */
-#define DEC_PRIORITY          1000          /**< priority of the detector */
-#define DEC_DECCHAR           'a'           /**< display character of detector */
-#define DEC_ENABLED           TRUE          /**< should detector be called by default */
+#define DEC_DETECTORNAME      "arrowheur"    /**< name of the detector */
+#define DEC_PRIORITY          1000           /**< priority of the detector */
+#define DEC_DECCHAR           'a'            /**< display character of detector */
+#define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
 /* Default parameter settings */
-#define DEFAULT_PRIORITY                  DEC_PRIORITY /**< Priority of the detector */
-#define DEFAULT_BLOCKS                    2            /**< number of blocks */
-#define DEFAULT_VARWEIGHT                 1            /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN              2            /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT              2            /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT             1            /**< weight for continous variable nodes */
-#define DEFAULT_VARWEIGHTIMPL             2            /**< weight for implicit integer variable nodes */
-#define DEFAULT_CONSWEIGHT                5            /**< weight for constraint hyperedges */
-#define DEFAULT_RANDSEED                  1            /**< random seed for the hmetis call */
-#define DEFAULT_TIDY                      TRUE         /**< whether to clean up afterwards */
-#define DEFAULT_DUMMYNODES                0.2          /**< percentage of dummy vertices*/
-#define DEFAULT_CONSWEIGHT_SETPPC         5            /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
-#define DEFAULT_MAXBLOCKS                 10           /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MINBLOCKS                 2            /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_ALPHA                     0.0          /**< factor for standard deviation of constraint weights */
-#define DEFAULT_BETA                      0.5          /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
-#define DEFAULT_METIS_UBFACTOR            5.0          /**< default unbalance factor given to metis on the commandline */
-#define DEFAULT_METIS_VERBOSE             FALSE        /**< should metis be verbose */
-#define DEFAULT_METISUSEPTYPE_RB          TRUE         /**< Should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_ISENABLED                 TRUE         /**< Should the detector be run */
+#define DEFAULT_BLOCKS            2          /**< number of blocks */
+#define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
+#define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
+#define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
+#define DEFAULT_RANDSEED          1          /**< random seed for the hmetis call */
+#define DEFAULT_TIDY              TRUE       /**< whether to clean up afterwards */
+#define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
+#define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
+#define DEFAULT_MAXBLOCKS         10         /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
+#define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
+#define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
+#define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
+#define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
+#define DEFAULT_ISENABLED         TRUE       /**< Should the detector be run */
 
 #define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
    "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
@@ -71,41 +69,44 @@
  * Data structures
  */
 
-/** presolver data */
+/** private detector data */
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   SCIP_PTRARRAY *hedges;
-   SCIP_INTARRAY *copytooriginal;
-   int *partition;
-   int nvertices;
-   int nhyperedges;
-   int *varpart;
+   SCIP_PTRARRAY* hedges;           /**< variable array of hyperedges */
+   SCIP_INTARRAY* copytooriginal;   /**< array mapping copied to original variables */
+   int*           partition;        /**< array storing vertex partitions */
+   int            nvertices;        /**< number of vertices */
+   int            nhyperedges;      /**< number of hyperedges */
+   int*           varpart;          /**< array storing variable partition */
 
-   /* Stuff to get the dw-solver to work*/
-   SCIP_HASHMAP *constolpid;
+   /* weight parameters */
+   int       varWeight;             /**< weight of a variable hyperedge */
+   int       varWeightBinary;       /**< weight of a binary variable hyperedge */
+   int       varWeightContinous;    /**< weight of a continuous variable hyperedge */
+   int       varWeightInteger;      /**< weight of an integer variable hyperedge */
+   int       varWeightImplint;      /**< weight of an implicit integer variable hyperedge */
+   int       consWeight;            /**< weight of a constraint hyperedge */
+   int       consWeightSetppc;      /**< weight of a setppc constraint hyperedge */
+   SCIP_Real alpha;                 /**< factor for constraint coefficient value standard deviation */
+   SCIP_Real beta;                  /**< factor for equality od inequality constraints */
 
-   SCIP_Bool tidy;
-   int blocks;
-   int maxblocks;
-   int minblocks;
-   int varWeight;
-   int varWeightBinary;
-   int varWeightContinous;
-   int varWeightInteger;
-   int varWeightImplint;
-   int consWeight;
-   int randomseed;
-   SCIP_Bool found;
-   SCIP_Real dummynodes;
-   int consWeightSetppc;
-   SCIP_Real alpha;
-   SCIP_Real beta;
+   /* general parameters */
+   SCIP_Real dummynodes;      /**< percent of dummy nodes */
+   SCIP_Bool tidy;            /**< whether tempory metis files should be cleaned up */
+   int       maxblocks;       /**< maximal number of blocks to test */
+   int       minblocks;       /**< minimal number of blocks to test */
 
-   SCIP_Real metisubfactor;
-   SCIP_Bool metisverbose;
-   SCIP_Bool metisuseptyperb;
-   SCIP_CLOCK *metisclock;
+   /* metis parameters */
+   int       randomseed;      /**< metis random seed */
+   SCIP_Real metisubfactor;   /**< metis unbalance factor */
+   SCIP_Bool metisverbose;    /**< should metis ouput be displayed */
+   SCIP_Bool metisuseptyperb; /**< flag to indicate whether metis uses kway or rb partitioning */
+
+   /* various data */
+   SCIP_CLOCK* metisclock;    /**< clock to measure metis time */
+   int         blocks;        /**< indicates the current block */
+   SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
 };
 
 enum htype
@@ -114,16 +115,17 @@ enum htype
 };
 typedef enum htype hType;
 
+
+/** hyper edge data structure */
 struct hyperedge
 {
 
-   hType type;       ///< The type of the hyperegde (is it a split variable or a real constraint)
-   int *variableIds; ///< the associated variable IDs that appear in the hyperedge
-  // int copyId;       ///< The ids of the associated copy
-   int nvariableIds; ///< number of variable ids
-   int originalId;   ///< the original SCIP ID of this constraint or variable
+   hType type;                /**< the type of the hyperegde (is it a split variable or a real constraint) */
+   int *variableIds;          /**< the associated variable IDs that appear in the hyperedge */
+   int nvariableIds;          /**< number of variable ids */
+   int originalId;            /**< the original SCIP ID of this constraint or variable */
 
-   int cost;
+   int cost;                  /**< cost of the hyperedge */
 
 };
 typedef struct hyperedge HyperEdge;
@@ -134,7 +136,7 @@ typedef struct hyperedge HyperEdge;
 
 /* put your local methods here, and declare them static */
 
-/** Detector initialization method */
+/** detector initialization method */
 static
 DEC_DECL_INITDETECTOR(initArrowheur)
 {
@@ -160,14 +162,6 @@ DEC_DECL_INITDETECTOR(initArrowheur)
    }
    SCIP_CALL( SCIPcreatePtrarray(scip, &detectordata->hedges) );
    SCIP_CALL( SCIPcreateIntarray(scip, &detectordata->copytooriginal) );
-
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constolpid, SCIPblkmem(scip), nconss) );
-
-   /* initialise consttolpid hashmap and hyper edges array */
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constolpid, SCIPgetConss(scip)[i], (void*)(size_t)i) );
-   }
 
    SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
 
@@ -197,9 +191,6 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    SCIPfreeMemoryArray(scip, &detectordata->partition);
    SCIPfreeMemoryArray(scip, &detectordata->varpart);
 
-   /* free hash map */
-   SCIPhashmapFree(&detectordata->constolpid);
-
    /* free dynamic arrays */
    for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, detectordata->hedges); ++i )
    {
@@ -219,12 +210,13 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    return SCIP_OKAY;
 }
 
+/** compute weight of a hyperedge */
 static
-int computeHyperedgeWeight(
-   SCIP*             scip,
-   DEC_DETECTORDATA* detectordata,
-   SCIP_CONS*        cons,
-   int*              cost
+SCIP_RETCODE computeHyperedgeWeight(
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata,  /**< detector data data structure */
+   SCIP_CONS*        cons,          /**< constraint belonging to the hyperegde */
+   int*              cost           /**< pointer storing the hyperedge cost */
    )
 {
    int j;
@@ -247,7 +239,6 @@ int computeHyperedgeWeight(
    {
       upgdcons = cons;
    }
-
 
    if(upgdcons != NULL)
    {
@@ -341,7 +332,7 @@ int computeHyperedgeWeight(
 }
 
 /**
- * Builds a graph structure out of the matrix.
+ * builds a graph structure out of the matrix.
  *
  * The function will create an HyperEdge for every constraint and every variable.
  * It will additionally create vertices for every variable and in particular
@@ -354,9 +345,9 @@ int computeHyperedgeWeight(
  * @todo The nonzeroness is not checked, all variables in the variable array are considered
  */
 static SCIP_RETCODE buildGraphStructure(
-      SCIP*             scip,          /**< SCIP data structure */
-      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
-      )
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   )
 {
    SCIP_CONS **conss;
    SCIP_PTRARRAY *hedges;
@@ -482,10 +473,6 @@ static SCIP_RETCODE buildGraphStructure(
 #endif
       }
 
-
-
-
-
       if( hedge->nvariableIds > 1 )
       {
          /* if the hyperedge contains more then 0 variables, add it to the end */
@@ -569,13 +556,13 @@ static SCIP_RETCODE buildGraphStructure(
    return SCIP_OKAY;
 }
 
-/** Will call hmetis via a system call */
+/** will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(
-      SCIP*              scip,          /**< SCIP data struture */
-      DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
-      SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
-      )
+   SCIP*              scip,          /**< SCIP data struture */
+   DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
+   SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
+   )
 {
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
@@ -631,7 +618,6 @@ SCIP_RETCODE callMetis(
       SCIPerrorMessage("Could not open temporary metis file!\n");
       return SCIP_FILECREATEERROR;
    }
-
 
    SCIPinfoMessage(scip, file, "%d %d 1\n", SCIPgetPtrarrayMaxIdx(scip, hedges)+1, nvertices+ndummyvertices);
    for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, hedges); i++ )
@@ -772,12 +758,12 @@ SCIP_RETCODE callMetis(
    return SCIP_OKAY;
 }
 
-/** Maps the partitions for the disaggregated vertices to the original vertices */
+/** maps the partitions for the disaggregated vertices to the original vertices */
 static
 SCIP_RETCODE assignBlocksToOriginalVariables(
-      SCIP*             scip,          /**< SCIP data structure */
-      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
-      )
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   )
 {
 
    int i;
@@ -826,7 +812,7 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
    return SCIP_OKAY;
 }
 
-/** Builds the transformed problem in the new scip instance */
+/** builds the transformed problem in the new scip instance */
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                    scip,           /**< SCIP data structure */
    DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
@@ -1031,8 +1017,8 @@ static SCIP_RETCODE buildTransformedProblem(
          SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*)consblock) );
          ++(nsubscipconss[consblock]);
       }
-
    }
+
    /*
     * go through all variables and look at the not handled variables and add
     * them to the correct partition
@@ -1116,6 +1102,7 @@ static SCIP_RETCODE buildTransformedProblem(
    return SCIP_OKAY;
 }
 
+/** detection callback method */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 {
@@ -1186,8 +1173,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
 /** creates the arrowheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP*                 scip              /**< SCIP data structure */
-
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA *detectordata;

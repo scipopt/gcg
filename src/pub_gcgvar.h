@@ -150,7 +150,7 @@ extern
 void GCGlinkingVarSetLinkingCons(
    SCIP_VAR*  var,            /**< variable data structure */
    SCIP_CONS* cons,           /**< linking constraint */
-   int        i               /**< index of pricing problem */
+   int        index           /**< index of pricing problem */
    );
 
 /** returns the blocks the linking variable is in */

@@ -16,15 +16,19 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "relax_gcg.h"
 #include "scip/cons_linear.h"
+
 #define STARTMAXMASTERVARS 10
 
 /*
  * Vardata methods
  */
+
+/** callback method called when an original GCG variable is deleted */
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
 {
@@ -88,6 +92,8 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
    return SCIP_OKAY;
 }
 
+
+/** callback method called when a transformed GCG variable is deleted */
 static
 SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 {
@@ -616,7 +622,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
 
 /** returns the linking constraints */
 SCIP_CONS** GCGlinkingVarGetLinkingConss(
-   SCIP_VAR* var
+   SCIP_VAR*  var             /**< variable data structure */
    )
 {
    SCIP_VARDATA* vardata;
@@ -636,13 +642,13 @@ SCIP_CONS** GCGlinkingVarGetLinkingConss(
 void GCGlinkingVarSetLinkingCons(
    SCIP_VAR*  var,            /**< variable data structure */
    SCIP_CONS* cons,           /**< linking constraint */
-   int        i               /**< index of pricing problem */
+   int        index           /**< index of pricing problem */
    )
 {
    SCIP_VARDATA* vardata;
    assert(var != NULL);
    assert(cons != NULL);
-   assert(i >= 0);
+   assert(index >= 0);
    assert(GCGvarIsOriginal(var));
    assert(GCGvarIsLinking(var));
 
@@ -651,7 +657,7 @@ void GCGlinkingVarSetLinkingCons(
 
    assert(vardata->data.origvardata.linkingvardata != NULL);
    assert(vardata->data.origvardata.linkingvardata->linkconss != NULL);
-   vardata->data.origvardata.linkingvardata->linkconss[i] = cons;
+   vardata->data.origvardata.linkingvardata->linkconss[index] = cons;
 }
 
 /** returns whether the master variable is a ray */
@@ -773,10 +779,10 @@ int GCGvarGetBlock(
    return vardata->blocknr;
 }
 
-/** Sets the block of the variable */
+/** sets the block of the variable */
 void GCGvarSetBlock(
-   SCIP_VAR* var, /**< Variable to set block for */
-   int block      /**< block to set */
+   SCIP_VAR* var,             /**< variable to set block for */
+   int       block            /**< block to set */
    )
 {
    SCIP_VARDATA* vardata;
@@ -944,7 +950,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
 
 /** creates the corresponding pricing variable for the given original variable */
 SCIP_RETCODE GCGlinkingVarCreatePricingVar(
-   SCIP*       masterscip,    /**< msater problem SCIP data structure */
+   SCIP*       masterscip,    /**< master problem SCIP data structure */
    SCIP*       pricingscip,   /**< pricing problem SCIP data structure */
    int         pricingprobnr, /**< number of the pricing problem */
    SCIP_VAR*   origvar,       /**< original variable */
@@ -991,7 +997,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP*        pricingscip,  /**< pricing problem SCIP data structure */
    SCIP_VAR**   newvar,       /**< pointer to store new master variable */
    char*        varname,      /**< new variable name */
-   SCIP_Real    objcoeff,     /**< new objective coeffient */
+   SCIP_Real    objcoeff,     /**< new objective coefficient */
    SCIP_VARTYPE vartype,      /**< new variable type */
    SCIP_Bool    solisray,     /**< indicates whether new variable is a ray */
    int          prob,         /**< number of pricing problem that created this variable */
