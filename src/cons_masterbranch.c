@@ -1072,7 +1072,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             assert(!GCGvarIsOriginal(conshdlrData->pendingvars[k]));
 
             bndchgblocknr = GCGvarGetBlock(conshdlrData->pendingvars[k]);
-            bndchgorigvars = GCGpricingVarGetOrigvars(conshdlrData->pendingvars[k]);
+            if( GCGvarIsMaster(conshdlrData->pendingvars[k]) )
+               bndchgorigvars = GCGmasterVarGetOrigvars(conshdlrData->pendingvars[k]);
+            else if( GCGvarIsPricing(conshdlrData->pendingvars[k]) )
+               bndchgorigvars = GCGpricingVarGetOrigvars(conshdlrData->pendingvars[k]);
+            else
+            {
+               SCIPerrorMessage("Variable %s is not pricing nor master.\n", SCIPvarGetName(conshdlrData->pendingvars[k]));
+               assert(FALSE);
+            }
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
 
             /* LINK: mb: this might work  */
