@@ -144,8 +144,6 @@
 #include "dec_arrowheur.h"
 
 /* Christian's heuristics */
-#include "heur_clasfeaspump.h"
-#include "heur_colgenfeaspump.h"
 #include "heur_extremepoints.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
@@ -271,8 +269,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurColgenfeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurExtremepoints(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );

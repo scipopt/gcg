@@ -48,8 +48,6 @@ MAINOBJ		=	reader_blk.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \
-			heur_clasfeaspump.o \
-			heur_colgenfeaspump.o \
 			heur_extremepoints.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
