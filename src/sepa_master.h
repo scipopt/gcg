@@ -9,6 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   sepa_master.h
+ * @ingroup SEPARATORS
  * @brief  master separator
  * @author Gerald Gamrath
  */
@@ -25,31 +26,31 @@
 /** creates the master separator and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeSepaMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 /* returns the array of original cuts saved in the separator data */
 extern
 SCIP_ROW** GCGsepaGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 /* returns the number of original cuts saved in the separator data */
 extern
 int GCGsepaGetNOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 /* returns the array of master cuts saved in the separator data */
 extern
 SCIP_ROW** GCGsepaGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 /* returns the number of master cuts saved in the separator data */
 extern
 int GCGsepaGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 #endif
