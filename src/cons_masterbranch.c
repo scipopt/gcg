@@ -1174,6 +1174,8 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          continue;
 
       /* the variable was copied from original to master */
+      /* @todo: cp: I think this code will never be executed
+       * as the vars array only contains variables generated during pricing */
       if( blocknr == -1 )
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
@@ -1218,7 +1220,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
             /* TODO: LINK: mb: This needs to be changed */
 
-            /* ignore variables that contain no original variables */
+            /* ignore master variables that contain no original variables */
             /* @todo: move this statement one for loop higher? */
             if( origvars == NULL || origvars[0] == NULL )
                continue;

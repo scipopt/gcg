@@ -20,6 +20,7 @@
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "relax_gcg.h"
+#include "scip_misc.h"
 #include "scip/cons_linear.h"
 
 #define STARTMAXMASTERVARS 10
@@ -225,7 +226,7 @@ SCIP_RETCODE GCGcreateOrigVarsData(
       assert(vars[i] != NULL);
       SCIP_CALL( GCGorigVarCreateData(scip, vars[i]) );
       relvar = SCIPvarGetProbvar(vars[i]);
-      if(SCIPisVarRelevant(relvar) && SCIPvarGetData(relvar) == NULL)
+      if( SCIPisVarRelevant(relvar) && SCIPvarGetData(relvar) == NULL )
          SCIP_CALL( GCGorigVarCreateData(scip, relvar) );
    }
 
