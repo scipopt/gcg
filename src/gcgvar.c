@@ -72,6 +72,8 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
          (*vardata)->data.origvardata.linkingvardata = NULL;
       }
       assert((*vardata)->data.origvardata.linkingvardata == NULL);
+      assert((*vardata)->data.origvardata.mastervars != NULL);
+      assert((*vardata)->data.origvardata.mastervals != NULL);
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
       if((*vardata)->data.origvardata.ncoefs > 0)
@@ -222,12 +224,8 @@ SCIP_RETCODE GCGcreateOrigVarsData(
    /* loop over the variables in the original problem */
    for( i = 0; i < nvars; i++ )
    {
-      SCIP_VAR* relvar;
       assert(vars[i] != NULL);
       SCIP_CALL( GCGorigVarCreateData(scip, vars[i]) );
-      relvar = SCIPvarGetProbvar(vars[i]);
-      if( SCIPisVarRelevant(relvar) && SCIPvarGetData(relvar) == NULL )
-         SCIP_CALL( GCGorigVarCreateData(scip, relvar) );
    }
 
    return SCIP_OKAY;
