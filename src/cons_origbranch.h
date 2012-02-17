@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_origbranch.h
- * @brief  constraint handler for storing the graph at each node of the tree
+ * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  */
 
@@ -19,30 +19,34 @@
 #include "scip/scip.h"
 #include "type_branchgcg.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/** returns the store graph constraint of the current node, needs only the pointer to scip */
+/** returns the branch orig constraint of the current node, only needs the pointer to scip */
 extern
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
-/** creates the handler for graph storing constraints and includes it in SCIP */
+/** creates the handler for origbranch constraints and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** creates and captures a origbranch constraint*/
+/** creates and captures a origbranch constraint */
 extern
 SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */
-   SCIP_NODE*            node,
-   SCIP_CONS*            parentcons,
-   SCIP_BRANCHRULE*      branchrule,
-   GCG_BRANCHDATA*       branchdata
+   SCIP_NODE*            node,               /**< the node to which this origbranch constraint belongs */
+   SCIP_CONS*            parentcons,         /**< origbranch constraint associated with the father node */
+   SCIP_BRANCHRULE*      branchrule,         /**< the branching rule that created the b&b node the constraint belongs to */
+   GCG_BRANCHDATA*       branchdata          /**< branching data storing information about the branching restrictions at the
+                                              *   corresponding node */
    );
 
 /** returns the stack and the number of elements on it */
@@ -147,5 +151,9 @@ int GCGconsOrigbranchGetNPropBoundChgs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
    );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

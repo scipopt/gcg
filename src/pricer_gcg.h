@@ -11,6 +11,8 @@
 /**@file   pricer_gcg.h
  * @brief  gcg variable pricer
  * @author Gerald Gamrath
+ * @author Martin Bergner
+ * @ingroup PRICERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -36,17 +38,6 @@ extern
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
-   );
-
-
-/* informs an original variable, that a variable in the master problem was created, that contains a part of the original variable,
- * saves this information int the original variable's data */
-extern
-SCIP_RETCODE GCGpricerAddMasterVarToOrigVar(
-   SCIP*                 scip,
-   SCIP_VAR*             origvar,
-   SCIP_VAR*             var,
-   SCIP_Real             val
    );
 
 /** returns the pointer to the scip instance representing the original problem */
@@ -79,30 +70,33 @@ SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
 extern
 SCIP_RETCODE GCGpricerIncludeSolver(
    SCIP*                 scip,               /**< SCIP data structure */
-   const char*           name,
-   const char*           description,
-   int                   priority,
-   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**<  solving method for solver */
-   GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**<  heuristic solving method for solver */
-   GCG_DECL_SOLVERFREE   ((*solverfree)),
-   GCG_DECL_SOLVERINIT   ((*solverinit)),
-   GCG_DECL_SOLVEREXIT   ((*solverexit)),
-   GCG_DECL_SOLVERINITSOL((*solverinitsol)),
-   GCG_DECL_SOLVEREXITSOL((*solverexitsol)),
-   GCG_SOLVERDATA*       solverdata
+   const char*           name,               /**< name of solver */
+   const char*           description,        /**< description of solver */
+   int                   priority,           /**< priority of solver */
+   GCG_DECL_SOLVERSOLVE  ((*solversolve)),   /**< solving method for solver */
+   GCG_DECL_SOLVERSOLVEHEUR((*solveheur)),   /**< heuristic solving method for solver */
+   GCG_DECL_SOLVERFREE   ((*solverfree)),    /**< free method of solver */
+   GCG_DECL_SOLVERINIT   ((*solverinit)),    /**< init method of solver */
+   GCG_DECL_SOLVEREXIT   ((*solverexit)),    /**< exit method of solver */
+   GCG_DECL_SOLVERINITSOL((*solverinitsol)), /**< initsol method of solver */
+   GCG_DECL_SOLVEREXITSOL((*solverexitsol)), /**< exitsol method of solver */
+   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
 
+
+/** returns the solverdata of a solver */
 extern
 GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*                 scip,
-   GCG_SOLVER*           solver
+   SCIP*       scip,          /**< SCIP data structure */
+   GCG_SOLVER* solver         /**< pointer so solver */
    );
 
+/** sets solver data of specific solver */
 extern
 void GCGpricerSetSolverdata(
-   SCIP*                 scip,
-   GCG_SOLVER*           solver,
-   GCG_SOLVERDATA*       solverdata
+   SCIP*           scip,      /**< SCIP data structure */
+   GCG_SOLVER*     solver,    /**< pointer to solver  */
+   GCG_SOLVERDATA* solverdata /**< solverdata data structure */
    );
 
 extern
