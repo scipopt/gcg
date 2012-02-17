@@ -866,34 +866,31 @@ SCIP_RETCODE createPricingVariables(
    for( v = 0; v < nvars; v++ )
    {
       int blocknr;
-      SCIP_VAR* var;
       SCIP_VAR* probvar;
-      probvar = SCIPvarGetProbvar(vars[v]);
-      if(SCIPvarGetNegatedVar(probvar) != NULL)
-         var = SCIPvarGetNegatedVar(probvar);
-      else
-         var = probvar;
 
+      probvar = SCIPvarGetProbvar(vars[v]);
       blocknr = GCGvarGetBlock(probvar);
-      SCIPdebugMessage("Creating map for var %s (%s): ", SCIPvarGetName(var), SCIPvarGetName(probvar));
+
+      SCIPdebugMessage("Creating map for var %s: ", SCIPvarGetName(probvar));
+
+      assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
+      SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
+
       /* variable belongs to exactly one block --> create corresponding pricing variable*/
       if( blocknr >= 0 )
       {
-         assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
+         SCIPdebugPrintf("block %d\n", blocknr);
 
+         assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIP_CALL( createPricingVar(relaxdata, probvar) );
          assert(GCGoriginalVarGetPricingVar(probvar) != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
 
-         SCIPdebugPrintf("block %d\n", blocknr);
-         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(var),
+         assert(!SCIPhashmapExists(hashorig2pricingvar[blocknr], probvar));
+         SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(probvar),
                (void*)(GCGoriginalVarGetPricingVar(probvar)) ));
-         if(var != probvar)
-            SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(probvar),
-                  (void*)(GCGoriginalVarGetPricingVar(probvar)) ));
 
-         assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blocknr], var)));
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
+         assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[blocknr], probvar)));
       }
       /* variable is a linking variable --> create corresponding pricing variable in all linked blocks
        * and create corresponding linking constraints */
@@ -904,6 +901,7 @@ SCIP_RETCODE createPricingVariables(
 
          SCIP_CALL( createLinkingPricingVars(relaxdata, probvar) );
          assert(GCGlinkingVarGetPricingVars(probvar) != NULL);
+
          pricingvars = GCGlinkingVarGetPricingVars(probvar);
 
          for( i = 0; i < npricingprobs; i++ )
@@ -911,22 +909,20 @@ SCIP_RETCODE createPricingVariables(
             if( pricingvars[i] != NULL)
             {
                assert(GCGvarIsPricing(pricingvars[i]));
-               SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(var),
-                     (void*)(pricingvars[i])) );
-               if(var != probvar)
-                  SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(probvar),
-                     (void*)(pricingvars[i])) );
 
+               assert(!SCIPhashmapExists(hashorig2pricingvar[i], probvar));
+               SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(probvar),
+                     (void*)(pricingvars[i])) );
+               assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[i], probvar)));
             }
          }
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
       }
       else
       {
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
-         SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
       }
+      assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
 
    return SCIP_OKAY;
@@ -1189,29 +1185,6 @@ SCIP_RETCODE createPricingprobConss(
 
          SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[b][c], &subscipconss[b][c]) );
          assert(subscipconss[b][c] != NULL);
-#ifndef NDEBUG
-         {
-            SCIP_VAR** curvars;
-            int ncurvars;
-            int i;
-
-            ncurvars = SCIPgetNVarsXXX(scip, subscipconss[b][c]);
-            curvars = NULL;
-            if(ncurvars > 0)
-            {
-               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-               SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[b][c], curvars, ncurvars) );
-            }
-
-            for( i = 0; i < ncurvars; ++i )
-            {
-               assert(SCIPhashmapExists(hashorig2pricingvar[b], curvars[i]));
-               assert(GCGvarIsPricing((SCIP_VAR*) SCIPhashmapGetImage(hashorig2pricingvar[b], curvars[i])));
-            }
-
-            SCIPfreeBufferArrayNull(scip, &curvars);
-         }
-#endif
 
          /* copy the constraint */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "p%d_%s", b, SCIPconsGetName(subscipconss[b][c]));
