@@ -648,11 +648,13 @@ SCIP_RETCODE readBlock(
 
       if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*) (size_t) LINKINGVALUE )
       {
+         SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(cons));
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE) );
          readerdata->nlinkingcons --;
       }
       else
       {
+         SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), decinput->blocknr);
          SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) decinput->blocknr)) );
       }
       SCIPfreeBufferArrayNull(scip, &vars);
@@ -692,6 +694,8 @@ SCIP_RETCODE readMasterconss(
       {
          /* set the block number of the variable to the number of the current block */
          SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+         ++(readerdata->nlinkingcons);
+         SCIPdebugMessage("cons %s is now master\n", decinput->token);
       }
    }
 
@@ -780,6 +784,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->linkingvars[ind] = allvars[i];
          decomp->nlinkingvars = decomp->nlinkingvars + 1;
          /* hashmap */
+         SCIPdebugMessage("var %s is linking\n", SCIPvarGetName(allvars[i]));
          SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE) );
       }
       else
@@ -796,6 +801,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nsubscipvars[value] ++;
 
          /* hashmap */
+         SCIPdebugMessage("var %s is in block %d\n", SCIPvarGetName(allvars[i]), value);
          SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value) );
       }
    }
@@ -808,6 +814,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->linkingconss[ind] = allcons[i];
          decomp->nlinkingconss ++;
          ind ++;
+         SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(allcons[i]));
       }
    }
 
@@ -826,6 +833,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nsubscipconss[i] ++;
          /* hashmap */
          /** @todo besser machen? */
+         SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(readerdata->blockcons[i][j]), i);
          SCIP_CALL( SCIPhashmapRemove(decomp->constoblock, readerdata->blockcons[i][j]) );
          SCIP_CALL( SCIPhashmapInsert(decomp->constoblock, readerdata->blockcons[i][j], (void*) (size_t) i) );
       }
