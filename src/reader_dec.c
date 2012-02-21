@@ -53,7 +53,6 @@
  */
 #define DEC_MAX_LINELEN       65536
 #define DEC_MAX_PUSHEDTOKENS  2
-#define DEC_PRINTLEN          100
 
 /** section in DEC File */
 enum DecSection
@@ -91,7 +90,6 @@ typedef struct DecInput DECINPUT;
 struct SCIP_ReaderData
 {
    DECDECOMP* decdecomp;      /**< decomposition data structure*/
-   SCIP_HASHMAP* vartoindex;  /**< hashmap which var is at which index*/
    int* varstoblock;          /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
    int* nblockvars;           /**< n variable per block that are not linkingvars*/
    SCIP_CONS*** blockcons;    /**< array of assignments from constraints to their blocks [blocknr][consid]  */
@@ -571,12 +569,11 @@ SCIP_RETCODE readNBlocks(
 /** reads the blocks section */
 static
 SCIP_RETCODE readBlock(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput   /**< DEC reading data */
+   SCIP* scip,                   /**< SCIP data structure */
+   DECINPUT* decinput,           /**< DEC reading data */
+   SCIP_READERDATA* readerdata   /**< reader data */
    )
 {
-   SCIP_READER* reader;
-   SCIP_READERDATA* readerdata;
    int varvalue;
    int varvalueindex;
    int consindex;
@@ -587,11 +584,6 @@ SCIP_RETCODE readBlock(
    SCIP_VAR** vars;
 
    assert(decinput != NULL);
-
-   reader = SCIPfindReader(scip, READER_NAME);
-   assert(reader != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
    while( getNextToken(decinput) )
@@ -619,6 +611,7 @@ SCIP_RETCODE readBlock(
 
       for( i = 0; i < nvars; i ++ )
       {
+         assert(vars != NULL);
          /*
           * saving for dedecomp
           */
@@ -632,9 +625,8 @@ SCIP_RETCODE readBlock(
             SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(vars[i]), decinput->blocknr);
             readerdata->varstoblock[varvalueindex ] = decinput->blocknr;
          }
-         else if( (varvalue != NOVALUE || varvalue != LINKINGVALUE) && varvalue != decinput->blocknr )
+         else if( (varvalue != LINKINGVALUE) && varvalue != decinput->blocknr )
          {
-
             SCIPdebugMessage("\tVar %s is linking (old %d != %d new).\n", SCIPvarGetName(vars[i]), varvalue, decinput->blocknr);
             assert(varvalue != decinput->blocknr);
 
@@ -672,11 +664,14 @@ SCIP_RETCODE readBlock(
 /** reads the masterconss section */
 static
 SCIP_RETCODE readMasterconss(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput   /**< DEC reading data */
+   SCIP* scip,                   /**< SCIP data structure */
+   DECINPUT* decinput,           /**< DEC reading data */
+   SCIP_READERDATA* readerdata   /**< reader data */
    )
 {
+   assert(scip != NULL);
    assert(decinput != NULL);
+   assert(readerdata != NULL);
 
    while( getNextToken(decinput) )
    {
@@ -685,8 +680,6 @@ SCIP_RETCODE readMasterconss(
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
-
-      cons = NULL;
 
       /* the token must be the name of an existing constraint */
       cons = SCIPfindCons(scip, decinput->token);
@@ -698,7 +691,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          /* set the block number of the variable to the number of the current block */
-         /*SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );*/
+         SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE) );
       }
    }
 
@@ -930,11 +923,11 @@ readDECFile(
                }
                nblocksread = TRUE;
             }
-            SCIP_CALL( readBlock(scip, decinput) );
+            SCIP_CALL( readBlock(scip, decinput, readerdata) );
             break;
 
          case DEC_MASTERCONSS:
-            SCIP_CALL( readMasterconss(scip, decinput) );
+            SCIP_CALL( readMasterconss(scip, decinput, readerdata) );
             break;
 
          case DEC_END: /* this is already handled in the while() loop */
