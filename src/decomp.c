@@ -32,8 +32,6 @@ const char *DECgetStrType(
    )
 {
    const char * names[] = {"unknown","arrowhead", "staircase", "diagonal", "bordered"};
-   assert((int)type >= 0);
-   assert((unsigned int)type < sizeof(names));
    return names[type];
 }
 

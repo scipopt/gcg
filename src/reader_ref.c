@@ -90,14 +90,6 @@ static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
 
 
-/** private reader data, not needed */
-struct SCIP_ReaderData
-{
-
-};
-
-
-
 /*
  * Local methods (for reading)
  */
@@ -706,7 +698,7 @@ SCIP_RETCODE writeREFFile(
 //         SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[i][j], &cons) );
 //         assert(cons != NULL);
          cons = SCIPfindCons(scip, SCIPconsGetName(subscipconss[i][j]));
-         ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
+         ind = (size_t) SCIPhashmapGetImage(cons2origindex, cons);
          SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
 
 #ifndef NDEBUG
@@ -728,22 +720,7 @@ SCIP_RETCODE writeREFFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeRef)
-{
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-   assert(reader != NULL);
-
-   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
+#define readerFreeRef NULL
 
 /** problem reading method of reader */
 static
@@ -774,14 +751,10 @@ SCIP_RETCODE SCIPincludeReaderRef(
    SCIP* scip                 /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
-
-   /* create ref reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
+   assert(scip != NULL);
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         NULL, readerFreeRef, readerReadRef, readerWriteRef, readerdata) );
+         NULL, readerFreeRef, readerReadRef, readerWriteRef, NULL) );
 
    return SCIP_OKAY;
 }

@@ -37,7 +37,6 @@
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
 /* Default parameter settings */
-#define DEFAULT_BLOCKS            2          /**< number of blocks */
 #define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
 #define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
 #define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
@@ -55,15 +54,6 @@
 #define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_ISENABLED         TRUE       /**< Should the detector be run */
-
-#define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
-   "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
-   (name), (blocks), (varcont), (varint), (cons), (dummy), (alpha), (beta), (conssetppc)
-
-#define GP_NAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
-   "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d.gp", \
-   (name), (blocks), (varcont), (varint), (cons), (dummy), (alpha), (beta), (conssetppc)
 
 /*
  * Data structures
@@ -77,7 +67,6 @@ struct DEC_DetectorData
    SCIP_INTARRAY* copytooriginal;   /**< array mapping copied to original variables */
    int*           partition;        /**< array storing vertex partitions */
    int            nvertices;        /**< number of vertices */
-   int            nhyperedges;      /**< number of hyperedges */
    int*           varpart;          /**< array storing variable partition */
 
    /* weight parameters */
@@ -203,8 +192,8 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    }
 
    SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
-   SCIPfreePtrarray(scip, &detectordata->hedges);
-   SCIPfreeIntarray(scip, &detectordata->copytooriginal);
+   SCIP_CALL( SCIPfreePtrarray(scip, &detectordata->hedges) );
+   SCIP_CALL( SCIPfreeIntarray(scip, &detectordata->copytooriginal) );
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -294,6 +283,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       /* calculate variety using the normalized variance */
       for( j = 0; j < ncurvars; ++j )
       {
+         assert(vals != NULL);
          mean += vals[j] / ncurvars;
       }
       if( ncurvars <= 1 )
@@ -304,6 +294,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       {
          for( j = 0; j < ncurvars; ++j )
          {
+            assert(vals != NULL);
             assert(ncurvars > 1);
             variance += pow((vals[j] - mean), 2.0) / (ncurvars-1);
          }
@@ -316,10 +307,12 @@ SCIP_RETCODE computeHyperedgeWeight(
       if( SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons), SCIPgetLhsXXX(scip, cons)) )
       {
          /* we are dealing with an equality*/
+         /*lint --e{524} */
          *cost = SCIPceil(scip, detectordata->beta*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
       else
       {
+         /*lint --e{524} */
          *cost = SCIPceil(scip, (1.0-detectordata->beta)*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
 
@@ -579,7 +572,7 @@ SCIP_RETCODE callMetis(
    SCIP_PTRARRAY *hedges;
    SCIP_FILE *zfile;
    FILE* file;
-   int temp_filedes = -1;
+   int temp_filedes;
    SCIP_Real remainingtime;
 
    assert(scip != NULL);
@@ -601,9 +594,10 @@ SCIP_RETCODE callMetis(
 
    hedges = detectordata->hedges;
    nvertices = detectordata->nvertices;
+   /*lint --e{524} */
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
 
-   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
    {
       SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
@@ -645,7 +639,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -656,7 +650,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -714,7 +708,7 @@ SCIP_RETCODE callMetis(
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;

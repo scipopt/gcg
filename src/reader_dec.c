@@ -1166,11 +1166,11 @@ SCIP_RETCODE SCIPwriteDecomp(
    /* print header */
    if( decdecomp == NULL )
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    }
    else
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
    }
 
    if( writeDecomposition )

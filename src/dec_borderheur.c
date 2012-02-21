@@ -35,7 +35,6 @@
 #define DEC_ENABLED              TRUE           /**< should detector be called by default */
 
 /* Default parameter settings */
-#define DEFAULT_PRIORITY         DEC_PRIORITY   /**< priority of the detector */
 #define DEFAULT_CONSWEIGHT       5              /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED         1              /**< random seed for the hmetis call */
 #define DEFAULT_TIDY             TRUE           /**< whether to clean up afterwards */
@@ -47,9 +46,6 @@
 #define DEFAULT_METIS_UBFACTOR   5.0            /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE    FALSE          /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB TRUE           /**< should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_ISENABLED        TRUE           /**< should the detector be run */
-
-#define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 
 /*
  * Data structures
@@ -179,7 +175,7 @@ SCIP_RETCODE computeHyperedgeWeight(
    SCIP_CONS*        cons,          /**< constraint belonging to the hyperegde */
    int*              cost           /**< pointer storing the hyperedge cost */
    )
-{
+{ /*lint --e{715}*/
    *cost = detectordata->consWeight;
 
    return SCIP_OKAY;
@@ -230,6 +226,7 @@ static SCIP_RETCODE buildGraphStructure(
 
       for(j = 0; j < ncurvars; ++j)
       {
+         assert(curvars != NULL);
          if( SCIPisVarRelevant(curvars[j]) )
          {
             valid = TRUE;
@@ -294,9 +291,10 @@ SCIP_RETCODE callMetis(
 
    nvertices = detectordata->nvertices;
    nhyperedges = detectordata->nhyperedges;
-   ndummyvertices = detectordata->dummynodes*nvertices;
+   /*lint --e{524}*/
+   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices); 
 
-   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
    {
       SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
@@ -332,7 +330,10 @@ SCIP_RETCODE callMetis(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         int ind = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
+         int ind;
+         assert(curvars != NULL);
+         ind = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
+
          assert(ind < SCIPgetNVars(scip));
          if( ind >= 0)
             SCIPinfoMessage(scip, file, "%d ", ind + 1 );
@@ -351,7 +352,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if(!SCIPisInfinity(scip, remainingtime))
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f; hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f; hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -362,7 +363,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -425,7 +426,7 @@ SCIP_RETCODE callMetis(
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d",tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d",tempfile, detectordata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;
@@ -596,6 +597,8 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          SCIP_VAR* var;
          long int varblock;
+         assert(curvars != NULL);
+
          if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
@@ -680,6 +683,7 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          size_t block;
          assert(detectordata->blocks >= 0);
+         /*lint --e{732} */
          block = detectordata->blocks +1;
          linkingconss[nlinkingconss] = conss[i];
          ++nlinkingconss;
