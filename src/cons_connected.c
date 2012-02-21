@@ -122,15 +122,18 @@ SCIP_Bool isConsMaster(
    vals = NULL;
    if( nvars > 0)
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &vals, nvars) );
-      SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
-      SCIP_CALL( SCIPgetValsXXX(scip, cons, vals, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
    }
 
    /* check vars and vals for integrality */
    for(i = 0; i < nvars && relevant; ++i)
    {
+      assert(vars != NULL);
+      assert(vals != NULL);
+
       if( !SCIPvarIsIntegral(vars[i]) && !SCIPvarIsBinary(vars[i]) )
       {
          SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
@@ -781,7 +784,6 @@ SCIP_RETCODE SCIPcreateConsConnected(
 
 
 /** returns whether a block diagonal structure was found */
-extern
 SCIP_Bool SCIPisMatrixBlockDiagonal(
    SCIP*                 scip                /**< SCIP data structure */
    )

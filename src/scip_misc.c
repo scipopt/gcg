@@ -42,6 +42,8 @@ SCIP_VAR* SCIPgetRelevantVariable(
    {
       return NULL;
    }
+
+   /*lint -e{788}*/
    switch (SCIPvarGetStatus(var))
    {
    case SCIP_VARSTATUS_AGGREGATED:

@@ -1035,7 +1035,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    newvardata->data.mastervardata.isray = solisray;
 
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0, INT_MAX /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */,
+   SCIP_CALL( SCIPcreateVar(scip, newvar, varname, 0.0, SCIPinfinity(scip), /* GCGrelaxGetNIdenticalBlocks(origprob, prob) */
          objcoeff, vartype, TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    /* count number of non-zeros */
@@ -1044,6 +1044,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    for( i = 0; i < nsolvars; i++ )
    {
       assert(solvars != NULL);
+      assert(solvals != NULL);
+
       if( !SCIPisZero(scip, solvals[i]) )
       {
          newvardata->data.mastervardata.norigvars++;
@@ -1078,6 +1080,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
       assert(solvars != NULL);
+      assert(solvals != NULL);
+
       if( !SCIPisZero(scip, solvals[i]) )
       {
          SCIP_VAR* origvar;

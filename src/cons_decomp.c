@@ -61,8 +61,6 @@
 struct SCIP_DecompositionScores
 {
    SCIP_Real borderscore;              /**< score of the border */
-   SCIP_Real minkequicutscore;         /**< minimal k-equi cut score */
-   SCIP_Real equicutscorenormalized;   /**< normalized equi-cut score */
    SCIP_Real densityscore;             /**< score of block densities */
    SCIP_Real linkingscore;             /**< score related to interlinking blocks */
    SCIP_Real totalscore;               /**< accumulated score */
@@ -81,7 +79,6 @@ struct SCIP_ConshdlrData
    DEC_DETECTOR** detectors;           /**< array of structure detectors */
    int*           priorities;          /**< priorities of the detectors */
    int            ndetectors;          /**< number of detectors */
-   int            usedetection;        /**< flag to indicate whether to detect or not */
    SCIP_CLOCK*    detectorclock;       /**< clock to measure detection time */
    SCIP_Bool      hasrun;              /**< flag to indicate whether we have already detected */
    int            ndecomps;            /**< number of decomposition structures  */
@@ -269,15 +266,17 @@ SCIP_RETCODE evaluateDecomposition(
    case DEC_DECTYPE_DIAGONAL:
       score->totalscore = 0.0;
       break;
+   case DEC_DECTYPE_STAIRCASE:
+      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
+      assert(FALSE);
+      break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
       assert(FALSE);
-      score->totalscore = 0.0;
       break;
    default:
       SCIPerrorMessage("No rule for this decomposition type, cannot compute score");
       assert(FALSE);
-      score->totalscore = 0.0;
       break;
    }
 
@@ -796,10 +795,11 @@ SCIP_RETCODE DECdetectStructure(
             SCIPdebugPrintf("we have %d decompositions!\n", ndecdecomps);
             for (j = 0; j < ndecdecomps; ++j)
             {
+               assert(decdecomps != NULL);
                DECdecdecompSetDetector(decdecomps[j], detector);
             }
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+ndecdecomps) );
-            BMScopyMemoryArray(&conshdlrdata->decdecomps[conshdlrdata->ndecomps], decdecomps, ndecdecomps);
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
+            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps);
             SCIPfreeMemoryArray(scip, &decdecomps);
             conshdlrdata->ndecomps += ndecdecomps;
          }
@@ -882,7 +882,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       else
          decchar = detector->decchar;
 
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s\0", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
 
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }

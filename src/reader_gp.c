@@ -87,7 +87,7 @@ SCIP_RETCODE writeDecompositionHeader(
    assert(scip != NULL);
    assert(file != NULL);
    assert(decdecomp != NULL);
-   if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
+   if(decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
    {
       return SCIP_OKAY;
    }
@@ -231,6 +231,8 @@ SCIP_RETCODE writeData(
 
       for( j = 0; j < nvars; j++)
       {
+         assert(vars != NULL);
+
          /* if the problem has been created, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
@@ -312,6 +314,7 @@ SCIP_DECL_READERFREE(readerFreeGp)
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
+   /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
    assert(scip != NULL);
 

@@ -46,10 +46,6 @@
  */
 #define BLK_MAX_LINELEN       65536
 #define BLK_MAX_PUSHEDTOKENS  2
-#define BLK_INIT_COEFSSIZE    8192
-#define BLK_MAX_PRINTLEN      561       /**< the maximum length of any line is 560 + '\\0' = 561*/
-#define BLK_MAX_NAMELEN       256       /**< the maximum length for any name is 255 + '\\0' = 256 */
-#define BLK_PRINTLEN          100
 
 /** Section in BLK File */
 enum BlkSection
@@ -687,8 +683,8 @@ SCIP_RETCODE readBLKFile(
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadBlk)
-{
-   SCIP_CALL( SCIPreadBlk(scip, reader, filename, result) );
+{  /*lint --e{715} */
+   SCIP_CALL( SCIPreadBlk(scip, filename, result) );
 
    return SCIP_OKAY;
 }
@@ -727,7 +723,6 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 /* reads problem from file */
 SCIP_RETCODE SCIPreadBlk(
    SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    )
