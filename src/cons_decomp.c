@@ -865,7 +865,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
    /** @todo: This is a giant hack, but it works quite well */
@@ -882,7 +882,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       else
          decchar = detector->decchar;
 
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s\0", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s\0", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
 
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }

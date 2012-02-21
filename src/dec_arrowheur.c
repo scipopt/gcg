@@ -603,7 +603,7 @@ SCIP_RETCODE callMetis(
    nvertices = detectordata->nvertices;
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
 
-   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
    {
       SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
@@ -645,7 +645,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -656,7 +656,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -714,7 +714,7 @@ SCIP_RETCODE callMetis(
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;

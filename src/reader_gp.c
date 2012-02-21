@@ -350,14 +350,14 @@ SCIP_RETCODE SCIPwriteGp(
       writeDecomposition = FALSE;
    }
    /* sanitize filename */
-   SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
    /* print header */
    if(decdecomp == NULL)
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", name, decdecomp->nblocks);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", name, decdecomp->nblocks);
 
    SCIP_CALL( writeFileHeader(scip, file, outname) );
 

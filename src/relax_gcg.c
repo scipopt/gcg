@@ -1452,7 +1452,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit));
 
 #ifdef SCIP_DEBUG
-      SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->pricingprobs[i], name, "lp", FALSE) );
 #endif
 
