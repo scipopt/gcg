@@ -143,3 +143,14 @@ v0902:
 
 v0903:
 - fix a vardata creation bug
+- copy cuts in LNS heuristics correctly
+- nicer decomposition output
+- decompositions from multiple detectors are compared in cons_decomp.h
+- added block diagonal detection code, GCG solves these more intelligently
+- added detection of standard problems to block detection code
+- refactored source
+- fixed bugs related to presolving
+- fixed bugs related to linking variables
+- cleaned up detector interface
+- fixed bugs in Ryan-Foster branching
+- fixed documentation
