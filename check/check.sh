@@ -172,13 +172,17 @@ do
 #            echo write genproblem cipreadparsetest.cip >> $TMPFILE
 #            echo read cipreadparsetest.cip         >> $TMPFILE
 #	    echo read $blkfile                     >> $TMPFILE
-#            echo optimize                          >> $TMPFILE
-#            echo display statistics                >> $TMPFILE
-#           echo display solution                  >> $TMPFILE
-#            echo checksol                          >> $TMPFILE
-	    echo presolve                          >> $TMPFILE
-	    echo detect                            >> $TMPFILE
-	    echo \write prob ..\/cutpacking\/$base.gp                        >> $TMPFILE
+	    if test $MODE = "detect"
+            then
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		echo \write prob ..\/cutpacking\/$base.gp >> $TMPFILE
+	    else
+		echo optimize                      >> $TMPFILE
+#            echo display solution                  >> $TMPFILE
+		echo checksol                      >> $TMPFILE
+	    fi
+            echo display statistics            >> $TMPFILE
             echo quit                              >> $TMPFILE
             echo -----------------------------
             date

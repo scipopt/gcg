@@ -20,6 +20,7 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+#include "type_decomp.h"
 
 /** creates the gcg relaxator and includes it in SCIP */
 extern
@@ -55,7 +56,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
-/** perform popagation method of the given branchrule for the given branchdata */
+/** perform propagation method of the given branchrule for the given branchdata */
 extern
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -81,20 +82,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
    );
 
-/** creates a variable in a pricing problem corresponding to the given original variable (belonging to exactly one block) */
-extern
-SCIP_RETCODE GCGrelaxCreatePricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding variable in the original program */
-   );
-
-/** creates a variable in each of the pricing problems linked by given original variable */
-extern
-SCIP_RETCODE GCGrelaxCreateLinkingPricingVars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             origvar             /**< corresponding linking variable in the original program */
-   );
-
 /** creates the data for a variable of the original program */
 extern
 SCIP_RETCODE GCGrelaxCreateOrigVardata(
@@ -118,50 +105,45 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    );
 
 
-/* sets the number of the block, the given original variable belongs to */
-extern
-SCIP_RETCODE GCGrelaxSetOriginalVarBlockNr(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var,                /**< variable to set the block number for */
-   int                   blocknr             /**< number of the block, the variable belongs to */
-   );
-
-/* marks the constraint to be a master constraint */
+/** marks the constraint to be a master constraint */
 extern
 SCIP_RETCODE GCGrelaxMarkConsMaster(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
    );
 
-/* returns the master problem */
+/** returns the master problem */
 extern
 SCIP* GCGrelaxGetMasterprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the pricing problem of the given number */
+/** returns the pricing problem of the given number */
 extern
 SCIP* GCGrelaxGetPricingprob(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
-/* returns the number of pricing problems */
+/** returns the number of pricing problems */
 extern
 int GCGrelaxGetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/* sets the number of pricing problems */
-void GCGrelaxSetNPricingprobs(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   npricingprobs       /**< the number of pricing problems */
    );
 
 /** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
  *  another and represented by it */
 extern
 SCIP_Bool GCGrelaxIsPricingprobRelevant(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   pricingprobnr       /**< number of the pricing problem */
+   );
+
+/**
+ *  for a given block, return the block by which it is represented
+ */
+extern
+int GCGrelaxGetBlockRepresentative(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
@@ -174,26 +156,26 @@ int GCGrelaxGetNIdenticalBlocks(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
-/* returns the number of constraints in the master problem */
+/** returns the number of constraints in the master problem */
 extern
 int GCGrelaxGetNMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the contraints in the master problem */
+/** returns the contraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* returns the contraints in the original problem that correspond to the constraints in the master problem */
+/** returns the contraints in the original problem that correspond to the constraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 
-/* returns the linear counterpart of the contraints in the original problem that correspond
+/** returns the linear counterpart of the contraints in the original problem that correspond
  * to the constraints in the master problem */
 extern
 SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
@@ -294,17 +276,28 @@ void GCGrelaxPrintVar(
    SCIP_VAR*             var                 /**< variable that shpuld be printed */
    );
 
-/* returns the stored primal solution of the original problem  */
+/** returns the stored primal solution of the original problem  */
 extern
 SCIP_SOL* GCGrelaxGetOrigPrimalSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/* sets the stored primal solution of the original problem  */
+/** sets the stored primal solution of the original problem  */
 extern
 void GCGrelaxSetOrigPrimalSol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             sol                 /**< solution */
+   );
+
+/** sets the structure information */
+void GCGsetStructDecdecomp(
+   SCIP*       scip,       /**< SCIP data structure */
+   DECDECOMP*  decdecomp   /**< decomposition data structure */
+   );
+
+/** gets the structure information */
+DECDECOMP* GCGgetStructDecdecomp(
+   SCIP*       scip        /**< SCIP data structure */
    );
 
 #endif

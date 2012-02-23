@@ -10,7 +10,6 @@
 //#define SCIP_DEBUG
 /**@file   reader_blk.c
  * @brief  BLK file reader
- * @ingroup FILEREADERS
  * @author Gerald Gamrath
  *
  */
@@ -47,10 +46,6 @@
  */
 #define BLK_MAX_LINELEN       65536
 #define BLK_MAX_PUSHEDTOKENS  2
-#define BLK_INIT_COEFSSIZE    8192
-#define BLK_MAX_PRINTLEN      561       /**< the maximum length of any line is 560 + '\\0' = 561*/
-#define BLK_MAX_NAMELEN       256       /**< the maximum length for any name is 255 + '\\0' = 256 */
-#define BLK_PRINTLEN          100
 
 /** Section in BLK File */
 enum BlkSection
@@ -59,6 +54,7 @@ enum BlkSection
 };
 typedef enum BlkSection BLKSECTION;
 
+/** exponent indicator of the a value */
 enum BlkExpType
 {
    BLK_EXP_NONE, BLK_EXP_UNSIGNED, BLK_EXP_SIGNED
@@ -69,18 +65,18 @@ typedef enum BlkExpType BLKEXPTYPE;
 /** BLK reading data */
 struct BlkInput
 {
-   SCIP_FILE*           file;
-   char                 linebuf[BLK_MAX_LINELEN];
-   char*                token;
-   char*                tokenbuf;
-   char*                pushedtokens[BLK_MAX_PUSHEDTOKENS];
-   int                  npushedtokens;
-   int                  linenumber;
-   int                  linepos;
-   int                  nblocks;
-   int                  blocknr;
-   BLKSECTION           section;
-   SCIP_Bool            haserror;
+   SCIP_FILE* file;                          /**< file to read */
+   char linebuf[BLK_MAX_LINELEN];            /**< line buffer */
+   char* token;                              /**< current token */
+   char* tokenbuf;                           /**< token buffer */
+   char* pushedtokens[BLK_MAX_PUSHEDTOKENS]; /**< token stack */
+   int npushedtokens;                        /**< size of token buffer */
+   int linenumber;                           /**< current line number */
+   int linepos;                              /**< current line position (column) */
+   int nblocks;                              /**< number of blocks */
+   int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
+   BLKSECTION section;                       /**< current section */
+   SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
 };
 typedef struct BlkInput BLKINPUT;
 
@@ -99,7 +95,7 @@ static const char commentchars[] = "\\";
 static
 void syntaxError(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*              blkinput,            /**< BLK reading data */
+   BLKINPUT*              blkinput,          /**< BLK reading data */
    const char*           msg                 /**< error message */
    )
 {
@@ -539,7 +535,7 @@ SCIP_RETCODE readNBlocks(
          if( blkinput->nblocks == -1 )
          {
             blkinput->nblocks = nblocks;
-            GCGrelaxSetNPricingprobs(scip, nblocks);
+            //GCGrelaxSetNPricingprobs(scip, nblocks);
          }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
@@ -577,7 +573,7 @@ SCIP_RETCODE readBlock(
       }
 
       /* set the block number of the variable to the number of the current block */
-      SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
+      // SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
    }
 
    return SCIP_OKAY;
@@ -610,7 +606,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          /* set the block number of the variable to the number of the current block */
-         SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
+         // SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
       }
    }
 
@@ -687,8 +683,8 @@ SCIP_RETCODE readBLKFile(
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadBlk)
-{
-   SCIP_CALL( SCIPreadBlk(scip, reader, filename, result) );
+{  /*lint --e{715} */
+   SCIP_CALL( SCIPreadBlk(scip, filename, result) );
 
    return SCIP_OKAY;
 }
@@ -698,6 +694,7 @@ SCIP_DECL_READERREAD(readerReadBlk)
 static
 SCIP_DECL_READERWRITE(readerWriteBlk)
 {
+ /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -726,7 +723,6 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 /* reads problem from file */
 SCIP_RETCODE SCIPreadBlk(
    SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    )

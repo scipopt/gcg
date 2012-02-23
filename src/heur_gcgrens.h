@@ -11,6 +11,8 @@
 /**@file   heur_gcgrens.h
  * @brief  GCG RENS primal heuristic
  * @author Timo Berthold
+ * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -40,8 +42,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_Longint          maxnodes,           /**< maximum number of  nodes for the subproblem                    */
    SCIP_Longint          nstallnodes,        /**< number of stalling nodes for the subproblem                    */
    SCIP_Bool             binarybounds,       /**< should general integers get binary bounds [floor(.),ceil(.)]?  */
-   SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
-   SCIP_Bool             usegcg              /**< should the subproblem be solved with GCG as well?              */
+   SCIP_Bool             uselprows           /**< should subproblem be created out of the rows in the LP rows?   */
    );
 
 #ifdef __cplusplus

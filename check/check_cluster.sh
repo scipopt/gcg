@@ -50,6 +50,7 @@ PPN=${16}
 CLIENTTMPDIR=${17}
 NOWAITCLUSTER=${18}
 EXCLUSIVE=${19}
+MODE='solve'
 
 # check all variables defined
 if [ -z ${EXCLUSIVE} ]
@@ -124,7 +125,7 @@ then
 fi
 
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
-touch $EVALFILE
+echo > $EVALFILE
 
 # counter to define file names for a test set uniquely 
 COUNT=1
@@ -194,10 +195,18 @@ do
       echo set save $SETFILE                 >> $TMPFILE
       echo read $SCIPPATH/$i                 >> $TMPFILE
 #  echo presolve                         >> $TMPFILE
-      echo optimize                          >> $TMPFILE
-      echo display statistics                >> $TMPFILE
+      if test $MODE = "detect"
+      then
+	  echo presolve                      >> $TMPFILE
+	  echo detect                        >> $TMPFILE
+	  echo display statistics            >> $TMPFILE
+	  echo presolve                      >> $TMPFILE
+      else
+	  echo optimize                      >> $TMPFILE
+	  echo display statistics            >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
-      echo checksol                          >> $TMPFILE
+	  echo checksol                      >> $TMPFILE
+      fi
       echo quit                              >> $TMPFILE
 
       # additional environment variables needed by runcluster.sh
@@ -210,20 +219,26 @@ do
       # check queue type
       if test  "$QUEUETYPE" = "srun"
       then
-	  srun --job-name=SCIP$TSTNAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
+	  srun --job-name=SCIP$SHORTFILENAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
       elif test  "$QUEUETYPE" = "bsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
-	  sed -i 's/$CLIENTTMPDIR/$TMP/' runcluster_tmp.sh
+	  TLIMIT=`expr $HARDTIMELIMIT / 60`
+	  sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
 	  sed -i "s,\$BASENAME,$BASENAME," runcluster_tmp.sh
 	  sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
 	  sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
+	  sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
+	  sed -i "s,\$SHORTFILENAME,$SHORTFILENAME," runcluster_tmp.sh
+	  sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
 	  sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
 #	  sed -i "s,,," runcluster_tmp.sh
-	  TLIMIT=`expr $HARDTIMELIMIT / 60`
+
 
 #	  less runcluster_aachen.sh
-	  bsub -J SCIP$TSTNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT < runcluster_tmp.sh &
+#	  bsub -J SCIP$SHORTFILENAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
+	  bsub -q $QUEUE -o error/out_$SHORTFILENAME_%I_%J.txt < runcluster_tmp.sh &
+#	  bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
       elif test  "$QUEUETYPE" = "qsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
@@ -233,7 +248,6 @@ do
 	  sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
 	  sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
 #	  sed -i "s,,," runcluster_tmp.sh
-
 #	  less runcluster_aachen.sh
 	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -N SCIP$SHORTFILENAME -o /dev/null -e /dev/null  runcluster_tmp.sh
 #	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -q $QUEUE -N SCIP$SHORTFILENAME  runcluster_tmp.sh

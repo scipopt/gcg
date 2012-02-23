@@ -144,8 +144,6 @@
 #include "dec_arrowheur.h"
 
 /* Christian's heuristics */
-#include "heur_clasfeaspump.h"
-#include "heur_colgenfeaspump.h"
 #include "heur_extremepoints.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
@@ -268,15 +266,13 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDispGcg(scip) );
 
    /* martin's decomp stuff */
-   SCIP_CALL(SCIPincludeReaderGp(scip));
-   SCIP_CALL(SCIPincludeConshdlrConnected(scip));
-   SCIP_CALL(SCIPincludeConshdlrDecomp(scip));
-   SCIP_CALL(SCIPincludeDetectionBorderheur(scip));
-   SCIP_CALL(SCIPincludeDetectionArrowheur(scip));
+   SCIP_CALL( SCIPincludeReaderGp(scip) );
+   SCIP_CALL( SCIPincludeConshdlrConnected(scip) );
+   SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
+   SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurColgenfeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurExtremepoints(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
@@ -285,8 +281,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
-   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-//   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );

@@ -20,10 +20,10 @@ pricing/masterpricer/maxvarsroundfarkas = 30
 
 # The maximal number of blocks
 # [type: int, range: [2,1000000], default: 10]
-arrowheur/maxblocks = 10
-arrowheur/priority = -1000
+detectors/arrowheur/maxblocks = 10
+detectors/arrowheur/priority = -1000
 
 # Unbalance factor for metis
 # [type: real, range: [0,1e+20], default: 5]
-arrowheur/ubfactor = 0.1
+detectors/arrowheur/ubfactor = 0.1
 

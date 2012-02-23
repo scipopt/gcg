@@ -138,7 +138,6 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 {
-   SCIP* origscip;
    SCIP_VAR** vars;
    SCIP_Real val1;
    SCIP_Real val2;
@@ -153,8 +152,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
+   assert(GCGpricerGetOrigprob(scip) != NULL);
 
    SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
@@ -208,14 +206,14 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
           * and the current master variable has different values for both of them, fix the variable to 0 */
          if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
          {
-            SCIPchgVarUb(scip, vars[i], 0.0);
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
          /* if branching enforces that both original vars must be in different mastervars, fix all
           * master variables to 0 that contain both */
-         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val1, 1.0) )
+         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val2, 1.0) )
          {
-            SCIPchgVarUb(scip, vars[i], 0.0);
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
       }
@@ -262,6 +260,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {
+   /*lint --e{715}*/
    SCIPdebugMessage("Execlp method of ryanfoster branching\n");
 //   printf("Execlp method of ryanfoster branching\n");
 
@@ -274,6 +273,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 {
+   /*lint --e{715}*/
    SCIP* masterscip;
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -315,9 +315,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    int norigvars1;
    SCIP_VAR** origvars1;
+   SCIP_Real* origvals1;
 
    int norigvars2;
    SCIP_VAR** origvars2;
+   SCIP_Real* origvals2;
 
 
    assert(branchrule != NULL);
@@ -330,7 +332,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* check whether the current original solution is integral */
+#ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+#else
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+#endif
    if( feasible )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n", SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
@@ -349,7 +355,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
     */
    ovar1 = NULL;
    ovar2 = NULL;
-
+   mvar1 = NULL;
    feasible = FALSE;
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
    {
@@ -357,11 +363,15 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       assert(GCGvarIsMaster(mvar1));
 
       origvars1 = GCGmasterVarGetOrigvars(mvar1);
+      origvals1 = GCGmasterVarGetOrigvals(mvar1);
       norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
 
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
          ovar1 = origvars1[o1];
+         if( SCIPisZero(scip,origvals1[o1]) )
+            continue;
+
          /* v1 contains o1, look for v2 */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
@@ -369,63 +379,66 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             assert(GCGvarIsMaster(mvar2));
 
             origvars2 = GCGmasterVarGetOrigvars(mvar2);
+            origvals2 = GCGmasterVarGetOrigvals(mvar2);
             norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
 
             contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
-               if( origvars2[j] == ovar1 )
+               if( origvars2[j] == ovar1 && !SCIPisZero(scip, origvals2[j]) )
                {
                   contained = TRUE;
                   break;
                }
             }
 
-            if(!contained)
+            if( !contained )
                continue;
 
             /* v2 also contains o1, now look for o2 */
             for( o2 = 0; o2 < norigvars1 && !feasible; o2++ )
             {
                ovar2 = origvars1[o2];
-               if( ovar2 == ovar1 )
+               if( ovar2 == ovar1 || SCIPisZero(scip, origvals1[o2]) )
                   continue;
 
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
-                  if( origvars2[j] == ovar2 )
+                  if( origvars2[j] == ovar2 && !SCIPisZero(scip, origvals2[j]) )
                   {
                      contained = TRUE;
                      break;
                   }
                }
 
+               /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
                if( contained )
                   continue;
 
                feasible = TRUE;
             }
 
-
+            /* @todo: cp: What is this if statement good for? */
             if( !feasible )
             {
                for( o2 = 0; o2 < norigvars2 && !feasible; o2++ )
                {
                   ovar2 = origvars2[o2];
-                  if( ovar2 == ovar1 )
+                  if( ovar2 == ovar1 || SCIPisZero(scip, origvals2[o2]) )
                      continue;
 
                   contained = FALSE;
                   for( j = 0; j < norigvars1; j++ )
                   {
-                     if( origvars1[j] == ovar2 )
+                     if( origvars1[j] == ovar2 && !SCIPisZero(scip, origvals1[j]) )
                      {
                         contained = TRUE;
                         break;
                      }
                   }
 
+                  /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
                   if( contained )
                      continue;
 
@@ -450,6 +463,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    assert(ovar1 != NULL);
    assert(ovar2 != NULL);
+   assert(mvar1 != NULL);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childsame, 0.0, SCIPgetLocalTransEstimate(scip)) );

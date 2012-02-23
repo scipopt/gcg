@@ -31,13 +31,6 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** sets the decomp structure for the given constraint handler */
-extern
-void SCIPconsConnectedSetDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
-   );
-
 /** creates and captures a connected constraint */
 extern
 SCIP_RETCODE SCIPcreateConsConnected(

@@ -8,31 +8,25 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_colgenfeaspump.h
- * @brief  column generation based feasibility pump primal heuristic
- * @author Christian Puchert
+/**@file   decomp.h
+ * @ingroup DECOMP
+ * @brief  private methods for working with decomp structures
+ * @author Martin Bergner
+ *
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#ifndef __SCIP_DECOMP_H__
+#define __SCIP_DECOMP_H__
 
-#ifndef __SCIP_HEUR_COLGENFEASPUMP_H__
-#define __SCIP_HEUR_COLGENFEASPUMP_H__
-
-
-#include "scip/scip.h"
-
+#include "type_decomp.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the colgenfeaspump primal heuristic and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeHeurColgenfeaspump(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif

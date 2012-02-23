@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_relaxcolsel.c
- * @ingroup PRIMALHEURISTICS
  * @brief  relaxation based column selection primal heuristic
  * @author Christian Puchert
  */
@@ -186,7 +185,7 @@ SCIP_RETCODE initializeStartsol(
             /* set master solution value to rounded down solution */
             SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
 
-            SCIPdebugMessage("  -> (block %d) selected master variable %s (%d times)\n",
+            SCIPdebugMessage("  -> (block %d) select master variable %s (%d times)\n",
                   block, SCIPvarGetName(mastervar), (int) roundval);
 
             for( j = 0; j < norigvars; ++j )
@@ -206,7 +205,7 @@ SCIP_RETCODE initializeStartsol(
                /* linking variables are treated differently; if the variable already has been assigned a value,
                 * one must check whether the value for the current block is the same (otherwise, the resulting
                 * solution will be infeasible in any case) */
-               if( GCGvarIsLinking(origvar))
+               if( GCGvarIsLinking(origvar) )
                {
                   SCIP_VAR** linkingpricingvars;
                   SCIP_Bool hasvalue;
@@ -253,11 +252,14 @@ SCIP_RETCODE initializeStartsol(
                   SCIP_VAR** origpricingvars;
                   int norigpricingvars;
 
+                  assert(GCGvarGetBlock(origvar) == block);
+
                   /* get the corresponding pricing variable */
                   pricingvar = GCGoriginalVarGetPricingVar(origvar);
                   assert(pricingvar != NULL);
                   assert(GCGvarIsPricing(pricingvar));
 
+                  /* get original variables represented by origvar */
                   norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                   origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
 
@@ -265,7 +267,7 @@ SCIP_RETCODE initializeStartsol(
                   for( k = 0; k < (int) roundval; ++k )
                   {
                      assert(blocknr[block] + k < norigpricingvars);
-                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block] + k], origvals[i]) );
+                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block] + k], origval) );
                   }
                }
             }
@@ -811,6 +813,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             SCIP_VAR* zeromastervar;
 
             /* fill the block with the zero solution */
+            zeromastervar = NULL;
             getZeroMastervar(scip, heurdata, i, &zeromastervar);
             if( zeromastervar != NULL )
             {
@@ -831,7 +834,11 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
        * also add the corresponding master solution */
       if( success && allblocksfull )
       {
+#ifdef SCIP_DEBUG
          SCIP_CALL( SCIPtrySol(scip, mastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+#else
+         SCIP_CALL( SCIPtrySol(scip, mastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+#endif
          if( !masterfeas )
          {
             SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");

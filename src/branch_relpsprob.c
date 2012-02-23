@@ -1046,7 +1046,9 @@ SCIP_RETCODE execRelpsprob(
    SCIP_BRANCHRULEDATA* branchruledata;
    BDCHGDATA* bdchgdata;
    SCIP_Real lpobjval;
+#ifndef NDEBUG
    SCIP_Real cutoffbound;
+#endif
 //   SCIP_Real bestsbdown;
 //   SCIP_Real bestsbup;
    SCIP_Real provedbound;
@@ -1078,8 +1080,9 @@ SCIP_RETCODE execRelpsprob(
 
    /* get current LP objective bound of the local sub problem and global cutoff bound */
    lpobjval = SCIPgetLocalLowerbound(scip);
+#ifndef NDEBUG
    cutoffbound = SCIPgetCutoffbound(scip);
-
+#endif
 //   bestsbdown = SCIP_INVALID;
 //   bestsbup = SCIP_INVALID;
 //   bestsbdownvalid = FALSE;

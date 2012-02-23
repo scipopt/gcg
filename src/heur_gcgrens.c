@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgrens.c
- * @ingroup PRIMALHEURISTICS
  * @brief  GCG RENS primal heuristic
  * @author Timo Berthold
  * @author Christian Puchert
@@ -42,19 +41,18 @@
 #define HEUR_USESSUBSCIP      TRUE      /**< does the heuristic use a secondary SCIP instance? */
 
 /* default values for RENS-specific plugins */
-#define DEFAULT_BINARYBOUNDS  TRUE      /* should general integers get binary bounds [floor(.),ceil(.)] ?      */
-#define DEFAULT_MAXNODES      5000LL    /* maximum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.5       /* minimum percentage of integer variables that have to be fixed       */
-#define DEFAULT_MINIMPROVE    0.01      /* factor by which RENS should at least improve the incumbent          */
-#define DEFAULT_MINNODES      500LL     /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_NODESOFS      500LL     /* number of nodes added to the contingent of the total nodes          */
-#define DEFAULT_NODESQUOT     0.1       /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_USELPROWS     TRUE      /* should subproblem be created out of the rows in the LP rows,
+#define DEFAULT_BINARYBOUNDS  TRUE      /**< should general integers get binary bounds [floor(.),ceil(.)] ?      */
+#define DEFAULT_MAXNODES      5000LL    /**< maximum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINFIXINGRATE 0.5       /**< minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_MINIMPROVE    0.01      /**< factor by which RENS should at least improve the incumbent          */
+#define DEFAULT_MINNODES      500LL     /**< minimum number of nodes to regard in the subproblem                 */
+#define DEFAULT_NODESOFS      500LL     /**< number of nodes added to the contingent of the total nodes          */
+#define DEFAULT_NODESQUOT     0.1       /**< subproblem nodes in relation to nodes of the original problem       */
+#define DEFAULT_USELPROWS     FALSE     /**< should subproblem be created out of the rows in the LP rows,
                                          * otherwise, the copy constructors of the constraints handlers are used */
-#define DEFAULT_COPYCUTS      TRUE      /* if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+#define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                          * of the original scip be copied to constraints of the subscip
                                          */
-#define DEFAULT_USEGCG        FALSE     /* should the subproblem be solved with GCG?                           */
 
 
 /*
@@ -73,10 +71,9 @@ struct SCIP_HeurData
    SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem       */
    SCIP_Bool             binarybounds;      /**< should general integers get binary bounds [floor(.),ceil(.)] ?      */
    SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?        */
-   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
-                                              *   to constraints in subproblem?
-                                              */
-   SCIP_Bool             usegcg;            /**< should the subproblem be solved with GCG?                           */
+   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                             *   to constraints in subproblem?
+                                             */
 };
 
 
@@ -285,8 +282,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_Longint          maxnodes,           /**< maximum number of  nodes for the subproblem                    */
    SCIP_Longint          nstallnodes,        /**< number of stalling nodes for the subproblem                    */
    SCIP_Bool             binarybounds,       /**< should general integers get binary bounds [floor(.),ceil(.)]?  */
-   SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
-   SCIP_Bool             usegcg              /**< should the subproblem be solved with GCG as well?              */
+   SCIP_Bool             uselprows           /**< should subproblem be created out of the rows in the LP rows?   */
    )
 {
    SCIP* subscip;                            /* the subproblem created by RENS                  */
@@ -323,88 +319,42 @@ SCIP_RETCODE SCIPapplyGcgrens(
    SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(subscip), SCIPcalcHashtableSize(5 * nvars)) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
 
-   if( usegcg )
-   {
-      if( uselprows )
-      {
-         char probname[SCIP_MAXSTRLEN];
-
-         /* copy all plugins */
-         SCIP_CALL( SCIPincludeGcgPlugins(subscip) );
-
-         /* get name of the original problem and add the string "_renssub" */
-         (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_renssub", SCIPgetProbName(scip));
-
-         /* create the subproblem */
-         SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-
-         /* copy all variables */
-         SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
-      }
-      else
-      {
-         SCIP_Bool valid;
-         SCIP_HEURDATA* heurdata;
-         
-         valid = FALSE;
-
-         SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "rens", TRUE, FALSE, &valid) );
-         
-         /* get heuristic's data */
-	      heurdata = SCIPheurGetData(heur);
-   	   assert( heurdata != NULL );
-         
-         if( heurdata->copycuts )
-      	{
-         	/** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-         	SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
-      	}
-      	
-         SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
-      }
-
-      // TODO: copy the matrix structure here
-      *result = SCIP_DIDNOTFIND;
-      return SCIP_OKAY;
-   }
-   else
+   if( uselprows )
    {
       char probname[SCIP_MAXSTRLEN];
 
       /* copy all plugins */
       SCIP_CALL( SCIPincludeDefaultPlugins(subscip) );
 
-      /* get name of the original problem and add the string "_renssub" */
-      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_renssub", SCIPgetProbName(scip));
+      /* get name of the original problem and add the string "_gcgrenssub" */
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_gcgrenssub", SCIPgetProbName(scip));
 
       /* create the subproblem */
       SCIP_CALL( SCIPcreateProb(subscip, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
       /* copy all variables */
       SCIP_CALL( SCIPcopyVars(scip, subscip, varmapfw, NULL, TRUE) );
+   }
+   else
+   {
+      SCIP_Bool valid;
+      SCIP_HEURDATA* heurdata;
 
-      /* if the lp rows are not used, also copy the constraints */
-      if( !uselprows )
+      valid = FALSE;
+
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, &valid) );
+
+      /* get heuristic's data */
+      heurdata = SCIPheurGetData(heur);
+      assert( heurdata != NULL );
+
+      if( heurdata->copycuts )
       {
-         SCIP_Bool valid;
-         SCIP_HEURDATA* heurdata;
-         
-         valid = FALSE;
-
-         SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
-         
-         /* get heuristic's data */
-	      heurdata = SCIPheurGetData(heur);
-   	   assert( heurdata != NULL );
-         
-         if( heurdata->copycuts )
-      	{
-         	/** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-         	SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
-      	}
-      
-         SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
+         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
       }
+
+      SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
    }
 
    for( i = 0; i < nvars; i++ )
@@ -685,7 +635,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    *result = SCIP_DIDNOTFIND;
 
    SCIP_CALL( SCIPapplyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
-         heurdata->maxnodes, nstallnodes, heurdata->binarybounds, heurdata->uselprows, heurdata->usegcg) );
+         heurdata->maxnodes, nstallnodes, heurdata->binarybounds, heurdata->uselprows) );
 
    return SCIP_OKAY;
 }
@@ -696,7 +646,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
  * primal heuristic specific interface methods
  */
 
-/** creates the rens primal heuristic and includes it in SCIP */
+/** creates RENS primal heuristic and includes it in SCIP */
 SCIP_RETCODE SCIPincludeHeurGcgrens(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -747,14 +697,10 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
-         
+
 	SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usegcg",
-         "should the subproblem be solved with GCG?",
-         &heurdata->usegcg, TRUE, DEFAULT_USEGCG, NULL, NULL) );
 
    return SCIP_OKAY;
 }

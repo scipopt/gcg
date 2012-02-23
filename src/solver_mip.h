@@ -24,7 +24,7 @@
 /** creates the mip solver for pricing problems and includes it in GCG */
 extern
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    );
 
 #endif

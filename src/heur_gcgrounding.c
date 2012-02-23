@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgrounding.c
- * @ingroup PRIMALHEURISTICS
  * @brief  LP rounding heuristic that tries to recover from intermediate infeasibilities
  * @author Tobias Achterberg
  * @author Christian Puchert
@@ -31,14 +30,14 @@
 #define HEUR_DESC             "LP rounding heuristic on original variables with infeasibility recovering"
 #define HEUR_DISPCHAR         'R'
 #define HEUR_PRIORITY         -1000
-#define HEUR_FREQ             1
+#define HEUR_FREQ             -1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      FALSE
 
-#define DEFAULT_SUCCESSFACTOR 100            /**< number of calls per found solution that are considered as standard success, 
-                                              * a higher factor causes the heuristic to be called more often 
+#define DEFAULT_SUCCESSFACTOR 100            /**< number of calls per found solution that are considered as standard success,
+                                              * a higher factor causes the heuristic to be called more often
                                               */
 
 
@@ -47,8 +46,8 @@ struct SCIP_HeurData
 {
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
-   int                   successfactor;      /**< number of calls per found solution that are considered as standard success, 
-                                              * a higher factor causes the heuristic to be called more often 
+   int                   successfactor;      /**< number of calls per found solution that are considered as standard success,
+                                              * a higher factor causes the heuristic to be called more often
                                               */
 };
 
@@ -413,7 +412,24 @@ SCIP_RETCODE selectEssentialRounding(
 #define heurCopyGcgrounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
-#define heurFreeGcgrounding NULL
+static
+SCIP_DECL_HEURFREE(heurFreeGcgrounding) /*lint --e{715}*/
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(heur != NULL);
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+   assert(scip != NULL);
+
+   /* free heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+   SCIPfreeMemory(scip, &heurdata);
+   SCIPheurSetData(heur, NULL);
+
+   return SCIP_OKAY;
+}
+
 
 
 /** initialization method of primal heuristic (called after problem was transformed) */

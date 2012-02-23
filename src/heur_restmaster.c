@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_restmaster.c
- * @ingroup PRIMALHEURISTICS
  * @brief  restricted master primal heuristic
  * @author Christian Puchert
  */
@@ -41,13 +40,13 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP
 #define HEUR_USESSUBSCIP      TRUE
 
-#define DEFAULT_MAXNODES      5000LL    /* maximum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.5       /* minimum percentage of integer variables that have to be fixed       */
-#define DEFAULT_MINIMPROVE    0.01      /* factor by which restricted master should at least improve the incumbent */
-#define DEFAULT_MINNODES      500LL     /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_NODESOFS      500LL     /* number of nodes added to the contingent of the total nodes          */
-#define DEFAULT_NODESQUOT     0.1       /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_USELPROWS     TRUE      /* should subproblem be created out of the rows in the LP rows,
+#define DEFAULT_MAXNODES      5000LL    /**< maximum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINFIXINGRATE 0.5       /**< minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_MINIMPROVE    0.01      /**< factor by which restricted master should at least improve the incumbent */
+#define DEFAULT_MINNODES      500LL     /**< minimum number of nodes to regard in the subproblem                 */
+#define DEFAULT_NODESOFS      500LL     /**< number of nodes added to the contingent of the total nodes          */
+#define DEFAULT_NODESQUOT     0.1       /**< subproblem nodes in relation to nodes of the original problem       */
+#define DEFAULT_USELPROWS     TRUE      /**< should subproblem be created out of the rows in the LP rows,
                                          * otherwise, the copy constructor of the constraints handlers are used*/
 
 
@@ -251,7 +250,11 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
 
    /* try to add new solution to origprob and free it immediately */
+#ifdef SCIP_DEBUG
    SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, success) );
+#else
+   SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+#endif
    SCIP_CALL( SCIPfreeSol(scip, &newmastersol) );
 
    SCIPfreeBufferArray(scip, &restmastervals);

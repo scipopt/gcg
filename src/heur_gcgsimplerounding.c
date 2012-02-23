@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgsimplerounding.c
- * @ingroup PRIMALHEURISTICS
  * @brief  simple and fast LP rounding heuristic
  * @author Tobias Achterberg
  * @author Christian Puchert
@@ -54,7 +53,6 @@ struct SCIP_HeurData
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-
 #define heurCopyGcgsimplerounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */

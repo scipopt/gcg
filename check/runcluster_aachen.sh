@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program and library             *
@@ -14,7 +14,12 @@
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 module switch intel gcc/4.6
-# check if tmp-path exists 
+
+#BSUB -J SCIP$SHORTFILENAME
+#BSUB -M $HARDMEMLIMIT
+#BSUB -W $TLIMIT
+
+# check if tmp-path exists
 if test ! -d $CLIENTTMPDIR
 then
     echo Skipping test since the path for the tmp-dir does not exist.
@@ -25,26 +30,36 @@ export ILOG_LICENSE_FILE=/home/mb322053/access.ilm
 OUTFILE=$CLIENTTMPDIR/$BASENAME.out
 ERRFILE=$CLIENTTMPDIR/$BASENAME.err
 TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
-cp /home/mb322053/bin/hmetis $CLIENTTMPDIR/
+
+#if test ! -f $CLIENTTMPDIR/hmetis
+#then
+#    cp /home/mb322053/bin/hmetis $CLIENTTMPDIR/
+#fi
+if test -f $CLIENTTMPDIR/hmetis
+then
+     rm $CLIENTTMPDIR/hmetis
+fi
+
+export PATH=$PATH:/home/mb322053/bin/
 cd $CLIENTTMPDIR
 
 uname -a                            > $OUTFILE
 uname -a                            > $ERRFILE
-echo "@01 $FILENAME ==========="      >> $OUTFILE 
-echo "@01 $FILENAME ==========="      >> $ERRFILE
+echo "@01 $FILENAME ==========="    >> $OUTFILE
+echo "@01 $FILENAME ==========="    >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE
 date                                >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date +"@03 %s"                      >> $OUTFILE
-$SOLVERPATH/../$BINNAME < $TMPFILE   >> $OUTFILE 2>>$ERRFILE
+$SOLVERPATH/../$BINNAME < $TMPFILE  >> $OUTFILE 2>>$ERRFILE
 date +"@04 %s"                      >> $OUTFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $ERRFILE
 echo                                >> $OUTFILE
-echo "=ready="                        >> $OUTFILE
+echo "=ready="                      >> $OUTFILE
 
 mv $OUTFILE $SOLVERPATH/results/$BASENAME.out
 mv $ERRFILE $SOLVERPATH/results/$BASENAME.err

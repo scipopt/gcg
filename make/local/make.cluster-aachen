@@ -15,7 +15,7 @@
 #
 # To get the result files call "./evalcheck_cluster.sh
 # results/check.$TSTNAME.$BINNMAE.$SETNAME.eval in directory check/
-# This leads to result files 
+# This leads to result files
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.out
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.res
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.err
@@ -24,9 +24,9 @@
 #  - PPN=8 means we need 8 core, therefore time measuring is possible if we use 1 node of queue "ib"
 #  - PPN=4 means we need 4 core, therefore time measuring is possible if we use 1 node of queue "gbe"
 #  - PPN=1 means we need one core, therefore time measuring is not possible
-QUEUETYPE       =        bsub
-QUEUE		=	 serial
-PPN		=	 1
+QUEUETYPE      =   bsub
+QUEUE		      =	 normal
+PPN	      	=	 1
 CLIENTTMPDIR	=	 ${TMP}
-EXCLUSIVE       =        notneeded
-NOWAITCLUSTER   =        1
+EXCLUSIVE      =   notneeded
+NOWAITCLUSTER  =   1

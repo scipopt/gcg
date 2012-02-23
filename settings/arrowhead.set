@@ -10,7 +10,7 @@ timing/clocktype = 2
 
 # maximal number of presolving rounds (-1: unlimited, 0: off)
 # [type: int, range: [-1,2147483647], default: -1]
-presolving/maxrounds = 0
+presolving/maxrounds = -1
 
 # maximal number of restarts (-1: unlimited)
 # [type: int, range: [-1,2147483647], default: -1]
@@ -20,14 +20,14 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/discretization = FALSE
 
-#detectors/arrowheur/minblocks = 2
-#detectors/arrowheur/maxblocks = 20
+detectors/arrowheur/minblocks = 2
+detectors/arrowheur/maxblocks = 5
+detectors/arrowheur/ubfactor = 0.1
+detectors/arrowheur/metisverbose = FALSE
+detectors/arrowheur/priority = 0
 
 detectors/borderheur/minblocks = 2
 detectors/borderheur/maxblocks = 20
 detectors/borderheur/ubfactor = 0.1
 detectors/borderheur/metisverbose = FALSE
-
-#detectors/arrowheur/ubfactor = 0.1
-detectors/arrowheur/metisverbose = FALSE
-#detectors/arrowheur/metisuseptyperb = TRUE
+detectors/borderheur/priority = 100
