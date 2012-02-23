@@ -163,7 +163,6 @@
 
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
-#include "dec_staircase.h"
 
 
 
@@ -295,7 +294,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* Friederike's */
    SCIP_CALL(SCIPincludeDetectionCutpacking(scip));
-   SCIP_CALL(SCIPincludeDetectionStaircase(scip));
 
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
