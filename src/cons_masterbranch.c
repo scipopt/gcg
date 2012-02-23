@@ -1953,7 +1953,7 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
 /** sets the origbranch constraint of the node in the master program corresponding to the node
     at which the given masterbranchbranch constraint is sticking */
 void GCGconsMasterbranchSetOrigcons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS* cons,           /**< constraint pointer */
    SCIP_CONS* origcons        /**< original origbranch constraint */
    )
 {

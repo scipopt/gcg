@@ -100,7 +100,7 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
     at which the given masterbranchbranch constraint is sticking */
 extern
 void GCGconsMasterbranchSetOrigcons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS* cons,           /**< constraint pointer */
    SCIP_CONS* origcons        /**< original origbranch constraint */
    );
 
