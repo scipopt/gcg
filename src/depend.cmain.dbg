@@ -596,7 +596,7 @@ $(OBJDIR)/heur_gcgcoefdiving.o: src/heur_gcgcoefdiving.c src/heur_gcgcoefdiving.
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  src/cons_origbranch.h src/type_branchgcg.h src/relax_gcg.h \
- src/type_decomp.h src/pub_gcgvar.h
+ src/type_decomp.h
 $(OBJDIR)/heur_gcgfracdiving.o: src/heur_gcgfracdiving.c src/heur_gcgfracdiving.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -1252,8 +1252,8 @@ $(OBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
- src/pricer_gcg.h src/type_solver.h src/relax_gcg.h src/type_branchgcg.h \
- src/type_decomp.h lib/scip/src/scip/scipdefplugins.h \
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
+ src/type_solver.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \

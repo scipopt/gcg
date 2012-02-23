@@ -111,12 +111,11 @@ struct SCIP_EventhdlrData
 /** the function initializes the condata data structure */
 static
 SCIP_RETCODE GCGconsMasterbranchCreateConsData(
-      SCIP* scip,                       /**< SCIP data structure*/
-      SCIP* origscip,                   /**< Original problem SCIP data structure*/
-      SCIP_CONSDATA * consdata,         /**< consdata to initialize*/
-      SCIP_CONSHDLRDATA * conshdlrData, /**< constraint handler data */
-      SCIP_CONS* cons                   /**< constraint for which the consdata is created */
-
+      SCIP*              scip,         /**< SCIP data structure*/
+      SCIP*              origscip,     /**< Original problem SCIP data structure*/
+      SCIP_CONSDATA*     consdata,     /**< consdata to initialize*/
+      SCIP_CONSHDLRDATA* conshdlrData, /**< constraint handler data */
+      SCIP_CONS*         cons          /**< constraint for which the consdata is created */
 )
 {
    SCIP_CONS* origcons;
@@ -1355,6 +1354,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 }
 
 
+/** enforcement method for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
 {
@@ -1363,6 +1363,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
    return SCIP_OKAY;
 }
 
+/** enforcement method for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
 {
@@ -1371,6 +1372,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
    return SCIP_OKAY;
 }
 
+/** check method for solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckMasterbranch)
 {
@@ -1379,6 +1381,7 @@ SCIP_DECL_CONSCHECK(consCheckMasterbranch)
    return SCIP_OKAY;
 }
 
+/** variable lock method */
 static
 SCIP_DECL_CONSLOCK(consLockMasterbranch)
 {
@@ -1655,7 +1658,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
 /** creates the handler for masterbranch constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
@@ -1703,12 +1706,12 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 }
 
 
-/** creates and captures a masterbranch constraint*/
+/** creates and captures a masterbranch constraint */
 SCIP_RETCODE GCGcreateConsMasterbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   SCIP_NODE*            node,
-   SCIP_CONS*            parentcons
+   SCIP*       scip,          /**< SCIP data structure */
+   SCIP_CONS** cons,          /**< pointer to hold the created constraint */
+   SCIP_NODE*  node,          /**< node at which the constraint should be created */
+   SCIP_CONS*  parentcons     /**< parent constraint */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -1796,7 +1799,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 /** returns the masterbranch constraint of the current node */
 SCIP_CONS* GCGconsMasterbranchGetActiveCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1820,9 +1823,9 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
 
 /** returns the stack and the number of elements on it */
 void GCGconsMasterbranchGetStack(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS***          stack,              /**< return value: pointer to the stack */
-   int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
+   SCIP*        scip,            /**< SCIP data structure */
+   SCIP_CONS*** stack,           /**< return value: pointer to the stack */
+   int*         nstackelements   /**< return value: pointer to int, for number of elements on the stack */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1845,7 +1848,7 @@ void GCGconsMasterbranchGetStack(
 
 /** returns the number of elements on the stack */
 int GCGconsMasterbranchGetNStackelements(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1867,7 +1870,7 @@ int GCGconsMasterbranchGetNStackelements(
 
 /** returns the branching data for a given masterbranch constraint */
 GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1880,7 +1883,7 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
 
 /** returns the node in the B&B tree at which the given masterbranch constraint is sticking */
 SCIP_NODE* GCGconsMasterbranchGetNode(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1894,7 +1897,7 @@ SCIP_NODE* GCGconsMasterbranchGetNode(
 /** returns the masterbranch constraint of the B&B father of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetParentcons(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1908,7 +1911,7 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
 /** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1922,7 +1925,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
 /** returns the masterbranch constraint of the second child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1936,7 +1939,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
 /** returns the origbranch constraint of the node in the original program corresponding to the node
     at which the given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetOrigcons(
-   SCIP_CONS*            cons
+   SCIP_CONS* cons            /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1950,8 +1953,8 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
 /** sets the origbranch constraint of the node in the master program corresponding to the node
     at which the given masterbranchbranch constraint is sticking */
 void GCGconsMasterbranchSetOrigcons(
-   SCIP_CONS*            cons,
-   SCIP_CONS*            origcons
+   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS* origcons        /**< original origbranch constraint */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1966,7 +1969,7 @@ void GCGconsMasterbranchSetOrigcons(
 
 /** checks the consistency of the masterbranch constraints in the problem */
 void GCGconsMasterbranchCheckConsistency(
-   SCIP*                 scip
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
