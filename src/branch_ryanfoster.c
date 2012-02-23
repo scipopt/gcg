@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //#define SCIP_DEBUG
 /**@file   branch_ryanfoster.c
- * @ingroup BRANCHINGRULES
  * @brief  branching rule for original problem in gcg implementing the Ryan and Foster branching scheme
  * @author Gerald Gamrath
  */
@@ -49,6 +48,7 @@ struct GCG_BranchData
  * Callback methods for enforcing branching constraints
  */
 
+/** callback activation method */
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
 {
@@ -107,6 +107,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback deactivation method */
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
 {
@@ -135,6 +136,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback propagation method */
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 {
@@ -230,6 +232,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback deletion method for branching data*/
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 {
@@ -547,7 +550,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
 /** branching execution method for not completely fixed pseudo solutions
  *
- * TODO: maybe we can remove this method */
+ * @todo maybe we can remove this method */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 {
