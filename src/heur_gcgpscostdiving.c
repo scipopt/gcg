@@ -95,7 +95,7 @@ struct SCIP_HeurData
  * local methods
  */
 
-/* get relaxation solution of root node (in original variables) */
+/** get relaxation solution of root node (in original variables) */
 static
 SCIP_RETCODE getRootRelaxSol(
       SCIP*        scip,
@@ -126,6 +126,7 @@ SCIP_RETCODE getRootRelaxSol(
    return SCIP_OKAY;
 }
 
+/** for a given variable, calculate its pseudo cost quotient */
 static
 void calcPscostQuot(
    SCIP*                 scip,               /**< SCIP data structure */
