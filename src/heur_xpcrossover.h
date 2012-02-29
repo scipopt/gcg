@@ -8,16 +8,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_extremepoints.h
- * @brief  extreme points crossover primal heuristic
+/**@file   heur_xpcrossover.h
+ * @brief  Extreme Point Crossover
  * @author Christian Puchert
  * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_EXTREMEPOINTS_H__
-#define __SCIP_HEUR_EXTREMEPOINTS_H__
+#ifndef __SCIP_HEUR_XPCROSSOVER_H__
+#define __SCIP_HEUR_XPCROSSOVER_H__
 
 
 #include "scip/scip.h"
@@ -26,9 +26,9 @@
 extern "C" {
 #endif
 
-/** creates the extreme points crossover primal heuristic and includes it in SCIP */
+/** creates the Extreme Point Crossover primal heuristic and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeHeurExtremepoints(
+SCIP_RETCODE SCIPincludeHeurXpcrossover(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
