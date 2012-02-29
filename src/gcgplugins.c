@@ -144,7 +144,6 @@
 #include "dec_arrowheur.h"
 
 /* Christian's heuristics */
-#include "heur_extremepoints.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
@@ -157,6 +156,7 @@
 #include "heur_gcgsimplerounding.h"
 #include "heur_gcgveclendiving.h"
 #include "heur_gcgzirounding.h"
+#include "heur_xpcrossover.h"
 #include "heur_xprins.h"
 
 
@@ -269,7 +269,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurExtremepoints(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
@@ -282,6 +281,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
+   SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );

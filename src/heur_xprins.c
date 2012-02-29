@@ -286,11 +286,12 @@ SCIP_RETCODE selectExtremePointsRandomized(
       solval = SCIPgetSolVal(masterprob, NULL, mastervar);
       block = GCGvarGetBlock(mastervar);
 
-      if( block >= 0 && !SCIPisZero(scip, solval) )
+      if( block >= 0 && !SCIPisFeasZero(scip, solval) )
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      *success &= npts[i] > nusedpts;
+      if( GCGrelaxIsPricingprobRelevant(scip, i) )
+         *success &= npts[i] > nusedpts;
 
    /* do not randomize if there are not enough points available */
    if( !*success )
@@ -311,8 +312,14 @@ SCIP_RETCODE selectExtremePointsRandomized(
    {
       for( i = 0; i < nblocks; ++i )
       {
+         int blockrep;
+
          SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
          SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
+
+         /* get representative of this block */
+         blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+         assert(blockrep >= 0 && blockrep <= i);
 
          /* get all relevant extreme points for this block */
          k = 0;
@@ -326,18 +333,18 @@ SCIP_RETCODE selectExtremePointsRandomized(
             solval = SCIPgetSolVal(masterprob, NULL, mastervar);
             block = GCGvarGetBlock(mastervar);
 
-            if( block == i && !SCIPisZero(scip, solval) )
+            if( block == blockrep && !SCIPisFeasZero(scip, solval) )
             {
-               assert(k < npts[i]);
+               assert(k < npts[blockrep]);
                blockpts[k] = j;
                ++k;
             }
          }
-         assert(k == npts[i]);
+         assert(k == npts[blockrep]);
 
          /* sort the extreme points */
-         SCIPsortRealInt(ptvals, blockpts, npts[i]);
-         lastpt = npts[i];
+         SCIPsortRealInt(ptvals, blockpts, npts[blockrep]);
+         lastpt = npts[blockrep];
 
          /* perform a random selection for this block */
          for( k = 0; k < nusedpts; ++k )
@@ -364,7 +371,6 @@ SCIP_RETCODE selectExtremePointsRandomized(
 //      }
 //      ++iters;
    }
-//   while( !*success && iters < 10 );
    *success = TRUE;
 
    /* free memory */

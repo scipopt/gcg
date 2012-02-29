@@ -8,8 +8,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_extremepoints.c
- * @brief  extreme points crossover primal heuristic
+/**@file   heur_xpcrossover.c
+ * @brief  Extreme Point Crossover
  * @author Christian Puchert
  */
 
@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "heur_extremepoints.h"
+#include "heur_xpcrossover.h"
 #include "pub_gcgvar.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
@@ -32,7 +32,7 @@
 #include "scip/scipdefplugins.h"
 
 
-#define HEUR_NAME             "extremepoints"
+#define HEUR_NAME             "xpcrossover"
 #define HEUR_DESC             "Extreme Point Crossover"
 #define HEUR_DISPCHAR         'X'
 #define HEUR_PRIORITY         -1100500
@@ -292,7 +292,7 @@ SCIP_RETCODE selectExtremePoints(
       assert(!SCIPisInfinity(scip, value));
 
       /* ignore irrelevant extreme points */
-      if( SCIPisZero(scip, value) )
+      if( SCIPisFeasZero(scip, value) )
          continue;
 
       /* ignore rays
@@ -354,7 +354,7 @@ SCIP_RETCODE selectExtremePoints(
       assert(!SCIPisInfinity(scip, value));
 
       /* ignore irrelevant extreme points */
-      if( SCIPisZero(scip, value) )
+      if( SCIPisFeasZero(scip, value) )
          continue;
 
       /* ignore rays
@@ -509,11 +509,12 @@ SCIP_RETCODE selectExtremePointsRandomized(
       solval = SCIPgetSolVal(masterprob, NULL, mastervar);
       block = GCGvarGetBlock(mastervar);
 
-      if( block >= 0 && !SCIPisZero(scip, solval) )
+      if( block >= 0 && !SCIPisFeasZero(scip, solval) )
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      *success &= npts[i] > nusedpts;
+      if( GCGrelaxIsPricingprobRelevant(scip, i) )
+         *success &= npts[i] > nusedpts;
 
    /* do not randomize if there are not enough points available */
    if( !*success )
@@ -534,8 +535,14 @@ SCIP_RETCODE selectExtremePointsRandomized(
    {
       for( i = 0; i < nblocks; ++i )
       {
+         int blockrep;
+
          SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
          SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
+
+         /* get representative of this block */
+         blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+         assert(blockrep >= 0 && blockrep <= i);
 
          /* get all relevant extreme points for this block */
          k = 0;
@@ -549,18 +556,18 @@ SCIP_RETCODE selectExtremePointsRandomized(
             solval = SCIPgetSolVal(masterprob, NULL, mastervar);
             block = GCGvarGetBlock(mastervar);
 
-            if( block == i && !SCIPisZero(scip, solval) )
+            if( block == blockrep && !SCIPisFeasZero(scip, solval) )
             {
-               assert(k < npts[i]);
+               assert(k < npts[blockrep]);
                blockpts[k] = j;
                ++k;
             }
          }
-         assert(k == npts[i]);
+         assert(k == npts[blockrep]);
 
          /* sort the extreme points */
-         SCIPsortRealInt(ptvals, blockpts, npts[i]);
-         lastpt = npts[i];
+         SCIPsortRealInt(ptvals, blockpts, npts[blockrep]);
+         lastpt = npts[blockrep];
 
          /* perform a random selection for this block */
          for( k = 0; k < nusedpts; ++k )
@@ -1203,11 +1210,11 @@ void updateFailureStatistic(
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#define heurCopyExtremepoints NULL
+#define heurCopyXpcrossover NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_HEURFREE(heurFreeExtremepoints)
+SCIP_DECL_HEURFREE(heurFreeXpcrossover)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
@@ -1227,7 +1234,7 @@ SCIP_DECL_HEURFREE(heurFreeExtremepoints)
 
 /** initialization method of primal heuristic (called after problem was transformed) */
 static
-SCIP_DECL_HEURINIT(heurInitExtremepoints)
+SCIP_DECL_HEURINIT(heurInitXpcrossover)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
@@ -1255,7 +1262,7 @@ SCIP_DECL_HEURINIT(heurInitExtremepoints)
 
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
 static
-SCIP_DECL_HEUREXIT(heurExitExtremepoints)
+SCIP_DECL_HEUREXIT(heurExitXpcrossover)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
    POINTTUPLE* pointtuple;
@@ -1287,16 +1294,16 @@ SCIP_DECL_HEUREXIT(heurExitExtremepoints)
 
 
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
-#define heurInitsolExtremepoints NULL
+#define heurInitsolXpcrossover NULL
 
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#define heurExitsolExtremepoints NULL
+#define heurExitsolXpcrossover NULL
 
 
 /** execution method of primal heuristic */
 static
-SCIP_DECL_HEUREXEC(heurExecExtremepoints)
+SCIP_DECL_HEUREXEC(heurExecXpcrossover)
 {  /*lint --e{715}*/
 
    SCIP* masterprob;
@@ -1568,24 +1575,24 @@ SCIP_DECL_HEUREXEC(heurExecExtremepoints)
  * primal heuristic specific interface methods
  */
 
-/** creates the extreme points crossover primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurExtremepoints(
+/** creates the Extreme Point Crossover primal heuristic and includes it in SCIP */
+SCIP_RETCODE SCIPincludeHeurXpcrossover(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
 
-   /* create extreme points crossover primal heuristic data */
+   /* create Extreme Point Crossover primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
    /* include primal heuristic */
    SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
-         heurCopyExtremepoints, heurFreeExtremepoints, heurInitExtremepoints, heurExitExtremepoints,
-         heurInitsolExtremepoints, heurExitsolExtremepoints, heurExecExtremepoints,
+         heurCopyXpcrossover, heurFreeXpcrossover, heurInitXpcrossover, heurExitXpcrossover,
+         heurInitsolXpcrossover, heurExitsolXpcrossover, heurExecXpcrossover,
          heurdata) );
 
-   /* add extreme points crossover primal heuristic parameters */
+   /* add Extreme Point Crossover primal heuristic parameters */
 
    SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
          "number of nodes added to the contingent of the total nodes",
