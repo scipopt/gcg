@@ -11,6 +11,7 @@
 /**@file   branch_master.h
  * @brief  branching rule for master problem
  * @author Gerald Gamrath
+ * @ingroup BRANCHINGRULES
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
