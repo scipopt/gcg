@@ -31,6 +31,8 @@ function ceil(x) {
 BEGIN {
    timegeomshift = 10.0;
    solsgeomshift = 10.0;
+   quotgeomshift = 10.0;
+
    onlyinsolufile = 0;  # should only instances be reported that are included in the .solu file?
    onlyintestfile = 0;  # should only instances be reported that are included in the .test file?  TEMPORARY HACK!
    useshortnames = 1;   # should problem name be truncated to fit into column?
@@ -44,6 +46,7 @@ BEGIN {
    nprobs = 0;
    nmheurs = 0;
    noheurs = 0;
+   stottime = 0.0;
 
    nmheurs = split(masterheurs, mheurs, ",");
    noheurs = split(origheurs, oheurs, ",");
@@ -155,10 +158,14 @@ BEGIN {
             timegeom[i] = 0.0;
             callsgeom[i] = 0.0;
             foundgeom[i] = 0.0;
+            timequotgeom[i] = 0.0;
+            solquotgeom[i] = 0.0;
 
             shiftedtimegeom[i] = timegeomshift;
             shiftedcallsgeom[i] = solsgeomshift;
             shiftedfoundgeom[i] = solsgeomshift;
+            shiftedtimequotgeom[i] = quotgeomshift;
+            shiftedsolquotgeom[i] = quotgeomshift;
          }
 
          time[i] = $(NF-2);
@@ -202,6 +209,9 @@ BEGIN {
    }
 }
 
+# time
+/^  solving          :/ { tottime = $3 } 
+
 /^=ready=/ {
    if( (!onlyinsolufile || solstatus[prob] != "") &&
       (!onlyintestfile || intestfile[filename]) &&
@@ -218,26 +228,26 @@ BEGIN {
             {
                for( i = 1; i <= nmheurs; ++i )
                {
-                  tablehead01 = tablehead01"+-----------------";
+                  tablehead01 = tablehead01"+---------------------------";
                }
                tablehead02 = tablehead02"|";
-               for( i = 1; i <= floor((18 * nmheurs - 15) / 2); ++i )
+               for( i = 1; i <= floor((28 * nmheurs - 15) / 2); ++i )
                   tablehead02 = tablehead02" ";
                tablehead02 = tablehead02"Master problem";
-               for( i = 1; i <= ceil((18 * nmheurs - 15) / 2); ++i )
+               for( i = 1; i <= ceil((28 * nmheurs - 15) / 2); ++i )
                   tablehead02 = tablehead02" ";
             }
             if( noheurs >= 1 )
             {
                for( i = 1; i <= noheurs; ++i )
                {
-                  tablehead01 = tablehead01"+-----------------";
+                  tablehead01 = tablehead01"+---------------------------";
                }
                tablehead02 = tablehead02"|";
-               for( i = 1; i <= floor((18 * noheurs - 17) / 2); ++i )
+               for( i = 1; i <= floor((28 * noheurs - 17) / 2); ++i )
                   tablehead02 = tablehead02" ";
                tablehead02 = tablehead02"Original problem";
-               for( i = 1; i <= ceil((18 * noheurs - 17) / 2); ++i )
+               for( i = 1; i <= ceil((28 * noheurs - 17) / 2); ++i )
                   tablehead02 = tablehead02" ";
             }
             tablehead01 = tablehead01"+\n";
@@ -254,9 +264,9 @@ BEGIN {
 
          for( i = 1; i <= nheurs; ++i )
          {
-            tablehead1 = tablehead1"-----------------+";
-            tablehead2 = sprintf("%s%-17s|", tablehead2, heurs[i]);
-            tablehead3 = tablehead3"-----------------+";
+            tablehead1 = tablehead1"---------------------------+";
+            tablehead2 = sprintf("%s%-17s          |", tablehead2, heurs[i]);
+            tablehead3 = tablehead3"---------------------------+";
          }
          if( nheurs > 1 )
          {
@@ -284,9 +294,13 @@ BEGIN {
       if( !onlypresolvereductions || origcons > cons || origvars > vars )
       {
          printf("%-18s ", shortprob);
+         stottime += tottime;
 
          for( i = 1; i <= nheurs; ++i )
          {
+            timequot = time[i] / max(tottime,1.0);
+            solquot = found[i] / max(calls[i],1.0);
+
             stime[i] += time[i];
             scalls[i] += calls[i];
             sfound[i] += found[i];
@@ -294,16 +308,20 @@ BEGIN {
             timegeom[i] = timegeom[i]^((nprobs-1)/nprobs) * max(time[i], 1.0)^(1.0/nprobs);
             callsgeom[i] = callsgeom[i]^((nprobs-1)/nprobs) * max(calls[i], 1.0)^(1.0/nprobs);
             foundgeom[i] = foundgeom[i]^((nprobs-1)/nprobs) * max(found[i], 1.0)^(1.0/nprobs);
+            timequotgeom[i] = timequotgeom[i]^((nprobs-1)/nprobs) * max(timequot, 1.0)^(1.0/nprobs);
+            solquotgeom[i] = solquotgeom[i]^((nprobs-1)/nprobs) * max(solquot, 1.0)^(1.0/nprobs);
 
             shiftedtimegeom[i] = shiftedtimegeom[i]^((nprobs-1)/nprobs) * max(time[i]+timegeomshift, 1.0)^(1.0/nprobs);
             shiftedcallsgeom[i] = shiftedcallsgeom[i]^((nprobs-1)/nprobs) * max(calls[i]+solsgeomshift, 1.0)^(1.0/nprobs);
             shiftedfoundgeom[i] = shiftedfoundgeom[i]^((nprobs-1)/nprobs) * max(found[i]+solsgeomshift, 1.0)^(1.0/nprobs);
+            shiftedtimequotgeom[i] = shiftedtimequotgeom[i]^((nprobs-1)/nprobs) * max(timequot+quotgeomshift, 1.0)^(1.0/nprobs);
+            shiftedsolquotgeom[i] = shiftedsolquotgeom[i]^((nprobs-1)/nprobs) * max(solquot+quotgeomshift, 1.0)^(1.0/nprobs);
 
             alltime += time[i];
             allcalls += calls[i];
             allfound += found[i];
 
-            printf("%7.1f/%4d/%4d ", time[i], calls[i], found[i]);
+            printf("%7.1f/%4d/%4d %4.1f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
          }
 
          if( nheurs > 1 )
@@ -330,6 +348,8 @@ END {
       shiftedtimegeom[i] -= timegeomshift;
       shiftedcallsgeom[i] -= solsgeomshift;
       shiftedfoundgeom[i] -= solsgeomshift;
+      shiftedtimequotgeom[i] -= quotgeomshift;
+      shiftedsolquotgeom[i] -= quotgeomshift;
    }
 
    alltime = 0;
@@ -338,7 +358,7 @@ END {
 
    printf("------------------+");
    for( i = 1; i <= nheurs; ++i )
-      printf("-----------------+");
+      printf("---------------------------+");
    if( nheurs > 1)
       printf("---------------------+");
    printf("-------------------+-------------------\n");
@@ -346,7 +366,7 @@ END {
    printf("Total (%4d)       ", nprobs);
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d ", stime[i], scalls[i], sfound[i]);
+      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
 
       alltime += stime[i];
       allcalls += scalls[i];
@@ -362,14 +382,14 @@ END {
    printf("Geom. Mean         ");
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d ", timegeom[i], callsgeom[i], foundgeom[i]);
+      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", timegeom[i], callsgeom[i], foundgeom[i], timequotgeom[i], solquotgeom[i]);
    }
    printf("                   \n");
 
    printf("Shifted Mean       ");
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i]);
+      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i], shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
    }
    printf("                   \n");
    printf("\n");
