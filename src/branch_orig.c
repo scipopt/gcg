@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //#define SCIP_DEBUG
 /**@file   branch_orig.c
- * @ingroup BRANCHINGRULES
  * @brief  branching rule for original problem in gcg
  * @author Gerald Gamrath
  */
@@ -66,7 +65,7 @@ struct GCG_BranchData
 };
 
 
-
+/** branches on a given variable */
 static
 SCIP_RETCODE branchVar(
    SCIP*                 scip,               /** SCIP data structure */
@@ -416,6 +415,7 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
 #define branchDeactiveMasterOrig NULL
 #define branchPropMasterOrig NULL
 
+/** callback activation method */
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
@@ -452,7 +452,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    return SCIP_OKAY;
 }
 
-
+/** callback solved method */
 static
 GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
 {
@@ -474,6 +474,7 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    return SCIP_OKAY;
 }
 
+/** callback deletion method for branching data */
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 {
@@ -639,7 +640,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
  * branching specific interface methods
  */
 
-/** creates the most branching on original variables braching rule and includes it in SCIP */
+/** creates the branching on original variable branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
