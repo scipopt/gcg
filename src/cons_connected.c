@@ -23,9 +23,7 @@
 #include "cons_connected.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
-#include "scip/clock.h"
 #include "pub_decomp.h"
-#include "cons_decomp.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "connected"
@@ -619,7 +617,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
 
       SCIP_CALL( SCIPstopClock(scip, conshdlrdata->clock) );
 
-      SCIPdebugMessage("Detection took %fs.\n", SCIPclockGetTime(conshdlrdata->clock));
+      SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, conshdlrdata->clock));
       if(result == SCIP_SUCCESS)
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", conshdlrdata->nblocks);

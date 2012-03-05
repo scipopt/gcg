@@ -18,9 +18,8 @@
 #ifndef __SCIP_CONS_CONNECTED_H__
 #define __SCIP_CONS_CONNECTED_H__
 
-
 #include "scip/scip.h"
-#include "type_decomp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

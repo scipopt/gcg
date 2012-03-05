@@ -2551,10 +2551,10 @@ $(OBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_detector.h src/type_decomp.h src/reader_gp.h src/reader_ref.h \
- src/reader_dec.h src/cons_connected.h src/relax_gcg.h \
- src/type_branchgcg.h src/struct_detector.h src/scip_misc.h \
- lib/scip/src/scip/clock.h src/pub_gcgvar.h src/pub_decomp.h
+ src/type_detector.h src/type_decomp.h src/cons_connected.h \
+ src/relax_gcg.h src/type_branchgcg.h src/struct_detector.h \
+ src/scip_misc.h lib/scip/src/scip/clock.h src/pub_gcgvar.h \
+ src/pub_decomp.h
 $(OBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/pub_decomp.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/type_var.h lib/scip/src/scip/type_cons.h \
@@ -2753,8 +2753,8 @@ $(OBJDIR)/cons_connected.o: src/cons_connected.c src/cons_connected.h \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_decomp.h src/cons_decomp.h src/type_detector.h src/scip_misc.h \
- lib/scip/src/scip/clock.h src/pub_decomp.h
+ src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
+ src/pub_decomp.h
 $(OBJDIR)/gcggithash.o: src/gcggithash.c src/gcggithash.h src/githash.c
 $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
