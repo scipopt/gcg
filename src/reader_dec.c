@@ -671,6 +671,8 @@ SCIP_RETCODE readMasterconss(
    SCIP_READERDATA* readerdata   /**< reader data */
    )
 {
+   int i;
+
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(readerdata != NULL);
@@ -692,8 +694,24 @@ SCIP_RETCODE readMasterconss(
       }
       else
       {
+         SCIP_VAR** vars;
+         int nvars;
          /* set the block number of the variable to the number of the current block */
          SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+         /* get all vars for  the specific constraint */
+         nvars = SCIPgetNVarsXXX(scip, cons);
+         vars = NULL;
+         if( nvars > 0 )
+         {
+            SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+            SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+         }
+         for( i = 0; i < nvars; ++i )
+         {
+            readerdata->varstoblock[SCIPvarGetProbindex(vars[i])] = NOVALUE;
+         }
+         SCIPfreeBufferArrayNull(scip, &vars);
+
          ++(readerdata->nlinkingcons);
          SCIPdebugMessage("cons %s is now master\n", decinput->token);
       }
@@ -785,7 +803,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nlinkingvars = decomp->nlinkingvars + 1;
          /* hashmap */
          SCIPdebugMessage("var %s is linking\n", SCIPvarGetName(allvars[i]));
-         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE) );
+         /*         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE) );*/
       }
       else
       { /* value = block id=index of block */
@@ -802,7 +820,7 @@ SCIP_RETCODE fillDecompStruct(
 
          /* hashmap */
          SCIPdebugMessage("var %s is in block %d\n", SCIPvarGetName(allvars[i]), value);
-         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value) );
+         /*         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value) );*/
       }
    }
 
