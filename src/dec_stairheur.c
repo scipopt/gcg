@@ -130,7 +130,7 @@ ITERATOR SCIPiteratorBegin(LIST* list);
 ITERATOR SCIPiteratorEnd(LIST* list);
 SCIP_Bool SCIPiteratorNext(ITERATOR* it);
 SCIP_Bool SCIPiteratorPrev(ITERATOR* it);
-void SCIPiteratorEquals(ITERATOR it1, ITERATOR it2);
+void SCIPiteratorEquals(ITERATOR* it1, ITERATOR* it2);
 SCIP_Bool SCIPiteratorIsEqual(ITERATOR it1, ITERATOR it2);
 
 /*print, compare callback*/
@@ -198,11 +198,9 @@ LIST* SCIPlistCopyShallow(SCIP* scip, LIST* list)
 SCIP_Bool SCIPlistPushFront(SCIP* scip, LIST* list, void* data)
 {
    /** adds a node at the front of the list */
-   NODE* newnode;
    ITERATOR it = {NULL, NULL};
    //case: list does not exist
    if(! list) return FALSE;
-   newnode = SCIPnodeCreate(scip, data);
    //it points to the beginning of list
    it = SCIPiteratorBegin(list);
    SCIPlistInsert(scip, &it, data);
@@ -224,12 +222,10 @@ SCIP_Bool SCIPlistPopFront(SCIP* scip, LIST* list)
 /** Inserts a new node with a pointer to 'data' at the back of the list. */
 SCIP_Bool SCIPlistPushBack(SCIP* scip, LIST* list, void* data)
 {
-   NODE* newnode;
    ITERATOR it = {NULL, NULL};
    //case: list does not exist
    if(! list) return FALSE;
-   newnode = SCIPnodeCreate(scip, data);
-   //it points to the beginning of list
+   //it points to the end of list
    it = SCIPiteratorEnd(list);
    SCIPlistInsert(scip, &it, data);
    return TRUE;
@@ -616,10 +612,10 @@ SCIP_Bool SCIPiteratorPrev(ITERATOR* it)
 }
 
 /** Assigns it1 = it2. */
-void SCIPiteratorEquals(ITERATOR it1, ITERATOR it2)
+void SCIPiteratorEquals(ITERATOR* it1, ITERATOR* it2)
 {
-   it1.list = it2.list;
-   it1.node = it2.node;
+   it1->list = it2->list;
+   it1->node = it2->node;
 }
 
 /** Returns TRUE if it1 points to the same element as it2. */
@@ -1214,12 +1210,10 @@ LIST* columnindices_list(
    int* data;
    int position;
    int nvars;
-   int ncons;
    int i;
    ITERATOR it1;
    ITERATOR it2;
    nvars = SCIPgetNVars(scip);
-   ncons = detectordata->nRelevantConss;
    //create the columnindices_array with pointers to empty lists
    SCIPallocMemoryArray(scip, &columnindices_array, nvars);
    for(i = 0; i < nvars; ++i)
