@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_restmaster.c
- * @brief  restricted master primal heuristic
+ * @brief  Restricted Master Heuristic
  * @author Christian Puchert
  */
 
@@ -21,22 +21,19 @@
 #include <assert.h>
 
 #include "heur_restmaster.h"
-#include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "relax_gcg.h"
 
 #include "scip/scipdefplugins.h"
-#include "scip/cons_linear.h"
-#include "scip/pub_misc.h"
 
 
 #define HEUR_NAME             "restmaster"
-#define HEUR_DESC             "heuristic that fixes master variables to zero which are zero in master LP solution"
+#define HEUR_DESC             "LNS heuristic for the master problem that fixes some master variables to zero"
 #define HEUR_DISPCHAR         'P'
 #define HEUR_PRIORITY         100
 #define HEUR_FREQ             10
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
-/** @todo should heuristic be called during the pricing loop or only after solving a node relaxation? */
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP
 #define HEUR_USESSUBSCIP      TRUE
 
@@ -46,8 +43,10 @@
 #define DEFAULT_MINNODES      500LL     /**< minimum number of nodes to regard in the subproblem                 */
 #define DEFAULT_NODESOFS      500LL     /**< number of nodes added to the contingent of the total nodes          */
 #define DEFAULT_NODESQUOT     0.1       /**< subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_USELPROWS     TRUE      /**< should subproblem be created out of the rows in the LP rows,
-                                         * otherwise, the copy constructor of the constraints handlers are used*/
+#define DEFAULT_USELPROWS     FALSE     /**< should subproblem be created out of the rows in the LP rows,
+                                          *  otherwise, the copy constructor of the constraints handlers are used*/
+#define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+                                          *  of the original scip be copied to constraints of the subscip       */
 
 
 
@@ -67,6 +66,9 @@ struct SCIP_HeurData
    SCIP_Real             minimprove;        /**< factor by which restricted master should at least improve the incumbent */
    SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem       */
    SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?        */
+   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                             *   to constraints in subproblem?
+                                             */
 };
 
 
@@ -76,13 +78,12 @@ struct SCIP_HeurData
  * Local methods
  */
 
-/** creates a restricted master problem by fixing master variables which are zero */
+/** set up the restricted master problem by fixing master variables to zero */
 static
-SCIP_RETCODE createSubproblem(
+SCIP_RETCODE setupSubproblem(
    SCIP*                 scip,               /**< SCIP data structure for master problem                         */
    SCIP*                 restmaster,         /**< SCIP data structure for restricted master problem              */
    SCIP_VAR**            restmastervars,     /**< the variables of the restricted                                */
-   SCIP_HASHMAP*         varmapfw,           /**< mapping of master variables to restricted master variables     */
    SCIP_Real             minfixingrate,      /**< percentage of integer variables that have to be fixed          */
    SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
    SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully  */
@@ -103,7 +104,7 @@ SCIP_RETCODE createSubproblem(
 
    fixingcounter = 0;
 
-   /* create the variables of the restricted master problem */
+   /* fix zero variables in the restricted master problem */
    for( i = 0; i < nmastervars; i++ )
    {
       mastersolval = SCIPgetSolVal(scip, NULL, mastervars[i]);
@@ -111,43 +112,28 @@ SCIP_RETCODE createSubproblem(
       /* if LP solution value of master variable is zero, fix it to zero in restricted master */
       if( SCIPisFeasZero(scip, mastersolval) )
       {
-         SCIP_CALL( SCIPcreateVar(restmaster, &restmastervars[i], SCIPvarGetName(mastervars[i]), 0, 0,
-               SCIPvarGetObj(mastervars[i]), SCIPvarGetType(mastervars[i]), SCIPvarIsInitial(mastervars[i]),
-               SCIPvarIsRemovable(mastervars[i]), NULL, NULL, NULL, NULL, NULL) );
+         SCIP_CALL( SCIPchgVarLbGlobal(restmaster, restmastervars[i], 0.0) );
+         SCIP_CALL( SCIPchgVarUbGlobal(restmaster, restmastervars[i], 0.0) );
          fixingcounter++;
       }
-
-      /* otherwise, just copy the variable to restricted master */
-      else
-      {
-         SCIP_CALL( SCIPcreateVar(restmaster, &restmastervars[i], SCIPvarGetName(mastervars[i]),
-               SCIPvarGetLbGlobal(mastervars[i]), SCIPvarGetUbGlobal(mastervars[i]), SCIPvarGetObj(mastervars[i]),
-               SCIPvarGetType(mastervars[i]), SCIPvarIsInitial(mastervars[i]), SCIPvarIsRemovable(mastervars[i]),
-               NULL, NULL, NULL, NULL, NULL) );
-      }
-
-      SCIP_CALL( SCIPaddVar(restmaster, restmastervars[i]) );
-
-      /* insert variable into mapping between master and restricted master */
-      SCIP_CALL( SCIPhashmapInsert(varmapfw, mastervars[i], restmastervars[i]) );
    }
 
    /* abort, if all variables were fixed (which should not happen) */
    if( fixingcounter == nmastervars )
    {
-      SCIPdebugMessage("restricted master problem: all master variables fixed, not solving problem.\n");
+      SCIPdebugMessage(" -> all master variables fixed, not solving problem.\n");
       *success = FALSE;
       return SCIP_OKAY;
    }
    else
       fixingrate = fixingcounter / (SCIP_Real)(MAX(nmastervars, 1));
 
-   SCIPdebugMessage("restricted master problem: %d out of %d (%.2f percent) master variables fixed.\n", fixingcounter, nmastervars, fixingrate * 100.0);
+   SCIPdebugMessage(" -> %d out of %d (%.2f percent) master variables fixed.\n", fixingcounter, nmastervars, fixingrate * 100.0);
 
    /* abort, if the amount of fixed variables is insufficient */
    if( fixingrate < minfixingrate )
    {
-      SCIPdebugMessage("                           -> not enough variables fixed.\n");
+      SCIPdebugMessage(" -> not enough variables fixed.\n");
       *success = FALSE;
       return SCIP_OKAY;
    }
@@ -214,7 +200,7 @@ SCIP_RETCODE createNewSol(
    SCIP*                 scip,               /**< SCIP data structure of master problem               */
    SCIP*                 restmaster,         /**< SCIP structure of restricted master problem         */
    SCIP_VAR**            restmastervars,     /**< the variables of the restricted master problem      */
-   SCIP_HEUR*            heur,               /**< RENS heuristic structure                            */
+   SCIP_HEUR*            heur,               /**< Restricted Master heuristic structure               */
    SCIP_SOL*             restmastersol,      /**< solution of the restricted master problem           */
    SCIP_Bool*            success             /**< used to store whether new solution was found or not */
    )
@@ -226,6 +212,7 @@ SCIP_RETCODE createNewSol(
    SCIP_Real* restmastervals;                /* solution values of the subproblem               */
    SCIP_SOL*  newmastersol;                  /* solution for the master problem                 */
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
+   SCIP_Bool  masterfeas;                    /* is the solution feasible for the master problem ? */
 
    assert( origprob != NULL );
    assert( scip != NULL );
@@ -244,18 +231,32 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPgetSolVals(restmaster, restmastersol, nmastervars, restmastervars, restmastervals) );
 
    /* create new solution for the master problem and translate it to the original problem;
-    * @todo GCG does not recognize that the solution comes from this heuristic */
+    * @todo: GCG does not recognize that the solution comes from this heuristic */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
 
-   /* try to add new solution to origprob and free it immediately */
+   /* try to add new solution to original problem and free it immediately */
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPtrySolFree(origprob, &newsol, TRUE, TRUE, TRUE, TRUE, success) );
 #else
    SCIP_CALL( SCIPtrySolFree(origprob, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
 #endif
-   SCIP_CALL( SCIPfreeSol(scip, &newmastersol) );
+
+   /* if we found a solution for the original problem,
+    * also add the corresponding master solution */
+   if( success )
+   {
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, TRUE, TRUE, TRUE, TRUE, &masterfeas) );
+#else
+      SCIP_CALL( SCIPtrySolFree(scip, &newmastersol, FALSE, TRUE, TRUE, TRUE, &masterfeas) );
+#endif
+      if( !masterfeas )
+      {
+         SCIPdebugMessage("WARNING: original solution feasible, but no solution has been added to master problem.\n");
+      }
+   }
 
    SCIPfreeBufferArray(scip, &restmastervals);
 
@@ -342,7 +343,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_VAR** restmastervars;
    int nmastervars;
 
-   char probname[SCIP_MAXSTRLEN];
    int i;
 
 #ifdef NDEBUG
@@ -365,8 +365,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    *result = SCIP_DIDNOTRUN;
 
    /* this heuristic works only for the discretization approach */
-   /** @todo make heuristic also usable for convexification;
-    *       in this case, we need some sort of constraint handler for the restmaster subSCIP */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( !discretization )
       return SCIP_OKAY;
@@ -394,7 +392,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* check whether we have enough nodes left to call subproblem solving */
    if( nstallnodes < heurdata->minnodes )
    {
-//      SCIPdebugMessage("skipping GCG restricted master heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
+//      SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
       return SCIP_OKAY;
    }
 
@@ -411,7 +409,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    if( SCIPisStopped(scip) )
       return SCIP_OKAY;
 
-   SCIPdebugMessage("Executing GCG restricted master heuristic ...\n");
+   SCIPdebugMessage("Executing Restricted Master Heuristic ...\n");
 
    *result = SCIP_DIDNOTFIND;
 
@@ -427,33 +425,50 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_CALL( SCIPhashmapCreate(&varmapfw, SCIPblkmem(restmaster), SCIPcalcHashtableSize(5 * nmastervars)) );
    SCIP_CALL( SCIPallocBufferArray(scip, &restmastervars, nmastervars) );
 
-   /* include SCIP plugins */
-   SCIP_CALL( SCIPincludeDefaultPlugins(restmaster) );
+   if( heurdata->uselprows )
+   {
+      char probname[SCIP_MAXSTRLEN];
 
-   /* get name of the master problem and add the string "_restricted" */
-   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_restricted", SCIPgetProbName(scip));
+      /* copy all plugins */
+      SCIP_CALL( SCIPincludeDefaultPlugins(restmaster) );
 
-   /* create the subproblem */
-   SCIP_CALL( SCIPcreateProb(restmaster, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+      /* get name of the original problem and add the string "_restricted" */
+      (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s_restricted", SCIPgetProbName(scip));
 
-//   /* copy all variables */
-//   SCIP_CALL( SCIPcopyVars(masterprob, restmaster, varmapfw, NULL, TRUE) );
+      /* create the subproblem */
+      SCIP_CALL( SCIPcreateProb(restmaster, probname, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
+
+      /* copy all variables */
+      SCIP_CALL( SCIPcopyVars(scip, restmaster, varmapfw, NULL, TRUE) );
+   }
+   else
+   {
+      SCIP_Bool valid;
+
+      valid = FALSE;
+
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, &valid) );
+
+      if( heurdata->copycuts )
+      {
+         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         SCIP_CALL( SCIPcopyCuts(scip, restmaster, varmapfw, NULL, TRUE) );
+      }
+
+      SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
+   }
+
+   for( i = 0; i < nmastervars; i++ )
+      restmastervars[i] = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, mastervars[i]);
+
+   /* free hash map */
+   SCIPhashmapFree(&varmapfw);
 
    success = FALSE;
 
-   /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
-   SCIP_CALL( createSubproblem(scip, restmaster, restmastervars, varmapfw, heurdata->minfixingrate, heurdata->uselprows, &success) );
+   /* set up restricted master problem by fixing variables to zero */
+   SCIP_CALL( setupSubproblem(scip, restmaster, restmastervars, heurdata->minfixingrate, heurdata->uselprows, &success) );
    SCIPdebugMessage("restricted master problem: %d vars, %d cons, success=%u\n", SCIPgetNVars(restmaster), SCIPgetNConss(restmaster), success);
-
-   /* if the lp rows are not used, also copy the constraints */
-   if( !heurdata->uselprows )
-   {
-      SCIP_Bool valid;
-      valid = FALSE;
-
-      SCIP_CALL( SCIPcopyConss(scip, restmaster, varmapfw, NULL, TRUE, FALSE, &valid) );
-      SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
-   }
 
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(restmaster, "misc/catchctrlc", FALSE) );
@@ -495,26 +510,18 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usesb", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(restmaster, "conflict/usepseudo", FALSE) );
 
-   /* free hash map */
-   SCIPhashmapFree(&varmapfw);
-
    /* if the subproblem could not be created, free memory and return */
    if( !success )
    {
       SCIPdebugMessage("restricted master problem not created.\n");
       *result = SCIP_DIDNOTRUN;
-      SCIP_CALL( SCIPfreeTransform(restmaster) );
-      for( i = 0; i < nmastervars; i++ )
-      {
-         SCIP_CALL( SCIPreleaseVar(restmaster, &restmastervars[i]) );
-      }
       SCIPfreeBufferArray(scip, &restmastervars);
       SCIP_CALL( SCIPfree(&restmaster) );
       return SCIP_OKAY;
    }
 
    /* if there is already a solution, add an objective cutoff */
-   /** @todo origprob or scip? */
+   /* @todo: origprob or scip? */
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;
@@ -545,7 +552,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    retstat = SCIPpresolve(restmaster);
    if( retstat != SCIP_OKAY )
    {
-      SCIPwarningMessage("Error while presolving subMIP in GCG restricted master heuristic; restricted master terminated with code <%d>\n",retstat);
+      SCIPwarningMessage("Error while presolving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
    }
 #else
    SCIP_CALL( SCIPpresolve(restmaster) );
@@ -567,13 +574,13 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
       retstat = SCIPsolve(restmaster);
       if( retstat != SCIP_OKAY )
       {
-         SCIPwarningMessage("Error while solving subMIP in GCG restricted master heuristic; restricted master terminated with code <%d>\n",retstat);
+         SCIPwarningMessage("Error while solving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
       }
 #else
       SCIP_CALL( SCIPsolve(restmaster) );
 #endif
 
-      SCIPdebugMessage("GCG restricted master heuristic: %d feasible solution(s) found.\n", SCIPgetNSols(restmaster));
+      SCIPdebugMessage(" -> %d feasible solution(s) found.\n", SCIPgetNSols(restmaster));
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
@@ -590,11 +597,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* free subproblem */
-   SCIP_CALL( SCIPfreeTransform(restmaster) );
-   for( i = 0; i < nmastervars; i++ )
-   {
-      SCIP_CALL( SCIPreleaseVar(restmaster, &restmastervars[i]) );
-   }
    SCIPfreeBufferArray(scip, &restmastervars);
    SCIP_CALL( SCIPfree(&restmaster) );
 
@@ -605,19 +607,18 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
 
 
-
 /*
  * primal heuristic specific interface methods
  */
 
-/** creates the restricted master primal heuristic and includes it in SCIP */
+/** creates the Restricted Master primal heuristic and includes it in SCIP */
 SCIP_RETCODE SCIPincludeHeurRestmaster(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
 
-   /* create restricted master primal heuristic data */
+   /* create Restricted Master primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
    /* include primal heuristic */
@@ -627,34 +628,38 @@ SCIP_RETCODE SCIPincludeHeurRestmaster(
          heurInitsolRestmaster, heurExitsolRestmaster, heurExecRestmaster,
          heurdata) );
 
-   /* add restricted master primal heuristic parameters */
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/restmaster/minfixingrate",
+   /* add Restricted Master primal heuristic parameters */
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minfixingrate",
          "minimum percentage of integer variables that have to be fixable ",
          &heurdata->minfixingrate, FALSE, DEFAULT_MINFIXINGRATE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/restmaster/maxnodes",
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/maxnodes",
          "maximum number of nodes to regard in the subproblem",
          &heurdata->maxnodes,  TRUE,DEFAULT_MAXNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/restmaster/nodesofs",
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
          "number of nodes added to the contingent of the total nodes",
          &heurdata->nodesofs, FALSE, DEFAULT_NODESOFS, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/restmaster/minnodes",
+   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/minnodes",
          "minimum number of nodes required to start the subproblem",
          &heurdata->minnodes, TRUE, DEFAULT_MINNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/restmaster/nodesquot",
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/nodesquot",
          "contingent of sub problem nodes in relation to the number of nodes of the original problem",
          &heurdata->nodesquot, FALSE, DEFAULT_NODESQUOT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/restmaster/minimprove",
+   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minimprove",
          "factor by which restricted master should at least improve the incumbent  ",
          &heurdata->minimprove, TRUE, DEFAULT_MINIMPROVE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/restmaster/uselprows",
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+         "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
+         &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

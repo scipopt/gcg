@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_restmaster.h
- * @brief  restricted master primal heuristic
+ * @brief  Restricted Master Heuristic
  * @author Christian Puchert
  * @ingroup PRIMALHEURISTICS
  */
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/** creates the restricted master primal heuristic and includes it in SCIP */
+/** creates the Restricted Master primal heuristic and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeHeurRestmaster(
    SCIP*                 scip                /**< SCIP data structure */
