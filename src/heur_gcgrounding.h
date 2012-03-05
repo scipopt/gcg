@@ -11,6 +11,8 @@
 /**@file   heur_gcgrounding.h
  * @brief  LP gcgrounding heuristic that tries to recover from intermediate infeasibilities
  * @author Tobias Achterberg
+ * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

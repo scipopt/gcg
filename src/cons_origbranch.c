@@ -7,10 +7,9 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*
- #define SCIP_DEBUG
- #define CHECKCONSISTENCY
- */
+// #define SCIP_DEBUG
+// #define CHECKCONSISTENCY
+
 /**@file   cons_origbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
@@ -165,7 +164,7 @@ static
 SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 {
 //   SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONSDATA* consdata2;
+   SCIP_CONSDATA* parentdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -181,21 +180,26 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    /* set the origcons pointer of the corresponding mastercons to NULL */
    if( (*consdata)->mastercons != NULL )
       GCGconsMasterbranchSetOrigcons((*consdata)->mastercons, NULL);
-   /* set the pointer in parent to NULL */
+
+   /* set the pointer in the parent constraint to NULL */
    if( (*consdata)->parentcons != NULL )
    {
-      consdata2 = SCIPconsGetData((*consdata)->parentcons);
-      if( consdata2->child1cons == cons )
-         consdata2->child1cons = NULL;
+      parentdata = SCIPconsGetData((*consdata)->parentcons);
+      if( parentdata->child1cons == cons )
+         parentdata->child1cons = NULL;
+      else if( parentdata->probingtmpcons == cons )
+      {
+         assert(SCIPinProbing(scip));
+         parentdata->probingtmpcons = NULL;
+      }
       else
       {
-         assert(consdata2->child2cons == cons);
-         consdata2->child2cons = NULL;
-
+         assert(parentdata->child2cons == cons);
+         parentdata->child2cons = NULL;
          if( SCIPinProbing(scip) )
          {
-            consdata2->child2cons = consdata2->probingtmpcons;
-            consdata2->probingtmpcons = NULL;
+            parentdata->child2cons = parentdata->probingtmpcons;
+            parentdata->probingtmpcons = NULL;
          }
       }
    }
@@ -300,6 +304,7 @@ SCIP_DECL_CONSPROP(consPropOrigbranch)
    return SCIP_OKAY;
 }
 
+/** lp solution enforcement method */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
 {
@@ -308,6 +313,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
    return SCIP_OKAY;
 }
 
+/** pseudo solution enforcement method */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
 {
@@ -316,6 +322,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
    return SCIP_OKAY;
 }
 
+/** solution check method */
 static
 SCIP_DECL_CONSCHECK(consCheckOrigbranch)
 {
@@ -324,6 +331,7 @@ SCIP_DECL_CONSCHECK(consCheckOrigbranch)
    return SCIP_OKAY;
 }
 
+/** variable lock method */
 static
 SCIP_DECL_CONSLOCK(consLockOrigbranch)
 {
@@ -388,7 +396,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
 }
 
 
-/** creates and captures a origbranch constraint*/
+/** creates and captures a origbranch constraint */
 SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */

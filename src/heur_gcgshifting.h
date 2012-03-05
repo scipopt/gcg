@@ -11,6 +11,8 @@
 /**@file   heur_gcgshifting.h
  * @brief  LP gcgrounding heuristic that tries to recover from intermediate infeasibilities and shifts continuous variables
  * @author Tobias Achterberg
+ * @author Christian Puchert
+ * @ingroup PRIMALHEURISTICS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -21,8 +23,7 @@
 
 #include "scip/scip.h"
 
-
-/** creates the GCG shifting heuristic and includes it in SCIP */
+/** creates the GCG shifting heuristic with infeasibility recovering and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeHeurGcgshifting(
    SCIP*                 scip                /**< SCIP data structure */

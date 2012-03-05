@@ -13,3 +13,5 @@ instances
 lint.out
 .cproject
 .project
+gcg-metis*
+release

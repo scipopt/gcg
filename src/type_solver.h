@@ -78,7 +78,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 #define GCG_DECL_SOLVEREXITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
 
-/** solving method for pricing solver
+/** solving method for pricing solver using optimal pricing
  *
  *
  *  input:
@@ -98,7 +98,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  */
 #define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
 
-/** solving method for pricing solver
+/** solving method for pricing solver using heuristic pricing only
  *
  *
  *  input:

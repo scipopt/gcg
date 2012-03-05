@@ -40,20 +40,13 @@
 
 #define DEC_DETECTORNAME      "stairheur"       /**< name of the detector */
 #define DEC_PRIORITY          -100              /**< priority of the detector */
+#define DEC_DECCHAR           's'            /**< display character of detector */
+#define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
 /* Default parameter settings*/
 #define DEFAULT_BLOCKS                    2     /**< number of blocks */
-//#define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
-//#define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
-//#define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
-//#define DEFAULT_DUMMYNODES	              0.2   /**< percentage of dummy vertices*/
-
 #define DEFAULT_MAXBLOCKS                 20    /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
-
-//#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
-//#define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
-//#define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
 #define DEFAULT_PRIORITY                  DEC_PRIORITY
 
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
@@ -852,7 +845,7 @@ void switchPointers(void** p1, void** p2)
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
 static
-void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
+SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 {
    FILE* output;
    char datafile[256];
@@ -863,6 +856,8 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
    int* varindex;
    int* consindex;
    SCIP_VAR* var;
+   SCIP_VAR** vars;
+   int nvars;
    SCIP_CONS* cons;
    //filenames
    sprintf(datafile, "%s.dat", filename);
@@ -880,13 +875,18 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
          cons = detectordata->relevantConss[i];
          consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
          assert(consindex != NULL);
-         for(j = 0; j < SCIPgetNVarsXXX(scip, cons); ++j)
+         //Get array of variables from constraint
+         nvars = SCIPgetNVarsXXX(scip, cons);
+         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+         for(j = 0; j < nvars; ++j)
          {
-            var = SCIPgetVarsXXX(scip, cons)[j];
+            var = vars[j];
             varindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) var);
             assert(varindex != NULL);
             fprintf(output, "%i %i\n", *varindex, *consindex);
          }
+         SCIPfreeBufferArray(scip, &vars);
       }
    }
    fclose(output);
@@ -895,15 +895,15 @@ void plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filena
    output = fopen(gpfile, "w");
    fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot '%s' lt 0 pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, datafile);
    fclose(output);
+   return SCIP_OKAY;
 }
 
 //debug ?
-static
 /** Creates a data and a gnuplot file for the blocked problem.
  * @param scip < SCIP data structure
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
-void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
+static SCIP_RETCODE plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 {
    FILE* output;
    char datafile[256];
@@ -938,7 +938,8 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
             consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
             assert(consindex != NULL);
             nvars = SCIPgetNVarsXXX(scip, cons);
-            vars = SCIPgetVarsXXX(scip, cons);
+            SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+            SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
             //loop over all vars in constraint
             for(k = 0; k < nvars; ++k)
             {
@@ -946,6 +947,7 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
                assert(varindex != NULL);
                fprintf(output, "%i %i\n", *varindex, *consindex);
             }//loop over all vars in constraint
+            SCIPfreeBufferArray(scip, &vars);
          }//loop over all constraints in block
          fprintf(output, "\n");
       }//loop over all blocks
@@ -956,6 +958,7 @@ void plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    output = fopen(gpfile, "w");
    fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset style line 1 lt 0 lw 1 pt 5\nset style line 2 lt 9 lw 1 pt 5\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot for [i=0:%i:1] '%s' every :::i::(i+1) linestyle (i%%2+1) notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, detectordata->blocks-1, datafile);
    fclose(output);
+   return SCIP_OKAY;
 }
 
 //debug ?
@@ -1151,13 +1154,13 @@ LIST* rowindices_list(
       hashmapindex = &detectordata->hashmapindices[i+1];
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
       nconsvars = SCIPgetNVarsXXX(scip, cons);
-      consvars = SCIPgetVarsXXX(scip, cons);
+      SCIPallocBufferArray(scip, &consvars, nconsvars);
+      SCIPgetVarsXXX(scip, cons, consvars, nconsvars);
       //allocate memory for the array of probindices
       SCIPallocMemoryArray(scip, &probindices, nconsvars);
       //fill the array with the indices of the variables of the current constraint
       for(j = 0; j < nconsvars; ++j)
       {
-//         probindices[j] = SCIPvarGetProbindex(consvars[j])+1;
          probindices[j] = *(int*) SCIPhashmapGetImage(varindex, consvars[j]);
       }
       //sort the elements of probindices ('<')
@@ -1172,6 +1175,7 @@ LIST* rowindices_list(
       }
       //deallocate memory
       SCIPfreeMemoryArray(scip, &probindices);
+      SCIPfreeBufferArray(scip, &consvars);
       //add rowindices_row to the list rowindices
       SCIPlistPushBack(scip, rowindices, rowindices_row);
    }
@@ -2161,19 +2165,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    return SCIP_OKAY;
 }
 
-static
-DEC_DECL_GETPRIORITY(getPriority)
-{
-   DEC_DETECTOR* arrowheur;
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(arrowheur);
-   assert(detectordata != NULL);
-
-   assert(strcmp(DECdetectorGetName(arrowheur), DEC_DETECTORNAME) == 0);
-   return detectordata->priority;
-}
 
 /** creates the stairheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionStairheur(
@@ -2189,7 +2180,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
    detectordata->decdecomp = NULL;
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildStair, initStairheur, exitStairheur, getPriority));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildStair, initStairheur, exitStairheur));
 
    /* add stairheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));

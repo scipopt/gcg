@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //#define SCIP_DEBUG
 /**@file   branch_orig.c
- * @ingroup BRANCHINGRULES
  * @brief  branching rule for original problem in gcg
  * @author Gerald Gamrath
  */
@@ -66,7 +65,7 @@ struct GCG_BranchData
 };
 
 
-
+/** branches on a given variable */
 static
 SCIP_RETCODE branchVar(
    SCIP*                 scip,               /** SCIP data structure */
@@ -265,9 +264,36 @@ SCIP_RETCODE branchExtern(
       {
          assert(GCGvarIsOriginal(branchcands[i]));
 
-         /* variable belongs to no block or the block is not unique */
-         if( GCGvarGetBlock(branchcands[i]) == -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         /* variable belongs to no block */
+         if( GCGvarGetBlock(branchcands[i]) == -1 )
             continue;
+
+         /* block is not unique (non-linking variables) */
+         if( !GCGvarIsLinking(branchcands[i]) && GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+            continue;
+
+         /* block is not unique (linking variables) */
+         if( GCGvarIsLinking(branchcands[i]) )
+         {
+            int nvarblocks;
+            int* varblocks;
+            SCIP_Bool unique;
+            int j;
+
+            nvarblocks = GCGlinkingVarGetNBlocks(branchcands[i]);
+            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( GCGlinkingVarGetBlocks(branchcands[i], nvarblocks, varblocks) );
+
+            unique = TRUE;
+            for( j = 0; j < nvarblocks; ++j )
+               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+                  unique = FALSE;
+
+            SCIPfreeBufferArray(scip, &varblocks);
+
+            if( !unique )
+               continue;
+         }
 
          /* use pseudocost variable selection rule */
          if( usepseudocosts )
@@ -389,6 +415,7 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
 #define branchDeactiveMasterOrig NULL
 #define branchPropMasterOrig NULL
 
+/** callback activation method */
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 {
@@ -425,7 +452,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    return SCIP_OKAY;
 }
 
-
+/** callback solved method */
 static
 GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
 {
@@ -447,6 +474,7 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    return SCIP_OKAY;
 }
 
+/** callback deletion method for branching data */
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 {
@@ -596,7 +624,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
    assert(branchrule != NULL);
 
    printf("orig copy called.\n");
-   SCIP_CALL(GCGincludeOriginalCopyPlugins(scip));
+   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }
@@ -612,7 +640,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
  * branching specific interface methods
  */
 
-/** creates the most branching on original variables braching rule and includes it in SCIP */
+/** creates the branching on original variable branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )

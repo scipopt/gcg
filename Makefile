@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	0.9.0.2
+VERSION         :=	0.9.0.3
 SCIPDIR         =       lib/scip
 
 
@@ -48,9 +48,6 @@ MAINOBJ		=	reader_blk.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \
-			heur_clasfeaspump.o \
-			heur_colgenfeaspump.o \
-			heur_extremepoints.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \
@@ -66,6 +63,7 @@ MAINOBJ		=	reader_blk.o \
 			heur_greedycolsel.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
+			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_master.o \
 			branch_relpsprob.o \
@@ -87,6 +85,7 @@ MAINOBJ		=	reader_blk.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
+			misc.o \
 			gcgvar.o \
 			main.o
 

@@ -1,44 +1,49 @@
-/*
- * scip_misc.cpp
- *
- *  Created on: Apr 8, 2010
- *      Author: mbergner
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
+/*         SCIP --- Solving Constraint Integer Programs                      */
+/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/**@file    scip_misc.c
+ * @brief   various SCIP helper methods
+ * @author  Martin Bergner
  */
 
-#define SCIP_DEBUG
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/* #define SCIP_DEBUG */
 
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
 #include <string.h>
 
-/**
- * Returns the rhs of an arbitrary SCIP constraint
- * @param scip the scip instance
- * @param cons the constraint
- * @return
- */
-
-extern
-SCIP_Bool isVarRelevant(
-   SCIP_VAR* var
+/** returns TRUE if variable is relevant, FALSE otherwise */
+SCIP_Bool SCIPisVarRelevant(
+   SCIP_VAR* var              /**< variable to test */
    )
 {
    assert(var != NULL);
    return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
 }
 
-extern
-SCIP_VAR* getRelevantVariable(
-   SCIP_VAR *var
+
+/** returns the relevant variable, if possible */
+SCIP_VAR* SCIPgetRelevantVariable(
+   SCIP_VAR* var              /**< variable to test */
    )
 {
    SCIP_VAR *newvar;
    newvar = NULL;
    assert(var != NULL);
-   if(!isVarRelevant(var))
+   if(!SCIPisVarRelevant(var))
    {
       return NULL;
    }
+
+   /*lint -e{788}*/
    switch (SCIPvarGetStatus(var))
    {
    case SCIP_VARSTATUS_AGGREGATED:
@@ -57,7 +62,10 @@ SCIP_VAR* getRelevantVariable(
    return newvar;
 }
 
-consType SCIPconsGetType( SCIP_CONS *cons )
+/** returns the type of an arbitrary SCIP constraint */
+consType SCIPconsGetType(
+   SCIP_CONS* cons            /**< constraint to get type for */
+   )
 {
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
@@ -106,11 +114,15 @@ consType SCIPconsGetType( SCIP_CONS *cons )
    return unknown;
 }
 
-SCIP_Real SCIPgetRhsXXX( SCIP * scip, SCIP_CONS * cons )
+/** returns the rhs of an arbitrary SCIP constraint */
+SCIP_Real SCIPgetRhsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   )
 {
-
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+
    assert(scip != NULL);
    assert(cons != NULL);
    conshdlr = SCIPconsGetHdlr(cons);
@@ -158,17 +170,15 @@ SCIP_Real SCIPgetRhsXXX( SCIP * scip, SCIP_CONS * cons )
    return -SCIPinfinity(scip);
 }
 
-/**
- * Returns the lhs of an arbitrary SCIP constraint
- * @param scip the scip instance
- * @param cons the constraint
- * @return
- */
-SCIP_Real SCIPgetLhsXXX( SCIP * scip, SCIP_CONS * cons )
+/** Returns the lhs of an arbitrary SCIP constraint */
+SCIP_Real SCIPgetLhsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   )
 {
-
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+
    assert(scip != NULL);
    assert(cons != NULL);
    conshdlr = SCIPconsGetHdlr(cons);
@@ -216,17 +226,15 @@ SCIP_Real SCIPgetLhsXXX( SCIP * scip, SCIP_CONS * cons )
    return SCIPinfinity(scip);
 }
 
-/**
- * Returns the number of variables in an arbitrary SCIP constraint
- * @param scip the scip instance
- * @param cons the constraint
- * @return
- */
-int SCIPgetNVarsXXX( SCIP * scip, SCIP_CONS * cons )
+/** Returns the number of variables in an arbitrary SCIP constraint */
+int SCIPgetNVarsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get number of variables */
+   )
 {
-
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+
    assert(scip != NULL);
    assert(cons != NULL);
    conshdlr = SCIPconsGetHdlr(cons);
@@ -268,122 +276,93 @@ int SCIPgetNVarsXXX( SCIP * scip, SCIP_CONS * cons )
    }
 }
 
-/**
- * Returns the variable array of an arbitrary SCIP constraint
- * @param scip the scip instance
- * @param cons the constraint
- * @return
- */
-SCIP_VAR ** SCIPgetVarsXXX( SCIP * scip, SCIP_CONS * cons )
+/** Returns the variable array of an arbitrary SCIP constraint */
+SCIP_RETCODE SCIPgetVarsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons,           /**< constraint to get variables from */
+   SCIP_VAR** vars,           /**< array where variables are stored */
+   int        nvars           /**< size of storage array */
+   )
 {
 
-   SCIP_RETCODE retcode;
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
-   SCIP_VAR ** vars;
-   int nvars;
+
    assert(scip != NULL);
    assert(cons != NULL);
+   assert(vars != NULL);
+   assert(nvars > 0);
+
    conshdlr = SCIPconsGetHdlr(cons);
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
    if( strcmp(conshdlrname, "linear") == 0 )
    {
-      nvars = SCIPgetNVarsLinear(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsLinear(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsLinear(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsLinear(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
-      nvars = SCIPgetNVarsSetppc(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsSetppc(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsSetppc(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
-      nvars = SCIPgetNVarsLogicor(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsLogicor(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsLogicor(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
-      nvars = SCIPgetNVarsKnapsack(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsKnapsack(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsKnapsack(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
-      retcode = SCIPallocMemoryArray(scip, &vars, 2);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
+      if( nvars < 2 )
+         return SCIP_INVALIDDATA;
+
       vars[0] = SCIPgetVarVarbound(scip, cons);
       vars[1] = SCIPgetVbdvarVarbound(scip, cons);
-      return vars;
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
-      nvars = SCIPgetNVarsSOS1(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsSOS1(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsSOS1(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsSOS1(scip, cons), nvars);
    }
    else if( strcmp(conshdlrname, "SOS2") == 0 )
    {
-      nvars = SCIPgetNVarsSOS2(scip, cons);
-      retcode = SCIPduplicateMemoryArray(scip, &vars, SCIPgetVarsSOS2(scip, cons), nvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vars;
+      if( nvars < SCIPgetNVarsSOS2(scip, cons) )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vars, SCIPgetVarsSOS2(scip, cons), nvars);
    }
    else
    {
       SCIPdebugMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
    }
-   return NULL;
+   return SCIP_OKAY;
 }
 
-/**
- * Returns the dual solution value of an arbitrary SCIP constraint
- * @param scip
- * @param cons
- * @return
- */
-SCIP_Real SCIPgetDualsolXXX( SCIP * scip, SCIP_CONS * cons )
+/** Returns the dual solution value of an arbitrary SCIP constraint */
+SCIP_Real SCIPgetDualsolXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons            /**< constraint to get dual solution */
+   )
 {
-
    SCIP_CONSHDLR* conshdlr;
    const char * conshdlrname;
+
    assert(scip != NULL);
    assert(cons != NULL);
    conshdlr = SCIPconsGetHdlr(cons);
@@ -427,89 +406,75 @@ SCIP_Real SCIPgetDualsolXXX( SCIP * scip, SCIP_CONS * cons )
 
 /**
  * Returns the value array of an arbitrary SCIP constraint
- * @todo varbound, SOS1 & SOS2 not implemented yet
- * @param scip the scip instance
- * @param cons the constraint
- * @return
+ * @todo SOS1 & SOS2 not implemented yet
  */
-SCIP_Real * SCIPgetValsXXX( SCIP * scip, SCIP_CONS * cons )
+SCIP_RETCODE SCIPgetValsXXX(
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_CONS* cons,           /**< constraint to get values from */
+   SCIP_Real* vals,           /**< array where values are stored */
+   int        nvals           /**< size of storage array */
+   )
 {
-
-   SCIP_RETCODE retcode;
    SCIP_CONSHDLR* conshdlr;
-   const char * conshdlrname;
+   const char* conshdlrname;
    int i;
-   SCIP_Real * vals;
+   int nvars;
+
    assert(scip != NULL);
    assert(cons != NULL);
+   assert(vals != NULL);
+   assert(nvals > 0);
+
    conshdlr = SCIPconsGetHdlr(cons);
    assert(conshdlr != NULL);
    conshdlrname = SCIPconshdlrGetName(conshdlr);
 
    if( strcmp(conshdlrname, "linear") == 0 )
    {
-      retcode = SCIPduplicateMemoryArray(scip, &vals, SCIPgetValsLinear(scip, cons), SCIPgetNVarsLinear(scip, cons));
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      return vals;
+      nvars = SCIPgetNVarsLinear(scip, cons);
+      if( nvals < nvars )
+         return SCIP_INVALIDDATA;
+
+      BMScopyMemoryArray(vals, SCIPgetValsLinear(scip, cons), nvals);
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
-      int nconsvars = SCIPgetNVarsSetppc(scip, cons);
-      retcode = SCIPallocMemoryArray(scip, &vals, nconsvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      for( i = 0; i < nconsvars; i++ )
-         vals[i] = 1.0;
-      return vals;
+      nvars = SCIPgetNVarsSetppc(scip, cons);
+      if( nvals < nvars )
+         return SCIP_INVALIDDATA;
 
+      for( i = 0; i < nvals; i++ )
+         vals[i] = 1.0;
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
-      int nconsvars = SCIPgetNVarsLogicor(scip, cons);
-      retcode = SCIPallocMemoryArray(scip, &vals, nconsvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      for( i = 0; i < nconsvars; i++ )
+      nvars = SCIPgetNVarsLogicor(scip, cons);
+      if( nvals < nvars )
+         return SCIP_INVALIDDATA;
+
+      for( i = 0; i < nvals; i++ )
          vals[i] = 1.0;
-      return vals;
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
 
       /* copy Longint array to SCIP_Real array */
       long long int * w = SCIPgetWeightsKnapsack(scip, cons);
-      int nconsvars = SCIPgetNVarsKnapsack(scip, cons);
-      retcode = SCIPallocMemoryArray(scip, &vals, nconsvars);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
-      for( i = 0; i < nconsvars; i++ )
+      nvars = SCIPgetNVarsKnapsack(scip, cons);
+      if( nvals < nvars )
+         return SCIP_INVALIDDATA;
+
+      for( i = 0; i < nvars; i++ )
          vals[i] = w[i];
-      return vals;
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
-      retcode = SCIPallocMemoryArray(scip, &vals, 2);
-      if(retcode != SCIP_OKAY)
-      {
-         SCIPerrorMessage("Memory for array could not be allocated!");
-         return NULL;
-      }
+      nvars = 2;
+      if( nvals < nvars )
+         return SCIP_INVALIDDATA;
+
       vals[0] = 1.0;
       vals[1] = SCIPgetVbdcoefVarbound(scip, cons);
-      return vals;
    }
    else if( strcmp(conshdlrname, "SOS1") == 0 )
    {
@@ -525,5 +490,5 @@ SCIP_Real * SCIPgetValsXXX( SCIP * scip, SCIP_CONS * cons )
    {
       SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
-   return NULL;
+   return SCIP_OKAY;
 }

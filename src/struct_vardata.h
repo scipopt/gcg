@@ -8,8 +8,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_event.h
- * @brief  datastructures for managing events
+/**@file   struct_vardata.h
+ * @brief  data structures for GCG variable data
  * @author Gerald Gamrath
  */
 
@@ -42,9 +42,9 @@ typedef struct GCG_LinkingVarData GCG_LINKINGVARDATA;
 struct GCG_OrigVarData
 {
    SCIP_VAR*             pricingvar;              /**< corresponding variable in the pricing program */
-   SCIP_CONS**           linkconss;               /**< linking constraints of the original program in which the variable has a nonzero entry */
-   SCIP_Real*            coefs;                   /**< coefficiants in the linking constraints of the original program */
-   int                   ncoefs;                  /**< number of coefficiants */
+   SCIP_CONS**           masterconss;             /**< master constraints of the original program in which the variable has a nonzero entry */
+   SCIP_Real*            coefs;                   /**< coefficients in the linking constraints of the original program */
+   int                   ncoefs;                  /**< number of coefficients */
    SCIP_VAR**            mastervars;              /**< variables in the master problem that contain the variable */
    SCIP_Real*            mastervals;              /**< value of this variable in the master problem variables */
    int                   nmastervars;             /**< number of corresponding master variables */

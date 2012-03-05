@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   struct_branchgcg.h
- * @brief  datastructures for branching rules
+ * @brief  data structures for branching rules
  * @author Gerald Gamrath
  */
 
@@ -27,12 +27,12 @@ extern "C" {
 /** branching rule */
 struct GCG_Branchrule
 {
-   SCIP_BRANCHRULE*       branchrule;
-   GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));
-   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster));
-   GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));
-   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));
-   GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));
+   SCIP_BRANCHRULE*       branchrule;                       /**< pointer to the SCIP branching rule */
+   GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));     /**< node activation method of branching rule */
+   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)); /**< node deactivation method of branching rule */
+   GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));         /**< propagation method of branching rule */
+   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));      /**< lp solved method of branching rule */
+   GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
 };
 
 

@@ -7,14 +7,16 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define DEBUG_PRICING_ALL_OUTPUT
-//#define SCIP_DEBUG
+
 /**@file   solver_mip.c
  * @brief  mip solver for pricing problems
  * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+//#define DEBUG_PRICING_ALL_OUTPUT
+//#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -33,30 +35,30 @@
 #define SOLVER_DESC          "mip solver for pricing problems"
 #define SOLVER_PRIORITY      0
 
-#define DEFAULT_CHECKSOLS TRUE
+#define DEFAULT_CHECKSOLS    TRUE
 
 
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
-   SCIP* origprob;
-   SCIP_Real** solvals;
-   SCIP_VAR*** solvars;
-   SCIP_Real*  tmpsolvals;
-   int* nsolvars;
-   SCIP_Bool* solisray;
-   int nsols;
-   int maxvars;
+   SCIP*       origprob;      /**< original SCIP data structure */
+   SCIP_Real** solvals;       /**< two dimensional array of values in solutions */
+   SCIP_VAR*** solvars;       /**< two dimensional array of variables in solutions */
+   SCIP_Real*  tmpsolvals;    /**< temporary solution values */
+   int*        nsolvars;      /**< number of solution variables per solution */
+   SCIP_Bool*  solisray;      /**< array to indicate whether solutions are rays */
+   int         nsols;         /**< number of solutions */
+   int         maxvars;       /**< maximal number of variables in a solution */
 
-   SCIP_Bool checksols;
+   SCIP_Bool   checksols;     /**< should solutions be checked extensively */
 };
 
 /* ensures size of solution arrays */
 static
 SCIP_RETCODE ensureSizeSolvars(
-   SCIP*                 scip,
-   GCG_SOLVERDATA*       solverdata,
-   int                   nsols
+   SCIP*           scip,       /**< SCIP data structure */
+   GCG_SOLVERDATA* solverdata, /**< solver data data structure */
+   int             nsols       /**< number of solutions */
    )
 {
    int i;
@@ -88,11 +90,11 @@ SCIP_RETCODE ensureSizeSolvars(
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
 SCIP_RETCODE checkSolNew(
-   SCIP*                 scip,
-   SCIP*                 pricingprob,
-   SCIP_SOL**            sols,
-   int                   idx,
-   SCIP_Bool*            isnew
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP*      pricingprob,    /**< pricing problem SCIP data structure */
+   SCIP_SOL** sols,           /**< array of solutions */
+   int        idx,            /**< index of the solution */
+   SCIP_Bool* isnew           /**< pointer to store whether the solution is new */
    )
 {
    SCIP_VAR** probvars;
@@ -297,13 +299,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
    {
       int ind;
-      SCIP_CALL(checkSolsForInfinity(pricingprob, &solisinvalid, &ind));
+      SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
 
       if (solisinvalid)
       {
          SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
          SCIP_CALL( SCIPfreeTransform(pricingprob) );
-         SCIP_CALL( adjustPricingObj(pricingprob, ind, up));
+         SCIP_CALL( adjustPricingObj(pricingprob, ind, up) );
          SCIP_CALL( SCIPtransformProb(pricingprob) );
          SCIP_CALL( SCIPsolve(pricingprob) );
 
@@ -588,7 +590,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
 /** creates the most infeasible LP braching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    GCG_SOLVERDATA* data;

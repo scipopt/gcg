@@ -27,6 +27,7 @@
 #include "reader_gp.h"
 #include "scip_misc.h"
 #include "struct_decomp.h"
+#include "cons_decomp.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for matrix visualization"
@@ -86,7 +87,7 @@ SCIP_RETCODE writeDecompositionHeader(
    assert(scip != NULL);
    assert(file != NULL);
    assert(decdecomp != NULL);
-   if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
+   if(decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
    {
       return SCIP_OKAY;
    }
@@ -157,8 +158,8 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)));
-   SCIP_CALL(SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)));
+   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if(decdecomp != NULL)
    {
@@ -167,6 +168,7 @@ SCIP_RETCODE writeData(
                || decdecomp->type == DEC_DECTYPE_DIAGONAL
                || decdecomp->type == DEC_DECTYPE_UNKNOWN
                || decdecomp->type == DEC_DECTYPE_STAIRCASE);
+
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL)
       {
@@ -181,14 +183,13 @@ SCIP_RETCODE writeData(
             for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
             {
                assert(decdecomp->subscipvars[i][j] != NULL);
-               SCIP_CALL(SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex));
+               SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
                varindex++;
             }
             for( j = 0; j < decdecomp->nsubscipconss[i]; ++j)
             {
-   //            SCIPinfoMessage(scip, NULL, "%d, %d, %d; ", i, j, decdecomp->nsubscipconss[i] );
                assert(decdecomp->subscipconss[i][j] != NULL);
-               SCIP_CALL(SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex));
+               SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex) );
                consindex++;
             }
          }
@@ -200,27 +201,15 @@ SCIP_RETCODE writeData(
          for( j = 0; j < decdecomp->nlinkingvars; ++j)
          {
             assert(decdecomp->linkingvars[j]);
-            SCIP_CALL(SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex));
+            SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
          }
          for( j = 0; j < decdecomp->nlinkingconss; ++j)
          {
             assert(decdecomp->linkingconss[j]);
-            SCIP_CALL(SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex));
+            SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
             consindex++;
          }
-
-         /* try this fix in order to assign indices to every variable (does not work!)*/
-         /*
-         for (j = 0; j < SCIPgetNVars(scip); ++j)
-         {
-            if(SCIPhashmapGetImage(varindexmap, SCIPgetVars(scip)[j]) == NULL)
-            {
-               SCIP_CALL(SCIPhashmapInsert(varindexmap, SCIPgetVars(scip)[j], (void*)varindex));
-               varindex++;
-            }
-         }
-         */
       }
       else if(decdecomp->type == DEC_DECTYPE_STAIRCASE)
       {
@@ -228,13 +217,22 @@ SCIP_RETCODE writeData(
          consindexmap = decdecomp->consindex;
       }
    }
+
    for( i = 0; i < nconss; i++)
    {
-      vars = SCIPgetVarsXXX(scip, conss[i]);
       nvars = SCIPgetNVarsXXX(scip, conss[i]);
+      vars = NULL;
+
+      if( nvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray( scip, &vars, nvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, nvars) );
+      }
 
       for( j = 0; j < nvars; j++)
       {
+         assert(vars != NULL);
+
          /* if the problem has been created, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
@@ -242,11 +240,6 @@ SCIP_RETCODE writeData(
             continue;
          }
 
-         /* somehow this assumes that the problem is presolved or we would have been*/
-         if(!SCIPvarIsActive(vars[j]))
-         {
-           // continue;
-         }
          /* if there is no decomposition, output the presolved model! */
          if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN)
          {
@@ -263,12 +256,11 @@ SCIP_RETCODE writeData(
                SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
                SCIPhashmapGetImage(consindexmap, conss[i])
                );
-
          }
       }
-      SCIPfreeMemoryArrayNull(scip, &vars);
+
+      SCIPfreeBufferArrayNull(scip, &vars);
    }
-   /* SCIPinfoMessage(scip, NULL, "varindex: %d, consindex: %d", varindex, consindex); */
 
    if(decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE)
    {
@@ -277,7 +269,6 @@ SCIP_RETCODE writeData(
    }
 
    return SCIP_OKAY;
-
 }
 
 
@@ -290,27 +281,6 @@ SCIP_RETCODE writeFileTrailer(
 {
    SCIPinfoMessage(scip, file, "e\n");
    return SCIP_OKAY;
-}
-
-
-/** returns the sanitized problem name (without paths) */
-static
-const char* getSanitizedProbName(SCIP* scip)
-{
-   const char* name;
-   const char* tname;
-
-   assert(scip != NULL);
-
-   name = SCIPgetProbName(scip);
-   assert(name != NULL);
-   tname = strrchr(name, '/');
-
-   if(tname != NULL)
-      return tname+1;
-   else
-      return name;
-
 }
 
 
@@ -344,24 +314,25 @@ SCIP_DECL_READERFREE(readerFreeGp)
 static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
+   /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
    assert(scip != NULL);
 
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
-   //   if(readerdata->decdecomp != NULL && readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
-   //   readerdata->decdecomp = DECgetBestDecomp(scip);
-   SCIP_CALL(SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE));
+
+   SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE) );
+
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
-
 
 
 /*
  * reader specific interface methods
  */
 
+/** writes the decomposition to the specific file */
 SCIP_RETCODE SCIPwriteGp(
    SCIP* scip,                                /**< SCIP data structure */
    FILE* file,                                /**< File pointer to write to */
@@ -369,46 +340,45 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP_Bool writeDecomposition               /**< whether to write decomposed problem */
    )
 {
+   char probname[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
+   char *name;
+
    assert(scip != NULL);
    assert(file != NULL);
-   if(writeDecomposition)
+
+   if(writeDecomposition && decdecomp == NULL)
    {
-      if(decdecomp == NULL)
-      {
-         SCIPwarningMessage("Cannot write decomposed problem if decomposition structure empty!");
-         writeDecomposition = FALSE;
-         //return SCIP_INVALIDDATA;
-      }
+      SCIPwarningMessage("Cannot write decomposed problem if decomposition structure empty!");
+      writeDecomposition = FALSE;
    }
+   /* sanitize filename */
+   (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+   SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
+
    /* print header */
    if(decdecomp == NULL)
-   {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", getSanitizedProbName(scip));
-   }
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
-   {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", getSanitizedProbName(scip), decdecomp->nblocks);
-   }
-   SCIP_CALL(writeFileHeader(scip, file, outname));
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", name, decdecomp->nblocks);
+
+   SCIP_CALL( writeFileHeader(scip, file, outname) );
 
    /* write decomp information such as rectangles */
    if(writeDecomposition)
-   {
-      SCIP_CALL(writeDecompositionHeader(scip, file, decdecomp));
-   }
+      SCIP_CALL( writeDecompositionHeader(scip, file, decdecomp) );
 
    /* write the plot header*/
-   SCIP_CALL(writePlotCommands(scip, file));
-
+   SCIP_CALL( writePlotCommands(scip, file) );
 
    /* write data */
-   SCIP_CALL(writeData(scip, file, decdecomp));
+   SCIP_CALL( writeData(scip, file, decdecomp) );
 
    /* write file end */
-   SCIP_CALL(writeFileTrailer(scip, file));
+   SCIP_CALL( writeFileTrailer(scip, file) );
    return SCIP_OKAY;
 }
+
 
 /** includes the gp file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
@@ -418,15 +388,13 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP_READERDATA* readerdata;
 
    /* create gp reader data */
-   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
    readerdata->decdecomp = NULL;
    readerdata->vartoindex = NULL;
 
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
          readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
-
-   /* add gp reader parameters */
 
    return SCIP_OKAY;
 }

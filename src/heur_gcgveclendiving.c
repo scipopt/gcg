@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgveclendiving.c
- * @ingroup PRIMALHEURISTICS
  * @brief  LP diving heuristic that rounds variables with long column vectors
  * @author Tobias Achterberg
  * @author Christian Puchert

@@ -7,11 +7,10 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 /**@file   reader_dec.c
  * @brief  DEC file reader
- * @ingroup FILEREADERS
  * @author Lukas Kirchhart
- *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -56,13 +55,14 @@
 #define DEC_MAX_PUSHEDTOKENS  2
 #define DEC_PRINTLEN          100
 
-/** Section in DEC File */
+/** section in DEC File */
 enum DecSection
 {
    DEC_START, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
+/** exponent indicator of the a value */
 enum DecExpType
 {
    DEC_EXP_NONE, DEC_EXP_UNSIGNED, DEC_EXP_SIGNED
@@ -72,33 +72,33 @@ typedef enum DecExpType DECEXPTYPE;
 /** DEC reading data */
 struct DecInput
 {
-   SCIP_FILE* file;
-   char linebuf[DEC_MAX_LINELEN];
-   char* token;
-   char* tokenbuf;
-   char* pushedtokens[DEC_MAX_PUSHEDTOKENS];
-   int npushedtokens;
-   int linenumber;
-   int linepos;
-   int nblocks;
-   int blocknr;               /**< number of the currentblock between 0 and Nblocks-1*/
-   DECSECTION section;
-   SCIP_Bool haserror;
+   SCIP_FILE* file;                          /**< file to read */
+   char linebuf[DEC_MAX_LINELEN];            /**< line buffer */
+   char* token;                              /**< current token */
+   char* tokenbuf;                           /**< token buffer */
+   char* pushedtokens[DEC_MAX_PUSHEDTOKENS]; /**< token stack */
+   int npushedtokens;                        /**< size of token buffer */
+   int linenumber;                           /**< current line number */
+   int linepos;                              /**< current line position (column) */
+   int nblocks;                              /**< number of blocks */
+   int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
+   DECSECTION section;                       /**< current section */
+   SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
 };
 typedef struct DecInput DECINPUT;
 
 /** data for gp reader */
 struct SCIP_ReaderData
 {
-   DECDECOMP* decdecomp;
-   SCIP_HASHMAP *vartoindex;
+   DECDECOMP* decdecomp;      /**< decomposition data structure*/
+   SCIP_HASHMAP* vartoindex;  /**< hashmap which var is at which index*/
    int* varstoblock;          /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
-   int* nblockvars;           /**< n variable per block that are no linkingvars*/
-   SCIP_CONS*** blockcons;    /**< [decnr][consid]  */
-   int* nblockcons;
-   SCIP_HASHMAP* constoblock;
-   int nlinkingcons;
-   int nlinkingvars;
+   int* nblockvars;           /**< n variable per block that are not linkingvars*/
+   SCIP_CONS*** blockcons;    /**< array of assignments from constraints to their blocks [blocknr][consid]  */
+   int* nblockcons;           /**< number of block-constraints for blockID*/
+   SCIP_HASHMAP* constoblock; /**< hashmap key=constaint value=block*/
+   int nlinkingcons;          /**< number of linking constraints*/
+   int nlinkingvars;          /**< number of linking vars*/
 };
 
 static const int NOVALUE = - 1;
@@ -511,7 +511,7 @@ SCIP_Bool isNewSection(
 }
 
 /** reads the header of the file */
-static 
+static
 SCIP_RETCODE readStart(
    SCIP* scip,          /**< SCIP data structure */
    DECINPUT* decinput   /**< DEC reading data */
@@ -607,16 +607,18 @@ SCIP_RETCODE readBlock(
          syntaxError(scip, decinput, "unknown variable in block section");
          break;
       }
+
       /* get all vars for  the specific constraint */
-      vars = SCIPgetVarsXXX(scip, cons);
       nvars = SCIPgetNVarsXXX(scip, cons);
+      vars = NULL;
+      if( nvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      }
+
       for( i = 0; i < nvars; i ++ )
       {
-         /*
-          * set each var to the current block
-          */
-         /*         SCIP_CALL(GCGrelaxSetOriginalVarBlockNr(scip, vars[i], decinput->blocknr)); */
-         
          /*
           * saving for dedecomp
           */
@@ -627,10 +629,15 @@ SCIP_RETCODE readBlock(
          varvalue = readerdata->varstoblock[varvalueindex ];
          if( varvalue == NOVALUE )
          {
+            SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(vars[i]), decinput->blocknr);
             readerdata->varstoblock[varvalueindex ] = decinput->blocknr;
          }
-         else if( varvalue != NOVALUE || varvalue != LINKINGVALUE )
+         else if( (varvalue != NOVALUE || varvalue != LINKINGVALUE) && varvalue != decinput->blocknr )
          {
+
+            SCIPdebugMessage("\tVar %s is linking (old %d != %d new).\n", SCIPvarGetName(vars[i]), varvalue, decinput->blocknr);
+            assert(varvalue != decinput->blocknr);
+
             readerdata->varstoblock[varvalueindex ] = LINKINGVALUE;
             /* decrease the value again if it is a linking var */
             readerdata->nblockvars[decinput->blocknr] = readerdata->nblockvars[decinput->blocknr] - 1;
@@ -649,14 +656,14 @@ SCIP_RETCODE readBlock(
 
       if( SCIPhashmapGetImage(readerdata->constoblock, cons) != (void*) (size_t) LINKINGVALUE )
       {
-         SCIP_CALL(SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE));
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) (size_t) LINKINGVALUE) );
          readerdata->nlinkingcons --;
       }
       else
       {
-         SCIP_CALL(SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) decinput->blocknr)));
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) decinput->blocknr)) );
       }
-      SCIPfreeMemoryArray(scip, &vars);
+      SCIPfreeBufferArrayNull(scip, &vars);
    }
 
    return SCIP_OKAY;
@@ -691,7 +698,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          /* set the block number of the variable to the number of the current block */
-         /*SCIP_CALL(GCGrelaxMarkConsMaster(scip, cons));*/
+         /*SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );*/
       }
    }
 
@@ -706,7 +713,7 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_READERDATA* readerdata   /**< reader data*/
    )
 {
-   
+
    DECDECOMP* decomp;
    SCIP_VAR** allvars;
    SCIP_CONS** allcons;
@@ -733,41 +740,30 @@ SCIP_RETCODE fillDecompStruct(
 
    nconss = SCIPgetNConss(scip);
    /* nvars */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->nsubscipvars, decinput->nblocks));
-   for( i = 0; i < decinput->nblocks; i ++ )
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->nsubscipvars, decinput->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->nsubscipconss, decinput->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipvars, decinput->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipconss, decinput->nblocks) );
+
+   for( i = 0; i < decinput->nblocks; ++i )
    {
       decomp->nsubscipvars[i] = 0;
+      decomp->nsubscipconss[i] = 0;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipvars[i], readerdata->nblockvars[i]) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipconss[i], readerdata->nblockcons[i]) );
    }
-   /* vars */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars, decinput->nblocks));
-   for( i = 0; i < decinput->nblocks; i ++ )
-   {
-      SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars[i], readerdata->nblockvars[i]));
-   }
+
    /* linking vars */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->linkingvars, readerdata->nlinkingvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->linkingvars, readerdata->nlinkingvars) );
    decomp->nlinkingvars = 0;
 
-   /* conss */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss, decinput->nblocks));
-   for( i = 0; i < decinput->nblocks; i ++ )
-   {
-      SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss[i], readerdata->nblockcons[i]));
-   }
-   /* nconss */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->nsubscipconss, decinput->nblocks));
-   for( i = 0; i < decinput->nblocks; i ++ )
-   {
-      decomp->nsubscipconss[i] = 0;
-   }
-
    /* linking conss */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->linkingconss, readerdata->nlinkingcons));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->linkingconss, readerdata->nlinkingcons) );
    decomp->nlinkingconss = 0;
 
    /* hashmaps */
-   SCIP_CALL(SCIPhashmapCreate(&decomp->constoblock, SCIPblkmem(scip), nconss));
-   SCIP_CALL(SCIPhashmapCreate(&decomp->vartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)));
+   SCIP_CALL( SCIPhashmapCreate(&decomp->constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&decomp->vartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
 
    /* init */
    allvars = SCIPgetVars(scip);
@@ -791,7 +787,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->linkingvars[ind] = allvars[i];
          decomp->nlinkingvars = decomp->nlinkingvars + 1;
          /* hashmap */
-         SCIP_CALL(SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE));
+         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE) );
       }
       else
       { /* value = block id=index of block */
@@ -807,7 +803,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nsubscipvars[value] ++;
 
          /* hashmap */
-         SCIP_CALL(SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value));
+         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value) );
       }
    }
 
@@ -824,7 +820,7 @@ SCIP_RETCODE fillDecompStruct(
 
    for( i = 0; i < nconss; i ++ )
    {
-      SCIP_CALL(SCIPhashmapInsert(decomp->constoblock, allcons[i], (void*) (size_t) LINKINGVALUE));
+      SCIP_CALL( SCIPhashmapInsert(decomp->constoblock, allcons[i], (void*) (size_t) LINKINGVALUE) );
    }
    n = decinput->nblocks;
    for( i = 0; i < n; i ++ )
@@ -837,8 +833,8 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nsubscipconss[i] ++;
          /* hashmap */
          /* @todo besser machen? */
-         SCIP_CALL(SCIPhashmapRemove(decomp->constoblock, readerdata->blockcons[i][j]));
-         SCIP_CALL(SCIPhashmapInsert(decomp->constoblock, readerdata->blockcons[i][j], (void*) (size_t) i));
+         SCIP_CALL( SCIPhashmapRemove(decomp->constoblock, readerdata->blockcons[i][j]) );
+         SCIP_CALL( SCIPhashmapInsert(decomp->constoblock, readerdata->blockcons[i][j], (void*) (size_t) i) );
       }
    }
 
@@ -864,7 +860,7 @@ readDECFile(
    nblocksread = FALSE;
    assert(decinput != NULL);
 
-   /*   SCIP_CALL(GCGcreateOrigVarsData(scip));*/
+   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) );*/
 
    /* open file */
    decinput->file = SCIPfopen(filename, "r");
@@ -891,18 +887,18 @@ readDECFile(
    nconss = SCIPgetNConss(scip);
    /* alloc: var -> block mapping */
 
-   SCIP_CALL(SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars));
+   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
 
    for( i = 0; i < nvars; i ++ )
    {
       readerdata->varstoblock[i] = NOVALUE;
    }
- 
-  SCIP_CALL(SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss));
+
+  SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
 
    for( i = 0; i < SCIPgetNConss(scip); i ++ )
    {
-      SCIP_CALL(SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE));
+      SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*) (size_t) LINKINGVALUE) );
    }
 
    /* parse the file */
@@ -912,41 +908,33 @@ readDECFile(
       switch( decinput->section )
       {
          case DEC_START:
-            SCIP_CALL(readStart(scip, decinput));
+            SCIP_CALL( readStart(scip, decinput) );
             break;
 
          case DEC_NBLOCKS:
-            SCIP_CALL(readNBlocks(scip, decinput));
+            SCIP_CALL( readNBlocks(scip, decinput) );
             break;
 
          case DEC_BLOCK:
             if( nblocksread == FALSE )
             {
                /* alloc n vars per block */
-               SCIP_CALL(SCIPallocBufferArray(scip, &readerdata->nblockvars, decinput->nblocks));
+               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, decinput->nblocks) );
+               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockcons, decinput->nblocks) );
+               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons, decinput->nblocks) );
                for( i = 0; i < decinput->nblocks; i ++ )
                {
                   readerdata->nblockvars[i] = 0;
-               }
-               /* alloc: constraint -> block */
-               SCIP_CALL(SCIPallocBufferArray(scip, &readerdata->blockcons, decinput->nblocks));
-
-               for( i = 0; i < decinput->nblocks; i ++ )
-               {
-                  SCIP_CALL(SCIPallocBufferArray(scip, &readerdata->blockcons[i], nconss));
-               }
-               SCIP_CALL(SCIPallocBufferArray(scip, &readerdata->nblockcons, decinput->nblocks));
-               for( i = 0; i < decinput->nblocks; i ++ )
-               {
                   readerdata->nblockcons[i] = 0;
+                  SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons[i], nconss) );
                }
                nblocksread = TRUE;
             }
-            SCIP_CALL(readBlock(scip, decinput));
+            SCIP_CALL( readBlock(scip, decinput) );
             break;
 
          case DEC_MASTERCONSS:
-            SCIP_CALL(readMasterconss(scip, decinput));
+            SCIP_CALL( readMasterconss(scip, decinput) );
             break;
 
          case DEC_END: /* this is already handled in the while() loop */
@@ -956,10 +944,10 @@ readDECFile(
       }
    }
    /* fill decomp */
-   SCIP_CALL(fillDecompStruct(scip, decinput, readerdata));
+   SCIP_CALL( fillDecompStruct(scip, decinput, readerdata) );
 
    /* add decomp to cons_decomp */
-   SCIP_CALL(SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp));
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
 
 
    for( i = 0; i < decinput->nblocks; i ++ )
@@ -1000,7 +988,7 @@ SCIP_DECL_READERFREE(readerFreeDec)
 static
 SCIP_DECL_READERREAD(readerReadDec)
 {
-   SCIP_CALL(SCIPreadDec(scip, reader, filename, result));
+   SCIP_CALL( SCIPreadDec(scip, reader, filename, result) );
 
    return SCIP_OKAY;
 }
@@ -1016,7 +1004,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   SCIP_CALL(SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE));
+   SCIP_CALL( SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -1029,14 +1017,14 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE
 SCIPincludeReaderDec(
-        SCIP * scip /**< SCIP data structure */
+        SCIP * scip       /**< SCIP data structure */
         )
 {  /*lint --e{715}*/
    SCIP_READERDATA* readerdata;
 
    /* create dec reader data */
-   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
-   SCIP_CALL(DECdecdecompCreate(scip, &readerdata->decdecomp));
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( DECdecdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include lp reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
@@ -1046,7 +1034,7 @@ SCIPincludeReaderDec(
 }
 
 /* reads problem from file */
-SCIP_RETCODE SCIPreadDec(         
+SCIP_RETCODE SCIPreadDec(
    SCIP* scip,             /**< SCIP data structure */
    SCIP_READER* reader,    /**< the file reader itself */
    const char* filename,   /**< full path and name of file to read, or NULL if stdin should be used */
@@ -1059,13 +1047,13 @@ SCIP_RETCODE SCIPreadDec(
    /* initialize DEC input data */
    decinput.file = NULL;
    decinput.linebuf[0] = '\0';
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decinput.token, DEC_MAX_LINELEN));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.token, DEC_MAX_LINELEN) );
    decinput.token[0] = '\0';
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decinput.tokenbuf, DEC_MAX_LINELEN));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.tokenbuf, DEC_MAX_LINELEN) );
    decinput.tokenbuf[0] = '\0';
    for( i = 0; i < DEC_MAX_PUSHEDTOKENS; ++ i )
    {
-      SCIP_CALL(SCIPallocMemoryArray(scip, &decinput.pushedtokens[i], DEC_MAX_LINELEN));
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.pushedtokens[i], DEC_MAX_LINELEN) );
    }
 
    decinput.npushedtokens = 0;
@@ -1077,7 +1065,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.haserror = FALSE;
 
    /* read the file */
-   SCIP_CALL(readDECFile(scip, &decinput, filename));
+   SCIP_CALL( readDECFile(scip, &decinput, filename) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &decinput.token);
@@ -1119,7 +1107,7 @@ SCIP_RETCODE writeData(
            || decdecomp->type == DEC_DECTYPE_UNKNOWN
            || decdecomp->type == DEC_DECTYPE_STAIRCASE);
    SCIPdebugMessage("DECDECOMP Type: %d\n",decdecomp->type);
-   
+
    /* if we don't have staicase, but something else, go through the blocks and create the indices */
    /* conss */
    assert(decdecomp->nsubscipconss != NULL);
@@ -1127,7 +1115,7 @@ SCIP_RETCODE writeData(
 
    /* linking cons */
    assert(decdecomp->nlinkingconss >= 0 && decdecomp->nlinkingconss < SCIPgetNConss(scip));
-   assert(decdecomp->linkingconss != NULL);
+   assert(decdecomp->linkingconss != NULL || decdecomp->nlinkingconss == 0 );
 
    SCIPinfoMessage(scip, file, "NBLOCKS\n");
    SCIPinfoMessage(scip, file, "%d\n", decdecomp->nblocks);
@@ -1153,11 +1141,12 @@ SCIP_RETCODE writeData(
    return SCIP_OKAY;
 }
 
+/** write a DEC file for a given decomposition */
 SCIP_RETCODE SCIPwriteDecomp(
-   SCIP* scip,                   /**< SCIP data structure */
-   FILE* file,                   /**< File pointer to write to */
-   DECDECOMP* decdecomp,         /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition  /**< whether to write decomposed problem */
+   SCIP* scip,                  /**< SCIP data structure */
+   FILE* file,                  /**< File pointer to write to */
+   DECDECOMP* decdecomp,        /**< Decomposition pointer */
+   SCIP_Bool writeDecomposition /**< whether to write decomposed problem */
    )
 {
    char outname[SCIP_MAXSTRLEN];
@@ -1177,18 +1166,18 @@ SCIP_RETCODE SCIPwriteDecomp(
    /* print header */
    if( decdecomp == NULL )
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    }
    else
    {
-      SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), decdecomp->nblocks);
    }
 
    if( writeDecomposition )
    {
 
       /* write data */
-      SCIP_CALL(writeData(scip, file, decdecomp));
+      SCIP_CALL( writeData(scip, file, decdecomp) );
 
    }
 

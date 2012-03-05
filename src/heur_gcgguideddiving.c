@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgguideddiving.c
- * @ingroup PRIMALHEURISTICS
  * @brief  LP diving heuristic that chooses fixings in direction of incumbent solutions
  * @author Tobias Achterberg
  * @author Christian Puchert
@@ -337,6 +336,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(scip) );
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;

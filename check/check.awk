@@ -8,7 +8,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id$
 #
 #@file    check.awk
 #@brief   SCIP Check Report Generator
@@ -271,6 +270,7 @@ BEGIN {
 # problem: master or original?
 #
 /^Original Program statistics:/ { inmasterprob = 0; inoriginalprob = 1; }
+/^Master Program statistics:/ { inmasterprob = 1; inoriginalprob = 0; }
 #
 # conflict analysis
 #
@@ -360,6 +360,9 @@ BEGIN {
    blocks = $3;
    rel = $5;
 }
+/^GCG                : Performing Dantzig-Wolfe with [0-9]+ blocks./ {
+   blocks = $6;
+}
 /^  mip              :/ {
    npriceprobs = $4 + $6;
 }
@@ -410,13 +413,13 @@ BEGIN {
 #
 /^Original Problem   : no problem exists./ { readerror = 1; }
 /^SCIP Status        :/ { aborted = 0; }
-/solving was interrupted/ { timeout = 1; }
-/gap limit reached/ { gapreached = 1; }
-/solution limit reached/ { sollimitreached = 1; }
-/memory limit reached/ { memlimitreached = 1; }
-/node limit reached/ { nodelimitreached = 1; }
-/problem is solved/ { timeout = 0; }
-/best solution is not feasible in original problem/  { bestsolfeas = 0; }
+/solving was interrupted/ { if( inoriginalprob ) timeout = 1; }
+/gap limit reached/ { if( inoriginalprob ) gapreached = 1; }
+/solution limit reached/ { if( inoriginalprob ) sollimitreached = 1; }
+/memory limit reached/ { if( inoriginalprob ) memlimitreached = 1; }
+/node limit reached/ { if( inoriginalprob ) nodelimitreached = 1; }
+/problem is solved/ { if( inoriginalprob ) timeout = 0; }
+/best solution is not feasible in original problem/  { if( inoriginalprob ) bestsolfeas = 0; }
 
 /^  First Solution   :/ {
    timetofirst = $11;

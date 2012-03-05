@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_arrowheur.c
- * @ingroup DETECTORS
  * @brief  arrowheur presolver
  * @author Martin Bergner
  */
@@ -32,89 +31,71 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 
-#define DEC_DETECTORNAME      "arrowheur"   /**< name of the detector */
-#define DEC_PRIORITY          1000          /**< priority of the detector */
+#define DEC_DETECTORNAME      "arrowheur"    /**< name of the detector */
+#define DEC_PRIORITY          1000           /**< priority of the detector */
+#define DEC_DECCHAR           'a'            /**< display character of detector */
+#define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
 /* Default parameter settings */
-#define DEFAULT_BLOCKS                    2     /**< number of blocks */
-#define DEFAULT_VARWEIGHT                 1     /**< weight for variable nodes */
-#define DEFAULT_VARWEIGHTBIN              2     /**< weight for binary variable nodes */
-#define DEFAULT_VARWEIGHTINT              2     /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT             1     /**< weight for continous variable nodes */
-#define DEFAULT_VARWEIGHTIMPL             2     /**< weight for implicit integer variable nodes */
-#define DEFAULT_CONSWEIGHT                5     /**< weight for constraint hyperedges */
-#define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
-#define DEFAULT_TIDY                      TRUE  /**< whether to clean up afterwards */
-#define DEFAULT_DUMMYNODES                0.2   /**< percentage of dummy vertices*/
-#define DEFAULT_CONSWEIGHT_SETPPC         5     /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
-#define DEFAULT_MAXBLOCKS                 10    /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_ALPHA                     0.0   /**< factor for standard deviation of constraint weights */
-#define DEFAULT_BETA                      0.5   /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
-#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
-#define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
-#define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_PRIORITY                  DEC_PRIORITY
-
-
-#define DWSOLVER_REFNAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
-   "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d_ref.txt", \
-   (name), (blocks), (varcont), (varint), (cons), (dummy), (alpha), (beta), (conssetppc)
-
-#define GP_NAME(name, blocks, varcont, varint, cons, dummy, alpha, beta, conssetppc)  \
-   "%s_%d_%d_%d_%d_%.1f_%.1f_%.1f_%d.gp", \
-   (name), (blocks), (varcont), (varint), (cons), (dummy), (alpha), (beta), (conssetppc)
+#define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
+#define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
+#define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
+#define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
+#define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
+#define DEFAULT_RANDSEED          1          /**< random seed for the hmetis call */
+#define DEFAULT_TIDY              TRUE       /**< whether to clean up afterwards */
+#define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
+#define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
+#define DEFAULT_MAXBLOCKS         10         /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
+#define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
+#define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
+#define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
+#define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
 
 /*
  * Data structures
  */
 
-/** score data structure **/
-struct SCIP_ArrowheurScores
-{
-   SCIP_Real borderscore;
-   SCIP_Real minkequicutscore;
-   SCIP_Real equicutscorenormalized;
-   SCIP_Real densityscore;
-   SCIP_Real linkingscore;
-};
-typedef struct SCIP_ArrowheurScores SCIP_ARROWHEURSCORES;
-/** presolver data */
+/** private detector data */
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   SCIP_PTRARRAY *hedges;
-   SCIP_INTARRAY *copytooriginal;
-   int *partition;
-   int nvertices;
-   int nhyperedges;
-   int *varpart;
+   SCIP_PTRARRAY* hedges;           /**< variable array of hyperedges */
+   SCIP_INTARRAY* copytooriginal;   /**< array mapping copied to original variables */
+   int*           partition;        /**< array storing vertex partitions */
+   int            nvertices;        /**< number of vertices */
+   int*           varpart;          /**< array storing variable partition */
 
-   /* Stuff to get the dw-solver to work*/
-   SCIP_HASHMAP *constolpid;
+   /* weight parameters */
+   int       varWeight;             /**< weight of a variable hyperedge */
+   int       varWeightBinary;       /**< weight of a binary variable hyperedge */
+   int       varWeightContinous;    /**< weight of a continuous variable hyperedge */
+   int       varWeightInteger;      /**< weight of an integer variable hyperedge */
+   int       varWeightImplint;      /**< weight of an implicit integer variable hyperedge */
+   int       consWeight;            /**< weight of a constraint hyperedge */
+   int       consWeightSetppc;      /**< weight of a setppc constraint hyperedge */
+   SCIP_Real alpha;                 /**< factor for constraint coefficient value standard deviation */
+   SCIP_Real beta;                  /**< factor for equality od inequality constraints */
 
-   SCIP_Bool tidy;
-   int blocks;
-   int maxblocks;
-   int minblocks;
-   int varWeight;
-   int varWeightBinary;
-   int varWeightContinous;
-   int varWeightInteger;
-   int varWeightImplint;
-   int consWeight;
-   int randomseed;
-   SCIP_Bool found;
-   SCIP_Real dummynodes;
-   int consWeightSetppc;
-   SCIP_Real alpha;
-   SCIP_Real beta;
+   /* general parameters */
+   SCIP_Real dummynodes;      /**< percent of dummy nodes */
+   SCIP_Bool tidy;            /**< whether tempory metis files should be cleaned up */
+   int       maxblocks;       /**< maximal number of blocks to test */
+   int       minblocks;       /**< minimal number of blocks to test */
 
-   SCIP_Real metisubfactor;
-   SCIP_Bool metisverbose;
-   SCIP_Bool metisuseptyperb;
-   SCIP_CLOCK *metisclock;
-   int priority;
+   /* metis parameters */
+   int       randomseed;      /**< metis random seed */
+   SCIP_Real metisubfactor;   /**< metis unbalance factor */
+   SCIP_Bool metisverbose;    /**< should metis ouput be displayed */
+   SCIP_Bool metisuseptyperb; /**< flag to indicate whether metis uses kway or rb partitioning */
+
+   /* various data */
+   SCIP_CLOCK* metisclock;    /**< clock to measure metis time */
+   int         blocks;        /**< indicates the current block */
+   SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
 };
 
 enum htype
@@ -123,16 +104,17 @@ enum htype
 };
 typedef enum htype hType;
 
+
+/** hyper edge data structure */
 struct hyperedge
 {
 
-   hType type;       ///< The type of the hyperegde (is it a split variable or a real constraint)
-   int *variableIds; ///< the associated variable IDs that appear in the hyperedge
-  // int copyId;       ///< The ids of the associated copy
-   int nvariableIds; ///< number of variable ids
-   int originalId;   ///< the original SCIP ID of this constraint or variable
+   hType type;                /**< the type of the hyperegde (is it a split variable or a real constraint) */
+   int *variableIds;          /**< the associated variable IDs that appear in the hyperedge */
+   int nvariableIds;          /**< number of variable ids */
+   int originalId;            /**< the original SCIP ID of this constraint or variable */
 
-   int cost;
+   int cost;                  /**< cost of the hyperedge */
 
 };
 typedef struct hyperedge HyperEdge;
@@ -143,36 +125,7 @@ typedef struct hyperedge HyperEdge;
 
 /* put your local methods here, and declare them static */
 
-/** Prints the score of the decomposition */
-static
-SCIP_RETCODE printArrowheurScores(
-      SCIP*                 scip,
-      DEC_DETECTORDATA*   detectordata,
-      SCIP_ARROWHEURSCORES* scores
-      )
-{
-   char name[SCIP_MAXSTRLEN];
-   SCIPsnprintf(name, SCIP_MAXSTRLEN, DWSOLVER_REFNAME(SCIPgetProbName(scip),
-         detectordata->blocks,
-         detectordata->varWeightContinous,
-         detectordata->varWeightInteger,
-         detectordata->consWeight,
-         detectordata->dummynodes,
-         detectordata->alpha,
-         detectordata->beta,
-         detectordata->consWeightSetppc));
-
-   SCIPdebugMessage("SCORES:\t%s\t%s\t%f\t%f\t%f\t%f\t%f\n",
-         SCIPgetProbName(scip), name,
-         scores->borderscore,
-         scores->densityscore,
-         scores->linkingscore,
-         scores->minkequicutscore,
-         scores->equicutscorenormalized);
-
-   return SCIP_OKAY;
-}
-
+/** detector initialization method */
 static
 DEC_DECL_INITDETECTOR(initArrowheur)
 {
@@ -191,23 +144,15 @@ DEC_DECL_INITDETECTOR(initArrowheur)
    nconss = SCIPgetNConss(scip);
    detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
    /* initialize variables and constraints per block structures*/
-   SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->varpart, nvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varpart, nvars) );
    for( i = 0; i < nvars; ++i )
    {
       detectordata->varpart[i] = -1;
    }
-   SCIP_CALL(SCIPcreatePtrarray(scip, &detectordata->hedges));
-   SCIP_CALL(SCIPcreateIntarray(scip, &detectordata->copytooriginal));
+   SCIP_CALL( SCIPcreatePtrarray(scip, &detectordata->hedges) );
+   SCIP_CALL( SCIPcreateIntarray(scip, &detectordata->copytooriginal) );
 
-   SCIP_CALL(SCIPhashmapCreate(&detectordata->constolpid, SCIPblkmem(scip), nconss));
-
-   /* initialise consttolpid hashmap and hyper edges array */
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_CALL(SCIPhashmapInsert(detectordata->constolpid, SCIPgetConss(scip)[i], (void*)(size_t)i));
-   }
-
-   SCIP_CALL(SCIPcreateWallClock(scip, &detectordata->metisclock));
+   SCIP_CALL( SCIPcreateWallClock(scip, &detectordata->metisclock) );
 
    return SCIP_OKAY;
 }
@@ -235,9 +180,6 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
    SCIPfreeMemoryArray(scip, &detectordata->partition);
    SCIPfreeMemoryArray(scip, &detectordata->varpart);
 
-   /* free hash map */
-   SCIPhashmapFree(&detectordata->constolpid);
-
    /* free dynamic arrays */
    for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, detectordata->hedges); ++i )
    {
@@ -249,20 +191,21 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
       SCIPfreeMemory(scip, &hedge);
    }
 
-   SCIP_CALL(SCIPfreeClock(scip, &detectordata->metisclock));
-   SCIPfreePtrarray(scip, &detectordata->hedges);
-   SCIPfreeIntarray(scip, &detectordata->copytooriginal);
+   SCIP_CALL( SCIPfreeClock(scip, &detectordata->metisclock) );
+   SCIP_CALL( SCIPfreePtrarray(scip, &detectordata->hedges) );
+   SCIP_CALL( SCIPfreeIntarray(scip, &detectordata->copytooriginal) );
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
 }
 
+/** compute weight of a hyperedge */
 static
-int computeHyperedgeWeight(
-   SCIP*             scip,
-   DEC_DETECTORDATA* detectordata,
-   SCIP_CONS*        cons,
-   int*              cost
+SCIP_RETCODE computeHyperedgeWeight(
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata,  /**< detector data data structure */
+   SCIP_CONS*        cons,          /**< constraint belonging to the hyperegde */
+   int*              cost           /**< pointer storing the hyperedge cost */
    )
 {
    int j;
@@ -277,7 +220,7 @@ int computeHyperedgeWeight(
 
    if((strcmp("linear", hdlrname) == 0))
    {
-      SCIP_CALL(SCIPupgradeConsLinear(scip, cons, &upgdcons));
+      SCIP_CALL( SCIPupgradeConsLinear(scip, cons, &upgdcons) );
       if(upgdcons != NULL)
          upgraded = TRUE;
    }
@@ -285,7 +228,6 @@ int computeHyperedgeWeight(
    {
       upgdcons = cons;
    }
-
 
    if(upgdcons != NULL)
    {
@@ -329,13 +271,19 @@ int computeHyperedgeWeight(
 
       mean = 0.0;
       variance = 0.0;
-      vals = SCIPgetValsXXX(scip, cons);
+      vals = NULL;
+      if(ncurvars > 0)
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &vals, ncurvars) );
+         SCIP_CALL( SCIPgetValsXXX(scip, cons, vals, ncurvars) );
+      }
 
       *cost = detectordata->consWeight;
 
       /* calculate variety using the normalized variance */
       for( j = 0; j < ncurvars; ++j )
       {
+         assert(vals != NULL);
          mean += vals[j] / ncurvars;
       }
       if( ncurvars <= 1 )
@@ -346,35 +294,38 @@ int computeHyperedgeWeight(
       {
          for( j = 0; j < ncurvars; ++j )
          {
+            assert(vals != NULL);
             assert(ncurvars > 1);
             variance += pow((vals[j] - mean), 2.0) / (ncurvars-1);
          }
       }
       assert(variance >= 0);
       stddev = sqrt(variance);
-      SCIPfreeMemoryArray(scip, &vals);
+      SCIPfreeBufferArrayNull(scip, &vals);
 
       // TODO: MAGIC NUMBER 2
       if( SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons), SCIPgetLhsXXX(scip, cons)) )
       {
          /* we are dealing with an equality*/
+         /*lint --e{524} */
          *cost = SCIPceil(scip, detectordata->beta*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
       else
       {
+         /*lint --e{524} */
          *cost = SCIPceil(scip, (1.0-detectordata->beta)*2.0*detectordata->consWeight+detectordata->alpha*stddev);
       }
 
    }
    if( upgraded == TRUE )
    {
-      SCIP_CALL(SCIPreleaseCons(scip, &upgdcons));
+      SCIP_CALL( SCIPreleaseCons(scip, &upgdcons) );
    }
    return SCIP_OKAY;
 }
 
 /**
- * Builds a graph structure out of the matrix.
+ * builds a graph structure out of the matrix.
  *
  * The function will create an HyperEdge for every constraint and every variable.
  * It will additionally create vertices for every variable and in particular
@@ -387,9 +338,9 @@ int computeHyperedgeWeight(
  * @todo The nonzeroness is not checked, all variables in the variable array are considered
  */
 static SCIP_RETCODE buildGraphStructure(
-      SCIP*             scip,          /**< SCIP data structure */
-      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
-      )
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   )
 {
    SCIP_CONS **conss;
    SCIP_PTRARRAY *hedges;
@@ -414,23 +365,23 @@ static SCIP_RETCODE buildGraphStructure(
    hedges = detectordata->hedges;
    copytoorig = detectordata->copytooriginal;
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &copies, nconss));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &copies, nconss) );
 
    /* we need at least nconss + nvars hyperedges */
-   SCIP_CALL(SCIPextendPtrarray(scip, hedges,  0, nconss+nvars));
+   SCIP_CALL( SCIPextendPtrarray(scip, hedges,  0, nconss+nvars) );
    /* we have at least nvars may copy vertices */
-   SCIP_CALL(SCIPextendIntarray(scip, copytoorig, 0, nvars));
+   SCIP_CALL( SCIPextendIntarray(scip, copytoorig, 0, nvars) );
 
    /* map the original variable to all of its copies */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &maporigtocopies, nvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &maporigtocopies, nvars) );
 
    /* these are the number of copies for the given variable */
-   SCIP_CALL(SCIPallocMemoryArray(scip, &nmaporigtocopies, nvars));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nmaporigtocopies, nvars) );
 
    /* initialize for every variable the list of copies */
    for( i = 0; i < nvars; ++i )
    {
-      SCIP_CALL(SCIPcreateIntarray(scip, &maporigtocopies[i]));
+      SCIP_CALL( SCIPcreateIntarray(scip, &maporigtocopies[i]) );
       nmaporigtocopies[i] = 0;
    }
 
@@ -451,21 +402,22 @@ static SCIP_RETCODE buildGraphStructure(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      vars = SCIPgetVarsXXX( scip, conss[i] );
+      SCIP_CALL( SCIPallocBufferArray(scip, &vars, ncurvars) );
+      SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, ncurvars) );
 
       /* TODO: skip all variables that have a zero coeffient or where all coefficients add to zero */
       /* TODO: Do more then one entry per variable actually work? */
 
       /* allocate a hyperedge for the constraint */
-      SCIP_CALL(SCIPallocMemory(scip, &hedge));
+      SCIP_CALL( SCIPallocMemory(scip, &hedge) );
       hedge->type = CONSTRAINT;
       hedge->originalId = i;
 
       /* compute its weight*/
-      SCIP_CALL(computeHyperedgeWeight(scip, detectordata, conss[i], &(hedge->cost)));
+      SCIP_CALL( computeHyperedgeWeight(scip, detectordata, conss[i], &(hedge->cost)) );
 
       /* lets collect the variable ids of the variables */
-      SCIP_CALL(SCIPallocMemoryArray(scip, &varids, ncurvars));
+      SCIP_CALL( SCIPallocBufferArray(scip, &varids, ncurvars) );
       hedge->nvariableIds = 0;
 
       for( j = 0; j < ncurvars; ++j )
@@ -474,10 +426,9 @@ static SCIP_RETCODE buildGraphStructure(
          int varIndex;
 
          /* if the variable is inactive, skip it */
-         if( !isVarRelevant(vars[j]) )
-         {
+         if( !SCIPisVarRelevant(vars[j]) )
             continue;
-         }
+
          var = SCIPvarGetProbvar(vars[j]);
          assert(var != NULL);
          varIndex = SCIPvarGetProbindex(var);
@@ -491,9 +442,9 @@ static SCIP_RETCODE buildGraphStructure(
          ++(hedge->nvariableIds);
 
          /* put the copied id (started from 0, should be the index of the nonzero entry) to the end of the map of original to copy ids  */
-         SCIP_CALL(SCIPsetIntarrayVal(scip, maporigtocopies[varIndex], nmaporigtocopies[varIndex], id));
+         SCIP_CALL( SCIPsetIntarrayVal(scip, maporigtocopies[varIndex], nmaporigtocopies[varIndex], id) );
          ++(nmaporigtocopies[varIndex]);
-         SCIP_CALL(SCIPsetIntarrayVal(scip, copytoorig, id, varIndex));
+         SCIP_CALL( SCIPsetIntarrayVal(scip, copytoorig, id, varIndex) );
          ++id;
          /* Check the mapping here */
 #ifdef SCIP_DEBUG
@@ -515,23 +466,19 @@ static SCIP_RETCODE buildGraphStructure(
 #endif
       }
 
-
-
-
-
       if( hedge->nvariableIds > 1 )
       {
          /* if the hyperedge contains more then 0 variables, add it to the end */
-         SCIP_CALL(SCIPduplicateMemoryArray(scip, &hedge->variableIds, varids, hedge->nvariableIds));
-         SCIP_CALL(SCIPsetPtrarrayVal(scip, hedges, nhyperedges, hedge));
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &hedge->variableIds, varids, hedge->nvariableIds) );
+         SCIP_CALL( SCIPsetPtrarrayVal(scip, hedges, nhyperedges, hedge) );
          ++nhyperedges;
       }
       else
       {
          SCIPfreeMemory(scip, &hedge);
       }
-      SCIPfreeMemoryArray(scip, &varids);
-      SCIPfreeMemoryArray(scip, &vars);
+      SCIPfreeBufferArray(scip, &varids);
+      SCIPfreeBufferArray(scip, &vars);
    }
 
    /* build variable hyperedges */
@@ -568,17 +515,17 @@ static SCIP_RETCODE buildGraphStructure(
          break;
       }
 
-      SCIP_CALL(SCIPallocMemory(scip, &hedge));
+      SCIP_CALL( SCIPallocMemory(scip, &hedge) );
       hedge->type = VARIABLE;
       hedge->originalId = i;
       hedge->nvariableIds = 0;
       hedge->variableIds = NULL;
       hedge->cost = varWeight;
-      SCIP_CALL(SCIPsetPtrarrayVal(scip, hedges, nhyperedges, hedge));
+      SCIP_CALL( SCIPsetPtrarrayVal(scip, hedges, nhyperedges, hedge) );
       ++nhyperedges;
 
       /* link the copies together */
-      SCIP_CALL(SCIPallocMemoryArray(scip, &hedge->variableIds, size));
+      SCIP_CALL( SCIPallocMemoryArray(scip, &hedge->variableIds, size) );
       hedge->nvariableIds = size;
 
       for( j = 0; j < size; ++j )
@@ -587,7 +534,7 @@ static SCIP_RETCODE buildGraphStructure(
          SCIPdebugPrintf("%d, ", hedge->variableIds[j]+1);
       }
       SCIPdebugPrintf("\n");
-      SCIP_CALL(SCIPfreeIntarray(scip, &maporigtocopies[i]));
+      SCIP_CALL( SCIPfreeIntarray(scip, &maporigtocopies[i]) );
    }
    SCIPfreeMemoryArray(scip, &maporigtocopies);
    SCIPfreeMemoryArray(scip, &nmaporigtocopies);
@@ -602,13 +549,13 @@ static SCIP_RETCODE buildGraphStructure(
    return SCIP_OKAY;
 }
 
-/** Will call hmetis via a system call */
+/** will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(
-      SCIP*              scip,          /**< SCIP data struture */
-      DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
-      SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
-      )
+   SCIP*              scip,          /**< SCIP data struture */
+   DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
+   SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
+   )
 {
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
@@ -625,7 +572,7 @@ SCIP_RETCODE callMetis(
    SCIP_PTRARRAY *hedges;
    SCIP_FILE *zfile;
    FILE* file;
-   int temp_filedes = -1;
+   int temp_filedes;
    SCIP_Real remainingtime;
 
    assert(scip != NULL);
@@ -647,9 +594,10 @@ SCIP_RETCODE callMetis(
 
    hedges = detectordata->hedges;
    nvertices = detectordata->nvertices;
+   /*lint --e{524} */
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
 
-   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
    {
       SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
@@ -664,7 +612,6 @@ SCIP_RETCODE callMetis(
       SCIPerrorMessage("Could not open temporary metis file!\n");
       return SCIP_FILECREATEERROR;
    }
-
 
    SCIPinfoMessage(scip, file, "%d %d 1\n", SCIPgetPtrarrayMaxIdx(scip, hedges)+1, nvertices+ndummyvertices);
    for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, hedges); i++ )
@@ -692,7 +639,7 @@ SCIP_RETCODE callMetis(
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
                tempfile,
                detectordata->blocks,
@@ -703,7 +650,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
+      (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                tempfile,
                detectordata->blocks,
                detectordata->randomseed,
@@ -712,12 +659,13 @@ SCIP_RETCODE callMetis(
                detectordata->metisverbose ? "" : "> /dev/null" );
    }
 
-   SCIP_CALL(SCIPresetClock(scip, detectordata->metisclock));
-   SCIP_CALL(SCIPstartClock(scip, detectordata->metisclock));
+   SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
+   SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) );
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", detectordata->blocks );
    status = system( metiscall );
 
-   SCIP_CALL(SCIPstopClock(scip, detectordata->metisclock));
+   SCIP_CALL( SCIPstopClock(scip, detectordata->metisclock) );
    SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock),  remainingtime-SCIPgetClockTime(scip, detectordata->metisclock) );
 
    /* check error codes */
@@ -754,13 +702,13 @@ SCIP_RETCODE callMetis(
     */
    if( detectordata->partition == NULL )
    {
-      SCIP_CALL(SCIPallocMemoryArray(scip, &detectordata->partition, nvertices));
+      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, nvertices) );
    }
 
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;
@@ -804,12 +752,12 @@ SCIP_RETCODE callMetis(
    return SCIP_OKAY;
 }
 
-/** Maps the partitions for the disaggregated vertices to the original vertices */
+/** maps the partitions for the disaggregated vertices to the original vertices */
 static
 SCIP_RETCODE assignBlocksToOriginalVariables(
-      SCIP*             scip,          /**< SCIP data structure */
-      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
-      )
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   )
 {
 
    int i;
@@ -858,13 +806,12 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
    return SCIP_OKAY;
 }
 
-/** Builds the transformed problem in the new scip instance */
+/** builds the transformed problem in the new scip instance */
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                    scip,           /**< SCIP data structure */
    DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
    DECDECOMP*               decdecomp,      /**< decdecomp data structure */
    int                      nblocks,        /**< number of blocks for this decomposition */
-   SCIP_ARROWHEURSCORES*    score,           /**< scores */
    SCIP_RESULT*             result
    )
 {
@@ -890,7 +837,6 @@ static SCIP_RETCODE buildTransformedProblem(
 
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(score != NULL);
 
    nconss = SCIPgetNConss( scip );
    nvars = SCIPgetNVars( scip );
@@ -921,10 +867,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nconss) );
 
-   score->minkequicutscore = 0;
-   score->equicutscorenormalized = 0;
-
-   SCIP_CALL(SCIPallocBufferArray(scip, &isVarHandled, nvars));
+   SCIP_CALL( SCIPallocBufferArray(scip, &isVarHandled, nvars) );
    for( i = 0; i < nvars; ++i )
    {
       isVarHandled[i] = FALSE;
@@ -934,19 +877,28 @@ static SCIP_RETCODE buildTransformedProblem(
    for( i = 0; i < nconss; i++ )
    {
       long int consblock = -1;
+      int ncurvars;
+      SCIP_VAR **curvars;
+
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0)
+         continue;
 
       /* sort the variables into corresponding buckets */
-      int ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
-      SCIP_VAR **curvars = SCIPgetVarsXXX( scip, conss[i] );
+      ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
+      curvars = NULL;
+      if(ncurvars > 0)
+      {
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX( scip, conss[i], curvars, ncurvars) );
+      }
+
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
          long int varblock = -1;
-         if( !isVarRelevant(curvars[j]) )
-         {
-//            SCIPprintVar(scip, curvars[j], NULL);
+         if( !SCIPisVarRelevant(curvars[j]) )
             continue;
-         }
+
          var = SCIPvarGetProbvar(curvars[j]);
 
          assert(var != NULL);
@@ -993,7 +945,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
             /* finally set the hashmap image */
             assert(!SCIPhashmapExists(vartoblock, var));
-            SCIP_CALL(SCIPhashmapInsert(vartoblock, var, (void*)varblock));
+            SCIP_CALL( SCIPhashmapInsert(vartoblock, var, (void*)varblock) );
          }
          else
          {
@@ -1033,7 +985,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
          }
       }
-      SCIPfreeMemoryArrayNull(scip, &curvars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
 
       /*
        *  sort the constraints into the corresponding bucket
@@ -1048,7 +1000,7 @@ static SCIP_RETCODE buildTransformedProblem(
          linkingconss[nlinkingconss] = conss[i];
          ++nlinkingconss;
          assert(!SCIPhashmapExists(constoblock, conss[i]));
-         SCIP_CALL(SCIPhashmapInsert(constoblock, conss[i], (void*)(block)));
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*)(block)) );
 
       }
       /* otherwise put it in its block */
@@ -1056,11 +1008,11 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          subscipconss[consblock][nsubscipconss[consblock]] = conss[i];
          assert(!SCIPhashmapExists(constoblock, conss[i]));
-         SCIP_CALL(SCIPhashmapInsert(constoblock, conss[i], (void*)consblock));
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*)consblock) );
          ++(nsubscipconss[consblock]);
       }
-
    }
+
    /*
     * go through all variables and look at the not handled variables and add
     * them to the correct partition
@@ -1069,31 +1021,8 @@ static SCIP_RETCODE buildTransformedProblem(
    for( i = 0; i < nvars; i++ )
    {
       int partitionOfVar;
-      if( detectordata->varpart[i] < 0 )
-      {
-         switch(SCIPvarGetType(SCIPvarGetProbvar(vars[i])))
-         {
-         case SCIP_VARTYPE_BINARY:
-            score->minkequicutscore += detectordata->varWeightBinary;
-            break;
-         case SCIP_VARTYPE_CONTINUOUS:
-            score->minkequicutscore += detectordata->varWeightContinous;
-            break;
-         case SCIP_VARTYPE_IMPLINT:
-            score->minkequicutscore += detectordata->varWeightImplint;
-            break;
-         case SCIP_VARTYPE_INTEGER:
-            score->minkequicutscore += detectordata->varWeightInteger;
-            break;
-         default:
-            break;
-         }
-      }
       if( isVarHandled[i] )
-      {
          continue;
-
-      }
 
       partitionOfVar = -1;
       if( detectordata->varpart[i] >= 0 )
@@ -1135,9 +1064,16 @@ static SCIP_RETCODE buildTransformedProblem(
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
       SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
       SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      if(nlinkingconss > 0)
+      {
+         SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+         DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      }
       if( nlinkingvars > 0 )
+      {
+         DECdecdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
          SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      }
       DECdecdecompSetVartoblock(decdecomp, vartoblock);
       DECdecdecompSetConstoblock(decdecomp, constoblock);
    }
@@ -1160,191 +1096,10 @@ static SCIP_RETCODE buildTransformedProblem(
    return SCIP_OKAY;
 }
 
-static
-SCIP_RETCODE evaluateDecomposition(
-      SCIP*                 scip,           /**< SCIP data structure */
-      DEC_DETECTORDATA*     detectordata,   /**< presolver data data structure */
-      DECDECOMP*            decdecomp,      /**< decomposition data structure */
-      SCIP_ARROWHEURSCORES* score           /**< returns the score of the decomposition */
-      )
-{
-   char name[SCIP_MAXSTRLEN];
-   long int matrixarea;
-   long int borderarea;
-   int nvars;
-   int nconss;
-   int i;
-   int j;
-   int k;
-   /*   int blockarea; */
-   SCIP_Real varratio;
-   int* nzblocks;
-   int nblocks;
-   int* nlinkvarsblocks;
-   int* nvarsblocks;
-   SCIP_Real* blockdensities;
-   int* blocksizes;
-   SCIP_Real density;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(score != NULL);
-
-   nvars = SCIPgetNVars(scip);
-   nconss = SCIPgetNConss(scip);
-
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
-
-   /* get the right name */
-   SCIPsnprintf(name, SCIP_MAXSTRLEN,
-         DWSOLVER_REFNAME(SCIPgetProbName(scip),
-                          nblocks,
-                          detectordata->varWeightContinous,
-                          detectordata->varWeightInteger,
-            detectordata->consWeight,
-                          detectordata->dummynodes,
-                          detectordata->alpha,
-                          detectordata->beta,
-                          detectordata->consWeightSetppc)
-      );
-
-   SCIP_CALL(SCIPallocBufferArray(scip, &nzblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blockdensities, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &blocksizes, nblocks));
-   SCIP_CALL(SCIPallocBufferArray(scip, &nvarsblocks, nblocks));
-   /*
-    * 3 Scores
-    *
-    * - Area percentage (min)
-    * - block density (max)
-    * - \pi_b {v_b|v_b is linking}/#vb (min)
-    */
-
-   /* calculate matrix area */
-   matrixarea = nvars*nconss;
-
-   /* calculate slave sizes, nonzeros and linkingvars */
-   for( i = 0; i < nblocks; ++i )
-   {
-      SCIP_CONS** curconss;
-      int ncurconss;
-      int nvarsblock;
-      SCIP_Bool *ishandled;
-
-      SCIP_CALL(SCIPallocBufferArray(scip, &ishandled, nvars));
-      nvarsblock = 0;
-      nzblocks[i] = 0;
-      nlinkvarsblocks[i] = 0;
-      for( j = 0; j < nvars; ++j )
-      {
-         ishandled[j] = FALSE;
-      }
-      curconss = DECdecdecompGetSubscipconss(decdecomp)[i];
-      ncurconss = DECdecdecompGetNSubscipconss(decdecomp)[i];
-
-      for( j = 0; j < ncurconss; ++j )
-      {
-         SCIP_VAR** curvars;
-         SCIP_VAR* var;
-         int ncurvars;
-
-         curvars = SCIPgetVarsXXX(scip, curconss[j]);
-         ncurvars = SCIPgetNVarsXXX(scip, curconss[j]);
-         for( k = 0; k < ncurvars; ++k )
-         {
-            long int block;
-            if( !isVarRelevant(curvars[k]) )
-               continue;
-
-            var = SCIPvarGetProbvar(curvars[k]);
-            assert(var != NULL);
-            assert(SCIPvarIsActive(var));
-            assert(!SCIPvarIsDeleted(var));
-            ++(nzblocks[i]);
-            assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-            block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
-
-            if(block == detectordata->blocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
-            {
-               ++(nlinkvarsblocks[i]);
-            }
-            ishandled[SCIPvarGetProbindex(var)] = TRUE;
-         }
-
-         SCIPfreeMemoryArray(scip, &curvars);
-      }
-
-      for( j = 0; j < nvars; ++j )
-      {
-         if( ishandled[j] )
-         {
-            ++nvarsblock;
-         }
-      }
-
-      blocksizes[i] = nvarsblock*ncurconss;
-      nvarsblocks[i] = nvarsblock;
-      if(blocksizes[i] > 0)
-      {
-         blockdensities[i] = 1.0*nzblocks[i]/blocksizes[i];
-      }
-      else
-      {
-         blockdensities[i] = 0.0;
-      }
-
-      assert(blockdensities[i] >= 0 && blockdensities[i] <= 1.0);
-      SCIPfreeBufferArray(scip, &ishandled);
-   }
-
-   /* calculate border area */
-   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars+DECdecdecompGetNLinkingvars(decdecomp)*(nconss-DECdecdecompGetNLinkingconss(decdecomp));
-
-   /*   blockarea = 0; */
-   density = 1E20;
-   varratio = 1.0;
-   for( i = 0; i < nblocks; ++i )
-   {
-      /* calculate block area */
-      /* blockarea += blocksizes[i]; */
-
-
-      /* calculate density */
-      density = MIN(density, blockdensities[i]);
-
-      /* calculate linking var ratio */
-      if( DECdecdecompGetNLinkingvars(decdecomp) > 0 )
-      {
-         varratio *= 1.0*nlinkvarsblocks[i]/DECdecdecompGetNLinkingvars(decdecomp);
-      }
-      else
-      {
-         varratio = 0;
-      }
-   }
-
-   score->linkingscore = (0.5+0.5*varratio);
-   score->borderscore = (1.0*(borderarea)/matrixarea);
-   score->densityscore = (1-density);
-
-   SCIPfreeBufferArray(scip, &nzblocks);
-   SCIPfreeBufferArray(scip, &nlinkvarsblocks);
-   SCIPfreeBufferArray(scip, &blockdensities);
-   SCIPfreeBufferArray(scip, &blocksizes);
-   SCIPfreeBufferArray(scip, &nvarsblocks);
-
-   return SCIP_OKAY;
-
-}
-
-
+/** detection callback method */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 {
-
-   SCIP_ARROWHEURSCORES* scores;
-   SCIP_Real* cumscores;
    int i;
    int j;
    int ndecs;
@@ -1361,23 +1116,21 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* allocate space for output data */
    assert(detectordata->maxblocks >= detectordata->minblocks);
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &scores, ndecs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &cumscores, ndecs) );
 
    /* build the hypergraph structure from the original problem */
-   SCIP_CALL(buildGraphStructure(scip, detectordata));
+   SCIP_CALL( buildGraphStructure(scip, detectordata) );
 
    for(i = 0; i < ndecs; ++i)
    {
       SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
       detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
-      SCIP_CALL(callMetis(scip, detectordata, result));
+      SCIP_CALL( callMetis(scip, detectordata, result) );
 
       if( *result != SCIP_SUCCESS )
       {
@@ -1392,87 +1145,62 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       /* deduce the partitions for the original variables */
       SCIP_CALL( assignBlocksToOriginalVariables( scip, detectordata) );
 
-      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, &scores[j], result) );
+      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, result) );
       if( *result == SCIP_SUCCESS )
       {
-         SCIP_CALL( evaluateDecomposition(scip, detectordata, (*decdecomps)[j], &scores[j]) );
-         SCIP_CALL( printArrowheurScores(scip, detectordata, &scores[j]) );
-
-         cumscores[j] = scores[j].borderscore*scores[j].linkingscore*scores[j].densityscore;
          *ndecdecomps += 1;
          ++j;
       }
    }
-
-   SCIPsortRealPtr(cumscores, (void**) *decdecomps, *ndecdecomps);
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n",  *ndecdecomps);
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
       DECdecdecompFree(scip, &((*decdecomps)[i]) );
    }
 
-   SCIP_CALL(SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps));
-   SCIPfreeMemoryArray(scip, &cumscores);
-   SCIPfreeMemoryArray(scip, &scores);
+   SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
 
-/** returns the priority of the detector */
-static
-DEC_DECL_GETPRIORITY(getPriority)
-{
-   DEC_DETECTOR* arrowheur;
-   DEC_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-   arrowheur = DECfindDetector(scip, DEC_DETECTORNAME);
-   detectordata = DECdetectorGetData(arrowheur);
-   assert(detectordata != NULL);
-
-   assert(strcmp(DECdetectorGetName(arrowheur), DEC_DETECTORNAME) == 0);
-   return detectordata->priority;
-}
-
 /** creates the arrowheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP*                 scip              /**< SCIP data structure */
-
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA *detectordata;
    assert(scip != NULL);
 
-   SCIP_CALL(SCIPallocMemory(scip, &detectordata));
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
 
    assert(detectordata != NULL);
    detectordata->found = FALSE;
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur, getPriority));
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
 
 
    /* add arrowheur presolver parameters */
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ));
-   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL));
-   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddRealParam(scip, "arrowheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ));
-   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ));
-   SCIP_CALL(SCIPaddBoolParam(scip, "arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "arrowheur/priority", "random seed for hmetis", &detectordata->priority, FALSE, DEFAULT_PRIORITY, INT_MIN, INT_MAX, NULL, NULL));
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/beta", "factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/alpha", "factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightBinary", "Weight of a binary variable hyperedge", &detectordata->varWeightBinary, FALSE, DEFAULT_VARWEIGHTBIN, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightContinous", "Weight of a continuos variable hyperedge", &detectordata->varWeightContinous, FALSE, DEFAULT_VARWEIGHTCONT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightImplint", "Weight of a implicit integer variable hyperedge", &detectordata->varWeightImplint, FALSE, DEFAULT_VARWEIGHTIMPL, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/varWeightInteger", "Weight of a integer variable hyperedge", &detectordata->varWeightInteger, FALSE, DEFAULT_VARWEIGHTINT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/consWeight", "Weight of a constraint hyperedge", &detectordata->consWeight, FALSE, DEFAULT_CONSWEIGHT, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/dummynodes", "percentage of dummy nodes for metis", &detectordata->dummynodes, FALSE, DEFAULT_DUMMYNODES, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/arrowheur/consWeightSetppc", "Weight for constraint hyperedges that are setpartitioning or covering constraints", &detectordata->consWeightSetppc, FALSE, DEFAULT_CONSWEIGHT_SETPPC, 0, 1000000, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
 
    return SCIP_OKAY;
 }

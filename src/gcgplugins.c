@@ -145,9 +145,6 @@
 #include "dec_stairheur.h"
 
 /* Christian's heuristics */
-#include "heur_clasfeaspump.h"
-#include "heur_colgenfeaspump.h"
-#include "heur_extremepoints.h"
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
@@ -160,6 +157,7 @@
 #include "heur_gcgsimplerounding.h"
 #include "heur_gcgveclendiving.h"
 #include "heur_gcgzirounding.h"
+#include "heur_xpcrossover.h"
 #include "heur_xprins.h"
 
 
@@ -273,9 +271,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL(SCIPincludeDetectionStairheur(scip));
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurClasfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurColgenfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurExtremepoints(scip) );
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
@@ -283,11 +278,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
-   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-//   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
+   SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );

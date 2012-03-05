@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //#define SCIP_DEBUG
 /**@file   branch_master.c
- * @ingroup BRANCHINGRULES
  * @brief  branching rule for master problem
  * @author Gerald Gamrath
  */
@@ -44,10 +43,13 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-
+/** includes all plugins in the master copy. 
+ *
+ * This method makes SCIPcopy work for heuristics in the master
+ */
 static
 SCIP_RETCODE GCGincludeMasterCopyPlugins(
-   SCIP* scip
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
@@ -70,13 +72,14 @@ SCIP_RETCODE GCGincludeMasterCopyPlugins(
  * Callback methods
  */
 
+/** copy method for master branching rule */
 static
 SCIP_DECL_BRANCHCOPY(branchCopyMaster)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
    SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL(GCGincludeMasterCopyPlugins(scip));
+   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }

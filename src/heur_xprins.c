@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_xprins.c
- * @ingroup PRIMALHEURISTICS
  * @brief  Extreme Point RINS
  * @author Christian Puchert
  */
@@ -17,7 +16,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* toggle debug mode */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -33,28 +32,31 @@
 
 
 #define HEUR_NAME             "xprins"
-#define HEUR_DESC             "heuristic that performs a neighborhood search on the relaxation and the extreme points"
+#define HEUR_DESC             "Extreme Point RINS"
 #define HEUR_DISPCHAR         'Y'
-#define HEUR_PRIORITY         -100600
-#define HEUR_FREQ             -1
+#define HEUR_PRIORITY         -1100600
+#define HEUR_FREQ             0
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      TRUE
 
-#define DEFAULT_EQUALITYRATE  0.5           /* minimum percentage of coincidence of relaxation and extreme pts     */
-#define DEFAULT_MAXNODES      1000LL        /* maximum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINIMPROVE    0.01          /* factor by which xprins should at least improve the incumbent        */
-#define DEFAULT_MINNODES      200LL         /* minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.4           /* minimum percentage of integer variables that have to be fixed       */
-#define DEFAULT_NODESOFS      200LL         /* number of nodes added to the contingent of the total nodes          */
-#define DEFAULT_NODESQUOT     0.1           /* subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_NUSEDPTS      -1            /* number of extreme pts per block that will be taken into account     */
-#define DEFAULT_NWAITINGNODES 200LL         /* number of nodes without incumbent change heuristic should wait      */
-#define DEFAULT_RANDOMIZATION FALSE         /* should the choice which sols to take be randomized?                 */
-#define DEFAULT_DONTWAITATROOT FALSE        /* should the nwaitingnodes parameter be ignored at the root node?     */
-#define DEFAULT_USELPROWS     TRUE           /* should subproblem be created out of the rows in the LP rows,
-                                              * otherwise, the copy constructors of the constraints handlers are used */
+#define DEFAULT_EQUALITYRATE  0.5           /**< minimum percentage of coincidence of relaxation and extreme pts     */
+#define DEFAULT_MAXNODES      1000LL        /**< maximum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINIMPROVE    0.01          /**< factor by which xprins should at least improve the incumbent        */
+#define DEFAULT_MINNODES      200LL         /**< minimum number of nodes to regard in the subproblem                 */
+#define DEFAULT_MINFIXINGRATE 0.5           /**< minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_NODESOFS      200LL         /**< number of nodes added to the contingent of the total nodes          */
+#define DEFAULT_NODESQUOT     0.1           /**< subproblem nodes in relation to nodes of the original problem       */
+#define DEFAULT_NUSEDPTS      -1            /**< number of extreme pts per block that will be taken into account     */
+#define DEFAULT_NWAITINGNODES 200LL         /**< number of nodes without incumbent change heuristic should wait      */
+#define DEFAULT_RANDOMIZATION FALSE         /**< should the choice which sols to take be randomized?                 */
+#define DEFAULT_DONTWAITATROOT FALSE        /**< should the nwaitingnodes parameter be ignored at the root node?     */
+#define DEFAULT_USELPROWS     FALSE         /**< should subproblem be created out of the rows in the LP rows,
+                                             * otherwise, the copy constructors of the constraints handlers are used */
+#define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
+                                             * of the original scip be copied to constraints of the subscip
+                                             */
 
 
 
@@ -82,6 +84,9 @@ struct SCIP_HeurData
    SCIP_Bool             randomization;     /**< should the choice which sols to take be randomized?               */
    SCIP_Bool             dontwaitatroot;    /**< should the nwaitingnodes parameter be ignored at the root node?   */
    SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?      */
+   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                             *   to constraints in subproblem?
+                                             */
    unsigned int          randseed;          /**< seed value for random number generator                            */
 };
 
@@ -152,7 +157,6 @@ SCIP_RETCODE selectExtremePoints(
 
       /* get block information and solution value */
       block = GCGvarGetBlock(mastervar);
-      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
       value = SCIPgetSolVal(masterprob, NULL, mastervar);
 
       /* @todo: handle infinite master solution values */
@@ -174,6 +178,10 @@ SCIP_RETCODE selectExtremePoints(
       /* ignore "empty" master variables, i.e. variables representing the zero vector */
 //      if( norigvars == 0 )
 //         continue;
+
+      /* get number of blocks that are identical to this block */
+      assert(block >= 0);
+      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
 
       value = value / nidentblocks;
 
@@ -215,7 +223,7 @@ SCIP_RETCODE selectExtremePoints(
 }
 
 
-/** select extreme points (represented by mastervars) randomly*/
+/** select extreme points (represented by mastervars) randomly */
 static
 SCIP_RETCODE selectExtremePointsRandomized(
    SCIP*                 scip,              /**< original SCIP data structure                                    */
@@ -278,11 +286,12 @@ SCIP_RETCODE selectExtremePointsRandomized(
       solval = SCIPgetSolVal(masterprob, NULL, mastervar);
       block = GCGvarGetBlock(mastervar);
 
-      if( block >= 0 && !SCIPisZero(scip, solval) )
+      if( block >= 0 && !SCIPisFeasZero(scip, solval) )
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      *success &= npts[i] > nusedpts;
+      if( GCGrelaxIsPricingprobRelevant(scip, i) )
+         *success &= npts[i] > nusedpts;
 
    /* do not randomize if there are not enough points available */
    if( !*success )
@@ -303,8 +312,14 @@ SCIP_RETCODE selectExtremePointsRandomized(
    {
       for( i = 0; i < nblocks; ++i )
       {
+         int blockrep;
+
          SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
          SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
+
+         /* get representative of this block */
+         blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+         assert(blockrep >= 0 && blockrep <= i);
 
          /* get all relevant extreme points for this block */
          k = 0;
@@ -318,18 +333,18 @@ SCIP_RETCODE selectExtremePointsRandomized(
             solval = SCIPgetSolVal(masterprob, NULL, mastervar);
             block = GCGvarGetBlock(mastervar);
 
-            if( block == i && !SCIPisZero(scip, solval) )
+            if( block == blockrep && !SCIPisFeasZero(scip, solval) )
             {
-               assert(k < npts[i]);
+               assert(k < npts[blockrep]);
                blockpts[k] = j;
                ++k;
             }
          }
-         assert(k == npts[i]);
+         assert(k == npts[blockrep]);
 
          /* sort the extreme points */
-         SCIPsortRealInt(ptvals, blockpts, npts[i]);
-         lastpt = npts[i];
+         SCIPsortRealInt(ptvals, blockpts, npts[blockrep]);
+         lastpt = npts[blockrep];
 
          /* perform a random selection for this block */
          for( k = 0; k < nusedpts; ++k )
@@ -356,7 +371,6 @@ SCIP_RETCODE selectExtremePointsRandomized(
 //      }
 //      ++iters;
    }
-//   while( !*success && iters < 10 );
    *success = TRUE;
 
    /* free memory */
@@ -414,6 +428,11 @@ SCIP_RETCODE initializeSubproblem(
       valid = FALSE;
 
       SCIP_CALL( SCIPcopyConss(scip, subscip, varmapfw, NULL, TRUE, FALSE, &valid) );
+      if( heurdata->copycuts )
+      {
+         /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
+         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
+      }
       SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
    }
 
@@ -652,27 +671,40 @@ static SCIP_RETCODE fixVariables(
          for( k = 0; k < norigvars; ++k )
          {
             SCIP_VAR* pricingvar;
-            SCIP_VAR** origpricingvars;
-            int norigpricingvars;
+            SCIP_VAR** pricingorigvars;
+            int npricingorigvars;
 
             if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                continue;
 
-            pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-            assert(GCGvarIsPricing(pricingvar));
-            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-            assert(origpricingvars != NULL);
-            assert(norigpricingvars >= 0);
+            /* get the corresponding pricing variable */
+            if( GCGvarIsLinking(origvars[k]) )
+            {
+               SCIP_VAR** linkingpricingvars;
 
-            for( l = 0; l < norigpricingvars; ++l )
+               linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+               pricingvar = linkingpricingvars[block];
+            }
+            else
+               pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+          
+            assert(pricingvar != NULL);
+            assert(GCGvarIsPricing(pricingvar));
+
+            /* get all origvars represented by the current origvar */
+            pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+            npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(pricingorigvars != NULL);
+            assert(npricingorigvars >= 0);
+
+            for( l = 0; l < npricingorigvars; ++l )
             {
                int idx;
                SCIP_Real solval;
 
-               idx = SCIPvarGetProbindex(origpricingvars[l]);
+               idx = SCIPvarGetProbindex(pricingorigvars[l]);
                assert(idx < nbinvars + nintvars);
-               solval = SCIPgetRelaxSolVal(scip, origpricingvars[l]);
+               solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
 
                if( SCIPisZero(scip, solval) )
                {
@@ -724,27 +756,40 @@ static SCIP_RETCODE fixVariables(
                for( k = 0; k < norigvars; ++k )
                {
                   SCIP_VAR* pricingvar;
-                  SCIP_VAR** origpricingvars;
-                  int norigpricingvars;
+                  SCIP_VAR** pricingorigvars;
+                  int npricingorigvars;
 
                   if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
                      continue;
 
-                  pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-                  assert(GCGvarIsPricing(pricingvar));
-                  origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
-                  assert(origpricingvars != NULL);
-                  assert(norigpricingvars >= 0);
+                  /* get the corresponding pricing variable */
+                  if( GCGvarIsLinking(origvars[k]) )
+                  {
+                     SCIP_VAR** linkingpricingvars;
 
-                  for( l = 0; l < norigpricingvars; ++l )
+                     linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+                     pricingvar = linkingpricingvars[i];
+                  }
+                  else
+                     pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
+          
+                  assert(pricingvar != NULL);
+                  assert(GCGvarIsPricing(pricingvar));
+
+                  /* get all origvars represented by the current origvar */
+                  pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
+                  npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
+                  assert(pricingorigvars != NULL);
+                  assert(npricingorigvars >= 0);
+
+                  for( l = 0; l < npricingorigvars; ++l )
                   {
                      int idx;
                      SCIP_Real solval;
 
-                     idx = SCIPvarGetProbindex(origpricingvars[l]);
+                     idx = SCIPvarGetProbindex(pricingorigvars[l]);
                      assert(idx < nbinvars + nintvars);
-                     solval = SCIPgetRelaxSolVal(scip, origpricingvars[l]);
+                     solval = SCIPgetRelaxSolVal(scip, pricingorigvars[l]);
 
                      if( SCIPisZero(scip, solval) )
                      {
@@ -972,7 +1017,7 @@ SCIP_RETCODE createNewSol(
 
    if( *success )
    {
-      SCIPdebugMessage("GCG extreme points crossover: new solution added.\n");
+      SCIPdebugMessage("Extreme Point RINS: new solution added.\n");
    }
 
    SCIPfreeBufferArray(scip, &subsolvals);
@@ -1285,7 +1330,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
       int nsubsols;
       int solindex;                             /* index of the solution created by crossover          */
 
-      SCIPdebugMessage("Extreme Point RINS found %i feasible solution(s).\n", SCIPgetNSols(subscip));
+      SCIPdebugMessage("  -> found %i feasible solution(s).\n", SCIPgetNSols(subscip));
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
@@ -1307,7 +1352,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    {
       /* if no new solution was found, run was a failure */
       updateFailureStatistic(scip, heurdata);
-      SCIPdebugMessage("Extreme Point RINS: no subMIP solution found - ");
+      SCIPdebugMessage(" -> no subMIP solution found - ");
       switch ( SCIPgetStatus(subscip) ) {
       case SCIP_STATUS_INFEASIBLE:
          SCIPdebugPrintf("subMIP infeasible.\n");
@@ -1418,6 +1463,10 @@ SCIP_RETCODE SCIPincludeHeurXprins(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+         "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
+         &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

@@ -9,7 +9,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 //#define SCIP_DEBUG
 /**@file   branch_ryanfoster.c
- * @ingroup BRANCHINGRULES
  * @brief  branching rule for original problem in gcg implementing the Ryan and Foster branching scheme
  * @author Gerald Gamrath
  */
@@ -49,6 +48,7 @@ struct GCG_BranchData
  * Callback methods for enforcing branching constraints
  */
 
+/** callback activation method */
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
 {
@@ -107,6 +107,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback deactivation method */
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
 {
@@ -135,6 +136,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback propagation method */
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
 {
@@ -206,14 +208,14 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
           * and the current master variable has different values for both of them, fix the variable to 0 */
          if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
          {
-            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
          /* if branching enforces that both original vars must be in different mastervars, fix all
           * master variables to 0 that contain both */
-         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val1, 1.0) )
+         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val2, 1.0) )
          {
-            SCIP_CALL(SCIPchgVarUb(scip, vars[i], 0.0));
+            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
             propcount++;
          }
       }
@@ -230,6 +232,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    return SCIP_OKAY;
 }
 
+/** callback deletion method for branching data*/
 static
 GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 {
@@ -315,9 +318,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    int norigvars1;
    SCIP_VAR** origvars1;
+   SCIP_Real* origvals1;
 
    int norigvars2;
    SCIP_VAR** origvars2;
+   SCIP_Real* origvals2;
 
 
    assert(branchrule != NULL);
@@ -361,11 +366,15 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       assert(GCGvarIsMaster(mvar1));
 
       origvars1 = GCGmasterVarGetOrigvars(mvar1);
+      origvals1 = GCGmasterVarGetOrigvals(mvar1);
       norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
 
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
          ovar1 = origvars1[o1];
+         if( SCIPisZero(scip,origvals1[o1]) )
+            continue;
+
          /* v1 contains o1, look for v2 */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
@@ -373,63 +382,66 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             assert(GCGvarIsMaster(mvar2));
 
             origvars2 = GCGmasterVarGetOrigvars(mvar2);
+            origvals2 = GCGmasterVarGetOrigvals(mvar2);
             norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
 
             contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
-               if( origvars2[j] == ovar1 )
+               if( origvars2[j] == ovar1 && !SCIPisZero(scip, origvals2[j]) )
                {
                   contained = TRUE;
                   break;
                }
             }
 
-            if(!contained)
+            if( !contained )
                continue;
 
             /* v2 also contains o1, now look for o2 */
             for( o2 = 0; o2 < norigvars1 && !feasible; o2++ )
             {
                ovar2 = origvars1[o2];
-               if( ovar2 == ovar1 )
+               if( ovar2 == ovar1 || SCIPisZero(scip, origvals1[o2]) )
                   continue;
 
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
-                  if( origvars2[j] == ovar2 )
+                  if( origvars2[j] == ovar2 && !SCIPisZero(scip, origvals2[j]) )
                   {
                      contained = TRUE;
                      break;
                   }
                }
 
+               /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
                if( contained )
                   continue;
 
                feasible = TRUE;
             }
 
-
+            /* @todo: cp: What is this if statement good for? */
             if( !feasible )
             {
                for( o2 = 0; o2 < norigvars2 && !feasible; o2++ )
                {
                   ovar2 = origvars2[o2];
-                  if( ovar2 == ovar1 )
+                  if( ovar2 == ovar1 || SCIPisZero(scip, origvals2[o2]) )
                      continue;
 
                   contained = FALSE;
                   for( j = 0; j < norigvars1; j++ )
                   {
-                     if( origvars1[j] == ovar2 )
+                     if( origvars1[j] == ovar2 && !SCIPisZero(scip, origvals1[j]) )
                      {
                         contained = TRUE;
                         break;
                      }
                   }
 
+                  /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
                   if( contained )
                      continue;
 
@@ -538,7 +550,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
 /** branching execution method for not completely fixed pseudo solutions
  *
- * TODO: maybe we can remove this method */
+ * @todo maybe we can remove this method */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 {

@@ -13,7 +13,7 @@
  * @ingroup FILEREADERS
  * @author Gerald Gamrath
  * @author Christian Puchert
- *
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -29,9 +29,11 @@
 
 #include "reader_ref.h"
 #include "relax_gcg.h"
-#include "struct_decomp.h"
+#include "type_decomp.h"
 #include "scip/cons_linear.h"
 #include "pub_gcgvar.h"
+#include "pub_decomp.h"
+#include "cons_decomp.h"
 
 #define READER_NAME             "refreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
@@ -60,36 +62,32 @@ typedef enum RefExpType REFEXPTYPE;
 /** REF reading data */
 struct RefInput
 {
-   SCIP_FILE*           file;
-   char                 linebuf[REF_MAX_LINELEN];
-   char*                token;
-   char*                tokenbuf;
-   char*                pushedtokens[REF_MAX_PUSHEDTOKENS];
-   int                  npushedtokens;
-   int                  linenumber;
-   int                  linepos;
-   int                  nblocks;
-   int                  blocknr;
-   int                  nassignedvars;
-   int*                 blocksizes;
-   int                  totalconss;
-   int                  totalreadconss;
-   SCIP_CONS**          markedmasterconss;
-   int                  nmarkedmasterconss;
-   REFSECTION           section;
-   SCIP_Bool            haserror;
+   SCIP_FILE*    file;                                /**< file to read */
+   char          linebuf[REF_MAX_LINELEN];            /**< line buffer */
+   char*         token;                               /**< current token */
+   char*         tokenbuf;                            /**< token buffer */
+   char*         pushedtokens[REF_MAX_PUSHEDTOKENS];  /**< token stack */
+   int           npushedtokens;                       /**< size of token stack */
+   int           linenumber;                          /**< current line number */
+   int           linepos;                             /**< current line position (column) */
+   int           nblocks;                             /**< number of blocks */
+   int           blocknr;                             /**< current block number */
+   int           nassignedvars;                       /**< number of assigned variables */
+   int*          blocksizes;                          /**< array of block sizes */
+   int           totalconss;                          /**< total number of constraints */
+   int           totalreadconss;                      /**< total number of read constraints */
+   SCIP_CONS**   markedmasterconss;                   /**< array of constraints to be in the master */
+   int           nmarkedmasterconss;                  /**< number of constraints to be in the master */
+   REFSECTION    section;                             /**< current section */
+   SCIP_Bool     haserror;                            /**< flag to indicate an error occurence */
+   SCIP_HASHMAP* vartoblock;                          /**< hashmap mapping variables to blocks (1..nblocks) */
+   SCIP_HASHMAP* constoblock;                         /**< hashmap mapping constraints to blocks (1..nblocks) */
 };
 typedef struct RefInput REFINPUT;
 
 static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
-
-struct SCIP_ReaderData
-{
-   DECDECOMP*           decdecomp;
-};
-
 
 
 /*
@@ -99,9 +97,9 @@ struct SCIP_ReaderData
 /** issues an error message and marks the REF data to have errors */
 static
 void syntaxError(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,            /**< REF reading data */
-   const char*           msg                 /**< error message */
+   SCIP*       scip,          /**< SCIP data structure */
+   REFINPUT*   refinput,      /**< REF reading data */
+   const char* msg            /**< error message */
    )
 {
    char formatstr[256];
@@ -127,7 +125,7 @@ void syntaxError(
 /** returns whether a syntax error was detected */
 static
 SCIP_Bool hasError(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    assert(refinput != NULL);
@@ -138,7 +136,7 @@ SCIP_Bool hasError(
 /** returns whether the given character is a token delimiter */
 static
 SCIP_Bool isDelimChar(
-   char                  c                   /**< input character */
+   char c                     /**< input character */
    )
 {
    return (c == '\0') || (strchr(delimchars, c) != NULL);
@@ -147,7 +145,7 @@ SCIP_Bool isDelimChar(
 /** returns whether the given character is a single token */
 static
 SCIP_Bool isTokenChar(
-   char                  c                   /**< input character */
+   char c                     /**< input character */
    )
 {
    return (strchr(tokenchars, c) != NULL);
@@ -156,11 +154,11 @@ SCIP_Bool isTokenChar(
 /** returns whether the current character is member of a value string */
 static
 SCIP_Bool isValueChar(
-   char                  c,                  /**< input character */
-   char                  nextc,              /**< next input character */
-   SCIP_Bool             firstchar,          /**< is the given character the first char of the token? */
-   SCIP_Bool*            hasdot,             /**< pointer to update the dot flag */
-   REFEXPTYPE*           exptype             /**< pointer to update the exponent type */
+   char        c,             /**< input character */
+   char        nextc,         /**< next input character */
+   SCIP_Bool   firstchar,     /**< is the given character the first char of the token? */
+   SCIP_Bool*  hasdot,        /**< pointer to update the dot flag */
+   REFEXPTYPE* exptype        /**< pointer to update the exponent type */
    )
 {
    assert(hasdot != NULL);
@@ -200,7 +198,7 @@ SCIP_Bool isValueChar(
  */
 static
 SCIP_Bool getNextLine(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int i;
@@ -244,7 +242,7 @@ SCIP_Bool getNextLine(
 /** reads the next token from the input file into the token buffer; returns whether a token was read */
 static
 SCIP_Bool getNextToken(
-   REFINPUT*              refinput             /**< REF reading data */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    SCIP_Bool hasdot;
@@ -354,9 +352,9 @@ SCIP_Bool getNextToken(
 /** returns whether the current token is a value */
 static
 SCIP_Bool isInt(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,           /**< REF reading data */
-   int*                  value               /**< pointer to store the value (unchanged, if token is no value) */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput,        /**< REF reading data */
+   int*      value            /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
    assert(refinput != NULL);
@@ -386,8 +384,8 @@ SCIP_Bool isInt(
 /** reads the header of the file */
 static
 SCIP_RETCODE readStart(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    assert(refinput != NULL);
@@ -400,8 +398,8 @@ SCIP_RETCODE readStart(
 /** reads the nblocks section */
 static
 SCIP_RETCODE readNBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int nblocks;
@@ -417,7 +415,7 @@ SCIP_RETCODE readNBlocks(
          {
             refinput->nblocks = nblocks;
             SCIP_CALL( SCIPallocBufferArray(scip, &refinput->blocksizes, nblocks) );
-            GCGrelaxSetNPricingprobs(scip, nblocks);
+            // GCGrelaxSetNPricingprobs(scip, nblocks);
          }
          SCIPdebugMessage("Number of blocks = %d\n", refinput->nblocks);
       }
@@ -435,8 +433,8 @@ SCIP_RETCODE readNBlocks(
 /** reads the blocksizes section */
 static
 SCIP_RETCODE readBlockSizes(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    int blocknr;
@@ -463,8 +461,8 @@ SCIP_RETCODE readBlockSizes(
 /** reads the blocks section */
 static
 SCIP_RETCODE readBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput            /**< REF reading data */
+   SCIP*     scip,            /**< SCIP data structure */
+   REFINPUT* refinput         /**< REF reading data */
    )
 {
    SCIP_CONS** conss;
@@ -507,6 +505,8 @@ SCIP_RETCODE readBlocks(
                continue;
             }
 
+            SCIP_CALL( SCIPhashmapSetImage(refinput->constoblock, cons, (void*) (size_t) (refinput->blocknr+1) ) );
+
             for( v = 0; v < nvars; v++ )
             {
                var = vars[v];
@@ -514,7 +514,21 @@ SCIP_RETCODE readBlocks(
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
                /* set the block number of the variable to the number of the current block */
-               SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, refinput->blocknr) );
+               if( SCIPhashmapExists(refinput->vartoblock, var) )
+               {
+                  long int block;
+                  block = (long int) SCIPhashmapGetImage(refinput->vartoblock, var);
+                  if( block != refinput->blocknr+1 && block != refinput->nblocks+1)
+                  {
+                     SCIP_CALL( SCIPhashmapRemove(refinput->vartoblock, var) );
+                     SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->nblocks+1)) );
+
+                  }
+               }
+               else
+               {
+                  SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->blocknr+1)) );
+               }
                refinput->nassignedvars++;
             }
             consctr++;
@@ -535,19 +549,18 @@ SCIP_RETCODE readBlocks(
 }
 
 
-
 /** reads an REF file */
 static
 SCIP_RETCODE readREFFile(
-   SCIP*                 scip,               /**< SCIP data structure */
-   REFINPUT*             refinput,           /**< REF reading data */
-   const char*           filename            /**< name of the input file */
+   SCIP*       scip,          /**< SCIP data structure */
+   REFINPUT*   refinput,      /**< REF reading data */
+   DECDECOMP*  decdecomp,     /**< decomposition structure */
+   const char* filename       /**< name of the input file */
    )
 {
-   int i;
    assert(refinput != NULL);
 
-   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) ); */
 
    /* open file */
    refinput->file = SCIPfopen(filename, "r");
@@ -570,6 +583,7 @@ SCIP_RETCODE readREFFile(
 
       case REF_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, refinput) );
+         DECdecdecompSetNBlocks(decdecomp, refinput->nblocks);
          break;
 
       case REF_BLOCKSIZES:
@@ -589,30 +603,30 @@ SCIP_RETCODE readREFFile(
 
    /* close file */
    SCIPfclose(refinput->file);
-
-
-   for (i = 0; i < refinput->nmarkedmasterconss; ++i)
-   {
-      SCIP_CALL( GCGrelaxMarkConsMaster(scip, refinput->markedmasterconss[i]) );
-   }
+   DECdecdecompSetVartoblock(decdecomp, refinput->vartoblock);
+   DECdecdecompSetConstoblock(decdecomp, refinput->constoblock);
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, refinput->vartoblock, refinput->constoblock,
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
    return SCIP_OKAY;
 }
 
-/** writes a BLK file */
+/** writes a Ref file */
 static
 SCIP_RETCODE writeREFFile(
-   SCIP*                 scip,              /**< SCIP data structure */
-   SCIP_READER*          reader,
-   FILE*                 file
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< ref reader */
+   FILE*        file          /**< target file */
 
    )
 {
-   SCIP_READERDATA* readerdata;
    SCIP_HASHMAP *cons2origindex;
+   DECDECOMP* decdecomp;
 
    SCIP_CONS** conss;
    int nconss;
-
+   SCIP_CONS*** subscipconss;
+   int* nsubscipconss;
    int i;
    int j;
    int nblocks;
@@ -620,19 +634,23 @@ SCIP_RETCODE writeREFFile(
    assert(reader != NULL);
    assert(file != NULL);
 
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
+   decdecomp = GCGgetStructDecdecomp(scip);
 
-   if(readerdata->decdecomp == NULL)
+   if(decdecomp == NULL)
+   {
+      decdecomp = DECgetBestDecomp(scip);
+   }
+
+   if(decdecomp == NULL)
    {
       SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
       return SCIP_INVALIDCALL;
    }
-   nblocks = readerdata->decdecomp->nblocks;
+   nblocks = DECdecdecompGetNBlocks(decdecomp);
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
-   SCIP_CALL(SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss));
+   SCIP_CALL( SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss) );
    for( i = 0; i < nconss; ++i)
    {
       size_t ind;
@@ -650,33 +668,37 @@ SCIP_RETCODE writeREFFile(
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
 
       SCIPdebugMessage("cons added: %zu\t%p\t%s\n",ind, cons, SCIPconsGetName(cons));
-      SCIP_CALL(SCIPhashmapInsert(cons2origindex, cons, (void*)(ind))); /* shift by 1 to enable error checking */
+      SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(ind)) ); /* shift by 1 to enable error checking */
 
    }
 
+   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
    SCIPinfoMessage(scip, file, "%d ", nblocks);
-   assert(readerdata->decdecomp->nsubscipconss != NULL);
-   assert(readerdata->decdecomp->subscipconss != NULL);
+
+   assert(nsubscipconss != NULL);
+   assert(subscipconss != NULL);
+
    for(i = 0; i < nblocks; ++i)
    {
-      SCIPinfoMessage(scip, file, "%d ", readerdata->decdecomp->nsubscipconss[i]);
+      SCIPinfoMessage(scip, file, "%d ", nsubscipconss[i]);
    }
    SCIPinfoMessage(scip, file, "\n", nblocks);
 
    for(i = 0; i < nblocks; ++i)
    {
-      for(j = 0; j < readerdata->decdecomp->nsubscipconss[i]; ++j)
+      for(j = 0; j < nsubscipconss[i]; ++j)
       {
          size_t ind;
 #ifndef NDEBUG
          size_t unconss;
 #endif
          SCIP_CONS* cons;
-//         assert(SCIPconsIsTransformed(readerdata->decdecomp->subscipconss[i][j]));
-//         SCIP_CALL(SCIPgetTransformedCons(scip, readerdata->decdecomp->subscipconss[i][j], &cons));
+//         assert(SCIPconsIsTransformed(subscipconss[i][j]));
+//         SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[i][j], &cons) );
 //         assert(cons != NULL);
-         cons = SCIPfindCons(scip, SCIPconsGetName(readerdata->decdecomp->subscipconss[i][j]));
-         ind = (size_t)SCIPhashmapGetImage(cons2origindex, cons);
+         cons = SCIPfindCons(scip, SCIPconsGetName(subscipconss[i][j]));
+         ind = (size_t) SCIPhashmapGetImage(cons2origindex, cons);
          SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
 
 #ifndef NDEBUG
@@ -698,22 +720,7 @@ SCIP_RETCODE writeREFFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeRef)
-{
-   SCIP_READERDATA* readerdata;
-   assert(scip != NULL);
-   assert(reader != NULL);
-
-   assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
+#define readerFreeRef NULL
 
 /** problem reading method of reader */
 static
@@ -730,7 +737,7 @@ static
 SCIP_DECL_READERWRITE(readerWriteRef)
 {
    /*lint --e{715}*/
-   SCIP_CALL(writeREFFile(scip, reader, file));
+   SCIP_CALL( writeREFFile(scip, reader, file) );
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -739,19 +746,15 @@ SCIP_DECL_READERWRITE(readerWriteRef)
  * reader specific interface methods
  */
 
-/** includes the blk file reader in SCIP */
+/** includes the ref file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderRef(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP* scip                 /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
-
-   /* create blk reader data */
-   SCIP_CALL(SCIPallocMemory(scip, &readerdata));
-
+   assert(scip != NULL);
    /* include lp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         NULL, readerFreeRef, readerReadRef, readerWriteRef, readerdata) );
+         NULL, readerFreeRef, readerReadRef, readerWriteRef, NULL) );
 
    return SCIP_OKAY;
 }
@@ -759,15 +762,15 @@ SCIP_RETCODE SCIPincludeReaderRef(
 
 /* reads problem from file */
 SCIP_RETCODE SCIPreadRef(
-   SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
-   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< the file reader itself */
+   const char*  filename,     /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT* result        /**< pointer to store the result of the file reading call */
    )
 {
    REFINPUT refinput;
+   DECDECOMP* decdecomp;
    int i;
-
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
    int nvars;
@@ -797,15 +800,17 @@ SCIP_RETCODE SCIPreadRef(
    refinput.nassignedvars = 0;
    refinput.nmarkedmasterconss = 0;
    refinput.haserror = FALSE;
-
+   SCIP_CALL( SCIPhashmapCreate(&refinput.vartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    /* read the file */
-   SCIP_CALL( readREFFile(scip, &refinput, filename) );
+   SCIP_CALL( DECdecdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( readREFFile(scip, &refinput, decdecomp, filename) );
 
    SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
    SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL));
+   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
 
    for( i = 0; i < nvars; i++ )
    {
@@ -827,6 +832,8 @@ SCIP_RETCODE SCIPreadRef(
    }
    SCIPfreeBufferArray(scip, &refinput.markedmasterconss);
    SCIPfreeBufferArray(scip, &refinput.blocksizes);
+   //   SCIPhashmapFree(&refinput.vartoblock);
+   //SCIPhashmapFree(&refinput.constoblock);
 
    /* evaluate the result */
    if( refinput.haserror )
