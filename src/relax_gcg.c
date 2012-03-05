@@ -1207,12 +1207,12 @@ SCIP_RETCODE createPricingprobConss(
             int ncurvars;
             int i;
 
-            ncurvars = SCIPgetNVarsXXX(scip, newcons);
+            ncurvars = SCIPgetNVarsXXX(relaxdata->pricingprobs[b], newcons);
             curvars = NULL;
             if(ncurvars > 0)
             {
                SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-               SCIP_CALL( SCIPgetVarsXXX(scip, newcons, curvars, ncurvars) );
+               SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
                for( i = 0; i < ncurvars; ++i )
                {

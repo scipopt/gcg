@@ -23,10 +23,6 @@
 #include <assert.h>
 
 #include "cons_decomp.h"
-
-#include "reader_gp.h"
-#include "reader_ref.h"
-#include "reader_dec.h"
 #include "cons_connected.h"
 #include "relax_gcg.h"
 #include "struct_detector.h"
