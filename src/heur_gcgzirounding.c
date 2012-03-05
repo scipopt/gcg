@@ -31,7 +31,7 @@
 #define HEUR_DISPCHAR         'z'
 #define HEUR_PRIORITY         -500
 //#define HEUR_FREQ             1
-#define HEUR_FREQ             -1    // TODO: heuristic deactivated due to false solutions
+#define HEUR_FREQ             -1    /// @todo heuristic deactivated due to false solutions
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
@@ -598,7 +598,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 
       /* get row activity */
       activities[i] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
-      /* TODO: This assertion has been commented out due to numerical troubles */
+      /** @todo This assertion has been commented out due to numerical troubles */
 //      assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) );
 
       /* in special case if LHS or RHS is (-)infinity slacks have to be initialized as infinity*/
@@ -620,7 +620,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
        */
       if( SCIPisFeasEQ(scip, lhs, rhs) && rowneedsslackvar[i] )
       {
-         /* @todo: This is only necessary for rows containing fractional variables. */
+         /** @todo This is only necessary for rows containing fractional variables. */
          rowFindSlackVar(scip, row, &(slackvars[i]), &(slackvarcoeffs[i]));
 
          if( slackvars[i] == NULL )

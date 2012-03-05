@@ -415,14 +415,14 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                   }
                }
 
-               /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
+               /** @todo cp: Shouldn't this be '!contained' rather than 'contained'? */
                if( contained )
                   continue;
 
                feasible = TRUE;
             }
 
-            /* @todo: cp: What is this if statement good for? */
+            /** @todo cp: What is this if statement good for? */
             if( !feasible )
             {
                for( o2 = 0; o2 < norigvars2 && !feasible; o2++ )
@@ -441,7 +441,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                      }
                   }
 
-                  /* @todo: cp: Shouldn't this be '!contained' rather than 'contained'? */
+                  /** @todo cp: Shouldn't this be '!contained' rather than 'contained'? */
                   if( contained )
                      continue;
 

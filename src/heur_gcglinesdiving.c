@@ -288,7 +288,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    if( SCIPgetLastDivenode(masterprob) == SCIPgetNNodes(masterprob) && SCIPgetDepth(masterprob) > 0 )
       return SCIP_OKAY;
 
-   /* TODO: for some reason, the heuristic is sometimes called with an invalid relaxation solution;
+   /** @todo for some reason, the heuristic is sometimes called with an invalid relaxation solution;
     *       in that case, don't execute it */
    if( !SCIPisRelaxSolValid(scip) )
    {
@@ -323,7 +323,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    /* allow at least a certain number of LP iterations in this dive */
    maxnlpiterations = MAX(maxnlpiterations, heurdata->nlpiterations + MINLPITER);
 
-   /* TODO: limit number of pricing rounds, play with parameters */
+   /** @todo limit number of pricing rounds, play with parameters */
    if( heurdata->maxpriceofs > -1 )
    {
       npricerounds = SCIPgetNPriceRounds(masterprob);
@@ -637,7 +637,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    }
 
    /* check if a solution has been found */
-   /* TODO: maybe this is unneccessary since solutions are also added in GCGrelaxUpdateCurrentSol() */
+   /** @todo maybe this is unneccessary since solutions are also added in GCGrelaxUpdateCurrentSol() */
    if( nlpcands == 0 && !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && divedepth > 0 )
    {
       /* create solution from diving LP */
@@ -664,7 +664,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
-   /* TODO: since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
+   /** @todo since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
     * *result != SCIP_FOUNDSOL although a solution has been found */
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;

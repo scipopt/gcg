@@ -288,7 +288,7 @@ SCIP_RETCODE selectExtremePoints(
       block = GCGvarGetBlock(mastervar);
       value = SCIPgetSolVal(masterprob, NULL, mastervar);
 
-      /* @todo: handle infinite master solution values */
+      /** @todo handle infinite master solution values */
       assert(!SCIPisInfinity(scip, value));
 
       /* ignore irrelevant extreme points */
@@ -296,7 +296,7 @@ SCIP_RETCODE selectExtremePoints(
          continue;
 
       /* ignore rays
-       * @todo: do it smarter */
+       * @todo do it smarter */
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
@@ -350,7 +350,7 @@ SCIP_RETCODE selectExtremePoints(
       block = GCGvarGetBlock(mastervar);
       value = SCIPgetSolVal(masterprob, NULL, mastervar);
 
-      /* @todo: handle infinite master solution values */
+      /** @todo handle infinite master solution values */
       assert(!SCIPisInfinity(scip, value));
 
       /* ignore irrelevant extreme points */
@@ -358,7 +358,7 @@ SCIP_RETCODE selectExtremePoints(
          continue;
 
       /* ignore rays
-       * @todo: do it smarter */
+       * @todo do it smarter */
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
@@ -929,7 +929,7 @@ static SCIP_RETCODE fixVariables(
                         break;
                   firstblock = (l == blockrep);
 
-                  /* @todo: can there be aggregated linking variables? */
+                  /** @todo can there be aggregated linking variables? */
                   origvar = origvars[k];
                }
                else

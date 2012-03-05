@@ -292,7 +292,7 @@ SCIP_RETCODE initializeStartsol(
 }
 
 /** for a given block, search if there is a master variable corresponding to the zero solution;
- * @todo: it would be more efficient to "mark" master variables as being trivial */
+ * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
       SCIP*             scip,
@@ -826,7 +826,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             }
          }
 
-         /* @todo: >= should not happen, replace it by == ? */
+         /** @todo >= should not happen, replace it by == ? */
          allblocksfull &= blocknr[i] >= nidentblocks;
       }
 

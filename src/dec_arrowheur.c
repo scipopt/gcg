@@ -303,7 +303,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       stddev = sqrt(variance);
       SCIPfreeBufferArrayNull(scip, &vals);
 
-      // TODO: MAGIC NUMBER 2
+      /// @todo MAGIC NUMBER 2
       if( SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons), SCIPgetLhsXXX(scip, cons)) )
       {
          /* we are dealing with an equality*/
@@ -405,8 +405,8 @@ static SCIP_RETCODE buildGraphStructure(
       SCIP_CALL( SCIPallocBufferArray(scip, &vars, ncurvars) );
       SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, ncurvars) );
 
-      /* TODO: skip all variables that have a zero coeffient or where all coefficients add to zero */
-      /* TODO: Do more then one entry per variable actually work? */
+      /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+      /** @todo Do more then one entry per variable actually work? */
 
       /* allocate a hyperedge for the constraint */
       SCIP_CALL( SCIPallocMemory(scip, &hedge) );

@@ -304,7 +304,7 @@ SCIP_RETCODE convertStructToGCG(
          continue;
 
       SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
-      /* HACK; TODO: find out constraint blocks */
+      /* HACK; @todo find out constraint blocks */
       for( j = 0; j < nblocks; ++j )
       {
          found = FALSE;
@@ -392,7 +392,7 @@ SCIP_RETCODE ensureSizeBranchrules(
 }
 
 /** checks whether two arrays of SCIP_Real's are identical
- * @todo: What about using SCIPisEq()
+ * @todo What about using SCIPisEq()
  */
 
 static
@@ -624,7 +624,7 @@ SCIP_RETCODE checkIdenticalBlocks(
          if( relaxdata->blockrepresentative[j] != j )
             continue;
 
-         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* TODO: +1 to deal with empty subproblems */
+         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** @todo +1 to deal with empty subproblems */
          SCIP_CALL( pricingprobsAreIdentical(relaxdata, i, j, varmap, &identical) );
 
          if( identical )
@@ -2811,7 +2811,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
 
-   /* TODO: solve master problem again */
+   /** @todo solve master problem again */
 
    return SCIP_OKAY;
 }
@@ -2856,7 +2856,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    }
    SCIPclearExternBranchCands(scip);
 
-   /** @todo: remove the TRUE of the if condition and use correct abort criteria */
+   /** @todo remove the TRUE of the if condition and use correct abort criteria */
    /* nothing has to be done, if no LP was solved after the last update */
    /*if( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )*/
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
@@ -2937,11 +2937,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
-      /** @todo: Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.
+      /** @todo Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.
        *  Remedy could be: Round the values or propagate changes or call a heuristic to fix it.
        */
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-      /** @todo: Martin will disable that here, because at the current stage, it does not have to be true!
+      /** @todo Martin will disable that here, because at the current stage, it does not have to be true!
        *       assert(stored);
        */
       if(stored)
