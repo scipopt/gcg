@@ -1319,7 +1319,7 @@ SCIP_Real computeSolObjValue(
 
    for ( j = 0; j < nsolvars; j++ )
    {
-      /** @todo: round solution values??? */
+      /** @todo round solution values??? */
       assert(solvars[j] != NULL);
       bestsolval += solvals[j] * SCIPvarGetObj(solvars[j]);
    }
@@ -1375,7 +1375,7 @@ void sortPricingProblemsByScore(SCIP_PRICERDATA *pricerdata)
 {
    int i;
    assert(pricerdata != NULL);
-    /* TODO: sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
+    /** @todo sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
    for (i = 0; i < pricerdata->npricingprobs; i++)
    {
       pricerdata->permu[i] = i;
@@ -1621,7 +1621,7 @@ SCIP_RETCODE performPricing(
             /* compute the ojective value of the best solution */
             bestsolval = computeSolObjValue(nsolvars[0], solvars[0], solvals[0]);
 
-            /* TODO: ensure that the first solution is really the best one and that its objective value is the best reduced cost */
+            /** @todo ensure that the first solution is really the best one and that its objective value is the best reduced cost */
             if( SCIPisSumNegative(scip, bestsolval - pricerdata->dualsolconv[prob]) )
                bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) *
                   (bestsolval - pricerdata->dualsolconv[prob]);
@@ -1666,8 +1666,8 @@ SCIP_RETCODE performPricing(
       pricerdata->nbestsols = 0;
    }
 
-   /** @todo: perhaps solve remaining pricing problems, if only few left? */
-   /** @todo: solve all pricing problems all k iterations? */
+   /** @todo perhaps solve remaining pricing problems, if only few left? */
+   /** @todo solve all pricing problems all k iterations? */
    /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
    for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
       if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )

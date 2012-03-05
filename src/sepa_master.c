@@ -324,7 +324,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepadata) );
 
    /* add master separator parameters */
-   /* TODO: (optional) add separator specific parameters with SCIPaddTypeParam() here */
+   /** @todo (optional) add separator specific parameters with SCIPaddTypeParam() here */
 
    return SCIP_OKAY;
 }

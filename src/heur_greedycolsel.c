@@ -33,7 +33,7 @@
 #define HEUR_FREQ             2
 #define HEUR_FREQOFS          1
 #define HEUR_MAXDEPTH         -1
-/* TODO: should heuristic be called during the pricing loop or only after solving a node relaxation? */
+/** @todo should heuristic be called during the pricing loop or only after solving a node relaxation? */
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP
 #define HEUR_USESSUBSCIP      FALSE
 
@@ -181,11 +181,11 @@ SCIP_RETCODE getBestMastervar(
       assert(GCGvarIsMaster(mastervar));
       block = GCGvarGetBlock(mastervar);
 
-      /* @todo: handle copied original variables and linking variables */
+      /** @todo handle copied original variables and linking variables */
       if( block < 0 )
          continue;
 
-      /* @todo: handle rays */
+      /** @todo handle rays */
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
@@ -262,7 +262,7 @@ SCIP_RETCODE updateActivities(
 }
 
 /** for a given block, search if there is a master variable corresponding to the zero solution;
- * @todo: it would be more efficient to "mark" master variables as being trivial */
+ * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
       SCIP*             scip,
@@ -749,7 +749,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             }
          }
 
-         /* @todo: >= should not happen, replace it by == ? */
+         /** @todo >= should not happen, replace it by == ? */
          allblocksfull &= blocknr[i] >= nidentblocks;
       }
 

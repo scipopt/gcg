@@ -832,7 +832,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->subscipconss[i][ind] = readerdata->blockcons[i][j];
          decomp->nsubscipconss[i] ++;
          /* hashmap */
-         /* @todo besser machen? */
+         /** @todo besser machen? */
          SCIP_CALL( SCIPhashmapRemove(decomp->constoblock, readerdata->blockcons[i][j]) );
          SCIP_CALL( SCIPhashmapInsert(decomp->constoblock, readerdata->blockcons[i][j], (void*) (size_t) i) );
       }

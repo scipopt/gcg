@@ -26,7 +26,7 @@ extern "C" {
 
 /** detector data structure
  *
- * @todo: add priority and enabled flag (bug #7)
+ * @todo add priority and enabled flag (bug #7)
  */
 struct DEC_Detector {
    const char *name;                            /**< name of the detector */

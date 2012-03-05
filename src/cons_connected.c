@@ -268,7 +268,7 @@ SCIP_RETCODE findConnectedComponents(
          assert(varindex >= 0);
          assert(varindex < nvars);
 
-         /** @todo: what about deleted variables? */
+         /** @todo what about deleted variables? */
          varblock = vartoblock[varindex];
 
          /* if variable is assigned to a block, assign constraint to that block */
@@ -295,7 +295,7 @@ SCIP_RETCODE findConnectedComponents(
             /* assign all previous variables of this constraint to this block */
             for (k = j; k >= 0; --k)
             {
-               /** @todo: what about deleted variables? */
+               /** @todo what about deleted variables? */
                assert(consblock >= 1);
                assert(consblock <= nextblock);
                vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
@@ -773,7 +773,7 @@ SCIP_RETCODE SCIPcreateConsConnected(
 
    /* create constraint data */
    consdata = NULL;
-   /* TODO: create and store constraint specific data here */
+   /** @todo create and store constraint specific data here */
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
