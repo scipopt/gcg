@@ -11,10 +11,9 @@
 
 #@file    Makefile
 #@brief   Makefile for generic column generation code using SCIP as a callable library
-#@author  Thorsten Koch
-#@author  Tobias Achterberg
-#@author  Marc Pfetsch
 #@author  Gerald Gamrath
+#@author  Martin Bergner
+#@author  Christian Puchert
 
 
 #-----------------------------------------------------------------------------
@@ -112,12 +111,21 @@ all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 .PHONY: lint
 lint:		$(MAINSRC)
 		-rm -f lint.out
+ifeq ($(FILES),)
 		$(SHELL) -ec 'for i in $^; \
 			do \
 			echo $$i; \
 			$(LINT) lint/$(MAINNAME).lnt +os\(lint.out\) -u -zero \
 			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
+else
+		$(SHELL) -ec  'for i in $(FILES); \
+			do \
+			echo $$i; \
+			$(LINT) lint/$(MAINNAME).lnt +os\(lint.out\) -u -zero \
+			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			done'
+endif
 
 .PHONY: scip
 scip:
