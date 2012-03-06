@@ -268,7 +268,7 @@ SCIP_RETCODE evaluateDecomposition(
       break;
    case DEC_DECTYPE_STAIRCASE:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
-      assert(FALSE);
+      score->totalscore = 1.0;
       break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
