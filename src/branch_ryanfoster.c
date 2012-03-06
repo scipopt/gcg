@@ -262,10 +262,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 /** branching execution method for fractional LP solutions */
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
-{
-   /*lint --e{715}*/
+{  /*lint --e{715}*/
    SCIPdebugMessage("Execlp method of ryanfoster branching\n");
-//   printf("Execlp method of ryanfoster branching\n");
 
    *result = SCIP_DIDNOTRUN;
 
@@ -353,13 +351,15 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, &nbinmastervars, &nintmastervars, NULL, NULL) );
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, &branchcandssol, &branchcandsfrac, &nbranchcands, NULL) );
 
-   /* now search for 2 (fractional) columns v1, v2 in the master and 2 original variables o1, o2
-    * s.t. v1 contains both o1 and o2 and column 2 contains either o1 or o2
+   /* now search for two (fractional) columns mvar1, mvar2 in the master and 2 original variables ovar1, ovar2
+    * s.t. mvar1 contains both ovar1 and ovar2 and mvar2 contains ovar1, but not ovar2
     */
    ovar1 = NULL;
    ovar2 = NULL;
    mvar1 = NULL;
+   mvar2 = NULL;
    feasible = FALSE;
+   /* select first fractional column (mvar1) */
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
    {
       mvar1 = branchcands[v1];
@@ -369,13 +369,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       origvals1 = GCGmasterVarGetOrigvals(mvar1);
       norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
 
+      /* select first original variable ovar1, that should be contained in both master variables */
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
          ovar1 = origvars1[o1];
-         if( SCIPisZero(scip,origvals1[o1]) )
-            continue;
+         assert(!SCIPisZero(scip,origvals1[o1]));
 
-         /* v1 contains o1, look for v2 */
+         /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
             mvar2 = branchcands[v2];
@@ -385,47 +385,61 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             origvals2 = GCGmasterVarGetOrigvals(mvar2);
             norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
 
+            /* check whether ovar1 is contained in mvar2, too */
             contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
-               if( origvars2[j] == ovar1 && !SCIPisZero(scip, origvals2[j]) )
+               assert(!SCIPisZero(scip, origvals2[j]));
+               if( origvars2[j] == ovar1 )
                {
                   contained = TRUE;
                   break;
                }
             }
 
+            /* mvar2 does not contain ovar1, so look for another mvar2 */
             if( !contained )
                continue;
 
-            /* v2 also contains o1, now look for o2 */
-            for( o2 = 0; o2 < norigvars1 && !feasible; o2++ )
+            /* mvar2 also contains ovar1, now look for ovar2 contained in mvar1, but not in mvar2 */
+            for( o2 = 0; o2 < norigvars1; o2++ )
             {
+               assert(!SCIPisZero(scip, origvals1[o2]));
+
                ovar2 = origvars1[o2];
-               if( ovar2 == ovar1 || SCIPisZero(scip, origvals1[o2]) )
+               if( ovar2 == ovar1 )
                   continue;
 
+               /* check whether ovar2 is contained in mvar2, too */
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
-                  if( origvars2[j] == ovar2 && !SCIPisZero(scip, origvals2[j]) )
+                  assert(!SCIPisZero(scip, origvals2[j]));
+
+                  if( origvars2[j] == ovar2 )
                   {
                      contained = TRUE;
                      break;
                   }
                }
 
-               /** @todo cp: Shouldn't this be '!contained' rather than 'contained'? */
+               /* ovar2 should be contained in mvar1 but not in mvar2, so look for another ovar2,
+                * if the current one is contained in mvar2
+                */
                if( contained )
                   continue;
 
+               /* if we arrive here, ovar2 is contained in mvar1 but not in mvar2, so everything is fine */
                feasible = TRUE;
+               break;
             }
 
-            /** @todo cp: What is this if statement good for? */
+            /* we did not find an ovar2 contained in mvar1, but not in mvar2,
+             * now look for one contained in mvar2, but not in mvar1
+             */
             if( !feasible )
             {
-               for( o2 = 0; o2 < norigvars2 && !feasible; o2++ )
+               for( o2 = 0; o2 < norigvars2; o2++ )
                {
                   ovar2 = origvars2[o2];
                   if( ovar2 == ovar1 || SCIPisZero(scip, origvals2[o2]) )
@@ -441,11 +455,15 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                      }
                   }
 
-                  /** @todo cp: Shouldn't this be '!contained' rather than 'contained'? */
+                  /* ovar2 should be contained in mvar2 but not in mvar1, so look for another ovar2,
+                   * if the current one is contained in mvar1
+                   */
                   if( contained )
                      continue;
 
+                  /* if we arrive here, ovar2 is contained in mvar2 but not in mvar1, so everything is fine */
                   feasible = TRUE;
+                  break;
                }
             }
          }
@@ -467,6 +485,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    assert(ovar1 != NULL);
    assert(ovar2 != NULL);
    assert(mvar1 != NULL);
+   assert(mvar2 != NULL);
 
    /* create the b&b-tree child-nodes of the current node */
    SCIP_CALL( SCIPcreateChild(scip, &childsame, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -510,13 +529,15 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    pricingvar2 = GCGoriginalVarGetPricingVar(branchdifferdata->var2);
    assert(GCGvarIsPricing(pricingvar1));
    assert(GCGvarIsPricing(pricingvar2));
-
    assert(GCGvarGetBlock(pricingvar1) == GCGvarGetBlock(pricingvar2));
    assert(GCGpricingVarGetNOrigvars(pricingvar1) == GCGpricingVarGetNOrigvars(pricingvar2));
+
    norigvars1 = GCGpricingVarGetNOrigvars(pricingvar1);
+   assert(norigvars1 == GCGpricingVarGetNOrigvars(pricingvar2));
 
    origvars1 = GCGpricingVarGetOrigvars(pricingvar1);
    origvars2 = GCGpricingVarGetOrigvars(pricingvar2);
+
    for( i = 0; i < norigvars1; i++ )
    {
       assert(GCGvarGetBlock(origvars1[i]) == GCGvarGetBlock(origvars2[i]));
@@ -550,20 +571,22 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
 /** branching execution method for not completely fixed pseudo solutions
  *
- * @todo maybe we can remove this method */
+ * @todo maybe we can remove this method
+ */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
-{
+{  /*lint --e{715}*/
    SCIPdebugMessage("Execps method of ryanfoster branching\n");
-   if(SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING)
+
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING )
    {
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
-   assert(0);
+   SCIPABORT();
 
-   return SCIP_OKAY;
+   return SCIP_OKAY; /*lint !e527 */
 }
 
 /** initialization method of branching rule (called after problem was transformed) */
