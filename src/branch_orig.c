@@ -503,10 +503,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 /** branching execution method for fractional LP solutions */
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
-{
-   /*lint --e{715}*/
+{  /*lint --e{715}*/
    SCIPdebugMessage("Execlp method of orig branching\n");
-   //printf("Execlp method of orig branching\n");
 
    if( SCIPgetNExternBranchCands(scip) > 0 )
    {
@@ -520,7 +518,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 /** branching execution method for relaxation solutions */
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
-{
+{  /*lint --e{715}*/
    SCIP_CALL( branchExtern(scip, branchrule, result) );
 
    return SCIP_OKAY;
@@ -541,7 +539,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 /** branching execution method for not completely fixed pseudo solutions */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
-{
+{  /*lint --e{715}*/
    int i;
 
    /* branching candidates */
@@ -563,6 +561,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    *result = SCIP_DIDNOTRUN;
    if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING )
       return SCIP_OKAY;
+
    /* get the branching candidates */
    SCIP_CALL( SCIPgetPseudoBranchCands(scip, &branchcands, &nbranchcands, &npriobranchcands) );
 
@@ -584,7 +583,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    }
 
    /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
-    * but was directly transferred to the master problem and which has fractional value in the current solution */
+    * but was directly transferred to the master problem and which has fractional value in the current solution
+    */
    if( branchvar == NULL )
    {
       for( i = 0; i < npriobranchcands; i++ )
@@ -604,7 +604,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
-      //printf("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 
