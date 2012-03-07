@@ -110,9 +110,7 @@ struct SCIP_PricerData
 
    /** variables used for statistics */
    SCIP_CLOCK* redcostclock;              /**< time for reduced cost pricing */
-   SCIP_CLOCK* redcostsolveclock;         /**< solving time for reduced cost pricing */
    SCIP_CLOCK* farkasclock;               /**< time for farkas pricing */
-   SCIP_CLOCK* farkassolveclock;          /**< solving time for farkas pricing */
    SCIP_CLOCK* freeclock;                 /**< time for freeing pricing problems */
    SCIP_CLOCK* transformclock;            /**< time for transforming pricing problems */
    int         solvedsubmipsoptimal;      /**< number of optimal pricing runs */
@@ -222,8 +220,8 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
 
       for( i = 0; i < pricerdata->maxbestsols; i++ )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) ); /*lint !e866*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) ); /*lint !e866*/
          pricerdata->nbestsolvars[i] = 0;
       }
 
@@ -249,8 +247,8 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
 
       for( i = pricerdata->maxbestsols; i < pricerdata->maxvarsroundredcost; i++ )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) ); /*lint !e866*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) ); /*lint !e866*/
          pricerdata->nbestsolvars[i] = 0;
       }
 
@@ -288,7 +286,7 @@ SCIP_DECL_PARAMCHGD(paramChgdOnlybestMaxvars)
 /** execution method of event handler */
 static
 SCIP_DECL_EVENTEXEC(eventExecVardeleted)
-{
+{  /*lint --e{715}*/
    SCIP_VAR* var;
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
@@ -395,7 +393,7 @@ SCIP_RETCODE ensureSizeSolvers(
 
    if( pricerdata->nsolvers == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvers), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvers), 1) ); /*lint !e506*/
    }
    else
    {
@@ -1356,7 +1354,8 @@ SCIP_Bool canPricingBeAborted(
    if ( pricerdata->abortpricinggap > 0 )
    {
       SCIP_Real gap;
-      gap = ABS((SCIPgetLPObjval(scip) - SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)))/SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)));
+      gap = (SCIPgetLPObjval(scip) - SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)))/SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip));
+      gap = ABS(gap);
 
       if ( gap < pricerdata->abortpricinggap )
       {
@@ -1452,6 +1451,9 @@ SCIP_RETCODE performPricing(
 
    if(pricetype == GCG_PRICETYPE_REDCOST)
    {
+      assert(result != NULL);
+
+      /* terminate early, if applicable */
       if( canPricingBeAborted(scip, pricerdata) )
       {
          *result = SCIP_DIDNOTRUN;
@@ -1517,7 +1519,7 @@ SCIP_RETCODE performPricing(
             {
                SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
                if( pricetype == GCG_PRICETYPE_REDCOST )
-                  *result = SCIP_DIDNOTRUN;
+                  *result = SCIP_DIDNOTRUN; /*lint !e613*/
 
                return SCIP_OKAY;
             }
@@ -1603,7 +1605,7 @@ SCIP_RETCODE performPricing(
             {
                SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
                if( pricetype == GCG_PRICETYPE_REDCOST )
-                  *result = SCIP_DIDNOTRUN;
+                  *result = SCIP_DIDNOTRUN; /*lint !e613*/
 
                bestredcostvalid = FALSE;
                break;
@@ -1933,8 +1935,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
       for( i = 0; i < pricerdata->maxbestsols; i++ )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvars[i]), pricerdata->maxvars) ); /*lint !e866*/
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->bestsolvals[i]), pricerdata->maxvars) ); /*lint !e866*/
          pricerdata->nbestsolvars[i] = 0;
       }
 
@@ -2364,7 +2366,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
       pricerdata->solvers[pos] = pricerdata->solvers[pos-1];
       pos--;
    }
-   SCIP_CALL( SCIPallocMemory(scip, &(pricerdata->solvers[pos])) );
+   SCIP_CALL( SCIPallocMemory(scip, &(pricerdata->solvers[pos])) ); /*lint !e866*/
 
    SCIP_ALLOC( BMSduplicateMemoryArray(&pricerdata->solvers[pos]->name, name, strlen(name)+1) );
    SCIP_ALLOC( BMSduplicateMemoryArray(&pricerdata->solvers[pos]->description, description, strlen(description)+1) );
@@ -2542,8 +2544,8 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       if(pricerdata->pricingprobs[i] == NULL)
          continue;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[i])) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[i])) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars[i], SCIPgetNVars(pricerdata->pricingprobs[i])) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &pricingvals[i], SCIPgetNVars(pricerdata->pricingprobs[i])) ); /*lint !e866*/
    }
 
    /* get solution values */

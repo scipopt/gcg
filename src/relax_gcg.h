@@ -207,7 +207,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
 extern
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Longint          maxlpiterations,    /**< maximum number of lp iterations allowed */
+   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
    SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
