@@ -33,7 +33,7 @@
 /** node selector data */
 struct SCIP_NodeselData
 {
-   int lastorignodenumber;
+   SCIP_Longint lastorignodenumber;
 };
 
 /*
@@ -86,7 +86,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    SCIP_CONS* parentmastercons;
    SCIP* origscip;
    int nnodes;
-   int orignodenumber;
+   SCIP_Longint orignodenumber;
 
    assert(nodesel != NULL);
    assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
@@ -229,7 +229,7 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
    /* create master node selector data */
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
 
-   nodeseldata->lastorignodenumber = -1;
+   nodeseldata->lastorignodenumber = -1LL;
 
    /* include node selector */
    SCIP_CALL( SCIPincludeNodesel(scip, NODESEL_NAME, NODESEL_DESC, NODESEL_STDPRIORITY, NODESEL_MEMSAVEPRIORITY,

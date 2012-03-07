@@ -524,7 +524,7 @@ SCIP_DECL_CONSFREE(consFreeMasterbranch)
 /** initialization method of constraint handler (called after problem was transformed) */
 static
 SCIP_DECL_CONSINIT(consInitMasterbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -556,7 +556,7 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONS* cons;
 
    assert(scip != NULL);
@@ -580,7 +580,7 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 /** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
 SCIP_DECL_CONSEXIT(consExitMasterbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -608,7 +608,6 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
 static
 SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
-//   SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSDATA* consdata2;
 
    assert(scip != NULL);
@@ -618,13 +617,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(*consdata != NULL);
 
-//   conshdlrData = SCIPconshdlrGetData(conshdlr);
-
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
+
    /* set the pointer in the parent node to NULL */
    if( (*consdata)->parentcons != NULL )
    {
@@ -740,14 +738,14 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* put constraint on the stack */
    if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
-      SCIPreallocMemoryArray(scip, &(conshdlrData->stack), 2*(conshdlrData->maxstacksize));
       conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), conshdlrData->maxstacksize) );
       SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
    }
    conshdlrData->stack[conshdlrData->nstack] = cons;
    (conshdlrData->nstack)++;
 
-   SCIPdebugMessage("Activating masterbranch constraint: <%s> [stack size: %d], needprop = %d.\n",
+   SCIPdebugMessage("Activating masterbranch constraint: <%s> [stack size: %d], needprop = %u.\n",
       consdata->name, conshdlrData->nstack, consdata->needprop);
 
    /* apply global bound changes in the original problem to the master problem */
@@ -962,7 +960,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 /** domain propagation method of constraint handler */
 static
 SCIP_DECL_CONSPROP(consPropMasterbranch)
-{
+{  /*lint --e{715}*/
    SCIP* origscip;
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
@@ -1051,12 +1049,12 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
          assert(blocknr < GCGrelaxGetNPricingprobs(origscip));
          assert(norigvars >= 0);
-
-//         fixed = FALSE;
+         assert(origvars != NULL || norigvars == 0);
 
          /* only look at master variables not globally fixed to zero that belong to a block */
          ismastervariablerelevant = !SCIPisFeasZero(scip, SCIPvarGetUbGlobal(vars[i]));
-         ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0]));
+         ismastervariablerelevant = ismastervariablerelevant && (norigvars > 0);
+         ismastervariablerelevant = ismastervariablerelevant && (blocknr >= 0 || GCGvarIsLinking(origvars[0])); /*lint !e613*/
          if( !ismastervariablerelevant )
             continue;
 
@@ -1111,11 +1109,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                /* Make sure that the original variable and the master variable belong to the same block
                 * or that, in case of linking variables, the linking variable is in that block */
-               assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr)));
+               assert(GCGvarGetBlock(origvars[j]) == blocknr || (GCGisLinkingVarInBlock(origvars[j], blocknr))); /*lint !e613*/
 
                /* check whether the original variable contained in the master variable equals the variable
                 * on which the current branching was performed */
-               if( origvars[j] == bndchgorigvars[0] )
+               if( origvars[j] == bndchgorigvars[0] ) /*lint !e613*/
                {
                   val = origvals[j];
                   break;
@@ -1131,7 +1129,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIP_CALL( SCIPchgVarUbGlobal(scip, vars[i], 0.0) );
                propcount++;
-//               fixed = TRUE; // the break will deal with it
                break;
             }
             /* branching imposes new upper bound */
@@ -1140,7 +1137,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                SCIP_CALL( SCIPchgVarUbGlobal(scip, vars[i], 0.0) );
                propcount++;
-//               fixed = TRUE; // the break will deal with it
                break;
             }
          }
@@ -1197,7 +1193,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
                   SCIP_CALL( SCIPchgVarUb(scip, vars[i], consdata->newbounds[k]) );
                   propcount++;
                }
-
             }
          }
       }
@@ -1333,8 +1328,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
    }
 
-   /*SCIPdebugMessage("Finished external propagation: %d vars fixed.\n", propcount);*/
-
    if( *result != SCIP_CUTOFF )
       if( propcount > 0 )
          *result = SCIP_REDUCEDDOM;
@@ -1357,7 +1350,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 /** enforcement method for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -1366,7 +1359,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpMasterbranch)
 /** enforcement method for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -1375,7 +1368,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsMasterbranch)
 /** check method for solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckMasterbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -1384,7 +1377,7 @@ SCIP_DECL_CONSCHECK(consCheckMasterbranch)
 /** variable lock method */
 static
 SCIP_DECL_CONSLOCK(consLockMasterbranch)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -1402,7 +1395,6 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 #define consSepasolMasterbranch NULL
 #define consEnableMasterbranch NULL
 #define consDisableMasterbranch NULL
-#define consDelvarMasterbranch NULL
 #define consPrintMasterbranch NULL
 #define consDelvarsMasterbranch NULL
 #define consCopyMasterbranch NULL
@@ -1420,7 +1412,7 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 /** initialization method of event handler (called after problem was transformed) */
 static
 SCIP_DECL_EVENTINIT(eventInitOrigvarbound)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -1429,7 +1421,7 @@ SCIP_DECL_EVENTINIT(eventInitOrigvarbound)
 /** solving process initialization method of event handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_EVENTINITSOL(eventInitsolOrigvarbound)
-{
+{  /*lint --e{715}*/
    SCIP_VAR** vars;
    int nvars;
    int i;
@@ -1453,7 +1445,7 @@ SCIP_DECL_EVENTINITSOL(eventInitsolOrigvarbound)
 /** execution method of event handler */
 static
 SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
-{
+{  /*lint --e{715}*/
    SCIP_EVENTTYPE eventtype;
    SCIP_VAR* var;
    SCIP_Real oldbound;
@@ -1475,7 +1467,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    newbound = SCIPeventGetNewbound(event);
 
    SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
-   //printf("eventexec: eventtype = %d, var = %s, oldbound = %f, newbound = %f, diff = %g\n", eventtype, SCIPvarGetName(var), oldbound, newbound, oldbound-newbound);
 
    assert(GCGvarIsOriginal(var));
    blocknr = GCGvarGetBlock(var);
@@ -1988,7 +1979,7 @@ void GCGconsMasterbranchCheckConsistency(
    if( conshdlr == NULL )
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
-      assert(0);
+      SCIPABORT();
       return;
    }
 #ifndef NDEBUG
@@ -2000,7 +1991,7 @@ void GCGconsMasterbranchCheckConsistency(
    {
 #ifndef NDEBUG
       consdata = SCIPconsGetData(conss[i]);
-#endif 
+#endif
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
