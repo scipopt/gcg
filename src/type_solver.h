@@ -10,7 +10,7 @@
 
 /**@file   type_solver.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for pricing problem solvers in gcg projects
+ * @brief  type definitions for pricing problem solvers in gcg project
  * @author Gerald Gamrath
  */
 
@@ -78,7 +78,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
 #define GCG_DECL_SOLVEREXITSOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver)
 
 
-/** solving method for pricing solver using optimal pricing
+/** solving method for pricing solver which solves the pricing problem to optimality
  *
  *
  *  input:
