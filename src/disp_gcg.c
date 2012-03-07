@@ -313,7 +313,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    }
    else
    {
-      SCIPdispLongint(file, 0, DISP_WIDT_MLPITERATIONS);
+      SCIPdispLongint(file, 0LL, DISP_WIDT_MLPITERATIONS);
    }
 
    return SCIP_OKAY;

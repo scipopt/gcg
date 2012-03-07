@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   sepa_master.c
  * @brief  master separator
  * @author Gerald Gamrath
@@ -184,7 +184,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    int ncuts;
    int i;
    int j;
-//   int sum;
    SCIP_Bool feasible;
 
    assert(scip != NULL);
@@ -197,8 +196,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    assert(sepadata != NULL);
 
    SCIPdebugMessage("sepaExeclpMaster\n");
-   //SCIPdebugMessage("%d cuts are in the original LP!\n", SCIPgetNCutsApplied(origscip));
-   //SCIPdebugMessage("%d cuts are in the master LP!\n", SCIPgetNCutsApplied(scip));
 
    *result = SCIP_DIDNOTFIND;
 
@@ -214,7 +211,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
          FALSE, FALSE, &delayed, &cutoff) );
 
    SCIPdebugMessage("SCIPseparateSol() found %d cuts!\n", SCIPgetNCuts(origscip));
-//   sum = 0;
 
    cuts = SCIPgetCuts(origscip);
    ncuts = SCIPgetNCuts(origscip);
@@ -225,7 +221,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    for( i = 0; i < ncuts; i++ )
    {
       sepadata->origcuts[sepadata->norigcuts] = cuts[i];
-      SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]);
+      SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
       sepadata->norigcuts++;
    }
 
@@ -238,8 +234,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    for( i = 0; i < ncuts; i++ )
    {
       origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i];
-      /* add orig cut to the original scip */
-      //SCIP_CALL( SCIPaddCut(origscip, GCGrelaxGetCurrentOrigSol(origscip), origcut, FALSE) );
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
@@ -269,7 +263,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE) );
       sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
-      //SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]);
       sepadata->nmastercuts++;
 
 #ifdef SCIP_DEBUG
@@ -301,7 +294,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
 /** creates the master separator and includes it in SCIP */
 SCIP_RETCODE SCIPincludeSepaMaster(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPADATA* sepadata;
@@ -309,8 +302,8 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    /* create master separator data */
    SCIP_CALL( SCIPallocMemory(scip, &sepadata) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
    sepadata->maxcuts = STARTMAXCUTS;
    sepadata->norigcuts = 0;
    sepadata->nmastercuts = 0;

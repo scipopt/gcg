@@ -46,7 +46,7 @@
 /** constraint enforcing method of constraint handler for LP solutions */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
-{
+{  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_VAR** origvars;
    int norigvars;
@@ -140,7 +140,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 /** constraint enforcing method of constraint handler for pseudo solutions */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
-{
+{  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_Bool discretization;
 
@@ -194,7 +194,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 /** feasibility check method of constraint handler for integral solutions */
 static
 SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
-{
+{  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_VAR** origvars;
    int norigvars;
@@ -265,7 +265,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 /** variable rounding lock method of constraint handler */
 static
 SCIP_DECL_CONSLOCK(consLockIntegralOrig)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 

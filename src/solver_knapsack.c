@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   solver_knapsack.c
  * @brief  knapsack solver for pricing problems
  * @author Gerald Gamrath
@@ -94,8 +94,8 @@ GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
    for( i = 0; i < solverdata->nsols; i++ )
    {
       solverdata->nsolvars[i] = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) ); /*lint !e866*/
    }
 
    return SCIP_OKAY;
@@ -132,7 +132,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
 
 static
 GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
-{
+{  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
    SCIP_CONS* cons;
    SCIP_VAR** consvars;
@@ -153,7 +153,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    int*                  nonsolitems;
    int                   nnonsolitems;
    SCIP_Real             solval;
-//   SCIP_Bool             applyable;
    SCIP_Bool success;
 
    int i;
@@ -167,22 +166,16 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
 
-
-   //printf("solver knapsack\n");
-
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
    {
-      //printf("%d conss in problem, abort!\n", nconss);
-
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   //cons = SCIPconshdlrGetConss(linearhandler)[0];
    cons = SCIPgetConss(pricingprob)[0];
    assert(cons != NULL);
 
@@ -194,17 +187,14 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          nitems++;
    }
 
-//   applyable = TRUE;
    if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) ||
       !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
-      //printf("wrong structure, abort!\n");
-
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   capacity = SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
+   capacity = (SCIP_Longint)SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
    consvars = SCIPgetVarsLinear(pricingprob, cons);
    nconsvars = SCIPgetNVarsLinear(pricingprob, cons);
    consvals = SCIPgetValsLinear(pricingprob, cons);
@@ -213,8 +203,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    {
       if( !SCIPisIntegral(scip, consvals[i]) )
       {
-         //printf("wrong structure, abort!\n");
-
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
       }
@@ -248,7 +236,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          continue;
       if( SCIPisEQ(scip, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
-         capacity -= SCIPfloor(scip, consvals[i]);
+         capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
          continue;
       }
       for( k = 0; k < nitems; k++ )
@@ -257,13 +245,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          {
             if( SCIPisPositive(scip, consvals[i]) )
             {
-               weights[k] = SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(scip, consvals[i]);
                break;
             }
             else
             {
-               capacity -= SCIPfloor(scip, consvals[i]);
-               weights[k] = SCIPfloor(scip, -1.0*consvals[i]);
+               capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(scip, -1.0*consvals[i]);
                profits[k] *= -1.0;
 
                break;
@@ -278,7 +266,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
 
    assert(success);
-   //printf("knapsack solved, solval = %g\n", solval);
+   SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
    solverdata->nsolvars[0] = 0;
    solverdata->solisray[0] = FALSE;
@@ -334,7 +322,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
-{
+{  /*lint --e{715}*/
    SCIP_CONS* cons;
    SCIP_VAR** consvars;
    int nconsvars;
@@ -354,7 +342,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    int*                  nonsolitems;
    int                   nnonsolitems;
    SCIP_Real             solval;
-//   SCIP_Bool             applyable;
 
    int i;
    int k;
@@ -367,21 +354,16 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    assert(scip != NULL);
    assert(result != NULL);
 
-   //printf("solver knapsack\n");
-
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
    {
-      //printf("%d conss in problem, abort!\n", nconss);
-
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   //cons = SCIPconshdlrGetConss(linearhandler)[0];
    cons = SCIPgetConss(pricingprob)[0];
    assert(cons != NULL);
 
@@ -393,17 +375,14 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          nitems++;
    }
 
-//   applyable = TRUE;
    if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) ||
       !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
-      //printf("wrong structure, abort!\n");
-
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   capacity = SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
+   capacity = (SCIP_Longint)SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
    consvars = SCIPgetVarsLinear(pricingprob, cons);
    nconsvars = SCIPgetNVarsLinear(pricingprob, cons);
    consvals = SCIPgetValsLinear(pricingprob, cons);
@@ -412,8 +391,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( !SCIPisIntegral(scip, consvals[i]) )
       {
-         //printf("wrong structure, abort!\n");
-
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
       }
@@ -447,7 +424,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          continue;
       if( SCIPisEQ(scip, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
-         capacity -= SCIPfloor(scip, consvals[i]);
+         capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
          continue;
       }
       for( k = 0; k < nitems; k++ )
@@ -456,13 +433,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          {
             if( SCIPisPositive(scip, consvals[i]) )
             {
-               weights[k] = SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(scip, consvals[i]);
                break;
             }
             else
             {
-               capacity -= SCIPfloor(scip, consvals[i]);
-               weights[k] = SCIPfloor(scip, -1.0*consvals[i]);
+               capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(scip, -1.0*consvals[i]);
                profits[k] *= -1.0;
 
                break;
@@ -476,7 +453,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
          nonsolitems, &nsolitems, &nnonsolitems, &solval ));
 
-   //printf("knapsack solved, solval = %g\n", solval);
+   SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
    SCIP_CALL( SCIPtransformProb(pricingprob) );
 
@@ -486,7 +463,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( !SCIPisNegative(scip, consvals[solitems[i]]) )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[solitems[i]], 1) );
+         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[solitems[i]], 1.0) );
       }
    }
 
@@ -494,7 +471,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[nonsolitems[i]], 1) );
+         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[nonsolitems[i]], 1.0) );
       }
    }
 
@@ -502,7 +479,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPvarGetLbLocal(pricingprobvars[i]) > 0.5 )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[i], 1) );
+         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[i], 1.0) );
       }
    }
 

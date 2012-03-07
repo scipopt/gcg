@@ -85,7 +85,7 @@ struct SCIP_ConshdlrData
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
 SCIP_DECL_CONSFREE(consFreeOrigbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -108,7 +108,7 @@ SCIP_DECL_CONSFREE(consFreeOrigbranch)
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
 
@@ -140,7 +140,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 /** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
 static
 SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -162,8 +162,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 /** frees specific constraint data */
 static
 SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
-{
-//   SCIP_CONSHDLRDATA* conshdlrData;
+{  /*lint --e{715}*/
    SCIP_CONSDATA* parentdata;
 
    assert(scip != NULL);
@@ -232,7 +231,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 /** constraint activation notification method of constraint handler */
 static
 SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -252,7 +251,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    /* put constraint on the stack */
    if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
-      SCIPreallocMemoryArray(scip, &(conshdlrData->stack), 2*(conshdlrData->maxstacksize));
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), 2*(conshdlrData->maxstacksize)) );
       conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
       SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
    }
@@ -270,7 +269,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 /** constraint deactivation notification method of constraint handler */
 static
 SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
-{
+{  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
 
    assert(scip != NULL);
@@ -300,14 +299,14 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveOrigbranch)
 /** domain propagation method of constraint handler */
 static
 SCIP_DECL_CONSPROP(consPropOrigbranch)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
 /** lp solution enforcement method */
 static
 SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -316,7 +315,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpOrigbranch)
 /** pseudo solution enforcement method */
 static
 SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -325,7 +324,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsOrigbranch)
 /** solution check method */
 static
 SCIP_DECL_CONSCHECK(consCheckOrigbranch)
-{
+{  /*lint --e{715}*/
    *result = SCIP_FEASIBLE;
 
    return SCIP_OKAY;
@@ -334,7 +333,7 @@ SCIP_DECL_CONSCHECK(consCheckOrigbranch)
 /** variable lock method */
 static
 SCIP_DECL_CONSLOCK(consLockOrigbranch)
-{
+{  /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -355,7 +354,6 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
-#define conshdlrCopyOrigbranch NULL
 
 /*
  * interface methods

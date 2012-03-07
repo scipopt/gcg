@@ -607,7 +607,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDisplaycols)
          SCIPdialogMessage(scip, NULL, "%6s  ", "on");
          break;
       default:
-         SCIPdialogMessage(scip, NULL, "%6s  ", "???");
+         SCIPdialogMessage(scip, NULL, "%6s  ", "?\?\?");
          break;
       }
       SCIPdialogMessage(scip, NULL, "%s", SCIPdispGetDesc(disps[i]));
@@ -912,7 +912,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    {
       if(SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
          SCIP_CALL( SCIPpresolve(scip) );
-      SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", 0) );
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", 0LL) );
       SCIP_CALL( SCIPsolve(scip) );
    }
    else
@@ -1650,7 +1650,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetBranchingDirection)
       SCIPerrorMessage("invalid preferred branching direction <%d> of variable <%s>\n",
          SCIPvarGetBranchDirection(var), SCIPvarGetName(var));
       return SCIP_INVALIDDATA;
-   }
+   } /*lint !e788*/
    (void) SCIPsnprintf(prompt, SCIP_MAXSTRLEN, "current value: %d, new value: ", direction);
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, prompt, &valuestr, &endoffile) );
    if( endoffile )
