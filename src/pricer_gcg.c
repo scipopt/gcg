@@ -1304,7 +1304,7 @@ static
 SCIP_Real computeSolObjValue(
    int         nsolvars,      /**< number of variables in the solution  */
    SCIP_VAR**  solvars,       /**< Array of solution variables          */
-   double*     solvals        /**< Array of solution values             */
+   SCIP_Real*  solvals        /**< Array of solution values             */
 )
 {
    int j;

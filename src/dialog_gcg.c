@@ -902,7 +902,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
-   long long int nnodes;
+   SCIP_Longint nnodes;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 

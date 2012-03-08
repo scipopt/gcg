@@ -1748,7 +1748,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
       while( !SCIPisStopped(scip))
       {
-         double mastertimelimit = SCIPinfinity(scip);
+         SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
          /* set memorylimit for master */
          SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
@@ -1810,7 +1810,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
          {
-            double tilim;
+            SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
             if(tilim-SCIPgetSolvingTime(masterprob) < 0)
             {

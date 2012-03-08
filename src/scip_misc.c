@@ -459,7 +459,7 @@ SCIP_RETCODE SCIPgetValsXXX(
    {
 
       /* copy Longint array to SCIP_Real array */
-      long long int * w = SCIPgetWeightsKnapsack(scip, cons);
+      SCIP_Longint * w = SCIPgetWeightsKnapsack(scip, cons);
       nvars = SCIPgetNVarsKnapsack(scip, cons);
       if( nvals < nvars )
          return SCIP_INVALIDDATA;

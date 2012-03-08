@@ -99,8 +99,8 @@ SCIP_RETCODE evaluateDecomposition(
       SCIP_DECOMPOSITIONSCORES* score        /**< returns the score of the decomposition */
       )
 {
-   long int matrixarea;
-   long int borderarea;
+   int matrixarea;
+   int borderarea;
    int nvars;
    int nconss;
    int i;
@@ -170,7 +170,7 @@ SCIP_RETCODE evaluateDecomposition(
 
          for( k = 0; k < ncurvars; ++k )
          {
-            long int block;
+            int block;
             if( !SCIPisVarRelevant(curvars[k]) )
                continue;
 
@@ -184,12 +184,12 @@ SCIP_RETCODE evaluateDecomposition(
             ++(nzblocks[i]);
             if( !SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var) )
             {
-               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
             }
             else
             {
                assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
             }
 
             if(block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
