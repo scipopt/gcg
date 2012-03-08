@@ -516,13 +516,12 @@ SCIP_RETCODE readBlocks(
                /* set the block number of the variable to the number of the current block */
                if( SCIPhashmapExists(refinput->vartoblock, var) )
                {
-                  long int block;
-                  block = (long int) SCIPhashmapGetImage(refinput->vartoblock, var);
+                  int block;
+                  block = (int)(size_t) SCIPhashmapGetImage(refinput->vartoblock, var);
                   if( block != refinput->blocknr+1 && block != refinput->nblocks+1)
                   {
                      SCIP_CALL( SCIPhashmapRemove(refinput->vartoblock, var) );
                      SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->nblocks+1)) );
-
                   }
                }
                else

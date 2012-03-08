@@ -428,7 +428,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* handle variables */
    for( i = 0; i < nvars; ++i )
    {
-      long int block;
+      int block;
       SCIP_VAR* var;
 
       var = vars[i];
@@ -437,7 +437,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (long int) SCIPhashmapGetImage(vartoblock, var);
+         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var);
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -445,7 +445,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       /* if variable belongs to a block */
       if( block <= nblocks )
       {
-         SCIPdebugMessage("var %s in block %ld.\n", SCIPvarGetName(var), block-1);
+         SCIPdebugMessage("var %s in block %d.\n", SCIPvarGetName(var), block-1);
          subscipvars[block-1][nsubscipvars[block-1]] = var;
          ++(nsubscipvars[block-1]);
       }
@@ -461,7 +461,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* handle constraints */
    for( i = 0; i < nconss; ++i )
    {
-      long int block;
+      int block;
       SCIP_CONS* cons;
 
       cons = conss[i];
@@ -470,7 +470,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (long int) SCIPhashmapGetImage(decdecomp->constoblock, cons);
+         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons);
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -478,7 +478,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       /* if constraint belongs to a block */
       if( block <= nblocks )
       {
-         SCIPdebugMessage("cons %s in block %ld.\n", SCIPconsGetName(cons), block-1);
+         SCIPdebugMessage("cons %s in block %d.\n", SCIPconsGetName(cons), block-1);
          subscipconss[block-1][nsubscipconss[block-1]] = cons;
          ++(nsubscipconss[block-1]);
       }
