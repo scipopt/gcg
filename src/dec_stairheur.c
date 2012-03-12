@@ -105,7 +105,9 @@ SCIP_Bool SCIPlistAssignList(LIST* list1, LIST* list2);
 SCIP_Bool SCIPlistIsEmpty(LIST* list);
 SCIP_Bool SCIPlistErase(SCIP* scip, ITERATOR* it);
 SCIP_Bool SCIPlistDelete(SCIP* scip, LIST* list);
+SCIP_Bool SCIPlistReset(SCIP* scip, LIST* list, SCIP_Bool delete_data);
 SCIP_Bool SCIPlistDeleteData(SCIP* scip, LIST* list);
+SCIP_Bool SCIPlistResetNested(SCIP* scip, LIST* list, SCIP_Bool delete_data);
 SCIP_Bool SCIPlistDeleteNested(SCIP* scip, LIST* list);
 ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, SCIP_Bool (*comp_func)(void* a, void* b));
 SCIP_Bool SCIPlistMove(ITERATOR position, ITERATOR it);
@@ -131,6 +133,31 @@ int printstring(void *s);
 int printint(void *i);
 static int compare (const void * a, const void * b);
 static SCIP_Bool compare_int(void* a, void * b);
+
+
+//debugging methods
+static void printArray(int* array, int size, const char* name)
+{
+   int i;
+   printf("%s=[ ", name);
+   for(i = 0; i < size; ++i)
+   {
+      printf("%i ", array[i]);
+   }
+   printf("]\n");
+}
+
+static void printNested(LIST* list, const char* name)
+{
+   ITERATOR it2;
+   printf("%s=( ", name);
+   for(it2 = SCIPiteratorBegin(list); ! SCIPiteratorIsEqual(SCIPiteratorEnd(list), it2); SCIPiteratorNext(&it2))
+   {
+      SCIPlistPrint(it2.node->data, printint);
+   }
+   printf(")\n");
+}
+
 
 /** Creates an empty lists and returns a pointer to that list */
 LIST* SCIPlistCreate(SCIP* scip)
@@ -351,6 +378,30 @@ SCIP_Bool SCIPlistDelete(SCIP* scip, LIST* list)
    }
 }
 
+/** Resets the list, effectively removing all nodes, resulting in an empty list.
+ *
+ *  For deallocating memory of the list data, set delete_data = TRUE. */
+SCIP_Bool SCIPlistReset(SCIP* scip, LIST* list, SCIP_Bool delete_data)
+{
+   if(! list)
+   {
+      return FALSE;
+   }
+   else
+   {
+      if(delete_data)
+      {
+         SCIPlistDeleteData(scip, list);
+      }
+      while(! SCIPlistIsEmpty(list))
+      {
+         SCIPlistPopBack(scip, list);
+      }
+      return TRUE;
+   }
+}
+
+
 /** Deallocates the memory the data pointers of the list points to. */
 SCIP_Bool SCIPlistDeleteData(SCIP* scip, LIST* list)
 {
@@ -385,6 +436,31 @@ SCIP_Bool SCIPlistDeleteNested(SCIP* scip, LIST* list)
             SCIPlistDelete(scip, it1.node->data);
          }
       SCIPlistDelete(scip, list);
+      return TRUE;
+   }
+}
+
+/** Resets the nested list, effectively removing all nodes, resulting in an empty list.
+ *
+ *  For deallocating memory of the list data, set delete_data = TRUE. */
+SCIP_Bool SCIPlistResetNested(SCIP* scip, LIST* list, SCIP_Bool delete_data)
+{
+   ITERATOR it1;
+   if(! list)
+   {
+      return FALSE;
+   }
+   else
+   {
+      for(it1 = SCIPiteratorBegin(list);  ! ( SCIPiteratorIsEqual(it1, SCIPiteratorEnd(list)) ); SCIPiteratorNext(&it1))
+         {
+            if(delete_data)
+            {
+               SCIPlistDeleteData(scip, it1.node->data);
+            }
+            SCIPlistDelete(scip, it1.node->data);
+         }
+      SCIPlistReset(scip, list, FALSE);
       return TRUE;
    }
 }
@@ -718,6 +794,35 @@ void indexmapFree(SCIP* scip, INDEXMAP* indexmap)
    SCIPfreeMemory(scip, &indexmap);
 }
 
+static
+void indexmapInit(INDEXMAP* indexmap, SCIP_VAR** vars, int nvars, SCIP_CONS** conss, int nconss, int* hashmapindices)
+{
+   int i;
+   int* hashmapindex;
+   SCIP_VAR* var;
+   SCIP_CONS* cons;
+   for(i = 0; i < nvars; ++i)
+   {
+      var = vars[i];
+      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = &hashmapindices[i+1];
+      assert( ! SCIPhashmapExists(indexmap->indexvar, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap->indexvar, (void*) hashmapindex, (void*) var);
+      assert( ! SCIPhashmapExists(indexmap->varindex, (void*) var));
+      SCIPhashmapInsert(indexmap->varindex, (void*) var, (void*) hashmapindex);
+   }
+   for(i = 0; i < nconss; ++i)
+   {
+      cons = conss[i];
+      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = &hashmapindices[i+1];
+      assert( ! SCIPhashmapExists(indexmap->indexcons, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap->indexcons, (void*) hashmapindex, (void*) cons);
+      assert( ! SCIPhashmapExists(indexmap->consindex, (void*) cons));
+      SCIPhashmapInsert(indexmap->consindex, (void*) cons, (void*) hashmapindex);
+   }
+}
+
 /** Predicate function for sorting arrays.
  *
  * Returns the value of a - b (after casting into integers). */
@@ -838,6 +943,39 @@ void switchPointers(void** p1, void** p2)
     *p2 = *p1;
     *p1= p3;
 }
+
+/** Returns the problem name without the path */
+static const char* getProbNameWithoutPath(SCIP* scip)
+{
+   const char* pname;
+   //remove '/' from problem name
+   pname = strrchr(SCIPgetProbName(scip), '/');
+   if( pname == NULL )
+   {
+      pname = SCIPgetProbName(scip);
+   }
+   else
+   {
+      pname = pname+1;
+   }
+   return pname;
+}
+
+
+#ifdef SCIP_DEBUG
+static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars)
+{
+   int i;
+   for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
+   {
+      assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
+   }
+   for(i = 0; i < nvars - 1; ++i)
+   {
+      assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
+   }
+}
+#endif
 
 //debug ?
 /** Creates a data and a gnuplot file for the initial problem.
@@ -1127,59 +1265,61 @@ SCIP_RETCODE findRelevantConss(SCIP* scip, DEC_DETECTORDATA* detectordata)
  *    (5)    )
  */
 static
-LIST* rowindices_list(
+SCIP_RETCODE rowindices_list(
       SCIP* scip,                      /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
       SCIP_HASHMAP* indexcons,         /**< hashmap index -> constraint */
-      SCIP_HASHMAP* varindex           /**< hashmap variable -> index*/
+      SCIP_HASHMAP* varindex,          /**< hashmap variable -> index*/
+      LIST** rowindices                 /**< list to store the row indices list*/
       )
 {
    //create the rowindices list
    int i;
    int j;
    int* data;
-   LIST* rowindices;
    LIST* rowindices_row;
    int ncons; //number of constraints of the problem
-   int nconsvars; //number of variables in a constraint
+   int nvars; //number of variables in a constraint
    int* probindices;
    int* hashmapindex;
    SCIP_CONS* cons; //one constraint of the problem
-   SCIP_VAR** consvars; //array of variables that occur in a constraint (unequal zero)
+   SCIP_VAR** vars; //array of variables that occur in a constraint (unequal zero)
 
-   rowindices = SCIPlistCreate(scip);
+   *rowindices = SCIPlistCreate(scip);
    ncons = detectordata->nRelevantConss;
    for(i = 0; i < ncons; ++i)
    {
       hashmapindex = &detectordata->hashmapindices[i+1];
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
-      nconsvars = SCIPgetNVarsXXX(scip, cons);
-      SCIPallocBufferArray(scip, &consvars, nconsvars);
-      SCIPgetVarsXXX(scip, cons, consvars, nconsvars);
+      nvars = SCIPgetNVarsXXX(scip, cons);
+      SCIP_CALL(SCIPallocBufferArray(scip, &vars, nvars));
+      SCIPgetVarsXXX(scip, cons, vars, nvars);
       //allocate memory for the array of probindices
-      SCIPallocMemoryArray(scip, &probindices, nconsvars);
+      SCIP_CALL(SCIPallocMemoryArray(scip, &probindices, nvars));
       //fill the array with the indices of the variables of the current constraint
-      for(j = 0; j < nconsvars; ++j)
+      for(j = 0; j < nvars; ++j)
       {
-         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, consvars[j]);
+         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, vars[j]);
       }
       //sort the elements of probindices ('<')
-      qsort(probindices, nconsvars, sizeof(int), compare);
+      qsort(probindices, nvars, sizeof(int), compare);
       //store a copy of the elements of probindices in the list rowindices_row
       rowindices_row = SCIPlistCreate(scip);
-      for(j = 0; j < nconsvars; ++j)
+      for(j = 0; j < nvars; ++j)
       {
-         SCIPallocMemory(scip, &data);
+         SCIP_CALL(SCIPallocMemory(scip, &data));
          *data = probindices[j];
          SCIPlistPushBack(scip, rowindices_row, data);
       }
       //deallocate memory
       SCIPfreeMemoryArray(scip, &probindices);
-      SCIPfreeBufferArray(scip, &consvars);
+      SCIPfreeBufferArray(scip, &vars);
       //add rowindices_row to the list rowindices
-      SCIPlistPushBack(scip, rowindices, rowindices_row);
+      SCIPlistPushBack(scip, *rowindices, rowindices_row);
    }
-   return rowindices;
+   //debug
+//   printNested(*rowindices, "rowindices in rowindices_list");
+   return SCIP_OKAY;
 }
 
 /** Creates a nested list with the indices of the nonzero entries of each column.
@@ -1202,14 +1342,14 @@ LIST* rowindices_list(
  *    (3)    )
  */
 static
-LIST* columnindices_list(
+SCIP_RETCODE columnindices_list(
       SCIP* scip,                      /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata,  /**< detector data data structure */
-      LIST* rowindices                 /**< A list with the row indices (achieved from calling rowindices_list() ) */
+      LIST* rowindices,                /**< A list with the row indices (achieved from calling rowindices_list() ) */
+      LIST** columnindices              /**< list to store the column indices list*/
       )
 {
    LIST** columnindices_array;
-   LIST* columnindices;
    LIST* rowindices_row;
    int* data;
    int position;
@@ -1219,7 +1359,7 @@ LIST* columnindices_list(
    ITERATOR it2;
    nvars = SCIPgetNVars(scip);
    //create the columnindices_array with pointers to empty lists
-   SCIPallocMemoryArray(scip, &columnindices_array, nvars);
+   SCIP_CALL(SCIPallocMemoryArray(scip, &columnindices_array, nvars));
    for(i = 0; i < nvars; ++i)
    {
       columnindices_array[i] = SCIPlistCreate(scip);
@@ -1230,21 +1370,21 @@ LIST* columnindices_list(
       rowindices_row = it1.node->data;
       for(it2 = SCIPiteratorBegin(rowindices_row); ! ( SCIPiteratorIsEqual(it2, SCIPiteratorEnd(rowindices_row)) ); SCIPiteratorNext(&it2))
       {
-         SCIPallocMemory(scip, &data);
+         SCIP_CALL(SCIPallocMemory(scip, &data));
          *data = i+1;
          position = *(int*)(it2.node->data)-1;
          SCIPlistPushBack(scip, columnindices_array[position], data);
       }
    }
    //create a columnindices list instead of an array
-   columnindices = SCIPlistCreate(scip);
+   *columnindices = SCIPlistCreate(scip);
    for(i = 0; i < nvars; ++i)
    {
-      SCIPlistPushBack(scip, columnindices, columnindices_array[i]);
+      SCIPlistPushBack(scip, *columnindices, columnindices_array[i]);
    }
    //deallocate memory
    SCIPfreeMemoryArray(scip, &columnindices_array);
-   return columnindices;
+   return SCIP_OKAY;
 }
 
 /** Does the row ordering of the ROC2 algorithm.
@@ -1323,32 +1463,6 @@ SCIP_RETCODE formIndexArray(int* begin, int* end, LIST* indices)
    return SCIP_OKAY;
 }
 
-//static
-//SCIP_Bool IndexArrayChanges(SCIP* scip, DEC_DETECTORDATA* detectordata)
-//{
-//   /*returns TRUE if at least one entry of a new index array differs from the corresponding entry of the old index array*/
-//   int i;
-//   //any change in ibegin or iend?
-//   for(i = 0; i < detectordata->nRelevantConss; ++i)
-//   {
-//      if(   detectordata->ibegin_old[i] != detectordata->ibegin_new[i]
-//         || detectordata->iend_old[i] != detectordata->iend_new[i] )
-//      {
-//         return TRUE;
-//      }
-//   }
-//   //any change in jbegin or jend?
-//   for(i = 0; i < SCIPgetNVars(scip); ++i)
-//   {
-//      if(   detectordata->jbegin_old[i] != detectordata->jbegin_new[i]
-//         || detectordata->jend_old[i] != detectordata->jend_new[i] )
-//      {
-//         return TRUE;
-//      }
-//   }
-//   //case: all entries of old and new are equal
-//   return FALSE;
-//}
 
 /**Returns FALSE if at least one entry of new_array and old_array are different.*/
 static
@@ -1370,7 +1484,7 @@ SCIP_Bool arraysAreEqual(int* new_array, int* old_array, int num_elements)
  *
  *  One call of this function is equivalent to one iteration of the ROC2-algortihm. */
 static
-SCIP_RETCODE rankOrderClustering(
+SCIP_RETCODE rankOrderClusteringIteration(
       SCIP*             scip,          /**< SCIP data structure */
       DEC_DETECTORDATA*  detectordata, /**< presolver data data structure */
       INDEXMAP* inputmap,              /**< indexmap for input */
@@ -1390,13 +1504,17 @@ SCIP_RETCODE rankOrderClustering(
    SCIP_CONS* cons;
    SCIP_VAR* var;
 
+   SCIPdebugMessage("Entering rankOrderClusteringIteration\n");
+
    assert(scip != NULL);
    assert(detectordata != NULL);
    nvars = SCIPgetNVars(scip);
    ncons = detectordata->nRelevantConss;
    //create the lists containing the positions of nonzero entries; row and column ordering
-   rowindices = rowindices_list(scip, detectordata, inputmap->indexcons, inputmap->varindex);
-   columnindices = columnindices_list(scip, detectordata, rowindices);
+   rowindices = SCIPlistCreate(scip);
+   rowindices_list(scip, detectordata, inputmap->indexcons, inputmap->varindex, &rowindices);
+   columnindices = SCIPlistCreate(scip);
+   columnindices_list(scip, detectordata, rowindices, &columnindices);
    roworder = rowOrdering(scip, columnindices, ncons);
    SCIPlistRearrange(scip, rowindices, roworder);
    columnorder = rowOrdering(scip, rowindices, nvars);
@@ -1440,6 +1558,76 @@ SCIP_RETCODE rankOrderClustering(
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
    return SCIP_OKAY;
+}
+
+static
+int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iterations)
+{
+   int i;
+   int nvars;
+   int ncons;
+   INDEXMAP* indexmap_permuted;
+   LIST* rowindices;
+   LIST* columnindices;
+   int* ibegin_permuted;
+   int* iend_permuted;
+   int* jbegin_permuted;
+   int* jend_permuted;
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   if(max_iterations <= 0)
+   {
+      return max_iterations;
+   }
+   else
+   {
+      nvars = SCIPgetNVars(scip);
+      ncons = detectordata->nRelevantConss;
+      indexmapCreate(scip, &indexmap_permuted, ncons, nvars);
+      SCIP_CALL(SCIPallocMemoryArray(scip, &ibegin_permuted, ncons));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &iend_permuted, ncons));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &jbegin_permuted, nvars));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &jend_permuted, nvars));
+      indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, detectordata->relevantConss, ncons, detectordata->hashmapindices);
+      rowindices = SCIPlistCreate(scip);
+      columnindices = SCIPlistCreate(scip);
+      i = 0;
+      do
+      {
+         ++i;
+         //not more than max_iterations loops
+         if(i > max_iterations) {break;}
+         SCIPdebugMessage("Iteration # %i of ROC2\n", i);
+         rankOrderClusteringIteration(scip, detectordata, detectordata->indexmap, indexmap_permuted);
+         //form the new index arrays after the permutation
+         rowindices_list(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex, &rowindices);
+         columnindices_list(scip, detectordata, rowindices, &columnindices);
+         formIndexArray(ibegin_permuted, iend_permuted, rowindices);
+         formIndexArray(jbegin_permuted, jend_permuted, columnindices);
+         SCIPlistResetNested(scip, rowindices, TRUE);
+         SCIPlistResetNested(scip, columnindices, TRUE);
+         //switch between index arrays containing new and old indices
+         switchPointers( (void*) &detectordata->ibegin, (void*) &ibegin_permuted);
+         switchPointers( (void*) &detectordata->iend, (void*) &iend_permuted);
+         switchPointers( (void*) &detectordata->jbegin, (void*) &jbegin_permuted);
+         switchPointers( (void*) &detectordata->jend, (void*) &jend_permuted);
+         //switch between hash maps containing new and old indices
+         switchPointers( (void*) &detectordata->indexmap, (void*) &indexmap_permuted);
+      }
+      //while Index Arrays change
+      while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
+             && arraysAreEqual(detectordata->iend, iend_permuted, ncons)
+             && arraysAreEqual(detectordata->jbegin, jbegin_permuted, nvars)
+             && arraysAreEqual(detectordata->jend, jend_permuted, nvars)));
+
+      indexmapFree(scip, indexmap_permuted);
+      SCIPfreeMemoryArray(scip, &ibegin_permuted);
+      SCIPfreeMemoryArray(scip, &iend_permuted);
+      SCIPfreeMemoryArray(scip, &jbegin_permuted);
+      SCIPfreeMemoryArray(scip, &jend_permuted);
+   }
+   return (i-1);
 }
 
 /** finds rows with local minima regarding the number of linking variables and stores them in detectordata->rowsWithConstrictions */
@@ -1843,33 +2031,24 @@ static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 {
    int i;
-   int* hashmapindex;
    int ncons; //number of constraints in the problem
    int nvars; //number of variables in the problem
    SCIP_VAR** vars_array;
-   SCIP_VAR* var;
    SCIP_CONS** cons_array;
-   SCIP_CONS* cons;
-//   DEC_DETECTOR* stairheur;
-//   DEC_DETECTORDATA* detectordata;
    LIST* rowindices;
    LIST* columnindices;
-   INDEXMAP* indexmap_permuted;
-   int* ibegin_permuted;
-   int* iend_permuted;
-   int* jbegin_permuted;
-   int* jend_permuted;
-   int n;
-   int v;
-   int tau;
+   int n;   // maximum width of the band after ROC
+   int v;   // minimum width of the band after ROC
+   int tau; // desired number of blocks
    int ROC_iterations;
+   int max_iterations;
+   max_iterations = 0;
 
    assert(scip != NULL);
-//   stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
-//   detectordata = DECdetectorGetData(stairheur);
    assert(detectordata != NULL);
-//   assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
-   SCIPdebugMessage("%s\n", SCIPgetProbName(scip));
+   assert(decdecomps != NULL);
+   assert(ndecdecomps != NULL);
+
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
@@ -1878,176 +2057,43 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
    cons_array = detectordata->relevantConss;
-#ifdef SCIP_DEBUG
-   {
-      //remove '/' from problem name
-//      const char* pname;
-//      const char* ext;
-//      char fname[256];
-//      pname = strrchr(SCIPgetProbName(scip), '/');
-//      if( pname == NULL )
-//      {
-//         pname = SCIPgetProbName(scip);
-//      }
-//      else
-//      {
-//         pname = pname+1;
-//      }
-//      ext = strrchr(SCIPgetProbName(scip), '.');
-//      if( ext == NULL )
-//      {
-//         strcpy(fname, pname);
-//      }
-//      else
-//      {
-//         strncpy(fname, pname, ext-pname);
-//         fname[ext-pname]='\0';
-//      }
-//      strcat(fname, "_permuted.lp");
-//      sprintf(fname, "permuted_%s", pname);
-//
-//      SCIPdebugMessage("Writing Orig Problem to %s\n", fname);
-//      SCIPwriteOrigProblem  (scip, fname, "lp", TRUE);
-//      SCIPdebugMessage("Writing Trans Problem\n");
-//      SCIPwriteTransProblem  (scip, fname, "lp", TRUE);
-
-
-      SCIPdebugMessage("ncons: %i \n", ncons);
-      SCIPdebugMessage("nvars: %i \n", nvars);
-      SCIPdebugMessage("initializing hash maps\n");
-   }
-#endif
-   //initialize hash maps for variables: indexvar_old, indexvar_new, varindex_old, varindex_new
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexmap->indexvar, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexmap->indexvar, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(detectordata->indexmap->varindex, (void*) var));
-      SCIPhashmapInsert(detectordata->indexmap->varindex, (void*) var, (void*) hashmapindex);
-   }
-   //initialize hash maps for constraints: indexcons_old, indexcons_new, consindex_old, consindex_new
-   for(i = 0; i < ncons; ++i)
-   {
-      cons = cons_array[i];
-      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexmap->indexcons, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexmap->indexcons, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(detectordata->indexmap->consindex, (void*) cons));
-      SCIPhashmapInsert(detectordata->indexmap->consindex, (void*) cons, (void*) hashmapindex);
-   }
-   SCIPdebugMessage("initializing hash maps DONE.\n");
-   SCIPdebugMessage("initializing index arrays...\n");
+   //initialize hash maps for keeping track of variables and constraints and their corresponding indices after being permuted by the ROC2-algorithm
+   indexmapInit(detectordata->indexmap, vars_array, nvars, cons_array, ncons, detectordata->hashmapindices);
 #ifndef NDEBUG
    {
-      //remove '/' from problem name
-      const char* pname;
       char filename[256];
-      pname = strrchr(SCIPgetProbName(scip), '/');
-      if( pname == NULL )
-      {
-         pname = SCIPgetProbName(scip);
-      }
-      else
-      {
-         pname = pname+1;
-      }
-      sprintf(filename, "%s_initial_problem", pname);
+      sprintf(filename, "%s_initial_problem", getProbNameWithoutPath(scip));
       plotInitialProblem(scip, detectordata, filename);
    }
 #endif
    //initialize index arrays ibegin, iend, jbegin, jend
-   rowindices = rowindices_list(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex);
-   columnindices = columnindices_list(scip, detectordata, rowindices);
+   rowindices = SCIPlistCreate(scip);
+   columnindices = SCIPlistCreate(scip);
+   rowindices_list(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex, &rowindices);
+   //debug
+//   printNested(rowindices, "rowindices in detectAndBuildStair");
+   columnindices_list(scip, detectordata, rowindices, &columnindices);
    formIndexArray(detectordata->ibegin, detectordata->iend, rowindices);
    formIndexArray(detectordata->jbegin, detectordata->jend, columnindices);
 
-   indexmapCreate(scip, &indexmap_permuted, ncons, nvars);
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(indexmap_permuted->indexvar, (void*) hashmapindex));
-      SCIPhashmapInsert(indexmap_permuted->indexvar, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(indexmap_permuted->varindex, (void*) var));
-      SCIPhashmapInsert(indexmap_permuted->varindex, (void*) var, (void*) hashmapindex);
-   }
-   //debug: temporary hash maps: how to initialize???
-   for(i = 0; i < ncons; ++i)
-   {
-      cons = cons_array[i];
-      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(indexmap_permuted->indexcons, (void*) hashmapindex));
-      SCIPhashmapInsert(indexmap_permuted->indexcons, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(indexmap_permuted->consindex, (void*) cons));
-      SCIPhashmapInsert(indexmap_permuted->consindex, (void*) cons, (void*) hashmapindex);
-   }
-   SCIP_CALL(SCIPallocMemoryArray(scip, &ibegin_permuted, ncons));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &iend_permuted, ncons));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &jbegin_permuted, nvars));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &jend_permuted, nvars));
+   //debug
+//   printArray(detectordata->ibegin, ncons, "ibegin");
+//   printArray(detectordata->iend, ncons, "iend");
 
    //ROC2 algorithm
-   SCIPdebugMessage("starting ROC2 algortihm\n");
-   i = 0;
-   do
-   {
-      ++i;
-      SCIPdebugMessage("Iteration # %i of ROC2\n", i);
-      rankOrderClustering(scip, detectordata, detectordata->indexmap, indexmap_permuted);
-      //form the new index arrays after the permutation
-      SCIPlistDeleteNested(scip, rowindices);
-      SCIPlistDeleteNested(scip, columnindices);
-      rowindices = rowindices_list(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex);
-      columnindices = columnindices_list(scip, detectordata, rowindices);
-      formIndexArray(ibegin_permuted, iend_permuted, rowindices);
-      formIndexArray(jbegin_permuted, jend_permuted, columnindices);
-      //switch between index arrays containing new and old indices
-      switchPointers( (void*) &detectordata->ibegin, (void*) &ibegin_permuted);
-      switchPointers( (void*) &detectordata->iend, (void*) &iend_permuted);
-      switchPointers( (void*) &detectordata->jbegin, (void*) &jbegin_permuted);
-      switchPointers( (void*) &detectordata->jend, (void*) &jend_permuted);
-      //switch between hash maps containing new and old indices
-      switchPointers( (void*) &detectordata->indexmap, (void*) &indexmap_permuted);
-   }
-   while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)));
-   ROC_iterations = i;
+   SCIPdebugMessage("starting ROC2 algorithm\n");
+   ROC_iterations = rankOrderClustering(scip, detectordata, max_iterations);
 #ifndef NDEBUG
    {
-      //remove '/' from problem name
-      const char* pname;
       char filename[256];
-      pname = strrchr(SCIPgetProbName(scip), '/');
-      if( pname == NULL )
-      {
-         pname = SCIPgetProbName(scip);
-      }
-      else
-      {
-         pname = pname+1;
-      }
-      sprintf(filename, "%s_ROC", pname);
+      sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
       plotInitialProblem(scip, detectordata, filename);
    }
-#endif
    //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
-#ifdef SCIP_DEBUG
-   for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
-   {
-      assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
-   }
-   for(i = 0; i < nvars - 1; ++i)
-   {
-      assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
-   }
+   if(ROC_iterations < max_iterations)
+      {
+         checkConsistencyOfIndexarrays(detectordata, nvars);
+      }
 #endif
    //arrays jmin, jmax and minV
    SCIPdebugMessage("calculating index arrays\n");
@@ -2064,32 +2110,16 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    n = maxArray(detectordata->width, ncons);
    v = minArray(detectordata->width, ncons);
    tau = round((nvars - v)/(n - v));
+   SCIPdebugMessage("<n><v><tau>: <%i><%i><%i>\n", n, v, tau);
    if(tau > detectordata->maxblocks)
    {
       tau = detectordata->maxblocks;
    }
-
-#ifndef NDEBUG
-   SCIPdebugMessage("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, n, v, tau);
-//   printf("minV = [ ");
-//   for(i = 0; i < ncons-1; ++i)
+   //debug
+//   if(tau < 2)
 //   {
-//      printf("%i ", detectordata->minV[i]);
+//      tau = 2;
 //   }
-//   printf("]\n");
-//   printf("jmin = [ ");
-//   for(i = 0; i < ncons; ++i)
-//   {
-//      printf("%i ", detectordata->jmin[i]);
-//   }
-//   printf("]\n");
-//   printf("jmax = [ ");
-//   for(i = 0; i < ncons; ++i)
-//   {
-//      printf("%i ", detectordata->jmax[i]);
-//   }
-//   printf("]\n");
-#endif
    //continue only if tau >= 2
    if(tau < 2)
    {
@@ -2097,51 +2127,26 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       return SCIP_OKAY;
    }
 
-   rowsWithConstriction(scip, detectordata);
-//   SCIPdebugMessage("rows with constriction:");
-//   SCIPlistPrint(detectordata->rowsWithConstrictions, printint); //debug
-
    //BLOCKING
+   rowsWithConstriction(scip, detectordata);
    blocking(scip, detectordata, tau, nvars);
-   SCIPdebugMessage("BLOCKING DONE.\n");
 
    //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
 #ifndef NDEBUG
    {
-   //remove '/' from problem name
-   const char* pname;
    char filename1[256];
    char filename2[256];
    char paramfile[256];
-   pname = strrchr(SCIPgetProbName(scip), '/');
-   if( pname == NULL )
-   {
-      pname = SCIPgetProbName(scip);
-   }
-   else
-   {
-      pname = pname+1;
-   }
-   sprintf(filename1, "%s_blocking", pname);
-   sprintf(filename2, "%s_minV", pname);
-   sprintf(paramfile, "%s.params", pname);
-   SCIPdebugMessage("plotBlocking.\n");
+
+   sprintf(filename1, "%s_blocking", getProbNameWithoutPath(scip));
+   sprintf(filename2, "%s_minV", getProbNameWithoutPath(scip));
+   sprintf(paramfile, "%s.params", getProbNameWithoutPath(scip));
    plotBlocking(scip, detectordata, filename1);
-   SCIPdebugMessage("plotMinV.\n");
    plotMinV(scip, detectordata, filename2);
    SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
-   SCIPdebugMessage("writing Params.\n");
    writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
    }
 #endif
-   //fill detectordata for a single block for testing
-//   detectordata->blocks = 1;
-//   detectordata->varsperblock[0] = vars_array;
-//   detectordata->nvarsperblock[0] = nvars;
-//   detectordata->consperblock[0] = SCIPgetConss(scip);
-//   detectordata->nconsperblock[0] = ncons;
-//   detectordata->linkingconss = NULL;
-//   detectordata->nlinkingconss = 0;
    detectordata->found = TRUE;
    SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, detectordata->decdecomp));
 
@@ -2150,12 +2155,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 //   SCIPlistDeleteData(scip, detectordata->blockedAfterrow);
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
-   indexmapFree(scip, indexmap_permuted);
-
-   SCIPfreeMemoryArray(scip, &ibegin_permuted);
-   SCIPfreeMemoryArray(scip, &iend_permuted);
-   SCIPfreeMemoryArray(scip, &jbegin_permuted);
-   SCIPfreeMemoryArray(scip, &jend_permuted);
 
    //debug Ein Hack von Martin
    SCIP_CALL(SCIPallocMemoryArray(scip, decdecomps, 1));
