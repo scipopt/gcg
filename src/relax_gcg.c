@@ -875,8 +875,12 @@ SCIP_RETCODE createPricingVariables(
 
       probvar = SCIPvarGetProbvar(vars[v]);
       blocknr = GCGvarGetBlock(probvar);
+      if( blocknr == -1)
+      {
+         blocknr = ((int) (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar) ) -1;
+      }
 
-      SCIPdebugMessage("Creating map for var %s: ", SCIPvarGetName(probvar));
+      SCIPdebugMessage("Creating map for var %s:", SCIPvarGetName(probvar));
 
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
@@ -926,6 +930,7 @@ SCIP_RETCODE createPricingVariables(
       {
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
+         SCIPdebugPrintf("master!\n");
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -1587,6 +1592,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
          relaxdata->masterconss, relaxdata->masterconss) );
 
+   SCIP_CALL( DECdecdecompTransform(scip, relaxdata->decdecomp) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )

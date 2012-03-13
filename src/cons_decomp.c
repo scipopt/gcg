@@ -805,6 +805,9 @@ SCIP_RETCODE DECdetectStructure(
          }
       }
    }
+   else {
+      SCIP_CALL( DECdecdecompTransform(scip, conshdlrdata->decdecomps[0]) );
+   }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i)
