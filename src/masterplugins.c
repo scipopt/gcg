@@ -32,7 +32,6 @@
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
-#include "scip/disp_default.h"
 #include "scip/dialog_default.h"
 
 #if USEHEURS
@@ -143,6 +142,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropProbing(scip) );
+   /* TODO: I added the include of the following propagators, was there a reason to not add them? (Gerald) */
+   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
+   SCIP_CALL( SCIPincludePropRootredcost(scip) );
+   SCIP_CALL( SCIPincludePropRedcost(scip) );
 #endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
@@ -203,7 +206,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
    SCIP_CALL( SCIPincludeDialogDefault(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
-   SCIP_CALL( SCIPdebugIncludeProp(scip) );
+   SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );

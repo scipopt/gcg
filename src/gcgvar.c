@@ -539,8 +539,8 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
 
    if( vardata->data.origvardata.ncoefs == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.coefs), 1) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), 1) ); /*lint !e506*/
    }
    else
    {
@@ -939,7 +939,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(scip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -976,7 +976,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &vardata) );
    vardata->vartype = GCG_VARTYPE_PRICING;
    vardata->blocknr = pricingprobnr;
-   SCIP_CALL( SCIPallocMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), 1) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
 
@@ -1161,8 +1161,8 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    newvardata->data.mastervardata.norigvars = 1;
 
    /* save corresoponding origvar */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvars), 1) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newvardata->data.mastervardata.origvals), 1) ); /*lint !e506*/
    newvardata->data.mastervardata.origvars[0] = var;
    newvardata->data.mastervardata.origvals[0] = 1.0;
 

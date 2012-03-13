@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   reader_blk.c
  * @brief  BLK file reader
  * @author Gerald Gamrath
@@ -21,7 +21,7 @@
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
-#include <strings.h>
+#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
 #include <ctype.h>
 
@@ -344,7 +344,6 @@ SCIP_Bool getNextToken(
    blkinput->token[tokenlen] = '\0';
 
    SCIPdebugMessage("(line %d) read token: '%s'\n", blkinput->linenumber, blkinput->token);
-   //printf("(line %d) read token: '%s'\n", blkinput->linenumber, blkinput->token);
 
    return TRUE;
 }
@@ -381,25 +380,18 @@ SCIP_Bool isInt(
    int*                  value               /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
+   long val;
+   char* endptr;
+
    assert(blkinput != NULL);
    assert(value != NULL);
+   assert(!(strcasecmp(blkinput->token, "INFINITY") == 0) && !(strcasecmp(blkinput->token, "INF") == 0));
 
-   if( strcasecmp(blkinput->token, "INFINITY") == 0 || strcasecmp(blkinput->token, "INF") == 0 )
+   val = strtol(blkinput->token, &endptr, 0);
+   if( endptr != blkinput->token && *endptr == '\0' )
    {
-      *value = SCIPinfinity(scip);
+      *value = val;
       return TRUE;
-   }
-   else
-   {
-      long val;
-      char* endptr;
-
-      val = strtol(blkinput->token, &endptr, 0);
-      if( endptr != blkinput->token && *endptr == '\0' )
-      {
-         *value = val;
-         return TRUE;
-      }
    }
 
    return FALSE;
@@ -529,9 +521,6 @@ SCIP_RETCODE readNBlocks(
       /* read number of blocks */
       if( isInt(scip, blkinput, &nblocks) )
       {
-         //assert(nblocks > 0);
-
-
          if( blkinput->nblocks == -1 )
          {
             blkinput->nblocks = nblocks;
@@ -733,13 +722,13 @@ SCIP_RETCODE SCIPreadBlk(
    /* initialize BLK input data */
    blkinput.file = NULL;
    blkinput.linebuf[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.token, BLK_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.token, BLK_MAX_LINELEN) ); /*lint !e506*/
    blkinput.token[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.tokenbuf, BLK_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.tokenbuf, BLK_MAX_LINELEN) ); /*lint !e506*/
    blkinput.tokenbuf[0] = '\0';
    for( i = 0; i < BLK_MAX_PUSHEDTOKENS; ++i )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.pushedtokens[i], BLK_MAX_LINELEN) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &blkinput.pushedtokens[i], BLK_MAX_LINELEN) ); /*lint !e506 !e866*/
    }
 
    blkinput.npushedtokens = 0;

@@ -264,9 +264,9 @@ SCIP_RETCODE computeHyperedgeWeight(
    }
    else
    {
-      double mean;
-      double variance;
-      double stddev;
+      SCIP_Real mean;
+      SCIP_Real variance;
+      SCIP_Real stddev;
       SCIP_Real * vals;
 
       mean = 0.0;
@@ -876,7 +876,7 @@ static SCIP_RETCODE buildTransformedProblem(
    /* go through all of the constraints */
    for( i = 0; i < nconss; i++ )
    {
-      long int consblock = -1;
+      int consblock = -1;
       int ncurvars;
       SCIP_VAR **curvars;
 
@@ -895,7 +895,7 @@ static SCIP_RETCODE buildTransformedProblem(
       for( j = 0; j < ncurvars; j++ )
       {
          SCIP_VAR* var;
-         long int varblock = -1;
+         int varblock = -1;
          if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
@@ -945,11 +945,11 @@ static SCIP_RETCODE buildTransformedProblem(
 
             /* finally set the hashmap image */
             assert(!SCIPhashmapExists(vartoblock, var));
-            SCIP_CALL( SCIPhashmapInsert(vartoblock, var, (void*)varblock) );
+            SCIP_CALL( SCIPhashmapInsert(vartoblock, var, (void*) (size_t) varblock) );
          }
          else
          {
-            varblock = (long int)SCIPhashmapGetImage(vartoblock, var);
+            varblock = (int)(size_t)SCIPhashmapGetImage(vartoblock, var);
             assert(varblock == detectordata->varpart[SCIPvarGetProbindex(var)] ||  detectordata->varpart[SCIPvarGetProbindex(var)] == -2);
          }
 
@@ -1008,7 +1008,7 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          subscipconss[consblock][nsubscipconss[consblock]] = conss[i];
          assert(!SCIPhashmapExists(constoblock, conss[i]));
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*)consblock) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) consblock) );
          ++(nsubscipconss[consblock]);
       }
    }

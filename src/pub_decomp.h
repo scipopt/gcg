@@ -212,6 +212,12 @@ DEC_DETECTOR* DECdecdecompGetDetector(
    DECDECOMP* decdecomp       /**< decdecomp instance */
    );
 
+/** transforms all constraints and variables, updating the arrays */
+SCIP_RETCODE DECdecdecompTransform(
+   SCIP*      scip,           /**< SCIP data structure */
+   DECDECOMP* decdecomp       /**< decdecomp instance */
+   );
+
 #ifdef __cplusplus
 }
 #endif

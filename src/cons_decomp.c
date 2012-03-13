@@ -23,10 +23,6 @@
 #include <assert.h>
 
 #include "cons_decomp.h"
-
-#include "reader_gp.h"
-#include "reader_ref.h"
-#include "reader_dec.h"
 #include "cons_connected.h"
 #include "relax_gcg.h"
 #include "struct_detector.h"
@@ -99,8 +95,8 @@ SCIP_RETCODE evaluateDecomposition(
       SCIP_DECOMPOSITIONSCORES* score        /**< returns the score of the decomposition */
       )
 {
-   long int matrixarea;
-   long int borderarea;
+   int matrixarea;
+   int borderarea;
    int nvars;
    int nconss;
    int i;
@@ -170,7 +166,7 @@ SCIP_RETCODE evaluateDecomposition(
 
          for( k = 0; k < ncurvars; ++k )
          {
-            long int block;
+            int block;
             if( !SCIPisVarRelevant(curvars[k]) )
                continue;
 
@@ -184,12 +180,12 @@ SCIP_RETCODE evaluateDecomposition(
             ++(nzblocks[i]);
             if( !SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var) )
             {
-               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
             }
             else
             {
                assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-               block = (long int) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
             }
 
             if(block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
@@ -268,7 +264,7 @@ SCIP_RETCODE evaluateDecomposition(
       break;
    case DEC_DECTYPE_STAIRCASE:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
-      assert(FALSE);
+      score->totalscore = 1.0;
       break;
    case DEC_DECTYPE_UNKNOWN:
       SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
@@ -808,6 +804,9 @@ SCIP_RETCODE DECdetectStructure(
             SCIPdebugPrintf("Failure!\n");
          }
       }
+   }
+   else {
+      SCIP_CALL( DECdecdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );

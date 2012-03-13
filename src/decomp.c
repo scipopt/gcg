@@ -19,6 +19,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+/* #define SCIP_DEBUG */
+
 #include "decomp.h"
 #include "pub_decomp.h"
 #include "scip/scip.h"
@@ -468,7 +470,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* handle variables */
    for( i = 0; i < nvars; ++i )
    {
-      long int block;
+      int block;
       SCIP_VAR* var;
 
       var = vars[i];
@@ -477,7 +479,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (long int) SCIPhashmapGetImage(vartoblock, var);
+         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var);
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -485,7 +487,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       /* if variable belongs to a block */
       if( block <= nblocks )
       {
-         SCIPdebugMessage("var %s in block %ld.\n", SCIPvarGetName(var), block-1);
+         SCIPdebugMessage("var %s in block %d.\n", SCIPvarGetName(var), block-1);
          subscipvars[block-1][nsubscipvars[block-1]] = var;
          ++(nsubscipvars[block-1]);
       }
@@ -501,7 +503,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* handle constraints */
    for( i = 0; i < nconss; ++i )
    {
-      long int block;
+      int block;
       SCIP_CONS* cons;
 
       cons = conss[i];
@@ -510,7 +512,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (long int) SCIPhashmapGetImage(decdecomp->constoblock, cons);
+         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons);
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -518,7 +520,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       /* if constraint belongs to a block */
       if( block <= nblocks )
       {
-         SCIPdebugMessage("cons %s in block %ld.\n", SCIPconsGetName(cons), block-1);
+         SCIPdebugMessage("cons %s in block %d.\n", SCIPconsGetName(cons), block-1);
          subscipconss[block-1][nsubscipconss[block-1]] = cons;
          ++(nsubscipconss[block-1]);
       }
@@ -583,4 +585,74 @@ DEC_DETECTOR* DECdecdecompGetDetector(
    assert(decdecomp != NULL);
 
    return decdecomp->detector;
+}
+
+/** transforms all constraints and variables, updating the arrays */
+SCIP_RETCODE DECdecdecompTransform(
+   SCIP*      scip,           /**< SCIP data structure */
+   DECDECOMP* decdecomp       /**< decdecomp instance */
+   )
+{
+   int b;
+   int c;
+   int v;
+   SCIP_HASHMAP* newconstoblock;
+   SCIP_HASHMAP* newvartoblock;
+   assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
+
+   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+
+   /* transform all constraints and put them in constoblock */
+   for( b = 0; b < decdecomp->nblocks; ++b )
+   {
+      for( c = 0; c < decdecomp->nsubscipconss[b]; ++c)
+      {
+         SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decdecomp->subscipconss[b][c]), SCIPconsIsTransformed(decdecomp->subscipconss[b][c])?"t":"o" );
+         assert(decdecomp->subscipconss[b][c] != NULL);
+         decdecomp->subscipconss[b][c] = SCIPfindCons(scip, SCIPconsGetName(decdecomp->subscipconss[b][c]));
+         assert(decdecomp->subscipconss[b][c] != NULL);
+         assert(!SCIPhashmapExists(newconstoblock, decdecomp->subscipconss[b][c]));
+         SCIP_CALL( SCIPhashmapInsert(newconstoblock, decdecomp->subscipconss[b][c], (void*) (size_t) b) );
+      }
+   }
+   /* transform all variables and put them in vartoblock */
+   for( b = 0; b < decdecomp->nblocks; ++b )
+   {
+      for( v = 0; v < decdecomp->nsubscipvars[b]; ++v)
+      {
+         SCIPdebugMessage("%d, %d: %s (%s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
+         assert(decdecomp->subscipvars[b][v] != NULL);
+         decdecomp->subscipvars[b][v] = SCIPfindVar(scip, SCIPvarGetName(decdecomp->subscipvars[b][v]));
+         assert(decdecomp->subscipvars[b][v] != NULL);
+         assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][v]));
+         SCIP_CALL( SCIPhashmapInsert(newvartoblock, decdecomp->subscipvars[b][v], (void*) (size_t) b) );
+      }
+   }
+
+   /* transform all linking constraints */
+   for( c = 0; c < decdecomp->nlinkingconss; ++c)
+   {
+      SCIPdebugMessage("m, %d: %s (%s)\n", c, SCIPconsGetName(decdecomp->linkingconss[c]), SCIPconsIsTransformed(decdecomp->linkingconss[c])?"t":"o" );
+      assert(decdecomp->linkingconss[c] != NULL);
+      decdecomp->linkingconss[c] = SCIPfindCons(scip, SCIPconsGetName(decdecomp->linkingconss[c]));
+      assert(decdecomp->linkingconss[c] != NULL);
+   }
+
+   /** @todo include Friederikes code */
+
+   /* transform all linking variables */
+   for( v = 0; v < decdecomp->nlinkingvars; ++v)
+   {
+      SCIPdebugMessage("m, %d: %s (%s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
+      assert(decdecomp->linkingvars[v] != NULL);
+      decdecomp->linkingvars[v] = SCIPfindVar(scip, SCIPvarGetName(decdecomp->linkingvars[v]));
+      assert(decdecomp->linkingvars[v] != NULL);
+   }
+
+   SCIPhashmapFree(&decdecomp->constoblock);
+   decdecomp->constoblock = newconstoblock;
+   SCIPhashmapFree(&decdecomp->vartoblock);
+   decdecomp->vartoblock = newvartoblock;
+   return SCIP_OKAY;
 }

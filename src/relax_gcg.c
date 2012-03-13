@@ -91,8 +91,10 @@ struct SCIP_RelaxData
    /* parameter data */
    SCIP_Bool        discretization;      /**< TRUE: use discretization approach; FALSE: use convexification approach */
    SCIP_Bool        mergeidenticalblocks;/**< should identical blocks be merged (only for discretization approach)? */
+#if 0 /* TODO: detect the structure of the master problem only aggregate, if appropriate */
    SCIP_Bool        masterissetpart;     /**< is the master a set partitioning problem? */
    SCIP_Bool        masterissetcover;    /**< is the master a set covering problem? */
+#endif
    SCIP_Bool        dispinfos;           /**< should additional information be displayed? */
 
    /* data for probing */
@@ -261,7 +263,7 @@ SCIP_RETCODE convertStructToGCG(
       SCIP_VAR* transvar;
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]);
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
@@ -318,21 +320,21 @@ SCIP_RETCODE convertStructToGCG(
             {
                SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[j][k], curvars, ncurvars) );
-            }
 
-            for( v = 0; v < ncurvars; ++v )
-            {
-               if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i])
+               for( v = 0; v < ncurvars; ++v )
                {
-                  SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
-                  assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                  SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
-                  found = TRUE;
-                  break;
+                  if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i])
+                  {
+                     SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
+                     assert(SCIPvarGetData(linkingvars[i]) != NULL);
+                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
+                     found = TRUE;
+                     break;
+                  }
                }
-            }
 
-            SCIPfreeBufferArrayNull(scip, &curvars);
+               SCIPfreeBufferArray(scip, &curvars);
+            }
 
             if( found )
                break;
@@ -381,7 +383,7 @@ SCIP_RETCODE ensureSizeBranchrules(
 
    if( relaxdata->nbranchrules == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchrules), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->branchrules), 1) ); /*lint !e506*/
    }
    else
    {
@@ -405,11 +407,14 @@ SCIP_Bool realArraysAreEqual(
 {
    int i;
 
-   assert(array1 != NULL || array1length == 0);
-   assert(array2 != NULL || array2length == 0);
-
    if( array1length != array2length )
       return FALSE;
+
+   if( array1length == 0 )
+      return TRUE;
+
+   assert(array1 != NULL);
+   assert(array2 != NULL);
 
    for( i = 0; i < array1length; i++ )
    {
@@ -701,7 +706,7 @@ SCIP_RETCODE setPricingProblemParameters(SCIP* scip)
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 #if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
 #endif
@@ -870,8 +875,12 @@ SCIP_RETCODE createPricingVariables(
 
       probvar = SCIPvarGetProbvar(vars[v]);
       blocknr = GCGvarGetBlock(probvar);
+      if( blocknr == -1)
+      {
+         blocknr = ((int) (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar) ) -1;
+      }
 
-      SCIPdebugMessage("Creating map for var %s: ", SCIPvarGetName(probvar));
+      SCIPdebugMessage("Creating map for var %s:", SCIPvarGetName(probvar));
 
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
@@ -921,6 +930,7 @@ SCIP_RETCODE createPricingVariables(
       {
          assert(GCGvarGetBlock(probvar) == -1);
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
+         SCIPdebugPrintf("master!\n");
       }
       assert(SCIPhashmapExists(relaxdata->hashorig2origvar, probvar));
    }
@@ -1076,7 +1086,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
    for( v = 0; v < norigvars; v++ )
    {
       SCIP_VAR* var;
-      var = SCIPvarGetProbvar(origvars[v]);
+      var = SCIPvarGetProbvar(origvars[v]); /*lint !e613*/
       assert(GCGvarIsOriginal(var));
       assert(GCGoriginalVarGetCoefs(var) == NULL);
       GCGoriginalVarSetNCoefs(var, 0);
@@ -1202,20 +1212,20 @@ SCIP_RETCODE createPricingprobConss(
             int ncurvars;
             int i;
 
-            ncurvars = SCIPgetNVarsXXX(scip, newcons);
+            ncurvars = SCIPgetNVarsXXX(relaxdata->pricingprobs[b], newcons);
             curvars = NULL;
             if(ncurvars > 0)
             {
                SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-               SCIP_CALL( SCIPgetVarsXXX(scip, newcons, curvars, ncurvars) );
-            }
+               SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
-            for( i = 0; i < ncurvars; ++i )
-            {
-               assert(GCGvarIsPricing(curvars[i]));
-            }
+               for( i = 0; i < ncurvars; ++i )
+               {
+                  assert(GCGvarIsPricing(curvars[i]));
+               }
 
-            SCIPfreeBufferArrayNull(scip, &curvars);
+               SCIPfreeBufferArrayNull(scip, &curvars);
+            }
          }
 #endif
          SCIP_CALL( SCIPreleaseCons(relaxdata->pricingprobs[b], &newcons) );
@@ -1267,7 +1277,7 @@ SCIP_RETCODE createMaster(
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
 
       SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name) );
-      SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) );
+      SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
    /* create pricing variables */
@@ -1427,8 +1437,8 @@ SCIP_RETCODE solveDiagonalBlocks(
    SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
 
    objvalue = 0.0;
-   /* solve pricing problems one after the other */
 
+   /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i)
    {
 #ifdef SCIP_DEBUG
@@ -1439,7 +1449,7 @@ SCIP_RETCODE solveDiagonalBlocks(
          continue;
 
       SCIPinfoMessage(scip, NULL, "Solving pricing %i.\n", i);
-      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", SCIP_VERBLEVEL_NONE) );
+      SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
       {
@@ -1465,7 +1475,6 @@ SCIP_RETCODE solveDiagonalBlocks(
       case SCIP_STATUS_INFEASIBLE:
          *result = SCIP_CUTOFF;
          return SCIP_OKAY;
-         break;
       case SCIP_STATUS_BESTSOLLIMIT:
       case SCIP_STATUS_MEMLIMIT:
       case SCIP_STATUS_STALLNODELIMIT:
@@ -1474,14 +1483,13 @@ SCIP_RETCODE solveDiagonalBlocks(
       case SCIP_STATUS_TIMELIMIT:
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
-         break;
       case SCIP_STATUS_GAPLIMIT:
       case SCIP_STATUS_OPTIMAL:
          objvalue += SCIPgetDualbound(relaxdata->pricingprobs[i]);
          break;
       default:
          break;
-      }
+      } /*lint !e788*/
    }
 
    /* get solution and glue it together */
@@ -1498,8 +1506,7 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
-   /* maybe add a constraint to the node to indicate that it has been decomposed */
-
+   /* TODO: maybe add a constraint to the node to indicate that it has been decomposed */
    SCIPinfoMessage(scip, NULL, "We need code for this situation here!\n");
 
    *result = SCIP_SUCCESS;
@@ -1585,6 +1592,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
          relaxdata->masterconss, relaxdata->masterconss) );
 
+   SCIP_CALL( DECdecdecompTransform(scip, relaxdata->decdecomp) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -1746,7 +1754,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
       while( !SCIPisStopped(scip))
       {
-         double mastertimelimit = SCIPinfinity(scip);
+         SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
          /* set memorylimit for master */
          SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
@@ -1808,7 +1816,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
          {
-            double tilim;
+            SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
             if(tilim-SCIPgetSolvingTime(masterprob) < 0)
             {
@@ -1945,6 +1953,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
+   int pos;
 
    assert(scip != NULL);
    assert(branchrule != NULL);
@@ -1957,14 +1966,16 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 
    SCIP_CALL( ensureSizeBranchrules(scip, relaxdata) );
 
+   pos = relaxdata->nbranchrules;
+
    /* store callback functions */
-   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->branchrules[relaxdata->nbranchrules])) );
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchrule = branchrule;
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchactivemaster = branchactivemaster;
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchdeactivemaster = branchdeactivemaster;
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchpropmaster = branchpropmaster;
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchmastersolved = branchmastersolved;
-   relaxdata->branchrules[relaxdata->nbranchrules]->branchdatadelete = branchdatadelete;
+   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->branchrules[pos])) ); /*lint !e866*/
+   relaxdata->branchrules[pos]->branchrule = branchrule;
+   relaxdata->branchrules[pos]->branchactivemaster = branchactivemaster;
+   relaxdata->branchrules[pos]->branchdeactivemaster = branchdeactivemaster;
+   relaxdata->branchrules[pos]->branchpropmaster = branchpropmaster;
+   relaxdata->branchrules[pos]->branchmastersolved = branchmastersolved;
+   relaxdata->branchrules[pos]->branchdatadelete = branchdatadelete;
    relaxdata->nbranchrules++;
 
    return SCIP_OKAY;
@@ -2573,7 +2584,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
 static
 SCIP_RETCODE performProbing(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Longint          maxlpiterations,    /**< maximum number of lp iterations allowed */
+   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
    int                   maxpricerounds,     /**< maximum number of pricing rounds allowed */
    SCIP_Bool             usepricing,         /**< should the LP be solved with or without pricing? */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
@@ -2683,7 +2694,7 @@ SCIP_RETCODE performProbing(
  *  propagate domains and solve the LP without pricing. */
 SCIP_RETCODE GCGrelaxPerformProbing(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Longint          maxlpiterations,    /**< maximum number of lp iterations allowed */
+   int                   maxlpiterations,    /**< maximum number of lp iterations allowed */
    SCIP_Longint*         nlpiterations,      /**< pointer to store the number of performed LP iterations (or NULL) */
    SCIP_Real*            lpobjvalue,         /**< pointer to store the lp obj value if lp was solved */
    SCIP_Bool*            lpsolved,           /**< pointer to store whether the lp was solved */
@@ -2798,7 +2809,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
          var = vars[i];
          solval = SCIPgetSolVal(scip, relaxdata->storedorigsol, var);
 
-         SCIPsetSolVal(scip, relaxdata->currentorigsol, var, solval);
+         SCIP_CALL( SCIPsetSolVal(scip, relaxdata->currentorigsol, var, solval) );
 
          if( SCIPvarGetType(var) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, solval) )
          {

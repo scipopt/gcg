@@ -43,7 +43,7 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-/** includes all plugins in the master copy. 
+/** includes all plugins in the master copy.
  *
  * This method makes SCIPcopy work for heuristics in the master
  */
@@ -107,7 +107,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyMaster)
 /** branching execution method for fractional LP solutions */
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
-{
+{  /*lint --e{715}*/
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
@@ -140,9 +140,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 /** branching execution method relaxation solutions */
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextMaster)
-{
+{  /*lint --e{715}*/
    SCIPdebugMessage("Execext method of master branching\n");
-//   printf("Execext method of master branching\n");
 
    return SCIP_OKAY;
 }
@@ -150,7 +149,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextMaster)
 /** branching execution method for not completely fixed pseudo solutions */
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
-{
+{  /*lint --e{715}*/
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
