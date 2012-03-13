@@ -821,6 +821,10 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
          ++j;
       }
    }
+   for( i = *ndecdecomps; i < ndecs; ++i )
+   {
+      DECdecdecompFree(scip,  &(*decdecomps)[i]);
+   }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n", *ndecdecomps );
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

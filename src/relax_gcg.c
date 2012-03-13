@@ -1683,7 +1683,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->varlinkconss[i]) );
    }
-   SCIPfreeMemoryArray(scip, &(relaxdata->varlinkconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
