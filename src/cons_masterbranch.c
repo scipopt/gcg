@@ -1166,14 +1166,14 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       origvals = GCGmasterVarGetOrigvals(vars[i]);
       norigvars = GCGmasterVarGetNOrigvars(vars[i]);
       origvars = GCGmasterVarGetOrigvars(vars[i]);
-      /** @todo: LINK: mb: This might work*/
+      /** @todo LINK: mb: This might work*/
 
       /* only look at variables not already fixed to 0 or that belong to no block */
       if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
          continue;
 
       /* the variable was copied from original to master */
-      /* @todo: cp: I think this code will never be executed
+      /** @todo cp: I think this code will never be executed
        * as the vars array only contains variables generated during pricing */
       if( blocknr == -1 )
       {
@@ -1217,10 +1217,10 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
 
-            /* TODO: LINK: mb: This needs to be changed */
+            /** @todo LINK: mb: This needs to be changed */
 
             /* ignore master variables that contain no original variables */
-            /* @todo: move this statement one for loop higher? */
+            /** @todo move this statement one for loop higher? */
             if( origvars == NULL || origvars[0] == NULL )
                continue;
 
@@ -1300,7 +1300,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    {
 
       assert(GCGvarIsOriginal(propvars[i]));
-      assert(GCGvarGetBlock(propvars[i]) < 0); /* TODO: LINK: mb: this might not work */
+      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo LINK: mb: this might not work */
       assert(GCGoriginalVarGetNMastervars(propvars[i]) >= 1);
       mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
 
@@ -1329,7 +1329,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    /* call branching rule specific propagation method */
    if( consdata->branchrule != NULL )
    {
-      /* TODO: count number of propagations */
+      /** @todo count number of propagations */
       SCIP_CALL( GCGrelaxBranchPropMaster(GCGpricerGetOrigprob(scip), consdata->branchrule, consdata->branchdata, result) );
    }
 
@@ -1551,7 +1551,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
 
-         /* TODO: do we also have to iterate over the pricing problems? */
+         /** @todo do we also have to iterate over the pricing problems? */
       }
    }
    /* deal with linking variables */

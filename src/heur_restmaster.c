@@ -36,7 +36,7 @@
 #define HEUR_FREQ             10
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
-/* TODO: should heuristic be called during the pricing loop or only after solving a node relaxation? */
+/** @todo should heuristic be called during the pricing loop or only after solving a node relaxation? */
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP
 #define HEUR_USESSUBSCIP      TRUE
 
@@ -244,7 +244,7 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPgetSolVals(restmaster, restmastersol, nmastervars, restmastervars, restmastervals) );
 
    /* create new solution for the master problem and translate it to the original problem;
-    * TODO: GCG does not recognize that the solution comes from this heuristic */
+    * @todo GCG does not recognize that the solution comes from this heuristic */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
@@ -365,7 +365,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    *result = SCIP_DIDNOTRUN;
 
    /* this heuristic works only for the discretization approach */
-   /* TODO: make heuristic also usable for convexification;
+   /** @todo make heuristic also usable for convexification;
     *       in this case, we need some sort of constraint handler for the restmaster subSCIP */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( !discretization )
@@ -514,7 +514,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* if there is already a solution, add an objective cutoff */
-   /* TODO: origprob or scip? */
+   /** @todo origprob or scip? */
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;

@@ -21,7 +21,7 @@
 #include "pub_gcgvar.h"
 
 /** transforms given solution of the master problem into solution of the original problem
- *  TODO: think about types of epsilons used in this method*/
+ *  @todo think about types of epsilons used in this method*/
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /** SCIP data structure */
    SCIP_SOL*             mastersol,          /** solution of the master problem, or NULL for current LP solution */
@@ -85,7 +85,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       assert(GCGvarIsMaster(mastervars[i]));
       assert(!SCIPisFeasNegative(scip, mastervals[i]));
 
-      /* TODO: handle infinite master solution values */
+      /** @todo handle infinite master solution values */
       assert(!SCIPisInfinity(scip, mastervals[i]));
 
       /* first of all, handle variables representing rays */
@@ -121,7 +121,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
       {
          /* variable was directly transferred to the master problem (only in linking conss or linking variable) */
-         /* TODO: this may be the wrong place for this case, handle it before the while loop
+         /** @todo this may be the wrong place for this case, handle it before the while loop
           * and remove the similar case in the next while loop */
          if( blocknr == -1 )
          {

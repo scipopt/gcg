@@ -102,7 +102,7 @@ SCIP_RETCODE branchVar(
    SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
    SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   /* TODO: use block memory here */
+   /** @todo use block memory here */
    /* create the branch data for the childs and assign the values */
    SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
    SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );

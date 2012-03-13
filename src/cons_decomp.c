@@ -490,7 +490,7 @@ SCIP_RETCODE SCIPcreateConsDecomp(
    const char* name           /**< name of constraint */
    )
 {
-   /* TODO: (optional) modify the definition of the SCIPcreateConsDecomp() call, if you don't need all the information */
+   /** @todo (optional) modify the definition of the SCIPcreateConsDecomp() call, if you don't need all the information */
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
@@ -508,7 +508,7 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
    /* create constraint data */
    consdata = NULL;
-   /* TODO: create and store constraint specific data here */
+   /** @todo create and store constraint specific data here */
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -868,7 +868,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
-   /** @todo: This is a giant hack, but it works quite well */
+   /** @todo This is a giant hack, but it works quite well */
    tmp = conshdlrdata->decdecomps[0];
 
    for ( i = 0; i < conshdlrdata->ndecomps; ++i )

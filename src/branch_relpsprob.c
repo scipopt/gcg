@@ -479,7 +479,7 @@ SCIP_RETCODE applyProbing(
    int leftubprobing;
    int rightlbprobing;
    int rightubprobing;
-   /* TODO: handle the feasible result */
+   /** @todo handle the feasible result */
    SCIP_Bool feasible;
 
    leftubprobing = -1;
@@ -547,7 +547,7 @@ SCIP_RETCODE applyProbing(
    /* apply propagation */
    if( !(*cutoff) )
    {
-      SCIP_CALL( SCIPpropagateProbing(scip, -1 /*@todo maxproprounds */, cutoff, NULL) );
+      SCIP_CALL( SCIPpropagateProbing(scip, -1 /** @todo maxproprounds */, cutoff, NULL) );
    }
 
    /* evaluate propagation */
@@ -1241,7 +1241,7 @@ SCIP_RETCODE execRelpsprob(
       inititer = branchruledata->inititer;
       if( inititer == 0 )
       {
-         /* @todo: use high value for number of lp iterations */
+         /** @todo use high value for number of lp iterations */
          inititer = 500;
       }
 

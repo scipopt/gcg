@@ -12,7 +12,7 @@
  * @brief  GCG variable access functions
  * @author Martin Bergner
  *
- * @todo: capture and release variables stored in other variable's data?
+ * @todo capture and release variables stored in other variable's data?
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
