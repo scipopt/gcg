@@ -11,6 +11,7 @@
 /**@file   reader_dec.c
  * @brief  DEC file reader
  * @author Lukas Kirchhart
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -671,7 +672,7 @@ SCIP_RETCODE readMasterconss(
    SCIP_READERDATA* readerdata   /**< reader data */
    )
 {
-   int i;
+   /* int i;*/
 
    assert(scip != NULL);
    assert(decinput != NULL);
@@ -706,10 +707,11 @@ SCIP_RETCODE readMasterconss(
             SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
             SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
          }
-         for( i = 0; i < nvars; ++i )
+         /*         for( i = 0; i < nvars; ++i )
          {
             readerdata->varstoblock[SCIPvarGetProbindex(vars[i])] = NOVALUE;
          }
+*/
          SCIPfreeBufferArrayNull(scip, &vars);
 
          ++(readerdata->nlinkingcons);
@@ -791,9 +793,12 @@ SCIP_RETCODE fillDecompStruct(
    n = SCIPgetNVars(scip);
    for( i = 0; i < n; i ++ )
    {
+      SCIPdebugMessage("var %s ", SCIPvarGetName(allvars[i]));
       value = readerdata->varstoblock[i];
+
       if( value == NOVALUE )
       {
+         SCIPdebugMessage("is unknown\n" );
          /** @todo What should be done  in this case? */
       }
       else if( value == LINKINGVALUE )
@@ -802,7 +807,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->linkingvars[ind] = allvars[i];
          decomp->nlinkingvars = decomp->nlinkingvars + 1;
          /* hashmap */
-         SCIPdebugMessage("var %s is linking\n", SCIPvarGetName(allvars[i]));
+         SCIPdebugMessage("is linking\n" );
          /*         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) LINKINGVALUE) );*/
       }
       else
@@ -819,7 +824,7 @@ SCIP_RETCODE fillDecompStruct(
          decomp->nsubscipvars[value] ++;
 
          /* hashmap */
-         SCIPdebugMessage("var %s is in block %d\n", SCIPvarGetName(allvars[i]), value);
+         SCIPdebugMessage("is in block %d\n", value);
          /*         SCIP_CALL( SCIPhashmapInsert(decomp->vartoblock, allvars[i], (void*) (size_t) value) );*/
       }
    }
