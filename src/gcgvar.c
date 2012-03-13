@@ -47,22 +47,12 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
          assert((*vardata)->data.origvardata.linkingvardata != NULL);
          if( (*vardata)->data.origvardata.linkingvardata->linkconss != NULL )
          {
-            SCIP* masterprob;
-
             assert((*vardata)->data.origvardata.linkingvardata->pricingvars != NULL);
-
-            masterprob = GCGrelaxGetMasterprob(scip);
-            assert(masterprob != NULL);
 
             for( i = 0; i < nblocks; i++ )
             {
                assert(((*vardata)->data.origvardata.linkingvardata->linkconss[i] == NULL)
                   == ((*vardata)->data.origvardata.linkingvardata->pricingvars[i] == NULL));
-
-               if( (*vardata)->data.origvardata.linkingvardata->linkconss[i] != NULL )
-               {
-                  SCIP_CALL( SCIPreleaseCons(masterprob, &((*vardata)->data.origvardata.linkingvardata->linkconss[i])) );
-               }
             }
 
             SCIPfreeBlockMemoryArray(scip, &((*vardata)->data.origvardata.linkingvardata->linkconss), nblocks);

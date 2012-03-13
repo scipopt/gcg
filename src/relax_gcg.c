@@ -74,6 +74,7 @@ struct SCIP_RelaxData
                                           * master problem */
    SCIP_CONS**      linearmasterconss;   /**< array of linear constraints equivalent to the cons in
                                           * the original problem that belong to the master problem */
+   SCIP_CONS**      varlinkconss;        /**< array of constraints ensuring linking vars equality */
    int              maxmasterconss;      /**< length of the array mastercons */
    int              nmasterconss;        /**< number of constraints saved in mastercons */
 
@@ -811,7 +812,10 @@ SCIP_RETCODE createLinkingPricingVars(
       assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss+1) );
+      relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
       relaxdata->nvarlinkconss++;
+
 
       /* because the variable was added to the problem,
        * it is captured by SCIP and we can safely release it right now
@@ -1311,7 +1315,10 @@ SCIP_RETCODE createMaster(
 
    /* display statistics */
    if( relaxdata->dispinfos )
+   {
       SCIP_CALL( displayPricingStatistics(scip, relaxdata->pricingprobs, relaxdata->npricingprobs, relaxdata->blockrepresentative) );
+      SCIP_CALL( SCIPwriteOrigProblem(relaxdata->masterprob, "masterprob.lp", "lp", FALSE) );
+   }
 
    if( hashorig2pricingvar != NULL)
    {
@@ -1626,6 +1633,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
          }
       }
    }
+   SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
 
    if( SCIPfindConshdlr(scip, "connected") != NULL )
    {
@@ -1671,7 +1679,11 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       if( relaxdata->convconss[i] != NULL )
          SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->convconss[i]) );
    }
-
+   for( i = 0; i < relaxdata->nvarlinkconss; i++ )
+   {
+      SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->varlinkconss[i]) );
+   }
+   SCIPfreeMemoryArray(scip, &(relaxdata->varlinkconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
@@ -1901,7 +1913,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
-
+   relaxdata->varlinkconss = NULL;
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
