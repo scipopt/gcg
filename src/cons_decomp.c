@@ -23,10 +23,6 @@
 #include <assert.h>
 
 #include "cons_decomp.h"
-
-#include "reader_gp.h"
-#include "reader_ref.h"
-#include "reader_dec.h"
 #include "cons_connected.h"
 #include "relax_gcg.h"
 #include "struct_detector.h"
@@ -808,6 +804,9 @@ SCIP_RETCODE DECdetectStructure(
             SCIPdebugPrintf("Failure!\n");
          }
       }
+   }
+   else {
+      SCIP_CALL( DECdecdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
