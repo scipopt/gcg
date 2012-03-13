@@ -31,6 +31,14 @@
 extern "C" {
 #endif
 
+enum Blockingtype
+{
+   MINLINKINGVARS    = 1,     /**< Tries to minimize the number of linking variables */
+   CONSTANTBLOCKSIZE = 2,     /**< Creates blocks with the same number of rows */
+   ASSOONASPOSSIBLE  = 3      /**< Blocking is done in a way such that three adjacent blocks just do not overlap. This results in (almost) exclusively linking variables. */
+};
+typedef enum Blockingtype BLOCKINGTYPE;
+
 extern
 /** creates the stairheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionStairheur(

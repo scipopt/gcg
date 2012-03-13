@@ -170,7 +170,7 @@ SCIP_RETCODE DECdecdecompSetSubscipvars(
 
    for( b = 0; b < decdecomp->nblocks; ++b)
    {
-      assert(nsubscipvars[b] > 0);
+      assert(nsubscipvars[b] >= 0);
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
       assert(subscipvars[b] != NULL);
@@ -263,7 +263,7 @@ SCIP_RETCODE DECdecdecompSetLinkingconss(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(linkingconss != NULL);
-   assert(nlinkingconss > 0);
+   assert(nlinkingconss >= 0);
 
    assert(decdecomp->linkingconss == NULL);
    assert(decdecomp->nlinkingconss == 0);
@@ -374,6 +374,46 @@ SCIP_HASHMAP*  DECdecdecompGetConstoblock(
 {
    assert(decdecomp != NULL);
    return decdecomp->constoblock;
+}
+
+/** Sets the varindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetVarindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* varindex      /**< Varindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(varindex != NULL);
+   decdecomp->varindex = varindex;
+}
+
+/** Returns the varindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetVarindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->varindex;
+}
+
+/** Sets the consindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetConsindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* consindex      /**< Consindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(consindex != NULL);
+   decdecomp->consindex = consindex;
+}
+
+/** Returns the consindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetConsindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->consindex;
 }
 
 /** completely initializes decdecomp from the values of the hashmaps */

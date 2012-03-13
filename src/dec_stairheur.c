@@ -730,6 +730,8 @@ struct DEC_DetectorData
    int nlinkingvars;
    SCIP_CONS** linkingconss;
    int nlinkingconss;
+   SCIP_HASHMAP* vartoblock;
+   SCIP_HASHMAP* constoblock;
    int blocks;
    int maxblocks;
    int minblocks;
@@ -1185,7 +1187,6 @@ void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, in
       }
       zeros = nvars*ncons - nonzeros;
       sparsity = (float) nonzeros / (nvars*ncons);
-      SCIPdebugMessage("minList.\n");
       minimum_linking_vars = minList(SCIPiteratorBegin(detectordata->rowsWithConstrictions), SCIPiteratorEnd(detectordata->rowsWithConstrictions));
       SCIPdebugMessage("minList.\n");
       fprintf(output, "# of rows\n%i\n", ncons);
@@ -1649,11 +1650,11 @@ void rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
    }
 }
 
-/** assigns variables to a block, divided into linking variables and nonlinking variables */
+/** Assigns variables to a block, divided into linking variables and nonlinking variables.*/
 static
-void assignVarsToBlock(
+SCIP_RETCODE assignVarsToBlock(
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
-      int block,                       /**< number of current block */
+      int block,                       /**< number of current block, first block = 1 */
       int first_var,                   /**< index of first variable in the block*/
       int last_var,                    /**< index of last variable in the block*/
       int first_linkingvar             /**< index of first linking variable*/
@@ -1672,6 +1673,9 @@ void assignVarsToBlock(
       var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexmap->indexvar, (void*) hashmapindex);
       assert(var != NULL);
       detectordata->varsperblock[block-1][j] = var;
+      /* insert var into hash map vartoblock */
+      assert(!SCIPhashmapExists(detectordata->vartoblock, var));
+      SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, var, (void*)&detectordata->hashmapindices[block]) );
    }
    //assign linking vars
    for(i = first_linkingvar; i <= last_var; ++i)
@@ -1682,11 +1686,12 @@ void assignVarsToBlock(
       detectordata->linkingvars[detectordata->nlinkingvars] = var;
       ++detectordata->nlinkingvars;
    }
+   return SCIP_OKAY;
 }
 
-/** assigns constraints in the interval [first_cons, last_cons] to 'block' */
+/** Assigns constraints in the interval [first_cons, last_cons] to 'block'. */
 static
-void assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
+SCIP_RETCODE assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
 {
    int i;
    int j;
@@ -1700,8 +1705,12 @@ void assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, in
       cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
       assert(cons != NULL);
       detectordata->consperblock[block-1][j] = cons;
+      /* insert cons into hash map vartoblock */
+      assert(!SCIPhashmapExists(detectordata->constoblock, cons));
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*)&detectordata->hashmapindices[block]) );
    }
    SCIPlistPushBack(scip, detectordata->blockedAfterrow, &detectordata->hashmapindices[last_cons]);
+   return SCIP_OKAY;
 }
 
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
@@ -1815,7 +1824,7 @@ ITERATOR nextRowToBlockAt(DEC_DETECTORDATA* detectordata, ITERATOR it_constricti
 
 /** Tries to divide the problem into subproblems (blocks)*/
 static
-void blocking(
+SCIP_RETCODE blockingMinLinkingVars(
       SCIP* scip,                      /**< scip object */
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
       int tau,                         /**< desired number of blocks */
@@ -1869,43 +1878,101 @@ void blocking(
    assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss);
    SCIPlistPopBack(scip, detectordata->blockedAfterrow);
    detectordata->blocks = block;
+   return SCIP_OKAY;
 }
 
+/** Returns the number of rows in a block in order to distribute the number of rows evenly across the blocks */
+static
+int rowsInConstantBlock(int block, int desired_blocks, int nrows)
+{
+   if(desired_blocks - (nrows % desired_blocks) <= block)
+   {
+      return (nrows / desired_blocks);
+   }
+   else
+   {
+      return ((nrows / desired_blocks) + 1);
+   }
+}
+
+/** Creates blocks with the same number of rows*/
+static
+SCIP_RETCODE blockingConstantBlockSize(
+      SCIP* scip,                      /**< scip object */
+      DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
+      int desired_blocks,              /**< desired number of blocks */
+      int nvars                        /**< number of variables in the problem*/
+      )
+{
+   int block;
+   int prev_block_last_row;
+   int current_row;
+   //notation: i=current block; im1=i-1=previous block; ip1=i+1=next block
+   int max_col_index_im1;
+   int min_col_index_ip1;
+   int max_col_index_i;
+
+   block = 1;
+   prev_block_last_row = 0;
+   max_col_index_im1 = 0;
+   min_col_index_ip1 = 1;
+   current_row = 0;
+   //blocks 1 to (desired_blocks-1)
+   for(block = 1; block < desired_blocks; ++block)
+   {
+      current_row += rowsInConstantBlock(block, desired_blocks, detectordata->nRelevantConss);
+      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
+      min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
+      //assign the variables and constraints to block
+      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+      SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
+      assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, min_col_index_ip1);
+      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
+      //update variables in the while loop
+      max_col_index_im1 = max_col_index_i;
+      prev_block_last_row = current_row;
+   }
+   //last block
+   //assign the remaining cons and vars to the last block; no new linking vars are added
+   //debug
+   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, detectordata->nRelevantConss);
+   SCIPdebugMessage("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
+   assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
+   assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss);
+   SCIPlistPopBack(scip, detectordata->blockedAfterrow);
+   detectordata->blocks = block;
+   return SCIP_OKAY;
+}
+
+static
+void blockingAsSoonAsPossible()
+{
+   ;
+}
 
 /** copies the variable and block information to the decomp structure */
 static
 SCIP_RETCODE copyDetectorDataToDecomp(
       SCIP*             scip,         /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata, /**< presolver data data structure */
-      DECDECOMP*        decomp        /**< DECOMP data structure */
+      DECDECOMP*        decdecomp        /**< DECOMP data structure */
       )
 {
-   int i;
    assert(scip != 0);
    assert(detectordata != 0);
-   assert(decomp != 0);
+   assert(decdecomp != 0);
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss, detectordata->blocks));
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->linkingvars, detectordata->linkingvars, detectordata->nlinkingvars));
-   decomp->nlinkingvars = detectordata->nlinkingvars;
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->linkingconss, detectordata->linkingconss, detectordata->nlinkingconss));
-   decomp->nlinkingconss = detectordata->nlinkingconss;
-
-   for( i = 0; i < detectordata->blocks; ++i )
-   {
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipconss[i], detectordata->consperblock[i], detectordata->nconsperblock[i]));
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipvars[i], detectordata->varsperblock[i], detectordata->nvarsperblock[i]));
-   }
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipconss, detectordata->nconsperblock, detectordata->blocks));
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipvars, detectordata->nvarsperblock, detectordata->blocks));
-
-   decomp->varindex = detectordata->indexmap->varindex;
-   decomp->consindex = detectordata->indexmap->consindex;
-   decomp->nblocks = detectordata->blocks;
-   decomp->type = DEC_DECTYPE_STAIRCASE;
+   DECdecdecompSetNBlocks(decdecomp, detectordata->blocks);
+   DECdecdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
+   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock) );
+   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock) );
+   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars) );
+   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss) );
+   //hashmaps: shallow copy
+   DECdecdecompSetVarindex(decdecomp, detectordata->indexmap->varindex);
+   DECdecdecompSetConsindex(decdecomp, detectordata->indexmap->consindex);
+   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
    return SCIP_OKAY;
 }
 
@@ -2033,6 +2100,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    int i;
    int ncons; //number of constraints in the problem
    int nvars; //number of variables in the problem
+   int ndecs;
    SCIP_VAR** vars_array;
    SCIP_CONS** cons_array;
    LIST* rowindices;
@@ -2042,7 +2110,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    int tau; // desired number of blocks
    int ROC_iterations;
    int max_iterations;
-   max_iterations = 0;
+   BLOCKINGTYPE blockingtype;
+   max_iterations = 100000;
+   ndecs = 1;
+//   blockingtype = MINLINKINGVARS;
+   blockingtype = CONSTANTBLOCKSIZE;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -2050,6 +2122,14 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    assert(ndecdecomps != NULL);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   *ndecdecomps = 0;
+
+   /* allocate space for output data */
+   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
+   for(i = 0; i < ndecs; ++i)
+   {
+      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+   }
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
    SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
@@ -2128,8 +2208,27 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
 
    //BLOCKING
+   //create the hashmaps constoblock and vartoblock
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartoblock, SCIPblkmem(scip), nvars) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), detectordata->nRelevantConss) );
    rowsWithConstriction(scip, detectordata);
-   blocking(scip, detectordata, tau, nvars);
+   switch (blockingtype)
+   {
+   case MINLINKINGVARS:
+      blockingMinLinkingVars(scip, detectordata, tau, nvars);
+      break;
+   case CONSTANTBLOCKSIZE:
+      blockingConstantBlockSize(scip, detectordata, tau, nvars);
+      break;
+   case ASSOONASPOSSIBLE:
+      blockingAsSoonAsPossible();
+      break;
+   default:
+      SCIPerrorMessage("No rule for this blocking type, cannot perform blocking.");
+      assert(FALSE);
+      break;
+   }
+//   blocking(scip, detectordata, tau, nvars);
 
    //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
 #ifndef NDEBUG
@@ -2148,18 +2247,14 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
 #endif
    detectordata->found = TRUE;
-   SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, detectordata->decdecomp));
+   SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, *decdecomps[0]));
+   (*ndecdecomps)++;
 
    //deallocate memory
    SCIPlistDeleteData(scip, detectordata->rowsWithConstrictions);
-//   SCIPlistDeleteData(scip, detectordata->blockedAfterrow);
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
 
-   //debug Ein Hack von Martin
-   SCIP_CALL(SCIPallocMemoryArray(scip, decdecomps, 1));
-   (*decdecomps)[0] = detectordata->decdecomp;
-   *ndecdecomps = 1;
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }

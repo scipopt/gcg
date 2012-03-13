@@ -166,6 +166,27 @@ SCIP_HASHMAP* DECdecdecompGetConstoblock(
    DECDECOMP* decdecomp       /**< decdecomp instance */
    );
 
+/** Sets the varindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetVarindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* varindex      /**< Varindex hashmap */
+   );
+
+/** Returns the varindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetVarindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   );
+
+/** Sets the consindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetConsindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* consindex      /**< Consindex hashmap */
+   );
+
+/** Returns the consindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetConsindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   );
 
 /** completely initializes decdecomp from the values of the hashmaps */
 SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
