@@ -29,21 +29,23 @@ extern "C" {
 /** decomposition structure information */
 struct DecDecomp
 {
-   int            nblocks;       /**< number of blocks in this decomposition */
-   SCIP_VAR***    subscipvars;   /**< two dimensional array of variables in each block */
-   int*           nsubscipvars;  /**< array of number of variables in each block */
-   SCIP_CONS***   subscipconss;  /**< two dimensional array of constraints in each block */
-   int*           nsubscipconss; /**< array of number of constraints in each block */
-   SCIP_CONS**    linkingconss;  /**< array of constraints linking the blocks */
-   int            nlinkingconss; /**< number of linking constraints */
-   SCIP_VAR**     linkingvars;   /**< array of variables linking the blocks */
-   int            nlinkingvars;  /**< number of linking variables */
-   SCIP_HASHMAP*  vartoblock;    /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
-   SCIP_HASHMAP*  constoblock;   /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
-   SCIP_HASHMAP*  varindex;      /**< hashmap mapping variables to indeces for a visual ordering */
-   SCIP_HASHMAP*  consindex;     /**< hashmap mapping constraints to indices for visual ordering */
-   DEC_DECTYPE    type;          /**< type of the decomposition */
-   DEC_DETECTOR*  detector;      /**< detector that found this decomposition */
+   int            nblocks;                /**< number of blocks in this decomposition */
+   SCIP_VAR***    subscipvars;            /**< two dimensional array of variables in each block */
+   int*           nsubscipvars;           /**< array of number of variables in each block */
+   SCIP_CONS***   subscipconss;           /**< two dimensional array of constraints in each block */
+   int*           nsubscipconss;          /**< array of number of constraints in each block */
+   SCIP_CONS**    linkingconss;           /**< array of constraints linking the blocks */
+   int            nlinkingconss;          /**< number of linking constraints */
+   SCIP_VAR**     linkingvars;            /**< array of variables linking the blocks */
+   int            nlinkingvars;           /**< number of linking variables */
+   SCIP_VAR***    stairlinkingvars;       /**< array of variables staircaslinking the blocks */
+   int*           nstairlinkingvars;      /**< number of staircaslinking variables */
+   SCIP_HASHMAP*  vartoblock;             /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
+   SCIP_HASHMAP*  constoblock;            /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
+   SCIP_HASHMAP*  varindex;               /**< hashmap mapping variables to indeces for a visual ordering */
+   SCIP_HASHMAP*  consindex;              /**< hashmap mapping constraints to indices for visual ordering */
+   DEC_DECTYPE    type;                   /**< type of the decomposition */
+   DEC_DETECTOR*  detector;               /**< detector that found this decomposition */
 };
 
 #ifdef __cplusplus

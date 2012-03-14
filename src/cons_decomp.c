@@ -832,6 +832,7 @@ SCIP_RETCODE DECdetectStructure(
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
+
    return SCIP_OKAY;
 }
 

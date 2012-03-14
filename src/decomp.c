@@ -58,6 +58,8 @@ SCIP_RETCODE DECdecdecompCreate(
    (*decomp)->nlinkingconss = 0;
    (*decomp)->linkingvars = NULL;
    (*decomp)->nlinkingvars = 0;
+   (*decomp)->stairlinkingvars = NULL;
+   (*decomp)->nstairlinkingvars = NULL;
    (*decomp)->nblocks = 0;
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
@@ -85,10 +87,17 @@ void DECdecdecompFree(
       SCIPfreeMemoryArray(scip, &decomp->subscipvars[i]);
       SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
    }
+   for( i = 0; i < decomp->nblocks-1; ++i )
+   {
+      SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars[i]);
+   }
    SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
    SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
+   SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
+   SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars);
+   SCIPfreeMemoryArray(scip, &decomp->nstairlinkingvars);
 
    /* free hashmaps if they are not NULL */
    if( decomp->constoblock != NULL )
@@ -101,7 +110,6 @@ void DECdecdecompFree(
       SCIPhashmapFree(&decomp->consindex);
 
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
 
    SCIPfreeMemory(scip, decdecomp);
 }
@@ -172,7 +180,7 @@ SCIP_RETCODE DECdecdecompSetSubscipvars(
 
    for( b = 0; b < decdecomp->nblocks; ++b)
    {
-      assert(nsubscipvars[b] > 0);
+      //assert(nsubscipvars[b] > 0);
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
       assert(subscipvars[b] != NULL);
@@ -301,7 +309,7 @@ SCIP_RETCODE DECdecdecompSetLinkingvars(
    SCIP* scip,                 /**< SCIP data structure */
    DECDECOMP* decdecomp,       /**< DECDECOMP data structure */
    SCIP_VAR** linkingvars,    /**< Linkingvars array  */
-   int nlinkingvars          /**< number of linkingvars per block */
+   int nlinkingvars            /**< number of linkingvars per block */
    )
 {
    assert(scip != NULL);
@@ -336,6 +344,61 @@ int  DECdecdecompGetNLinkingvars(
    assert(decdecomp != NULL);
    assert(decdecomp->nlinkingvars >= 0);
    return decdecomp->nlinkingvars;
+}
+
+/** Copies the input stairlinkingvars array to the given decdecomp structure */
+SCIP_RETCODE DECdecdecompSetStairlinkingvars(
+   SCIP* scip,                 /**< SCIP data structure */
+   DECDECOMP* decdecomp,       /**< DECDECOMP data structure */
+   SCIP_VAR*** stairlinkingvars,    /**< Linkingvars array  */
+   int* nstairlinkingvars           /**< number of linkingvars per block */
+   )
+{
+   int b;
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(stairlinkingvars != NULL);
+   assert(nstairlinkingvars != NULL);
+   assert(decdecomp->nblocks > 0);
+
+   assert(decdecomp->stairlinkingvars == NULL);
+   assert(decdecomp->nstairlinkingvars == NULL);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->stairlinkingvars, decdecomp->nblocks-1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nstairlinkingvars, decdecomp->nblocks-1) );
+
+   assert(decdecomp->stairlinkingvars != NULL);
+   assert(decdecomp->nstairlinkingvars != NULL);
+
+   for( b = 0; b < decdecomp->nblocks-1; ++b)
+   {
+      assert(nstairlinkingvars[b] > 0);
+      decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
+
+      assert(stairlinkingvars[b] != NULL);
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->stairlinkingvars[b], stairlinkingvars[b], nstairlinkingvars[b]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** Returns the stairlinkingvars array of the given decdecomp structure */
+SCIP_VAR***  DECdecdecompGetStairlinkingvars(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->stairlinkingvars;
+}
+
+/** Returns the nstairlinkingvars array of the given decdecomp structure */
+int*  DECdecdecompGetNStairlinkingvars(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(decdecomp->nstairlinkingvars != NULL );
+   return decdecomp->nstairlinkingvars;
 }
 
 /** Sets the vartoblock hashmap of the given decdecomp structure */
@@ -376,6 +439,46 @@ SCIP_HASHMAP*  DECdecdecompGetConstoblock(
 {
    assert(decdecomp != NULL);
    return decdecomp->constoblock;
+}
+
+/** Sets the varindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetVarindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* varindex        /**< Varindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(varindex != NULL);
+   decdecomp->varindex = varindex;
+}
+
+/** Returns the varindexk hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetVarindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->varindex;
+}
+
+/** Sets the consindex hashmap of the given decdecomp structure */
+void  DECdecdecompSetConsindex(
+   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+   SCIP_HASHMAP* consindex       /**< Consindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(consindex != NULL);
+   decdecomp->consindex = consindex;
+}
+
+/** Returns the constoblock hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecdecompGetConsindex(
+   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->consindex;
 }
 
 /** completely initializes decdecomp from the values of the hashmaps */
@@ -420,6 +523,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    nlinkingconss = 0;
    nlinkingvars = 0;
+
    for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
@@ -509,7 +613,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    DECdecdecompSetConstoblock(decdecomp, constoblock);
 
    SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
    SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &nsubscipvars);
 
@@ -521,6 +624,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    SCIPfreeBufferArray(scip, &subscipconss);
    SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &linkingvars);
 
    return SCIP_OKAY;
 }
