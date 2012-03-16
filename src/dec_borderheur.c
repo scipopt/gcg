@@ -792,7 +792,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 
    for(i = 0; i < ndecs; ++i)
    {
-      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+      SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting bordered structure:");
