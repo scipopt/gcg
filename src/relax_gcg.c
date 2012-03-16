@@ -287,6 +287,7 @@ SCIP_RETCODE convertStructToGCG(
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
+            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]),subscipvars[i][j],i );
          }
          else
          {
@@ -877,27 +878,30 @@ SCIP_RETCODE createPricingVariables(
       int blocknr;
       SCIP_VAR* probvar;
 
+      assert(SCIPvarIsTransformed(vars[v]));
+
       probvar = SCIPvarGetProbvar(vars[v]);
+      assert(SCIPvarIsTransformed(probvar));
       blocknr = GCGvarGetBlock(probvar);
       if( blocknr == -1)
       {
          blocknr = ((int) (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar) ) -1;
       }
-
-      SCIPdebugMessage("Creating map for var %s:", SCIPvarGetName(probvar));
-
+      SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
 
       /* variable belongs to exactly one block --> create corresponding pricing variable*/
       if( blocknr >= 0 )
       {
-         SCIPdebugPrintf("block %d\n", blocknr);
+         SCIPdebugPrintf("block %d", blocknr);
 
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIP_CALL( createPricingVar(relaxdata, probvar) );
          assert(GCGoriginalVarGetPricingVar(probvar) != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
+
+         SCIPdebugPrintf("-> %p\n", GCGoriginalVarGetPricingVar(probvar));
 
          assert(!SCIPhashmapExists(hashorig2pricingvar[blocknr], probvar));
          SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(probvar),

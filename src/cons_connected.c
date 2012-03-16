@@ -211,21 +211,17 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
 
-   /* in a first preprocessing step, indicate which constraints should go in the master */
-
-   for ( i = 0; i < nconss; ++i )
+   /* go through the all constraints */
+   for( i = 0; i < nconss; ++i )
    {
+      int consblock;
+
+      /* in a first preprocessing step, indicate which constraints should go in the master */
       if(conshdlrdata->setppcinmaster)
          conshdlrdata->consismaster[i] = isConsMaster(scip, conss[i]);
       else
          conshdlrdata->consismaster[i] = FALSE;
 
-   }
-
-   /* go through the all constraints */
-   for( i = 0; i < nconss; ++i )
-   {
-      int consblock;
       cons = conss[i];
       assert(cons != NULL);
       if( isConsGCGCons(cons) )
@@ -234,6 +230,7 @@ SCIP_RETCODE findConnectedComponents(
       if( conshdlrdata->consismaster[i] )
          continue;
 
+      /* get variables of constraint */
       ncurvars = SCIPgetNVarsXXX(scip, cons);
       curvars = NULL;
       if( ncurvars > 0)
@@ -246,6 +243,8 @@ SCIP_RETCODE findConnectedComponents(
       assert(curvars != NULL || ncurvars == 0);
 
       assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
+
+      /* if there are no variables, put it in the first block, otherwise put it in the next block */
       if(ncurvars == 0)
          consblock = 1;
       else
@@ -267,11 +266,14 @@ SCIP_RETCODE findConnectedComponents(
          assert(varindex < nvars);
 
          /** @todo what about deleted variables? */
+         /* get block of variable */
          varblock = vartoblock[varindex];
-
+         SCIPdebugMessage("\tVar %s (%d): ", SCIPvarGetName(probvar), varblock);
          /* if variable is assigned to a block, assign constraint to that block */
-         if( varblock != -1 )
+         if( varblock > -1 && varblock != consblock )
          {
+            SCIPdebugPrintf("still in block %d.\n",  varblock);
+            /* if constraint is assigned to the next block, it is actually free, so assign it to the current block  */
             if(consblock == nextblock)
                consblock = varblock;
 
@@ -280,9 +282,15 @@ SCIP_RETCODE findConnectedComponents(
             {
                /* always take the lower one of both as the representative*/
                if(varblock < consblock)
+               {
                   blockrepresentative[consblock] = varblock;
+                  consblock = varblock;
+               }
                else
+               {
                   blockrepresentative[varblock] = consblock;
+                  varblock = consblock;
+               }
 
                assert(blockrepresentative[consblock] >= 1);
                assert(blockrepresentative[consblock] <= nextblock);
@@ -296,16 +304,23 @@ SCIP_RETCODE findConnectedComponents(
                /** @todo what about deleted variables? */
                assert(consblock >= 1);
                assert(consblock <= nextblock);
+               assert( vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] >= consblock || k == j );
                vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
+               SCIPdebugMessage("\t\tVar %s reset in block %d.\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[k])), consblock);
             }
          }
-         else
+         else if(varblock == -1)
          {
             /* if variable is free, assign it to the new block for this constraint */
             varblock = consblock;
             assert(varblock > 0);
             assert(varblock <= nextblock);
             vartoblock[varindex] = varblock;
+            SCIPdebugPrintf("new in block %d.\n",  varblock);
+         }
+         else
+         {
+            SCIPdebugPrintf("no change.\n");
          }
       }
 
@@ -323,6 +338,7 @@ SCIP_RETCODE findConnectedComponents(
       assert(consblock <= nextblock);
 
       /* store the constraint block */
+      SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
       SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
    }
 
@@ -387,6 +403,7 @@ SCIP_RETCODE findConnectedComponents(
       if(varblock > 0)
       {
          assert(varblock < tempblock);
+         SCIPdebugMessage("Var %s in block %d\n", SCIPvarGetName(SCIPvarGetProbvar(vars[i])), varblock-1);
          SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]),
                (void*)(size_t)(varblock)) );
       }
