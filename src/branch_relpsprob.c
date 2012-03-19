@@ -872,6 +872,7 @@ SCIP_RETCODE addBranchcandsToData(
    {     /* no variables known before, reinitialized hashmap and variable info storage */
 
       /* create hash map */
+      assert(branchruledata->varhashmap == NULL);
       SCIP_CALL( SCIPhashmapCreate(&(branchruledata->varhashmap), SCIPblkmem(scip), HASHSIZE_VARS) );
 
       SCIP_CALL( SCIPallocMemoryArray(scip, &branchruledata->nvarprobings, nbranchcands) );

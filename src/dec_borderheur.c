@@ -751,6 +751,11 @@ static SCIP_RETCODE buildTransformedProblem(
       DECdecdecompSetVartoblock(decdecomp, vartoblock);
       DECdecdecompSetConstoblock(decdecomp, constoblock);
    }
+   else {
+      SCIPhashmapFree(&constoblock);
+      SCIPhashmapFree(&vartoblock);
+   }
+
    /* free all local data */
    for( i = 0; i < nblocks; ++i )
    {

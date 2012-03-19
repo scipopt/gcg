@@ -646,6 +646,8 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
       else
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
+         SCIPhashmapFree(&conshdlrdata->constoblock);
+         SCIPhashmapFree(&conshdlrdata->vartoblock);
       }
       if( conshdlrdata->setppcinmaster == FALSE && result != SCIP_SUCCESS )
       {
