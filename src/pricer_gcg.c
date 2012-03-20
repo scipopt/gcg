@@ -42,8 +42,7 @@
 #define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX    /**< maximal number of successful MIP solves */
 #define DEFAULT_MAXROUNDSREDCOST         INT_MAX    /**< maximal number of reduced cost pricing rounds */
 #define DEFAULT_MAXSOLSPROB              INT_MAX    /**< maximal number of solution per pricing problem*/
-#define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic prcing be used */
-#define DEFAULT_ONLYPOSCONV              FALSE      /**< should only positive convex combinations be allowed */
+#define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
 #define DEFAULT_ONLYBEST                 FALSE      /**< should only best solutions be accepted */
@@ -136,7 +135,6 @@ struct SCIP_PricerData
    int          nroundsredcost;           /**< number of reduced cost rounds */
    int          sorting;                  /**< how should pricing problems be sorted */
    SCIP_Bool    useheurpricing;           /**< should heuristic pricing be used */
-   SCIP_Bool    onlyposconv;              /**< should only positive convex combinations be allowed */
    SCIP_Bool    abortpricingint;          /**< should the pricing be aborted on integral solutions */
    SCIP_Bool    onlybest;                 /**< should only best solutions be accepted */
    SCIP_Bool    dispinfos;                /**< should pricing information be displayed*/
@@ -1493,7 +1491,6 @@ SCIP_RETCODE performPricing(
                   nfoundvars < pricerdata->maxvarsroundredcost) && successfulmips < pricerdata->maxsuccessfulmipsredcost
                && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
                && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull )))
-              && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv )
               && (pricetype == GCG_PRICETYPE_REDCOST || (nfoundvars < pricerdata->maxvarsroundfarkas
                     && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull))); i++)
       {
@@ -1579,7 +1576,6 @@ SCIP_RETCODE performPricing(
                && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
                && (nfoundvars == 0 || ( (root || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull)
                    && (!root || solvedmips < pricerdata->mipsrelredcostroot * pricerdata->npricingprobsnotnull) ) )))
-              && (nfoundvars == 0 || pricerdata->dualsolconv[pricerdata->permu[i]] > 0 || !pricerdata->onlyposconv)
               && (pricetype == GCG_PRICETYPE_REDCOST || (nfoundvars < pricerdata->maxvarsroundfarkas
                     && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull))); i++)
       {
@@ -2196,10 +2192,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useheurpricing",
          "should pricing be performed heuristically before solving the MIPs to optimality?",
          &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlyposconv",
-         "should only pricing problems be solved with a positive dualsol of the convexity constraint, if possible?",
-         &pricerdata->onlyposconv, TRUE, DEFAULT_ONLYPOSCONV, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
