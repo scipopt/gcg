@@ -146,9 +146,9 @@ SCIP_RETCODE setOriginalVarBlockNr(
       GCGvarSetBlock(var, newblock);
 
    /* if var already belongs to another block, it is a linking variable */
-   else if ( blocknr != newblock )
+   else if( blocknr != newblock )
    {
-      if(!GCGvarIsLinking(var))
+      if( !GCGvarIsLinking(var) )
          relaxdata->nlinkingvars++;
 
       SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
@@ -281,7 +281,7 @@ SCIP_RETCODE convertStructToGCG(
 
          relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
 
-         if(SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL)
+         if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
             SCIP_VAR* origvar;
 
@@ -327,7 +327,7 @@ SCIP_RETCODE convertStructToGCG(
 
                for( v = 0; v < ncurvars; ++v )
                {
-                  if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i])
+                  if( SCIPvarGetProbvar(curvars[v]) == linkingvars[i] || curvars[v] == linkingvars[i] )
                   {
                      SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
@@ -476,12 +476,12 @@ SCIP_RETCODE pricingprobsAreIdentical(
 
    SCIPdebugMessage("check block %d and block %d for identity...\n", probnr1, probnr2);
 
-   if( SCIPgetNVars(scip1) != SCIPgetNVars(scip2))
+   if( SCIPgetNVars(scip1) != SCIPgetNVars(scip2) )
    {
       SCIPdebugMessage("--> number of variables differs!\n");
       return SCIP_OKAY;
    }
-   if( SCIPgetNConss(scip1) != SCIPgetNConss(scip1))
+   if( SCIPgetNConss(scip1) != SCIPgetNConss(scip1) )
    {
       SCIPdebugMessage("--> number of constraints differs!\n");
       return SCIP_OKAY;
@@ -795,7 +795,7 @@ SCIP_RETCODE createLinkingPricingVars(
       count = 0;
       for( i = 0; i < relaxdata->npricingprobs; i++ )
       {
-         if( pricingvars[i] != NULL)
+         if( pricingvars[i] != NULL )
          {
             count++;
             //assert(pricingvars[i] == vars[v]);
@@ -840,7 +840,7 @@ SCIP_RETCODE createLinkingPricingVars(
       count = 0;
       for( i = 0; i < relaxdata->npricingprobs; i++ )
       {
-         if( pricingvars[i] != NULL)
+         if( pricingvars[i] != NULL )
          {
             count++;
             assert(GCGvarIsPricing(pricingvars[i]));
@@ -890,7 +890,7 @@ SCIP_RETCODE createPricingVariables(
       probvar = SCIPvarGetProbvar(vars[v]);
       assert(SCIPvarIsTransformed(probvar));
       blocknr = GCGvarGetBlock(probvar);
-      if( blocknr == -1)
+      if( blocknr == -1 )
       {
          blocknr = ((int) (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar) ) -1;
       }
@@ -930,7 +930,7 @@ SCIP_RETCODE createPricingVariables(
 
          for( i = 0; i < npricingprobs; i++ )
          {
-            if( pricingvars[i] != NULL)
+            if( pricingvars[i] != NULL )
             {
                assert(GCGvarIsPricing(pricingvars[i]));
 
@@ -1143,9 +1143,9 @@ SCIP_RETCODE createMasterprobConss(
    newcons = NULL;
 
    assert(SCIPhashmapGetNEntries(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
-   for( c = 0; c < nmasterconss; ++c)
+   for( c = 0; c < nmasterconss; ++c )
    {
-      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0)
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[c])), "origbranch") == 0 )
          continue;
 
       success = FALSE;
@@ -1204,7 +1204,7 @@ SCIP_RETCODE createPricingprobConss(
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
          SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(subscipconss[b][c]), b);
-         if(!SCIPconsIsActive( subscipconss[b][c]))
+         if( !SCIPconsIsActive( subscipconss[b][c]) )
             continue;
 
          SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[b][c], &subscipconss[b][c]) );
@@ -1228,7 +1228,7 @@ SCIP_RETCODE createPricingprobConss(
 
             ncurvars = SCIPgetNVarsXXX(relaxdata->pricingprobs[b], newcons);
             curvars = NULL;
-            if(ncurvars > 0)
+            if( ncurvars > 0 )
             {
                SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
@@ -1265,7 +1265,7 @@ SCIP_RETCODE createMaster(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
-   if(relaxdata->decdecomp != NULL)
+   if( relaxdata->decdecomp != NULL )
       SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
    npricingprobs = relaxdata->npricingprobs;
@@ -1330,7 +1330,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPwriteOrigProblem(relaxdata->masterprob, "masterprob.lp", "lp", FALSE) );
    }
 
-   if( hashorig2pricingvar != NULL)
+   if( hashorig2pricingvar != NULL )
    {
       for( i = 0; i < npricingprobs; i++ )
          SCIPhashmapFree(&(hashorig2pricingvar[i]));
@@ -1369,7 +1369,7 @@ SCIP_RETCODE combineSolutions(
    vars = SCIPgetVars(scip);
 
 #ifdef SCIP_DEBUG
-   for (i = 0; i < nprobs; ++i)
+   for( i = 0; i < nprobs; ++i )
    {
       if( probs[i] == NULL )
          continue;
@@ -1379,7 +1379,7 @@ SCIP_RETCODE combineSolutions(
    }
 #endif
 
-   for( v = 0; v < nvars; ++v)
+   for( v = 0; v < nvars; ++v )
    {
       SCIP_VAR* pricingvar;
       int block;
@@ -1456,7 +1456,7 @@ SCIP_RETCODE solveDiagonalBlocks(
    objvalue = 0.0;
 
    /* solve pricing problems one after the other */
-   for( i = 0; i < relaxdata->npricingprobs; ++i)
+   for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
 #ifdef SCIP_DEBUG
       char name[SCIP_MAXSTRLEN];
@@ -1513,7 +1513,7 @@ SCIP_RETCODE solveDiagonalBlocks(
    SCIP_CALL( combineSolutions(scip, &newsol, relaxdata->pricingprobs, relaxdata->npricingprobs) );
 
    /* update lower bound pointer and add solution such that this node will be cut off automatically */
-   if(SCIPgetObjsense(scip) == SCIP_OBJSENSE_MAXIMIZE)
+   if( SCIPgetObjsense(scip) == SCIP_OBJSENSE_MAXIMIZE )
       *lowerbound = -objvalue;
    else
       *lowerbound = objvalue;
@@ -1614,7 +1614,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
-      if( relaxdata->convconss[i] != NULL)
+      if( relaxdata->convconss[i] != NULL )
       {
          SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
       }
@@ -1623,7 +1623,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
    /* transform the linking constraints */
-   for( i = 0; i < nvars; ++i)
+   for( i = 0; i < nvars; ++i )
    {
       int j;
       assert(GCGvarIsOriginal(vars[i]));
@@ -1803,7 +1803,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          if( relaxdata->hasblockdetection && SCIPisMatrixBlockDiagonal(scip) )
          {
             SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
-            if( *result == SCIP_SUCCESS)
+            if( *result == SCIP_SUCCESS )
                return SCIP_OKAY;
          }
          /* We are solving the masterproblem regularly */
@@ -1813,7 +1813,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
 
-         if(SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT)
+         if( SCIPgetStatus(masterprob) != SCIP_STATUS_TIMELIMIT )
          {
             break;
          }
@@ -1821,7 +1821,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          if( !SCIPisInfinity(scip, timelimit) )
             SCIPinfoMessage(scip, NULL, "Masterprob was to short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
       }
-      if(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip))
+      if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
       {
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
@@ -1840,7 +1840,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
-            if(tilim-SCIPgetSolvingTime(masterprob) < 0)
+            if( tilim-SCIPgetSolvingTime(masterprob) < 0 )
             {
                *result = SCIP_DIDNOTRUN;
                return SCIP_OKAY;
@@ -2977,7 +2977,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       /** @todo Martin will disable that here, because at the current stage, it does not have to be true!
        *       assert(stored);
        */
-      if(stored)
+      if( stored )
          SCIPdebugMessage("updated current best primal feasible solution!\n");
    }
 

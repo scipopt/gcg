@@ -1002,7 +1002,7 @@ SCIP_DECL_READERFREE(readerFreeDec)
    SCIP_READERDATA* readerdata;
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
-   if( readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN)
+   if( readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN )
       DECdecdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
    return SCIP_OKAY;

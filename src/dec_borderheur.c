@@ -151,7 +151,7 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
    /* copy data to decomp structure */
-   if( !detectordata->found)
+   if( !detectordata->found )
    {
       SCIPfreeMemory(scip, &detectordata);
       return SCIP_OKAY;
@@ -224,7 +224,7 @@ static SCIP_RETCODE buildGraphStructure(
          SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
       }
 
-      for(j = 0; j < ncurvars; ++j)
+      for( j = 0; j < ncurvars; ++j )
       {
          assert(curvars != NULL);
          if( SCIPisVarRelevant(curvars[j]) )
@@ -304,7 +304,7 @@ SCIP_RETCODE callMetis(
    SCIPdebugMessage("Temporary filename: %s\n", tempfile);
 
    file = fdopen(temp_filedes, "w");
-   if(file == NULL)
+   if( file == NULL )
    {
       SCIPerrorMessage("Could not open temporary metis file!\n");
       return SCIP_FILECREATEERROR;
@@ -317,7 +317,7 @@ SCIP_RETCODE callMetis(
       SCIP_VAR** curvars;
       HyperEdge hedge;
       hedge = detectordata->hedges[i];
-      if(hedge.cons == NULL)
+      if( hedge.cons == NULL )
          continue;
       SCIPinfoMessage(scip, file, "%d ", hedge.cost);
       ncurvars = SCIPgetNVarsXXX(scip, hedge.cons);
@@ -335,7 +335,7 @@ SCIP_RETCODE callMetis(
          ind = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
 
          assert(ind < SCIPgetNVars(scip));
-         if( ind >= 0)
+         if( ind >= 0 )
             SCIPinfoMessage(scip, file, "%d ", ind + 1 );
       }
       SCIPfreeBufferArrayNull(scip, &curvars);
@@ -343,14 +343,14 @@ SCIP_RETCODE callMetis(
    }
    status = fclose(file);
 
-   if(status == -1)
+   if( status == -1 )
    {
       SCIPerrorMessage("Could not close '%s'\n", tempfile);
       return SCIP_WRITEERROR;
    }
 
    /* call metis via syscall as there is no library usable ... */
-   if(!SCIPisInfinity(scip, remainingtime))
+   if( !SCIPisInfinity(scip, remainingtime) )
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f; hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
@@ -378,7 +378,7 @@ SCIP_RETCODE callMetis(
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " %d", detectordata->blocks );
 /*   extern char **environ;
    char **env;
-   for (env = environ; *env; ++env)
+   for( env = environ; *env; ++env )
         printf("%s\n", *env);
 */
    status = system( metiscall );
@@ -553,7 +553,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
 
-   for (i = 0; i < nblocks; ++i )
+   for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
@@ -581,7 +581,7 @@ static SCIP_RETCODE buildTransformedProblem(
       int ncurvars;
       SCIP_VAR **curvars;
 
-      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0)
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0 )
          continue;
 
       /* sort the variables into corresponding buckets */
@@ -645,7 +645,7 @@ static SCIP_RETCODE buildTransformedProblem(
           * if the variable is not a linking variable, add it to the correct
           * block and update the block of the constraint, if necessary
           */
-         if( varblock <= detectordata->blocks && varblock >= 0)
+         if( varblock <= detectordata->blocks && varblock >= 0 )
          {
             /*
              * if the block of the constraint has not been set yet, set it to
@@ -743,7 +743,7 @@ static SCIP_RETCODE buildTransformedProblem(
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
       SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
       SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-      if( nlinkingconss > 0)
+      if( nlinkingconss > 0 )
       {
          SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
          DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
@@ -795,13 +795,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    /* build the hypergraph structure from the original problem */
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
 
-   for(i = 0; i < ndecs; ++i)
+   for( i = 0; i < ndecs; ++i )
    {
       SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting bordered structure:");
-   for(j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
+   for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
       detectordata->blocks = i;
       /* get the partitions for the new variables from metis */

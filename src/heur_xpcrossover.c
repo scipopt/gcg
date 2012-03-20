@@ -646,7 +646,7 @@ SCIP_RETCODE printExtremePoints(
    printf("------------------------------------------------------------\n");
 
    /* then, print the selected extreme points for each block */
-   for( i = 0; i < nblocks; ++i)
+   for( i = 0; i < nblocks; ++i )
    {
       printf("Block %i\n", i+1);
       printf("------------------------------------------------------------\n");
@@ -793,7 +793,7 @@ SCIP_RETCODE initializeSubproblem(
       }
       else
       {
-         if ( SCIPgetUpperbound ( scip ) >= 0 )
+         if( SCIPgetUpperbound ( scip ) >= 0 )
             cutoff = ( 1 - heurdata->minimprove ) * SCIPgetUpperbound ( scip );
          else
             cutoff = ( 1 + heurdata->minimprove ) * SCIPgetUpperbound ( scip );
@@ -944,7 +944,7 @@ static SCIP_RETCODE fixVariables(
                   npricingorigvars = GCGpricingVarGetNOrigvars(pricingvar);
                   pricingorigvars = GCGpricingVarGetOrigvars(pricingvar);
                   origvar = NULL;
-                  for( l = 0; l < npricingorigvars; ++l  )
+                  for( l = 0; l < npricingorigvars; ++l )
                      if( GCGvarGetBlock(pricingorigvars[l]) == i )
                      {
                         origvar = pricingorigvars[l];
@@ -1050,7 +1050,7 @@ static SCIP_RETCODE fixVariables(
 
          fixingcounter++;
 
-         if ( SCIPisZero(scip, fixvals[i]) )
+         if( SCIPisZero(scip, fixvals[i]) )
             zerocounter++;
       }
    }

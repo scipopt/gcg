@@ -167,7 +167,7 @@ void calculateBounds(
       /** all bounds and slacks as they are calculated in zirounding always have to be greater equal zero.
        * It might however be due to numerical issues, e.g. with scaling, that they are not. Better abort in this case.
        */
-      if( SCIPisFeasLT(scip, *lowerbound, 0.0) || SCIPisFeasLT(scip, *upperbound, 0.0)
+      if( SCIPisFeasLT(scip, *lowerbound, 0.0) || SCIPisFeasLT(scip, *upperbound, 0.0 )
          || SCIPisFeasLT(scip, upslacks[rowpos], 0.0) || SCIPisFeasLT(scip, downslacks[rowpos] , 0.0) )
       {
          *numericalerror = TRUE;

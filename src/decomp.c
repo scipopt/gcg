@@ -170,7 +170,7 @@ SCIP_RETCODE DECdecdecompSetSubscipvars(
    assert(decdecomp->subscipvars != NULL);
    assert(decdecomp->nsubscipvars != NULL);
 
-   for( b = 0; b < decdecomp->nblocks; ++b)
+   for( b = 0; b < decdecomp->nblocks; ++b )
    {
       assert(nsubscipvars[b] > 0);
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
@@ -224,7 +224,7 @@ SCIP_RETCODE DECdecdecompSetSubscipconss(
    assert(decdecomp->subscipconss != NULL);
    assert(decdecomp->nsubscipconss != NULL);
 
-   for( b = 0; b < decdecomp->nblocks; ++b)
+   for( b = 0; b < decdecomp->nblocks; ++b )
    {
       assert(nsubscipconss[b] > 0);
       decdecomp->nsubscipconss[b] = nsubscipconss[b];
@@ -493,12 +493,12 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       }
    }
 
-   if(nlinkingconss > 0)
+   if( nlinkingconss > 0 )
    {
       SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
    }
-   if(nlinkingvars > 0)
+   if( nlinkingvars > 0 )
    {
       SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
@@ -566,7 +566,7 @@ SCIP_RETCODE DECdecdecompTransform(
    /* transform all constraints and put them in constoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      for( c = 0; c < decdecomp->nsubscipconss[b]; ++c)
+      for( c = 0; c < decdecomp->nsubscipconss[b]; ++c )
       {
          SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decdecomp->subscipconss[b][c]), SCIPconsIsTransformed(decdecomp->subscipconss[b][c])?"t":"o" );
          assert(decdecomp->subscipconss[b][c] != NULL);
@@ -579,7 +579,7 @@ SCIP_RETCODE DECdecdecompTransform(
    /* transform all variables and put them in vartoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      for( v = 0; v < decdecomp->nsubscipvars[b]; ++v)
+      for( v = 0; v < decdecomp->nsubscipvars[b]; ++v )
       {
          SCIPdebugMessage("%d, %d: %s (%s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
          assert(decdecomp->subscipvars[b][v] != NULL);
@@ -591,7 +591,7 @@ SCIP_RETCODE DECdecdecompTransform(
    }
 
    /* transform all linking constraints */
-   for( c = 0; c < decdecomp->nlinkingconss; ++c)
+   for( c = 0; c < decdecomp->nlinkingconss; ++c )
    {
       SCIPdebugMessage("m, %d: %s (%s)\n", c, SCIPconsGetName(decdecomp->linkingconss[c]), SCIPconsIsTransformed(decdecomp->linkingconss[c])?"t":"o" );
       assert(decdecomp->linkingconss[c] != NULL);
@@ -602,7 +602,7 @@ SCIP_RETCODE DECdecdecompTransform(
    /** @todo include Friederikes code */
 
    /* transform all linking variables */
-   for( v = 0; v < decdecomp->nlinkingvars; ++v)
+   for( v = 0; v < decdecomp->nlinkingvars; ++v )
    {
       SCIPdebugMessage("m, %d: %s (%s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
       assert(decdecomp->linkingvars[v] != NULL);

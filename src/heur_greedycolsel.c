@@ -190,7 +190,7 @@ SCIP_RETCODE getBestMastervar(
          continue;
 
       /* ignore the master variable if the corresponding block is already full */
-      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block)
+      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block )
             && !ignored[i])
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);

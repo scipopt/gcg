@@ -255,7 +255,7 @@ SCIP_DECL_HEUREXIT(heurExitGcgpscostdiving) /*lint --e{715}*/
 
    /* free working solution and root relaxation solution */
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
-   if(heurdata->rootsol != NULL)
+   if( heurdata->rootsol != NULL )
       SCIP_CALL( SCIPfreeSol(scip, &heurdata->rootsol) );
 
    return SCIP_OKAY;

@@ -444,7 +444,7 @@ SCIP_Bool checkVars(
          continue;
 
       /* iterate over all vars and check whether they violate the current cons */
-      for( i = 0; i < nvars; i++)
+      for( i = 0; i < nvars; i++ )
       {
          if( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
          {
@@ -825,9 +825,9 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
          SCIPdebugMessage("adjusting bound of linking pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
-         for(j = 0; j < npricingprobs; ++j)
+         for( j = 0; j < npricingprobs; ++j )
          {
-            if(pricingvars[j] == NULL)
+            if( pricingvars[j] == NULL )
                continue;
 
             SCIP_CALL( GCGtightenPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j) );
@@ -914,7 +914,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
          SCIP_CALL(GCGresetPricingVarBound(scip, origscip,
                GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr));
       }
-      else if(blocknr == -2)
+      else if( blocknr == -2 )
       {
          int j;
          SCIP_VAR** pricingvars;
@@ -927,10 +927,10 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
          /* reset corresponding bound in the pricing problem */
          /* lower bound was changed */
-         for( j = 0; j < npricingprobs; ++j)
+         for( j = 0; j < npricingprobs; ++j )
          {
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
-            if( pricingvars[j] == NULL)
+            if( pricingvars[j] == NULL )
                continue;
 
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
@@ -1575,9 +1575,9 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          }
 
          /* add the bound change to the pricing problems */
-         for (i = 0; i < npricingprobs; ++i)
+         for( i = 0; i < npricingprobs; ++i )
          {
-            if(pricingvars[i] == NULL)
+            if( pricingvars[i] == NULL )
                continue;
 #ifdef SCIP_DEBUG
             handled = TRUE;
@@ -1601,9 +1601,9 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          }
 
          /* add the bound change to the pricing problems */
-         for (i = 0; i < npricingprobs; ++i)
+         for( i = 0; i < npricingprobs; ++i )
          {
-            if(pricingvars[i] == NULL)
+            if( pricingvars[i] == NULL )
                continue;
 #ifdef SCIP_DEBUG
             handled = TRUE;

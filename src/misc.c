@@ -99,7 +99,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; j++ )
             {
-               if(SCIPisZero(scip, origvals[j]))
+               if( SCIPisZero(scip, origvals[j]) )
                   break;
 
                assert(!SCIPisZero(scip, origvals[j]));
@@ -142,7 +142,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                SCIP_VAR* pricingvar;
                int norigpricingvars;
                SCIP_VAR** origpricingvars;
-               if(SCIPisZero(scip, origvals[j]))
+               if( SCIPisZero(scip, origvals[j]) )
                   break;
                assert(!SCIPisZero(scip, origvals[j]));
 
@@ -323,7 +323,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
          for( k = 0; k < nmastervars; k++ )
          {
             assert(!SCIPvarIsTransformedOrigvar(mastervars[k]));
-            if( mastervars[k] == varmastervars[0])
+            if( mastervars[k] == varmastervars[0] )
             {
                assert(!SCIPvarIsTransformedOrigvar(varmastervars[0]));
                mastervals[k] += (varmastervals[0] * origvals[i]);
@@ -395,7 +395,7 @@ void GCGrelaxPrintVar(
          nblocks = GCGlinkingVarGetNBlocks(var);
          printf("Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
          /*lint --e{440}*/
-         for( i = 0, j = 0; j < nblocks; ++i)
+         for( i = 0, j = 0; j < nblocks; ++i )
          {
             if( pricingvars[i] != NULL )
             {

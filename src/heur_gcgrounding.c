@@ -583,7 +583,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
       if( !SCIProwIsLocal(row) )
       {
          activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
-         if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row))
+         if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row) )
             || SCIPisFeasGT(scip, activities[r], SCIProwGetRhs(row)) )
          {
             violrows[nviolrows] = row;

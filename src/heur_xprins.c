@@ -496,7 +496,7 @@ SCIP_RETCODE initializeSubproblem(
       }
       else
       {
-         if ( SCIPgetUpperbound ( scip ) >= 0 )
+         if( SCIPgetUpperbound ( scip ) >= 0 )
             cutoff = ( 1 - heurdata->minimprove ) * SCIPgetUpperbound ( scip );
          else
             cutoff = ( 1 + heurdata->minimprove ) * SCIPgetUpperbound ( scip );
@@ -615,7 +615,7 @@ static SCIP_RETCODE fixVariables(
 
       if( !SCIPisZero(scip, solval) || block == -1 )
          neqpts[i] = 0;
-      else if ( block == -2 )
+      else if( block == -2 )
       {
          SCIP_VAR** linkingpricingvars;
 
@@ -821,7 +821,7 @@ static SCIP_RETCODE fixVariables(
       solval = SCIPgetRelaxSolVal(scip, var);
 
       /* if the variable is represented by another one, it is not treated here */
-      if( block >= 0 && !GCGrelaxIsPricingprobRelevant(scip, block))
+      if( block >= 0 && !GCGrelaxIsPricingprobRelevant(scip, block) )
          continue;
 
       /* we still need to treat variables belonging to no block (as they did not appear in any extreme point) */
@@ -838,7 +838,7 @@ static SCIP_RETCODE fixVariables(
             SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], solval) );
 
             fixingcounter++;
-            if ( SCIPisZero(scip, solval) )
+            if( SCIPisZero(scip, solval) )
                zerocounter++;
          }
       }
@@ -884,7 +884,7 @@ static SCIP_RETCODE fixVariables(
             SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], solval) );
 
             fixingcounter++;
-            if ( SCIPisZero(scip, solval) )
+            if( SCIPisZero(scip, solval) )
                zerocounter++;
          }
       }

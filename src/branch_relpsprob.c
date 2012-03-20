@@ -257,7 +257,7 @@ SCIP_RETCODE addBdchg(
          bdchgdata->ubchgs[pos] = newbound;
          (*nbdchgs)++;
       }
-      if(  (infeasible != NULL) && (newbound < bdchgdata->lbchgs[pos]) )
+      if( (infeasible != NULL) && (newbound < bdchgdata->lbchgs[pos]) )
       {
          *infeasible = TRUE;
       }
@@ -752,7 +752,7 @@ SCIP_RETCODE SCIPgetVarProbingbranch(
    /* analyze probing deductions */
 
    /* 1. dualbounds */
-   if( leftlpsolved  )
+   if( leftlpsolved )
       *down = leftlpbound;
    if( rightlpsolved )
       *up = rightlpbound;
@@ -1223,7 +1223,7 @@ SCIP_RETCODE execRelpsprob(
 
                fracscore = MIN(branchcandsfrac[c], 1.0 - branchcandsfrac[c]);
                domainscore = -(SCIPvarGetUbLocal(branchcands[c]) - SCIPvarGetLbLocal(branchcands[c]));
-               if( SCIPisSumGT(scip, score, bestpsscore)
+               if( SCIPisSumGT(scip, score, bestpsscore )
                   || SCIPisSumGT(scip, fracscore, bestpsfracscore)
                   || (SCIPisSumGE(scip, fracscore, bestpsfracscore) && domainscore > bestpsdomainscore) )
                {
@@ -1371,7 +1371,7 @@ SCIP_RETCODE execRelpsprob(
 
                fracscore = MIN(branchcandsfrac[c], 1.0 - branchcandsfrac[c]);
                domainscore = -(SCIPvarGetUbLocal(branchcands[c]) - SCIPvarGetLbLocal(branchcands[c]));
-               if( SCIPisSumGT(scip, score, bestsbscore)
+               if( SCIPisSumGT(scip, score, bestsbscore )
                   || SCIPisSumGT(scip, fracscore, bestsbfracscore)
                   || (SCIPisSumGE(scip, fracscore, bestsbfracscore) && domainscore > bestsbdomainscore) )
                {
@@ -1446,7 +1446,7 @@ SCIP_RETCODE execRelpsprob(
       }
 
       /* apply domain reductions */
-      if( (nbdchgs >= branchruledata->minbdchgs || ninfprobings >= 5)
+      if( (nbdchgs >= branchruledata->minbdchgs || ninfprobings >= 5 )
          && *result != SCIP_CUTOFF && !SCIPisStopped(scip) )
       {
          SCIP_CALL( applyBdchgs(scip, bdchgdata, SCIPgetCurrentNode(scip)) );

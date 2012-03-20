@@ -66,7 +66,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       assert((*vardata)->data.origvardata.mastervals != NULL);
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervars));
       SCIPfreeMemoryArray(scip, &((*vardata)->data.origvardata.mastervals));
-      if((*vardata)->data.origvardata.ncoefs > 0)
+      if( (*vardata)->data.origvardata.ncoefs > 0 )
       {
          assert((*vardata)->data.origvardata.coefs != NULL);
          assert((*vardata)->data.origvardata.masterconss != NULL);
@@ -172,7 +172,7 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
    //   assert(vardata->data.origvardata.pricingvar != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
    assert(!GCGvarIsLinking(var));
-   if(vardata->data.origvardata.pricingvar != NULL)
+   if( vardata->data.origvardata.pricingvar != NULL )
       assert(GCGvarIsPricing(vardata->data.origvardata.pricingvar));
    return vardata->data.origvardata.pricingvar;
 }
@@ -504,7 +504,7 @@ void GCGoriginalVarSetNCoefs(
    assert(vardata != NULL);
 
    assert(vardata->data.origvardata.coefs != NULL || vardata->data.origvardata.ncoefs == 0 );
-   if( ncoefs == 0)
+   if( ncoefs == 0 )
       assert(vardata->data.origvardata.coefs == NULL);
 
    vardata->data.origvardata.ncoefs = ncoefs;
@@ -602,7 +602,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    assert(GCGvarIsLinking(var));
 
    /* store new block */
-   if(vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL)
+   if( vardata->data.origvardata.linkingvardata->pricingvars[newblock] == NULL )
    {
       assert(vardata->data.origvardata.linkingvardata->linkconss[newblock] == NULL);
       vardata->data.origvardata.linkingvardata->pricingvars[newblock] = var;
@@ -1046,7 +1046,7 @@ SCIP_RETCODE GCGcreateMasterVar(
     * if we have not added any original variable to the mastervariable, all coefficients were 0.
     * In that case, we will add all variables in the pricing problem
     */
-   if(newvardata->data.mastervardata.norigvars == 0)
+   if( newvardata->data.mastervardata.norigvars == 0 )
    {
       newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
       trivialsol = TRUE;
@@ -1098,7 +1098,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
       pricingvars = SCIPgetOrigVars(pricingscip);
       npricingvars = SCIPgetNOrigVars(pricingscip);
-      for( j = 0; j < npricingvars; ++j)
+      for( j = 0; j < npricingvars; ++j )
       {
          SCIP_VAR* origvar;
          assert(GCGvarIsPricing(pricingvars[j]));
@@ -1134,7 +1134,7 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    blocknr = GCGvarGetBlock(var);
    assert( blocknr == -1 || blocknr == -2);
 
-   if( blocknr == -1)
+   if( blocknr == -1 )
    {
       SCIPdebugMessage("var %s is in no block - copy it directly to the master\n", SCIPvarGetName(var));
    }

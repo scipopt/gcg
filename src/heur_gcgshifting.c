@@ -621,7 +621,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
       if( !SCIProwIsLocal(row) )
       {
          activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
-         if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row))
+         if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row) )
             || SCIPisFeasGT(scip, activities[r], SCIProwGetRhs(row)) )
          {
             violrows[nviolrows] = row;
@@ -760,7 +760,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
       oldsolvalisfrac = !SCIPisFeasIntegral(scip, oldsolval)
          && (SCIPvarGetType(shiftvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(shiftvar) == SCIP_VARTYPE_INTEGER);
       obj = SCIPvarGetObj(shiftvar);
-      if( (SCIPvarGetType(shiftvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(shiftvar) == SCIP_VARTYPE_INTEGER)
+      if( (SCIPvarGetType(shiftvar) == SCIP_VARTYPE_BINARY || SCIPvarGetType(shiftvar) == SCIP_VARTYPE_INTEGER )
          && oldsolvalisfrac )
       {
          assert(SCIPisFeasIntegral(scip, newsolval));

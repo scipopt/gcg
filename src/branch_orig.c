@@ -314,7 +314,7 @@ SCIP_RETCODE branchExtern(
             assert(frac > 0);
 
             /* fractionality is higher than that of the current highest fractionality */
-            if( frac >= maxfrac  )
+            if( frac >= maxfrac )
             {
                SCIPdebugMessage("Var %s has fractional value in current solution: %f\n", SCIPvarGetName(branchcands[i]), branchcandssol[i]);
                solval = SCIPgetRelaxSolVal(scip, branchcands[i]);
@@ -356,7 +356,7 @@ SCIP_RETCODE branchExtern(
             frac = MIN( branchcandsscore[i], 1.0 - branchcandsscore[i] );
             assert(frac > 0);
 
-            if( frac >= maxfrac  )
+            if( frac >= maxfrac )
             {
                SCIPdebugMessage("Var %s has fractional value in current solution: %f\n",
                   SCIPvarGetName(branchcands[i]), branchcandssol[i]);

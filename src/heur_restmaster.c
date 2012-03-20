@@ -535,7 +535,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
       }
       else
       {
-         if ( SCIPgetUpperbound ( origprob ) >= 0 )
+         if( SCIPgetUpperbound ( origprob ) >= 0 )
             cutoff = ( 1 - heurdata->minimprove ) * SCIPgetUpperbound ( origprob );
          else
             cutoff = ( 1 + heurdata->minimprove ) * SCIPgetUpperbound ( origprob );

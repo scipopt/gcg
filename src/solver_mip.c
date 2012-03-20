@@ -283,12 +283,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD );
 
 #ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
-   if(SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
+   if( SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
    {
       int ind;
       SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
 
-      if (solisinvalid)
+      if( solisinvalid )
       {
          SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
          SCIP_CALL( SCIPfreeTransform(pricingprob) );
@@ -487,7 +487,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       int ind;
       SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
 
-      if (solisinvalid)
+      if( solisinvalid )
       {
          SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
          SCIP_CALL( SCIPfreeTransform(pricingprob) );

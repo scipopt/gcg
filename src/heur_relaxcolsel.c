@@ -161,7 +161,7 @@ SCIP_RETCODE initializeStartsol(
 
          /* if the variable should be integral but is not, add rounded down value;
           * otherwise, add (possibly fractional) value */
-         if( (vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER)
+         if( (vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
                && !SCIPisFeasFracIntegral(scip, frac) )
          {
             SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );

@@ -216,7 +216,7 @@ SCIP_RETCODE writeProblem(
             SCIPdialoghdlrClearBuffer(dialoghdlr);
             break;
          }
-         else if(retcode == SCIP_WRITEERROR )
+         else if( retcode == SCIP_WRITEERROR )
          {
             SCIPdialogMessage(scip, NULL, "error writing file <%s>\n", filename);
             SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -302,7 +302,7 @@ SCIP_RETCODE writeAllDecompositions(
             SCIPdialoghdlrClearBuffer(dialoghdlr);
             break;
          }
-         else if(retcode == SCIP_WRITEERROR )
+         else if( retcode == SCIP_WRITEERROR )
          {
             SCIPdialogMessage(scip, NULL, "error writing files\n");
             SCIPdialoghdlrClearBuffer(dialoghdlr);
@@ -908,9 +908,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Starting detection\n");
    SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &nnodes) );
-   if( SCIPgetStage(scip) > SCIP_STAGE_INIT)
+   if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
-      if(SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+      if( SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          SCIP_CALL( SCIPpresolve(scip) );
       SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", 0LL) );
       SCIP_CALL( SCIPsolve(scip) );
@@ -933,7 +933,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayTransproblem)
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
    SCIPdialogMessage(scip, NULL, "\n");
-   if(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
+   if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED )
    {
       SCIP_CALL( SCIPprintTransProblem(scip, NULL, "cip", FALSE) );
    }

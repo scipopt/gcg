@@ -38,7 +38,7 @@ SCIP_VAR* SCIPgetRelevantVariable(
    SCIP_VAR *newvar;
    newvar = NULL;
    assert(var != NULL);
-   if(!SCIPisVarRelevant(var))
+   if( !SCIPisVarRelevant(var) )
    {
       return NULL;
    }

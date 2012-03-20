@@ -167,7 +167,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    nvars = SCIPgetNVars(scip);
 
    /* iterate over all master variables */
-   for( i = 0; i < nvars; i++)
+   for( i = 0; i < nvars; i++ )
    {
       int norigvars;
       SCIP_Real* origvals;

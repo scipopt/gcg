@@ -277,7 +277,7 @@ SCIP_Bool getNextToken(
          }
          else
          {
-            if ( refinput->section == REF_START )
+            if( refinput->section == REF_START )
                refinput->section = REF_NBLOCKS;
             else if( refinput->section == REF_BLOCKSIZES )
             {
@@ -494,7 +494,7 @@ SCIP_RETCODE readBlocks(
             cons = conss[consnr];
             conshdlr = SCIPconsGetHdlr(cons);
 
-            if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0)
+            if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
             {
                vars = SCIPgetVarsLinear(scip, cons);
                nvars = SCIPgetNVarsLinear(scip, cons);
@@ -518,7 +518,7 @@ SCIP_RETCODE readBlocks(
                {
                   int block;
                   block = (int)(size_t) SCIPhashmapGetImage(refinput->vartoblock, var);
-                  if( block != refinput->blocknr+1 && block != refinput->nblocks+1)
+                  if( block != refinput->blocknr+1 && block != refinput->nblocks+1 )
                   {
                      SCIP_CALL( SCIPhashmapRemove(refinput->vartoblock, var) );
                      SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->nblocks+1)) );
@@ -635,12 +635,12 @@ SCIP_RETCODE writeREFFile(
 
    decdecomp = GCGgetStructDecdecomp(scip);
 
-   if(decdecomp == NULL)
+   if( decdecomp == NULL )
    {
       decdecomp = DECgetBestDecomp(scip);
    }
 
-   if(decdecomp == NULL)
+   if( decdecomp == NULL )
    {
       SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
       return SCIP_INVALIDCALL;
@@ -650,7 +650,7 @@ SCIP_RETCODE writeREFFile(
    nconss = SCIPgetNOrigConss(scip);
 
    SCIP_CALL( SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss) );
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       size_t ind;
 #ifndef NDEBUG
@@ -678,15 +678,15 @@ SCIP_RETCODE writeREFFile(
    assert(nsubscipconss != NULL);
    assert(subscipconss != NULL);
 
-   for(i = 0; i < nblocks; ++i)
+   for( i = 0; i < nblocks; ++i )
    {
       SCIPinfoMessage(scip, file, "%d ", nsubscipconss[i]);
    }
    SCIPinfoMessage(scip, file, "\n", nblocks);
 
-   for(i = 0; i < nblocks; ++i)
+   for( i = 0; i < nblocks; ++i )
    {
-      for(j = 0; j < nsubscipconss[i]; ++j)
+      for( j = 0; j < nsubscipconss[i]; ++j )
       {
          size_t ind;
 #ifndef NDEBUG
@@ -813,7 +813,7 @@ SCIP_RETCODE SCIPreadRef(
 
    for( i = 0; i < nvars; i++ )
    {
-      if( GCGvarGetBlock(vars[i]) == -1)
+      if( GCGvarGetBlock(vars[i]) == -1 )
       {
          SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
       }

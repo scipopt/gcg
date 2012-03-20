@@ -188,7 +188,7 @@ SCIP_RETCODE evaluateDecomposition(
                block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
             }
 
-            if(block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE)
+            if( block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
             {
                ++(nlinkvarsblocks[i]);
             }
@@ -208,7 +208,7 @@ SCIP_RETCODE evaluateDecomposition(
 
       blocksizes[i] = nvarsblock*ncurconss;
       nvarsblocks[i] = nvarsblock;
-      if(blocksizes[i] > 0)
+      if( blocksizes[i] > 0 )
       {
          blockdensities[i] = 1.0*nzblocks[i]/blocksizes[i];
       }
@@ -329,7 +329,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
       DEC_DETECTOR *detector;
       detector = conshdlrdata->detectors[i];
       assert(detector != NULL);
-      if( detector->exitDetection != NULL)
+      if( detector->exitDetection != NULL )
       {
          SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
          SCIP_CALL( (*detector->exitDetection)(scip, detector) );
@@ -528,7 +528,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if(conshdlrdata->ndecomps == 0)
+   if( conshdlrdata->ndecomps == 0 )
    {
       assert(conshdlrdata->decdecomps == NULL);
       SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) );
@@ -615,7 +615,7 @@ DEC_DETECTOR* DECfindDetector(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   for(i = 0; i < conshdlrdata->ndetectors; ++i)
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       DEC_DETECTOR *detector;
       detector = conshdlrdata->detectors[i];
@@ -776,7 +776,7 @@ SCIP_RETCODE DECdetectStructure(
          assert(detector != NULL);
          if( !detector->enabled )
             continue;
-         if(detector->initDetection != NULL)
+         if( detector->initDetection != NULL )
          {
             SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
             SCIP_CALL( (*detector->initDetection)(scip, detector) );
@@ -789,7 +789,7 @@ SCIP_RETCODE DECdetectStructure(
             assert(ndecdecomps >= 0);
             assert(decdecomps != NULL || ndecdecomps == 0);
             SCIPdebugPrintf("we have %d decompositions!\n", ndecdecomps);
-            for (j = 0; j < ndecdecomps; ++j)
+            for( j = 0; j < ndecdecomps; ++j )
             {
                assert(decdecomps != NULL);
                DECdecdecompSetDetector(decdecomps[j], detector);
@@ -810,7 +810,7 @@ SCIP_RETCODE DECdetectStructure(
    }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
-   for( i = 0; i < conshdlrdata->ndecomps; ++i)
+   for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
       SCIP_DECOMPOSITIONSCORES score;
 
@@ -870,13 +870,13 @@ SCIP_RETCODE DECwriteAllDecomps(
    /** @todo This is a giant hack, but it works quite well */
    tmp = conshdlrdata->decdecomps[0];
 
-   for ( i = 0; i < conshdlrdata->ndecomps; ++i )
+   for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
 
       conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
 
       detector = DECdecdecompGetDetector(conshdlrdata->decdecomps[i]);
-      if(detector == NULL)
+      if( detector == NULL )
          decchar = '?';
       else
          decchar = detector->decchar;

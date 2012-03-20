@@ -171,7 +171,7 @@ DEC_DECL_EXITDETECTOR(exitArrowheur)
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
    /* copy data to decomp structure */
-   if( !detectordata->found)
+   if( !detectordata->found )
    {
       SCIPfreeMemory(scip, &detectordata);
       return SCIP_OKAY;
@@ -218,10 +218,10 @@ SCIP_RETCODE computeHyperedgeWeight(
    *cost = detectordata->consWeight;
    hdlrname = SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
 
-   if((strcmp("linear", hdlrname) == 0))
+   if( (strcmp("linear", hdlrname) == 0) )
    {
       SCIP_CALL( SCIPupgradeConsLinear(scip, cons, &upgdcons) );
-      if(upgdcons != NULL)
+      if( upgdcons != NULL )
          upgraded = TRUE;
    }
    else
@@ -229,7 +229,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       upgdcons = cons;
    }
 
-   if(upgdcons != NULL)
+   if( upgdcons != NULL )
    {
      hdlrname =  SCIPconshdlrGetName(SCIPconsGetHdlr(upgdcons));
    }
@@ -239,7 +239,7 @@ SCIP_RETCODE computeHyperedgeWeight(
    }
    ncurvars = SCIPgetNVarsXXX(scip, cons);
 
-   if((strcmp("setppc", hdlrname) == 0))
+   if( (strcmp("setppc", hdlrname) == 0) )
    {
       switch(SCIPgetTypeSetppc(scip, upgdcons))
       {
@@ -258,7 +258,7 @@ SCIP_RETCODE computeHyperedgeWeight(
          break;
       }
    }
-   else if(strcmp(hdlrname, "logicor") == 0)
+   else if( strcmp(hdlrname, "logicor") == 0 )
    {
       *cost = detectordata->consWeightSetppc;
    }
@@ -272,7 +272,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       mean = 0.0;
       variance = 0.0;
       vals = NULL;
-      if(ncurvars > 0)
+      if( ncurvars > 0 )
       {
          SCIP_CALL( SCIPallocBufferArray(scip, &vals, ncurvars) );
          SCIP_CALL( SCIPgetValsXXX(scip, cons, vals, ncurvars) );
@@ -792,9 +792,9 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
       {
          origpart[originalId] = partition[i];
       }
-      else if(origpart[originalId] >= 0)
+      else if( origpart[originalId] >= 0 )
       {
-         if(origpart[originalId] != partition[i])
+         if( origpart[originalId] != partition[i] )
          {
             origpart[originalId] = -2;
          }
@@ -850,7 +850,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
 
-   for (i = 0; i < nblocks; ++i )
+   for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
@@ -880,13 +880,13 @@ static SCIP_RETCODE buildTransformedProblem(
       int ncurvars;
       SCIP_VAR **curvars;
 
-      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0)
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(conss[i])), "origbranch") == 0 )
          continue;
 
       /* sort the variables into corresponding buckets */
       ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
       curvars = NULL;
-      if(ncurvars > 0)
+      if( ncurvars > 0 )
       {
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPgetVarsXXX( scip, conss[i], curvars, ncurvars) );
@@ -1064,7 +1064,7 @@ static SCIP_RETCODE buildTransformedProblem(
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
       SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
       SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-      if(nlinkingconss > 0)
+      if( nlinkingconss > 0 )
       {
          SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
          DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
@@ -1124,7 +1124,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* build the hypergraph structure from the original problem */
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
 
-   for(i = 0; i < ndecs; ++i)
+   for( i = 0; i < ndecs; ++i )
    {
       SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }

@@ -357,7 +357,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
       return SCIP_OKAY;
 
    /* only call heuristic, if enough nodes were processed since last incumbent */
-   if( SCIPgetNNodes(scip) - SCIPgetSolNodenum(scip,SCIPgetBestSol(scip)) < heurdata->nwaitingnodes)
+   if( SCIPgetNNodes(scip) - SCIPgetSolNodenum(scip,SCIPgetBestSol(scip)) < heurdata->nwaitingnodes )
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTRUN;

@@ -87,19 +87,19 @@ SCIP_RETCODE writeDecompositionHeader(
    assert(scip != NULL);
    assert(file != NULL);
    assert(decdecomp != NULL);
-   if(decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0)
+   if( decdecomp->type == DEC_DECTYPE_UNKNOWN || decdecomp->nblocks == 0 )
    {
       return SCIP_OKAY;
    }
 
-   if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED)
+   if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED )
    {
       startx = 0;
       starty = 0;
       endx = 0;
       endy = 0;
 
-      for( i = 0; i < decdecomp->nblocks; ++i)
+      for( i = 0; i < decdecomp->nblocks; ++i )
       {
          endx += decdecomp->nsubscipvars[i];
          endy += decdecomp->nsubscipconss[i];
@@ -161,7 +161,7 @@ SCIP_RETCODE writeData(
    SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
-   if(decdecomp != NULL)
+   if( decdecomp != NULL )
    {
       assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
                || decdecomp->type == DEC_DECTYPE_BORDERED
@@ -170,23 +170,23 @@ SCIP_RETCODE writeData(
                || decdecomp->type == DEC_DECTYPE_STAIRCASE);
 
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
-      if(decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL)
+      if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
          consindex = 1;
-         for( i = 0; i < decdecomp->nblocks; ++i)
+         for( i = 0; i < decdecomp->nblocks; ++i )
          {
             SCIPdebugPrintf("Block %d:\n", i+1);
             SCIPdebugPrintf("\tVars: %d", decdecomp->nsubscipvars[i]);
             SCIPdebugPrintf("\tConss: %d\n", decdecomp->nsubscipconss[i]);
-            for( j = 0; j < decdecomp->nsubscipvars[i]; ++j)
+            for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
             {
                assert(decdecomp->subscipvars[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->subscipvars[i][j], (void*)varindex) );
                varindex++;
             }
-            for( j = 0; j < decdecomp->nsubscipconss[i]; ++j)
+            for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
             {
                assert(decdecomp->subscipconss[i][j] != NULL);
                SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->subscipconss[i][j], (void*)consindex) );
@@ -198,27 +198,27 @@ SCIP_RETCODE writeData(
          SCIPdebugPrintf("\tVars: %d", decdecomp->nlinkingvars);
          SCIPdebugPrintf("\tConss: %d\n\n", decdecomp->nlinkingconss);
 
-         for( j = 0; j < decdecomp->nlinkingvars; ++j)
+         for( j = 0; j < decdecomp->nlinkingvars; ++j )
          {
             assert(decdecomp->linkingvars[j]);
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
          }
-         for( j = 0; j < decdecomp->nlinkingconss; ++j)
+         for( j = 0; j < decdecomp->nlinkingconss; ++j )
          {
             assert(decdecomp->linkingconss[j]);
             SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
             consindex++;
          }
       }
-      else if(decdecomp->type == DEC_DECTYPE_STAIRCASE)
+      else if( decdecomp->type == DEC_DECTYPE_STAIRCASE )
       {
          varindexmap = decdecomp->varindex;
          consindexmap = decdecomp->consindex;
       }
    }
 
-   for( i = 0; i < nconss; i++)
+   for( i = 0; i < nconss; i++ )
    {
       nvars = SCIPgetNVarsXXX(scip, conss[i]);
       vars = NULL;
@@ -229,7 +229,7 @@ SCIP_RETCODE writeData(
          SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, nvars) );
       }
 
-      for( j = 0; j < nvars; j++)
+      for( j = 0; j < nvars; j++ )
       {
          assert(vars != NULL);
 
@@ -241,7 +241,7 @@ SCIP_RETCODE writeData(
          }
 
          /* if there is no decomposition, output the presolved model! */
-         if(decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN)
+         if( decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN )
          {
             SCIPinfoMessage(scip, file, "%d, %d\n", SCIPvarGetIndex(vars[j]), i);
          }
@@ -262,7 +262,7 @@ SCIP_RETCODE writeData(
       SCIPfreeBufferArrayNull(scip, &vars);
    }
 
-   if(decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE)
+   if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )
    {
       SCIPhashmapFree(&varindexmap);
       SCIPhashmapFree(&consindexmap);
@@ -347,7 +347,7 @@ SCIP_RETCODE SCIPwriteGp(
    assert(scip != NULL);
    assert(file != NULL);
 
-   if(writeDecomposition && decdecomp == NULL)
+   if( writeDecomposition && decdecomp == NULL )
    {
       SCIPwarningMessage("Cannot write decomposed problem if decomposition structure empty!");
       writeDecomposition = FALSE;
@@ -357,7 +357,7 @@ SCIP_RETCODE SCIPwriteGp(
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 
    /* print header */
-   if(decdecomp == NULL)
+   if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", name, decdecomp->nblocks);
@@ -365,7 +365,7 @@ SCIP_RETCODE SCIPwriteGp(
    SCIP_CALL( writeFileHeader(scip, file, outname) );
 
    /* write decomp information such as rectangles */
-   if(writeDecomposition)
+   if( writeDecomposition )
       SCIP_CALL( writeDecompositionHeader(scip, file, decdecomp) );
 
    /* write the plot header*/
