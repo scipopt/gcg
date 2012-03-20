@@ -46,7 +46,6 @@
 #define DEFAULT_ONLYPOSCONV              FALSE      /**< should only positive convex combinations be allowed */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
-#define DEFAULT_USEINTERBOUNDS           TRUE       /**< should lagrangean bounds be used */
 #define DEFAULT_ONLYBEST                 FALSE      /**< should only best solutions be accepted */
 #define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
 #define DEFAULT_MIPSRELREDCOSTROOT       1.0        /**< factor of reduced cost pricing MIPs to be solved at root node */
@@ -139,7 +138,6 @@ struct SCIP_PricerData
    SCIP_Bool    useheurpricing;           /**< should heuristic pricing be used */
    SCIP_Bool    onlyposconv;              /**< should only positive convex combinations be allowed */
    SCIP_Bool    abortpricingint;          /**< should the pricing be aborted on integral solutions */
-   SCIP_Bool    useinterbounds;           /**< should lagrangean bounds be used*/
    SCIP_Bool    onlybest;                 /**< should only best solutions be accepted */
    SCIP_Bool    dispinfos;                /**< should pricing information be displayed*/
    SCIP_Real    successfulmipsrel;        /**< Factor of successful MIPs solved until pricing be aborted */
@@ -1632,8 +1630,10 @@ SCIP_RETCODE performPricing(
          }
 
          if( status != SCIP_STATUS_OPTIMAL )
+         {
             bestredcostvalid = FALSE;
-
+            *result = SCIP_DIDNOTRUN;
+         }
          nfoundvarsprob = 0;
 
          for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
@@ -1686,7 +1686,7 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
          }
 
-   if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid && pricerdata->useinterbounds && duringheurpricing == FALSE)
+   if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid && duringheurpricing == FALSE)
    {
       assert(lowerbound != NULL);
       GCGpricerPrintInfo(scip, pricerdata, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
@@ -2208,10 +2208,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/abortpricinggap",
          "should pricing be aborted due to small gap between dual bound and RMP objective?",
          &pricerdata->abortpricinggap, TRUE, DEFAULT_ABORTPRICINGGAP, 0.0, 1.0, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useinterbounds",
-         "should lagrangean intermediate dual bounds be computed and used?",
-         &pricerdata->useinterbounds, TRUE, DEFAULT_USEINTERBOUNDS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/onlybest",
          "should only the best variables (TRUE) be added in case of a maxvarsround limit or the first ones (FALSE)?",
