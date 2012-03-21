@@ -573,7 +573,7 @@ SCIP_RETCODE solvePricingProblem(
    for( i = 0; i < pricerdata->nsolvers; i++ )
    {
 
-      /*get time limit */
+      /* get time limit */
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
       if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetSolvingTime(scip) < 0 )
       {
@@ -1162,6 +1162,8 @@ SCIP_RETCODE createNewMasterVar(
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
+         SCIPdebugMessage("var with redcost %g (objvalue = %g, dualsol =%g) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
+
          *added = FALSE;
 
          return SCIP_OKAY;

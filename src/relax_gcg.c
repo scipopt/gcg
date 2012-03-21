@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include "scip/scipdefplugins.h"
+#include "scip/cons_linear.h"
+#include "scip/scip.h"
 
 #include "relax_gcg.h"
 
@@ -682,7 +684,9 @@ SCIP_RETCODE checkIdenticalBlocks(
 
 /** sets the pricing problem parameters */
 static
-SCIP_RETCODE setPricingProblemParameters(SCIP* scip)
+SCIP_RETCODE setPricingProblemParameters(
+   SCIP*                 scip                /**< SCIP data structure of the pricing problem */
+   )
 {
    assert(scip != NULL);
 
@@ -706,6 +710,9 @@ SCIP_RETCODE setPricingProblemParameters(SCIP* scip)
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
+
+   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
+   SCIP_CALL( SCIPsetIntParam(scip, "presolving/dualfix/maxrounds", 0) );
 
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
@@ -979,7 +986,6 @@ SCIP_RETCODE displayPricingStatistics(
          SCIPgetNConss(pricingprobs[i]), SCIPgetNVars(pricingprobs[i]), nbin, nint, nimpl, ncont);
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricingprob_%d.lp", i);
-
       SCIP_CALL( SCIPwriteOrigProblem(pricingprobs[i], name, NULL, FALSE) );
    }
 

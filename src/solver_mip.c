@@ -264,6 +264,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
 #endif
 
    solverdata = GCGpricerGetSolverdata(scip, solver);
@@ -346,7 +347,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          solverdata->solvals[0][solverdata->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
          solverdata->nsolvars[0]++;
 
-         SCIPdebugMessage("%s: %g\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]));
+         SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]), SCIPvarGetObj(probvars[i]));
       }
       solverdata->solisray[0] = TRUE;
       *solvars = solverdata->solvars;
