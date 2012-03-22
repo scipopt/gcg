@@ -558,12 +558,13 @@ SCIP_RETCODE DECdecdecompTransform(
    int v;
    SCIP_HASHMAP* newconstoblock;
    SCIP_HASHMAP* newvartoblock;
+   SCIP_VAR* newvar;
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
    SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
 
-   /* transform all constraints and put them in constoblock */
+   /* transform all constraints and put them into constoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
       for( c = 0; c < decdecomp->nsubscipconss[b]; ++c )
@@ -576,14 +577,24 @@ SCIP_RETCODE DECdecdecompTransform(
          SCIP_CALL( SCIPhashmapInsert(newconstoblock, decdecomp->subscipconss[b][c], (void*) (size_t) b) );
       }
    }
-   /* transform all variables and put them in vartoblock */
+   /* transform all variables and put them into vartoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
       for( v = 0; v < decdecomp->nsubscipvars[b]; ++v )
       {
-         SCIPdebugMessage("%d, %d: %s (%s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
          assert(decdecomp->subscipvars[b][v] != NULL);
-         decdecomp->subscipvars[b][v] = SCIPfindVar(scip, SCIPvarGetName(decdecomp->subscipvars[b][v]));
+         if( !SCIPvarIsTransformed(decdecomp->subscipvars[b][v]) )
+         {
+            SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->subscipvars[b][v], &newvar) );
+         }
+         else
+            newvar = decdecomp->subscipvars[b][v];
+         assert(newvar != NULL);
+         assert(SCIPvarIsTransformed(newvar));
+
+         decdecomp->subscipvars[b][v] = newvar;
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
          assert(decdecomp->subscipvars[b][v] != NULL);
          assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][v]));
          SCIP_CALL( SCIPhashmapInsert(newvartoblock, decdecomp->subscipvars[b][v], (void*) (size_t) b) );
@@ -604,9 +615,20 @@ SCIP_RETCODE DECdecdecompTransform(
    /* transform all linking variables */
    for( v = 0; v < decdecomp->nlinkingvars; ++v )
    {
-      SCIPdebugMessage("m, %d: %s (%s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
       assert(decdecomp->linkingvars[v] != NULL);
-      decdecomp->linkingvars[v] = SCIPfindVar(scip, SCIPvarGetName(decdecomp->linkingvars[v]));
+
+      if( !SCIPvarIsTransformed(decdecomp->linkingvars[v]) )
+      {
+         SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->linkingvars[v], &newvar) );
+      }
+      else
+         newvar = decdecomp->linkingvars[v];
+      assert(newvar != NULL);
+      assert(SCIPvarIsTransformed(newvar));
+
+      decdecomp->linkingvars[v] = newvar;
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
       assert(decdecomp->linkingvars[v] != NULL);
    }
 
