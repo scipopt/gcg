@@ -40,7 +40,7 @@ struct DecDecomp
    int            nlinkingvars;  /**< number of linking variables */
    SCIP_HASHMAP*  vartoblock;    /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*  constoblock;   /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
-   SCIP_HASHMAP*  varindex;      /**< hashmap mapping variables to indeces for a visual ordering */
+   SCIP_HASHMAP*  varindex;      /**< hashmap mapping variables to indices for a visual ordering */
    SCIP_HASHMAP*  consindex;     /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE    type;          /**< type of the decomposition */
    DEC_DETECTOR*  detector;      /**< detector that found this decomposition */
