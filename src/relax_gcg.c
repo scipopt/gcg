@@ -413,10 +413,10 @@ SCIP_RETCODE checkSetppcStructure(
 
    masterconss = DECdecdecompGetLinkingconss(relaxdata->decdecomp);
    nmasterconss = DECdecdecompGetNLinkingconss(relaxdata->decdecomp);
-   assert(masterconss != NULL);
    assert(nmasterconss >= 0);
+   assert(masterconss != NULL || nmasterconss == 0);
 
-   if( relaxdata->nvarlinkconss > 0 )
+   if( nmasterconss == 0 || relaxdata->nvarlinkconss > 0 )
    {
       relaxdata->masterissetcover = FALSE;
       relaxdata->masterissetpart = FALSE;
