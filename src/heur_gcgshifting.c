@@ -646,7 +646,20 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
 
    /* calculate the minimal objective value possible after rounding fractional variables */
    minobj = SCIPgetSolTransObj(scip, sol);
-   assert(minobj < SCIPgetCutoffbound(scip));
+   /* since the heuristic timing was changed to AFTERNODE, it might happen that it is called on a
+    * node with has been cut off; in that case, delay the heuristic
+    */
+   if( minobj >= SCIPgetCutoffbound(scip) )
+   {
+      *result = SCIP_DELAYED;
+      SCIPfreeBufferArray(scip, &ndecreases);
+      SCIPfreeBufferArray(scip, &nincreases);
+      SCIPfreeBufferArray(scip, &nfracsinrow);
+      SCIPfreeBufferArray(scip, &violrowpos);
+      SCIPfreeBufferArray(scip, &violrows);
+      SCIPfreeBufferArray(scip, &activities);
+      return SCIP_OKAY;
+   }
    for( c = 0; c < nlpcands; ++c )
    {
       obj = SCIPvarGetObj(lpcands[c]);

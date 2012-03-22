@@ -521,10 +521,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
-   SCIPdebugMessage("LP solution status of masterprob: %d\n", SCIPgetLPSolstat(masterprob));
-   SCIPdebugMessage("Masterprob has LP: %d\n", SCIPhasCurrentNodeLP(masterprob));
-   SCIPdebugMessage("Relaxation solution is%s valid\n", SCIPisRelaxSolValid(scip) ? "" : " not");
-   assert(SCIPisRelaxSolValid(scip));
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("not executing GCG rounding: invalid relaxation solution\n");
+      return SCIP_OKAY;
+   }
 
    *result = SCIP_DIDNOTRUN;
 
@@ -604,7 +605,17 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
 
    /* calculate the minimal objective value possible after rounding fractional variables */
    minobj = SCIPgetSolTransObj(scip, sol);
-   assert(minobj < SCIPgetCutoffbound(scip));
+   /* since the heuristic timing was changed to AFTERNODE, it might happen that it is called on a
+    * node with has been cut off; in that case, delay the heuristic
+    */
+   if( minobj >= SCIPgetCutoffbound(scip) )
+   {
+      *result = SCIP_DELAYED;
+      SCIPfreeBufferArray(scip, &violrowpos);
+      SCIPfreeBufferArray(scip, &violrows);
+      SCIPfreeBufferArray(scip, &activities);
+      return SCIP_OKAY;
+   }
    for( c = 0; c < nlpcands; ++c )
    {
       obj = SCIPvarGetObj(lpcands[c]);
