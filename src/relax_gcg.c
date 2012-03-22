@@ -1685,6 +1685,13 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       SCIP_CALL( SCIPinterruptSolve(scip) );
       return SCIP_OKAY;
    }
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
+   if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
+      relaxdata->discretization = FALSE;
+   }
+
    SCIP_CALL( createMaster(scip, relaxdata) );
 
    relaxdata->lastsolvednodenr = -1;
@@ -2035,7 +2042,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* add gcg relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
-         &(relaxdata->discretization), FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
+         NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mergeidenticalblocks",
          "should identical blocks be merged (only for discretization approach)?",
          &(relaxdata->mergeidenticalblocks), FALSE, DEFAULT_MERGEIDENTICALBLOCS, NULL, NULL) );
