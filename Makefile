@@ -73,6 +73,7 @@ MAINOBJ		=	reader_blk.o \
 			disp_gcg.o \
 			disp_master.o \
 			dialog_gcg.o \
+			dialog_master.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			cons_decomp.o \

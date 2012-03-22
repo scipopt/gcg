@@ -8,19 +8,17 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dialog_gcg.h
- * @brief  gcg user interface dialog
- * @author Tobias Achterberg
- * @author Timo Berthold
- * @author Gerald Gamrath
- * @author Martin Bergner
+/**@file   dialog_master.h
  * @ingroup DIALOGS
+ * @brief  user interface dialog for master problem
+ * @author Tobias Achterberg
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_DIALOG_GCG_H__
-#define __SCIP_DIALOG_GCG_H__
+#ifndef __SCIP_DIALOG_MASTER_H__
+#define __SCIP_DIALOG_MASTER_H__
 
 
 #include "scip/scip.h"
@@ -29,28 +27,20 @@
 extern "C" {
 #endif
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method telling that a command is not available */
 extern
-SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
-
-/** dialog execution method for the display statistics command */
-extern
-SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
-
-/** dialog execution method for the detect command */
-extern
-SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
+SCIP_DECL_DIALOGEXEC(GCGmasterDialogExecNotAvailable);
 
 /** creates a root dialog */
 extern
-SCIP_RETCODE GCGcreateRootDialog(
+SCIP_RETCODE GCGcreateRootMasterDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    );
 
-/** includes or updates the gcg dialog menus in SCIP */
+/** includes or updates the master dialog menus in GCG */
 extern
-SCIP_RETCODE SCIPincludeDialogGcg(
+SCIP_RETCODE SCIPincludeDialogMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

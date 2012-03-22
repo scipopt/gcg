@@ -32,7 +32,6 @@
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
-#include "scip/dialog_default.h"
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -94,7 +93,7 @@
 #include "scip/reader_lp.h"
 #include "scip/scipshell.h"
 
-/* GGC specific stuff */
+/* GCG specific stuff */
 #include "pricer_gcg.h"
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
@@ -102,6 +101,7 @@
 #include "sepa_master.h"
 #include "branch_master.h"
 #include "scip/debug.h"
+#include "dialog_master.h"
 #include "disp_master.h"
 #include "solver_knapsack.h"
 #include "solver_mip.h"
@@ -204,7 +204,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
    SCIP_CALL( SCIPincludeSepaMaster(scip) );
-   SCIP_CALL( SCIPincludeDialogDefault(scip) );
+   SCIP_CALL( SCIPincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
 
