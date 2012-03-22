@@ -1372,14 +1372,13 @@ SCIP_RETCODE createMaster(
    }
 
    /* create pricing variables */
-   if( relaxdata->decdecomp != NULL )
-   {
-      SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
 
-      /* create master and pricing problem constraints */
-      SCIP_CALL( createMasterprobConss(scip, relaxdata) );
-      SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-   }
+   SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
+
+   /* create master and pricing problem constraints */
+   SCIP_CALL( createMasterprobConss(scip, relaxdata) );
+   SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
+
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
@@ -1680,6 +1679,12 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   if( relaxdata->decdecomp == NULL )
+   {
+      SCIPinfoMessage(scip, SCIP_VERBLEVEL_NONE, "\nYou need to specify a decomposition!\n");
+      SCIP_CALL( SCIPinterruptSolve(scip) );
+      return SCIP_OKAY;
+   }
    SCIP_CALL( createMaster(scip, relaxdata) );
 
    relaxdata->lastsolvednodenr = -1;
@@ -1778,9 +1783,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->varlinkconss[i]) );
    }
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->origmasterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->linearmasterconss));
-   SCIPfreeMemoryArray(scip, &(relaxdata->masterconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->origmasterconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->linearmasterconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->masterconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->convconss));
 
    /* free master problem */

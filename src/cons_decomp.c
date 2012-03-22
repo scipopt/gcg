@@ -821,13 +821,18 @@ SCIP_RETCODE DECdetectStructure(
    SCIPsortRealPtr(scores, (void**)conshdlrdata->decdecomps, conshdlrdata->ndecomps);
    SCIPfreeBufferArray(scip, &scores);
 
-
    SCIP_CALL( SCIPstopClock(scip, conshdlrdata->detectorclock) );
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
-      DECdecdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecdecompGetType(conshdlrdata->decdecomps[0])));
-   GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
-
+   if( conshdlrdata->ndecomps > 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
+         DECdecdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecdecompGetType(conshdlrdata->decdecomps[0])));
+      GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
+   }
+   else
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "No decomposition found!\n");
+   }
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
    /* show that we done our duty */
