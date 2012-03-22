@@ -424,6 +424,7 @@ SCIP_RETCODE solvePricingProblem(
    SCIP_PRICERDATA* pricerdata,  /**< pricerdata data structure */
    int              prob,        /**< index of pricing problem */
    GCG_PRICETYPE    pricetype,   /**< type of pricing: optimal or heuristic */
+   SCIP_Real*       lowerbound,  /**< dual bound returned by pricing problem */
    SCIP_VAR****     solvars,     /**< solution variables for found solutions */
    SCIP_Real***     solvals,     /**< values for solution variables for each solution */
    int**            nsolvars,    /**< number of non-zero variables for each solution */
@@ -473,7 +474,7 @@ SCIP_RETCODE solvePricingProblem(
          SCIP_CALL( SCIPstartClock(scip, clock) );
 
          SCIP_CALL( pricerdata->solvers[i]->solversolve(scip, pricerdata->solvers[i],
-               pricerdata->pricingprobs[prob], prob,
+               pricerdata->pricingprobs[prob], prob, lowerbound,
                solvars, solvals, nsolvars, solisray, nsols, status) );
 
          SCIP_CALL( SCIPstopClock(scip, clock) );
@@ -498,6 +499,7 @@ SCIP_RETCODE solvePricingProblemHeur(
    SCIP_PRICERDATA* pricerdata,  /**< pricerdata data structure */
    int              prob,        /**< index of pricing problem */
    GCG_PRICETYPE    pricetype,   /**< type of pricing: optimal or heuristic */
+   SCIP_Real*       lowerbound,  /**< dual bound returned by pricing problem */
    SCIP_VAR****     solvars,     /**< solution variables for found solutions */
    SCIP_Real***     solvals,     /**< values for solution variables for each solution */
    int**            nsolvars,    /**< number of non-zero variables for each solution */
@@ -547,7 +549,7 @@ SCIP_RETCODE solvePricingProblemHeur(
          SCIP_CALL( SCIPstartClock(scip, clock) );
 
          SCIP_CALL( pricerdata->solvers[i]->solversolveheur(scip, pricerdata->solvers[i],
-               pricerdata->pricingprobs[prob], prob,
+               pricerdata->pricingprobs[prob], prob, lowerbound,
                solvars, solvals, nsolvars, solisray, nsols, status) );
 
          SCIP_CALL( SCIPstopClock(scip, clock) );
@@ -1127,31 +1129,6 @@ SCIP_RETCODE createNewMasterVar(
    return SCIP_OKAY;
 }
 
-/** compute the ojective value of the best solution */
-static
-SCIP_Real computeSolObjValue(
-   int         nsolvars,      /**< number of variables in the solution  */
-   SCIP_VAR**  solvars,       /**< Array of solution variables          */
-   SCIP_Real*  solvals        /**< Array of solution values             */
-)
-{
-   int j;
-   SCIP_Real bestsolval;
-   assert(nsolvars >= 0);
-   assert(solvals != NULL);
-   assert(solvars != NULL);
-
-   bestsolval = 0.0;
-
-   for( j = 0; j < nsolvars; j++ )
-   {
-      /** @todo round solution values??? */
-      assert(solvars[j] != NULL);
-      bestsolval += solvals[j] * SCIPvarGetObj(solvars[j]);
-   }
-
-   return bestsolval;
-}
 
 /**
  * check whether pricing can be aborted:
@@ -1240,12 +1217,12 @@ SCIP_RETCODE performPricing(
 
    SCIP_Real timelimit;
 
-   SCIP_Real bestsolval;
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool added;
    SCIP_Bool root;
    SCIP_Bool duringheurpricing;
+   SCIP_Real pricinglowerbound;
 
    SCIP_STATUS status;
 
@@ -1354,7 +1331,7 @@ SCIP_RETCODE performPricing(
          pricerdata->solvedsubmipsheur++;
          solvedmips++;
 
-         SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &solvars, &solvals,
+         SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
                &nsolvars, &solisray, &nsols, &status) );
 
          //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
@@ -1435,22 +1412,14 @@ SCIP_RETCODE performPricing(
             }
          }
 
-         SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, &solvars, &solvals,
+         SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
                &nsolvars, &solisray, &nsols, &status) );
 
          pricerdata->solvedsubmipsoptimal++;
          solvedmips++;
 
-         if( nsols > 0 )
-         {
-            /* compute the ojective value of the best solution */
-            bestsolval = computeSolObjValue(nsolvars[0], solvars[0], solvals[0]);
-
-            /** @todo ensure that the first solution is really the best one and that its objective value is the best reduced cost */
-            if( SCIPisSumNegative(scip, bestsolval - pricerdata->dualsolconv[prob]) )
-               bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) *
-                  (bestsolval - pricerdata->dualsolconv[prob]);
-         }
+         assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
+         bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
 
          if( status != SCIP_STATUS_OPTIMAL )
          {

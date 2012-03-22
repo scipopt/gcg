@@ -313,6 +313,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    *solisray = solverdata->solisray;
    *nsols = 1;
 
+   *lowerbound = solval;
 
    *result = SCIP_STATUS_OPTIMAL;
 
@@ -323,6 +324,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/
+
+   GCG_SOLVERDATA* solverdata;
    SCIP_CONS* cons;
    SCIP_VAR** consvars;
    int nconsvars;
@@ -346,13 +349,12 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    int i;
    int k;
 
-   SCIP_SOL* sol;
-
-   SCIP_Bool stored;
-
    assert(pricingprob != NULL);
    assert(scip != NULL);
    assert(result != NULL);
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
@@ -455,15 +457,16 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
-   SCIP_CALL( SCIPtransformProb(pricingprob) );
-
-   SCIP_CALL( SCIPcreateSol( pricingprob, &sol, NULL) );
+   solverdata->nsolvars[0] = 0;
+   solverdata->solisray[0] = FALSE;
 
    for( i = 0; i < nsolitems; i++ )
    {
       if( !SCIPisNegative(scip, consvals[solitems[i]]) )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[solitems[i]], 1.0) );
+         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[solitems[i]];
+         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
+         solverdata->nsolvars[0]++;
       }
    }
 
@@ -471,7 +474,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[nonsolitems[i]], 1.0) );
+         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[nonsolitems[i]];
+         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
+         solverdata->nsolvars[0]++;
       }
    }
 
@@ -479,18 +484,25 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPvarGetLbLocal(pricingprobvars[i]) > 0.5 )
       {
-         SCIP_CALL( SCIPsetSolVal(pricingprob, sol, pricingprobvars[i], 1.0) );
+         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[i];
+         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
+         solverdata->nsolvars[0]++;
       }
    }
-
-   SCIP_CALL( SCIPaddSolFree(pricingprob, &sol, &stored) );
-   assert(stored);
 
    SCIPfreeBufferArray(scip, &nonsolitems);
    SCIPfreeBufferArray(scip, &solitems);
    SCIPfreeBufferArray(scip, &profits);
    SCIPfreeBufferArray(scip, &weights);
    SCIPfreeBufferArray(scip, &items);
+
+   *solvars = solverdata->solvars;
+   *solvals = solverdata->solvals;
+   *nsolvars = solverdata->nsolvars;
+   *solisray = solverdata->solisray;
+   *nsols = 1;
+
+   *lowerbound = -SCIPinfinity(scip);
 
    *result = SCIP_STATUS_OPTIMAL;
 

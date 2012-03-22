@@ -269,6 +269,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
 
+   *lowerbound = -SCIPinfinity(scip);
+
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
 
@@ -436,6 +438,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       *nsolvars = solverdata->nsolvars;
       *solisray = solverdata->solisray;
 
+      *lowerbound = SCIPgetDualbound(pricingprob);
+
       *result = SCIP_STATUS_OPTIMAL;
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
@@ -470,6 +474,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
    solverdata = GCGpricerGetSolverdata(scip, solver);
    assert(solverdata != NULL);
+
+   *lowerbound = -SCIPinfinity(scip);
 
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", 100LL) );
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", 1000LL) );
@@ -628,6 +634,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       *nsolvars = solverdata->nsolvars;
       *solisray = solverdata->solisray;
 
+      *lowerbound = SCIPgetDualbound(pricingprob);
       *result = SCIP_STATUS_OPTIMAL;
    }
 
