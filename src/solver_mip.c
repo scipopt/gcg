@@ -14,7 +14,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
 /*#define DEBUG_PRICING_ALL_OUTPUT*/
 
 #include <assert.h>
@@ -392,8 +391,14 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
            SCIPdebugMessage("unbounded solution\n");
          }
 
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, TRUE) );
-         assert(feasible);
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );
+
+         if( !feasible )
+         {
+            SCIPwarningMessage("solution of pricing problem %d not feasible:\n", probnr);
+            SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+         }
+
 
          /* check whether the solution is equal to one of the previous solutions */
          if( solverdata->checksols )
@@ -414,6 +419,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          {
             if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
                continue;
+
+            assert(!SCIPisInfinity(scip, solverdata->tmpsolvals[i]));
+            assert(!SCIPisInfinity(scip, -solverdata->tmpsolvals[i]));
 
             solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
             solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
