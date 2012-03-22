@@ -332,6 +332,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
 
    *result = SCIP_DIDNOTRUN;
 
+   /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
+   if( !GCGrelaxIsMasterSetCovering(scip) || !GCGrelaxIsMasterSetPartitioning(scip) )
+   {
+      SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
+      return SCIP_OKAY;
+   }
+
    /* check whether the current original solution is integral */
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );

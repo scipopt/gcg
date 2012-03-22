@@ -196,6 +196,18 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns whether the master problem is a set covering problem */
+extern
+SCIP_Bool GCGrelaxIsMasterSetCovering(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns whether the master problem is a set partitioning problem */
+extern
+SCIP_Bool GCGrelaxIsMasterSetPartitioning(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** start probing mode on master problem */
 extern
 SCIP_RETCODE GCGrelaxStartProbing(

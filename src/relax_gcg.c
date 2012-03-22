@@ -23,6 +23,7 @@
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
+#include "scip/cons_setppc.h"
 #include "scip/scip.h"
 
 #include "relax_gcg.h"
@@ -94,10 +95,8 @@ struct SCIP_RelaxData
    /* parameter data */
    SCIP_Bool        discretization;      /**< TRUE: use discretization approach; FALSE: use convexification approach */
    SCIP_Bool        mergeidenticalblocks;/**< should identical blocks be merged (only for discretization approach)? */
-#if 0 /* TODO: detect the structure of the master problem only aggregate, if appropriate */
    SCIP_Bool        masterissetpart;     /**< is the master a set partitioning problem? */
    SCIP_Bool        masterissetcover;    /**< is the master a set covering problem? */
-#endif
    SCIP_Bool        dispinfos;           /**< should additional information be displayed? */
 
    /* data for probing */
@@ -397,6 +396,80 @@ SCIP_RETCODE ensureSizeBranchrules(
    return SCIP_OKAY;
 }
 
+
+/** check whether the master problem has a set partitioning or set covering structure */
+static
+SCIP_RETCODE checkSetppcStructure(
+   SCIP*             scip,       /**< SCIP data structure */
+   SCIP_RELAXDATA*   relaxdata   /**< relaxator data structure */
+   )
+{
+   SCIP_CONS** masterconss;
+   int nmasterconss;
+
+   int i;
+
+   assert(relaxdata->decdecomp != NULL);
+
+   masterconss = DECdecdecompGetLinkingconss(relaxdata->decdecomp);
+   nmasterconss = DECdecdecompGetNLinkingconss(relaxdata->decdecomp);
+   assert(masterconss != NULL);
+   assert(nmasterconss >= 0);
+
+   if( relaxdata->nvarlinkconss > 0 )
+   {
+      relaxdata->masterissetcover = FALSE;
+      relaxdata->masterissetpart = FALSE;
+      return SCIP_OKAY;
+   }
+
+   relaxdata->masterissetcover = TRUE;
+   relaxdata->masterissetpart = TRUE;
+
+   for( i = 0; i < nmasterconss; ++i )
+      if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[i])), "setppc") == 0 )
+      {
+         switch( SCIPgetTypeSetppc(scip, masterconss[i]) )
+         {
+         case SCIP_SETPPCTYPE_COVERING:
+            relaxdata->masterissetpart = FALSE;
+            break;
+         case SCIP_SETPPCTYPE_PARTITIONING:
+            relaxdata->masterissetcover = FALSE;
+            break;
+         case SCIP_SETPPCTYPE_PACKING:
+            relaxdata->masterissetcover = FALSE;
+            relaxdata->masterissetpart = FALSE;
+            break;
+         }
+      }
+      else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[i])), "logicor") == 0 )
+      {
+         relaxdata->masterissetpart = FALSE;
+         break;
+      }
+      else
+      {
+         relaxdata->masterissetcover = FALSE;
+         relaxdata->masterissetpart = FALSE;
+         break;
+      }
+
+   if( relaxdata->masterissetcover )
+   {
+      assert(!relaxdata->masterissetpart);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set covering problem!\n");
+   }
+   if( relaxdata->masterissetpart )
+   {
+      assert(!relaxdata->masterissetcover);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Master problem is a set partitioning problem!\n");
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /** checks whether two arrays of SCIP_Real's are identical
  * @todo What about using SCIPisEq()
  */
@@ -624,6 +697,10 @@ SCIP_RETCODE checkIdenticalBlocks(
    nrelevant = 0;
 
    if( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
+      return SCIP_OKAY;
+
+   /* aggregate only if the master problem has a set partitioning or set covering structure */
+   if( !relaxdata->masterissetcover || !relaxdata->masterissetpart )
       return SCIP_OKAY;
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -1303,6 +1380,10 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( createMasterprobConss(scip, relaxdata) );
       SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
    }
+
+   /* check if the master problem is a set partitioning or set covering problem */
+   SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
+
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
 
@@ -1531,6 +1612,8 @@ SCIP_RETCODE solveDiagonalBlocks(
 
 }
 
+
+
 /*
  * Callback methods of relaxator
  */
@@ -1650,6 +1733,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       relaxdata->hasblockdetection = TRUE;
       SCIPdebugMessage("Block detection code present.\n");
    }
+
    return SCIP_OKAY;
 }
 
@@ -2566,6 +2650,44 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
    return relaxdata->currentorigsol;
 }
 
+/** returns whether the master problem is a set covering problem */
+SCIP_Bool GCGrelaxIsMasterSetCovering(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->masterissetcover;
+}
+
+/** returns whether the master problem is a set partitioning problem */
+SCIP_Bool GCGrelaxIsMasterSetPartitioning(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->masterissetpart;
+}
+
 /** start probing mode on master problem */
 SCIP_RETCODE GCGrelaxStartProbing(
    SCIP*                 scip                /**< SCIP data structure */
@@ -2945,6 +3067,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
                assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
+
                SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
                         origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
                      SCIPgetRelaxSolVal(scip, origvars[i])) );
