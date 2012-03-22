@@ -1455,7 +1455,8 @@ SCIP_RETCODE performPricing(
          if( status != SCIP_STATUS_OPTIMAL )
          {
             bestredcostvalid = FALSE;
-            *result = SCIP_DIDNOTRUN;
+            if( result != NULL)
+               *result = SCIP_DIDNOTRUN;
          }
          nfoundvarsprob = 0;
 
