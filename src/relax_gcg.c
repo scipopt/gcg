@@ -2817,7 +2817,7 @@ SCIP_RETCODE performProbing(
    {
       /* get LP solution status, objective value */
       *cutoff = *cutoff || (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
-      if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && SCIPisLPRelax(masterscip) )
+      if( lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )
       {
          SCIPdebugMessage("lpobjval = %g\n", SCIPgetLPObjval(masterscip));
          *lpobjvalue = SCIPgetLPObjval(masterscip);
