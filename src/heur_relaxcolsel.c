@@ -139,8 +139,60 @@ SCIP_RETCODE initializeStartsol(
       origvals = GCGmasterVarGetOrigvals(mastervar);
       norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
-      /* update master solution and original solution;
-       * first, treat variables directly transferred to the master problem (but not linking variables) */
+      /* update master solution and original solution */
+
+      /* treat variables representing rays separately */
+      if( GCGmasterVarIsRay(mastervar) )
+      {
+         assert(block >= 0);
+
+         if( SCIPisFeasPositive(scip, roundval) )
+         {
+            SCIPdebugMessage("  -> (block %d) select ray master variable %s (%d times)\n",
+               block, SCIPvarGetName(mastervar), (int) roundval);
+
+            /* set master solution value to rounded down solution */
+            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
+
+            /* loop over all original variables contained in the current master variable */
+            for( j = 0; j < norigvars; ++j )
+            {
+               SCIP_VAR* origvar;
+               SCIP_Real origval;
+
+               /* get original variable and its value in the master variable */
+               origvar = origvars[j];
+               origval = origvals[j];
+               assert(GCGvarIsOriginal(origvar));
+
+               if( SCIPisZero(scip, origval) )
+                  continue;
+
+               assert(!SCIPisZero(scip, origval));
+
+               /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
+               if( GCGvarIsLinking(origvar) )
+                  continue;
+
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, origsol, origvar, origval * roundval) );
+            }
+
+            /* if the master variable is fractional, add it as a candidate */
+            if( !SCIPisFeasFracIntegral(scip, frac) )
+            {
+               mastercands[*nmastercands] = i;
+               candfracs[*nmastercands] = frac;
+               ++(*nmastercands);
+            }
+         }
+
+         continue;
+      }
+
+      assert(!GCGmasterVarIsRay(mastervar));
+
+      /* treat variables directly transferred to the master problem (but not linking variables) */
       if( block == -1 )
       {
          SCIP_VAR* origvar;
@@ -180,7 +232,7 @@ SCIP_RETCODE initializeStartsol(
       /* then, treat master variables representing extreme points and rays */
       else
       {
-         if( !SCIPisZero(scip, roundval) )
+         if( !SCIPisFeasZero(scip, roundval) )
          {
             /* set master solution value to rounded down solution */
             SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
