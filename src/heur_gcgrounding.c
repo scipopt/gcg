@@ -521,13 +521,16 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
+   *result = SCIP_DIDNOTRUN;
+
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
    if( !SCIPisRelaxSolValid(scip) )
    {
-      SCIPdebugMessage("not executing GCG rounding: invalid relaxation solution\n");
+      SCIPdebugMessage("skipping GCG rounding: invalid relaxation solution\n");
       return SCIP_OKAY;
    }
-
-   *result = SCIP_DIDNOTRUN;
 
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )

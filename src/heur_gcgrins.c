@@ -343,6 +343,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
    *result = SCIP_DELAYED;
 
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("skipping GCG RINS: invalid relaxation solution\n");
+      return SCIP_OKAY;
+   }
+
    /* only call heuristic, if feasible solution is available */
    if( SCIPgetNSols(scip) <= 0 )
       return SCIP_OKAY;

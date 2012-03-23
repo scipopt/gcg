@@ -1344,6 +1344,15 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
 
    *result = SCIP_DELAYED;
 
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("skipping Extreme Point Crossover: invalid relaxation solution\n");
+      return SCIP_OKAY;
+   }
+
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
    {

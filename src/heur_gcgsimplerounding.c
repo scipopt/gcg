@@ -140,6 +140,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
 
    *result = SCIP_DIDNOTRUN;
 
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("skipping GCG simple rounding: invalid relaxation solution\n");
+      return SCIP_OKAY;
+   }
+
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;

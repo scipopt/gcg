@@ -477,6 +477,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
 
    *result = SCIP_DIDNOTRUN;
 
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
+   if( !SCIPisRelaxSolValid(scip) )
+   {
+      SCIPdebugMessage("skipping GCG ZI rounding: invalid relaxation solution\n");
+      return SCIP_OKAY;
+   }
+
    /* only call heuristic if an optimal LP-solution is at hand */
    if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
