@@ -261,6 +261,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    int s;
    int i;
 
+   SCIP_Real memlimit;
+
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
    SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
@@ -271,17 +273,27 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
    *lowerbound = -SCIPinfinity(scip);
 
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memlimit) );
+   if( !SCIPisInfinity(scip, memlimit) )
+   {
+      memlimit -= SCIPgetMemUsed(scip)/1048576.0 + GCGgetPricingprobsMemUsed(solverdata->origprob) - SCIPgetMemUsed(pricingprob)/1048576.0;
+      if( memlimit < 0 )
+         memlimit = 0.0;
+      SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/memory", memlimit) );
+   }
+
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
 
    /* all SCIP statuses handled so far */
-   assert( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD );
+   assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT);
 
 #ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
    if( SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
@@ -361,7 +373,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
    }
    /* the solving process was interrupted, so we have no solutions and set the status pointer accordingly */
-   else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
+   else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT )
    {
       *solvars = solverdata->solvars;
       *solvals = solverdata->solvals;

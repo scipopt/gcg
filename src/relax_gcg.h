@@ -307,8 +307,16 @@ void GCGsetStructDecdecomp(
    DECDECOMP*  decdecomp   /**< decomposition data structure */
    );
 
+
 /** gets the structure information */
+extern
 DECDECOMP* GCGgetStructDecdecomp(
+   SCIP*       scip        /**< SCIP data structure */
+   );
+
+/** gets the total memory used after problem creation stage for all pricingproblems */
+extern
+SCIP_Real GCGgetPricingprobsMemUsed(
    SCIP*       scip        /**< SCIP data structure */
    );
 

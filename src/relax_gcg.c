@@ -67,6 +67,7 @@ struct SCIP_RelaxData
    SCIP_CONS**      convconss;           /**< array of convexity constraints, one for each block */
    int              nlinkingvars;        /**< number of linking variables */
    int              nvarlinkconss;       /**< number of constraints that ensure that copies of linking variables have the same value */
+   SCIP_Real        pricingprobsmemused; /**< sum of memory used after problem creation stage of all pricing problems */
 
    /* hashmaps for transformation */
    SCIP_HASHMAP*    hashorig2origvar;    /**< hashmap mapping original variables to themselves */
@@ -1401,7 +1402,9 @@ SCIP_RETCODE createMaster(
 
    /* set integral obj status in the extended problem, if possible */
    if( SCIPisObjIntegral(scip) )
+   {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
+   }
 
    /* display statistics */
    if( relaxdata->dispinfos )
@@ -1416,6 +1419,12 @@ SCIP_RETCODE createMaster(
          SCIPhashmapFree(&(hashorig2pricingvar[i]));
 
       SCIPfreeBufferArray(scip, &(hashorig2pricingvar));
+   }
+
+   /* get used memory and save it for reference */
+   for( i = 0; i < npricingprobs; ++i )
+   {
+      relaxdata->pricingprobsmemused += SCIPgetMemUsed(relaxdata->pricingprobs[i])/1048576.0;
    }
 
    return SCIP_OKAY;
@@ -1914,7 +1923,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
             break;
          }
 
-         if( !SCIPisInfinity(scip, timelimit) )
+         if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
             SCIPinfoMessage(scip, NULL, "Masterprob was to short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
       }
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
@@ -2020,6 +2029,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
+   relaxdata->pricingprobsmemused = 0.0;
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -3196,4 +3206,23 @@ DECDECOMP* GCGgetStructDecdecomp(
    assert(relaxdata != NULL);
 
    return relaxdata->decdecomp;
+}
+
+/** gets the total memory used after problem creation stage for all pricingproblems */
+SCIP_Real GCGgetPricingprobsMemUsed(
+   SCIP*       scip        /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->pricingprobsmemused;
 }
