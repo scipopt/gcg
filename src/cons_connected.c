@@ -246,7 +246,7 @@ SCIP_RETCODE findConnectedComponents(
 
       /* if there are no variables, put it in the first block, otherwise put it in the next block */
       if( ncurvars == 0 )
-         consblock = 1;
+         consblock = -1;
       else
          consblock = nextblock;
 
@@ -334,12 +334,17 @@ SCIP_RETCODE findConnectedComponents(
       }
 
       SCIPfreeBufferArrayNull(scip, &curvars);
-      assert(consblock >= 1);
+      assert(consblock >= 1 || consblock == -1);
       assert(consblock <= nextblock);
 
       /* store the constraint block */
-      SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
-      SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
+      if(consblock != -1)
+      {
+         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
+         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
+      }
+      else
+         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(cons));
    }
 
    tempblock = 1;
@@ -374,6 +379,9 @@ SCIP_RETCODE findConnectedComponents(
          continue;
 
       if( conshdlrdata->consismaster[i] )
+         continue;
+
+      if(!SCIPhashmapExists(constoblock, cons))
          continue;
 
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
@@ -501,12 +509,17 @@ SCIP_RETCODE copyToDecdecomp(
    for( i = 0; i < nvars; ++i )
    {
       size_t varblock;
-      varblock = (size_t) SCIPhashmapGetImage(conshdlrdata->vartoblock, vars[i]);
+      SCIP_VAR* var;
+      var = SCIPvarGetProbvar(vars[i]);
+      if(var == NULL)
+         continue;
+      varblock = (size_t) SCIPhashmapGetImage(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]));
+
       assert(varblock > 0);
       assert(nblocks >= 0);
       assert(varblock <= (size_t) nblocks);
 
-      subscipvars[varblock-1][nsubscipvars[varblock-1]] = vars[i];
+      subscipvars[varblock-1][nsubscipvars[varblock-1]] = SCIPvarGetProbvar(vars[i]);
       ++(nsubscipvars[varblock-1]);
    }
 
@@ -519,6 +532,7 @@ SCIP_RETCODE copyToDecdecomp(
    {
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    }
+
    SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
    SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
