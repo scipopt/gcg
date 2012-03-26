@@ -301,12 +301,30 @@ SCIP_RETCODE findConnectedComponents(
             /* assign all previous variables of this constraint to this block */
             for( k = j; k >= 0; --k )
             {
+               int oldblock;
                /** @todo what about deleted variables? */
                assert(consblock >= 1);
                assert(consblock <= nextblock);
                assert( vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] >= consblock || k == j );
+
+               oldblock = vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))];
+
+               /************************
+                ** FAILS WITH MODGLOB **
+                ************************/
+
+               assert(blockrepresentative[oldblock] <= oldblock);
+               if((blockrepresentative[oldblock] =! -1) && (blockrepresentative[oldblock] > consblock))
+               {
+                  assert(blockrepresentative[oldblock] > -1);
+                  printf("oldrepresentative for block %d is %d, new representative is %d.\n", oldblock, blockrepresentative[oldblock], consblock);
+                  blockrepresentative[oldblock] = consblock;
+               }
+               assert(blockrepresentative[oldblock] <= oldblock);
+
                vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
                SCIPdebugMessage("\t\tVar %s reset in block %d.\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[k])), consblock);
+
             }
          }
          else if( varblock == -1 )
@@ -344,7 +362,9 @@ SCIP_RETCODE findConnectedComponents(
          SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
       }
       else
+      {
          SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(cons));
+      }
    }
 
    tempblock = 1;
