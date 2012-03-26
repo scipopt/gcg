@@ -43,7 +43,8 @@
 
 #define CONSHDLR_PROP_TIMING       SCIP_PROPTIMING_BEFORELP
 
-
+#define DEFAULT_ENABLE             TRUE /**< should the detection be enabled */
+#define DEFAULT_SETPPCINMASTER     TRUE /**< should the extended structure be detected */
 /*
  * Data structures
  */
@@ -173,6 +174,7 @@ SCIP_RETCODE findConnectedComponents(
    int j;
    int k;
    int tempblock;
+   SCIP_Bool findextended;
 
    int* blockrepresentative;
    int nextblock;
@@ -182,8 +184,6 @@ SCIP_RETCODE findConnectedComponents(
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
    assert(result != NULL);
-
-   SCIPdebugMessage("Trying to detect block diagonal matrix.\n");
 
    /* initialize data structures */
    vars = SCIPgetVars(scip);
@@ -210,17 +210,29 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[0] = 0;
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
+   findextended = conshdlrdata->setppcinmaster;
+
+   /* in a first preprocessing step, indicate which constraints should go in the master */
+   if( findextended )
+   {
+      for( i = 0; i < nconss; ++i )
+      {
+         conshdlrdata->consismaster[i] = isConsMaster(scip, conss[i]);
+         /* we look for an extended structure if there is a constraint not in the master! */
+         findextended = findextended || !conshdlrdata->consismaster[i];
+      }
+   }
+
+   if( !findextended )
+   {
+      for( i = 0; i < nconss; ++i )
+         conshdlrdata->consismaster[i] = FALSE;
+   }
 
    /* go through the all constraints */
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
-
-      /* in a first preprocessing step, indicate which constraints should go in the master */
-      if( conshdlrdata->setppcinmaster )
-         conshdlrdata->consismaster[i] = isConsMaster(scip, conss[i]);
-      else
-         conshdlrdata->consismaster[i] = FALSE;
 
       cons = conss[i];
       assert(cons != NULL);
@@ -246,7 +258,7 @@ SCIP_RETCODE findConnectedComponents(
 
       /* if there are no variables, put it in the first block, otherwise put it in the next block */
       if( ncurvars == 0 )
-         consblock = 1;
+         consblock = -1;
       else
          consblock = nextblock;
 
@@ -272,42 +284,8 @@ SCIP_RETCODE findConnectedComponents(
          /* if variable is assigned to a block, assign constraint to that block */
          if( varblock > -1 && varblock != consblock )
          {
+            consblock = MIN(consblock, varblock);
             SCIPdebugPrintf("still in block %d.\n",  varblock);
-            /* if constraint is assigned to the next block, it is actually free, so assign it to the current block  */
-            if( consblock == nextblock )
-               consblock = varblock;
-
-            /* if variable is assigned to a different block, merge the blocks */
-            if( varblock != consblock )
-            {
-               /* always take the lower one of both as the representative*/
-               if( varblock < consblock )
-               {
-                  blockrepresentative[consblock] = varblock;
-                  consblock = varblock;
-               }
-               else
-               {
-                  blockrepresentative[varblock] = consblock;
-                  varblock = consblock;
-               }
-
-               assert(blockrepresentative[consblock] >= 1);
-               assert(blockrepresentative[consblock] <= nextblock);
-               assert(blockrepresentative[varblock] >= 1);
-               assert(blockrepresentative[varblock] <= nextblock);
-            }
-
-            /* assign all previous variables of this constraint to this block */
-            for( k = j; k >= 0; --k )
-            {
-               /** @todo what about deleted variables? */
-               assert(consblock >= 1);
-               assert(consblock <= nextblock);
-               assert( vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] >= consblock || k == j );
-               vartoblock[SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[k]))] = consblock;
-               SCIPdebugMessage("\t\tVar %s reset in block %d.\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[k])), consblock);
-            }
          }
          else if( varblock == -1 )
          {
@@ -320,6 +298,7 @@ SCIP_RETCODE findConnectedComponents(
          }
          else
          {
+            assert((varblock > 0) && (consblock == varblock));
             SCIPdebugPrintf("no change.\n");
          }
       }
@@ -327,19 +306,64 @@ SCIP_RETCODE findConnectedComponents(
       /* if the constraint belongs to a new block, mark it as such */
       if( consblock == nextblock )
       {
+         assert(consblock > 0);
          blockrepresentative[consblock] = consblock;
-         assert(blockrepresentative[consblock] >= 0);
+         assert(blockrepresentative[consblock] > 0);
          assert(blockrepresentative[consblock] <= nextblock);
          ++nextblock;
       }
 
+      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(cons), consblock, nextblock);
+      for( k = 0; k < ncurvars; ++k )
+      {
+         int curvarindex;
+         SCIP_VAR* curprobvar;
+         int oldblock;
+
+         curprobvar = SCIPvarGetProbvar(curvars[k]);
+         curvarindex = SCIPvarGetProbindex(curprobvar);
+         oldblock = vartoblock[curvarindex];
+         assert((oldblock > 0) && (oldblock <= nextblock));
+         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(curprobvar));
+         if( oldblock != consblock )
+         {
+            SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
+            vartoblock[curvarindex] = consblock;
+
+            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > consblock))
+            {
+               int oldrepr;
+               oldrepr = blockrepresentative[oldblock];
+               SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldblock, blockrepresentative[oldblock], consblock );
+               assert(consblock > 0);
+               blockrepresentative[oldblock] = consblock;
+               if( (oldrepr != consblock) && (oldrepr != oldblock) )
+               {
+                  blockrepresentative[oldrepr] = consblock;
+                  SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldrepr, blockrepresentative[oldrepr], consblock );
+               }
+            }
+         }
+         else
+         {
+            SCIPdebugPrintf("will not be changed from %d to %d.\n", oldblock, consblock);
+         }
+      }
+
       SCIPfreeBufferArrayNull(scip, &curvars);
-      assert(consblock >= 1);
+      assert(consblock >= 1 || consblock == -1);
       assert(consblock <= nextblock);
 
       /* store the constraint block */
-      SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
-      SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
+      if(consblock != -1)
+      {
+         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
+         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
+      }
+      else
+      {
+         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(cons));
+      }
    }
 
    tempblock = 1;
@@ -376,6 +400,9 @@ SCIP_RETCODE findConnectedComponents(
       if( conshdlrdata->consismaster[i] )
          continue;
 
+      if(!SCIPhashmapExists(constoblock, cons))
+         continue;
+
       consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
@@ -399,7 +426,7 @@ SCIP_RETCODE findConnectedComponents(
          continue;
 
       varblock = blockrepresentative[vartoblock[varindex]];
-      assert(varblock == -1 || varblock >= 0);
+      assert(varblock == -1 || varblock > 0);
       if( varblock > 0 )
       {
          assert(varblock < tempblock);
@@ -501,12 +528,17 @@ SCIP_RETCODE copyToDecdecomp(
    for( i = 0; i < nvars; ++i )
    {
       size_t varblock;
-      varblock = (size_t) SCIPhashmapGetImage(conshdlrdata->vartoblock, vars[i]);
+      SCIP_VAR* var;
+      var = SCIPvarGetProbvar(vars[i]);
+      if(var == NULL)
+         continue;
+      varblock = (size_t) SCIPhashmapGetImage(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]));
+
       assert(varblock > 0);
       assert(nblocks >= 0);
       assert(varblock <= (size_t) nblocks);
 
-      subscipvars[varblock-1][nsubscipvars[varblock-1]] = vars[i];
+      subscipvars[varblock-1][nsubscipvars[varblock-1]] = SCIPvarGetProbvar(vars[i]);
       ++(nsubscipvars[varblock-1]);
    }
 
@@ -519,6 +551,7 @@ SCIP_RETCODE copyToDecdecomp(
    {
       DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    }
+
    SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
    SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
@@ -621,7 +654,7 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
    result = SCIP_DIDNOTFIND;
    nconss = SCIPgetNConss(scip);
 
-   runs = conshdlrdata->setppcinmaster ? 1:2;
+   runs = conshdlrdata->setppcinmaster ? 2:1;
    SCIP_CALL( SCIPallocBufferArray(scip, &conshdlrdata->consismaster, nconss) );
 
    for( i = 0; i < runs && result != SCIP_SUCCESS; ++i )
@@ -638,9 +671,10 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
       if( result == SCIP_SUCCESS )
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", conshdlrdata->nblocks);
-         conshdlrdata->blockdiagonal = !conshdlrdata->setppcinmaster;
+
          SCIP_CALL( DECdecdecompCreate(scip, &conshdlrdata->decdecomp) );
          SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
+         conshdlrdata->blockdiagonal = DECdecdecompGetType(conshdlrdata->decdecomp) == DEC_DECTYPE_DIAGONAL;
          SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );
       }
       else
@@ -649,9 +683,9 @@ SCIP_DECL_CONSINITSOL(consInitsolConnected)
          SCIPhashmapFree(&conshdlrdata->constoblock);
          SCIPhashmapFree(&conshdlrdata->vartoblock);
       }
-      if( conshdlrdata->setppcinmaster == FALSE && result != SCIP_SUCCESS )
+      if( conshdlrdata->setppcinmaster == TRUE && result != SCIP_SUCCESS )
       {
-         conshdlrdata->setppcinmaster = TRUE;
+         conshdlrdata->setppcinmaster = FALSE;
       }
    }
    SCIPfreeBufferArray(scip, &conshdlrdata->consismaster);
@@ -760,8 +794,8 @@ SCIP_RETCODE SCIPincludeConshdlrConnected(
          conshdlrdata) );
 
    /* add connected constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/enable", "Controls whether block diagonal detection is enabled", &conshdlrdata->enable, FALSE, FALSE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting", &conshdlrdata->setppcinmaster, FALSE, FALSE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/enable", "Controls whether block diagonal detection is enabled", &conshdlrdata->enable, FALSE, DEFAULT_ENABLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting", &conshdlrdata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
 
    return SCIP_OKAY;
 }
