@@ -444,14 +444,15 @@ static SCIP_RETCODE buildGraphStructure(
          /* put the copied id (started from 0, should be the index of the nonzero entry) to the end of the map of original to copy ids  */
          SCIP_CALL( SCIPsetIntarrayVal(scip, maporigtocopies[varIndex], nmaporigtocopies[varIndex], id) );
          ++(nmaporigtocopies[varIndex]);
+         SCIPdebugMessage("Adding %d at %d to copytoorig.\n", varIndex, id);
          SCIP_CALL( SCIPsetIntarrayVal(scip, copytoorig, id, varIndex) );
          ++id;
          /* Check the mapping here */
 #ifdef SCIP_DEBUG
          {
             int k;
-            SCIPdebugPrintf("Cons: %d: ", i);
-            SCIPdebugPrintf("Var: %d: ", varIndex);
+            SCIPdebugMessage("Cons %s (%d): ", SCIPconsGetName(conss[i]), i);
+            SCIPdebugPrintf("Var %s (%d): ", SCIPvarGetName(var), varIndex);
             for( k = 0; k < nmaporigtocopies[varIndex]; ++k )
             {
                int copy;
@@ -528,6 +529,8 @@ static SCIP_RETCODE buildGraphStructure(
       SCIP_CALL( SCIPallocMemoryArray(scip, &hedge->variableIds, size) );
       hedge->nvariableIds = size;
 
+      SCIPdebugMessage("nvars hedge: ");
+
       for( j = 0; j < size; ++j )
       {
          hedge->variableIds[j] = SCIPgetIntarrayVal(scip, maporigtocopies[i], j);
@@ -543,7 +546,7 @@ static SCIP_RETCODE buildGraphStructure(
    detectordata->nvertices = nvertices;
 
    assert(SCIPgetPtrarrayMaxIdx(scip, hedges)+1 == nhyperedges);
-   assert(nvertices == SCIPgetIntarrayMaxIdx(scip, copytoorig)+1);
+   //   assert(nvertices == SCIPgetIntarrayMaxIdx(scip, copytoorig)+1);
 
 
    return SCIP_OKAY;
