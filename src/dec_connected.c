@@ -618,7 +618,6 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    runs = detectordata->setppcinmaster ? 2:1;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
@@ -634,7 +633,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       if( *result == SCIP_SUCCESS )
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
-
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );
          SCIP_CALL( DECdecdecompCreate(scip, &((*decdecomps)[0])) );
          SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
          detectordata->blockdiagonal = DECdecdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
