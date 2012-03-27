@@ -1635,7 +1635,9 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
+   {
       SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+   }
 
    SCIPfreeMemory(scip, &relaxdata);
 
@@ -1686,6 +1688,34 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   relaxdata->blockrepresentative = NULL;
+   relaxdata->convconss = NULL;
+   relaxdata->hashorig2origvar = NULL;
+   relaxdata->lastsolvednodenr = 0;
+
+   relaxdata->linearmasterconss = NULL;
+   relaxdata->origmasterconss = NULL;
+   relaxdata->masterconss = NULL;
+   relaxdata->nmasterconss = 0;
+
+   relaxdata->npricingprobs = -1;
+   relaxdata->pricingprobs = NULL;
+   relaxdata->nrelpricingprobs = 0;
+   relaxdata->currentorigsol = NULL;
+   relaxdata->storedorigsol = NULL;
+   relaxdata->origprimalsol = NULL;
+   relaxdata->nblocksidentical = NULL;
+
+   relaxdata->lastmastersol = NULL;
+   relaxdata->lastmasterlpiters = 0;
+   relaxdata->markedmasterconss = NULL;
+   relaxdata->masterinprobing = FALSE;
+
+   relaxdata->nlinkingvars = 0;
+   relaxdata->nvarlinkconss = 0;
+   relaxdata->varlinkconss = NULL;
+   relaxdata->pricingprobsmemused = 0.0;
+
    if( relaxdata->decdecomp == NULL )
    {
       SCIPinfoMessage(scip, SCIP_VERBLEVEL_NONE, "\nYou need to specify a decomposition!\n");
@@ -1699,12 +1729,13 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
       relaxdata->discretization = FALSE;
    }
 
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
    SCIP_CALL( createMaster(scip, relaxdata) );
 
    relaxdata->lastsolvednodenr = -1;
 
-   masterprob = relaxdata->masterprob;
-   assert(masterprob != NULL);
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
 
@@ -1797,7 +1828,10 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->convconss));
 
    /* free master problem */
-   SCIP_CALL( SCIPfree(&(relaxdata->masterprob)) );
+   if( relaxdata->masterprob != NULL )
+   {
+      SCIP_CALL( SCIPfreeTransform(relaxdata->masterprob) );
+   }
 
    /* free pricing problems */
    for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
@@ -1993,35 +2027,10 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* create gcg relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
 
-   relaxdata->blockrepresentative = NULL;
-   relaxdata->convconss = NULL;
-   relaxdata->hashorig2origvar = NULL;
-   relaxdata->lastsolvednodenr = 0;
-
-   relaxdata->linearmasterconss = NULL;
-   relaxdata->masterconss = NULL;
-
-   relaxdata->npricingprobs = -1;
-   relaxdata->pricingprobs = NULL;
-   relaxdata->nrelpricingprobs = 0;
-   relaxdata->currentorigsol = NULL;
-   relaxdata->storedorigsol = NULL;
-   relaxdata->origprimalsol = NULL;
-   relaxdata->masterprob = NULL;
-   relaxdata->nblocksidentical = NULL;
-
-   relaxdata->lastmastersol = NULL;
-   relaxdata->lastmasterlpiters = 0;
-   relaxdata->markedmasterconss = NULL;
-   relaxdata->masterinprobing = FALSE;
-
+   relaxdata->decdecomp = NULL;
    relaxdata->nbranchrules = 0;
    relaxdata->branchrules = NULL;
-
-   relaxdata->nlinkingvars = 0;
-   relaxdata->nvarlinkconss = 0;
-   relaxdata->varlinkconss = NULL;
-   relaxdata->pricingprobsmemused = 0.0;
+   relaxdata->masterprob = NULL;
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -2035,6 +2044,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
+
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
 
