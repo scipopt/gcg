@@ -31,7 +31,7 @@
 #define HEUR_DESC             "LNS heuristic for the master problem that fixes some master variables to zero"
 #define HEUR_DISPCHAR         'P'
 #define HEUR_PRIORITY         100
-#define HEUR_FREQ             10
+#define HEUR_FREQ             30
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP
