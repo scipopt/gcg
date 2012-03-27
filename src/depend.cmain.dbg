@@ -206,13 +206,12 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  src/reader_blk.h src/reader_dec.h src/type_decomp.h src/pricer_gcg.h \
  src/type_solver.h src/relax_gcg.h src/type_branchgcg.h src/branch_orig.h \
  src/branch_ryanfoster.h src/cons_origbranch.h src/disp_gcg.h \
- src/dialog_gcg.h src/branch_relpsprob.h src/reader_ref.h \
- src/cons_decomp.h src/type_detector.h src/cons_connected.h \
- src/reader_gp.h src/dec_borderheur.h src/dec_arrowheur.h \
- src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h \
- src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
- src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrins.h \
- src/heur_gcgrounding.h src/heur_gcgshifting.h \
+ src/dialog_gcg.h src/branch_relpsprob.h src/reader_ref.h src/reader_gp.h \
+ src/cons_decomp.h src/type_detector.h src/dec_connected.h \
+ src/dec_borderheur.h src/dec_arrowheur.h src/heur_gcgcoefdiving.h \
+ src/heur_gcgfracdiving.h src/heur_gcgguideddiving.h \
+ src/heur_gcglinesdiving.h src/heur_gcgpscostdiving.h src/heur_gcgrens.h \
+ src/heur_gcgrins.h src/heur_gcgrounding.h src/heur_gcgshifting.h \
  src/heur_gcgsimplerounding.h src/heur_gcgveclendiving.h \
  src/heur_gcgzirounding.h src/heur_xpcrossover.h src/heur_xprins.h
 $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
@@ -316,9 +315,9 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
  lib/scip/src/nlpi/nlpi_ipopt.h src/relax_gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/struct_branchgcg.h src/cons_origbranch.h \
- src/cons_masterbranch.h src/cons_connected.h src/pricer_gcg.h \
- src/type_solver.h src/masterplugins.h src/nodesel_master.h \
- src/pub_gcgvar.h src/pub_decomp.h src/type_detector.h src/scip_misc.h
+ src/cons_masterbranch.h src/pricer_gcg.h src/type_solver.h \
+ src/masterplugins.h src/nodesel_master.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/type_detector.h src/scip_misc.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
@@ -2108,7 +2107,7 @@ $(OBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
- src/type_detector.h src/type_decomp.h src/cons_connected.h \
+ src/type_detector.h src/type_decomp.h src/dec_connected.h \
  src/relax_gcg.h src/type_branchgcg.h src/struct_detector.h \
  src/scip_misc.h lib/scip/src/scip/clock.h src/pub_gcgvar.h \
  src/pub_decomp.h
@@ -2226,7 +2225,7 @@ $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/intervalarith.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h
-$(OBJDIR)/cons_connected.o: src/cons_connected.c src/cons_connected.h \
+$(OBJDIR)/dec_connected.o: src/dec_connected.c src/dec_connected.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \

@@ -32,7 +32,6 @@
 
 #include "cons_origbranch.h"
 #include "cons_masterbranch.h"
-#include "cons_connected.h"
 #include "pricer_gcg.h"
 #include "masterplugins.h"
 #include "nodesel_master.h"
@@ -108,7 +107,6 @@ struct SCIP_RelaxData
    SCIP_SOL*        origprimalsol;       /**< best original primal solution */
 
    /* structure information */
-   SCIP_Bool        hasblockdetection;   /**< indicates whether the block detection code is present */
    DECDECOMP*       decdecomp;           /**< structure information */
 };
 
@@ -1749,12 +1747,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    }
    SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
 
-   if( SCIPfindConshdlr(scip, "connected") != NULL )
-   {
-      relaxdata->hasblockdetection = TRUE;
-      SCIPdebugMessage("Block detection code present.\n");
-   }
-
    return SCIP_OKAY;
 }
 
@@ -1905,7 +1897,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
          /* if we have a blockdetection, see whether the node is block diagonal */
-         if( relaxdata->hasblockdetection && SCIPisMatrixBlockDiagonal(scip) )
+         if( DECdecdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
          {
             SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
             if( *result == SCIP_SUCCESS )

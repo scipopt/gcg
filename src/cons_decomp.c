@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include "cons_decomp.h"
-#include "cons_connected.h"
+#include "dec_connected.h"
 #include "relax_gcg.h"
 #include "struct_detector.h"
 #include "string.h"

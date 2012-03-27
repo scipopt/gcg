@@ -137,9 +137,9 @@
 #include "reader_ref.h"
 
 /* Martin's detection stuff */
-#include "cons_decomp.h"
-#include "cons_connected.h"
 #include "reader_gp.h"
+#include "cons_decomp.h"
+#include "dec_connected.h"
 #include "dec_borderheur.h"
 #include "dec_arrowheur.h"
 
@@ -263,8 +263,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
-   SCIP_CALL( SCIPincludeConshdlrConnected(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
+   SCIP_CALL( SCIPincludeDetectionConnected(scip) );
    SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
    SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 

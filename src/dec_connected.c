@@ -8,8 +8,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   cons_connected.c
- * @ingroup CONSHDLRS
+/**@file   dec_connected.c
+ * @ingroup DETECTORS
  * @brief  constraint handler for connected constraints
  * @author Martin Bergner
  */
@@ -20,52 +20,33 @@
 #include <assert.h>
 #include <string.h>
 
-#include "cons_connected.h"
+#include "dec_connected.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
 #include "pub_decomp.h"
 
 /* constraint handler properties */
-#define CONSHDLR_NAME          "connected"
-#define CONSHDLR_DESC          "constraint handler template"
-#define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
-#define CONSHDLR_ENFOPRIORITY         0 /**< priority of the constraint handler for constraint enforcing */
-#define CONSHDLR_CHECKPRIORITY        0 /**< priority of the constraint handler for checking feasibility */
-#define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
-#define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
-#define CONSHDLR_EAGERFREQ          100 /**< frequency for using all instead of only the useful constraints in separation,
-                                          *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
-#define CONSHDLR_MAXPREROUNDS        -1 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
-#define CONSHDLR_DELAYSEPA         TRUE /**< should separation method be delayed, if other separators found cuts? */
-#define CONSHDLR_DELAYPROP         TRUE /**< should propagation method be delayed, if other propagators found reductions? */
-#define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
-#define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
+#define DEC_DETECTORNAME         "connected"    /**< name of detector */
+#define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
+#define DEC_DECCHAR              'b'            /**< display character of detector */
+#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 
-#define CONSHDLR_PROP_TIMING       SCIP_PROPTIMING_BEFORELP
-
-#define DEFAULT_ENABLE             TRUE /**< should the detection be enabled */
-#define DEFAULT_SETPPCINMASTER     TRUE /**< should the extended structure be detected */
+#define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
 /*
  * Data structures
  */
 
-/** constraint data for connected constraints */
-struct SCIP_ConsData
-{
-};
-
 /** constraint handler data */
-struct SCIP_ConshdlrData
+struct DEC_DetectorData
 {
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
    SCIP_Bool blockdiagonal;
 
-   DECDECOMP* decdecomp;
    SCIP_CLOCK* clock;
    int nblocks;
-   SCIP_Bool enable;
-   SCIP_Bool *consismaster;
+
+   SCIP_Bool* consismaster;
    SCIP_Bool setppcinmaster;
 };
 
@@ -154,11 +135,11 @@ SCIP_Bool isConsMaster(
 }
 
 
-/** looks for connected components in the constraints in conshdlrdata */
+/** looks for connected components in the constraints in detectordata */
 static
 SCIP_RETCODE findConnectedComponents(
    SCIP*              scip,         /**< SCIP data structure */
-   SCIP_CONSHDLRDATA* conshdlrdata, /**< constraint handler data structure */
+   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
    SCIP_RESULT*       result        /**< result pointer to indicate success oder failuer */
    )
 {
@@ -182,7 +163,7 @@ SCIP_RETCODE findConnectedComponents(
    SCIP_HASHMAP *constoblock;
 
    assert(scip != NULL);
-   assert(conshdlrdata != NULL);
+   assert(detectordata != NULL);
    assert(result != NULL);
 
    /* initialize data structures */
@@ -195,7 +176,7 @@ SCIP_RETCODE findConnectedComponents(
    SCIP_CALL( SCIPallocBufferArray(scip, &vartoblock, nvars+1) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blockrepresentative, nconss+1) );
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss+1) );
-   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), nconss) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -210,23 +191,23 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[0] = 0;
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
-   findextended = conshdlrdata->setppcinmaster;
+   findextended = detectordata->setppcinmaster;
 
    /* in a first preprocessing step, indicate which constraints should go in the master */
    if( findextended )
    {
       for( i = 0; i < nconss; ++i )
       {
-         conshdlrdata->consismaster[i] = isConsMaster(scip, conss[i]);
+         detectordata->consismaster[i] = isConsMaster(scip, conss[i]);
          /* we look for an extended structure if there is a constraint not in the master! */
-         findextended = findextended || !conshdlrdata->consismaster[i];
+         findextended = findextended || !detectordata->consismaster[i];
       }
    }
 
    if( !findextended )
    {
       for( i = 0; i < nconss; ++i )
-         conshdlrdata->consismaster[i] = FALSE;
+         detectordata->consismaster[i] = FALSE;
    }
 
    /* go through the all constraints */
@@ -239,7 +220,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( conshdlrdata->consismaster[i] )
+      if( detectordata->consismaster[i] )
          continue;
 
       /* get variables of constraint */
@@ -388,7 +369,7 @@ SCIP_RETCODE findConnectedComponents(
    }
    SCIPdebugPrintf("\n");
 
-   /* convert temporary data to conshdlrdata */
+   /* convert temporary data to detectordata */
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
@@ -397,7 +378,7 @@ SCIP_RETCODE findConnectedComponents(
       if( isConsGCGCons(cons) )
          continue;
 
-      if( conshdlrdata->consismaster[i] )
+      if( detectordata->consismaster[i] )
          continue;
 
       if(!SCIPhashmapExists(constoblock, cons))
@@ -407,11 +388,11 @@ SCIP_RETCODE findConnectedComponents(
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
       assert(consblock < tempblock);
-      SCIP_CALL( SCIPhashmapInsert(conshdlrdata->constoblock, cons, (void*)(size_t)consblock) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*)(size_t)consblock) );
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
    }
 
-   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->vartoblock, SCIPblkmem(scip), nvars+1) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartoblock, SCIPblkmem(scip), nvars+1) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -431,7 +412,7 @@ SCIP_RETCODE findConnectedComponents(
       {
          assert(varblock < tempblock);
          SCIPdebugMessage("Var %s in block %d\n", SCIPvarGetName(SCIPvarGetProbvar(vars[i])), varblock-1);
-         SCIP_CALL( SCIPhashmapInsert(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]),
+         SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]),
                (void*)(size_t)(varblock)) );
       }
    }
@@ -440,9 +421,9 @@ SCIP_RETCODE findConnectedComponents(
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
-   conshdlrdata->nblocks = tempblock-1;
+   detectordata->nblocks = tempblock-1;
 
-   if( conshdlrdata->nblocks > 1 )
+   if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
    else
       *result = SCIP_DIDNOTFIND;
@@ -455,7 +436,7 @@ SCIP_RETCODE findConnectedComponents(
 static
 SCIP_RETCODE copyToDecdecomp(
    SCIP*              scip,         /**< SCIP data structure */
-   SCIP_CONSHDLRDATA* conshdlrdata, /**< constraint handler data structure */
+   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
    DECDECOMP*         decdecomp     /**< decdecomp data structure */
    )
 {
@@ -474,7 +455,7 @@ SCIP_RETCODE copyToDecdecomp(
    int nblocks;
 
    assert(scip != NULL);
-   assert(conshdlrdata != NULL);
+   assert(detectordata != NULL);
    assert(decdecomp != NULL);
 
    assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
@@ -484,7 +465,7 @@ SCIP_RETCODE copyToDecdecomp(
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
    nlinkingconss = 0;
-   nblocks = conshdlrdata->nblocks;
+   nblocks = detectordata->nblocks;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) ) ;
@@ -501,22 +482,22 @@ SCIP_RETCODE copyToDecdecomp(
    }
 
    DECdecdecompSetNBlocks(decdecomp, nblocks);
-   DECdecdecompSetConstoblock(decdecomp, conshdlrdata->constoblock);
-   DECdecdecompSetVartoblock(decdecomp, conshdlrdata->vartoblock);
+   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
 
    for( i = 0; i < nconss; ++i )
    {
       size_t consblock;
       if( isConsGCGCons(conss[i]) )
          continue;
-      if( conshdlrdata->consismaster[i] )
+      if( detectordata->consismaster[i] )
       {
          linkingconss[nlinkingconss] = conss[i];
          ++(nlinkingconss);
          continue;
       }
 
-      consblock = (size_t) SCIPhashmapGetImage(conshdlrdata->constoblock, conss[i]);
+      consblock = (size_t) SCIPhashmapGetImage(detectordata->constoblock, conss[i]);
       assert(consblock > 0);
       assert(nblocks >= 0);
       assert(consblock <= (size_t)nblocks);
@@ -532,7 +513,7 @@ SCIP_RETCODE copyToDecdecomp(
       var = SCIPvarGetProbvar(vars[i]);
       if(var == NULL)
          continue;
-      varblock = (size_t) SCIPhashmapGetImage(conshdlrdata->vartoblock, SCIPvarGetProbvar(vars[i]));
+      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]));
 
       assert(varblock > 0);
       assert(nblocks >= 0);
@@ -556,7 +537,7 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
 
-   for( i = 0; i < conshdlrdata->nblocks; ++i )
+   for( i = 0; i < detectordata->nblocks; ++i )
    {
       SCIPfreeBufferArray(scip, &subscipvars[i]);
       SCIPfreeBufferArray(scip, &subscipconss[i]);
@@ -568,183 +549,109 @@ SCIP_RETCODE copyToDecdecomp(
    SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &linkingconss);
 
-   conshdlrdata->vartoblock = NULL;
-   conshdlrdata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->constoblock = NULL;
 
    return SCIP_OKAY;
 }
-
-
-/*
- * Callback methods of constraint handler
- */
-
-/* unneeded methods */
-
-#define conshdlrCopyConnected NULL
-#define consDeleteConnected NULL
-#define consTransConnected NULL
-#define consInitlpConnected NULL
-#define consSepalpConnected NULL
-#define consSepasolConnected NULL
-#define consPropConnected NULL
-#define consPresolConnected NULL
-#define consRespropConnected NULL
-#define consActiveConnected NULL
-#define consDeactiveConnected NULL
-#define consEnableConnected NULL
-#define consDisableConnected NULL
-#define consDelvarConnected NULL
-#define consPrintConnected NULL
-#define consCopyConnected NULL
-#define consParseConnected NULL
-#define consInitConnected NULL
-#define consExitConnected NULL
-#define consInitpreConnected NULL
-#define consExitpreConnected NULL
-
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
-SCIP_DECL_CONSFREE(consFreeConnected)
+DEC_DECL_EXITDETECTOR(exitConnected)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA *conshdlrdata;
+   DEC_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
-   assert(conshdlr != NULL);
+   assert(detector != NULL);
 
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
 
-   SCIPfreeMemory(scip, &conshdlrdata);
+   if( detectordata->clock != NULL )
+      SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
+
+   SCIPfreeMemory(scip, &detectordata);
    return SCIP_OKAY;
 
 }
 
-
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
-SCIP_DECL_CONSINITSOL(consInitsolConnected)
+DEC_DECL_INITDETECTOR(initConnected)
 {  /*lint --e{715}*/
 
-   SCIP_CONSHDLRDATA *conshdlrdata;
-   SCIP_RESULT result;
-   int runs;
-   int i;
+   DEC_DETECTORDATA *detectordata;
 
    assert(scip != NULL);
-   assert(conshdlr != NULL);
+   assert(detector != NULL);
 
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
 
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
 
-   if( !conshdlrdata->enable )
-      return SCIP_OKAY;
+   detectordata->clock = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->blockdiagonal = FALSE;
 
-   /* apparently, there is a structure, which means we don't try to detect one */
-   if( SCIPconshdlrDecompGetNDecdecomps(scip) > 0 )
-   {
-      return SCIP_OKAY;
-   }
+   detectordata->nblocks = 0;
+   detectordata->consismaster = NULL;
 
-   result = SCIP_DIDNOTFIND;
+   SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
+
+   return SCIP_OKAY;
+}
+
+static
+DEC_DECL_DETECTSTRUCTURE(detectConnected)
+{
+   int runs;
+   int i;
+   int nconss;
+
+   *result = SCIP_DIDNOTFIND;
    nconss = SCIPgetNConss(scip);
 
-   runs = conshdlrdata->setppcinmaster ? 2:1;
-   SCIP_CALL( SCIPallocBufferArray(scip, &conshdlrdata->consismaster, nconss) );
+   runs = detectordata->setppcinmaster ? 2:1;
 
-   for( i = 0; i < runs && result != SCIP_SUCCESS; ++i )
+   SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );
+
+   for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", conshdlrdata->setppcinmaster ? "extended":"blockdiagonal" );
-      SCIP_CALL( SCIPcreateClock(scip, &conshdlrdata->clock) );
-      SCIP_CALL( SCIPstartClock(scip, conshdlrdata->clock) );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectordata->setppcinmaster ? "extended":"blockdiagonal" );
 
-      SCIP_CALL( findConnectedComponents(scip, conshdlrdata, &result) );
+      SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
 
-      SCIP_CALL( SCIPstopClock(scip, conshdlrdata->clock) );
+      SCIP_CALL( findConnectedComponents(scip, detectordata, result) );
 
-      SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, conshdlrdata->clock));
-      if( result == SCIP_SUCCESS )
+      SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
+
+      SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
+      if( *result == SCIP_SUCCESS )
       {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", conshdlrdata->nblocks);
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
 
-         SCIP_CALL( DECdecdecompCreate(scip, &conshdlrdata->decdecomp) );
-         SCIP_CALL( copyToDecdecomp(scip, conshdlrdata, conshdlrdata->decdecomp) );
-         conshdlrdata->blockdiagonal = DECdecdecompGetType(conshdlrdata->decdecomp) == DEC_DECTYPE_DIAGONAL;
-         SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, conshdlrdata->decdecomp) );
+         SCIP_CALL( DECdecdecompCreate(scip, &((*decdecomps)[0])) );
+         SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
+         detectordata->blockdiagonal = DECdecdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
+         *ndecdecomps = 1;
       }
       else
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-         SCIPhashmapFree(&conshdlrdata->constoblock);
-         SCIPhashmapFree(&conshdlrdata->vartoblock);
+         SCIPhashmapFree(&detectordata->constoblock);
+         SCIPhashmapFree(&detectordata->vartoblock);
       }
-      if( conshdlrdata->setppcinmaster == TRUE && result != SCIP_SUCCESS )
+      if( detectordata->setppcinmaster == TRUE && *result != SCIP_SUCCESS )
       {
-         conshdlrdata->setppcinmaster = FALSE;
+         detectordata->setppcinmaster = FALSE;
       }
    }
-   SCIPfreeBufferArray(scip, &conshdlrdata->consismaster);
-
-   return SCIP_OKAY;
-}
-
-
-/** solving process deinitialization method of constraint handler (called before branch and bound process data is freed) */
-static
-SCIP_DECL_CONSEXITSOL(consExitsolConnected)
-{  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA *conshdlrdata;
-
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( conshdlrdata->clock != NULL )
-      SCIP_CALL( SCIPfreeClock(scip, &conshdlrdata->clock) );
-
-   return SCIP_OKAY;
-}
-
-
-/** constraint enforcing method of constraint handler for LP solutions */
-static
-SCIP_DECL_CONSENFOLP(consEnfolpConnected)
-{  /*lint --e{715}*/
-   *result = SCIP_FEASIBLE;
-   return SCIP_OKAY;
-}
-
-
-/** constraint enforcing method of constraint handler for pseudo solutions */
-static
-SCIP_DECL_CONSENFOPS(consEnfopsConnected)
-{  /*lint --e{715}*/
-   *result = SCIP_FEASIBLE;
-   return SCIP_OKAY;
-}
-
-
-/** feasibility check method of constraint handler for integral solutions */
-static
-SCIP_DECL_CONSCHECK(consCheckConnected)
-{  /*lint --e{715}*/
-   *result = SCIP_FEASIBLE;
-   return SCIP_OKAY;
-}
-
-/** variable rounding lock method of constraint handler */
-static
-SCIP_DECL_CONSLOCK(consLockConnected)
-{  /*lint --e{715}*/
+   SCIPfreeBufferArray(scip, &detectordata->consismaster);
 
    return SCIP_OKAY;
 }
@@ -755,101 +662,22 @@ SCIP_DECL_CONSLOCK(consLockConnected)
  */
 
 /** creates the handler for connected constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConshdlrConnected(
+SCIP_RETCODE SCIPincludeDetectionConnected(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CONSHDLRDATA* conshdlrdata;
+   DEC_DETECTORDATA* detectordata;
 
    /* create connected constraint handler data */
-   conshdlrdata = NULL;
+   detectordata = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
-   assert(conshdlrdata != NULL);
-   conshdlrdata->clock = NULL;
-   conshdlrdata->constoblock = NULL;
-   conshdlrdata->vartoblock = NULL;
-   conshdlrdata->blockdiagonal = FALSE;
+   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   assert(detectordata != NULL);
 
-   conshdlrdata->nblocks = 0;
-   conshdlrdata->enable = TRUE;
-   conshdlrdata->decdecomp = NULL;
-   conshdlrdata->consismaster = NULL;
-
-   /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
-         CONSHDLR_SEPAPRIORITY, CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY,
-         CONSHDLR_SEPAFREQ, CONSHDLR_PROPFREQ, CONSHDLR_EAGERFREQ, CONSHDLR_MAXPREROUNDS,
-         CONSHDLR_DELAYSEPA, CONSHDLR_DELAYPROP, CONSHDLR_DELAYPRESOL, CONSHDLR_NEEDSCONS,
-         CONSHDLR_PROP_TIMING,
-         conshdlrCopyConnected,
-         consFreeConnected, consInitConnected, consExitConnected,
-         consInitpreConnected, consExitpreConnected, consInitsolConnected, consExitsolConnected,
-         consDeleteConnected, consTransConnected, consInitlpConnected,
-         consSepalpConnected, consSepasolConnected, consEnfolpConnected, consEnfopsConnected, consCheckConnected,
-         consPropConnected, consPresolConnected, consRespropConnected, consLockConnected,
-         consActiveConnected, consDeactiveConnected,
-         consEnableConnected, consDisableConnected, consDelvarConnected,
-         consPrintConnected, consCopyConnected, consParseConnected,
-         conshdlrdata) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
 
    /* add connected constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/enable", "Controls whether block diagonal detection is enabled", &conshdlrdata->enable, FALSE, DEFAULT_ENABLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting", &conshdlrdata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
 
    return SCIP_OKAY;
-}
-
-/** creates and captures a connected constraint */
-SCIP_RETCODE SCIPcreateConsConnected(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name                /**< name of constraint */
-   )
-{
-
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSDATA* consdata;
-
-   SCIPerrorMessage("method of connected constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527} --e{715}*/
-
-   /* find the connected constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("connected constraint handler not found\n");
-      return SCIP_PLUGINNOTFOUND;
-   }
-
-   /* create constraint data */
-   consdata = NULL;
-   /** @todo create and store constraint specific data here */
-
-   /* create constraint */
-   SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
-         TRUE, TRUE, FALSE, TRUE, TRUE) );
-
-   return SCIP_OKAY;
-}
-
-
-/** returns whether a block diagonal structure was found */
-SCIP_Bool SCIPisMatrixBlockDiagonal(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA *conshdlrdata;
-
-   assert(scip != NULL);
-
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-   return conshdlrdata->blockdiagonal;
 }
