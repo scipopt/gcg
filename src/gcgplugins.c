@@ -140,8 +140,6 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
-#include "dec_borderheur.h"
-#include "dec_arrowheur.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -265,8 +263,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
-   SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
-   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );

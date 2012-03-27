@@ -78,8 +78,6 @@ MAINOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			decomp.o \
-			dec_arrowheur.o \
-			dec_borderheur.o \
 			dec_connected.o \
 			gcggithash.o \
 			reader_gp.o \
