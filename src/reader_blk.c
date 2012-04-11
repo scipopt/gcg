@@ -296,7 +296,7 @@ SCIP_Bool getNextToken(
    /* check if the token is a value */
    hasdot = FALSE;
    exptype = BLK_EXP_NONE;
-   if( isValueChar(buf[blkinput->linepos], buf[blkinput->linepos+1], TRUE, &hasdot, &exptype) )
+   if( isValueChar(buf[blkinput->linepos], buf[blkinput->linepos+1], TRUE, &hasdot, &exptype) ) /*lint !e679*/
    {
       /* read value token */
       tokenlen = 0;
@@ -305,10 +305,11 @@ SCIP_Bool getNextToken(
          assert(tokenlen < BLK_MAX_LINELEN);
          assert(!isDelimChar(buf[blkinput->linepos]));
          blkinput->token[tokenlen] = buf[blkinput->linepos];
-         tokenlen++;
-         blkinput->linepos++;
+         ++tokenlen;
+         ++(blkinput->linepos);
+         assert(blkinput->linepos < BLK_MAX_LINELEN);
       }
-      while( isValueChar(buf[blkinput->linepos], buf[blkinput->linepos+1], FALSE, &hasdot, &exptype) );
+      while( isValueChar(buf[blkinput->linepos], buf[blkinput->linepos+1], FALSE, &hasdot, &exptype) ); /*lint !e679*/
    }
    else
    {
@@ -390,7 +391,10 @@ SCIP_Bool isInt(
    val = strtol(blkinput->token, &endptr, 0);
    if( endptr != blkinput->token && *endptr == '\0' )
    {
-      *value = val;
+      if(val < INT_MIN || val > INT_MAX )
+         return FALSE;
+
+      *value = val; /*lint !e712*/
       return TRUE;
    }
 

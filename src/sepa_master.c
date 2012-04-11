@@ -233,7 +233,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    for( i = 0; i < ncuts; i++ )
    {
-      origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i];
+      origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i]; /*lint !e679*/ 
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
