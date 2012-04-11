@@ -1183,10 +1183,17 @@ void sortPricingProblemsByScore(SCIP_PRICERDATA *pricerdata)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       pricerdata->permu[i] = i;
-      if( pricerdata->sorting == 1 )
+      switch(pricerdata->sorting)
+      {
+      case 1:
          pricerdata->score[i] = pricerdata->dualsolconv[i];
-      else if( pricerdata->sorting == 2 )
+         break;
+      case 2:
          pricerdata->score[i] = -(0.2 * pricerdata->npointsprob[i] + pricerdata->nraysprob[i]);
+         break;
+      default:
+         pricerdata->score[i] = 0.0;
+      }
    }
 
    if( pricerdata->sorting > 0 )

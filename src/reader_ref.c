@@ -23,7 +23,7 @@
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
-#include <strings.h>
+#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
 #include <ctype.h>
 
@@ -296,7 +296,7 @@ SCIP_Bool getNextToken(
    /* check if the token is a value */
    hasdot = FALSE;
    exptype = REF_EXP_NONE;
-   if( isValueChar(buf[refinput->linepos], buf[refinput->linepos+1], TRUE, &hasdot, &exptype) )
+   if( isValueChar(buf[refinput->linepos], buf[refinput->linepos+1], TRUE, &hasdot, &exptype) ) /*lint !e679*/
    {
       /* read value token */
       tokenlen = 0;
@@ -305,10 +305,11 @@ SCIP_Bool getNextToken(
          assert(tokenlen < REF_MAX_LINELEN);
          assert(!isDelimChar(buf[refinput->linepos]));
          refinput->token[tokenlen] = buf[refinput->linepos];
-         tokenlen++;
-         refinput->linepos++;
+         ++tokenlen;
+         ++(refinput->linepos);
+         assert(refinput->linepos < REF_MAX_LINELEN);
       }
-      while( isValueChar(buf[refinput->linepos], buf[refinput->linepos+1], FALSE, &hasdot, &exptype) );
+      while( isValueChar(buf[refinput->linepos], buf[refinput->linepos+1], FALSE, &hasdot, &exptype) ); /*lint !e679*/
    }
    else
    {
@@ -357,26 +358,23 @@ SCIP_Bool isInt(
    int*      value            /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
+   long val;
+   char* endptr;
+
    assert(refinput != NULL);
    assert(value != NULL);
+   assert(!strcasecmp(refinput->token, "INFINITY") == 0 && !strcasecmp(refinput->token, "INF") == 0 );
 
-   if( strcasecmp(refinput->token, "INFINITY") == 0 || strcasecmp(refinput->token, "INF") == 0 )
+   val = strtol(refinput->token, &endptr, 0);
+   if( endptr != refinput->token && *endptr == '\0' )
    {
-      *value = SCIPinfinity(scip);
+      if( val < INT_MIN || val > INT_MAX )
+         return FALSE;
+
+      *value = val; /*lint !e712*/
       return TRUE;
    }
-   else
-   {
-      long val;
-      char* endptr;
 
-      val = strtol(refinput->token, &endptr, 0);
-      if( endptr != refinput->token && *endptr == '\0' )
-      {
-         *value = val;
-         return TRUE;
-      }
-   }
 
    return FALSE;
 }
@@ -390,7 +388,7 @@ SCIP_RETCODE readStart(
 {
    assert(refinput != NULL);
 
-   getNextToken(refinput);
+   (void) getNextToken(refinput);
 
    return SCIP_OKAY;
 }
@@ -517,7 +515,7 @@ SCIP_RETCODE readBlocks(
                if( SCIPhashmapExists(refinput->vartoblock, var) )
                {
                   int block;
-                  block = (int)(size_t) SCIPhashmapGetImage(refinput->vartoblock, var);
+                  block = (int)(size_t) SCIPhashmapGetImage(refinput->vartoblock, var); /*lint !e507*/
                   if( block != refinput->blocknr+1 && block != refinput->nblocks+1 )
                   {
                      SCIP_CALL( SCIPhashmapRemove(refinput->vartoblock, var) );
@@ -551,15 +549,17 @@ SCIP_RETCODE readBlocks(
 /** reads an REF file */
 static
 SCIP_RETCODE readREFFile(
-   SCIP*       scip,          /**< SCIP data structure */
-   REFINPUT*   refinput,      /**< REF reading data */
-   DECDECOMP*  decdecomp,     /**< decomposition structure */
-   const char* filename       /**< name of the input file */
+   SCIP*        scip,         /**< SCIP data structure */
+   SCIP_READER* reader,       /**< reader data structure */
+   REFINPUT*    refinput,     /**< REF reading data */
+   DECDECOMP*   decdecomp,    /**< decomposition structure */
+   const char*  filename      /**< name of the input file */
    )
 {
+   assert(scip != NULL);
+   assert(reader != NULL);
    assert(refinput != NULL);
-
-   /*   SCIP_CALL( GCGcreateOrigVarsData(scip) ); */
+   assert(filename != NULL);
 
    /* open file */
    refinput->file = SCIPfopen(filename, "r");
@@ -652,23 +652,17 @@ SCIP_RETCODE writeREFFile(
    SCIP_CALL( SCIPhashmapCreate(&cons2origindex, SCIPblkmem(scip), 2*nconss) );
    for( i = 0; i < nconss; ++i )
    {
-      size_t ind;
-#ifndef NDEBUG
-      size_t unconss;
-#endif
+      int ind;
       SCIP_CONS* cons;
 
       ind = i+1;
-#ifndef NDEBUG
-      unconss = nconss;
-#endif
+
       assert(ind > 0);
-      assert(ind <= unconss);
+      assert(ind <= nconss);
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
 
-      SCIPdebugMessage("cons added: %zu\t%p\t%s\n",ind, cons, SCIPconsGetName(cons));
-      SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(ind)) ); /* shift by 1 to enable error checking */
-
+      SCIPdebugMessage("cons added: %d\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
+      SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
    subscipconss = DECdecdecompGetSubscipconss(decdecomp);
@@ -688,23 +682,15 @@ SCIP_RETCODE writeREFFile(
    {
       for( j = 0; j < nsubscipconss[i]; ++j )
       {
-         size_t ind;
-#ifndef NDEBUG
-         size_t unconss;
-#endif
+         int ind;
          SCIP_CONS* cons;
-//         assert(SCIPconsIsTransformed(subscipconss[i][j]));
-//         SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[i][j], &cons) );
-//         assert(cons != NULL);
-         cons = SCIPfindCons(scip, SCIPconsGetName(subscipconss[i][j]));
-         ind = (size_t) SCIPhashmapGetImage(cons2origindex, cons);
-         SCIPdebugMessage("cons retrieve (o): %zu\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
 
-#ifndef NDEBUG
-         unconss = nconss;
-#endif
+         cons = SCIPfindCons(scip, SCIPconsGetName(subscipconss[i][j]));
+         ind = (int)(size_t) SCIPhashmapGetImage(cons2origindex, cons); /*lint !e507*/
+         SCIPdebugMessage("cons retrieve (o): %d\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
+
          assert(ind > 0); /* shift by 1 */
-         assert(ind <= unconss); /* shift by 1 */
+         assert(ind <= nconss); /* shift by 1 */
          SCIPinfoMessage(scip, file, "%d ", ind-1);
       }
       SCIPinfoMessage(scip, file, "\n", nblocks);
@@ -778,13 +764,13 @@ SCIP_RETCODE SCIPreadRef(
    /* initialize REF input data */
    refinput.file = NULL;
    refinput.linebuf[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.token, REF_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.token, REF_MAX_LINELEN) ); /*lint !e506*/
    refinput.token[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.tokenbuf, REF_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.tokenbuf, REF_MAX_LINELEN) ); /*lint !e506*/
    refinput.tokenbuf[0] = '\0';
    for( i = 0; i < REF_MAX_PUSHEDTOKENS; ++i )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.pushedtokens[i], REF_MAX_LINELEN) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.pushedtokens[i], REF_MAX_LINELEN) ); /*lint !e506 !e866*/
    }
    SCIP_CALL( SCIPallocBufferArray(scip, &refinput.markedmasterconss, 1) );
 
@@ -803,7 +789,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    /* read the file */
    SCIP_CALL( DECdecdecompCreate(scip, &decdecomp) );
-   SCIP_CALL( readREFFile(scip, &refinput, decdecomp, filename) );
+   SCIP_CALL( readREFFile(scip, reader, &refinput, decdecomp, filename) );
 
    SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
    SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
