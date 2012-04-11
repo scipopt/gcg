@@ -215,22 +215,24 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
             /* add bound changes to the boundchanges array */
             for( j = 0; j < SCIPdomchgGetNBoundchgs(domchg); j++ )
             {
+               int bndchgindex;
                boundchg = SCIPdomchgGetBoundchg(domchg, j);
+
                if( j < stackconsdata->nboundchangestreated[i] )
                {
                   assert(stackconsdata->boundchgvars[j] == SCIPboundchgGetVar(boundchg)
-                     && stackconsdata->newbounds[j] == SCIPboundchgGetNewbound(boundchg)
+                     && SCIPisEQ(scip, stackconsdata->newbounds[j], SCIPboundchgGetNewbound(boundchg))
                      && stackconsdata->boundtypes[j] == SCIPboundchgGetBoundtype(boundchg));
                   continue;
                }
                if( j < parentdata->nboundchangestreated[i] )
                   continue;
-               consdata->boundchgvars[consdata->nboundchanges + j - parentdata->nboundchangestreated[i]]
-                  = SCIPboundchgGetVar(boundchg);
-               consdata->newbounds[consdata->nboundchanges + j - parentdata->nboundchangestreated[i]]
-                  = SCIPboundchgGetNewbound(boundchg);
-               consdata->boundtypes[consdata->nboundchanges + j - parentdata->nboundchangestreated[i]]
-                  = SCIPboundchgGetBoundtype(boundchg);
+
+               bndchgindex = consdata->nboundchanges + j - parentdata->nboundchangestreated[i];
+
+               consdata->boundchgvars[bndchgindex] = SCIPboundchgGetVar(boundchg);
+               consdata->newbounds[bndchgindex] = SCIPboundchgGetNewbound(boundchg);
+               consdata->boundtypes[bndchgindex] = SCIPboundchgGetBoundtype(boundchg);
 
             }
             consdata->nboundchanges += diff;
@@ -1076,9 +1078,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             else
             {
                SCIPerrorMessage("Variable %s is not pricing nor master.\n", SCIPvarGetName(conshdlrData->pendingvars[k]));
-               assert(FALSE);
+               assert(GCGvarIsMaster(conshdlrData->pendingvars[k]) || GCGvarIsPricing(conshdlrData->pendingvars[k]));
+               bndchgorigvars = NULL;
             }
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
+            assert(bndchgorigvars != NULL);
 
             /* LINK: mb: this might work  */
             /* the boundchange was performed on a variable in another block, continue */
@@ -1511,7 +1515,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPvarGetLbGlobal(mastervars[0]) == oldbound);
+         assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
@@ -1521,7 +1525,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPvarGetUbGlobal(mastervars[0]) == oldbound);
+         assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
@@ -1568,7 +1572,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPvarGetLbGlobal(mastervars[0]) == oldbound);
+            assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
             //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
@@ -1594,7 +1598,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPvarGetUbGlobal(mastervars[0]) == oldbound);
+            assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
             //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
@@ -1980,7 +1984,9 @@ void GCGconsMasterbranchCheckConsistency(
    {
       SCIPerrorMessage("masterbranch constraint handler not found\n");
       SCIPABORT();
+#ifdef NDEBUG
       return;
+#endif
    }
 #ifndef NDEBUG
    conss = SCIPconshdlrGetConss(conshdlr);
