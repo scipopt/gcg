@@ -1417,8 +1417,11 @@ SCIP_RETCODE performPricing(
 
          pricerdata->solvedsubmipsoptimal++;
          solvedmips++;
+         if( !SCIPisInfinity(scip, pricinglowerbound) )
+         {
+            assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
+         }
 
-         assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
          bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
 
          if( status != SCIP_STATUS_OPTIMAL )
