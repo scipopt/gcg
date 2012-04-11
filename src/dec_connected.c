@@ -300,6 +300,7 @@ SCIP_RETCODE findConnectedComponents(
          int curvarindex;
          SCIP_VAR* curprobvar;
          int oldblock;
+         assert(curvars != NULL);
 
          curprobvar = SCIPvarGetProbvar(curvars[k]);
          curvarindex = SCIPvarGetProbindex(curprobvar);
@@ -384,7 +385,7 @@ SCIP_RETCODE findConnectedComponents(
       if(!SCIPhashmapExists(constoblock, cons))
          continue;
 
-      consblock = (size_t)SCIPhashmapGetImage(constoblock, cons);
+      consblock = (int)(size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
       assert(consblock < tempblock);
@@ -475,9 +476,9 @@ SCIP_RETCODE copyToDecdecomp(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
       nsubscipvars[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
       nsubscipconss[i] = 0;
    }
 
@@ -497,7 +498,7 @@ SCIP_RETCODE copyToDecdecomp(
          continue;
       }
 
-      consblock = (size_t) SCIPhashmapGetImage(detectordata->constoblock, conss[i]);
+      consblock = (size_t) SCIPhashmapGetImage(detectordata->constoblock, conss[i]); /*lint !e507*/
       assert(consblock > 0);
       assert(nblocks >= 0);
       assert(consblock <= (size_t)nblocks);
@@ -513,7 +514,7 @@ SCIP_RETCODE copyToDecdecomp(
       var = SCIPvarGetProbvar(vars[i]);
       if(var == NULL)
          continue;
-      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]));
+      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, SCIPvarGetProbvar(vars[i])); /*lint !e507*/
 
       assert(varblock > 0);
       assert(nblocks >= 0);
@@ -633,7 +634,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       if( *result == SCIP_SUCCESS )
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
-         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
          SCIP_CALL( DECdecdecompCreate(scip, &((*decdecomps)[0])) );
          SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
          detectordata->blockdiagonal = DECdecdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
