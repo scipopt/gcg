@@ -427,6 +427,9 @@ SCIP_RETCODE checkSetppcStructure(
    relaxdata->masterissetpart = TRUE;
 
    for( i = 0; i < nmasterconss; ++i )
+   {
+      assert(masterconss != NULL);
+
       if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[i])), "setppc") == 0 )
       {
          switch( SCIPgetTypeSetppc(scip, masterconss[i]) )
@@ -454,6 +457,7 @@ SCIP_RETCODE checkSetppcStructure(
          relaxdata->masterissetpart = FALSE;
          break;
       }
+   }
 
    if( relaxdata->masterissetcover )
    {
@@ -473,13 +477,13 @@ SCIP_RETCODE checkSetppcStructure(
 /** checks whether two arrays of SCIP_Real's are identical
  * @todo What about using SCIPisEq()
  */
-
 static
 SCIP_Bool realArraysAreEqual(
-   SCIP_Real*            array1,
-   int                   array1length,
-   SCIP_Real*            array2,
-   int                   array2length
+   SCIP*      scip,           /**< SCIP data structure */
+   SCIP_Real* array1,         /**< first array */
+   int        array1length,   /**< length of first array */
+   SCIP_Real* array2,         /**< second array */
+   int        array2length    /**< length of second array */   
    )
 {
    int i;
@@ -495,7 +499,7 @@ SCIP_Bool realArraysAreEqual(
 
    for( i = 0; i < array1length; i++ )
    {
-      if( array1[i] != array2[i] )
+      if( !SCIPisEQ(scip, array1[i], array2[i]) )
          return FALSE;
    }
 
@@ -505,6 +509,7 @@ SCIP_Bool realArraysAreEqual(
 /* checks whether two pricingproblems represent identical blocks */
 static
 SCIP_RETCODE pricingprobsAreIdentical(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
    int                   probnr1,            /**< number of the first pricingproblem */
    int                   probnr2,            /**< number of the second pricingproblem */
@@ -606,7 +611,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
       assert(GCGvarIsOriginal(origvars1[0]));
       assert(GCGvarIsOriginal(origvars2[0]));
 
-      if( !realArraysAreEqual(coefs1, ncoefs1, coefs2, ncoefs2) )
+      if( !realArraysAreEqual(scip, coefs1, ncoefs1, coefs2, ncoefs2) )
       {
          SCIPdebugMessage("--> coefs differ for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
@@ -637,7 +642,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
          SCIPdebugMessage("--> rhs differs for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
          return SCIP_OKAY;
       }
-      if( !realArraysAreEqual(SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
+      if( !realArraysAreEqual(scip, SCIPgetValsLinear(scip1, conss1[i]), SCIPgetNVarsLinear(scip1, conss1[i]),
             SCIPgetValsLinear(scip2, conss2[i]), SCIPgetNVarsLinear(scip2, conss2[i])) )
       {
          SCIPdebugMessage("--> coefs differ for cons %s and cons %s!\n", SCIPconsGetName(conss1[i]), SCIPconsGetName(conss2[i]));
@@ -711,7 +716,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             continue;
 
          SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** @todo +1 to deal with empty subproblems */
-         SCIP_CALL( pricingprobsAreIdentical(relaxdata, i, j, varmap, &identical) );
+         SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
          if( identical )
          {
@@ -850,10 +855,11 @@ SCIP_RETCODE createLinkingPricingVars(
    SCIP_CONS* linkcons;
 #ifndef NDEBUG
    SCIP_CONS** linkconss;
+   int nblocks;
 #endif
    SCIP_VAR** pricingvars;
    int i;
-   int nblocks;
+
 
    assert(origvar != NULL);
    assert(relaxdata != NULL);
@@ -862,8 +868,9 @@ SCIP_RETCODE createLinkingPricingVars(
    assert(GCGvarIsOriginal(origvar));
    assert(GCGvarIsLinking(origvar));
    pricingvars = GCGlinkingVarGetPricingVars(origvar);
-   nblocks = GCGlinkingVarGetNBlocks(origvar);
+
 #ifndef NDEBUG
+   nblocks = GCGlinkingVarGetNBlocks(origvar);
    /* checks that GCGrelaxSetOriginalVarBlockNr() worked correctly */
    {
       int count;
@@ -969,7 +976,11 @@ SCIP_RETCODE createPricingVariables(
       blocknr = GCGvarGetBlock(probvar);
       if( blocknr == -1 )
       {
-         blocknr = ((int) (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar) ) -1;
+         size_t tempblock;
+         tempblock = (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
+         assert(tempblock < INT_MAX);
+         assert(tempblock > 0);
+         blocknr = (int) (tempblock -1); /*lint !e806*/
       }
       SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
@@ -1719,7 +1730,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
    if( relaxdata->decdecomp == NULL )
    {
-      SCIPinfoMessage(scip, SCIP_VERBLEVEL_NONE, "\nYou need to specify a decomposition!\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\nYou need to specify a decomposition!\n");
       SCIP_CALL( SCIPinterruptSolve(scip) );
       return SCIP_OKAY;
    }
