@@ -874,7 +874,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
             assert(!SCIPisZero(scip, coefs[c]));
             SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
 
-            idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons);
+            idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons); /*lint !e507*/
             assert(0 <= idx && idx < nmasterconss);
             assert(masterconss[idx] == linkcons);
             mastercoefs[idx] += coefs[c] * solvals[i];
@@ -1703,7 +1703,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    {
       //printf("add cons %s to hashmap: pointer %p\n", SCIPconsGetName(masterconss[i]), masterconss[i]);
       SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, masterconss[i], (void*)(size_t)i) );
-      assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i);
+      assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i); /*lint !e507*/
    }
 
    pricerdata->npricedvars = 0;
@@ -2023,7 +2023,7 @@ SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
    assert(pricerdata != NULL);
 
    SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, cons, (void*)(size_t)pos) );
-   assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, cons) == pos);
+   assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, cons) == pos); /*lint !e507*/
 
    SCIPdebugMessage("Added cons %s (%p) to hashmap with index %d\n", SCIPconsGetName(cons), cons, pos);
 
