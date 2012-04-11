@@ -622,7 +622,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
    assert(scip != NULL);
    assert(branchrule != NULL);
 
-   printf("orig copy called.\n");
+   SCIPdebugMessage("orig copy called.\n");
    SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
 
    return SCIP_OKAY;
