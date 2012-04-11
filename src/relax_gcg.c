@@ -275,9 +275,10 @@ SCIP_RETCODE convertStructToGCG(
       {
          SCIP_VAR* relevantvar;
          assert(subscipvars[i][j] != NULL);
-         assert(SCIPisVarRelevant(subscipvars[i][j]));
-
-         relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
+         if( SCIPisVarRelevant(subscipvars[i][j]) )
+            relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
+         else
+            relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
 
          if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
