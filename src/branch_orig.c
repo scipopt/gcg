@@ -247,7 +247,7 @@ SCIP_RETCODE branchExtern(
 
    if( usepsstrong )
    {
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, FALSE, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
+      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
             npriobranchcands, result, &branchvar) );
       assert(branchvar != NULL || *result == SCIP_CUTOFF);
       assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);

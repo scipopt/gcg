@@ -35,8 +35,6 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
 extern
 SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             allowaddcons,       /**< is the branching rule allowed to add constraints to the current node
-                                              *   in order to cut off the current solution instead of creating a branching? */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
    SCIP_Real*            branchcandsfrac,    /**< fractional part of the branching candidates, zero possible */
