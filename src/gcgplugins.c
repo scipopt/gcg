@@ -26,14 +26,6 @@
 /* include header files here, such that the user only has to include
  * gcgplugins.h
  */
-#include "scip/branch_allfullstrong.h"
-#include "scip/branch_fullstrong.h"
-#include "scip/branch_inference.h"
-#include "scip/branch_mostinf.h"
-#include "scip/branch_leastinf.h"
-#include "scip/branch_pscost.h"
-#include "scip/branch_random.h"
-#include "scip/branch_relpscost.h"
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
 #include "scip/cons_conjunction.h"
@@ -85,9 +77,6 @@
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
-#include "scip/nodesel_estimate.h"
-#include "scip/nodesel_hybridestim.h"
-#include "scip/nodesel_restartdfs.h"
 
 #include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
@@ -102,12 +91,9 @@
 #include "scip/prop_redcost.h"
 #endif
 
-#include "scip/reader_cnf.h"
-#include "scip/reader_fix.h"
 #include "scip/reader_lp.h"
 #include "scip/reader_mps.h"
 #include "scip/reader_sol.h"
-#include "scip/reader_zpl.h"
 #include "scip/reader_cip.h"
 
 #if USESEPA
@@ -123,7 +109,6 @@
 #endif
 
 #include "scip/scipshell.h"
-#include "scip/disp_default.h"
 #include "reader_blk.h"
 #include "reader_dec.h"
 #include "pricer_gcg.h"
