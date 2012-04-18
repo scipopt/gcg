@@ -1096,15 +1096,15 @@ SCIP_RETCODE createNewMasterVar(
          pricerdata->eventhdlr, NULL, NULL) );
 
 
-   SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost);
-
    /* add variable */
    if( !force )
    {
+      SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost); /*lint !e644*/
       SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
    }
    else
    {
+      SCIPdebugMessage("force var %s!\n", SCIPvarGetName(newvar));
       SCIP_CALL( SCIPaddVar(scip, newvar) );
    }
 
