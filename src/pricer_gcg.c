@@ -1022,7 +1022,6 @@ SCIP_RETCODE createNewMasterVar(
       *addedvar = NULL;
 
    objvalue = 0.0;
-   redcost = 0.0;
 
    if( !force )
    {
@@ -1041,11 +1040,14 @@ SCIP_RETCODE createNewMasterVar(
 
          return SCIP_OKAY;
       }
+      SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
+   }
+   else
+   {
+      SCIPdebugMessage("force var (objvalue = %g, dualsol =%g)\n",  objvalue, pricerdata->dualsolconv[prob]);
    }
 
    *added = TRUE;
-
-   SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
 
    /* compute objective coefficient of the variable */
    objcoeff = 0;
