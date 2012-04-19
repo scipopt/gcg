@@ -307,7 +307,7 @@ SCIP_RETCODE DECdecdecompSetLinkingvars(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(linkingvars != NULL);
-   assert(nlinkingvars > 0);
+   assert(nlinkingvars >= 0);
 
    assert(decdecomp->linkingvars == NULL);
    assert(decdecomp->nlinkingvars == 0);
@@ -656,3 +656,50 @@ SCIP_RETCODE DECdecdecompTransform(
    decdecomp->vartoblock = newvartoblock;
    return SCIP_OKAY;
 }
+
+/** prints out detailed information on the contents of decdecomp*/
+void DECdecdecompPrintDecomp(
+   SCIP*      scip,           /**< SCIP data structure */
+   DECDECOMP* decdecomp       /**< decdecomp instance */
+   )
+{
+   int i;
+   int j;
+   SCIP_VAR* var;
+   SCIP_CONS* cons;
+   SCIPinfoMessage(scip, NULL, "================DECDECOMP===============\n");
+   SCIPinfoMessage(scip, NULL, "# blocks: %i\n", decdecomp->nblocks);
+   for(i = 0; i < decdecomp->nblocks; ++i)
+   {
+      SCIPinfoMessage(scip, NULL, "Block #%i (#vars: %i, #conss: %i):\n", i+1, decdecomp->nsubscipvars[i], decdecomp->nsubscipconss[i]);
+      SCIPinfoMessage(scip, NULL, "Variables (block, index):\n");
+      for(j = 0; j < decdecomp->nsubscipvars[i]; ++j)
+      {
+         var = decdecomp->subscipvars[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->vartoblock, (void*) var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+      }
+      SCIPinfoMessage(scip, NULL, "Constraints:\n");
+      for(j = 0; j < decdecomp->nsubscipconss[i]; ++j)
+      {
+         cons = decdecomp->subscipconss[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->constoblock, (void*) cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+      }
+      SCIPinfoMessage(scip, NULL, "========================================\n");
+   }
+   SCIPinfoMessage(scip, NULL, "Linking variables #%i (varindex) :\n", decdecomp->nlinkingvars);
+   for(j = 0; j < decdecomp->nlinkingvars; ++j)
+   {
+      var = decdecomp->linkingvars[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+   SCIPinfoMessage(scip, NULL, "Linking constraints #%i (consindex) :\n", decdecomp->nlinkingconss);
+   for(j = 0; j < decdecomp->nlinkingconss; ++j)
+   {
+      cons = decdecomp->linkingconss[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+}
+
+

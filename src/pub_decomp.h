@@ -218,6 +218,12 @@ SCIP_RETCODE DECdecdecompTransform(
    DECDECOMP* decdecomp       /**< decdecomp instance */
    );
 
+/** prints detailed information on the contents of decdecomp on the command line */
+void DECdecdecompPrintDecomp(
+   SCIP*      scip,           /**< SCIP data structure */
+   DECDECOMP* decdecomp       /**< decdecomp instance */
+   );
+
 #ifdef __cplusplus
 }
 #endif
