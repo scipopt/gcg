@@ -43,6 +43,9 @@ struct DEC_DetectorData
    SCIP_HASHMAP* vartoblock;
    Dijkstra_Graph graph;
 
+   int** varconss;
+   int* nvarconss;
+
    SCIP_CLOCK* clock;
    int nblocks;
 };
@@ -71,269 +74,137 @@ SCIP_Bool isConsGCGCons(
    return FALSE;
 }
 
+/** perform BFS on the graph, storing distance information in the user supplied array */
+static
+SCIP_RETCODE doBFS(
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata,  /**< constraint handler data structure */
+   unsigned int      startnode,     /**< starting node */
+   int**             distances      /**< triangular matrix to store the distance when starting from node i */
+   )
+{
+   unsigned int *queue;
+   SCIP_Bool* marked;
+   int squeue;
+   int equeue;
+   unsigned int i;
+   unsigned int j;
+
+   Dijkstra_Graph* graph;
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(distances != NULL);
+
+   graph = &detectordata->graph;
+   assert(i > 0 && i < graph->nodes);
+
+   squeue = 0;
+   equeue = 0;
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, graph->nodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, graph->nodes) );
+
+   for( i = 0; i < graph->nodes; ++i)
+   {
+      marked[i] = FALSE;
+   }
+
+   queue[equeue] = startnode;
+   ++equeue;
+
+   distances[startnode][startnode] = 0;
+   marked[startnode] = TRUE;
+
+   while(equeue > squeue)
+   {
+      unsigned int currentnode;
+
+      /* dequeue new node */
+      currentnode = queue[squeue];
+      SCIPdebugMessage("Dequeueing %ud\n", currentnode);
+
+      assert(currentnode < graph->nodes);
+      ++squeue;
+
+      /* go through all neighbours */
+      for( j = 0; j < graph->outcnt[currentnode]; ++j )
+      {
+         int eindex;
+         unsigned int targetnode;
+
+         eindex = graph->outbeg[currentnode+j];
+         targetnode = graph->head[eindex];
+
+         if( !marked[targetnode] )
+         {
+            int curdistance;
+
+            /* little magic for triangular distance matrix */
+            if( startnode < currentnode )
+            {
+               curdistance = distances[startnode][currentnode];
+            }
+            else
+            {
+               curdistance = distances[currentnode][startnode];
+            }
+
+            marked[targetnode] = TRUE;
+            queue[equeue] = targetnode;
+            if(targetnode > startnode)
+               distances[startnode][targetnode] = curdistance+1;
+
+            ++equeue;
+         }
+      }
+   }
+
+   SCIPfreeMemoryArray(scip, &queue);
+   SCIPfreeMemoryArray(scip, &marked);
+   return SCIP_OKAY;
+}
+
 /** looks for staircase components in the constraints in detectordata */
 static
 SCIP_RETCODE findStaircaseComponents(
-   SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
-   SCIP_RESULT*       result        /**< result pointer to indicate success oder failuer */
+   SCIP*             scip,          /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata,  /**< constraint handler data structure */
+   SCIP_RESULT*      result         /**< result pointer to indicate success oder failuer */
    )
 {
-   SCIP_VAR** vars;
-   int nvars;
    int nconss;
-   SCIP_VAR** curvars;
-   int ncurvars;
-   SCIP_CONS* cons;
-   SCIP_CONS** conss;
-
+   int nvars;
+   int** distance;
    int i;
-   int j;
-   int k;
-   int tempblock;
-
-   int* blockrepresentative;
-   int nextblock;
-   int *vartoblock;
-   SCIP_HASHMAP *constoblock;
+   unsigned int start;
+   unsigned int end;
+   SCIP_VAR*** cuts;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
    assert(result != NULL);
 
-   /* initialize data structures */
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
-   nextblock = 1; /* start at 1 in order to see whether the hashmap has a key*/
+   nvars = SCIPgetNVars(scip);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &vartoblock, nvars+1) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &blockrepresentative, nconss+1) );
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss+1) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), nconss) );
-
-   for( i = 0; i < nvars; ++i )
+   /* allocate triangular distance matrix */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
+   for( i = 0; i < nconss; ++i)
    {
-      vartoblock[i] = -1;
+      SCIP_CALL( SCIPallocMemoryArray(scip, &distance[i], nconss-i) );
    }
 
-   for( i = 0; i < nconss+1; ++i )
+   for( i = 0; i < nconss; ++i)
    {
-      blockrepresentative[i] = -1;
+      SCIP_CALL( doBFS(scip, detectordata, i, distance) );
    }
 
-   blockrepresentative[0] = 0;
-   blockrepresentative[1] = 1;
-   assert(nconss >= 1);
+   SCIP_CALL( findMaximalPath(scip, detectordata, distance[i], &start, &end) );
 
-   /* go through the all constraints */
-   for( i = 0; i < nconss; ++i )
-   {
-      int consblock;
+   SCIP_CALL( constructCuts(scip, detectordata, start, end, &cuts) );
 
-      cons = conss[i];
-      assert(cons != NULL);
-      if( isConsGCGCons(cons) )
-         continue;
-
-      /* get variables of constraint */
-      ncurvars = SCIPgetNVarsXXX(scip, cons);
-      curvars = NULL;
-      if( ncurvars > 0 )
-      {
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
-      }
-      assert(ncurvars >= 0);
-      assert(ncurvars <= nvars);
-      assert(curvars != NULL || ncurvars == 0);
-
-      assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
-
-      /* if there are no variables, put it in the first block, otherwise put it in the next block */
-      if( ncurvars == 0 )
-         consblock = -1;
-      else
-         consblock = nextblock;
-
-      /* go through all variables */
-      for( j = 0; j < ncurvars; ++j )
-      {
-         SCIP_VAR* probvar;
-         int varindex;
-         int varblock;
-
-         assert(curvars != NULL);
-         probvar = SCIPvarGetProbvar(curvars[j]);
-         assert(probvar != NULL);
-
-         varindex = SCIPvarGetProbindex(probvar);
-         assert(varindex >= 0);
-         assert(varindex < nvars);
-
-         /** @todo what about deleted variables? */
-         /* get block of variable */
-         varblock = vartoblock[varindex];
-         SCIPdebugMessage("\tVar %s (%d): ", SCIPvarGetName(probvar), varblock);
-         /* if variable is assigned to a block, assign constraint to that block */
-         if( varblock > -1 && varblock != consblock )
-         {
-            consblock = MIN(consblock, varblock);
-            SCIPdebugPrintf("still in block %d.\n",  varblock);
-         }
-         else if( varblock == -1 )
-         {
-            /* if variable is free, assign it to the new block for this constraint */
-            varblock = consblock;
-            assert(varblock > 0);
-            assert(varblock <= nextblock);
-            vartoblock[varindex] = varblock;
-            SCIPdebugPrintf("new in block %d.\n",  varblock);
-         }
-         else
-         {
-            assert((varblock > 0) && (consblock == varblock));
-            SCIPdebugPrintf("no change.\n");
-         }
-      }
-
-      /* if the constraint belongs to a new block, mark it as such */
-      if( consblock == nextblock )
-      {
-         assert(consblock > 0);
-         blockrepresentative[consblock] = consblock;
-         assert(blockrepresentative[consblock] > 0);
-         assert(blockrepresentative[consblock] <= nextblock);
-         ++nextblock;
-      }
-
-      SCIPdebugMessage("Cons %s will be in block %d (next %d)\n", SCIPconsGetName(cons), consblock, nextblock);
-      for( k = 0; k < ncurvars; ++k )
-      {
-         int curvarindex;
-         SCIP_VAR* curprobvar;
-         int oldblock;
-         assert(curvars != NULL);
-
-         curprobvar = SCIPvarGetProbvar(curvars[k]);
-         curvarindex = SCIPvarGetProbindex(curprobvar);
-         oldblock = vartoblock[curvarindex];
-         assert((oldblock > 0) && (oldblock <= nextblock));
-         SCIPdebugMessage("\tVar %s ", SCIPvarGetName(curprobvar));
-         if( oldblock != consblock )
-         {
-            SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
-            vartoblock[curvarindex] = consblock;
-
-            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > consblock))
-            {
-               int oldrepr;
-               oldrepr = blockrepresentative[oldblock];
-               SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldblock, blockrepresentative[oldblock], consblock );
-               assert(consblock > 0);
-               blockrepresentative[oldblock] = consblock;
-               if( (oldrepr != consblock) && (oldrepr != oldblock) )
-               {
-                  blockrepresentative[oldrepr] = consblock;
-                  SCIPdebugMessage("\t\tBlock representative from block %d changed from %d to %d.\n", oldrepr, blockrepresentative[oldrepr], consblock );
-               }
-            }
-         }
-         else
-         {
-            SCIPdebugPrintf("will not be changed from %d to %d.\n", oldblock, consblock);
-         }
-      }
-
-      SCIPfreeBufferArrayNull(scip, &curvars);
-      assert(consblock >= 1 || consblock == -1);
-      assert(consblock <= nextblock);
-
-      /* store the constraint block */
-      if(consblock != -1)
-      {
-         SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
-         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
-      }
-      else
-      {
-         SCIPdebugMessage("ignoring %s\n", SCIPconsGetName(cons));
-      }
-   }
-
-   tempblock = 1;
-
-   SCIPdebugPrintf("Blocks: ");
-   /* postprocess blockrepresentatives */
-   for( i = 1; i < nextblock; ++i )
-   {
-      /* forward replace the representatives */
-      assert(blockrepresentative[i] >= 0);
-      assert(blockrepresentative[i] < nextblock);
-      if( blockrepresentative[i] != i )
-         blockrepresentative[i] = blockrepresentative[blockrepresentative[i]];
-      else
-      {
-         blockrepresentative[i] = tempblock;
-         ++tempblock;
-      }
-      /* It is crucial that this condition holds */
-      assert(blockrepresentative[i] <= i);
-      SCIPdebugPrintf("%d ", blockrepresentative[i]);
-   }
-   SCIPdebugPrintf("\n");
-
-   /* convert temporary data to detectordata */
-   for( i = 0; i < nconss; ++i )
-   {
-      int consblock;
-
-      cons = conss[i];
-      if( isConsGCGCons(cons) )
-         continue;
-
-      if(!SCIPhashmapExists(constoblock, cons))
-         continue;
-
-      consblock = (int)(size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
-      assert(consblock > 0);
-      consblock = blockrepresentative[consblock];
-      assert(consblock < tempblock);
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*)(size_t)consblock) );
-      SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
-   }
-
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartoblock, SCIPblkmem(scip), nvars+1) );
-
-   for( i = 0; i < nvars; ++i )
-   {
-      int varindex;
-      int varblock;
-      varindex = SCIPvarGetProbindex(SCIPvarGetProbvar(vars[i]));
-      assert(varindex >= 0);
-      assert(varindex < nvars);
-
-      assert(vartoblock[varindex] < nextblock);
-      if( vartoblock[varindex] < 0 )
-         continue;
-
-      varblock = blockrepresentative[vartoblock[varindex]];
-      assert(varblock == -1 || varblock > 0);
-      if( varblock > 0 )
-      {
-         assert(varblock < tempblock);
-         SCIPdebugMessage("Var %s in block %d\n", SCIPvarGetName(SCIPvarGetProbvar(vars[i])), varblock-1);
-         SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]),
-               (void*)(size_t)(varblock)) );
-      }
-   }
-
-   /* free method data */
-   SCIPfreeBufferArray(scip, &vartoblock);
-   SCIPfreeBufferArray(scip, &blockrepresentative);
-   SCIPhashmapFree(&constoblock);
-   detectordata->nblocks = tempblock-1;
+   SCIP_CALL( convertCutsToDecomp(scip, detectordata, cuts) );
 
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
@@ -498,12 +369,26 @@ SCIP_RETCODE initDijkstraGraph(
       for( j = 0; j < ncurvars; ++j )
       {
          int pindex = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
-         vartocons[pindex][nvartoconss[pindex]] = i;
+         detectordata->varconss[pindex][detectordata->nvarconss[pindex]] = i;
+         ++(detectordata->nvarconss[pindex]);
       }
-
       SCIPfreeMemoryArray(scip, &curvars);
    }
 
+   /* reallocate to necessary size */
+   for( i = 0; i < nvars; ++i )
+   {
+      if( detectordata->nvarconss[i] > 0)
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->varconss[i], detectordata->nvarconss[i]) );
+      }
+      else
+      {
+         SCIPfreeMemoryArray(scip, &detectordata->varconss[i] );
+         assert(detectordata->nvarconss[i] == 0);
+      }
+
+   }
    return SCIP_OKAY;
 }
 
@@ -513,6 +398,9 @@ DEC_DECL_INITDETECTOR(initStaircase)
 {  /*lint --e{715}*/
 
    DEC_DETECTORDATA *detectordata;
+   int i;
+   int nvars;
+   int nconss;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -522,9 +410,21 @@ DEC_DECL_INITDETECTOR(initStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   nvars = SCIPgetNVars(scip);
+   nconss = SCIPgetNConss(scip);
+
    detectordata->clock = NULL;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nvarconss, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varconss, nvars) );
+
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varconss[i], nconss) );
+      detectordata->nvarconss[i] = 0;
+   }
 
    detectordata->nblocks = 0;
    SCIP_CALL( initDijkstraGraph(scip, detectordata) );
@@ -538,6 +438,8 @@ static
 DEC_DECL_EXITDETECTOR(exitStaircase)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
+   int i;
+   int nvars;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -547,12 +449,22 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
+   nvars = SCIPgetNVars(scip);
+
    if( detectordata->clock != NULL )
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
-   SCIPfreeMemory(scip, &detectordata);
-   return SCIP_OKAY;
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIPfreeMemoryArray(scip, &detectordata->varconss[i]);
+   }
 
+   SCIPfreeMemoryArray(scip, &detectordata->varconss);
+   SCIPfreeMemoryArray(scip, &detectordata->nvarconss);
+
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
 }
 
 static
