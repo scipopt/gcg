@@ -124,6 +124,8 @@ then
     HARDMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 fi
 
+ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
+
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
 echo > $EVALFILE
 
@@ -231,6 +233,7 @@ do
 	  sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
 	  sed -i "s,\$SHORTFILENAME,$SHORTFILENAME," runcluster_tmp.sh
 	  sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
+	  sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
 	  sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
 #	  sed -i "s,,," runcluster_tmp.sh
 

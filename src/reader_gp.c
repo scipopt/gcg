@@ -43,13 +43,6 @@
  * Data structures
  */
 
-/** data for gp reader */
-struct SCIP_ReaderData
-{
-   DECDECOMP* decdecomp;
-   SCIP_HASHMAP *vartoindex;
-};
-
 /*
  * Local methods
  */
@@ -319,13 +312,7 @@ SCIP_RETCODE writeFileTrailer(
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
-   SCIP_READERDATA* readerdata;
-
    assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-   SCIPfreeMemory(scip, &readerdata);
-
    return SCIP_OKAY;
 }
 
@@ -340,11 +327,7 @@ static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    /*lint --e{715}*/
-   SCIP_READERDATA* readerdata;
    assert(scip != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
 
    SCIP_CALL( SCIPwriteGp(scip, file, DECgetBestDecomp(scip), TRUE) );
 
@@ -410,16 +393,9 @@ SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
-
-   /* create gp reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   readerdata->decdecomp = NULL;
-   readerdata->vartoindex = NULL;
-
    /* include gp reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, readerdata) );
+         readerCopyGp, readerFreeGp, readerReadGp, readerWriteGp, NULL) );
 
    return SCIP_OKAY;
 }

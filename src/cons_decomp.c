@@ -180,12 +180,12 @@ SCIP_RETCODE evaluateDecomposition(
             ++(nzblocks[i]);
             if( !SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var) )
             {
-               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]); /*lint !e507*/
             }
             else
             {
                assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var);
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var); /*lint !e507*/
             }
 
             if( block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
@@ -531,7 +531,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    if( conshdlrdata->ndecomps == 0 )
    {
       assert(conshdlrdata->decdecomps == NULL);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrdata->decdecomps, 1) ); /*lint !e506*/
       conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps = 1;
    }
@@ -795,7 +795,7 @@ SCIP_RETCODE DECdetectStructure(
                DECdecdecompSetDetector(decdecomps[j], detector);
             }
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
-            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps);
+            BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
             SCIPfreeMemoryArray(scip, &decdecomps);
             conshdlrdata->ndecomps += ndecdecomps;
          }
@@ -813,6 +813,7 @@ SCIP_RETCODE DECdetectStructure(
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
       SCIP_DECOMPOSITIONSCORES score;
+      score.totalscore = 0.0;
 
       SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
       scores[i] = score.totalscore;

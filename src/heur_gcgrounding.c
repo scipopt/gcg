@@ -30,7 +30,7 @@
 #define HEUR_DESC             "LP rounding heuristic on original variables with infeasibility recovering"
 #define HEUR_DISPCHAR         'R'
 #define HEUR_PRIORITY         -1000
-#define HEUR_FREQ             -1
+#define HEUR_FREQ             1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE

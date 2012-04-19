@@ -30,8 +30,8 @@
 #define HEUR_DESC             "greedy column selection heuristic"
 #define HEUR_DISPCHAR         'e'
 #define HEUR_PRIORITY         0
-#define HEUR_FREQ             2
-#define HEUR_FREQOFS          1
+#define HEUR_FREQ             1
+#define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 /** @todo should heuristic be called during the pricing loop or only after solving a node relaxation? */
 #define HEUR_TIMING           SCIP_HEURTIMING_DURINGLPLOOP | SCIP_HEURTIMING_DURINGPRICINGLOOP

@@ -23,7 +23,7 @@
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
 #else
-#include <strings.h>
+#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
 #endif
 #include <ctype.h>
 #include <struct_decomp.h>
@@ -318,7 +318,7 @@ SCIP_Bool getNextToken(
    /* check if the token is a value */
    hasdot = FALSE;
    exptype = DEC_EXP_NONE;
-   if( isValueChar(buf[decinput->linepos], buf[decinput->linepos + 1], TRUE, &hasdot, &exptype) )
+   if( isValueChar(buf[decinput->linepos], buf[decinput->linepos + 1], TRUE, &hasdot, &exptype) ) /*lint !e679*/
    {
       /* read value token */
       tokenlen = 0;
@@ -327,10 +327,11 @@ SCIP_Bool getNextToken(
          assert(tokenlen < DEC_MAX_LINELEN);
          assert(! isDelimChar(buf[decinput->linepos]));
          decinput->token[tokenlen] = buf[decinput->linepos];
-         tokenlen ++;
-         decinput->linepos ++;
+         ++tokenlen;
+         ++(decinput->linepos);
+         assert(decinput->linepos < DEC_MAX_LINELEN-1);
       }
-      while( isValueChar(buf[decinput->linepos], buf[decinput->linepos + 1], FALSE, &hasdot, &exptype) );
+      while( isValueChar(buf[decinput->linepos], buf[decinput->linepos + 1], FALSE, &hasdot, &exptype) ); /*lint !e679*/
    }
    else
    {
@@ -402,26 +403,23 @@ SCIP_Bool isInt(
    int* value           /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
+   long val;
+   char* endptr;
+
    assert(decinput != NULL);
    assert(value != NULL);
+   assert(!(strcasecmp(decinput->token, "INFINITY") == 0) && !(strcasecmp(decinput->token, "INF") == 0));
 
-   if( strcasecmp(decinput->token, "INFINITY") == 0 || strcasecmp(decinput->token, "INF") == 0 )
+   val = strtol(decinput->token, &endptr, 0);
+   if( endptr != decinput->token && * endptr == '\0' )
    {
-      *value = SCIPinfinity(scip);
+      if(val < INT_MIN || val > INT_MAX )
+         return FALSE;
+
+      *value = val; /*lint !e712*/
       return TRUE;
    }
-   else
-   {
-      long val;
-      char* endptr;
 
-      val = strtol(decinput->token, &endptr, 0);
-      if( endptr != decinput->token && * endptr == '\0' )
-      {
-         *value = val;
-         return TRUE;
-      }
-   }
 
    return FALSE;
 }
@@ -766,8 +764,8 @@ SCIP_RETCODE fillDecompStruct(
    {
       decomp->nsubscipvars[i] = 0;
       decomp->nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipvars[i], readerdata->nblockvars[i]) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipconss[i], readerdata->nblockcons[i]) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipconss[i], readerdata->nblockcons[i]) ); /*lint !e866*/
    }
 
    /* linking vars */
@@ -869,16 +867,16 @@ SCIP_RETCODE fillDecompStruct(
 static
 SCIP_RETCODE
 readDECFile(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput,  /**< DEC reading data */
-   const char* filename /**< name of the input file */
+   SCIP*        scip,          /**< SCIP data structure */
+   SCIP_READER* reader,       /**< Reader data structure */
+   DECINPUT*    decinput,     /**< DEC reading data */
+   const char*  filename      /**< name of the input file */
    )
 {
    int i;
    int nconss;
    int nblocksread;
    int nvars;
-   SCIP_READER* reader;
    SCIP_READERDATA* readerdata;
    SCIP_CONS** conss;
    nblocksread = FALSE;
@@ -897,8 +895,6 @@ readDECFile(
 
    /** @todo check */
    assert(scip != NULL);
-
-   reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
 
    readerdata = SCIPreaderGetData(reader);
@@ -950,7 +946,7 @@ readDECFile(
                {
                   readerdata->nblockvars[i] = 0;
                   readerdata->nblockcons[i] = 0;
-                  SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons[i], nconss) );
+                  SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
                }
                nblocksread = TRUE;
             }
@@ -1021,12 +1017,8 @@ SCIP_DECL_READERREAD(readerReadDec)
 static
 SCIP_DECL_READERWRITE(readerWriteDec)
 {   /*lint --e{715}*/
-   SCIP_READERDATA* readerdata;
    assert(scip != NULL);
    assert(reader != NULL);
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
 
    SCIP_CALL( SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE) );
    *result = SCIP_SUCCESS;
@@ -1071,13 +1063,13 @@ SCIP_RETCODE SCIPreadDec(
    /* initialize DEC input data */
    decinput.file = NULL;
    decinput.linebuf[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.token, DEC_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.token, DEC_MAX_LINELEN) ); /*lint !e506*/
    decinput.token[0] = '\0';
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.tokenbuf, DEC_MAX_LINELEN) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.tokenbuf, DEC_MAX_LINELEN) ); /*lint !e506*/
    decinput.tokenbuf[0] = '\0';
    for( i = 0; i < DEC_MAX_PUSHEDTOKENS; ++ i )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.pushedtokens[i], DEC_MAX_LINELEN) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &decinput.pushedtokens[i], DEC_MAX_LINELEN) ); /*lint !e506 !e866*/
    }
 
    decinput.npushedtokens = 0;
@@ -1089,7 +1081,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.haserror = FALSE;
 
    /* read the file */
-   SCIP_CALL( readDECFile(scip, &decinput, filename) );
+   SCIP_CALL( readDECFile(scip, reader, &decinput, filename) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &decinput.token);

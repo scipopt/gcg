@@ -184,7 +184,7 @@ SCIP_RETCODE DECdecdecompSetSubscipvars(
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
       assert(subscipvars[b] != NULL);
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipvars[b], subscipvars[b], nsubscipvars[b]) );
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipvars[b], subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
    }
 
    return SCIP_OKAY;
@@ -238,7 +238,7 @@ SCIP_RETCODE DECdecdecompSetSubscipconss(
       decdecomp->nsubscipconss[b] = nsubscipconss[b];
 
       assert(subscipconss[b] != NULL);
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) );
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) ); /*lint !e866*/
    }
 
    return SCIP_OKAY;
@@ -526,9 +526,9 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
       nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
       nsubscipvars[i] = 0;
    }
    /* handle variables */
@@ -543,7 +543,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var);
+         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -576,7 +576,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          block = nblocks+1;
       else
       {
-         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons);
+         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons); /*lint !e507*/
       }
 
       assert(block > 0 && block <= nblocks+1);

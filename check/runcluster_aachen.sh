@@ -26,6 +26,9 @@ then
     exit
 fi
 
+ulimit -v $ULIMITMEMLIMIT
+ulimit -m $ULIMITMEMLIMIT
+
 export ILOG_LICENSE_FILE=/home/mb322053/access.ilm
 OUTFILE=$CLIENTTMPDIR/$BASENAME.out
 ERRFILE=$CLIENTTMPDIR/$BASENAME.err

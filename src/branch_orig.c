@@ -247,7 +247,7 @@ SCIP_RETCODE branchExtern(
 
    if( usepsstrong )
    {
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, FALSE, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
+      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
             npriobranchcands, result, &branchvar) );
       assert(branchvar != NULL || *result == SCIP_CUTOFF);
       assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
@@ -622,7 +622,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
    assert(scip != NULL);
    assert(branchrule != NULL);
 
-   printf("orig copy called.\n");
+   SCIPdebugMessage("orig copy called.\n");
    SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
 
    return SCIP_OKAY;

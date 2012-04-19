@@ -874,7 +874,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
             assert(!SCIPisZero(scip, coefs[c]));
             SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
 
-            idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons);
+            idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons); /*lint !e507*/
             assert(0 <= idx && idx < nmasterconss);
             assert(masterconss[idx] == linkcons);
             mastercoefs[idx] += coefs[c] * solvals[i];
@@ -1022,7 +1022,6 @@ SCIP_RETCODE createNewMasterVar(
       *addedvar = NULL;
 
    objvalue = 0.0;
-   redcost = 0.0;
 
    if( !force )
    {
@@ -1041,11 +1040,14 @@ SCIP_RETCODE createNewMasterVar(
 
          return SCIP_OKAY;
       }
+      SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
+   }
+   else
+   {
+      SCIPdebugMessage("force var (objvalue = %g, dualsol =%g)\n",  objvalue, pricerdata->dualsolconv[prob]);
    }
 
    *added = TRUE;
-
-   SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
 
    /* compute objective coefficient of the variable */
    objcoeff = 0;
@@ -1094,15 +1096,15 @@ SCIP_RETCODE createNewMasterVar(
          pricerdata->eventhdlr, NULL, NULL) );
 
 
-   SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost);
-
    /* add variable */
    if( !force )
    {
+      SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost); /*lint !e644*/
       SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
    }
    else
    {
+      SCIPdebugMessage("force var %s!\n", SCIPvarGetName(newvar));
       SCIP_CALL( SCIPaddVar(scip, newvar) );
    }
 
@@ -1183,10 +1185,17 @@ void sortPricingProblemsByScore(SCIP_PRICERDATA *pricerdata)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       pricerdata->permu[i] = i;
-      if( pricerdata->sorting == 1 )
+      switch(pricerdata->sorting)
+      {
+      case 1:
          pricerdata->score[i] = pricerdata->dualsolconv[i];
-      else if( pricerdata->sorting == 2 )
+         break;
+      case 2:
          pricerdata->score[i] = -(0.2 * pricerdata->npointsprob[i] + pricerdata->nraysprob[i]);
+         break;
+      default:
+         pricerdata->score[i] = 0.0;
+      }
    }
 
    if( pricerdata->sorting > 0 )
@@ -1417,8 +1426,11 @@ SCIP_RETCODE performPricing(
 
          pricerdata->solvedsubmipsoptimal++;
          solvedmips++;
+         if( !SCIPisInfinity(scip, pricinglowerbound) )
+         {
+            assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
+         }
 
-         assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
          bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
 
          if( status != SCIP_STATUS_OPTIMAL )
@@ -1693,7 +1705,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    {
       //printf("add cons %s to hashmap: pointer %p\n", SCIPconsGetName(masterconss[i]), masterconss[i]);
       SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, masterconss[i], (void*)(size_t)i) );
-      assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i);
+      assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i); /*lint !e507*/
    }
 
    pricerdata->npricedvars = 0;
@@ -2013,7 +2025,7 @@ SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
    assert(pricerdata != NULL);
 
    SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, cons, (void*)(size_t)pos) );
-   assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, cons) == pos);
+   assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, cons) == pos); /*lint !e507*/
 
    SCIPdebugMessage("Added cons %s (%p) to hashmap with index %d\n", SCIPconsGetName(cons), cons, pos);
 

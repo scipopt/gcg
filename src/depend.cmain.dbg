@@ -155,11 +155,6 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/scip/debug.h \
- lib/scip/src/scip/branch_allfullstrong.h \
- lib/scip/src/scip/branch_fullstrong.h \
- lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
- lib/scip/src/scip/branch_leastinf.h lib/scip/src/scip/branch_pscost.h \
- lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bounddisjunction.h \
  lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_integral.h \
  lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
@@ -186,23 +181,19 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
- lib/scip/src/scip/nodesel_hybridestim.h \
- lib/scip/src/scip/nodesel_restartdfs.h \
- lib/scip/src/scip/presol_dualfix.h lib/scip/src/scip/presol_implics.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/presol_dualfix.h \
+ lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_rootredcost.h lib/scip/src/scip/prop_redcost.h \
- lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_fix.h \
  lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_zpl.h \
- lib/scip/src/scip/reader_cip.h lib/scip/src/scip/sepa_clique.h \
- lib/scip/src/scip/sepa_cmir.h lib/scip/src/scip/sepa_flowcover.h \
- lib/scip/src/scip/sepa_gomory.h lib/scip/src/scip/sepa_impliedbounds.h \
- lib/scip/src/scip/sepa_intobj.h lib/scip/src/scip/sepa_mcf.h \
- lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
- lib/scip/src/scip/scipshell.h lib/scip/src/scip/disp_default.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_cip.h \
+ lib/scip/src/scip/sepa_clique.h lib/scip/src/scip/sepa_cmir.h \
+ lib/scip/src/scip/sepa_flowcover.h lib/scip/src/scip/sepa_gomory.h \
+ lib/scip/src/scip/sepa_impliedbounds.h lib/scip/src/scip/sepa_intobj.h \
+ lib/scip/src/scip/sepa_mcf.h lib/scip/src/scip/sepa_strongcg.h \
+ lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
  src/reader_blk.h src/reader_dec.h src/type_decomp.h src/pricer_gcg.h \
  src/type_solver.h src/relax_gcg.h src/type_branchgcg.h src/branch_orig.h \
  src/branch_ryanfoster.h src/cons_origbranch.h src/disp_gcg.h \
