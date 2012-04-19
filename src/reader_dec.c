@@ -1208,4 +1208,3 @@ SCIP_RETCODE SCIPwriteDecomp(
 
    return SCIP_OKAY;
 }
-

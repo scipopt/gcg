@@ -822,7 +822,7 @@ static SCIP_RETCODE fixVariables(
 
    SCIP_VAR** vars;                          /* original scip variables                */
    SCIP_Real fixingrate;                     /* percentage of variables that are fixed */
-   
+
    int nblocks;                              /* number of blocks                                   */
    int nusedpts;                             /* number of extreme points per block                 */
    int nvars;                                /* number of original variables                       */
@@ -920,7 +920,7 @@ static SCIP_RETCODE fixVariables(
                   linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
                   pricingvar = linkingpricingvars[blockrep];
                   assert(pricingvar != NULL);
-                  assert(GCGvarIsPricing(pricingvar));                  
+                  assert(GCGvarIsPricing(pricingvar));
 
                   /* for linking variables, also check whether this is
                      the first block the variable appears in */

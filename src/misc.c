@@ -10,7 +10,7 @@
 /* #define SCIP_DEBUG */
 /* #define CHECKCONSISTENCY */
 /**@file    misc.c
- * @brief   miscellaneous methods 
+ * @brief   miscellaneous methods
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  */
@@ -49,7 +49,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    npricingprobs = GCGrelaxGetNPricingprobs(scip);
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
-   
+
    SCIP_CALL( SCIPcreateSol(scip, origsol, NULL) );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );

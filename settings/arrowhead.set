@@ -31,4 +31,3 @@ detectors/borderheur/maxblocks = 20
 detectors/borderheur/ubfactor = 0.1
 detectors/borderheur/metisverbose = FALSE
 detectors/borderheur/priority = 100
-

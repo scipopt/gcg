@@ -36,8 +36,8 @@
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
 #define HEUR_USESSUBSCIP      FALSE
 
-#define DEFAULT_SUCCESSFACTOR 100            /**< number of calls per found solution that are considered as standard success, 
-                                              * a higher factor causes the heuristic to be called more often 
+#define DEFAULT_SUCCESSFACTOR 100            /**< number of calls per found solution that are considered as standard success,
+                                              * a higher factor causes the heuristic to be called more often
                                               */
 
 
@@ -46,8 +46,8 @@ struct SCIP_HeurData
 {
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
-   int                   successfactor;      /**< number of calls per found solution that are considered as standard success, 
-                                              * a higher factor causes the heuristic to be called more often 
+   int                   successfactor;      /**< number of calls per found solution that are considered as standard success,
+                                              * a higher factor causes the heuristic to be called more often
                                               */
 };
 

@@ -34,11 +34,11 @@
 #define READER_EXTENSION        "gp"
 
 #define READERGP_GNUPLOT_BOXTEMPLATE(i, x1, y1, x2, y2) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"grey\"\n", (i), (x1), (y1), (x2), (y2)
-#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset xtics\nunset ytics\nunset border\n", (outputname)
+#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\n", (outputname)
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [0:%d]\nset yrange[%d:0]\n", (xmax), (ymax)
 //#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset border\n", (outputname)
 
-#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" lt 0 pt 5 ps 0.5 notitle\n"
+#define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 with circles fc rgb \"black\"\n"
 /*
  * Data structures
  */
@@ -66,7 +66,7 @@ SCIP_RETCODE writeFileHeader(
 {
 
    SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(SCIPgetNVars(scip), SCIPgetNConss(scip)));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(SCIPgetNVars(scip)+1, SCIPgetNConss(scip)+1));
    return SCIP_OKAY;
 }
 
@@ -113,6 +113,27 @@ SCIP_RETCODE writeDecompositionHeader(
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+3, startx+0.5, +0.5, endx+0.5, endy+0.5));
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+4, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
    }
+
+   if(decdecomp->type == DEC_DECTYPE_STAIRCASE)
+   {
+      startx = 0;
+      starty = 0;
+      endx = 0;
+      endy = 0;
+
+      for( i = 0; i < decdecomp->nblocks-1; ++i)
+      {
+         endx += decdecomp->nsubscipvars[i]+decdecomp->nstairlinkingvars[i];
+         endy += decdecomp->nsubscipconss[i];
+         SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+1, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
+         startx = endx-decdecomp->nstairlinkingvars[i];
+         starty = endy;
+      }
+      endx += decdecomp->nsubscipvars[i];
+      endy += decdecomp->nsubscipconss[i];
+      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+1, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
+   }
+
    return SCIP_OKAY;
 }
 
@@ -158,8 +179,6 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if( decdecomp != NULL )
    {
@@ -172,6 +191,9 @@ SCIP_RETCODE writeData(
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
+         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
          consindex = 1;
@@ -215,6 +237,9 @@ SCIP_RETCODE writeData(
       {
          varindexmap = decdecomp->varindex;
          consindexmap = decdecomp->consindex;
+
+         assert(varindexmap != NULL);
+         assert(consindexmap != NULL);
       }
    }
 
@@ -236,23 +261,22 @@ SCIP_RETCODE writeData(
          /* if the problem has been created, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
-            SCIPinfoMessage(scip, file, "%d, %d\n", SCIPvarGetIndex(vars[j]), i);
+            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(vars[j]), i);
             continue;
          }
 
          /* if there is no decomposition, output the presolved model! */
          if( decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN )
          {
-            SCIPinfoMessage(scip, file, "%d, %d\n", SCIPvarGetIndex(vars[j]), i);
+            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(vars[j]), i);
          }
          /* if there is a decomposition, output the indices derived from the decomposition above*/
          else
          {
-
             assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
-            SCIPinfoMessage(scip, file, "%d, %d\n",
+            SCIPinfoMessage(scip, file, "%d %d 0.5\n",
                SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
                SCIPhashmapGetImage(consindexmap, conss[i])
                );
@@ -261,6 +285,7 @@ SCIP_RETCODE writeData(
 
       SCIPfreeBufferArrayNull(scip, &vars);
    }
+
 
    if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )
    {

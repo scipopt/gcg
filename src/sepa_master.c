@@ -61,9 +61,9 @@ struct SCIP_SepaData
 /** allocates enough memory to hold more cuts */
 static
 SCIP_RETCODE ensureSizeCuts(
-   SCIP*          scip,     /**< SCIP data structure */  
+   SCIP*          scip,     /**< SCIP data structure */
    SCIP_SEPADATA* sepadata, /**< separator data data structure */
-   int            size      /**< new size of cut arrays */  
+   int            size      /**< new size of cut arrays */
    )
 {
    assert(scip != NULL);

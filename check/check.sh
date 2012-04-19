@@ -8,6 +8,9 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
@@ -138,6 +141,9 @@ do
         if test -f $i
         then
             echo @01 $i ===========
+		NAME=`basename $i`
+		base=${NAME%%.*}
+		echo $base
 #	    echo @01 $blkfile ===========
             echo @01 $i ===========                >> $ERRFILE
             echo > $TMPFILE
@@ -170,14 +176,13 @@ do
             then
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-		echo presolve                      >> $TMPFILE
+		echo \write prob ..\/cutpacking\/$base.gp >> $TMPFILE
 	    else
 		echo optimize                      >> $TMPFILE
-		echo display statistics            >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	    fi
+            echo display statistics            >> $TMPFILE
             echo quit                              >> $TMPFILE
             echo -----------------------------
             date

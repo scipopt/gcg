@@ -160,6 +160,10 @@
 #include "heur_xpcrossover.h"
 #include "heur_xprins.h"
 
+/* Friedrike's detection stuff */
+#include "dec_cutpacking.h"
+
+
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
@@ -285,6 +289,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
+
+   /* Friederike's */
+   SCIP_CALL(SCIPincludeDetectionCutpacking(scip));
+
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
    //SCIP_CALL( SCIPincludeDialogDefault(scip) );
