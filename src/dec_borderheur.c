@@ -292,7 +292,7 @@ SCIP_RETCODE callMetis(
    nvertices = detectordata->nvertices;
    nhyperedges = detectordata->nhyperedges;
    /*lint --e{524}*/
-   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices); 
+   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
 
    (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )

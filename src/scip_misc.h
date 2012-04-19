@@ -27,7 +27,7 @@ extern "C" {
 
 /** constraint types */
 typedef enum  {
-   linear, knapsack, varbound, setpacking, setcovering, setpartitioning, 
+   linear, knapsack, varbound, setpacking, setcovering, setpartitioning,
    logicor, sos1, sos2, unknown, nconsTypeItems
 } consType;
 

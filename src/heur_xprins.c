@@ -687,7 +687,7 @@ static SCIP_RETCODE fixVariables(
             }
             else
                pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-          
+
             assert(pricingvar != NULL);
             assert(GCGvarIsPricing(pricingvar));
 
@@ -772,7 +772,7 @@ static SCIP_RETCODE fixVariables(
                   }
                   else
                      pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
-          
+
                   assert(pricingvar != NULL);
                   assert(GCGvarIsPricing(pricingvar));
 

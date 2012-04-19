@@ -258,7 +258,7 @@ SCIP_RETCODE selectShifting(
 
       /* calculate the score of the shifting (prefer smaller values) */
       if( isfrac )
-         shiftscore = increase ? -1.0 / (SCIPvarGetNLocksUp(var) + 1.0) : 
+         shiftscore = increase ? -1.0 / (SCIPvarGetNLocksUp(var) + 1.0) :
             -1.0 / (SCIPvarGetNLocksDown(var) + 1.0);
       else
       {
@@ -765,7 +765,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
          oldsolval, newsolval, SCIPvarGetObj(shiftvar));
 
       /* update row activities of globally valid rows */
-      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows, 
+      SCIP_CALL( updateActivities(scip, activities, violrows, violrowpos, &nviolrows, nlprows,
             shiftvar, oldsolval, newsolval) );
       if( nviolrows >= nprevviolrows )
          nnonimprovingshifts++;

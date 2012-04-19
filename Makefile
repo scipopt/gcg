@@ -38,7 +38,7 @@ include $(SCIPDIR)/make/make.project
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
 			reader_dec.o \
-	 		reader_ref.o \
+			reader_ref.o \
 			gcgplugins.o \
 			relax_gcg.o \
 			pricer_gcg.o \
@@ -81,6 +81,7 @@ MAINOBJ		=	reader_blk.o \
 			dec_arrowheur.o \
 			dec_borderheur.o \
 			dec_connected.o \
+			dec_cutpacking.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
@@ -155,12 +156,12 @@ $(BINDIR):
 githash::   # do not remove the double-colon
 
 .PHONY: test
-test:		
+test:
 		cd check; \
 		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK);
 
 .PHONY: eval
-eval:	
+eval:
 		cd check; \
 		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK);
 
