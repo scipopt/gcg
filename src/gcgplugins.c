@@ -153,6 +153,7 @@
 #include "dec_borderheur.h"
 #include "dec_arrowheur.h"
 #include "dec_stairheur.h"
+#include "dec_staircase.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -287,6 +288,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
    SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
    SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
