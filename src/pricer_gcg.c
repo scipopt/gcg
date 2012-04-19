@@ -1238,6 +1238,32 @@ SCIP_Bool abortHeuristicPricing(
 }
 
 static
+/** set subproblem timelimit */
+SCIP_RETCODE subproblemSetTimelimit(
+   SCIP*      scip,           /**< */
+   SCIP*      pricingscip,    /**< */
+   int        prob,           /**< */
+   SCIP_Real* timelimit       /**< */
+   )
+{
+   /* set time limit */
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", timelimit) );
+   if( !SCIPisInfinity(scip, *timelimit) )
+   {
+      if( *timelimit - SCIPgetSolvingTime(scip) > 0 )
+      {
+         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", *timelimit - SCIPgetSolvingTime(scip)) );
+         SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, *timelimit- SCIPgetSolvingTime(scip));
+      }
+      else
+      {
+         SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
+      }
+   }
+   return SCIP_OKAY;
+}
+
+static
 /** performs heuristic pricing */
 SCIP_RETCODE performHeuristicPricing(
    SCIP*            scip,        /**< */
@@ -1284,24 +1310,14 @@ SCIP_RETCODE performHeuristicPricing(
       /* set objective limit, such that only solutions with negative reduced costs are accepted */
       SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
 
-      /* set time limit */
-      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) )
-      {
-         if( timelimit - SCIPgetSolvingTime(scip) > 0 )
-         {
-            SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time",
-                  timelimit - SCIPgetSolvingTime(scip)) );
-            SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, timelimit- SCIPgetSolvingTime(scip) + 5);
-         }
-         else
-         {
-            SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
-            if( pricetype == GCG_PRICETYPE_REDCOST )
-               *result = SCIP_DIDNOTRUN; /*lint !e613*/
+      SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 
-            return SCIP_OKAY;
-         }
+      if( timelimit - SCIPgetSolvingTime(scip) <= 0 )
+      {
+         if( result != NULL )
+            *result = SCIP_DIDNOTRUN;
+
+         return SCIP_OKAY;
       }
 
       pricerdata->solvedsubmipsheur++;
@@ -1421,9 +1437,8 @@ SCIP_RETCODE performOptimalPricing(
    {
 
       if( abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
-      {
          break;
-      }
+
       prob = pricerdata->permu[i];
 
       if( pricerdata->pricingprobs[prob] == NULL )
@@ -1432,25 +1447,15 @@ SCIP_RETCODE performOptimalPricing(
       /* set objective limit, such that only solutions with negative reduced costs are accepted */
       //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
 
-      /* set time limit */
-      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) )
-      {
-         if( timelimit - SCIPgetSolvingTime(scip) > 0 )
-         {
-            SCIP_CALL( SCIPsetRealParam(pricerdata->pricingprobs[prob], "limits/time",
-                  timelimit - SCIPgetSolvingTime(scip)) );
-            SCIPdebugMessage("Tilim for pricing %d is %f\n", prob, timelimit- SCIPgetSolvingTime(scip) + 5);
-         }
-         else
-         {
-            SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
-            if( pricetype == GCG_PRICETYPE_REDCOST )
-               *result = SCIP_DIDNOTRUN; /*lint !e613*/
+      SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 
-            *bestredcostvalid = FALSE;
-            break;
-         }
+      if( timelimit - SCIPgetSolvingTime(scip) <= 0 )
+      {
+         if( result != NULL )
+            *result = SCIP_DIDNOTRUN;
+
+         *bestredcostvalid = FALSE;
+         return SCIP_OKAY;
       }
 
       SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
