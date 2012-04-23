@@ -1492,14 +1492,34 @@ SCIP_DECL_BRANCHFREE(branchFreeRelpsprob)
 /** initialization method of branching rule (called after problem was transformed) */
 #define branchInitRelpsprob NULL
 
+/** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
+static
+SCIP_DECL_BRANCHINITSOL(branchInitsolRelpsprob)
+{  /*lint --e{715}*/
+   SCIP_BRANCHRULEDATA* branchruledata;
+
+   /* free branching rule data */
+   branchruledata = SCIPbranchruleGetData(branchrule);
+
+   branchruledata->nprobingnodes = 0;
+   branchruledata->nlpiterations = 0;
+
+   branchruledata->nprobings = 0;
+   branchruledata->nbranchings = 0;
+   branchruledata->ninfprobings = 0;
+   branchruledata->nresolvesminbdchgs = 0;
+   branchruledata->nresolvesinfcands = 0;
+
+   branchruledata->varhashmap = NULL;
+   branchruledata->nvarbranchings = NULL;
+   branchruledata->nvarprobings = NULL;
+   branchruledata->nvars = 0;
+
+   return SCIP_OKAY;
+}
 
 /** deinitialization method of branching rule (called before transformed problem is freed) */
 #define branchExitRelpsprob NULL
-
-
-/** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
-#define branchInitsolRelpsprob NULL
-
 
 /** solving process deinitialization method of branching rule (called before branch and bound process data is freed) */
 static
@@ -1623,21 +1643,6 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
          "branching/relpsprob/reliability",
          "reliability value for probing ",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
-
-   branchruledata->nprobingnodes = 0;
-   branchruledata->nlpiterations = 0;
-
-
-   branchruledata->nprobings = 0;
-   branchruledata->nbranchings = 0;
-   branchruledata->ninfprobings = 0;
-   branchruledata->nresolvesminbdchgs = 0;
-   branchruledata->nresolvesinfcands = 0;
-
-   branchruledata->varhashmap = NULL;
-   branchruledata->nvarbranchings = NULL;
-   branchruledata->nvarprobings = NULL;
-   branchruledata->nvars = 0;
 
    return SCIP_OKAY;
 }
