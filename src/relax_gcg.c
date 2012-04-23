@@ -1497,7 +1497,7 @@ SCIP_RETCODE combineSolutions(
       assert(probs[block] != NULL);
       sol = SCIPgetBestSol(probs[block]);
 
-      /* solval should be 0 before */
+      /* @todo gg solval should be 0 before, anyway */
       SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
    }
    return SCIP_OKAY;
