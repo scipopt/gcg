@@ -767,7 +767,8 @@ SCIP_RETCODE checkIdenticalBlocks(
 /** sets the pricing problem parameters */
 static
 SCIP_RETCODE setPricingProblemParameters(
-   SCIP*                 scip                /**< SCIP data structure of the pricing problem */
+   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
+   int                   clocktype           /**< clocktype to use in the pricing problem */
    )
 {
    assert(scip != NULL);
@@ -785,7 +786,7 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
 
    /* disable expensive presolving */
-   //      SCIP_CALL( SCIPsetIntParam(scip, "presolving/probing/maxrounds", 0) );
+   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
@@ -801,15 +802,12 @@ SCIP_RETCODE setPricingProblemParameters(
 #if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
 #endif
-   /* disable solution store */
-   //SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
 
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
-   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", 2) );
 
-   /* disable solution store */
-   //      SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+   /* set clock type */
+   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
 
    return SCIP_OKAY;
 }
@@ -1119,27 +1117,30 @@ SCIP_RETCODE initRelaxProblemdata(
 /** creates the master problem with the specified name */
 static
 SCIP_RETCODE createMasterProblem(
-   SCIP*       masterscip, /**< SCIP data structure of master problem */
-   const char* name        /**< name of the master problem */
+   SCIP*                 masterscip,         /**< SCIP data structure of master problem */
+   const char*           name,               /**< name of the master problem */
+   int                   clocktype           /**< clocktype to use in the master SCIP */
    )
 {
    assert(masterscip != NULL);
    assert(name != NULL);
 
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-
    SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
    /* set parameters */
-   //SCIP_CALL( SCIPsetIntParam(masterscip, "presolving/probing/maxrounds", 0) );
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvarsroot", INT_MAX) );
-   //SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvars", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvarsroot", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcols", TRUE) );
-   //SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcolsroot", TRUE) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
    SCIP_CALL( SCIPsetRealParam(masterscip, "pricing/abortfac", 1.0) );
-   SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", 2) );
+
+#ifdef DELVARS
+   /* set paramteters to allow deletion of variables */
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvars", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvarsroot", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcols", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcolsroot", TRUE) );
+#endif
 
    return SCIP_OKAY;
 }
@@ -1148,8 +1149,9 @@ SCIP_RETCODE createMasterProblem(
 /** creates the pricing problem with the specified name */
 static
 SCIP_RETCODE createPricingProblem(
-   SCIP**      pricingscip,   /**< Pricing scip data structure */
-   const char* name           /**< name of the pricing problem */
+   SCIP**                pricingscip,         /**< Pricing scip data structure */
+   const char*           name,                /**< name of the pricing problem */
+   int                   clocktype            /**< clocktype to use in the pricing problem */
    )
 {
    assert(pricingscip != NULL);
@@ -1157,7 +1159,7 @@ SCIP_RETCODE createPricingProblem(
 
    SCIP_CALL( SCIPcreate(pricingscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype) );
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1167,12 +1169,12 @@ SCIP_RETCODE createPricingProblem(
 /** saves the coefficient of the masterconstraints in the original variable */
 static
 SCIP_RETCODE saveOriginalVarMastercoeffs(
-   SCIP*       scip,              /**< SCIP data structure */
-   SCIP_VAR**  origvars,          /**< original variables array */
-   int         norigvars,         /**< size of original variables array*/
-   int         nmasterconss,      /**< size of masterconns array */
-   SCIP_CONS** linearmasterconss, /**< linear master constraints array */
-   SCIP_CONS** masterconss        /**< master constraints */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            origvars,           /**< original variables array */
+   int                   norigvars,          /**< size of original variables array*/
+   int                   nmasterconss,       /**< size of masterconns array */
+   SCIP_CONS**           linearmasterconss,  /**< linear master constraints array */
+   SCIP_CONS**           masterconss         /**< master constraints */
    )
 {
    int v;
@@ -1184,6 +1186,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
    assert(nmasterconss >= 0);
    assert(masterconss != NULL);
    assert(linearmasterconss != NULL);
+
    /* for original variables, save the coefficients in the master problem */
    for( v = 0; v < norigvars; v++ )
    {
@@ -1205,7 +1208,9 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
       nvars = SCIPgetNVarsLinear(scip, linearmasterconss[i]);
       vals = SCIPgetValsLinear(scip, linearmasterconss[i]);
       for( v = 0; v < nvars; v++ )
+      {
          SCIP_CALL( GCGoriginalVarAddCoef(scip, vars[v], vals[v], masterconss[i]) );
+      }
    }
 
    return SCIP_OKAY;
@@ -1271,7 +1276,7 @@ static
 SCIP_RETCODE createPricingprobConss(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure */
-   SCIP_HASHMAP**        hashorig2pricingvar
+   SCIP_HASHMAP**        hashorig2pricingvar /**< hashmap mapping original to corresponding pricing variables */
    )
 {
    SCIP_CONS*** subscipconss;
@@ -1346,8 +1351,8 @@ SCIP_RETCODE createMaster(
 {
    int npricingprobs;
    SCIP_HASHMAP** hashorig2pricingvar;
-
    char name[SCIP_MAXSTRLEN];
+   int clocktype;
    int i;
 
    assert(scip != NULL);
@@ -1369,8 +1374,11 @@ SCIP_RETCODE createMaster(
 
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
+   /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype));
+
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
-   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name) );
+   SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
@@ -1378,12 +1386,11 @@ SCIP_RETCODE createMaster(
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
 
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 
    /* create pricing variables */
-
    SCIP_CALL( createPricingVariables(scip, relaxdata, hashorig2pricingvar) );
 
    /* create master and pricing problem constraints */
@@ -1410,7 +1417,7 @@ SCIP_RETCODE createMaster(
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, relaxdata->convconss[i]) );
    }
 
-   /* set integral obj status in the extended problem, if possible */
+   /* set integral objective status in the extended problem, if possible */
    if( SCIPisObjIntegral(scip) )
    {
       SCIP_CALL( SCIPsetObjIntegral(relaxdata->masterprob) );
@@ -1443,10 +1450,10 @@ SCIP_RETCODE createMaster(
 /** combines the solutions from all (disjoint) problems to one solution */
 static
 SCIP_RETCODE combineSolutions(
-   SCIP*      scip,     /**< SCIP data structure */
-   SCIP_SOL** newsol,   /**< pointer to store new solution */
-   SCIP**     probs,    /**< array of (solved) subproblems */
-   int        nprobs    /**< number of subproblems */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL**            newsol,             /**< pointer to store new solution */
+   SCIP**                probs,              /**< array of (solved) subproblems */
+   int                   nprobs              /**< number of subproblems */
    )
 {
 #ifdef SCIP_DEBUG
@@ -1489,6 +1496,8 @@ SCIP_RETCODE combineSolutions(
       assert(block < nprobs);
       assert(probs[block] != NULL);
       sol = SCIPgetBestSol(probs[block]);
+
+      /* solval should be 0 before */
       SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
    }
    return SCIP_OKAY;
