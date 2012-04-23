@@ -272,7 +272,7 @@ SCIP_RETCODE branchExtern(
          if( !GCGvarIsLinking(branchcands[i]) && GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
-         /* block is not unique (linking variables) */
+         /* check that blocks of linking variable are unique */
          if( GCGvarIsLinking(branchcands[i]) )
          {
             int nvarblocks;
@@ -582,8 +582,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       solval = SCIPvarGetLbLocal(branchvar) + 0.5;
    }
 
-   /* we did not find a variable to branch on so far, so we look for an integer variable that belongs to no block
-    * but was directly transferred to the master problem and which has fractional value in the current solution
+   /* we did not find a variable to branch on so far, so we look for an unfixed linking variable or an integer variable
+    * that belongs to no block but was directly transferred to the master problem
     */
    if( branchvar == NULL )
    {
@@ -592,8 +592,31 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
          assert(GCGvarIsOriginal(branchcands[i]));
 
          /* continue if variable belongs to a block */
-         if( GCGvarGetBlock(branchcands[i]) != -1 )
+         if( GCGvarGetBlock(branchcands[i]) > -1 )
             continue;
+
+         /* check that blocks of linking variable are unique */
+         if( GCGvarIsLinking(branchcands[i]) )
+         {
+            int nvarblocks;
+            int* varblocks;
+            SCIP_Bool unique;
+            int j;
+
+            nvarblocks = GCGlinkingVarGetNBlocks(branchcands[i]);
+            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( GCGlinkingVarGetBlocks(branchcands[i], nvarblocks, varblocks) );
+
+            unique = TRUE;
+            for( j = 0; j < nvarblocks; ++j )
+               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+                  unique = FALSE;
+
+            SCIPfreeBufferArray(scip, &varblocks);
+
+            if( !unique )
+               continue;
+         }
 
          branchvar = branchcands[i];
          assert(SCIPvarGetUbLocal(branchvar) - SCIPvarGetLbLocal(branchvar) > 0.8);
@@ -648,8 +671,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyOrig,
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
-         branchExeclpOrig, branchExecextOrig, branchExecpsOrig,
-         NULL) );
+         branchExeclpOrig, branchExecextOrig, branchExecpsOrig, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
