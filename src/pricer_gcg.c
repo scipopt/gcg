@@ -1836,10 +1836,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    assert(pricerdata != NULL);
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
-
-   //printf("pricerfarkas\n");
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
-
    SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
 
    return retcode;
@@ -1879,7 +1876,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
          NULL) );
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
-
 
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsuccessfulmipsredcost",
          "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
