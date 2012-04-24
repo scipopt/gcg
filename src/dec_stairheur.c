@@ -52,7 +52,7 @@
 #define DEFAULT_ENABLEBLOCKINGSTATIC            TRUE     /**< Enable blocking type 'static' */
 #define DEFAULT_ENABLEBLOCKINGASSOONASPOSSIBLE  TRUE     /**< Enable blocking type 'as soon as possible' */
 #define DEFAULT_ENABLEMULTIPLEDECOMPS           TRUE     /**< Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks' */
-#define DEFAULT_MAXITERATIONSROC                -1       /**< The maximum of iterations of the ROC-algorithm. -1 for no iteration limit */
+#define DEFAULT_MAXITERATIONSROC                1000000  /**< The maximum of iterations of the ROC-algorithm. -1 for no iteration limit */
 
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 
@@ -863,7 +863,7 @@ void indexmapInit(INDEXMAP* indexmap, SCIP_VAR** vars, int nvars, SCIP_CONS** co
    {
       var = vars[i];
       //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &hashmapindices[i+1];
+      hashmapindex = hashmapindices + i+1;
       assert( ! SCIPhashmapExists(indexmap->indexvar, (void*) hashmapindex));
       SCIPhashmapInsert(indexmap->indexvar, (void*) hashmapindex, (void*) var);
       assert( ! SCIPhashmapExists(indexmap->varindex, (void*) var));
@@ -873,7 +873,7 @@ void indexmapInit(INDEXMAP* indexmap, SCIP_VAR** vars, int nvars, SCIP_CONS** co
    {
       cons = conss[i];
       //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &hashmapindices[i+1];
+      hashmapindex = hashmapindices + i+1;
       assert( ! SCIPhashmapExists(indexmap->indexcons, (void*) hashmapindex));
       SCIPhashmapInsert(indexmap->indexcons, (void*) hashmapindex, (void*) cons);
       assert( ! SCIPhashmapExists(indexmap->consindex, (void*) cons));
@@ -1799,6 +1799,11 @@ SCIP_Bool isValidBlocking(DEC_DETECTORDATA* detectordata, int prev_block_first_r
    int last_column_prev_block;
    int first_column_current_block;
 
+   //if the function is called for the first block, the blocking is always valid
+   if(prev_block_last_row == 0)
+   {
+      return TRUE;
+   }
    last_column_prev_block = getMaxColIndex(detectordata, prev_block_first_row, prev_block_last_row);
    first_column_current_block = getMinColIndex(detectordata, block_at_row);
    return ( first_column_current_block > last_column_prev_block ? TRUE : FALSE);
@@ -2060,10 +2065,21 @@ SCIP_RETCODE blockingStatic(
       current_row += rowsInConstantBlock(block, desired_blocks, detectordata->nRelevantConss);
       max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
       min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
-      //assign the variables and constraints to block
-      SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
-      SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
-      assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, min_col_index_ip1);
+
+      //first check if three adjacent blocks overlap; in this case all variables are linking
+      if( min_col_index_ip1 <= max_col_index_im1)
+      {
+         SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+         SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, max_col_index_im1+1, max_col_index_i);
+         assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, max_col_index_im1 + 1);
+      }
+      else //no overlap of three adjacent blocks, only some vars are linking
+      {
+         //assign the variables and constraints to block
+         SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+         SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
+         assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, min_col_index_ip1);
+      }
       assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
       //update variables in the while loop
       max_col_index_im1 = max_col_index_i;
@@ -2088,8 +2104,8 @@ SCIP_RETCODE blockingStatic(
 
    //debug
 //   PrintDetectordata(scip, detectordata);
-   sprintf(filename1, "%s_static_blocking", getProbNameWithoutPath(scip));
-   sprintf(filename2, "%s_static_minV", getProbNameWithoutPath(scip));
+   sprintf(filename1, "%s_static_blocking_%i", getProbNameWithoutPath(scip), detectordata->blocks);
+   sprintf(filename2, "%s_static_minV_%i", getProbNameWithoutPath(scip), detectordata->blocks);
    sprintf(paramfile, "%s_static.params", getProbNameWithoutPath(scip));
    plotBlocking(scip, detectordata, filename1);
    plotMinV(scip, detectordata, filename2);
