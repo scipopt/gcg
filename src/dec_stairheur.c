@@ -748,6 +748,7 @@ struct DEC_DetectorData
 
 //debugging methods
 /** prints out detailed information on the contents of detectordata*/
+#ifdef SCIP_DEBUG
 static
 void PrintDetectordata(
    SCIP*      scip,                 /**< SCIP data structure */
@@ -814,6 +815,7 @@ static void printNested(LIST* list, const char* name)
    }
    printf(")\n");
 }
+#endif
 
 /** Allocates memory for an indexmap. */
 static
@@ -959,6 +961,7 @@ int minArray(int* a, int num_elements)
    }
 }
 
+#ifdef SCIP_DEBUG
 /** Returns the value of the minimum in the list between the iterators it1 and it2
  *
  *  Or -1 if a is empty or invalid. */
@@ -990,7 +993,7 @@ int minList(ITERATOR first, ITERATOR last)
       return -1;
    }
 }
-
+#endif
 /** Switches the data the pointers p1 and p2 points to. */
 static
 void switchPointers(void** p1, void** p2)
@@ -1019,7 +1022,7 @@ static const char* getProbNameWithoutPath(SCIP* scip)
 }
 
 
-#ifdef SCIP_DEBUG
+#ifndef NDEBUG
 static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars)
 {
    int i;
@@ -1213,7 +1216,7 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    fclose(output);
 }
 
-
+#ifdef SCIP_DEBUG
 static
 void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, int ROC_iterations, int tau, double time)
 {
@@ -1264,6 +1267,7 @@ void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, in
       fclose(output);
    }
 }
+#endif
 
 /** Scans all constraints of the constraint array of the scip object,
  * and stores pointers to all constraints that have at least one variable in detectordata->relevantConss.
@@ -2013,9 +2017,11 @@ SCIP_RETCODE blockingDynamic(
    plotBlocking(scip, detectordata, filename1);
    plotMinV(scip, detectordata, filename2);
    //debug
-//   PrintDetectordata(scip, detectordata);
-//   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
-//   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
+#ifdef SCIP_DEBUG
+   PrintDetectordata(scip, detectordata);
+   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
+   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
+#endif
    }
 #endif
 
@@ -2548,9 +2554,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    }
    //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
    if(ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1)
-      {
-         checkConsistencyOfIndexarrays(detectordata, nvars);
-      }
+   {
+      checkConsistencyOfIndexarrays(detectordata, nvars);
+   }
 #endif
    //arrays jmin, jmax and minV
    SCIPdebugMessage("calculating index arrays\n");
