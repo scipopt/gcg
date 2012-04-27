@@ -54,6 +54,7 @@
 #define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
+#define DEFAULT_REALNAME          FALSE      /**< whether the metis name should be real or temporary */
 
 /*
  * Data structures
@@ -63,11 +64,12 @@
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   SCIP_PTRARRAY* hedges;           /**< variable array of hyperedges */
-   SCIP_INTARRAY* copytooriginal;   /**< array mapping copied to original variables */
-   int*           partition;        /**< array storing vertex partitions */
-   int            nvertices;        /**< number of vertices */
-   int*           varpart;          /**< array storing variable partition */
+   SCIP_PTRARRAY* hedges;                    /**< variable array of hyperedges */
+   SCIP_INTARRAY* copytooriginal;            /**< array mapping copied to original variables */
+   int*           partition;                 /**< array storing vertex partitions */
+   int            nvertices;                 /**< number of vertices */
+   int*           varpart;                   /**< array storing variable partition */
+   char           tempfile[SCIP_MAXSTRLEN];  /**< filename for the metis input file */
 
    /* weight parameters */
    int       varWeight;             /**< weight of a variable hyperedge */
@@ -91,6 +93,7 @@ struct DEC_DetectorData
    SCIP_Real metisubfactor;   /**< metis unbalance factor */
    SCIP_Bool metisverbose;    /**< should metis ouput be displayed */
    SCIP_Bool metisuseptyperb; /**< flag to indicate whether metis uses kway or rb partitioning */
+   SCIP_Bool realname;        /**< flag to indicate real problem name or temporary filename for metis files */
 
    /* various data */
    SCIP_CLOCK* metisclock;    /**< clock to measure metis time */
@@ -563,19 +566,14 @@ SCIP_RETCODE callMetis(
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
    char line[SCIP_MAXSTRLEN];
-   char tempfile[SCIP_MAXSTRLEN];
 
    int status;
    int i;
-   int j;
    int nvertices;
-   int ndummyvertices;
    int* partition;
 
-   SCIP_PTRARRAY *hedges;
+
    SCIP_FILE *zfile;
-   FILE* file;
-   int temp_filedes;
    SCIP_Real remainingtime;
 
    assert(scip != NULL);
@@ -584,6 +582,7 @@ SCIP_RETCODE callMetis(
    *result = SCIP_DIDNOTRUN;
 
    remainingtime = DECgetRemainingTime(scip);
+   nvertices = detectordata->nvertices;
 
    if( remainingtime <= 0 )
    {
@@ -595,56 +594,12 @@ SCIP_RETCODE callMetis(
       detectordata->varpart[i] = -1;
    }
 
-   hedges = detectordata->hedges;
-   nvertices = detectordata->nvertices;
-   /*lint --e{524} */
-   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
-
-   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
-   if( (temp_filedes = mkstemp(tempfile)) < 0 )
-   {
-      SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
-      return SCIP_FILECREATEERROR;
-   }
-
-   SCIPdebugMessage("Temporary filename: %s\n", tempfile);
-
-   file = fdopen(temp_filedes, "w");
-   if( file == NULL )
-   {
-      SCIPerrorMessage("Could not open temporary metis file!\n");
-      return SCIP_FILECREATEERROR;
-   }
-
-   SCIPinfoMessage(scip, file, "%d %d 1\n", SCIPgetPtrarrayMaxIdx(scip, hedges)+1, nvertices+ndummyvertices);
-   for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, hedges); i++ )
-   {
-      HyperEdge* hedge;
-      hedge = (HyperEdge*) SCIPgetPtrarrayVal(scip, hedges, i);
-      assert(hedge != NULL);
-      assert(hedge->nvariableIds != 0);
-      SCIPinfoMessage(scip, file, "%d ", hedge->cost);
-
-      for( j = 0; j < hedge->nvariableIds; ++j )
-      {
-         SCIPinfoMessage(scip, file, "%d ",hedge->variableIds[j] + 1 );
-      }
-      SCIPinfoMessage(scip, file, "\n");
-   }
-   status = fclose(file);
-
-   if( status == -1 )
-   {
-      SCIPerrorMessage("Could not close '%s'\n", tempfile);
-      return SCIP_WRITEERROR;
-   }
-
    /* call metis via syscall as there is no library usable ... */
    if( !SCIPisInfinity(scip, DECgetRemainingTime(scip)) )
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
-               tempfile,
+               detectordata->tempfile,
                detectordata->blocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
@@ -654,7 +609,7 @@ SCIP_RETCODE callMetis(
    else
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"",
-               tempfile,
+               detectordata->tempfile,
                detectordata->blocks,
                detectordata->randomseed,
                detectordata->metisuseptyperb ? "rb" : "kway",
@@ -687,15 +642,6 @@ SCIP_RETCODE callMetis(
    /* exit gracefully in case of errors */
    if( status != 0 )
    {
-      if( detectordata->tidy )
-      {
-         status = unlink( tempfile );
-         if( status == -1 )
-         {
-            SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
-            return SCIP_WRITEERROR;
-         }
-      }
       return SCIP_ERROR;
    }
 
@@ -711,7 +657,7 @@ SCIP_RETCODE callMetis(
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, detectordata->blocks);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", detectordata->tempfile, detectordata->blocks);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;
@@ -734,12 +680,6 @@ SCIP_RETCODE callMetis(
    /* if desired delete the temoprary metis file */
    if( detectordata->tidy )
    {
-      status = unlink( tempfile );
-      if( status == -1 )
-      {
-         SCIPerrorMessage("Could not remove metis input file: %s\n", strerror( errno ));
-         return SCIP_WRITEERROR;
-      }
       status = unlink( metisout );
       if( status == -1 )
       {
@@ -749,7 +689,7 @@ SCIP_RETCODE callMetis(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", tempfile);
+      SCIPinfoMessage(scip, NULL, "Temporary file is in: %s\n", detectordata->tempfile);
    }
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1103,6 +1043,78 @@ static SCIP_RETCODE buildTransformedProblem(
    return SCIP_OKAY;
 }
 
+/** creates the temporary metis input file */
+static
+SCIP_RETCODE createMetisFile(
+   SCIP*             scip,          /**< SCIP data struture */
+   DEC_DETECTORDATA* detectordata   /**< detector data structure */
+   )
+{
+   FILE* file;
+   int temp_filedes;
+   int i;
+   int j;
+   SCIP_PTRARRAY *hedges;
+   int status;
+   int nvertices;
+   int ndummyvertices;
+
+   hedges = detectordata->hedges;
+   nvertices = detectordata->nvertices;
+   /*lint --e{524} */
+   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
+
+   if( !detectordata->realname )
+   {
+      (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   }
+   else
+   {
+      (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%s-XXXXXX", SCIPgetProbName(scip));
+   }
+
+   if( (temp_filedes = mkstemp(detectordata->tempfile)) < 0 )
+   {
+      SCIPerrorMessage("Error creating temporary file: %s\n", strerror( errno ));
+      return SCIP_FILECREATEERROR;
+   }
+
+   SCIPdebugMessage("Temporary filename: %s\n", detectordata->tempfile);
+
+   file = fdopen(temp_filedes, "w");
+   if( file == NULL )
+   {
+      SCIPerrorMessage("Could not open temporary metis file!\n");
+      return SCIP_FILECREATEERROR;
+   }
+
+   SCIPinfoMessage(scip, file, "%d %d 1\n", SCIPgetPtrarrayMaxIdx(scip, hedges)+1, nvertices+ndummyvertices);
+   for( i = 0; i <= SCIPgetPtrarrayMaxIdx(scip, hedges); i++ )
+   {
+      HyperEdge* hedge;
+      hedge = (HyperEdge*) SCIPgetPtrarrayVal(scip, hedges, i);
+      assert(hedge != NULL);
+      assert(hedge->nvariableIds != 0);
+      SCIPinfoMessage(scip, file, "%d ", hedge->cost);
+
+      for( j = 0; j < hedge->nvariableIds; ++j )
+      {
+         SCIPinfoMessage(scip, file, "%d ",hedge->variableIds[j] + 1 );
+      }
+      SCIPinfoMessage(scip, file, "\n");
+   }
+   status = fclose(file);
+
+   if( status == -1 )
+   {
+      SCIPerrorMessage("Could not close '%s'\n", detectordata->tempfile);
+      return SCIP_WRITEERROR;
+   }
+
+
+   return SCIP_OKAY;
+}
+
 /** detection callback method */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
@@ -1110,6 +1122,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    int i;
    int j;
    int ndecs;
+   int status;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -1131,6 +1144,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    {
       SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
    }
+
+   SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
@@ -1166,6 +1181,16 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    }
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
+
+   if( detectordata->tidy )
+   {
+      status = unlink( detectordata->tempfile );
+      if( status == -1 )
+      {
+         SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
+         return SCIP_WRITEERROR;
+      }
+   }
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1208,6 +1233,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP_CALL( SCIPaddRealParam(scip, "detectors/arrowheur/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
 
    return SCIP_OKAY;
 }
