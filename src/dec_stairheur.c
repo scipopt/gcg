@@ -37,16 +37,21 @@
 #include "scip/pub_misc.h"
 #include "scip/struct_var.h"
 
-#define DEC_DETECTORNAME      "stairheur"       /**< name of the detector */
-#define DEC_PRIORITY          -100              /**< priority of the detector */
+#define DEC_DETECTORNAME      "stairheur"    /**< name of the detector */
+#define DEC_PRIORITY          -100           /**< priority of the detector */
 #define DEC_DECCHAR           's'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
 /* Default parameter settings*/
-#define DEFAULT_BLOCKS                    2     /**< number of blocks */
-#define DEFAULT_MAXBLOCKS                 20    /**< value for the maximum number of blocks to be considered */
-#define DEFAULT_MINBLOCKS                 2     /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_PRIORITY                  DEC_PRIORITY
+#define DEFAULT_MAXBLOCKS                       20       /**< value for the maximum number of blocks to be considered */
+#define DEFAULT_MINBLOCKS                       2        /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_PRIORITY                        DEC_PRIORITY
+#define DEFAULT_DESIREDBLOCKS                   0       /**< value for the desired number of blocks (for all blocking types). Set to zero for self determination of block number */
+#define DEFAULT_ENABLEBLOCKINGDYNAMIC           TRUE     /**< Enable blocking type 'dynamic' */
+#define DEFAULT_ENABLEBLOCKINGSTATIC            TRUE     /**< Enable blocking type 'static' */
+#define DEFAULT_ENABLEBLOCKINGASSOONASPOSSIBLE  TRUE     /**< Enable blocking type 'as soon as possible' */
+#define DEFAULT_ENABLEMULTIPLEDECOMPS           TRUE     /**< Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks' */
+#define DEFAULT_MAXITERATIONSROC                1000000  /**< The maximum of iterations of the ROC-algorithm. -1 for no iteration limit */
 
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 
@@ -104,7 +109,9 @@ SCIP_Bool SCIPlistAssignList(LIST* list1, LIST* list2);
 SCIP_Bool SCIPlistIsEmpty(LIST* list);
 SCIP_Bool SCIPlistErase(SCIP* scip, ITERATOR* it);
 SCIP_Bool SCIPlistDelete(SCIP* scip, LIST* list);
+SCIP_Bool SCIPlistReset(SCIP* scip, LIST* list, SCIP_Bool delete_data);
 SCIP_Bool SCIPlistDeleteData(SCIP* scip, LIST* list);
+SCIP_Bool SCIPlistResetNested(SCIP* scip, LIST* list, SCIP_Bool delete_data);
 SCIP_Bool SCIPlistDeleteNested(SCIP* scip, LIST* list);
 ITERATOR SCIPlistFind(ITERATOR first, ITERATOR last, void* value, SCIP_Bool (*comp_func)(void* a, void* b));
 SCIP_Bool SCIPlistMove(ITERATOR position, ITERATOR it);
@@ -130,6 +137,8 @@ int printstring(void *s);
 int printint(void *i);
 static int compare (const void * a, const void * b);
 static SCIP_Bool compare_int(void* a, void * b);
+
+
 
 /** Creates an empty lists and returns a pointer to that list */
 LIST* SCIPlistCreate(SCIP* scip)
@@ -350,6 +359,30 @@ SCIP_Bool SCIPlistDelete(SCIP* scip, LIST* list)
    }
 }
 
+/** Resets the list, effectively removing all nodes, resulting in an empty list.
+ *
+ *  For deallocating memory of the list data, set delete_data = TRUE. */
+SCIP_Bool SCIPlistReset(SCIP* scip, LIST* list, SCIP_Bool delete_data)
+{
+   if(! list)
+   {
+      return FALSE;
+   }
+   else
+   {
+      if(delete_data)
+      {
+         SCIPlistDeleteData(scip, list);
+      }
+      while(! SCIPlistIsEmpty(list))
+      {
+         SCIPlistPopBack(scip, list);
+      }
+      return TRUE;
+   }
+}
+
+
 /** Deallocates the memory the data pointers of the list points to. */
 SCIP_Bool SCIPlistDeleteData(SCIP* scip, LIST* list)
 {
@@ -384,6 +417,31 @@ SCIP_Bool SCIPlistDeleteNested(SCIP* scip, LIST* list)
             SCIPlistDelete(scip, it1.node->data);
          }
       SCIPlistDelete(scip, list);
+      return TRUE;
+   }
+}
+
+/** Resets the nested list, effectively removing all nodes, resulting in an empty list.
+ *
+ *  For deallocating memory of the list data, set delete_data = TRUE. */
+SCIP_Bool SCIPlistResetNested(SCIP* scip, LIST* list, SCIP_Bool delete_data)
+{
+   ITERATOR it1;
+   if(! list)
+   {
+      return FALSE;
+   }
+   else
+   {
+      for(it1 = SCIPiteratorBegin(list);  ! ( SCIPiteratorIsEqual(it1, SCIPiteratorEnd(list)) ); SCIPiteratorNext(&it1))
+         {
+            if(delete_data)
+            {
+               SCIPlistDeleteData(scip, it1.node->data);
+            }
+            SCIPlistDelete(scip, it1.node->data);
+         }
+      SCIPlistReset(scip, list, FALSE);
       return TRUE;
    }
 }
@@ -644,7 +702,7 @@ typedef struct IndexMap INDEXMAP;
 /** detector data */
 struct DEC_DetectorData
 {
-   DECDECOMP* decdecomp;
+//   DECDECOMP* decdecomp;
    SCIP_VAR*** varsperblock;
    int* nvarsperblock;
    SCIP_CONS*** consperblock;
@@ -653,6 +711,8 @@ struct DEC_DetectorData
    int nlinkingvars;
    SCIP_CONS** linkingconss;
    int nlinkingconss;
+   SCIP_HASHMAP* vartoblock;
+   SCIP_HASHMAP* constoblock;
    int blocks;
    int maxblocks;
    int minblocks;
@@ -672,7 +732,12 @@ struct DEC_DetectorData
    LIST* blockedAfterrow;
    SCIP_CLOCK* clock;
    SCIP_Bool found;
-   int priority;
+   int desiredblocks;
+   SCIP_Bool enableblockingdynamic;  //Enable blocking type 'dynamic'
+   SCIP_Bool enableblockingstatic;  //Enable blocking type 'static'
+   SCIP_Bool enableblockingassoonaspossible;  //Enable blocking type 'as soon as possible'
+   SCIP_Bool enablemultipledecomps;  //Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks
+   int maxiterationsROC;
 };
 
 /*
@@ -680,6 +745,75 @@ struct DEC_DetectorData
  */
 
 /* put your local methods here, and declare them static */
+
+//debugging methods
+/** prints out detailed information on the contents of detectordata*/
+static
+void PrintDetectordata(
+   SCIP*      scip,                 /**< SCIP data structure */
+   DEC_DETECTORDATA* detectordata   /**< detectordata instance */
+   )
+{
+   int i;
+   int j;
+   SCIP_VAR* var;
+   SCIP_CONS* cons;
+   SCIPinfoMessage(scip, NULL, "================DETECTORDATA============\n");
+   SCIPinfoMessage(scip, NULL, "# blocks: %i\n", detectordata->blocks);
+   for(i = 0; i < detectordata->blocks; ++i)
+   {
+      SCIPinfoMessage(scip, NULL, "Block #%i (#vars: %i, #conss: %i):\n", i+1, detectordata->nvarsperblock[i], detectordata->nconsperblock[i]);
+      SCIPinfoMessage(scip, NULL, "Variables (block, index):\n");
+      for(j = 0; j < detectordata->nvarsperblock[i]; ++j)
+      {
+         var = detectordata->varsperblock[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(detectordata->vartoblock, (void*) var), *(int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) var));
+      }
+      SCIPinfoMessage(scip, NULL, "Constraints:\n");
+      for(j = 0; j < detectordata->nconsperblock[i]; ++j)
+      {
+         cons = detectordata->consperblock[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(detectordata->constoblock, (void*) cons), *(int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons));
+      }
+      SCIPinfoMessage(scip, NULL, "========================================\n");
+   }
+   SCIPinfoMessage(scip, NULL, "Linking variables #%i (varindex) :\n", detectordata->nlinkingvars);
+   for(j = 0; j < detectordata->nlinkingvars; ++j)
+   {
+      var = detectordata->linkingvars[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) var));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+   SCIPinfoMessage(scip, NULL, "Linking constraints #%i (consindex) :\n", detectordata->nlinkingconss);
+   for(j = 0; j < detectordata->nlinkingconss; ++j)
+   {
+      cons = detectordata->linkingconss[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+}
+
+static void printArray(int* array, int size, const char* name)
+{
+   int i;
+   printf("%s=[ ", name);
+   for(i = 0; i < size; ++i)
+   {
+      printf("%i ", array[i]);
+   }
+   printf("]\n");
+}
+
+static void printNested(LIST* list, const char* name)
+{
+   ITERATOR it2;
+   printf("%s=( ", name);
+   for(it2 = SCIPiteratorBegin(list); ! SCIPiteratorIsEqual(SCIPiteratorEnd(list), it2); SCIPiteratorNext(&it2))
+   {
+      SCIPlistPrint(it2.node->data, printint);
+   }
+   printf(")\n");
+}
 
 /** Allocates memory for an indexmap. */
 static
@@ -715,6 +849,35 @@ void indexmapFree(SCIP* scip, INDEXMAP* indexmap)
    SCIPhashmapFree(&indexmap->indexcons);
    SCIPhashmapFree(&indexmap->consindex);
    SCIPfreeMemory(scip, &indexmap);
+}
+
+static
+void indexmapInit(INDEXMAP* indexmap, SCIP_VAR** vars, int nvars, SCIP_CONS** conss, int nconss, int* hashmapindices)
+{
+   int i;
+   int* hashmapindex;
+   SCIP_VAR* var;
+   SCIP_CONS* cons;
+   for(i = 0; i < nvars; ++i)
+   {
+      var = vars[i];
+      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = hashmapindices + i+1;
+      assert( ! SCIPhashmapExists(indexmap->indexvar, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap->indexvar, (void*) hashmapindex, (void*) var);
+      assert( ! SCIPhashmapExists(indexmap->varindex, (void*) var));
+      SCIPhashmapInsert(indexmap->varindex, (void*) var, (void*) hashmapindex);
+   }
+   for(i = 0; i < nconss; ++i)
+   {
+      cons = conss[i];
+      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
+      hashmapindex = hashmapindices + i+1;
+      assert( ! SCIPhashmapExists(indexmap->indexcons, (void*) hashmapindex));
+      SCIPhashmapInsert(indexmap->indexcons, (void*) hashmapindex, (void*) cons);
+      assert( ! SCIPhashmapExists(indexmap->consindex, (void*) cons));
+      SCIPhashmapInsert(indexmap->consindex, (void*) cons, (void*) hashmapindex);
+   }
 }
 
 /** Predicate function for sorting arrays.
@@ -837,6 +1000,39 @@ void switchPointers(void** p1, void** p2)
     *p2 = *p1;
     *p1= p3;
 }
+
+/** Returns the problem name without the path */
+static const char* getProbNameWithoutPath(SCIP* scip)
+{
+   const char* pname;
+   //remove '/' from problem name
+   pname = strrchr(SCIPgetProbName(scip), '/');
+   if( pname == NULL )
+   {
+      pname = SCIPgetProbName(scip);
+   }
+   else
+   {
+      pname = pname+1;
+   }
+   return pname;
+}
+
+
+#ifdef SCIP_DEBUG
+static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars)
+{
+   int i;
+   for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
+   {
+      assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
+   }
+   for(i = 0; i < nvars - 1; ++i)
+   {
+      assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
+   }
+}
+#endif
 
 //debug ?
 /** Creates a data and a gnuplot file for the initial problem.
@@ -1046,7 +1242,6 @@ void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, in
       }
       zeros = nvars*ncons - nonzeros;
       sparsity = (float) nonzeros / (nvars*ncons);
-      SCIPdebugMessage("minList.\n");
       minimum_linking_vars = minList(SCIPiteratorBegin(detectordata->rowsWithConstrictions), SCIPiteratorEnd(detectordata->rowsWithConstrictions));
       SCIPdebugMessage("minList.\n");
       fprintf(output, "# of rows\n%i\n", ncons);
@@ -1126,59 +1321,61 @@ SCIP_RETCODE findRelevantConss(SCIP* scip, DEC_DETECTORDATA* detectordata)
  *    (5)    )
  */
 static
-LIST* rowindices_list(
+SCIP_RETCODE rowindices_list(
       SCIP* scip,                      /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
       SCIP_HASHMAP* indexcons,         /**< hashmap index -> constraint */
-      SCIP_HASHMAP* varindex           /**< hashmap variable -> index*/
+      SCIP_HASHMAP* varindex,          /**< hashmap variable -> index*/
+      LIST** rowindices                 /**< list to store the row indices list*/
       )
 {
    //create the rowindices list
    int i;
    int j;
    int* data;
-   LIST* rowindices;
    LIST* rowindices_row;
    int ncons; //number of constraints of the problem
-   int nconsvars; //number of variables in a constraint
+   int nvars; //number of variables in a constraint
    int* probindices;
    int* hashmapindex;
    SCIP_CONS* cons; //one constraint of the problem
-   SCIP_VAR** consvars; //array of variables that occur in a constraint (unequal zero)
+   SCIP_VAR** vars; //array of variables that occur in a constraint (unequal zero)
 
-   rowindices = SCIPlistCreate(scip);
+   *rowindices = SCIPlistCreate(scip);
    ncons = detectordata->nRelevantConss;
    for(i = 0; i < ncons; ++i)
    {
       hashmapindex = &detectordata->hashmapindices[i+1];
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
-      nconsvars = SCIPgetNVarsXXX(scip, cons);
-      SCIPallocBufferArray(scip, &consvars, nconsvars);
-      SCIPgetVarsXXX(scip, cons, consvars, nconsvars);
+      nvars = SCIPgetNVarsXXX(scip, cons);
+      SCIP_CALL(SCIPallocBufferArray(scip, &vars, nvars));
+      SCIPgetVarsXXX(scip, cons, vars, nvars);
       //allocate memory for the array of probindices
-      SCIPallocMemoryArray(scip, &probindices, nconsvars);
+      SCIP_CALL(SCIPallocMemoryArray(scip, &probindices, nvars));
       //fill the array with the indices of the variables of the current constraint
-      for(j = 0; j < nconsvars; ++j)
+      for(j = 0; j < nvars; ++j)
       {
-         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, consvars[j]);
+         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, vars[j]);
       }
       //sort the elements of probindices ('<')
-      qsort(probindices, nconsvars, sizeof(int), compare);
+      qsort(probindices, nvars, sizeof(int), compare);
       //store a copy of the elements of probindices in the list rowindices_row
       rowindices_row = SCIPlistCreate(scip);
-      for(j = 0; j < nconsvars; ++j)
+      for(j = 0; j < nvars; ++j)
       {
-         SCIPallocMemory(scip, &data);
+         SCIP_CALL(SCIPallocMemory(scip, &data));
          *data = probindices[j];
          SCIPlistPushBack(scip, rowindices_row, data);
       }
       //deallocate memory
       SCIPfreeMemoryArray(scip, &probindices);
-      SCIPfreeBufferArray(scip, &consvars);
+      SCIPfreeBufferArray(scip, &vars);
       //add rowindices_row to the list rowindices
-      SCIPlistPushBack(scip, rowindices, rowindices_row);
+      SCIPlistPushBack(scip, *rowindices, rowindices_row);
    }
-   return rowindices;
+   //debug
+//   printNested(*rowindices, "rowindices in rowindices_list");
+   return SCIP_OKAY;
 }
 
 /** Creates a nested list with the indices of the nonzero entries of each column.
@@ -1201,14 +1398,14 @@ LIST* rowindices_list(
  *    (3)    )
  */
 static
-LIST* columnindices_list(
+SCIP_RETCODE columnindices_list(
       SCIP* scip,                      /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata,  /**< detector data data structure */
-      LIST* rowindices                 /**< A list with the row indices (achieved from calling rowindices_list() ) */
+      LIST* rowindices,                /**< A list with the row indices (achieved from calling rowindices_list() ) */
+      LIST** columnindices              /**< list to store the column indices list*/
       )
 {
    LIST** columnindices_array;
-   LIST* columnindices;
    LIST* rowindices_row;
    int* data;
    int position;
@@ -1218,7 +1415,7 @@ LIST* columnindices_list(
    ITERATOR it2;
    nvars = SCIPgetNVars(scip);
    //create the columnindices_array with pointers to empty lists
-   SCIPallocMemoryArray(scip, &columnindices_array, nvars);
+   SCIP_CALL(SCIPallocMemoryArray(scip, &columnindices_array, nvars));
    for(i = 0; i < nvars; ++i)
    {
       columnindices_array[i] = SCIPlistCreate(scip);
@@ -1229,21 +1426,21 @@ LIST* columnindices_list(
       rowindices_row = it1.node->data;
       for(it2 = SCIPiteratorBegin(rowindices_row); ! ( SCIPiteratorIsEqual(it2, SCIPiteratorEnd(rowindices_row)) ); SCIPiteratorNext(&it2))
       {
-         SCIPallocMemory(scip, &data);
+         SCIP_CALL(SCIPallocMemory(scip, &data));
          *data = i+1;
          position = *(int*)(it2.node->data)-1;
          SCIPlistPushBack(scip, columnindices_array[position], data);
       }
    }
    //create a columnindices list instead of an array
-   columnindices = SCIPlistCreate(scip);
+   *columnindices = SCIPlistCreate(scip);
    for(i = 0; i < nvars; ++i)
    {
-      SCIPlistPushBack(scip, columnindices, columnindices_array[i]);
+      SCIPlistPushBack(scip, *columnindices, columnindices_array[i]);
    }
    //deallocate memory
    SCIPfreeMemoryArray(scip, &columnindices_array);
-   return columnindices;
+   return SCIP_OKAY;
 }
 
 /** Does the row ordering of the ROC2 algorithm.
@@ -1322,32 +1519,6 @@ SCIP_RETCODE formIndexArray(int* begin, int* end, LIST* indices)
    return SCIP_OKAY;
 }
 
-//static
-//SCIP_Bool IndexArrayChanges(SCIP* scip, DEC_DETECTORDATA* detectordata)
-//{
-//   /*returns TRUE if at least one entry of a new index array differs from the corresponding entry of the old index array*/
-//   int i;
-//   //any change in ibegin or iend?
-//   for(i = 0; i < detectordata->nRelevantConss; ++i)
-//   {
-//      if(   detectordata->ibegin_old[i] != detectordata->ibegin_new[i]
-//         || detectordata->iend_old[i] != detectordata->iend_new[i] )
-//      {
-//         return TRUE;
-//      }
-//   }
-//   //any change in jbegin or jend?
-//   for(i = 0; i < SCIPgetNVars(scip); ++i)
-//   {
-//      if(   detectordata->jbegin_old[i] != detectordata->jbegin_new[i]
-//         || detectordata->jend_old[i] != detectordata->jend_new[i] )
-//      {
-//         return TRUE;
-//      }
-//   }
-//   //case: all entries of old and new are equal
-//   return FALSE;
-//}
 
 /**Returns FALSE if at least one entry of new_array and old_array are different.*/
 static
@@ -1369,7 +1540,7 @@ SCIP_Bool arraysAreEqual(int* new_array, int* old_array, int num_elements)
  *
  *  One call of this function is equivalent to one iteration of the ROC2-algortihm. */
 static
-SCIP_RETCODE rankOrderClustering(
+SCIP_RETCODE rankOrderClusteringIteration(
       SCIP*             scip,          /**< SCIP data structure */
       DEC_DETECTORDATA*  detectordata, /**< presolver data data structure */
       INDEXMAP* inputmap,              /**< indexmap for input */
@@ -1389,13 +1560,17 @@ SCIP_RETCODE rankOrderClustering(
    SCIP_CONS* cons;
    SCIP_VAR* var;
 
+   SCIPdebugMessage("Entering rankOrderClusteringIteration\n");
+
    assert(scip != NULL);
    assert(detectordata != NULL);
    nvars = SCIPgetNVars(scip);
    ncons = detectordata->nRelevantConss;
    //create the lists containing the positions of nonzero entries; row and column ordering
-   rowindices = rowindices_list(scip, detectordata, inputmap->indexcons, inputmap->varindex);
-   columnindices = columnindices_list(scip, detectordata, rowindices);
+   rowindices = SCIPlistCreate(scip);
+   rowindices_list(scip, detectordata, inputmap->indexcons, inputmap->varindex, &rowindices);
+   columnindices = SCIPlistCreate(scip);
+   columnindices_list(scip, detectordata, rowindices, &columnindices);
    roworder = rowOrdering(scip, columnindices, ncons);
    SCIPlistRearrange(scip, rowindices, roworder);
    columnorder = rowOrdering(scip, rowindices, nvars);
@@ -1441,6 +1616,76 @@ SCIP_RETCODE rankOrderClustering(
    return SCIP_OKAY;
 }
 
+static
+int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iterations)
+{
+   int i;
+   int nvars;
+   int ncons;
+   INDEXMAP* indexmap_permuted;
+   LIST* rowindices;
+   LIST* columnindices;
+   int* ibegin_permuted;
+   int* iend_permuted;
+   int* jbegin_permuted;
+   int* jend_permuted;
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+
+   if(max_iterations <= 0)
+   {
+      return max_iterations;
+   }
+   else
+   {
+      nvars = SCIPgetNVars(scip);
+      ncons = detectordata->nRelevantConss;
+      indexmapCreate(scip, &indexmap_permuted, ncons, nvars);
+      SCIP_CALL(SCIPallocMemoryArray(scip, &ibegin_permuted, ncons));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &iend_permuted, ncons));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &jbegin_permuted, nvars));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &jend_permuted, nvars));
+      indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, detectordata->relevantConss, ncons, detectordata->hashmapindices);
+      rowindices = SCIPlistCreate(scip);
+      columnindices = SCIPlistCreate(scip);
+      i = 0;
+      do
+      {
+         ++i;
+         //not more than max_iterations loops. no iteration limit for max_iterations == -1
+         if(i > max_iterations && max_iterations != -1) {break;}
+         SCIPdebugMessage("Iteration # %i of ROC2\n", i);
+         rankOrderClusteringIteration(scip, detectordata, detectordata->indexmap, indexmap_permuted);
+         //form the new index arrays after the permutation
+         rowindices_list(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex, &rowindices);
+         columnindices_list(scip, detectordata, rowindices, &columnindices);
+         formIndexArray(ibegin_permuted, iend_permuted, rowindices);
+         formIndexArray(jbegin_permuted, jend_permuted, columnindices);
+         SCIPlistResetNested(scip, rowindices, TRUE);
+         SCIPlistResetNested(scip, columnindices, TRUE);
+         //switch between index arrays containing new and old indices
+         switchPointers( (void*) &detectordata->ibegin, (void*) &ibegin_permuted);
+         switchPointers( (void*) &detectordata->iend, (void*) &iend_permuted);
+         switchPointers( (void*) &detectordata->jbegin, (void*) &jbegin_permuted);
+         switchPointers( (void*) &detectordata->jend, (void*) &jend_permuted);
+         //switch between hash maps containing new and old indices
+         switchPointers( (void*) &detectordata->indexmap, (void*) &indexmap_permuted);
+      }
+      //while Index Arrays change
+      while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
+             && arraysAreEqual(detectordata->iend, iend_permuted, ncons)
+             && arraysAreEqual(detectordata->jbegin, jbegin_permuted, nvars)
+             && arraysAreEqual(detectordata->jend, jend_permuted, nvars)));
+
+      indexmapFree(scip, indexmap_permuted);
+      SCIPfreeMemoryArray(scip, &ibegin_permuted);
+      SCIPfreeMemoryArray(scip, &iend_permuted);
+      SCIPfreeMemoryArray(scip, &jbegin_permuted);
+      SCIPfreeMemoryArray(scip, &jend_permuted);
+   }
+   return (i-1);
+}
+
 /** finds rows with local minima regarding the number of linking variables and stores them in detectordata->rowsWithConstrictions */
 static
 void rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
@@ -1460,11 +1705,11 @@ void rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
    }
 }
 
-/** assigns variables to a block, divided into linking variables and nonlinking variables */
+/** Assigns variables to a block, divided into linking variables and nonlinking variables.*/
 static
-void assignVarsToBlock(
+SCIP_RETCODE assignVarsToBlock(
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
-      int block,                       /**< number of current block */
+      int block,                       /**< number of current block, first block = 1 */
       int first_var,                   /**< index of first variable in the block*/
       int last_var,                    /**< index of last variable in the block*/
       int first_linkingvar             /**< index of first linking variable*/
@@ -1475,14 +1720,18 @@ void assignVarsToBlock(
    int* hashmapindex;
    SCIP_VAR* var;
    //assign the subscipvars (=nonlinking vars)
-   assert(first_linkingvar >= first_var);
-   detectordata->nvarsperblock[block-1] = first_linkingvar - first_var;
-   for(i = first_var, j = 0; i < first_linkingvar; ++i, ++j)
+   //debug assertion not useful in case of constant block size?
+//   assert(first_linkingvar >= first_var);
+   detectordata->nvarsperblock[block-1] = maximum(first_linkingvar - first_var, 0);
+   for(i = first_var, j = 0; j < detectordata->nvarsperblock[block-1]; ++i, ++j)
    {
       hashmapindex = &detectordata->hashmapindices[i];
       var = (SCIP_VAR*) SCIPhashmapGetImage(detectordata->indexmap->indexvar, (void*) hashmapindex);
       assert(var != NULL);
       detectordata->varsperblock[block-1][j] = var;
+      /* insert var into hash map vartoblock */
+      assert(!SCIPhashmapExists(detectordata->vartoblock, var));
+      SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, var, (void*)&detectordata->hashmapindices[block]) );
    }
    //assign linking vars
    for(i = first_linkingvar; i <= last_var; ++i)
@@ -1493,11 +1742,12 @@ void assignVarsToBlock(
       detectordata->linkingvars[detectordata->nlinkingvars] = var;
       ++detectordata->nlinkingvars;
    }
+   return SCIP_OKAY;
 }
 
-/** assigns constraints in the interval [first_cons, last_cons] to 'block' */
+/** Assigns constraints in the interval [first_cons, last_cons] to 'block'. */
 static
-void assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
+SCIP_RETCODE assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
 {
    int i;
    int j;
@@ -1511,8 +1761,12 @@ void assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, in
       cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
       assert(cons != NULL);
       detectordata->consperblock[block-1][j] = cons;
+      /* insert cons into hash map vartoblock */
+      assert(!SCIPhashmapExists(detectordata->constoblock, cons));
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*)&detectordata->hashmapindices[block]) );
    }
    SCIPlistPushBack(scip, detectordata->blockedAfterrow, &detectordata->hashmapindices[last_cons]);
+   return SCIP_OKAY;
 }
 
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
@@ -1523,11 +1777,11 @@ int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
    return maxArray(detectordata->iend + (from_row -1), to_row - from_row + 1);
 }
 
-/** returns the column index of the first nonzero entry in 'row' */
+/** returns the column index of the first nonzero entry in 'row'. Rows start counting at 1, not 0. */
 static
 int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
 {
-   return detectordata->ibegin[row];
+   return detectordata->ibegin[row-1];
 }
 
 /** determines if a blocking at 'block_at_row' is a valid blocking
@@ -1544,6 +1798,11 @@ SCIP_Bool isValidBlocking(DEC_DETECTORDATA* detectordata, int prev_block_first_r
    int last_column_prev_block;
    int first_column_current_block;
 
+   //if the function is called for the first block, the blocking is always valid
+   if(prev_block_last_row == 0)
+   {
+      return TRUE;
+   }
    last_column_prev_block = getMaxColIndex(detectordata, prev_block_first_row, prev_block_last_row);
    first_column_current_block = getMinColIndex(detectordata, block_at_row);
    return ( first_column_current_block > last_column_prev_block ? TRUE : FALSE);
@@ -1624,9 +1883,68 @@ ITERATOR nextRowToBlockAt(DEC_DETECTORDATA* detectordata, ITERATOR it_constricti
    return it_constrictions;
 }
 
-/** Tries to divide the problem into subproblems (blocks)*/
 static
-void blocking(
+int calculateNdecompositions(DEC_DETECTORDATA* detectordata)
+{
+   int nblockingtypes;
+   int nblockingspertype;
+
+   nblockingtypes = 0;
+   //get the number of enabled blocking types
+   if(detectordata->enableblockingdynamic)
+   {
+      ++nblockingtypes;
+   }
+   if(detectordata->enableblockingstatic)
+   {
+      ++nblockingtypes;
+   }
+   if(detectordata->enableblockingassoonaspossible)
+   {
+      ++nblockingtypes;
+   }
+
+   //get the number of blockings per blocking type
+   if(detectordata->enablemultipledecomps)
+   {
+      nblockingspertype = detectordata->maxblocks - detectordata->minblocks + 1;
+   }
+   else
+   {
+      nblockingspertype = 1;
+   }
+
+   return nblockingtypes * nblockingspertype;
+}
+
+static
+void checkParameterConsistency(DEC_DETECTORDATA* detectordata, SCIP_RESULT* result)
+{
+   //maxblocks < nRelevantsCons?
+
+   //desired blocks <= maxblocks?
+
+   //is  minblocks <= maxblocks?
+   if(detectordata->enablemultipledecomps)
+   {
+      if(detectordata->minblocks > detectordata->maxblocks)
+      {
+         SCIPerrorMessage("minblocks > maxblocks. Setting minblocks = maxblocks.\n");
+         detectordata->minblocks = detectordata->maxblocks;
+      }
+   }
+
+   //is at least one blocking type enabled?
+   if( ! detectordata->enableblockingassoonaspossible && ! detectordata->enableblockingstatic &&! detectordata->enableblockingdynamic)
+   {
+      SCIPerrorMessage("No blocking type enabled, cannot perform blocking.\n");
+      *result = SCIP_DIDNOTRUN;
+   }
+}
+
+/** Tries to dynamically divide the problem into subproblems (blocks)*/
+static
+SCIP_RETCODE blockingDynamic(
       SCIP* scip,                      /**< scip object */
       DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
       int tau,                         /**< desired number of blocks */
@@ -1679,46 +1997,364 @@ void blocking(
    assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
    assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss);
    SCIPlistPopBack(scip, detectordata->blockedAfterrow);
+
    detectordata->blocks = block;
+   detectordata->found = TRUE;
+   //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
+#ifndef NDEBUG
+   {
+   char filename1[256];
+   char filename2[256];
+   char paramfile[256];
+
+   sprintf(filename1, "%s_dynamic_blocking", getProbNameWithoutPath(scip));
+   sprintf(filename2, "%s_dynamic_minV", getProbNameWithoutPath(scip));
+   sprintf(paramfile, "%s_dynamic.params", getProbNameWithoutPath(scip));
+   plotBlocking(scip, detectordata, filename1);
+   plotMinV(scip, detectordata, filename2);
+   //debug
+//   PrintDetectordata(scip, detectordata);
+//   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
+//   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
+   }
+#endif
+
+   return SCIP_OKAY;
 }
 
+/** Returns the number of rows in a block in order to distribute the number of rows evenly across the blocks */
+static
+int rowsInConstantBlock(int block, int desired_blocks, int nrows)
+{
+   if(block <= desired_blocks - (nrows % desired_blocks))
+   {
+      return (nrows / desired_blocks);
+   }
+   else
+   {
+      return ((nrows / desired_blocks) + 1);
+   }
+}
+
+/** Creates blocks with the same number of rows*/
+static
+SCIP_RETCODE blockingStatic(
+      SCIP* scip,                      /**< scip object */
+      DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
+      int desired_blocks,              /**< desired number of blocks */
+      int nvars                        /**< number of variables in the problem*/
+      )
+{
+   int block;
+   int prev_block_last_row;
+   int current_row;
+   //notation: i=current block; im1=i-1=previous block; ip1=i+1=next block
+   int max_col_index_im1;
+   int min_col_index_ip1;
+   int max_col_index_i;
+
+   block = 1;
+   prev_block_last_row = 0;
+   max_col_index_im1 = 0;
+   min_col_index_ip1 = 1;
+   current_row = 0;
+   //blocks 1 to (desired_blocks-1)
+   for(block = 1; block < desired_blocks; ++block)
+   {
+      current_row += rowsInConstantBlock(block, desired_blocks, detectordata->nRelevantConss);
+      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
+      min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
+
+      //first check if three adjacent blocks overlap; in this case all variables are linking
+      if( min_col_index_ip1 <= max_col_index_im1)
+      {
+         SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+         SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, max_col_index_im1+1, max_col_index_i);
+         assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, max_col_index_im1 + 1);
+      }
+      else //no overlap of three adjacent blocks, only some vars are linking
+      {
+         //assign the variables and constraints to block
+         SCIPdebugMessage("assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, current_row);
+         SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
+         assignVarsToBlock(detectordata, block, max_col_index_im1 + 1, max_col_index_i, min_col_index_ip1);
+      }
+      assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
+      //update variables in the while loop
+      max_col_index_im1 = max_col_index_i;
+      prev_block_last_row = current_row;
+   }
+   //last block
+   //assign the remaining cons and vars to the last block; no new linking vars are added
+   //debug
+   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, detectordata->nRelevantConss);
+   SCIPdebugMessage("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
+   assignVarsToBlock(detectordata, block, max_col_index_im1+1, nvars, nvars+1);
+   assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss);
+   SCIPlistPopBack(scip, detectordata->blockedAfterrow);
+
+   detectordata->blocks = block;
+   detectordata->found = TRUE;
+#ifndef NDEBUG
+   {
+   char filename1[256];
+   char filename2[256];
+   char paramfile[256];
+
+   //debug
+//   PrintDetectordata(scip, detectordata);
+   sprintf(filename1, "%s_static_blocking_%i", getProbNameWithoutPath(scip), detectordata->blocks);
+   sprintf(filename2, "%s_static_minV_%i", getProbNameWithoutPath(scip), detectordata->blocks);
+   sprintf(paramfile, "%s_static.params", getProbNameWithoutPath(scip));
+   plotBlocking(scip, detectordata, filename1);
+   plotMinV(scip, detectordata, filename2);
+//   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
+//   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
+   }
+#endif
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE blockingAsSoonAsPossible(
+      SCIP* scip,                      /**< scip object */
+      DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
+      int desired_blocks,              /**< desired number of blocks */
+      int nvars                        /**< number of variables in the problem*/
+      )
+{
+   int block;
+   block = 0;
+   detectordata->blocks = block;
+   detectordata->found = TRUE;
+   return SCIP_OKAY;
+}
 
 /** copies the variable and block information to the decomp structure */
 static
 SCIP_RETCODE copyDetectorDataToDecomp(
       SCIP*             scip,         /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata, /**< presolver data data structure */
-      DECDECOMP*        decomp        /**< DECOMP data structure */
+      DECDECOMP*        decdecomp        /**< DECOMP data structure */
       )
 {
-   int i;
    assert(scip != 0);
    assert(detectordata != 0);
-   assert(decomp != 0);
+   assert(decdecomp != 0);
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipvars, detectordata->blocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &decomp->subscipconss, detectordata->blocks));
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->linkingvars, detectordata->linkingvars, detectordata->nlinkingvars));
-   decomp->nlinkingvars = detectordata->nlinkingvars;
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->linkingconss, detectordata->linkingconss, detectordata->nlinkingconss));
-   decomp->nlinkingconss = detectordata->nlinkingconss;
-
-   for( i = 0; i < detectordata->blocks; ++i )
-   {
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipconss[i], detectordata->consperblock[i], detectordata->nconsperblock[i]));
-      SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->subscipvars[i], detectordata->varsperblock[i], detectordata->nvarsperblock[i]));
-   }
-
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipconss, detectordata->nconsperblock, detectordata->blocks));
-   SCIP_CALL(SCIPduplicateMemoryArray(scip, &decomp->nsubscipvars, detectordata->nvarsperblock, detectordata->blocks));
-
-   decomp->varindex = detectordata->indexmap->varindex;
-   decomp->consindex = detectordata->indexmap->consindex;
-   decomp->nblocks = detectordata->blocks;
-   decomp->type = DEC_DECTYPE_STAIRCASE;
+   DECdecdecompSetNBlocks(decdecomp, detectordata->blocks);
+   DECdecdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
+   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock) );
+   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock) );
+   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars) );
+   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss) );
+   //hashmaps: shallow copy
+   DECdecdecompSetVarindex(decdecomp, detectordata->indexmap->varindex);
+   DECdecdecompSetConsindex(decdecomp, detectordata->indexmap->consindex);
+   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   //debug
+//   PrintDetectordata(scip, detectordata);
+//   DECdecdecompPrintDecomp(scip, decdecomp);
    return SCIP_OKAY;
 }
+
+/** resets detectordata such that it can be used for the next decomposition */
+static
+void resetDetectordata(DEC_DETECTORDATA* detectordata)
+{
+   SCIPhashmapRemoveAll(detectordata->vartoblock);
+   SCIPhashmapRemoveAll(detectordata->constoblock);
+   detectordata->nlinkingvars = 0;
+   detectordata->nlinkingconss = 0;
+}
+
+static
+SCIP_RETCODE blocking(
+      SCIP* scip,
+      DEC_DETECTORDATA* detectordata,
+      DECDECOMP*** decdecomps,
+      int* ndecdecomps,
+      int nvars,
+      int ncons,
+      SCIP_RESULT* result
+      )
+{
+   int n;   // maximum width of the band after ROC
+   int v;   // minimum width of the band after ROC
+   int tau; // desired number of blocks
+
+   assert(*ndecdecomps == 0);
+   //debug
+   SCIPdebugMessage("Entering Blocking\n");
+   //if multiple decompositions disabled
+   if(detectordata->enablemultipledecomps == FALSE)
+   {
+      //if desiredblocks == 0 let the algorithm determine the desired number of blocks
+      if(detectordata->desiredblocks == 0)
+      {
+         n = maxArray(detectordata->width, ncons);
+         v = minArray(detectordata->width, ncons);
+         tau = round((nvars - v)/(n - v));
+         SCIPdebugMessage("<n><v><tau>: <%i><%i><%i>\n", n, v, tau);
+         if(tau > detectordata->maxblocks)
+         {
+            tau = detectordata->maxblocks;
+         }
+         //debug
+         SCIPdebugMessage("detectordata->enablemultipledecomps == FALSE. detectordata->desiredblocks == 0. Calculating tau = %i\n", tau);
+         //continue only if tau >= 2
+         if(tau < 2)
+         {
+            *result = SCIP_DIDNOTFIND;
+            return SCIP_OKAY;
+         }
+      }
+      else
+      {
+         tau = detectordata->desiredblocks;
+      }
+   }
+
+   //variant 1
+//   if(detectordata->enablemultipledecomps)
+//   {
+//      for(tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau)
+//      {
+//         if(detectordata->enableblockingdynamic)
+//         {
+//            blockingDynamic(scip, detectordata, tau, nvars);
+//         }
+//         if(detectordata->enableblockingstatic)
+//         {
+//            blockingStatic(scip, detectordata, tau, nvars);
+//         }
+//         if(detectordata->enableblockingassoonaspossible)
+//         {
+//            blockingAssoonaspossible(scip, detectordata, tau, nvars);
+//         }
+//      }
+//   }
+//   else
+//   {
+//      if(detectordata->enableblockingdynamic)
+//      {
+//         blockingDynamic(scip, detectordata, tau, nvars);
+//      }
+//      if(detectordata->enableblockingstatic)
+//      {
+//         blockingStatic(scip, detectordata, tau, nvars);
+//      }
+//      if(detectordata->enableblockingassoonaspossible)
+//      {
+//         blockingAssoonaspossible(scip, detectordata, tau, nvars);
+//      }
+//   }
+
+
+   //variant 2
+   //dynamic blocking
+   if(detectordata->enableblockingdynamic)
+   {
+      //debug
+      SCIPdebugMessage("detectordata->enableblockingdynamic == TRUE. \n");
+      rowsWithConstriction(scip, detectordata);
+      if(detectordata->enablemultipledecomps)
+      {
+         //debug
+         SCIPdebugMessage("detectordata->enablemultipledecomps == TRUE. \n");
+         for(tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau)
+         {
+            //debug
+            SCIPdebugMessage("tau = %i \n", tau);
+            resetDetectordata(detectordata);
+            blockingDynamic(scip, detectordata, tau, nvars);
+            //debug
+            SCIPdebugMessage("dynamic blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
+            copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+            //debug
+            DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+            *ndecdecomps += 1;
+         }
+      }
+      else
+      {
+         //debug
+         SCIPdebugMessage("detectordata->enablemultipledecomps == FALSE. \n");
+         resetDetectordata(detectordata);
+         //debug
+         SCIPdebugMessage("tau = %i \n", tau);
+         blockingDynamic(scip, detectordata, tau, nvars);
+         //debug
+         SCIPdebugMessage("dynamic blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
+         copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+         //debug
+         DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+         *ndecdecomps += 1;
+      }
+   }
+
+   //static blocking
+   if(detectordata->enableblockingstatic)
+   {
+      //debug
+      SCIPdebugMessage("detectordata->enableblockingstatic == TRUE. \n");
+      if(detectordata->enablemultipledecomps)
+      {
+         for(tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau)
+         {
+            //debug
+            SCIPdebugMessage("tau = %i \n", tau);
+            resetDetectordata(detectordata);
+            blockingStatic(scip, detectordata, tau, nvars);
+            copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+            //debug
+            DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+            *ndecdecomps += 1;
+         }
+      }
+      else
+      {
+         //debug
+         SCIPdebugMessage("detectordata->enablemultipledecomps == FALSE. \n");
+         resetDetectordata(detectordata);
+         //debug
+         SCIPdebugMessage("tau = %i \n", tau);
+         blockingStatic(scip, detectordata, tau, nvars);
+         //debug
+         SCIPdebugMessage("static blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
+         copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+         //debug
+         DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+         *ndecdecomps += 1;
+      }
+   }
+
+   //blocking ASAP
+   if(detectordata->enableblockingassoonaspossible)
+   {
+      if(detectordata->enablemultipledecomps)
+      {
+         for(tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau)
+         {
+            resetDetectordata(detectordata);
+            blockingAsSoonAsPossible(scip, detectordata, tau, nvars);
+            copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+            *ndecdecomps += 1;
+         }
+      }
+      else
+      {
+         resetDetectordata(detectordata);
+         blockingAsSoonAsPossible(scip, detectordata, tau, nvars);
+         copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
+         *ndecdecomps += 1;
+      }
+   }
+   return SCIP_OKAY;
+}
+
 
 static
 DEC_DECL_INITDETECTOR(initStairheur)
@@ -1842,211 +2478,79 @@ static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 {
    int i;
-   int* hashmapindex;
    int ncons; //number of constraints in the problem
    int nvars; //number of variables in the problem
+   int ndecs;
    SCIP_VAR** vars_array;
-   SCIP_VAR* var;
    SCIP_CONS** cons_array;
-   SCIP_CONS* cons;
-//   DEC_DETECTOR* stairheur;
-//   DEC_DETECTORDATA* detectordata;
    LIST* rowindices;
    LIST* columnindices;
-   INDEXMAP* indexmap_permuted;
-   int* ibegin_permuted;
-   int* iend_permuted;
-   int* jbegin_permuted;
-   int* jend_permuted;
-   int n;
-   int v;
-   int tau;
    int ROC_iterations;
 
    assert(scip != NULL);
-//   stairheur = DECfindDetector(scip, DEC_DETECTORNAME);
-//   detectordata = DECdetectorGetData(stairheur);
    assert(detectordata != NULL);
-//   assert(strcmp(DECdetectorGetName(stairheur), DEC_DETECTORNAME) == 0);
-   SCIPdebugMessage("%s\n", SCIPgetProbName(scip));
+   assert(decdecomps != NULL);
+   assert(ndecdecomps != NULL);
+
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   SCIPwriteParams(scip, NULL, TRUE, TRUE);
+   checkParameterConsistency(detectordata, result);
+   ndecs = calculateNdecompositions(detectordata);
+   SCIPdebugMessage("%i decompositions will be created\n", ndecs);
+   *ndecdecomps = 0;
+
+   /* allocate space for output data */
+   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
+   for(i = 0; i < ndecs; ++i)
+   {
+      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+   }
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
-   SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
+   //SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
    nvars = SCIPgetNVars(scip);
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
    cons_array = detectordata->relevantConss;
-#ifdef SCIP_DEBUG
-   {
-      //remove '/' from problem name
-//      const char* pname;
-//      const char* ext;
-//      char fname[256];
-//      pname = strrchr(SCIPgetProbName(scip), '/');
-//      if( pname == NULL )
-//      {
-//         pname = SCIPgetProbName(scip);
-//      }
-//      else
-//      {
-//         pname = pname+1;
-//      }
-//      ext = strrchr(SCIPgetProbName(scip), '.');
-//      if( ext == NULL )
-//      {
-//         strcpy(fname, pname);
-//      }
-//      else
-//      {
-//         strncpy(fname, pname, ext-pname);
-//         fname[ext-pname]='\0';
-//      }
-//      strcat(fname, "_permuted.lp");
-//      sprintf(fname, "permuted_%s", pname);
-//
-//      SCIPdebugMessage("Writing Orig Problem to %s\n", fname);
-//      SCIPwriteOrigProblem  (scip, fname, "lp", TRUE);
-//      SCIPdebugMessage("Writing Trans Problem\n");
-//      SCIPwriteTransProblem  (scip, fname, "lp", TRUE);
-
-
-      SCIPdebugMessage("ncons: %i \n", ncons);
-      SCIPdebugMessage("nvars: %i \n", nvars);
-      SCIPdebugMessage("initializing hash maps\n");
-   }
-#endif
-   //initialize hash maps for variables: indexvar_old, indexvar_new, varindex_old, varindex_new
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexmap->indexvar, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexmap->indexvar, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(detectordata->indexmap->varindex, (void*) var));
-      SCIPhashmapInsert(detectordata->indexmap->varindex, (void*) var, (void*) hashmapindex);
-   }
-   //initialize hash maps for constraints: indexcons_old, indexcons_new, consindex_old, consindex_new
-   for(i = 0; i < ncons; ++i)
-   {
-      cons = cons_array[i];
-      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(detectordata->indexmap->indexcons, (void*) hashmapindex));
-      SCIPhashmapInsert(detectordata->indexmap->indexcons, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(detectordata->indexmap->consindex, (void*) cons));
-      SCIPhashmapInsert(detectordata->indexmap->consindex, (void*) cons, (void*) hashmapindex);
-   }
-   SCIPdebugMessage("initializing hash maps DONE.\n");
-   SCIPdebugMessage("initializing index arrays...\n");
+   //initialize hash maps for keeping track of variables and constraints and their corresponding indices after being permuted by the ROC2-algorithm
+   indexmapInit(detectordata->indexmap, vars_array, nvars, cons_array, ncons, detectordata->hashmapindices);
 #ifndef NDEBUG
    {
-      //remove '/' from problem name
-      const char* pname;
       char filename[256];
-      pname = strrchr(SCIPgetProbName(scip), '/');
-      if( pname == NULL )
-      {
-         pname = SCIPgetProbName(scip);
-      }
-      else
-      {
-         pname = pname+1;
-      }
-      sprintf(filename, "%s_initial_problem", pname);
+      sprintf(filename, "%s_initial_problem", getProbNameWithoutPath(scip));
       plotInitialProblem(scip, detectordata, filename);
    }
 #endif
    //initialize index arrays ibegin, iend, jbegin, jend
-   rowindices = rowindices_list(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex);
-   columnindices = columnindices_list(scip, detectordata, rowindices);
+   rowindices = SCIPlistCreate(scip);
+   columnindices = SCIPlistCreate(scip);
+   rowindices_list(scip, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex, &rowindices);
+   //debug
+//   printNested(rowindices, "rowindices in detectAndBuildStair");
+   columnindices_list(scip, detectordata, rowindices, &columnindices);
    formIndexArray(detectordata->ibegin, detectordata->iend, rowindices);
    formIndexArray(detectordata->jbegin, detectordata->jend, columnindices);
 
-   indexmapCreate(scip, &indexmap_permuted, ncons, nvars);
-   for(i = 0; i < nvars; ++i)
-   {
-      var = vars_array[i];
-      //careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(indexmap_permuted->indexvar, (void*) hashmapindex));
-      SCIPhashmapInsert(indexmap_permuted->indexvar, (void*) hashmapindex, (void*) var);
-      assert( ! SCIPhashmapExists(indexmap_permuted->varindex, (void*) var));
-      SCIPhashmapInsert(indexmap_permuted->varindex, (void*) var, (void*) hashmapindex);
-   }
-   //debug: temporary hash maps: how to initialize???
-   for(i = 0; i < ncons; ++i)
-   {
-      cons = cons_array[i];
-      //careful: i+1, because '0' is treated as an empty hashmap entry, which causes an error
-      hashmapindex = &detectordata->hashmapindices[i+1];
-      assert( ! SCIPhashmapExists(indexmap_permuted->indexcons, (void*) hashmapindex));
-      SCIPhashmapInsert(indexmap_permuted->indexcons, (void*) hashmapindex, (void*) cons);
-      assert( ! SCIPhashmapExists(indexmap_permuted->consindex, (void*) cons));
-      SCIPhashmapInsert(indexmap_permuted->consindex, (void*) cons, (void*) hashmapindex);
-   }
-   SCIP_CALL(SCIPallocMemoryArray(scip, &ibegin_permuted, ncons));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &iend_permuted, ncons));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &jbegin_permuted, nvars));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &jend_permuted, nvars));
+   //debug
+//   printArray(detectordata->ibegin, ncons, "ibegin");
+//   printArray(detectordata->iend, ncons, "iend");
 
-   //ROC2 algorithm
-   SCIPdebugMessage("starting ROC2 algortihm\n");
-   i = 0;
-   do
-   {
-      ++i;
-      SCIPdebugMessage("Iteration # %i of ROC2\n", i);
-      rankOrderClustering(scip, detectordata, detectordata->indexmap, indexmap_permuted);
-      //form the new index arrays after the permutation
-      SCIPlistDeleteNested(scip, rowindices);
-      SCIPlistDeleteNested(scip, columnindices);
-      rowindices = rowindices_list(scip, detectordata, indexmap_permuted->indexcons, indexmap_permuted->varindex);
-      columnindices = columnindices_list(scip, detectordata, rowindices);
-      formIndexArray(ibegin_permuted, iend_permuted, rowindices);
-      formIndexArray(jbegin_permuted, jend_permuted, columnindices);
-      //switch between index arrays containing new and old indices
-      switchPointers( (void*) &detectordata->ibegin, (void*) &ibegin_permuted);
-      switchPointers( (void*) &detectordata->iend, (void*) &iend_permuted);
-      switchPointers( (void*) &detectordata->jbegin, (void*) &jbegin_permuted);
-      switchPointers( (void*) &detectordata->jend, (void*) &jend_permuted);
-      //switch between hash maps containing new and old indices
-      switchPointers( (void*) &detectordata->indexmap, (void*) &indexmap_permuted);
-   }
-   while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)
-          && arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons)));
-   ROC_iterations = i;
+   //====================
+   //===ROC2 algorithm===
+   //====================
+   SCIPdebugMessage("starting ROC2 algorithm\n");
+   ROC_iterations = rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
 #ifndef NDEBUG
    {
-      //remove '/' from problem name
-      const char* pname;
       char filename[256];
-      pname = strrchr(SCIPgetProbName(scip), '/');
-      if( pname == NULL )
-      {
-         pname = SCIPgetProbName(scip);
-      }
-      else
-      {
-         pname = pname+1;
-      }
-      sprintf(filename, "%s_ROC", pname);
+      sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
       plotInitialProblem(scip, detectordata, filename);
    }
-#endif
    //check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k
-#ifdef SCIP_DEBUG
-   for(i = 0; i < detectordata->nRelevantConss - 1; ++i)
-   {
-      assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
-   }
-   for(i = 0; i < nvars - 1; ++i)
-   {
-      assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
-   }
+   if(ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1)
+      {
+         checkConsistencyOfIndexarrays(detectordata, nvars);
+      }
 #endif
    //arrays jmin, jmax and minV
    SCIPdebugMessage("calculating index arrays\n");
@@ -2060,106 +2564,27 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
       detectordata->jmax[i] = maximum(detectordata->iend[i], detectordata->jmax[i-1]);
       detectordata->minV[i-1]=1 + (detectordata->jmax[i-1] - detectordata->jmin[i]);
    }
-   n = maxArray(detectordata->width, ncons);
-   v = minArray(detectordata->width, ncons);
-   tau = round((nvars - v)/(n - v));
-   if(tau > detectordata->maxblocks)
-   {
-      tau = detectordata->maxblocks;
-   }
+   //====================
+   //=====BLOCKING=======
+   //====================
+   //create the hashmaps constoblock and vartoblock
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartoblock, SCIPblkmem(scip), nvars) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), detectordata->nRelevantConss) );
 
-#ifndef NDEBUG
-   SCIPdebugMessage("<N> <n> <v> <tau>: <%i> <%i> <%i> <%i>\n", nvars, n, v, tau);
-//   printf("minV = [ ");
-//   for(i = 0; i < ncons-1; ++i)
-//   {
-//      printf("%i ", detectordata->minV[i]);
-//   }
-//   printf("]\n");
-//   printf("jmin = [ ");
-//   for(i = 0; i < ncons; ++i)
-//   {
-//      printf("%i ", detectordata->jmin[i]);
-//   }
-//   printf("]\n");
-//   printf("jmax = [ ");
-//   for(i = 0; i < ncons; ++i)
-//   {
-//      printf("%i ", detectordata->jmax[i]);
-//   }
-//   printf("]\n");
-#endif
-   //continue only if tau >= 2
-   if(tau < 2)
+   blocking(scip, detectordata, decdecomps, ndecdecomps, nvars, ncons, result);
+   //debug
+   SCIPdebugMessage("Detected %i decompositions. Block sizes are ", *ndecdecomps);
+   for(i = 0; i < *ndecdecomps; ++i)
    {
-      *result = SCIP_DIDNOTFIND;
-      return SCIP_OKAY;
+      SCIPinfoMessage(scip, NULL, "%i ", DECdecdecompGetNBlocks( (*decdecomps)[i] ));
    }
-
-   rowsWithConstriction(scip, detectordata);
-//   SCIPdebugMessage("rows with constriction:");
-//   SCIPlistPrint(detectordata->rowsWithConstrictions, printint); //debug
-
-   //BLOCKING
-   blocking(scip, detectordata, tau, nvars);
-   SCIPdebugMessage("BLOCKING DONE.\n");
-
-   //debug plot the blocking  plot for [i=1:2:1] 'test.dat' every :::i::i lt i pt 5
-#ifndef NDEBUG
-   {
-   //remove '/' from problem name
-   const char* pname;
-   char filename1[256];
-   char filename2[256];
-   char paramfile[256];
-   pname = strrchr(SCIPgetProbName(scip), '/');
-   if( pname == NULL )
-   {
-      pname = SCIPgetProbName(scip);
-   }
-   else
-   {
-      pname = pname+1;
-   }
-   sprintf(filename1, "%s_blocking", pname);
-   sprintf(filename2, "%s_minV", pname);
-   sprintf(paramfile, "%s.params", pname);
-   SCIPdebugMessage("plotBlocking.\n");
-   plotBlocking(scip, detectordata, filename1);
-   SCIPdebugMessage("plotMinV.\n");
-   plotMinV(scip, detectordata, filename2);
-   SCIP_CALL(SCIPstopClock(scip, detectordata->clock));
-   SCIPdebugMessage("writing Params.\n");
-   writeParams(scip, detectordata, paramfile, ROC_iterations, tau, SCIPgetClockTime(scip, detectordata->clock));
-   }
-#endif
-   //fill detectordata for a single block for testing
-//   detectordata->blocks = 1;
-//   detectordata->varsperblock[0] = vars_array;
-//   detectordata->nvarsperblock[0] = nvars;
-//   detectordata->consperblock[0] = SCIPgetConss(scip);
-//   detectordata->nconsperblock[0] = ncons;
-//   detectordata->linkingconss = NULL;
-//   detectordata->nlinkingconss = 0;
-   detectordata->found = TRUE;
-   SCIP_CALL(copyDetectorDataToDecomp(scip, detectordata, detectordata->decdecomp));
+   SCIPinfoMessage(scip, NULL, "\n");
 
    //deallocate memory
    SCIPlistDeleteData(scip, detectordata->rowsWithConstrictions);
-//   SCIPlistDeleteData(scip, detectordata->blockedAfterrow);
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
-   indexmapFree(scip, indexmap_permuted);
 
-   SCIPfreeMemoryArray(scip, &ibegin_permuted);
-   SCIPfreeMemoryArray(scip, &iend_permuted);
-   SCIPfreeMemoryArray(scip, &jbegin_permuted);
-   SCIPfreeMemoryArray(scip, &jend_permuted);
-
-   //debug Ein Hack von Martin
-   SCIP_CALL(SCIPallocMemoryArray(scip, decdecomps, 1));
-   (*decdecomps)[0] = detectordata->decdecomp;
-   *ndecdecomps = 1;
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -2178,12 +2603,17 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
 
    assert(detectordata != NULL);
    detectordata->found = FALSE;
-   detectordata->decdecomp = NULL;
+//   detectordata->decdecomp = NULL;
    SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildStair, initStairheur, exitStairheur));
 
    /* add stairheur presolver parameters */
-   SCIP_CALL(SCIPaddIntParam(scip, "stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "stairheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL));
-   SCIP_CALL(SCIPaddIntParam(scip, "stairheur/priority", "Priority of detector", &detectordata->priority, FALSE, DEFAULT_PRIORITY, INT_MIN, INT_MAX, NULL, NULL));
+   SCIP_CALL(SCIPaddIntParam(scip, "detectors/stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));
+   SCIP_CALL(SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL));
+   SCIP_CALL(SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks", "The desired number of blocks. 0 means automatic determination of the number of blocks.", &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL));
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/enableblockingdynamic", "Enable blocking type 'dynamic'", &detectordata->enableblockingdynamic, FALSE, DEFAULT_ENABLEBLOCKINGDYNAMIC, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/enableblockingstatic", "Enable blocking type 'static'", &detectordata->enableblockingstatic, FALSE, DEFAULT_ENABLEBLOCKINGSTATIC, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/enableblockingassoonaspossible", "Enable blocking type 'as soon as possible", &detectordata->enableblockingassoonaspossible, FALSE, DEFAULT_ENABLEBLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/stairheur/enablemultipledecomps", "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks", &detectordata->enablemultipledecomps, FALSE, DEFAULT_ENABLEMULTIPLEDECOMPS, NULL, NULL) );
+   SCIP_CALL(SCIPaddIntParam(scip, "detectors/stairheur/maxiterationsROC", "The maximum number of iterations of the ROC-algorithm. -1 for no limit", &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL));
    return SCIP_OKAY;
 }
