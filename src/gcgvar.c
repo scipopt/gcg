@@ -306,7 +306,7 @@ void GCGlinkingVarSetPricingVar(
 /** returns the blocks the linking variable is in */
 SCIP_RETCODE GCGlinkingVarGetBlocks(
    SCIP_VAR* var,              /**< SCIP variable structure */
-   int       nblocks,          /**< number of blocks the linking variable is in */
+   int       nblocks,          /**< size of array blocks */
    int*      blocks            /**< array to store the blocks of the linking variable */
    )
 {
@@ -315,6 +315,7 @@ SCIP_RETCODE GCGlinkingVarGetBlocks(
    int j;
 
    assert(var != NULL);
+   assert(nblocks == 0 || blocks != NULL);
 
    assert(GCGvarIsLinking(var));
    vardata = SCIPvarGetData(var);

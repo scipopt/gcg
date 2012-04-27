@@ -1089,6 +1089,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
             /* if we are not dealing with a linking variable, skip the master variable if it is useless */
             ismastervarrelevant = (bndchgblocknr == blocknr);
+
             /* if we are dealing with a linking master variable but it has nothing to do with the
              * boundchangevar's block, skip it, too */
             if( origvars != NULL )
