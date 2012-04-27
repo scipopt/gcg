@@ -87,17 +87,19 @@ void DECdecdecompFree(
       SCIPfreeMemoryArray(scip, &decomp->subscipvars[i]);
       SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
    }
-   for( i = 0; i < decomp->nblocks-1; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars[i]);
-   }
+   if( decomp->stairlinkingvars != NULL)
+      for( i = 0; i < decomp->nblocks-1; ++i )
+      {
+         SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars[i]);
+      }
+
    SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
    SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
-   SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars);
-   SCIPfreeMemoryArray(scip, &decomp->nstairlinkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->stairlinkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nstairlinkingvars);
 
    /* free hashmaps if they are not NULL */
    if( decomp->constoblock != NULL )
