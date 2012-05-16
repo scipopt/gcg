@@ -169,6 +169,21 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display detectors command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   DECprintListOfDetectors(scip);
+   SCIPdialogMessage(scip, NULL, "\n");
+
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
 /** dialog execution method for the master command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 {  /*lint --e{715}*/
@@ -282,6 +297,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayStatistics, NULL, NULL,
             "statistics", "display problem and optimization statistics", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display detectors */
+   if( !SCIPdialogHasEntry(submenu, "detectors") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDetectors, NULL, NULL,
+            "detectors", "display available detectors", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

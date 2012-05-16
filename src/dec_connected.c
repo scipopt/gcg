@@ -27,7 +27,7 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "connected"    /**< name of detector */
-#define DEC_DESC                 "Places setppc constraints in the master problem and finds block diagonal structures in the remaining problem." /**< description of detector*/
+#define DEC_DESC                 "Detector for classical and block diagonal problems" /**< description of detector*/
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'b'            /**< display character of detector */
 
@@ -677,7 +677,7 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );

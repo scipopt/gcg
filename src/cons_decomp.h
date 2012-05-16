@@ -77,6 +77,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
    const char* name,                               /**< name of the detector */
    const char decchar,                             /**< display character of the detector */
+   const char* description,                        /**< description of the detector */
    int priority,                                   /**< priority of the detector */
    SCIP_Bool enabled,                              /**< whether the detector should be enabled by default */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
@@ -117,6 +118,10 @@ DECDECOMP* DECgetBestDecomp(
    SCIP* scip                 /**< SCIP data structure */
    );
 
+/**< Writes out a list of all detectors */
+void DECprintListOfDetectors(
+   SCIP* scip                 /**< SCIP data structure */
+   );
 
 #ifdef __cplusplus
 }

@@ -634,6 +634,7 @@ SCIP_RETCODE DECincludeDetector(
    SCIP* scip,                                     /**< SCIP data structure */
    const char* name,                               /**< name of the detector */
    const char decchar,                             /**< display character of the detector */
+   const char* description,                        /**< description of the detector */
    int priority,                                   /**< priority of the detector */
    SCIP_Bool enabled,                              /**< whether the detector should be enabled by default */
    DEC_DETECTORDATA *detectordata,                 /**< the associated detector data (or NULL) */
@@ -650,6 +651,7 @@ SCIP_RETCODE DECincludeDetector(
 
    assert(scip != NULL);
    assert(name != NULL);
+   assert(description != NULL);
    assert(detectStructure != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
 
@@ -675,6 +677,7 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->decdata = detectordata;
    detector->name = name;
+   detector->description = description;
 
    detector->detectStructure = detectStructure;
 
@@ -915,4 +918,34 @@ DECDECOMP* DECgetBestDecomp(
       return conshdlrdata->decdecomps[0];
    else
       return NULL;
+}
+
+/**< Writes out a list of all detectors */
+void DECprintListOfDetectors(
+   SCIP* scip                 /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int ndetectors;
+   int i;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   ndetectors = conshdlrdata->ndetectors;
+
+   SCIPdialogMessage(scip, NULL, " detector             priority char  description\n --------------       -------- ----  -----------\n");
+
+   for( i = 0; i < ndetectors; ++i)
+   {
+      SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
+      SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);
+      SCIPdialogMessage(scip, NULL,  " %s\n", conshdlrdata->detectors[i]->description);
+   }
 }

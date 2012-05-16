@@ -33,7 +33,11 @@ extern "C" {
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method for the display detectors command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);
+
+/** dialog execution method for the master command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 
