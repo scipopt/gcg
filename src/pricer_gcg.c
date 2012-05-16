@@ -1143,7 +1143,7 @@ SCIP_RETCODE createNewMasterVar(
 static
 SCIP_Bool canPricingBeAborted(
    SCIP*             scip,          /**< SCIP data structure */
-   SCIP_PRICERDATA*  pricerdata     /**< */
+   SCIP_PRICERDATA*  pricerdata     /**< pricerdata data structure */
    )
 {
    SCIP_Bool canabort;
@@ -1177,8 +1177,11 @@ SCIP_Bool canPricingBeAborted(
    return canabort;
 }
 
+/** sorts pricing problems according to their score */
 static
-void sortPricingProblemsByScore(SCIP_PRICERDATA *pricerdata)
+void sortPricingProblemsByScore(
+   SCIP_PRICERDATA* pricerdata   /**< pricerdata data structure */
+)
 {
    int i;
    assert(pricerdata != NULL);
@@ -1203,14 +1206,15 @@ void sortPricingProblemsByScore(SCIP_PRICERDATA *pricerdata)
       SCIPsortDownRealInt(pricerdata->score, pricerdata->permu, pricerdata->npricingprobs);
 }
 
+/** indicates whether heuristic pricing can be aborted */
 static
 SCIP_Bool abortHeuristicPricing(
-   SCIP*            scip,        /**< */
-   SCIP_PRICERDATA* pricerdata,  /**< */
-   GCG_PRICETYPE    pricetype,   /**< */
-   int              nfoundvars,
-   int              solvedmips,
-   int              successfulmips
+   SCIP*            scip,           /**< SCIP data structure */
+   SCIP_PRICERDATA* pricerdata,     /**< pricerdata data structure */
+   GCG_PRICETYPE    pricetype,      /**< type of pricing */
+   int              nfoundvars,     /**< number of found variables */
+   int              solvedmips,     /**< number of solved mips */
+   int              successfulmips  /**< number of successfully solved mips so far */
    )
 {
 
@@ -1240,10 +1244,10 @@ SCIP_Bool abortHeuristicPricing(
 static
 /** set subproblem timelimit */
 SCIP_RETCODE subproblemSetTimelimit(
-   SCIP*      scip,           /**< */
-   SCIP*      pricingscip,    /**< */
-   int        prob,           /**< */
-   SCIP_Real* timelimit       /**< */
+   SCIP*      scip,           /**< SCIP data structure*/
+   SCIP*      pricingscip,    /**< SCIP of the pricingproblem */
+   int        prob,           /**< number of the pricing problem */
+   SCIP_Real* timelimit       /**< pointer to store timelimit */
    )
 {
    /* set time limit */
@@ -1263,14 +1267,14 @@ SCIP_RETCODE subproblemSetTimelimit(
    return SCIP_OKAY;
 }
 
-static
 /** performs heuristic pricing */
+static
 SCIP_RETCODE performHeuristicPricing(
-   SCIP*            scip,        /**< */
-   SCIP_PRICERDATA* pricerdata,  /**< */
-   GCG_PRICETYPE    pricetype,   /**< */
-   int*             nfoundvars,  /**< */
-   SCIP_RESULT*     result       /**< */
+   SCIP*            scip,        /**< SCIP data structure */
+   SCIP_PRICERDATA* pricerdata,  /**< pricerdata data structure */
+   GCG_PRICETYPE    pricetype,   /**< type of the pricing */
+   int*             nfoundvars,  /**< pointer to store the number of found vars */
+   SCIP_RESULT*     result       /**< result pointer */
    )
 {
    int i;
@@ -1363,14 +1367,13 @@ SCIP_RETCODE performHeuristicPricing(
 static
 /** returns TRUE if optimal pricing can be aborted, FALSE otherwise*/
 SCIP_Bool abortOptimalPricing(
-   SCIP*            scip,        /**< */
-   SCIP_PRICERDATA* pricerdata,  /**< */
-   GCG_PRICETYPE    pricetype,   /**< */
-   int              nfoundvars,
-   int              solvedmips,
-   int              successfulmips
+   SCIP*            scip,           /**< SCIP data structure */
+   SCIP_PRICERDATA* pricerdata,     /**< pricerdata data structure */
+   GCG_PRICETYPE    pricetype,      /**< type of pricing*/
+   int              nfoundvars,     /**< number of variables found so far */
+   int              solvedmips,     /**< number of MIPS solved so far */
+   int              successfulmips  /**< number of sucessful mips solved so far */
    )
-
 {
    SCIP_Bool root;
    root = isRootNode(scip);
@@ -1390,13 +1393,13 @@ SCIP_Bool abortOptimalPricing(
 static
 /** performs optimal pricing */
 SCIP_RETCODE performOptimalPricing(
-   SCIP*            scip,        /**< */
-   SCIP_PRICERDATA* pricerdata,  /**< */
-   GCG_PRICETYPE    pricetype,   /**< */
-   SCIP_RESULT*     result,      /**< */
-   int*             nfoundvars,
-   SCIP_Real*       bestredcost,
-   SCIP_Bool*       bestredcostvalid
+   SCIP*            scip,              /**< SCIP data structure */
+   SCIP_PRICERDATA* pricerdata,        /**< pricerdata data structure */
+   GCG_PRICETYPE    pricetype,         /**< type of pricing */
+   SCIP_RESULT*     result,            /**< result pointer */
+   int*             nfoundvars,        /**< pointer to store number of found variables */
+   SCIP_Real*       bestredcost,       /**< pointer to store reduced cost */
+   SCIP_Bool*       bestredcostvalid   /**< pointer to store whether the reduced cost returned is valid */
    )
 {
    int i;
@@ -1495,7 +1498,6 @@ SCIP_RETCODE performOptimalPricing(
                successfulmips++;
          }
       }
-
    }
 
    return SCIP_OKAY;
