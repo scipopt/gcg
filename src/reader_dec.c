@@ -926,21 +926,21 @@ SCIP_RETCODE readDECFile(
             return SCIP_INVALIDDATA;
       }
    }
+
    /* fill decomp */
    SCIP_CALL( fillDecompStruct(scip, decinput, readerdata) );
 
    /* add decomp to cons_decomp */
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
 
-
-   for( i = 0; i < decinput->nblocks; i ++ )
+   for( i = decinput->nblocks - 1; i >= 0; --i )
    {
       SCIPfreeBufferArray(scip, &readerdata->blockconss[i]);
    }
    SCIPfreeBufferArray(scip, &readerdata->blockconss);
    SCIPfreeBufferArray(scip, &readerdata->nblockconss);
-   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
    SCIPfreeBufferArray(scip, &readerdata->nblockvars);
+   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
    SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */
