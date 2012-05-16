@@ -35,7 +35,6 @@ SCIP_RETCODE SCIPincludeReaderDec(
 extern
 SCIP_RETCODE SCIPreadDec(
    SCIP*              scip,               /**< SCIP data structure */
-   SCIP_READER*       reader,             /**< the file reader itself */
    const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    );
