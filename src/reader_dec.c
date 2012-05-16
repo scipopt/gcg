@@ -964,7 +964,7 @@ SCIP_DECL_READERFREE(readerFreeDec)
    assert(readerdata != NULL);
 
    /* free decomp structure and readerdata */
-   if( readerdata->decdecomp->type == DEC_DECTYPE_UNKNOWN )
+   if( DECdecdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
       DECdecdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
@@ -1080,6 +1080,11 @@ SCIP_RETCODE writeData(
    DECDECOMP* decdecomp /**< Decomposition pointer */
    )
 {
+   SCIP_CONS*** subscipconss;
+   SCIP_CONS** linkingconss;
+   int* nsubscipconss;
+   int nlinkingconss;
+   int nblocks;
    int i;
    int j;
 
@@ -1087,40 +1092,46 @@ SCIP_RETCODE writeData(
    assert(file != NULL);
    assert(decdecomp != NULL);
 
-   assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
-           || decdecomp->type == DEC_DECTYPE_BORDERED
-           || decdecomp->type == DEC_DECTYPE_DIAGONAL
-           || decdecomp->type == DEC_DECTYPE_UNKNOWN
-           || decdecomp->type == DEC_DECTYPE_STAIRCASE);
-   SCIPdebugMessage("DECDECOMP Type: %d\n",decdecomp->type);
+   assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
+           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_BORDERED
+           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_DIAGONAL
+           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN
+           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_STAIRCASE);
+   SCIPdebugMessage("DECDECOMP Type: %s\n", DECgetStrType(DECdecdecompGetType(decdecomp)));
 
    /* if we don't have staicase, but something else, go through the blocks and create the indices */
-   /* conss */
-   assert(decdecomp->nsubscipconss != NULL);
-   assert(decdecomp->subscipconss != NULL);
+   /* subscip conss */
+   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
+   assert(subscipconss != NULL);
+   assert(nsubscipconss != NULL);
 
    /* linking cons */
-   assert(decdecomp->nlinkingconss >= 0 && decdecomp->nlinkingconss < SCIPgetNConss(scip));
-   assert(decdecomp->linkingconss != NULL || decdecomp->nlinkingconss == 0 );
+   linkingconss = DECdecdecompGetLinkingconss(decdecomp);
+   nlinkingconss = DECdecdecompGetNLinkingconss(decdecomp);
+   assert(nlinkingconss >= 0 && nlinkingconss < SCIPgetNConss(scip));
+   assert(linkingconss != NULL || nlinkingconss == 0 );
+
+   nblocks = DECdecdecompGetNBlocks(decdecomp);
 
    SCIPinfoMessage(scip, file, "NBLOCKS\n");
-   SCIPinfoMessage(scip, file, "%d\n", decdecomp->nblocks);
+   SCIPinfoMessage(scip, file, "%d\n", nblocks);
 
-   for( i = 0; i < decdecomp->nblocks; i ++ )
+   for( i = 0; i < nblocks; i ++ )
    {
       SCIPinfoMessage(scip, file, "BLOCK %d\n", i + 1);
-      for( j = 0; j < decdecomp->nsubscipconss[i]; j ++ )
+      for( j = 0; j < nsubscipconss[i]; j ++ )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->subscipconss[i][j]));
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(subscipconss[i][j]));
       }
    }
 
-   if( decdecomp->nlinkingconss > 0 )
+   if( nlinkingconss > 0 )
    {
       SCIPinfoMessage(scip, file, "MASTERCONSS\n");
-      for( i = 0; i < decdecomp->nlinkingconss; i ++ )
+      for( i = 0; i < nlinkingconss; i ++ )
       {
-         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(decdecomp->linkingconss[i]));
+         SCIPinfoMessage(scip, file, "%s\n", SCIPconsGetName(linkingconss[i]));
       }
    }
 
