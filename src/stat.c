@@ -54,6 +54,7 @@ SCIP_RETCODE writeDecompositionData(SCIP* scip)
    nLinkingCons=DECdecdecompGetNLinkingconss(decomposition);
 
    //Print
+   SCIPinfoMessage(scip,NULL,"Decomposition:\n");
    SCIPsnprintf(ausgabe,SCIP_MAXSTRLEN,"Decomposition Type: %s \n",typeName);
    SCIPinfoMessage(scip,NULL,ausgabe);
 
