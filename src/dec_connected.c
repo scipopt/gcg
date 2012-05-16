@@ -10,7 +10,7 @@
 
 /**@file   dec_connected.c
  * @ingroup DETECTORS
- * @brief  constraint handler for connected constraints
+ * @brief  detector for classical and blockdiagonal problems
  * @author Martin Bergner
  */
 
@@ -27,10 +27,11 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "connected"    /**< name of detector */
+#define DEC_DESC                 "Places setppc constraints in the master problem and finds block diagonal structures in the remaining problem." /**< description of detector*/
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'b'            /**< display character of detector */
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 
+#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
 /*
  * Data structures
@@ -39,15 +40,15 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_HASHMAP* constoblock;
-   SCIP_HASHMAP* vartoblock;
-   SCIP_Bool blockdiagonal;
+   SCIP_HASHMAP* constoblock;                   /**< hashmap mapping constraints to their associated block */
+   SCIP_HASHMAP* vartoblock;                    /**< hashmap mapping variables to their associated block */
+   SCIP_Bool blockdiagonal;                     /**< flag to indicate whether the problem is block diagonal */
 
-   SCIP_CLOCK* clock;
-   int nblocks;
+   SCIP_CLOCK* clock;                           /**< clock to measure detection time */
+   int nblocks;                                 /**< number of blocks found */
 
-   SCIP_Bool* consismaster;
-   SCIP_Bool setppcinmaster;
+   SCIP_Bool* consismaster;                     /**< boolean array to indicate constraints which should be in the master */
+   SCIP_Bool setppcinmaster;                    /**< flag to indicate whether setppc constraints should always be in the master */
 };
 
 
@@ -57,7 +58,7 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
-/* returns whether the constraint belongs to GCG or not */
+/** returns whether the constraint belongs to GCG or not */
 static
 SCIP_Bool isConsGCGCons(
    SCIP_CONS* cons   /**< constraint to check */
@@ -139,7 +140,7 @@ SCIP_Bool isConsMaster(
 static
 SCIP_RETCODE findConnectedComponents(
    SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
+   DEC_DETECTORDATA*  detectordata, /**< constraint handler data structure */
    SCIP_RESULT*       result        /**< result pointer to indicate success oder failuer */
    )
 {
@@ -351,6 +352,7 @@ SCIP_RETCODE findConnectedComponents(
    tempblock = 1;
 
    SCIPdebugPrintf("Blocks: ");
+
    /* postprocess blockrepresentatives */
    for( i = 1; i < nextblock; ++i )
    {
@@ -433,11 +435,11 @@ SCIP_RETCODE findConnectedComponents(
 }
 
 
-/* copy conshdldata data to decdecomp */
+/* copy detectordata data to decdecomp */
 static
 SCIP_RETCODE copyToDecdecomp(
    SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
+   DEC_DETECTORDATA*  detectordata, /**< constraint handler data structure */
    DECDECOMP*         decdecomp     /**< decdecomp data structure */
    )
 {
@@ -538,17 +540,17 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
 
-   for( i = 0; i < detectordata->nblocks; ++i )
+   for( i = nblocks-1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
       SCIPfreeBufferArray(scip, &subscipconss[i]);
+      SCIPfreeBufferArray(scip, &subscipvars[i]);
    }
 
-   SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &linkingconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &subscipconss);
    SCIPfreeBufferArray(scip, &nsubscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &linkingconss);
+   SCIPfreeBufferArray(scip, &subscipvars);
 
    detectordata->vartoblock = NULL;
    detectordata->constoblock = NULL;
@@ -556,7 +558,7 @@ SCIP_RETCODE copyToDecdecomp(
    return SCIP_OKAY;
 }
 
-/** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
+/** destructor of detector to free detector data (called when SCIP is exiting) */
 static
 DEC_DECL_EXITDETECTOR(exitConnected)
 {  /*lint --e{715}*/
@@ -574,11 +576,11 @@ DEC_DECL_EXITDETECTOR(exitConnected)
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
    SCIPfreeMemory(scip, &detectordata);
-   return SCIP_OKAY;
 
+   return SCIP_OKAY;
 }
 
-/** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
+/** detection initialization function of detector (called before solving is about to begin) */
 static
 DEC_DECL_INITDETECTOR(initConnected)
 {  /*lint --e{715}*/
@@ -606,6 +608,7 @@ DEC_DECL_INITDETECTOR(initConnected)
    return SCIP_OKAY;
 }
 
+/** detection function of detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectConnected)
 {
@@ -658,7 +661,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
 
 
 /*
- * constraint specific interface methods
+ * detector specific interface methods
  */
 
 /** creates the handler for connected constraints and includes it in SCIP */
@@ -677,7 +680,7 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
 
    /* add connected constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
 
    return SCIP_OKAY;
 }

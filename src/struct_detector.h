@@ -24,10 +24,7 @@
 extern "C" {
 #endif
 
-/** detector data structure
- *
- * @todo add priority and enabled flag (bug #7)
- */
+/** detector data structure */
 struct DEC_Detector {
    const char *name;                            /**< name of the detector */
    DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */

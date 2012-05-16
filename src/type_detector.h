@@ -10,7 +10,7 @@
 
 /**@file   type_detector.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for branching rules in gcg projects
+ * @brief  type definitions for detectors in GCG projects
  * @author Martin Bergner
  */
 
