@@ -306,15 +306,17 @@ SCIP_RETCODE DECdecdecompSetLinkingvars(
 {
    assert(scip != NULL);
    assert(decdecomp != NULL);
-   assert(linkingvars != NULL);
-   assert(nlinkingvars > 0);
+   assert(linkingvars != NULL || nlinkingvars == 0);
 
    assert(decdecomp->linkingvars == NULL);
    assert(decdecomp->nlinkingvars == 0);
 
    decdecomp->nlinkingvars = nlinkingvars;
 
-   SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
+   if( nlinkingvars > 0 )
+   {
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
+   }
 
    return SCIP_OKAY;
 }
