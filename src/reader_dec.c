@@ -403,13 +403,12 @@ SCIP_Bool isInt(
    val = strtol(decinput->token, &endptr, 0);
    if( endptr != decinput->token && * endptr == '\0' )
    {
-      if(val < INT_MIN || val > INT_MAX )
+      if( val < INT_MIN || val > INT_MAX ) /*lint !e685*/
          return FALSE;
 
-      *value = val; /*lint !e712*/
+      *value = (int) val;
       return TRUE;
    }
-
 
    return FALSE;
 }
@@ -995,7 +994,7 @@ SCIP_DECL_READERFREE(readerFreeDec)
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadDec)
-{
+{  /*lint --e{715}*/
    SCIP_CALL( SCIPreadDec(scip, filename, result) );
 
    return SCIP_OKAY;
@@ -1004,7 +1003,7 @@ SCIP_DECL_READERREAD(readerReadDec)
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteDec)
-{   /*lint --e{715}*/
+{  /*lint --e{715}*/
    assert(scip != NULL);
    assert(reader != NULL);
 
@@ -1149,6 +1148,7 @@ SCIP_RETCODE writeData(
 
    if( nlinkingconss > 0 )
    {
+      assert(linkingconss != NULL); /* for flexelint */
       SCIPinfoMessage(scip, file, "MASTERCONSS\n");
       for( i = 0; i < nlinkingconss; i ++ )
       {

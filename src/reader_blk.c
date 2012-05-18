@@ -83,8 +83,6 @@ struct BlkInput
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    BLKSECTION section;                       /**< current section */
    SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
-   SCIP_HASHMAP* vartoblock;                 /**< hashmap mapping variables to blocks (1..nblocks) */
-   SCIP_HASHMAP* constoblock;                /**< hashmap mapping constraints to blocks (1..nblocks) */
 };
 typedef struct BlkInput BLKINPUT;
 
@@ -416,10 +414,10 @@ SCIP_Bool isInt(
    val = strtol(blkinput->token, &endptr, 0);
    if( endptr != blkinput->token && *endptr == '\0' )
    {
-      if(val < INT_MIN || val > INT_MAX )
+      if(val < INT_MIN || val > INT_MAX ) /*lint !e685*/
          return FALSE;
 
-      *value = val; /*lint !e712*/
+      *value = (int) val;
       return TRUE;
    }
 
@@ -623,17 +621,18 @@ SCIP_RETCODE readBlock(
 
          assert(readerdata->nlinkingvarsblocks[varidx] == 0);
          assert(readerdata->linkingvarsblocks[varidx] == NULL);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], 2) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], 2) ); /*lint !e506 !e866*/
          readerdata->linkingvarsblocks[varidx][0] = oldblock;
          readerdata->linkingvarsblocks[varidx][1] = blockid;
          readerdata->nlinkingvarsblocks[varidx] = 2;
       }
       /* variable is a linking variable already, store the new block to which it belongs */
-      else if( oldblock == LINKINGVALUE )
+      else
       {
+         assert(oldblock == LINKINGVALUE);
          assert(readerdata->nlinkingvarsblocks[varidx] >= 2);
          assert(readerdata->linkingvarsblocks[varidx] != NULL);
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], readerdata->nlinkingvarsblocks[varidx] + 1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], readerdata->nlinkingvarsblocks[varidx] + 1) ); /*lint !e866*/
          readerdata->linkingvarsblocks[varidx][readerdata->nlinkingvarsblocks[varidx]] = blockid;
          ++(readerdata->nlinkingvarsblocks[varidx]);
       }

@@ -368,10 +368,10 @@ SCIP_Bool isInt(
    val = strtol(refinput->token, &endptr, 0);
    if( endptr != refinput->token && *endptr == '\0' )
    {
-      if( val < INT_MIN || val > INT_MAX )
+      if( val < INT_MIN || val > INT_MAX ) /*lint !e685*/
          return FALSE;
 
-      *value = val; /*lint !e712*/
+      *value = (int) val;
       return TRUE;
    }
 
