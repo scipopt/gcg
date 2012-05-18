@@ -12,6 +12,17 @@
  * @brief  BLK file reader
  * @author Gerald Gamrath
  *
+ * This reader reads in a blk-file that defines the structur to be used for the decomposition.
+ * The structure is defined variable-wise, i.e., the number of blocks and the variables belonging to each block are
+ * defined. Afterwards, each constraint that has only variables of one block is added to that block,
+ * constraints having variables of more than one block go into the master. If needed, constraints can also be
+ * forced into the master, even if they could be transferred to one block.
+ *
+ * The keywords are:
+ * - NBlocks: to be followed by a line giving the number of blocks
+ * - Block i with 1 <= i <= nblocks: to be followed by the names of the variables belonging to block i, one per line.
+ * - Masterconss: to be followed by names of constraints, one per line, that should go into the master,
+ *                even if they only contain variables of one block and could thus be added to this block.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -27,19 +38,14 @@
 
 #include "reader_blk.h"
 #include "relax_gcg.h"
-#include "scip/cons_knapsack.h"
-#include "scip/cons_linear.h"
-#include "scip/cons_logicor.h"
-#include "scip/cons_setppc.h"
-#include "scip/cons_varbound.h"
-#include "scip/cons_sos1.h"
-#include "scip/cons_sos2.h"
 #include "pub_gcgvar.h"
+#include "pub_decomp.h"
+#include "cons_decomp.h"
+#include "scip_misc.h"
 
 #define READER_NAME             "blkreader"
-#define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"
+#define READER_DESC             "file reader for structures in blk format"
 #define READER_EXTENSION        "blk"
-
 
 /*
  * Data structures
@@ -77,9 +83,28 @@ struct BlkInput
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    BLKSECTION section;                       /**< current section */
    SCIP_Bool haserror;                       /**< flag to indicate an error occurence */
+   SCIP_HASHMAP* vartoblock;                 /**< hashmap mapping variables to blocks (1..nblocks) */
+   SCIP_HASHMAP* constoblock;                /**< hashmap mapping constraints to blocks (1..nblocks) */
 };
 typedef struct BlkInput BLKINPUT;
 
+/** data for blk reader */
+struct SCIP_ReaderData
+{
+   DECDECOMP* decdecomp;      /**< decomposition data structure */
+   int* varstoblock;          /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
+   int* nblockvars;           /**< number of variable per block that are not linkingvars */
+   int** linkingvarsblocks;   /**< array with blocks assigned to one linking var */
+   int* nlinkingvarsblocks;    /**< array with number of blocks assigned to each linking var */
+   SCIP_HASHMAP* constoblock; /**< hashmap key=constaint value=block*/
+   SCIP_CONS*** blockcons;    /**< array of assignments from constraints to their blocks [blocknr][consid]  */
+   int* nblockcons;           /**< number of block-constraints for blockID*/
+   int nlinkingcons;          /**< number of linking constraints*/
+   int nlinkingvars;          /**< number of linking vars*/
+};
+
+static const int NOVALUE = -1;
+static const int LINKINGVALUE = -2;
 static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
@@ -95,7 +120,7 @@ static const char commentchars[] = "\\";
 static
 void syntaxError(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*              blkinput,          /**< BLK reading data */
+   BLKINPUT*             blkinput,           /**< BLK reading data */
    const char*           msg                 /**< error message */
    )
 {
@@ -122,7 +147,7 @@ void syntaxError(
 /** returns whether a syntax error was detected */
 static
 SCIP_Bool hasError(
-   BLKINPUT*              blkinput             /**< BLK reading data */
+   BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
    assert(blkinput != NULL);
@@ -195,7 +220,7 @@ SCIP_Bool isValueChar(
  */
 static
 SCIP_Bool getNextLine(
-   BLKINPUT*              blkinput             /**< BLK reading data */
+   BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
    int i;
@@ -253,7 +278,7 @@ void swapPointers(
 /** reads the next token from the input file into the token buffer; returns whether a token was read */
 static
 SCIP_Bool getNextToken(
-   BLKINPUT*              blkinput             /**< BLK reading data */
+   BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
    SCIP_Bool hasdot;
@@ -352,7 +377,7 @@ SCIP_Bool getNextToken(
 /** puts the current token on the token stack, such that it is read at the next call to getNextToken() */
 static
 void pushToken(
-   BLKINPUT*              blkinput             /**< BLK reading data */
+   BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
    assert(blkinput != NULL);
@@ -365,7 +390,7 @@ void pushToken(
 /** swaps the current token with the token buffer */
 static
 void swapTokenBuffer(
-   BLKINPUT*              blkinput             /**< BLK reading data */
+   BLKINPUT*             blkinput            /**< BLK reading data */
    )
 {
    assert(blkinput != NULL);
@@ -514,22 +539,25 @@ SCIP_RETCODE readNBlocks(
 {
    int nblocks;
 
+   assert(scip != NULL);
    assert(blkinput != NULL);
 
    while( getNextToken(blkinput) )
    {
       /* check if we reached a new section */
       if( isNewSection(scip, blkinput) )
-         return SCIP_OKAY;
+      {
+         if( blkinput->nblocks == NOVALUE )
+            syntaxError(scip, blkinput, "no integer value in nblocks section");
+         else
+            return SCIP_OKAY;
+      }
 
       /* read number of blocks */
       if( isInt(scip, blkinput, &nblocks) )
       {
-         if( blkinput->nblocks == -1 )
-         {
+         if( blkinput->nblocks == NOVALUE )
             blkinput->nblocks = nblocks;
-            //GCGrelaxSetNPricingprobs(scip, nblocks);
-         }
          else
             syntaxError(scip, blkinput, "2 integer values in nblocks section");
          SCIPdebugMessage("Number of blocks = %d\n", blkinput->nblocks);
@@ -539,19 +567,25 @@ SCIP_RETCODE readNBlocks(
    return SCIP_OKAY;
 }
 
-
-/** reads the blocks section */
+/** reads a block section */
 static
 SCIP_RETCODE readBlock(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*             blkinput            /**< BLK reading data */
+   BLKINPUT*             blkinput,           /**< BLK reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
+   int blockid;
+
    assert(blkinput != NULL);
+
+   blockid = blkinput->blocknr;
 
    while( getNextToken(blkinput) )
    {
       SCIP_VAR* var;
+      int varidx;
+      int oldblock;
 
       /* check if we reached a new section */
       if( isNewSection(scip, blkinput) )
@@ -565,8 +599,44 @@ SCIP_RETCODE readBlock(
          return SCIP_OKAY;
       }
 
+      varidx = SCIPvarGetProbindex(var);
+      oldblock = readerdata->varstoblock[varidx];
+
       /* set the block number of the variable to the number of the current block */
-      // SCIP_CALL( GCGrelaxSetOriginalVarBlockNr(scip, var, blkinput->blocknr) );
+      if( oldblock == NOVALUE )
+      {
+         SCIPdebugMessage("\tVar %s temporary in block %d.\n", SCIPvarGetName(var), blockid);
+         readerdata->varstoblock[varidx] = blockid;
+         ++(readerdata->nblockvars[blockid]);
+      }
+      /* variable was assigned to another (non-linking) block before, so it becomes a linking variable, now */
+      else if( (oldblock != LINKINGVALUE) )
+      {
+         assert(oldblock != blockid);
+         SCIPdebugMessage("\tVar %s is linking (old %d != %d new).\n", SCIPvarGetName(var), oldblock, blockid);
+
+         readerdata->varstoblock[varidx] = LINKINGVALUE;
+
+         /* decrease the number of variables in the old block and increase the number of linking variables */
+         --(readerdata->nblockvars[oldblock]);
+         ++(readerdata->nlinkingvars);
+
+         assert(readerdata->nlinkingvarsblocks[varidx] == 0);
+         assert(readerdata->linkingvarsblocks[varidx] == NULL);
+         SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], 2) );
+         readerdata->linkingvarsblocks[varidx][0] = oldblock;
+         readerdata->linkingvarsblocks[varidx][1] = blockid;
+         readerdata->nlinkingvarsblocks[varidx] = 2;
+      }
+      /* variable is a linking variable already, store the new block to which it belongs */
+      else if( oldblock == LINKINGVALUE )
+      {
+         assert(readerdata->nlinkingvarsblocks[varidx] >= 2);
+         assert(readerdata->linkingvarsblocks[varidx] != NULL);
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], readerdata->nlinkingvarsblocks[varidx] + 1) );
+         readerdata->linkingvarsblocks[varidx][readerdata->nlinkingvarsblocks[varidx]] = blockid;
+         ++(readerdata->nlinkingvarsblocks[varidx]);
+      }
    }
 
    return SCIP_OKAY;
@@ -576,7 +646,8 @@ SCIP_RETCODE readBlock(
 static
 SCIP_RETCODE readMasterconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   BLKINPUT*             blkinput            /**< BLK reading data */
+   BLKINPUT*             blkinput,           /**< BLK reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    assert(blkinput != NULL);
@@ -598,27 +669,299 @@ SCIP_RETCODE readMasterconss(
       }
       else
       {
-         /* set the block number of the variable to the number of the current block */
-         // SCIP_CALL( GCGrelaxMarkConsMaster(scip, cons) );
+         assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t)NOVALUE);
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*)(size_t)LINKINGVALUE) );
       }
    }
 
    return SCIP_OKAY;
 }
 
+/** fills the whole Decomp struct after the blk file has been read */
+static
+SCIP_RETCODE fillDecompStruct(
+   SCIP*                 scip,               /**< SCIP data structure */
+   BLKINPUT*             blkinput,           /**< blk reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data*/
+   )
+{
+   DECDECOMP* decomp;
+   SCIP_HASHMAP* vartoblock;
+   SCIP_HASHMAP* constoblock;
+   SCIP_VAR** allvars;
+   SCIP_CONS** allcons;
+   SCIP_CONS*** subscipconss;
+   SCIP_CONS** linkingconss;
+   SCIP_VAR*** subscipvars;
+   SCIP_VAR** linkingvars;
+   SCIP_VAR** consvars;
+   int* nsubscipconss;
+   int* nsubscipvars;
+   int nlinkingconss;
+   int nlinkingvars;
+   int i;
+   int j;
+   int nvars;
+   int blocknr;
+   int idx;
+   int nconss;
+   int nblocks;
 
+   assert(scip != NULL);
+   assert(blkinput != NULL);
+   assert(readerdata != NULL);
+   assert(readerdata->decdecomp != NULL);
+   decomp = readerdata->decdecomp;
+
+   printf("decomp = %p\n", decomp);
+
+   allvars = SCIPgetVars(scip);
+   allcons = SCIPgetConss(scip);
+   nvars = SCIPgetNVars(scip);
+   nconss = SCIPgetNConss(scip);
+   nblocks = blkinput->nblocks;
+
+   DECdecdecompSetNBlocks(decomp, nblocks);
+   DECdecdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+
+   /* get memory for subscip variables and constraints */
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      nsubscipvars[i] = 0;
+      nsubscipconss[i] = 0;
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
+   }
+
+   /* get memory for linking variables and constraints */
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, readerdata->nlinkingvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   nlinkingvars = 0;
+   nlinkingconss = 0;
+
+   /* assign variables to blocks or as linking variables according to the varstoblock structure */
+   for( i = 0; i < nvars; ++i )
+   {
+      SCIPdebugMessage("var %s ", SCIPvarGetName(allvars[i]));
+      blocknr = readerdata->varstoblock[i];
+
+      if( blocknr == NOVALUE )
+      {
+         SCIPdebugMessage("is unknown\n" );
+         /** @todo What should be done in this case? gg: copy directly into master */
+      }
+      else if( blocknr == LINKINGVALUE )
+      {
+         /* add variable to array of linking variables */
+         linkingvars[nlinkingvars] = allvars[i];
+         ++nlinkingvars;
+
+         SCIPdebugMessage("is linking\n" );
+      }
+      else
+      {
+         assert(blocknr >= 0);
+         assert(blocknr <= nblocks);
+         assert(SCIPvarGetProbindex(allvars[i]) == i);
+
+         /* get current number of variables in the block */
+         idx = nsubscipvars[blocknr];
+         assert(idx >= 0);
+         assert(idx <= readerdata->nblockvars[blocknr]);
+
+         /* add variable to array of variables in the block */
+         subscipvars[blocknr][idx] = allvars[i];
+         ++(nsubscipvars[blocknr]);
+
+         SCIPdebugMessage("is in block %d\n", blocknr);
+      }
+   }
+
+   /* set subscip and linking variables in decomposition structure */
+   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+
+   /* hashmaps */
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nvars) );
+
+   /* assign constraints to blocks or declare them linking */
+   for( i = 0; i < nconss; i ++ )
+   {
+      SCIP_CONS* cons;
+
+      cons = allcons[i];
+
+      if( SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE )
+      {
+         linkingconss[nlinkingconss] = cons;
+         ++nlinkingconss;
+         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+
+         SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(cons));
+      }
+      /* check whether all variables in the constraint belong to one block */
+      else
+      {
+         int nconsvars;
+
+         nconsvars = SCIPgetNVarsXXX(scip, cons);
+         assert(nconsvars < nvars);
+
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, consvars, nvars) );
+
+         blocknr = -1;
+
+         /* find the first unique assignment of a contained variable to a block */
+         for( j = 0; j < nconsvars; ++j )
+         {
+            /* if a contained variables is directly transferred to the master, the constraint is a linking constraint */
+            if( readerdata->varstoblock[SCIPvarGetProbindex(consvars[j])] == NOVALUE )
+            {
+               blocknr = -1;
+               break;
+            }
+            /* assign the constraint temporarily to the block of the variable, if it is unique */
+            if( blocknr == -1 && readerdata->varstoblock[SCIPvarGetProbindex(consvars[j])] != LINKINGVALUE )
+            {
+               blocknr = readerdata->varstoblock[SCIPvarGetProbindex(consvars[j])];
+            }
+         }
+         if( blocknr != -1 )
+         {
+            int varidx;
+            int varblock;
+
+            /* check whether all contained variables are copied into the assigned block;
+             * if not, the constraint is treated as a linking constraint
+             */
+            for( j = 0; j < nconsvars; ++j )
+            {
+               varidx = SCIPvarGetProbindex(consvars[j]);
+               varblock = readerdata->varstoblock[varidx];
+               assert(varblock != NOVALUE);
+
+               if( varblock != LINKINGVALUE && varblock != blocknr )
+               {
+                  blocknr = -1;
+                  break;
+               }
+               else if( varblock == LINKINGVALUE )
+               {
+                  int k;
+
+                  for( k = 0; k < readerdata->nlinkingvarsblocks[varidx]; ++k )
+                  {
+                     if( readerdata->linkingvarsblocks[varidx][k] == blocknr )
+                        break;
+                  }
+                  /* we did not break, so the variable is not assigned to the block */
+                  if( k == readerdata->nlinkingvarsblocks[varidx] )
+                  {
+                     blocknr = -1;
+                     break;
+                  }
+               }
+            }
+         }
+
+         if( blocknr == -1 )
+         {
+            linkingconss[nlinkingconss] = cons;
+            ++nlinkingconss;
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+
+            SCIPdebugMessage("constraint <%s> is a linking constraint\n",
+               SCIPconsGetName(cons));
+         }
+         else
+         {
+            idx = nsubscipconss[blocknr];
+            subscipconss[blocknr][idx] = cons;
+            ++(nsubscipconss[blocknr]);
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) blocknr) );
+
+            SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
+         }
+      }
+   }
+   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
+   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
+   DECdecdecompSetConstoblock(decomp, constoblock);
+   DECdecdecompSetVartoblock(decomp, vartoblock);
+
+   SCIPfreeBufferArray(scip, &consvars);
+   SCIPfreeBufferArray(scip, &linkingconss);
+   SCIPfreeBufferArray(scip, &linkingvars);
+   for( i = nblocks - 1; i >= 0; --i )
+   {
+      SCIPfreeBufferArray(scip, &subscipconss[i]);
+      SCIPfreeBufferArray(scip, &subscipvars[i]);
+   }
+   SCIPfreeBufferArray(scip, &subscipconss);
+   SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipvars);
+
+   return SCIP_OKAY;
+}
 
 /** reads an BLK file */
 static
 SCIP_RETCODE readBLKFile(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_READER*          reader,             /**< reader data structure */
    BLKINPUT*             blkinput,           /**< BLK reading data */
    const char*           filename            /**< name of the input file */
    )
 {
+   int i;
+   int nconss;
+   int nblocksread;
+   int nvars;
+   SCIP_READERDATA* readerdata;
+   SCIP_CONS** conss;
+   nblocksread = FALSE;
+
+   assert(scip != NULL);
+   assert(reader != NULL);
    assert(blkinput != NULL);
 
-   SCIP_CALL( GCGcreateOrigVarsData(scip) );
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   readerdata->nlinkingcons = SCIPgetNConss(scip);
+   readerdata->nlinkingvars = 0;
+   nvars = SCIPgetNVars(scip);
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+
+   /* alloc: var -> block mapping */
+   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
+   for( i = 0; i < nvars; i ++ )
+   {
+      readerdata->varstoblock[i] = NOVALUE;
+   }
+
+   /* alloc: linkingvar -> blocks mapping */
+   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->linkingvarsblocks, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nlinkingvarsblocks, nvars) );
+   BMSclearMemoryArray(readerdata->linkingvarsblocks, nvars);
+   BMSclearMemoryArray(readerdata->nlinkingvarsblocks, nvars);
+
+   /* cons -> block mapping */
+   SCIP_CALL( SCIPhashmapCreate(&readerdata->constoblock, SCIPblkmem(scip), nconss) );
+   for( i = 0; i < SCIPgetNConss(scip); i ++ )
+   {
+      SCIP_CALL( SCIPhashmapInsert(readerdata->constoblock, conss[i], (void*)(size_t) NOVALUE) );
+   }
+
 
    /* open file */
    blkinput->file = SCIPfopen(filename, "r");
@@ -644,11 +987,25 @@ SCIP_RETCODE readBLKFile(
          break;
 
       case BLK_BLOCK:
-         SCIP_CALL( readBlock(scip, blkinput) );
+         if( nblocksread == FALSE )
+         {
+            /* alloc n vars per block */
+            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockcons, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons, blkinput->nblocks) );
+            for( i = 0; i < blkinput->nblocks; ++i )
+            {
+               readerdata->nblockvars[i] = 0;
+               readerdata->nblockcons[i] = 0;
+               SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
+            }
+            nblocksread = TRUE;
+         }
+         SCIP_CALL( readBlock(scip, blkinput, readerdata) );
          break;
 
       case BLK_MASTERCONSS:
-         SCIP_CALL( readMasterconss(scip, blkinput) );
+         SCIP_CALL( readMasterconss(scip, blkinput, readerdata) );
          break;
 
       case BLK_END: /* this is already handled in the while() loop */
@@ -657,6 +1014,39 @@ SCIP_RETCODE readBLKFile(
          return SCIP_INVALIDDATA;
       }
    }
+
+   /* fill decomp */
+   SCIP_CALL( fillDecompStruct(scip, blkinput, readerdata) );
+
+   /* add decomp to cons_decomp */
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
+
+   for( i = 0; i < nvars; ++i )
+   {
+      assert(readerdata->linkingvarsblocks[i] != NULL || readerdata->nlinkingvarsblocks[i] == 0);
+      if( readerdata->nlinkingvarsblocks[i] > 0 )
+      {
+         printf("free linkingvarsblock\n");
+         SCIPfreeMemoryArray(scip, &readerdata->linkingvarsblocks[i]);
+      }
+   }
+
+   if( nblocksread  )
+   {
+      for( i = blkinput->nblocks - 1; i >= 0; --i )
+      {
+         SCIPfreeBufferArray(scip, &(readerdata->blockcons[i]));
+      }
+      SCIPfreeBufferArray(scip, &readerdata->blockcons);
+      SCIPfreeBufferArray(scip, &readerdata->nblockcons);
+      SCIPfreeBufferArray(scip, &readerdata->nblockvars);
+   }
+
+   SCIPhashmapFree(&readerdata->constoblock);
+
+   SCIPfreeBufferArray(scip, &readerdata->nlinkingvarsblocks);
+   SCIPfreeBufferArray(scip, &readerdata->linkingvarsblocks);
+   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
 
    /* close file */
    SCIPfclose(blkinput->file);
@@ -670,13 +1060,28 @@ SCIP_RETCODE readBLKFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-#define readerFreeBlk NULL
+static
+SCIP_DECL_READERFREE(readerFreeBlk)
+{
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   /* free decomp structure and readerdata */
+   if( DECdecdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
+      DECdecdecompFree(scip, &readerdata->decdecomp);
+   SCIPfreeMemory(scip, &readerdata);
+
+   return SCIP_OKAY;
+}
 
 
 /** problem reading method of reader */
 static
 SCIP_DECL_READERREAD(readerReadBlk)
 {  /*lint --e{715} */
+
    SCIP_CALL( SCIPreadBlk(scip, filename, result) );
 
    return SCIP_OKAY;
@@ -686,8 +1091,7 @@ SCIP_DECL_READERREAD(readerReadBlk)
 /** problem writing method of reader */
 static
 SCIP_DECL_READERWRITE(readerWriteBlk)
-{
- /*lint --e{715}*/
+{ /*lint --e{715}*/
    return SCIP_OKAY;
 }
 
@@ -703,9 +1107,10 @@ SCIP_RETCODE SCIPincludeReaderBlk(
    SCIP_READERDATA* readerdata;
 
    /* create blk reader data */
-   readerdata = NULL;
+   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( DECdecdecompCreate(scip, &readerdata->decdecomp) );
 
-   /* include lp reader */
+   /* include blk reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
          readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
@@ -715,13 +1120,17 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 
 /* reads problem from file */
 SCIP_RETCODE SCIPreadBlk(
-   SCIP*              scip,               /**< SCIP data structure */
-   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
+   SCIP_READER* reader;
    BLKINPUT blkinput;
    int i;
+
+   reader = SCIPfindReader(scip, READER_NAME);
+   assert(reader != NULL);
 
    /* initialize BLK input data */
    blkinput.file = NULL;
@@ -744,7 +1153,7 @@ SCIP_RETCODE SCIPreadBlk(
    blkinput.haserror = FALSE;
 
    /* read the file */
-   SCIP_CALL( readBLKFile(scip, &blkinput, filename) );
+   SCIP_CALL( readBLKFile(scip, reader, &blkinput, filename) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &blkinput.token);
