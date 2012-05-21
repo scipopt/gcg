@@ -16,10 +16,18 @@
 #ifndef STAT_H_
 #define STAT_H_
 
-#include "pub_decomp.h"
+#include "scip/type_scip.h"
+#include "scip/type_retcode.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 SCIP_RETCODE writeDecompositionData(SCIP* scip);
 
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif /* STAT_H_ */
