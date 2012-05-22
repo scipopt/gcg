@@ -34,6 +34,9 @@
 
 #include "scip/scip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** includes the blk file reader into SCIP */
 extern
@@ -50,5 +53,8 @@ SCIP_RETCODE SCIPreadBlk(
    SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
    );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

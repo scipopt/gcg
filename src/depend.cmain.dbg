@@ -73,22 +73,23 @@ $(OBJDIR)/reader_dec.o: src/reader_dec.c src/reader_dec.h lib/scip/src/scip/scip
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/intervalarith.h src/type_decomp.h src/scip_misc.h \
  src/pub_gcgvar.h src/cons_decomp.h src/type_detector.h src/pub_decomp.h
-$(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h lib/scip/src/scip/scip.h \
+$(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h \
+ lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_reader.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \
  lib/scip/src/scip/struct_message.h lib/scip/src/scip/pub_message.h \
- lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_result.h \
+ lib/scip/src/scip/type_result.h src/type_decomp.h src/relax_gcg.h \
+ lib/scip/src/scip/scip.h lib/scip/src/blockmemshell/memory.h \
  lib/scip/src/scip/type_clock.h lib/scip/src/scip/type_misc.h \
- lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_scip.h \
- lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
- lib/scip/src/scip/type_lp.h lib/scip/src/scip/type_nlp.h \
- lib/scip/src/scip/type_var.h lib/scip/src/scip/type_prob.h \
- lib/scip/src/scip/type_tree.h lib/scip/src/scip/type_branch.h \
- lib/scip/src/scip/type_conflict.h lib/scip/src/scip/type_cons.h \
- lib/scip/src/scip/type_sol.h lib/scip/src/scip/type_dialog.h \
- lib/scip/src/scip/type_disp.h lib/scip/src/scip/type_heur.h \
- lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
- lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
+ lib/scip/src/scip/type_timing.h lib/scip/src/scip/type_paramset.h \
+ lib/scip/src/scip/type_event.h lib/scip/src/scip/type_lp.h \
+ lib/scip/src/scip/type_nlp.h lib/scip/src/scip/type_var.h \
+ lib/scip/src/scip/type_prob.h lib/scip/src/scip/type_tree.h \
+ lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
+ lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
+ lib/scip/src/scip/type_dialog.h lib/scip/src/scip/type_disp.h \
+ lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_nodesel.h \
+ lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
  lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
  lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
  lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/pub_branch.h \
@@ -108,9 +109,9 @@ $(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h lib/scip/src/scip/scip
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/nlpi/type_exprinterpret.h \
- lib/scip/src/scip/intervalarith.h src/type_decomp.h src/relax_gcg.h \
- src/type_branchgcg.h lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h \
- src/pub_decomp.h src/type_detector.h src/cons_decomp.h
+ lib/scip/src/scip/intervalarith.h src/type_branchgcg.h \
+ lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/type_detector.h src/cons_decomp.h
 $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/type_message.h \

@@ -16,13 +16,16 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_READER_REF_N_H__
-#define __SCIP_READER_REF_N_H__
+#ifndef __SCIP_READER_DEC_H__
+#define __SCIP_READER_DEC_H__
 
 
 #include "scip/scip.h"
 #include "type_decomp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** includes the dec file reader into SCIP */
 extern
@@ -47,5 +50,9 @@ SCIP_RETCODE SCIPwriteDecomp(
    DECDECOMP* decdecomp,         /**< Decomposition pointer */
    SCIP_Bool  writeDecomposition /**< whether to write decomposed problem */
    );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

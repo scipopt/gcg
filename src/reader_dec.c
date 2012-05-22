@@ -13,6 +13,17 @@
  * @author Lukas Kirchhart
  * @author Martin Bergner
  * @author Gerald Gamrath
+ * This reader reads in a dec-file that defines the structur to be used for the decomposition.
+ * The structure is defined constraint-wise, i.e., the number of blocks and the constraints belonging
+ * to each block are  defined.  If needed, constraints can also be  forced into the master, even if
+ * they could be transferred to one block.
+ *
+ * The keywords are:
+ * - NBlocks: to be followed by a line giving the number of blocks
+ * - Block i with 1 <= i <= nblocks: to be followed by the names of the constraints belonging to block i,
+                  one per line.
+ * - Masterconss: to be followed by names of constraints, one per line, that should go into the master,
+ *                even if they only contain variables of one block and could thus be added to this block.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -106,9 +117,9 @@ static const char commentchars[] = "\\";
 /** issues an error message and marks the DEC data to have errors */
 static
 void syntaxError(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput,  /**< DEC reading data */
-   const char* msg      /**< error message */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   const char*           msg                 /**< error message */
    )
 {
    char formatstr[256];
@@ -134,7 +145,7 @@ void syntaxError(
 /** returns whether a syntax error was detected */
 static
 SCIP_Bool hasError(
-   DECINPUT* decinput   /**< DEC reading data */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    assert(decinput != NULL);
@@ -145,7 +156,7 @@ SCIP_Bool hasError(
 /** returns whether the given character is a token delimiter */
 static
 SCIP_Bool isDelimChar(
-   char c   /**< input character */
+   char                  c                   /**< input character */
    )
 {
    return (c == '\0') || (strchr(delimchars, c) != NULL);
@@ -154,7 +165,7 @@ SCIP_Bool isDelimChar(
 /** returns whether the given character is a single token */
 static
 SCIP_Bool isTokenChar(
-   char c /**< input character */
+   char                  c                   /**< input character */
    )
 {
    return (strchr(tokenchars, c) != NULL);
@@ -163,11 +174,11 @@ SCIP_Bool isTokenChar(
 /** returns whether the current character is member of a value string */
 static
 SCIP_Bool isValueChar(
-   char c,              /**< input character */
-   char nextc,          /**< next input character */
-   SCIP_Bool firstchar, /**< is the given character the first char of the token? */
-   SCIP_Bool* hasdot,   /**< pointer to update the dot flag */
-   DECEXPTYPE* exptype  /**< pointer to update the exponent type */
+   char                 c,                   /**< input character */
+   char                 nextc,               /**< next input character */
+   SCIP_Bool            firstchar,           /**< is the given character the first char of the token? */
+   SCIP_Bool*           hasdot,              /**< pointer to update the dot flag */
+   DECEXPTYPE*          exptype              /**< pointer to update the exponent type */
    )
 {
    assert(hasdot != NULL);
@@ -207,7 +218,7 @@ SCIP_Bool isValueChar(
  */
 static
 SCIP_Bool getNextLine(
-   DECINPUT* decinput   /**< DEC reading data */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    int i;
@@ -251,8 +262,8 @@ SCIP_Bool getNextLine(
 /** swaps the addresses of two pointers */
 static
 void swapPointers(
-   char** pointer1,     /**< first pointer */
-   char** pointer2      /**< second pointer */
+   char**                pointer1,           /**< first pointer */
+   char**                pointer2            /**< second pointer */
    )
 {
    char* tmp;
@@ -265,7 +276,7 @@ void swapPointers(
 /** reads the next token from the input file into the token buffer; returns whether a token was read */
 static
 SCIP_Bool getNextToken(
-   DECINPUT* decinput   /**< DEC reading data */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    SCIP_Bool hasdot;
@@ -364,7 +375,7 @@ SCIP_Bool getNextToken(
 /** puts the current token on the token stack, such that it is read at the next call to getNextToken() */
 static
 void pushToken(
-   DECINPUT* decinput   /**< DEC reading data */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    assert(decinput != NULL);
@@ -377,7 +388,7 @@ void pushToken(
 /** swaps the current token with the token buffer */
 static
 void swapTokenBuffer(
-   DECINPUT* decinput   /**< DEC reading data */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    assert(decinput != NULL);
@@ -388,9 +399,9 @@ void swapTokenBuffer(
 /** returns whether the current token is a value */
 static
 SCIP_Bool isInt(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput,  /**< DEC reading data */
-   int* value           /**< pointer to store the value (unchanged, if token is no value) */
+   SCIP*                 scip,                /**< SCIP data structure */
+   DECINPUT*             decinput,            /**< DEC reading data */
+   int*                  value                /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
    long val;
@@ -416,8 +427,8 @@ SCIP_Bool isInt(
 /** checks whether the current token is a section identifier, and if yes, switches to the corresponding section */
 static
 SCIP_Bool isNewSection(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput   /**< DEC reading data */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    SCIP_Bool iscolon;
@@ -499,8 +510,8 @@ SCIP_Bool isNewSection(
 /** reads the header of the file */
 static
 SCIP_RETCODE readStart(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput   /**< DEC reading data */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    assert(decinput != NULL);
@@ -520,8 +531,8 @@ SCIP_RETCODE readStart(
 /** reads the nblocks section */
 static
 SCIP_RETCODE readNBlocks(
-   SCIP* scip,          /**< SCIP data structure */
-   DECINPUT* decinput   /**< DEC reading data */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
    )
 {
    int nblocks;
@@ -557,9 +568,9 @@ SCIP_RETCODE readNBlocks(
 /** reads the blocks section */
 static
 SCIP_RETCODE readBlock(
-   SCIP* scip,                   /**< SCIP data structure */
-   DECINPUT* decinput,           /**< DEC reading data */
-   SCIP_READERDATA* readerdata   /**< reader data */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
    int oldblock;
@@ -690,9 +701,9 @@ SCIP_RETCODE readMasterconss(
 /** fills the whole Decomp struct after the dec file has been read */
 static
 SCIP_RETCODE fillDecompStruct(
-   SCIP* scip,                   /**< SCIP data structure */
-   DECINPUT* decinput,           /**< DEC reading data */
-   SCIP_READERDATA* readerdata   /**< reader data*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
    DECDECOMP* decomp;
@@ -853,10 +864,10 @@ SCIP_RETCODE fillDecompStruct(
 /** reads a DEC file */
 static
 SCIP_RETCODE readDECFile(
-   SCIP*        scip,         /**< SCIP data structure */
-   SCIP_READER* reader,       /**< Reader data structure */
-   DECINPUT*    decinput,     /**< DEC reading data */
-   const char*  filename      /**< name of the input file */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_READER*          reader,             /**< Reader data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   const char*           filename            /**< name of the input file */
    )
 {
    SCIP_READERDATA* readerdata;
@@ -1020,8 +1031,8 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE
 SCIPincludeReaderDec(
-        SCIP * scip       /**< SCIP data structure */
-        )
+   SCIP*                 scip                /**< SCIP data structure */
+   )
 {
    SCIP_READERDATA* readerdata;
 
@@ -1038,9 +1049,10 @@ SCIPincludeReaderDec(
 
 /* reads problem from file */
 SCIP_RETCODE SCIPreadDec(
-   SCIP* scip,             /**< SCIP data structure */
-   const char* filename,   /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT * result    /**< pointer to store the result of the file reading call */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_READER*          reader,             /**< the file reader itself */
+   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
    SCIP_READER* reader;
@@ -1095,9 +1107,9 @@ SCIP_RETCODE SCIPreadDec(
 /** write the data optionally using the decomposition data */
 static
 SCIP_RETCODE writeData(
-   SCIP* scip,          /**< SCIP data structure */
-   FILE* file,          /**< File pointer to write to */
-   DECDECOMP* decdecomp /**< Decomposition pointer */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp           /**< Decomposition pointer */
    )
 {
    SCIP_CONS*** subscipconss;
@@ -1161,10 +1173,10 @@ SCIP_RETCODE writeData(
 
 /** write a DEC file for a given decomposition */
 SCIP_RETCODE SCIPwriteDecomp(
-   SCIP* scip,                  /**< SCIP data structure */
-   FILE* file,                  /**< File pointer to write to */
-   DECDECOMP* decdecomp,        /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition /**< whether to write decomposed problem */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    )
 {
    char outname[SCIP_MAXSTRLEN];
@@ -1193,12 +1205,9 @@ SCIP_RETCODE SCIPwriteDecomp(
 
    if( writeDecomposition )
    {
-
       /* write data */
       SCIP_CALL( writeData(scip, file, decdecomp) );
-
    }
-
 
    return SCIP_OKAY;
 }
