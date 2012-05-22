@@ -61,7 +61,7 @@ struct DEC_DetectorData
 /** returns whether the constraint belongs to GCG or not */
 static
 SCIP_Bool isConsGCGCons(
-   SCIP_CONS* cons   /**< constraint to check */
+   SCIP_CONS*            cons                /**< constraint to check */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -79,8 +79,8 @@ SCIP_Bool isConsGCGCons(
 /* returns true if the constraint should be a master constraint and false otherwise */
 static
 SCIP_Bool isConsMaster(
-   SCIP*      scip,  /**< SCIP data structure */
-   SCIP_CONS* cons   /**< constraint to check */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to check */
    )
 {
    SCIP_VAR** vars;
@@ -139,9 +139,9 @@ SCIP_Bool isConsMaster(
 /** looks for connected components in the constraints in detectordata */
 static
 SCIP_RETCODE findConnectedComponents(
-   SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA*  detectordata, /**< constraint handler data structure */
-   SCIP_RESULT*       result        /**< result pointer to indicate success oder failuer */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success oder failuer */
    )
 {
    SCIP_VAR** vars;
@@ -438,9 +438,9 @@ SCIP_RETCODE findConnectedComponents(
 /* copy detectordata data to decdecomp */
 static
 SCIP_RETCODE copyToDecdecomp(
-   SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA*  detectordata, /**< constraint handler data structure */
-   DECDECOMP*         decdecomp     /**< decdecomp data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   DECDECOMP*            decdecomp           /**< decdecomp data structure */
    )
 {
    SCIP_CONS** conss;
@@ -676,6 +676,14 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
+
+   detectordata->clock = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->blockdiagonal = FALSE;
+
+   detectordata->nblocks = 0;
+   detectordata->consismaster = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
 
