@@ -113,4 +113,21 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
    );
 
+void GCGpricerGetStatistic(
+   SCIP_PRICERDATA* pricerdata,
+   GCG_PRICETYPE type,
+   int probindex,
+   SCIP_Real time
+   );
+
+void GCGpricerGetNodeTimeHistogram(
+   SCIP_PRICERDATA* pricerdata,
+   SCIP_Real time
+   );
+
+void GCGpricerGetFoundVarsHistogram(
+   SCIP_PRICERDATA* pricerdata,
+   int foundvars
+   );
+
 #endif
