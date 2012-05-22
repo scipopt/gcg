@@ -66,10 +66,13 @@ SCIP_RETCODE writeDecompositionData(SCIP* scip)
    SCIPinfoMessage(scip,NULL,"Number of LinkingCons: %d\n",nLinkingCons);
 
 
-   for( i=0; i<nBlocks; i++ )
+   SCIPinfoMessage(scip,NULL,"Block Information\n");
+   SCIPinfoMessage(scip,NULL,"no.:\t\t#Vars\t\t#Constraints\n");
+   for( i = 0; i < nBlocks; i++ )
    {
-      SCIPinfoMessage(scip,NULL,"Vars in Block %d: %d\n", i ,nVarsInBlocks[i]);
-      SCIPinfoMessage(scip,NULL,"Cons in Block %d: %d\n",i,nConsInBlocks[i]);
+      //SCIPinfoMessage(scip,NULL,"Vars in Block %d: %d\n", i ,nVarsInBlocks[i]);
+      SCIPinfoMessage(scip,NULL,"%d:\t\t%d\t\t%d\n", i ,nVarsInBlocks[i],nConsInBlocks[i]);
+      //SCIPinfoMessage(scip,NULL,"Cons in Block %d: %d\n",i,nConsInBlocks[i]);
    }
 
    SCIPfreeBufferArray(scip, &ausgabe);

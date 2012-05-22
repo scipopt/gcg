@@ -68,10 +68,10 @@
    }\
    }while(FALSE)
 
-#define PRICER_STAT_ARRAYLEN_TIME 1024                   /**< length of the array for Time histogram representation */
-#define PRICER_STAT_BUCKETSIZE_TIME 10                   /**< size of the buckets for Time histogram representation */
-#define PRICER_STAT_ARRAYLEN_VARS 1024                   /**< length of the array for foundVars histogram representation */
-#define PRICER_STAT_BUCKETSIZE_VARS 10                   /**< size of the buckets for foundVars histogram representation */
+#define PRICER_STAT_ARRAYLEN_TIME 1024                /**< length of the array for Time histogram representation */
+#define PRICER_STAT_BUCKETSIZE_TIME 10            /**< size of the buckets for Time histogram representation */
+#define PRICER_STAT_ARRAYLEN_VARS 1024                /**< length of the array for foundVars histogram representation */
+#define PRICER_STAT_BUCKETSIZE_VARS 1              /**< size of the buckets for foundVars histogram representation */
 
 /*
  * Data structures
@@ -2368,7 +2368,7 @@ void GCGpricerPrintStatistics(
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
    int i;
-   int start,end;
+   float start,end;
    assert(scip != NULL);
 
    pricer = SCIPfindPricer(scip, PRICER_NAME);
@@ -2421,11 +2421,11 @@ void GCGpricerPrintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
    {
-      start = i * PRICER_STAT_BUCKETSIZE_TIME;
-      end = start + PRICER_STAT_BUCKETSIZE_TIME;
+      start = (i * PRICER_STAT_BUCKETSIZE_TIME)/1000.;
+      end = start + PRICER_STAT_BUCKETSIZE_TIME/1000.0;
 
-      //if( pricerdata->nodetimehist[i] != 0 )
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%d\t-\t%d\ts:\t\t%d \n", start, end, pricerdata->nodetimehist[i]);
+      if( pricerdata->nodetimehist[i] != 0 )
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%.4f\t-\t%.4f\ts:\t\t%d \n", start, end, pricerdata->nodetimehist[i]);
    }
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Found Vars\n");
@@ -2436,7 +2436,7 @@ void GCGpricerPrintStatistics(
       end = start + PRICER_STAT_BUCKETSIZE_VARS;
 
       if( pricerdata->foundvarshist[i] != 0 )
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%d\t-\t%d\tvars:\t\t%d \n", start, end, pricerdata->foundvarshist[i]);
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%.0f\t-\t%.0f\tvars:\t\t%d \n", start, end, pricerdata->foundvarshist[i]);
    }
 
 }
@@ -2609,7 +2609,10 @@ void GCGpricerGetNodeTimeHistogram(
    )
 {
    int i;
-   i=time/PRICER_STAT_BUCKETSIZE_TIME;
+
+   /** 1000* because mapping milliseconds on the index i */
+   i=1000*time/PRICER_STAT_BUCKETSIZE_TIME;
+
    if(i>PRICER_STAT_ARRAYLEN_TIME)
    {
       i=PRICER_STAT_ARRAYLEN_TIME;
@@ -2626,6 +2629,7 @@ void GCGpricerGetFoundVarsHistogram(
 {
    int i;
    i=foundvars/PRICER_STAT_BUCKETSIZE_VARS;
+
    if(i>PRICER_STAT_ARRAYLEN_VARS)
    {
       i=PRICER_STAT_ARRAYLEN_VARS;
