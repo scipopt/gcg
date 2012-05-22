@@ -10,21 +10,9 @@
 
 /**@file   reader_ref.c
  * @brief  REF file reader for decomposition files
- * @ingroup FILEREADERS
  * @author Gerald Gamrath
  * @author Christian Puchert
  * @author Martin Bergner
- *
- * This reader reads and writes a ref-file that defines the structur to be used for the decomposition.
- * The structure is defined constraint-wise, i.e., the number of blocks and the constraints belonging to each
- * block are defined. The constraints are numbered by the appearance in the problem.
- *
- * Constraints not mentioned in one of the blocks will remain in the master problem
- *
- * The format is the following
- * - first line: \#nblocks \#ncons_block_1 ... \#n_cons_block_n
- * - one line for each block with the indices of constraints to be put into that block separated by a comma
- *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

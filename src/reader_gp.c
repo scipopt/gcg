@@ -14,13 +14,13 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.c
- * @ingroup FILEREADERS
  * @brief  GP file reader
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -52,9 +52,9 @@
 /** write file header with terminal etc. */
 static
 SCIP_RETCODE writeFileHeader(
-   SCIP*        scip,                           /**< SCIP data structure */
-   FILE*        file,                           /**< File pointer to write to */
-   const char*  outname                         /**< the name of the gnuplot outputname */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   const char*           outname             /**< the name of the gnuplot outputname */
    )
 {
 
@@ -66,9 +66,9 @@ SCIP_RETCODE writeFileHeader(
 /** write decomposition header such as rectangles for blocks etc. */
 static
 SCIP_RETCODE writeDecompositionHeader(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file,                                /**< File pointer to write to */
-   DECDECOMP* decdecomp                      /**< Decomposition pointer */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp           /**< Decomposition pointer */
    )
 {
 
@@ -112,8 +112,8 @@ SCIP_RETCODE writeDecompositionHeader(
 /** write the plot commands */
 static
 SCIP_RETCODE writePlotCommands(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file                                 /**< File pointer to write to */
+   SCIP*                scip,                /**< SCIP data structure */
+   FILE*                file                 /**< File pointer to write to */
    )
 {
    assert(scip != NULL);
@@ -126,10 +126,9 @@ SCIP_RETCODE writePlotCommands(
 /** write the data optionally using the decomposition data */
 static
 SCIP_RETCODE writeData(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file,                                /**< File pointer to write to */
-   DECDECOMP* decdecomp                      /**< Decomposition pointer */
-
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp           /**< Decomposition pointer */
    )
 {
    SCIP_VAR** vars;
@@ -268,8 +267,8 @@ SCIP_RETCODE writeData(
 /** write trailer of the file */
 static
 SCIP_RETCODE writeFileTrailer(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file                                 /**< File pointer to write to */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< File pointer to write to */
    )
 {
    SCIPinfoMessage(scip, file, "e\n");
@@ -317,10 +316,10 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 
 /** writes the decomposition to the specific file */
 SCIP_RETCODE SCIPwriteGp(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file,                                /**< File pointer to write to */
-   DECDECOMP* decdecomp,                      /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition               /**< whether to write decomposed problem */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    )
 {
    char probname[SCIP_MAXSTRLEN];
