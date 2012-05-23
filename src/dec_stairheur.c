@@ -14,8 +14,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_stairheur.c
- * @ingroup DETECTORS
  * @brief  stairheur presolver
+ * @author Martin Bergner
  * @author Mathias Luers
  */
 
@@ -38,7 +38,8 @@
 #include "scip/struct_var.h"
 
 #define DEC_DETECTORNAME      "stairheur"    /**< name of the detector */
-#define DEC_PRIORITY          -100           /**< priority of the detector */
+#define DEC_DESC              "detects staircase matrices via matrix reordering" /**< detector description */
+#define DEC_PRIORITY          1200           /**< priority of the detector */
 #define DEC_DECCHAR           's'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
 
@@ -141,16 +142,25 @@ static SCIP_Bool compare_int(void* a, void * b);
 
 
 /** Creates an empty lists and returns a pointer to that list */
-LIST* SCIPlistCreate(SCIP* scip)
+LIST* SCIPlistCreate(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
 {
    LIST* list;
    NODE* node;
-   if( SCIPallocBlockMemory(scip, &list) == SCIP_NOMEMORY) return NULL;
+
+   assert( scip != NULL);
+
+   if( SCIPallocBlockMemory(scip, &list) == SCIP_NOMEMORY)
+      return NULL;
+
    node = SCIPnodeCreate(scip, NULL);
    list->nil = node;
-   //list->nil->next contains a pointer to the last node
+
+   /* list->nil->next contains a pointer to the last node */
    list->nil->next = list->nil;
-   //list->nil->prev contains a pointer to the first node
+
+   /* list->nil->prev contains a pointer to the first node */
    list->nil->prev = list->nil;
    list->nil->data = node->data;
    list->size = 0;
@@ -158,7 +168,11 @@ LIST* SCIPlistCreate(SCIP* scip)
 }
 
 /** Creates a list with integers running from 'from' to 'to'. */
-LIST* SCIPlistCreateInt(SCIP* scip, int from, int to)
+LIST* SCIPlistCreateInt(
+   SCIP* scip,
+int from,
+int to
+)
 {
    LIST* list;
    int* data;
@@ -961,6 +975,7 @@ int minArray(int* a, int num_elements)
    }
 }
 
+#ifndef NDEBUG
 #ifdef SCIP_DEBUG
 /** Returns the value of the minimum in the list between the iterators it1 and it2
  *
@@ -994,6 +1009,8 @@ int minList(ITERATOR first, ITERATOR last)
    }
 }
 #endif
+#endif
+
 /** Switches the data the pointers p1 and p2 points to. */
 static
 void switchPointers(void** p1, void** p2)
@@ -1004,6 +1021,8 @@ void switchPointers(void** p1, void** p2)
     *p1= p3;
 }
 
+//debug ?
+#ifndef NDEBUG
 /** Returns the problem name without the path */
 static const char* getProbNameWithoutPath(SCIP* scip)
 {
@@ -1022,7 +1041,6 @@ static const char* getProbNameWithoutPath(SCIP* scip)
 }
 
 
-#ifndef NDEBUG
 static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars)
 {
    int i;
@@ -1035,7 +1053,7 @@ static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nv
       assert(detectordata->jbegin[i] <= detectordata->jbegin[i+1]);
    }
 }
-#endif
+
 
 //debug ?
 /** Creates a data and a gnuplot file for the initial problem.
@@ -1159,7 +1177,7 @@ static SCIP_RETCODE plotBlocking(SCIP* scip, DEC_DETECTORDATA* detectordata, cha
    return SCIP_OKAY;
 }
 
-//debug ?
+
 /** Creates a data and a gnuplot file for the graph representing the array minV (number of linking variables).
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
@@ -1267,6 +1285,7 @@ void writeParams(SCIP* scip, DEC_DETECTORDATA* detectordata, char* paramfile, in
       fclose(output);
    }
 }
+#endif
 #endif
 
 /** Scans all constraints of the constraint array of the scip object,
@@ -2191,6 +2210,8 @@ SCIP_RETCODE blocking(
    int v;   // minimum width of the band after ROC
    int tau; // desired number of blocks
 
+   tau = 0;
+
    assert(*ndecdecomps == 0);
    //debug
    SCIPdebugMessage("Entering Blocking\n");
@@ -2491,7 +2512,9 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_CONS** cons_array;
    LIST* rowindices;
    LIST* columnindices;
+#ifndef NDEBUG
    int ROC_iterations;
+#endif
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -2545,8 +2568,10 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    //===ROC2 algorithm===
    //====================
    SCIPdebugMessage("starting ROC2 algorithm\n");
-   ROC_iterations = rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
+
+
 #ifndef NDEBUG
+   ROC_iterations = rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
    {
       char filename[256];
       sprintf(filename, "%s_ROC", getProbNameWithoutPath(scip));
@@ -2557,6 +2582,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    {
       checkConsistencyOfIndexarrays(detectordata, nvars);
    }
+#else
+   (void) rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
 #endif
    //arrays jmin, jmax and minV
    SCIPdebugMessage("calculating index arrays\n");
@@ -2610,7 +2637,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 //   detectordata->decdecomp = NULL;
-   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildStair, initStairheur, exitStairheur));
+   SCIP_CALL(DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildStair, initStairheur, exitStairheur));
 
    /* add stairheur presolver parameters */
    SCIP_CALL(SCIPaddIntParam(scip, "detectors/stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL));

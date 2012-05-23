@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_arrowheur.c
- * @brief  arrowheur presolver
+ * @brief  arrowheur detector
  * @author Martin Bergner
  */
 
@@ -32,6 +32,7 @@
 #include "scip/cons_setppc.h"
 
 #define DEC_DETECTORNAME      "arrowheur"    /**< name of the detector */
+#define DEC_DESC              "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
@@ -341,8 +342,8 @@ SCIP_RETCODE computeHyperedgeWeight(
  * @todo The nonzeroness is not checked, all variables in the variable array are considered
  */
 static SCIP_RETCODE buildGraphStructure(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
    )
 {
    SCIP_CONS **conss;
@@ -558,9 +559,9 @@ static SCIP_RETCODE buildGraphStructure(
 /** will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(
-   SCIP*              scip,          /**< SCIP data struture */
-   DEC_DETECTORDATA*  detectordata,  /**< presolver data data structure */
-   SCIP_RESULT*       result         /**< result indicating whether the detection was successful */
+   SCIP*                 scip,               /**< SCIP data struture */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
    char metiscall[SCIP_MAXSTRLEN];
@@ -698,8 +699,8 @@ SCIP_RETCODE callMetis(
 /** maps the partitions for the disaggregated vertices to the original vertices */
 static
 SCIP_RETCODE assignBlocksToOriginalVariables(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
    )
 {
 
@@ -751,11 +752,11 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 
 /** builds the transformed problem in the new scip instance */
 static SCIP_RETCODE buildTransformedProblem(
-   SCIP*                    scip,           /**< SCIP data structure */
-   DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
-   DECDECOMP*               decdecomp,      /**< decdecomp data structure */
-   int                      nblocks,        /**< number of blocks for this decomposition */
-   SCIP_RESULT*             result
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DECDECOMP*            decdecomp,          /**< decdecomp data structure */
+   int                   nblocks,            /**< number of blocks for this decomposition */
+   SCIP_RESULT*          result              /**< result pointer */
    )
 {
    SCIP_Bool *isVarHandled;
@@ -1046,8 +1047,8 @@ static SCIP_RETCODE buildTransformedProblem(
 /** creates the temporary metis input file */
 static
 SCIP_RETCODE createMetisFile(
-   SCIP*             scip,          /**< SCIP data struture */
-   DEC_DETECTORDATA* detectordata   /**< detector data structure */
+   SCIP*                 scip,               /**< SCIP data struture */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    FILE* file;
@@ -1199,7 +1200,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
 /** creates the arrowheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA *detectordata;
@@ -1212,7 +1213,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
 
 
    /* add arrowheur presolver parameters */

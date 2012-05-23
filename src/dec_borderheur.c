@@ -30,7 +30,8 @@
 #include "scip/pub_misc.h"
 
 #define DEC_DETECTORNAME         "borderheur"   /**< name of the detector */
-#define DEC_PRIORITY             0              /**< priority of the detector */
+#define DEC_DESC                 "enforces standard Dantzig-Wolfe structures with graph partitioning"/**< detector description */
+#define DEC_PRIORITY             500            /**< priority of the detector */
 #define DEC_DECCHAR              'b'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should detector be called by default */
 
@@ -173,10 +174,10 @@ DEC_DECL_EXITDETECTOR(exitBorderheur)
 /** compute weight of a hyperedge */
 static
 SCIP_RETCODE computeHyperedgeWeight(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata,  /**< detector data data structure */
-   SCIP_CONS*        cons,          /**< constraint belonging to the hyperegde */
-   int*              cost           /**< pointer storing the hyperedge cost */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   SCIP_CONS*            cons,               /**< constraint belonging to the hyperegde */
+   int*                  cost                /**< pointer storing the hyperedge cost */
    )
 { /*lint --e{715}*/
    *cost = detectordata->consWeight;
@@ -484,8 +485,8 @@ SCIP_RETCODE callMetis(
 /** maps the partitions for the disaggregated vertices to the original vertices */
 static
 SCIP_RETCODE assignBlocksToOriginalVariables(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
    )
 {
 
@@ -523,11 +524,11 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 
 /** builds the transformed problem in the new scip instance */
 static SCIP_RETCODE buildTransformedProblem(
-   SCIP*                    scip,           /**< SCIP data structure */
-   DEC_DETECTORDATA*        detectordata,   /**< presolver data data structure */
-   DECDECOMP*               decdecomp,      /**< decdecomp data structure */
-   int                      nblocks,        /**< number of blocks for this decomposition */
-   SCIP_RESULT*             result          /**< indicates whether a structure was found*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   DECDECOMP*            decdecomp,          /**< decdecomp data structure */
+   int                   nblocks,            /**< number of blocks for this decomposition */
+   SCIP_RESULT*          result              /**< indicates whether a structure was found*/
    )
 {
    SCIP_Bool *isVarHandled;
@@ -878,7 +879,7 @@ SCIP_RETCODE SCIPincludeDetectionBorderheur(
    detectordata->partition = NULL;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur) );
 
    /* add borderheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
