@@ -27,42 +27,5 @@
 	      </td>
 	    </tr>
 	</table>
-
-    <h2><a name="further"></a>Further developers</h2>
-
-    	<table class="desc">
-	    <tr>
-	      <td width="180px">Friederike Menge
-	      </td>
-	      <td>
-		Student assistant (Staircase Detection)
-	      </td>
-	    </tr>
-	    <tr>
-	      <td>
-		Alexander Gross
-	      </td>
-	      <td>
-                Student assistant
-          </td>
-	    </tr>
-        <tr>
-	      <td>
-		Mathias Luers
-	      </td>
-	      <td>
-		Student assistant (Staircase Detection)
-	      </td>
-	    </tr>
-        <tr>
-	      <td>
-		Marcel Schmickerath
-	      </td>
-	      <td>
-		Student assistant (Primal Heuristics)
-	      </td>
-	    </tr>
-
-	</table>
 </div>
 

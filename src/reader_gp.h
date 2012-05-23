@@ -16,6 +16,9 @@
 /**@file   reader_gp.h
  * @brief  GP file reader
  * @author Martin Bergner
+ * @ingroup FILEREADERS
+ *
+ * This file reader will write the decomposed or original matrix to a file usuable by gnuplot.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -37,15 +40,15 @@ SCIP_RETCODE SCIPincludeReaderGp(
    );
 
 SCIP_RETCODE SCIPwriteGp(
-   SCIP* scip,                                /**< SCIP data structure */
-   FILE* file,                                /**< File pointer to write to */
-   DECDECOMP* decdecomp,                      /**< Decomposition pointer */
-   SCIP_Bool writeDecomposition                  /**< whether to write decomposed problem */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File pointer to write to */
+   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    );
 
 SCIP_RETCODE SCIPReaderGpSetDecomp(
-   SCIP* scip,
-   DECDECOMP* decdecomp
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECDECOMP*            decdecomp           /**< Decomposition pointer */
    );
 
 #ifdef __cplusplus

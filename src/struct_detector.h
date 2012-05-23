@@ -24,14 +24,12 @@
 extern "C" {
 #endif
 
-/** detector data structure
- *
- * @todo add priority and enabled flag (bug #7)
- */
+/** detector data structure */
 struct DEC_Detector {
-   const char *name;                            /**< name of the detector */
+   const char* name;                            /**< name of the detector */
    DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */
    char decchar;                                /**< display character of detector */
+   const char* description;                     /**< description of the detector */
    int priority;                                /**< detector priority */
    SCIP_Bool enabled;                           /**< flag to indicate whether detector is enabled */
 
