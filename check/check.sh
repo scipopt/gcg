@@ -110,7 +110,7 @@ date >>$ERRFILE
 # we add 10% to the hard time limit and additional 10 seconds in case of small time limits
 HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 10\` + \`expr $TIMELIMIT / 10\``
 
-# we add 10% to the hard memory limit and additional 100mb to the hard memory limit
+# we add 10% to the hard memory limit and additional 1000mb to the hard memory limit
 HARDMEMLIMIT=`expr \`expr $MEMLIMIT + 1000\` + \`expr $MEMLIMIT / 10\``
 HARDMEMLIMIT=`expr $HARDMEMLIMIT \* 1024`
 
@@ -157,7 +157,7 @@ do
             echo set display verblevel 4           >> $TMPFILE
             echo set display freq $DISPFREQ        >> $TMPFILE
             echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
-            if test "$LPS" = "none"      
+            if test "$LPS" = "none"
             then
                 echo set lp solvefreq -1           >> $TMPFILE # avoid solving LPs in case of LPS=none
             fi
@@ -168,10 +168,15 @@ do
 #	    echo read $blkfile                     >> $TMPFILE
 	    if test $MODE = "detect"
             then
+		echo write prob images\/$base.gp  >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-		echo presolve                      >> $TMPFILE
+		echo write prob images\/$base-dec.gp  >> $TMPFILE
+		echo write prob decs\/$base.dec    >> $TMPFILE
+	    elif test $MODE = "detectall"
+            then
+		echo detect                        >> $TMPFILE
+		echo write all ref                 >> $TMPFILE
 	    else
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
@@ -214,7 +219,7 @@ date >>$ERRFILE
 if test -e $DONEFILE
 then
     ./evalcheck.sh $OUTFILE
-    
+
     if test "$LOCK" = "true"
     then
         rm -f $RUNFILE
