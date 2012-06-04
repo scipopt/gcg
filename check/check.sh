@@ -134,11 +134,19 @@ do
     if test "$LASTPROB" = ""
     then
 #	blkfile=`echo $i | sed 's/lp/blk/g'`
+        DIR=`dirname $i`
+        NAME=`basename $i .gz`
+        NAME=`basename $NAME .mps`
+        NAME=`basename $NAME .lp`
+        BLKFILE=$DIR/$NAME.blk.gz
+        DECFILE=$DIR/$NAME.dec.gz
         LASTPROB=""
         if test -f $i
         then
             echo @01 $i ===========
-#	    echo @01 $blkfile ===========
+		NAME=`basename $i`
+		base=${NAME%%.*}
+		echo $base
             echo @01 $i ===========                >> $ERRFILE
             echo > $TMPFILE
             if test "$SETNAME" != "default"
@@ -166,6 +174,10 @@ do
 #            echo write genproblem cipreadparsetest.cip >> $TMPFILE
 #            echo read cipreadparsetest.cip         >> $TMPFILE
 #	    echo read $blkfile                     >> $TMPFILE
+            if test -f $DECFILE
+            then
+                echo read $DECFILE         >> $TMPFILE
+            fi
 	    if test $MODE = "detect"
             then
 		echo write prob images\/$base.gp  >> $TMPFILE
