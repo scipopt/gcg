@@ -317,6 +317,37 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP_VAR**  newvar         /**< pointer to store new variable */
    );
 
+/** sets the creation node of this var */
+extern
+void GCGsetCreationNode(
+   SCIP*           scip,          /**< SCIP data structure */
+   SCIP_VARDATA*   vardata,       /**< created variable */
+   long long int creationNode     /**< node */
+   );
+
+/** returns the creation node of this var */
+extern
+long long int GCGgetCreationNode(
+   SCIP*           scip,          /**< SCIP data structure */
+   SCIP_VARDATA*   vardata        /**< created variable */
+   );
+
+/** sets the creation time of this var */
+extern
+void GCGsetCreationTime(
+   SCIP*          scip,          /**< SCIP data structure */
+   SCIP_VARDATA*  vardata,       /**< created variable */
+   SCIP_Real      time           /**< creation time */
+   );
+
+/** returns the creation time of this var */
+extern
+SCIP_Real GCGgetCreationTime(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata       /**< created variable */
+   );
+
+
 
 #ifdef __cplusplus
 }

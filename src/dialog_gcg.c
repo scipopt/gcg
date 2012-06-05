@@ -164,6 +164,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
    SCIPdialogMessage(scip, NULL, "\n");
    writeDecompositionData(scip);
+   writeVarCreationDetails(GCGrelaxGetMasterprob(scip));
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -195,6 +196,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   writeVarCreationDetails(scip);
 
    return SCIP_OKAY;
 }

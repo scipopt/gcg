@@ -1090,6 +1090,11 @@ SCIP_RETCODE GCGcreateMasterVar(
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, solvals[i]) );
          j++;
+
+         /**
+          * TODO: TEST
+          */
+
       }
    }
    if( trivialsol )
@@ -1164,3 +1169,41 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 
    return SCIP_OKAY;
 }
+
+void GCGsetCreationNode(
+   SCIP* scip,
+   SCIP_VARDATA* vardata,
+   long long int creationNode)
+{
+   //printf("Node: %llu \n",creationNode);
+   vardata->creationnode = creationNode;
+
+
+}
+
+long long int GCGgetCreationNode(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata)
+{
+// printf("Node: %llu \n",vardata->creationnode);
+   return vardata->creationnode;
+}
+
+void GCGsetCreationTime(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         time)
+{
+
+   vardata->creationtime = time;
+}
+
+SCIP_Real GCGgetCreationTime(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata)
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+   return vardata->creationtime;
+}
+
+

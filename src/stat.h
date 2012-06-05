@@ -23,8 +23,20 @@
 extern "C" {
 #endif
 
+/** prints information about the best decomposition*/
+SCIP_RETCODE writeDecompositionData(
+   SCIP* scip           /**< SCIP data structure */
+   );
 
-SCIP_RETCODE writeDecompositionData(SCIP* scip);
+/** prints information about the creation of the Vars*/
+SCIP_RETCODE writeVarCreationDetails(
+   SCIP* scip           /**< SCIP data structure */
+);
+
+int checkNodes(
+   int* nodes,
+   int node
+   );
 
 
 #ifdef __cplusplus

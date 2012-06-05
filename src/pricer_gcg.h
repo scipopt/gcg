@@ -22,6 +22,7 @@
 
 #include "scip/scip.h"
 #include "type_solver.h"
+#include "struct_vardata.h"
 
 enum GCG_Pricetype
 {

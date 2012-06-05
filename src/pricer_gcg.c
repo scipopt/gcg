@@ -12,6 +12,7 @@
  * @brief  pricer for generic column generation
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Alexander Gross
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -99,15 +100,15 @@ struct SCIP_PricerData
    int           maxpricedvars;           /**< maximal number of priced variables */
 
    /** variables used for statistics */
-   SCIP_CLOCK* redcostclock;              /**< time for reduced cost pricing */
-   SCIP_CLOCK* farkasclock;               /**< time for farkas pricing */
-   SCIP_CLOCK* freeclock;                 /**< time for freeing pricing problems */
-   SCIP_CLOCK* transformclock;            /**< time for transforming pricing problems */
-   int         solvedsubmipsoptimal;      /**< number of optimal pricing runs */
-   int         solvedsubmipsheur;         /**< number of heuristical pricing runs*/
-   int         calls;                     /**< number of total pricing calls */
-   int         farkascalls;               /**< number of farkas pricing calls */
-   int         redcostcalls;              /**< number of reduced cost pricing calls */
+   SCIP_CLOCK*  redcostclock;              /**< time for reduced cost pricing */
+   SCIP_CLOCK*  farkasclock;               /**< time for farkas pricing */
+   SCIP_CLOCK*  freeclock;                 /**< time for freeing pricing problems */
+   SCIP_CLOCK*  transformclock;            /**< time for transforming pricing problems */
+   int          solvedsubmipsoptimal;      /**< number of optimal pricing runs */
+   int          solvedsubmipsheur;         /**< number of heuristical pricing runs*/
+   int          calls;                     /**< number of total pricing calls */
+   int          farkascalls;               /**< number of farkas pricing calls */
+   int          redcostcalls;              /**< number of reduced cost pricing calls */
 
    /* solver data */
    GCG_SOLVER** solvers;                  /**< pricing solvers array */
@@ -1035,6 +1036,9 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_Real objcoeff;
    SCIP_VAR* newvar;
 
+   SCIP_VARDATA* vardata;
+   long long int nodenumber;
+
    SCIP_Real objvalue;
    SCIP_Real redcost;
 
@@ -1053,6 +1057,9 @@ SCIP_RETCODE createNewMasterVar(
 
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
+
+//   printf("\n\nAUSGABE IN CREATE NEW MASTER VAR\n\n");
+
 
    if( addedvar != NULL )
       *addedvar = NULL;
@@ -1102,8 +1109,14 @@ SCIP_RETCODE createNewMasterVar(
 
          /* add quota of original variable's objcoef to the master variable's coef */
          objcoeff += solvals[i] * SCIPvarGetObj(origvar);
+
+
+
       }
+
    }
+
+
 
    if( SCIPisInfinity(scip, objcoeff) )
    {
@@ -1152,7 +1165,22 @@ SCIP_RETCODE createNewMasterVar(
    }
 
    if( addedvar != NULL )
+   {
+
       *addedvar = newvar;
+   }
+
+
+
+//   GCGsetCreationNode(scip,vardata,1111);
+//   GCGsetCreationTime(scip,vardata,2222);
+
+   nodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origprob));
+   vardata = SCIPvarGetData(newvar);
+   GCGsetCreationNode(origprob, vardata, nodenumber);
+   GCGsetCreationTime(origprob, vardata, SCIPgetSolvingTime(scip));
+
+
 
    return SCIP_OKAY;
 }
