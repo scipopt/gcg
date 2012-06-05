@@ -88,6 +88,9 @@ struct SCIP_VarData
    int                blocknr;               /**< number of the block and pricing problem, the variable belongs to,
                                               *   or -1 if variable is directly transferred to the master problem,
                                               *   or -2 if variable is a linking variable */
+   long long int      creationnode;          /**< node where the variable is created */
+   SCIP_Real          creationtime;          /**< time when the variable is created */
+
 };
 
 

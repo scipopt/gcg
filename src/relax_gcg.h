@@ -317,7 +317,20 @@ DECDECOMP* GCGgetStructDecdecomp(
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*       scip        /**< SCIP data structure */
+   SCIP*                 scip              /**< SCIP data structure */
    );
 
+/** returns the degeneracy of the masterproblem */
+extern
+double GCGgetDegeneracy(
+   SCIP*                 masterproblem     /**< SCIP masterproblem */
+   );
+
+
+/** prints out the degeneracy of the problem */
+extern
+void GCGprintDegeneracy(
+   SCIP*                 scip,               /**< SCIP data structure */
+   double                degeneracy          /**< degeneracy to print*/
+   );
 #endif
