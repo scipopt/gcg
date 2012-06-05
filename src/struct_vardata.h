@@ -90,7 +90,7 @@ struct SCIP_VarData
                                               *   or -2 if variable is a linking variable */
    long long int      creationnode;          /**< node where the variable is created */
    SCIP_Real          creationtime;          /**< time when the variable is created */
-
+   int                iteration;             /**< iteration when the variable is created */
 };
 
 

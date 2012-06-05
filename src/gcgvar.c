@@ -1206,4 +1206,21 @@ SCIP_Real GCGgetCreationTime(
    return vardata->creationtime;
 }
 
+void GCGsetIteration(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   int               iteration
+   )
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+    vardata->iteration = iteration;
+}
 
+SCIP_Real GCGgetIteration(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata)
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+   return vardata->iteration;
+
+}

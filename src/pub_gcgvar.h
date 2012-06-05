@@ -347,6 +347,22 @@ SCIP_Real GCGgetCreationTime(
    SCIP_VARDATA*   vardata       /**< created variable */
    );
 
+/** returns the iteration when the var was created */
+extern
+SCIP_Real GCGgetIteration(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata       /**< created variable */
+   );
+
+
+/** sets the iteration when the var was created */
+extern
+void GCGsetIteration(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata,      /**< created variable */
+   int             iteration     /**< iteration that this var was created */
+   );
+
 
 
 #ifdef __cplusplus

@@ -44,7 +44,10 @@ SCIP_RETCODE writeDecompositionData(SCIP* scip)
    typeName = DECgetStrType(type);
 
    detector = DECdecdecompGetDetector(decomposition);
-   detectorName = detector->name;
+   if( detector != NULL )
+      detectorName = detector->name;
+   else
+      detectorName = NULL;
 
    nBlocks = DECdecdecompGetNBlocks(decomposition);
 
@@ -59,7 +62,7 @@ SCIP_RETCODE writeDecompositionData(SCIP* scip)
    SCIPsnprintf(ausgabe, SCIP_MAXSTRLEN, "Decomposition Type: %s \n", typeName);
    SCIPinfoMessage(scip, NULL, ausgabe);
 
-   SCIPsnprintf(ausgabe, SCIP_MAXSTRLEN, "Decomposition Detector: %s\n", detectorName);
+   SCIPsnprintf(ausgabe, SCIP_MAXSTRLEN, "Decomposition Detector: %s\n", detectorName == NULL? "reader": detectorName );
    SCIPinfoMessage(scip, NULL, ausgabe);
 
    SCIPinfoMessage(scip, NULL, "Number of Blocks: %d \n", nBlocks);
@@ -95,7 +98,9 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    long long int* createnodestat;
    int* nodes;         /** < Wurzel Knoten und nicht wurzelknoten  */
    int* createtimestat;
-
+   int* createiterstat;
+   int iteration;
+   int m;
    nvars = SCIPgetNVars(scip);
    nnodes = SCIPgetNNodes(scip);
    sol = SCIPgetBestSol(scip);
@@ -106,7 +111,7 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    SCIP_CALL( SCIPallocBufferArray(scip,&nodes,2));         /** < 0= WurzelKnoten,1= alle anderen */
    SCIP_CALL( SCIPallocBufferArray(scip,&createnodestat,nnodes));
    SCIP_CALL( SCIPallocBufferArray(scip,&createtimestat,10));
-
+   SCIP_CALL( SCIPallocBufferArray(scip,&createiterstat,10));
    vars = SCIPgetVars(scip);
 
    SCIPinfoMessage(scip,NULL,"AddedVarDetails:\n");
@@ -114,6 +119,7 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    for( i = 0; i < 10; i++ )
    {
       createtimestat[i] = 0;
+      createiterstat[i] = 0;
    }
 
    nodes[0]=0;
@@ -124,6 +130,7 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
       vardata = SCIPvarGetData(vars[i]);
       node = GCGgetCreationNode(scip, vardata);
       time = GCGgetCreationTime(scip, vardata);
+      iteration = GCGgetIteration(scip, vardata);
 
       if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
       {
@@ -136,7 +143,9 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
       }
 
       n = (int)(100 * time / solvingtime) % 10;
-      createtimestat[n]++;
+      m = (int)(100 * iteration / SCIPgetNLPIterations(scip)) % 10;
+      createiterstat[n]++;
+      createtimestat[m]++;
 
       if(node==1)
       {
@@ -156,6 +165,13 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    {
          SCIPinfoMessage(scip, NULL,"Time %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createtimestat[i]);
    }
+
+
+   for( i = 0; i < 10; i++ )
+   {
+         SCIPinfoMessage(scip, NULL,"Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
+   }
+
 
    return SCIP_OKAY;
 }

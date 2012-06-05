@@ -1173,7 +1173,7 @@ SCIP_RETCODE createNewMasterVar(
    vardata = SCIPvarGetData(newvar);
    GCGsetCreationNode(origprob, vardata, nodenumber);
    GCGsetCreationTime(origprob, vardata, SCIPgetSolvingTime(scip));
-
+   GCGsetIteration(origprob, vardata, SCIPgetNLPIterations(scip));
 
 
    return SCIP_OKAY;
