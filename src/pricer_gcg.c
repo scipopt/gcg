@@ -70,9 +70,9 @@
    }while(FALSE)
 
 #define PRICER_STAT_ARRAYLEN_TIME 1024                /**< length of the array for Time histogram representation */
-#define PRICER_STAT_BUCKETSIZE_TIME 10            /**< size of the buckets for Time histogram representation */
+#define PRICER_STAT_BUCKETSIZE_TIME 10                /**< size of the buckets for Time histogram representation */
 #define PRICER_STAT_ARRAYLEN_VARS 1024                /**< length of the array for foundVars histogram representation */
-#define PRICER_STAT_BUCKETSIZE_VARS 1              /**< size of the buckets for foundVars histogram representation */
+#define PRICER_STAT_BUCKETSIZE_VARS 1                 /**< size of the buckets for foundVars histogram representation */
 
 /*
  * Data structures
@@ -1169,12 +1169,6 @@ SCIP_RETCODE createNewMasterVar(
 
       *addedvar = newvar;
    }
-
-
-
-//   GCGsetCreationNode(scip,vardata,1111);
-//   GCGsetCreationTime(scip,vardata,2222);
-
    nodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origprob));
    vardata = SCIPvarGetData(newvar);
    GCGsetCreationNode(origprob, vardata, nodenumber);

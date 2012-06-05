@@ -2015,7 +2015,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       if( SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED )
       {
          GCGprintDegeneracy(masterprob, GCGgetDegeneracy(masterprob));
-         SCIPwriteLP(masterprob,"master.lp");
+         //SCIPwriteLP(masterprob,"master.lp");
       }
 
 

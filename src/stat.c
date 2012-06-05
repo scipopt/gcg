@@ -93,7 +93,7 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    int nvars, i, n;
    long long int node;
    long long int* createnodestat;
-   long long int* nodeindizes;
+   int* nodes;         /** < Wurzel Knoten und nicht wurzelknoten  */
    int* createtimestat;
 
    nvars = SCIPgetNVars(scip);
@@ -103,16 +103,21 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    solvingtime = SCIPgetSolvingTime(scip);
 
    SCIP_CALL( SCIPallocBufferArray(scip,&vars,nvars));
-   SCIP_CALL( SCIPallocBufferArray(scip,&nodeindizes,nnodes));
+   SCIP_CALL( SCIPallocBufferArray(scip,&nodes,2));         /** < 0= WurzelKnoten,1= alle anderen */
    SCIP_CALL( SCIPallocBufferArray(scip,&createnodestat,nnodes));
    SCIP_CALL( SCIPallocBufferArray(scip,&createtimestat,10));
 
    vars = SCIPgetVars(scip);
 
+   SCIPinfoMessage(scip,NULL,"AddedVarDetails:\n");
+
    for( i = 0; i < 10; i++ )
    {
       createtimestat[i] = 0;
    }
+
+   nodes[0]=0;
+   nodes[1]=0;
 
    for( i = 0; i < nvars; i++ )
    {
@@ -127,20 +132,29 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
       else
       {
          SCIPdebugMessage("var <%s> has sol value %f (%lld, %f)\n", SCIPvarGetName(vars[i]),
-            SCIPgetSolVal(scip, sol, vars[i]), node, time);
+         SCIPgetSolVal(scip, sol, vars[i]), node, time);
       }
 
       n = (int)(100 * time / solvingtime) % 10;
       createtimestat[n]++;
+
+      if(node==1)
+      {
+         nodes[0]++;
+      }
+      else
+      {
+         nodes[1]++;
+      }
    }
 
 
+   SCIPinfoMessage(scip,NULL,"Root node:\tAdded Vars %d\n",nodes[0]);
+   SCIPinfoMessage(scip,NULL,"Leftover nodes:\tAdded Vars %d\n",nodes[1]);
+
    for( i = 0; i < 10; i++ )
    {
-      if( createtimestat[i] != 0 )
-      {
          SCIPinfoMessage(scip, NULL,"Time %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createtimestat[i]);
-      }
    }
 
    return SCIP_OKAY;
