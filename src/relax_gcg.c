@@ -3314,6 +3314,7 @@ double GCGgetDegeneracy(
    /**gives indices of Columns in Basis and indices of vars in Basis     */
    SCIPgetLPBasisInd(masterproblem, indizes);
 
+   countz = 0;
    count = 0;
 
    for( i = 0; i < ncols; i++ )
@@ -3324,8 +3325,8 @@ double GCGgetDegeneracy(
       {
          var=SCIPcolGetVar(cols[colindex]);
 
-         currentVal=SCIPgetVarSol(masterproblem,var);
-         if( currentVal == 0 )
+         currentVal=SCIPgetSolVal(masterproblem, NULL, var);
+         if( SCIPisEQ(masterproblem, currentVal, 0) )
          //if( SCIPcolGetObj(cols[colindex]) == 0 )
          {
             countz++;
