@@ -7,8 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
-/* #define CHECKCONSISTENCY */
+
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
  * @brief   gcg relaxator
@@ -1857,7 +1856,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    /* free pricing problems */
    for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
    {
-      SCIP_CALL( SCIPfreeTransform(relaxdata->pricingprobs[i]) );
       SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
    }
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->pricingprobs));

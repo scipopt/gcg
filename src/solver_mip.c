@@ -27,7 +27,7 @@
 
 /*
   #define EXPERIMENTALUNBOUNDED
- */
+*/
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "mip solver for pricing problems"

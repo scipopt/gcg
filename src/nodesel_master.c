@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   nodesel_master.c
  * @ingroup NODESELECTORS
  * @brief  node selector for coordination of master and original formulation
@@ -210,10 +210,6 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
    else
       return -1;
 }
-
-
-
-
 
 /*
  * master specific interface methods

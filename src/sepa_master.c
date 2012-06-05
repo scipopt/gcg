@@ -158,7 +158,6 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
    return SCIP_OKAY;
 }
 
-
 /** LP solution separation method of separator */
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
@@ -308,16 +307,12 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    sepadata->norigcuts = 0;
    sepadata->nmastercuts = 0;
 
-
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
          sepaCopyMaster, sepaFreeMaster, sepaInitMaster, sepaExitMaster,
          sepaInitsolMaster, sepaExitsolMaster,
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
-
-   /* add master separator parameters */
-   /** @todo (optional) add separator specific parameters with SCIPaddTypeParam() here */
 
    return SCIP_OKAY;
 }

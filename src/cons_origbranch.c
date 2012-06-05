@@ -7,22 +7,18 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-// #define SCIP_DEBUG
-// #define CHECKCONSISTENCY
 
 /**@file   cons_origbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  */
 
+/* #define CHECKCONSISTENCY */
 
 #include <assert.h>
 #include <string.h>
-
 #include "cons_origbranch.h"
-
 #include "scip/cons_linear.h"
-
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 
@@ -72,15 +68,10 @@ struct SCIP_ConshdlrData
 };
 
 
-/*
- * Local methods
- */
-
 
 /*
  * Callback methods of constraint handler
  */
-
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static

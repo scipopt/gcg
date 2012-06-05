@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
 
 /**@file   pricer_gcg.c
  * @brief  pricer for generic column generation
@@ -1640,7 +1639,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    }
 
    /* for variables in the original problem that do not belong to any block,
-    * create the corresponding variable in the master problem */
+    * create the corresponding variable in the master problem
+    */
    vars = SCIPgetVars(origprob);
    nvars = SCIPgetNVars(origprob);
    for( v = 0; v < nvars; v++ )
@@ -1650,7 +1650,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       int ncoefs;
       SCIP_VAR* var;
 
-      /*      var = SCIPvarGetProbvar(vars[v]);*/
+      /* var = SCIPvarGetProbvar(vars[v]); */
       var = vars[v];
       blocknr = GCGvarGetBlock(var);
       coefs = GCGoriginalVarGetCoefs(var);
@@ -1666,7 +1666,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
-
 
          linkconss = GCGoriginalVarGetMasterconss(var);
 
@@ -1703,7 +1702,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPhashmapCreate(&(pricerdata->mapcons2idx), SCIPblkmem(scip), 10 * nmasterconss +1) );
    for( i = 0; i < nmasterconss; i++ )
    {
-      //printf("add cons %s to hashmap: pointer %p\n", SCIPconsGetName(masterconss[i]), masterconss[i]);
       SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, masterconss[i], (void*)(size_t)i) );
       assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i); /*lint !e507*/
    }
@@ -1740,8 +1738,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
    SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));
    SCIPfreeMemoryArray(scip, &(pricerdata->nraysprob));
-
-   //SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {

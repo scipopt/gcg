@@ -8,8 +8,6 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-//#define SCIP_DEBUG
-
 /**@file   branch_relpsprob.c
  * @ingroup BRANCHINGRULES
  * @brief  generalized reliable pseudo costs branching rule

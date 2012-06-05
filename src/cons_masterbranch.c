@@ -7,8 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
-//#define CHECKPROPAGATEDVARS
+
 /**@file   cons_masterbranch.c
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
@@ -20,14 +19,13 @@
 #include <string.h>
 
 #include "cons_masterbranch.h"
-
 #include "scip/cons_linear.h"
-
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-
 #include "pub_gcgvar.h"
+
+/*#define CHECKPROPAGATEDVARS*/
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "masterbranch"
@@ -1970,8 +1968,8 @@ void GCGconsMasterbranchCheckConsistency(
 {
    SCIP_CONSHDLR*     conshdlr;
    int nconss;
-   int i;
 #ifndef NDEBUG
+   int i;
    SCIP_CONS** conss;
    SCIP_CONSDATA* consdata;
 #endif
@@ -1989,16 +1987,13 @@ void GCGconsMasterbranchCheckConsistency(
       return;
 #endif
    }
+   nconss = SCIPconshdlrGetNConss(conshdlr);
 #ifndef NDEBUG
    conss = SCIPconshdlrGetConss(conshdlr);
-#endif
-   nconss = SCIPconshdlrGetNConss(conshdlr);
 
    for( i = 0; i < nconss; i++ )
    {
-#ifndef NDEBUG
       consdata = SCIPconsGetData(conss[i]);
-#endif
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
@@ -2013,6 +2008,7 @@ void GCGconsMasterbranchCheckConsistency(
       assert(consdata->origcons == NULL ||
          GCGconsOrigbranchGetMastercons(consdata->origcons) == conss[i]);
    }
+#endif
 
    SCIPdebugMessage("checked consistency of %d masterbranch constraints, all ok!\n", nconss);
 }
