@@ -1065,6 +1065,7 @@ SCIP_RETCODE createNewMasterVar(
       *addedvar = NULL;
 
    objvalue = 0.0;
+   redcost = 0.0;
 
    if( !force )
    {
@@ -1109,9 +1110,6 @@ SCIP_RETCODE createNewMasterVar(
 
          /* add quota of original variable's objcoef to the master variable's coef */
          objcoeff += solvals[i] * SCIPvarGetObj(origvar);
-
-
-
       }
 
    }
@@ -1174,6 +1172,8 @@ SCIP_RETCODE createNewMasterVar(
    GCGsetCreationNode(origprob, vardata, nodenumber);
    GCGsetCreationTime(origprob, vardata, SCIPgetSolvingTime(scip));
    GCGsetIteration(origprob, vardata, SCIPgetNLPIterations(scip));
+   GCGsetGap(origprob, vardata, SCIPgetGap(scip) );
+   GCGsetRedcost(origprob, vardata, redcost );
 
 
    return SCIP_OKAY;

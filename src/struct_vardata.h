@@ -91,6 +91,8 @@ struct SCIP_VarData
    long long int      creationnode;          /**< node where the variable is created */
    SCIP_Real          creationtime;          /**< time when the variable is created */
    int                iteration;             /**< iteration when the variable is created */
+   SCIP_Real          gap;                   /**< gap when the variable was created */
+   SCIP_Real          redcost;               /**< reduced cost of the variable  */
 };
 
 

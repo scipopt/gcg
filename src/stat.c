@@ -101,6 +101,10 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    int* createiterstat;
    int iteration;
    int m;
+
+   SCIP_Real redcost;
+   SCIP_Real gap;
+
    nvars = SCIPgetNVars(scip);
    nnodes = SCIPgetNNodes(scip);
    sol = SCIPgetBestSol(scip);
@@ -125,12 +129,17 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
    nodes[0]=0;
    nodes[1]=0;
 
+   SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\tredcost\tgap\tsolval\n");
    for( i = 0; i < nvars; i++ )
    {
       vardata = SCIPvarGetData(vars[i]);
       node = GCGgetCreationNode(scip, vardata);
       time = GCGgetCreationTime(scip, vardata);
       iteration = GCGgetIteration(scip, vardata);
+      redcost = GCGgetRedcost(scip, vardata);
+      gap = GCGgetGap(scip, vardata);
+
+      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%f\t%d\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time, iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));
 
       if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
       {

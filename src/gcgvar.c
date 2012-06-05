@@ -1224,3 +1224,40 @@ SCIP_Real GCGgetIteration(
    return vardata->iteration;
 
 }
+
+void GCGsetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         gap
+   )
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+    vardata->gap = gap;
+}
+
+SCIP_Real GCGgetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata)
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+   return vardata->gap;
+
+}
+
+void GCGsetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         redcost
+   )
+{
+    vardata->redcost = redcost;
+}
+
+SCIP_Real GCGgetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata)
+{
+//   printf("Zeit: %f \n",vardata->creationtime);
+   return vardata->redcost;
+
+}

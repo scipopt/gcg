@@ -363,6 +363,26 @@ void GCGsetIteration(
    int             iteration     /**< iteration that this var was created */
    );
 
+void GCGsetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         gap
+   );
+
+SCIP_Real GCGgetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata
+   );
+
+void GCGsetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         redcost
+   );
+
+SCIP_Real GCGgetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata);
 
 
 #ifdef __cplusplus
