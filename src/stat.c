@@ -139,7 +139,7 @@ SCIP_RETCODE writeVarCreationDetails(SCIP* scip)
       redcost = GCGgetRedcost(scip, vardata);
       gap = GCGgetGap(scip, vardata);
 
-      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%f\t%d\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time, iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));
+      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%d\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time, iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));
 
       if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
       {
