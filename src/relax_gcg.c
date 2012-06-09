@@ -102,6 +102,7 @@ struct SCIP_RelaxData
 
    /* data for probing */
    SCIP_Bool        masterinprobing;     /**< is the master problem in probing mode? */
+   SCIP_HEUR*       probingheur;         /**< heuristic that started probing in master problem, or NULL */
    SCIP_SOL*        storedorigsol;       /**< orig solution that was stored from before the probing */
 
    /* solution data */
@@ -1820,6 +1821,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
@@ -2773,7 +2775,8 @@ SCIP_Bool GCGrelaxIsMasterSetPartitioning(
 
 /** start probing mode on master problem */
 SCIP_RETCODE GCGrelaxStartProbing(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
    )
 {
    SCIP_RELAX* relax;
@@ -2796,6 +2799,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
    SCIP_CALL( SCIPstartProbing(masterscip) );
 
    relaxdata->masterinprobing = TRUE;
+   relaxdata->probingheur = probingheur;
 
    /* remember the current original solution */
    assert(relaxdata->storedorigsol == NULL);
@@ -2803,6 +2807,25 @@ SCIP_RETCODE GCGrelaxStartProbing(
       SCIP_CALL( SCIPcreateSolCopy(scip, &relaxdata->storedorigsol, relaxdata->currentorigsol) );
 
    return SCIP_OKAY;
+}
+
+/** returns the  heuristic that started probing in the master problem, or NULL */
+SCIP_HEUR* GCGrelaxGetProbingheur(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->probingheur;
 }
 
 
@@ -2993,6 +3016,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP_CALL( SCIPendProbing(masterscip) );
 
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    /* if a new primal solution was found in the master problem, transfer it to the original problem */
    if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )

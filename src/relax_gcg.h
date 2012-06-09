@@ -211,6 +211,12 @@ SCIP_Bool GCGrelaxIsMasterSetPartitioning(
 /** start probing mode on master problem */
 extern
 SCIP_RETCODE GCGrelaxStartProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
+   );
+
+/** returns the  heuristic that started probing in the master problem, or NULL */
+SCIP_HEUR* GCGrelaxGetProbingheur(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

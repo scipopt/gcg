@@ -50,7 +50,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
    
-   SCIP_CALL( SCIPcreateSol(scip, origsol, NULL) );
+   SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
