@@ -622,6 +622,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    runs = detectordata->setppcinmaster ? 2:1;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
+   *ndecdecomps = 0;
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
@@ -654,6 +655,12 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
          detectordata->setppcinmaster = FALSE;
       }
    }
+
+   if( *ndecdecomps == 0 )
+   {
+         SCIPfreeMemoryArray(scip, decdecomps);
+   }
+
    SCIPfreeBufferArray(scip, &detectordata->consismaster);
 
    return SCIP_OKAY;

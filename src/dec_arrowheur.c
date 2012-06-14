@@ -676,6 +676,13 @@ SCIP_RETCODE callMetis(
       partition[i] = temp;
       i++;
    }
+
+   if( i != nvertices )
+   {
+      SCIPerrorMessage("Couldn't read partition for all vertices.\n");
+      return SCIP_READERROR;
+   }
+
    SCIPfclose(zfile);
 
    /* if desired delete the temoprary metis file */
