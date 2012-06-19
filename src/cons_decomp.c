@@ -369,8 +369,9 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
    if( !conshdlrdata->hasrun )
    {
-      SCIP_CALL( DECdetectStructure(scip) );
-      assert( conshdlrdata->hasrun );
+
+      /*      SCIP_CALL( DECdetectStructure(scip) ); */
+      //      assert( conshdlrdata->hasrun );
    }
    return SCIP_OKAY;
 }

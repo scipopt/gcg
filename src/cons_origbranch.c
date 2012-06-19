@@ -541,6 +541,7 @@ SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -554,6 +555,7 @@ SCIP_NODE* GCGconsOrigbranchGetNode(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -569,6 +571,7 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -584,6 +587,7 @@ SCIP_CONS* GCGconsOrigbranchGetChild1cons(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -599,6 +603,7 @@ SCIP_CONS* GCGconsOrigbranchGetChild2cons(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -614,6 +619,7 @@ void GCGconsOrigbranchSetMastercons(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
@@ -630,6 +636,7 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
    )
 {
    SCIP_CONSDATA* consdata;
+   assert(cons != NULL);
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
