@@ -158,7 +158,7 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
  lib/scip/src/scip/heur_localbranching.h \
- lib/scip/src/scip/heur_mutation.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
  lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
  lib/scip/src/scip/heur_oneopt.h lib/scip/src/scip/heur_pscostdiving.h \
  lib/scip/src/scip/heur_rens.h lib/scip/src/scip/heur_rins.h \
@@ -169,24 +169,29 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  lib/scip/src/scip/heur_trivial.h lib/scip/src/scip/heur_trysol.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
- lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/presol_dualfix.h \
- lib/scip/src/scip/presol_implics.h \
+ lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/heur_zeroobj.h \
+ lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/presol_dualfix.h lib/scip/src/scip/presol_implics.h \
  lib/scip/src/scip/presol_inttobinary.h \
  lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/presol_boundshift.h \
+ lib/scip/src/scip/presol_components.h lib/scip/src/scip/presol_domcol.h \
+ lib/scip/src/scip/presol_gateextraction.h \
+ lib/scip/src/scip/presol_convertinttobin.h \
  lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
  lib/scip/src/scip/prop_rootredcost.h lib/scip/src/scip/prop_redcost.h \
- lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_cip.h \
- lib/scip/src/scip/sepa_clique.h lib/scip/src/scip/sepa_cmir.h \
- lib/scip/src/scip/sepa_flowcover.h lib/scip/src/scip/sepa_gomory.h \
- lib/scip/src/scip/sepa_impliedbounds.h lib/scip/src/scip/sepa_intobj.h \
- lib/scip/src/scip/sepa_mcf.h lib/scip/src/scip/sepa_strongcg.h \
- lib/scip/src/scip/sepa_zerohalf.h lib/scip/src/scip/scipshell.h \
- src/reader_blk.h src/reader_dec.h src/type_decomp.h src/pricer_gcg.h \
- src/type_solver.h src/relax_gcg.h src/type_branchgcg.h src/branch_orig.h \
- src/branch_ryanfoster.h src/cons_origbranch.h src/disp_gcg.h \
- src/dialog_gcg.h src/branch_relpsprob.h src/reader_ref.h src/reader_gp.h \
+ lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_vbounds.h \
+ lib/scip/src/scip/prop_obbt.h lib/scip/src/scip/reader_lp.h \
+ lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_sol.h \
+ lib/scip/src/scip/reader_cip.h lib/scip/src/scip/sepa_clique.h \
+ lib/scip/src/scip/sepa_cmir.h lib/scip/src/scip/sepa_flowcover.h \
+ lib/scip/src/scip/sepa_gomory.h lib/scip/src/scip/sepa_impliedbounds.h \
+ lib/scip/src/scip/sepa_intobj.h lib/scip/src/scip/sepa_mcf.h \
+ lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
+ lib/scip/src/scip/scipshell.h src/reader_blk.h src/reader_dec.h \
+ src/type_decomp.h src/pricer_gcg.h src/type_solver.h src/relax_gcg.h \
+ src/type_branchgcg.h src/branch_orig.h src/branch_ryanfoster.h \
+ src/cons_origbranch.h src/disp_gcg.h src/dialog_gcg.h \
+ src/branch_relpsprob.h src/reader_ref.h src/reader_gp.h \
  src/cons_decomp.h src/type_detector.h src/dec_connected.h \
  src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h \
  src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
