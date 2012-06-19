@@ -805,7 +805,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
    SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
    nlinkingconss = 0;
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
    nlinkingvars = 0;
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
