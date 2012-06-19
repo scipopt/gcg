@@ -28,64 +28,6 @@
 #include "gcggithash.h"
 #include "relax_gcg.h"
 
-/*
- * Message Handler
- */
-
-/** message handler data */
-struct SCIP_MessagehdlrData
-{
-   FILE*                 logfile;            /**< log file where to copy messages into */
-   SCIP_Bool             quiet;              /**< should screen messages be suppressed? */
-};
-
-/** prints a message to the given file stream and writes the same message to the log file */
-static
-void logMessage(
-   SCIP_MESSAGEHDLR*     messagehdlr,        /**< message handler */
-   FILE*                 file,               /**< file stream to print message into */
-   const char*           msg                 /**< message to print */
-   )
-{
-   SCIP_MESSAGEHDLRDATA* messagehdlrdata;
-
-   messagehdlrdata = SCIPmessagehdlrGetData(messagehdlr);
-   assert(messagehdlrdata != NULL);
-
-   if( !messagehdlrdata->quiet || (file != stdout && file != stderr) )
-   {
-      fputs(msg, file);
-      fflush(file);
-   }
-   if( messagehdlrdata->logfile != NULL && (file == stdout || file == stderr) )
-   {
-      fputs(msg, messagehdlrdata->logfile);
-      fflush(messagehdlrdata->logfile);
-   }
-}
-
-/** warning message print method of message handler */
-static
-SCIP_DECL_MESSAGEWARNING(messageWarningLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-/** dialog message print method of message handler */
-static
-SCIP_DECL_MESSAGEDIALOG(messageDialogLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-/** info message print method of message handler */
-static
-SCIP_DECL_MESSAGEINFO(messageInfoLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-
 /** returns GCG major version */
 static
 int GCGmajorVersion(
@@ -360,94 +302,62 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
    if( !paramerror )
    {
-      SCIP_MESSAGEHDLR* messagehdlr;
-      SCIP_MESSAGEHDLRDATA* messagehdlrdata;
-      SCIP_Bool error;
 
       /***********************************
        * create log file message handler *
        ***********************************/
 
-      messagehdlr = NULL;
-      messagehdlrdata = NULL;
-      error = FALSE;
-      // if( logname != NULL || quiet )
-      // {
-      //    SCIP_CALL( SCIPallocMemory(scip, &messagehdlrdata) );
-      //    if( logname != NULL )
-      //    {
-      //       messagehdlrdata->logfile = fopen(logname, "a"); /* append to log file */
-      //       if( messagehdlrdata->logfile == NULL )
-      //       {
-      //          SCIPerrorMessage("cannot open log file <%s> for writing\n", logname);
-      //          error = TRUE;
-      //       }
-      //    }
-      //    else
-      //       messagehdlrdata->logfile = NULL;
-      //    messagehdlrdata->quiet = quiet;
-      //    SCIP_CALL( SCIPcreateMessagehdlrDefault(&messagehdlr, FALSE,
-      //          messageWarningLog, messageDialogLog, messageInfoLog,
-      //          messagehdlrdata) );
-      //    SCIP_CALL( SCIPsetMessagehdlr(scip, messagehdlr) );
-      // }
-
-      if( !error )
+      if( quiet )
       {
-         /***********************************
-          * Version and library information *
-          ***********************************/
+         SCIPsetMessagehdlrQuiet(scip, quiet);
+      }
 
-         SCIPprintVersion(scip, NULL);
+      if( logname != NULL )
+      {
+         SCIPsetMessagehdlrLogfile(scip, logname);
+      }
+
+
+      /***********************************
+       * Version and library information *
+       ***********************************/
+
+      SCIPprintVersion(scip, NULL);
+      SCIPinfoMessage(scip, NULL, "\n");
+
+      SCIPprintExternalCodes(scip, NULL);
+      SCIPinfoMessage(scip, NULL, "\n");
+
+      /*****************
+       * Load settings *
+       *****************/
+
+      if( settingsname != NULL )
+      {
+         SCIP_CALL( readParams(scip, settingsname) );
+      }
+      else if( defaultsetname != NULL )
+      {
+         SCIP_CALL( readParams(scip, defaultsetname) );
+      }
+
+      if( mastersetname != NULL )
+      {
+         SCIP_CALL( readParams(GCGrelaxGetMasterprob(scip), mastersetname) );
+      }
+
+      /**************
+       * Start SCIP *
+       **************/
+
+      if( probname != NULL )
+      {
+         SCIP_CALL( fromCommandLine(scip, probname, decname) );
+      }
+      else
+      {
          SCIPinfoMessage(scip, NULL, "\n");
-
-         SCIPprintExternalCodes(scip, NULL);
-         SCIPinfoMessage(scip, NULL, "\n");
-
-         /*****************
-          * Load settings *
-          *****************/
-
-         if( settingsname != NULL )
-         {
-            SCIP_CALL( readParams(scip, settingsname) );
-         }
-         else if( defaultsetname != NULL )
-         {
-            SCIP_CALL( readParams(scip, defaultsetname) );
-         }
-
-         if( mastersetname != NULL )
-         {
-            SCIP_CALL( readParams(GCGrelaxGetMasterprob(scip), mastersetname) );
-         }
-
-         /**************
-          * Start SCIP *
-          **************/
-
-         if( probname != NULL )
-         {
-            SCIP_CALL( fromCommandLine(scip, probname, decname) );
-         }
-         else
-         {
-            SCIPinfoMessage(scip, NULL, "\n");
-            SCIP_CALL( SCIPstartInteraction(scip) );
-         }
-
-         /******************
-          * Close log file *
-          ******************/
-
-         // if( messagehdlrdata != NULL )
-         // {
-         //    SCIP_CALL( SCIPsetDefaultMessagehdlr() );
-         //    SCIP_CALL( SCIPfreeMessagehdlr(&messagehdlr) );
-         //    if( messagehdlrdata->logfile != NULL )
-         //       fclose(messagehdlrdata->logfile);
-         //    SCIPfreeMemory(scip, &messagehdlrdata);
-         // }
+         SCIP_CALL( SCIPstartInteraction(scip) );
       }
    }
    else

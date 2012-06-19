@@ -378,7 +378,7 @@ $(OBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  src/struct_branchgcg.h src/cons_origbranch.h src/cons_masterbranch.h \
  src/pricer_gcg.h src/type_solver.h src/masterplugins.h \
  src/nodesel_master.h src/pub_gcgvar.h src/pub_decomp.h \
- src/type_detector.h src/scip_misc.h
+ src/type_detector.h src/cons_decomp.h src/scip_misc.h
 $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

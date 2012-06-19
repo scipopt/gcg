@@ -29,6 +29,7 @@
 #include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
+#include "cons_masterbranch.h"
 
 #define PRICER_NAME            "gcg"
 #define PRICER_DESC            "pricer for gcg"
