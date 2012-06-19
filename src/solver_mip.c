@@ -293,7 +293,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
        || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
        || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
        || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT);
+       || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN);
 
 #ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
    if( SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
@@ -373,7 +374,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
    }
    /* the solving process was interrupted, so we have no solutions and set the status pointer accordingly */
-   else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT )
+   else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN )
    {
       *solvars = solverdata->solvars;
       *solvals = solverdata->solvals;
@@ -504,7 +505,8 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD );
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT);
 
 #ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
    if(SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED

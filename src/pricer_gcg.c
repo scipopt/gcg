@@ -958,22 +958,33 @@ SCIP_RETCODE addVariableToMastercuts(
 
          /* if the belongs to the same block and is no linking variable, update the coef */
          if( blocknr == prob )
-         {
             for( k = 0; k < nsolvars; k++ )
-            {
                if( solvars[k] == GCGoriginalVarGetPricingVar(var) )
                {
                   conscoef += ( consvals[j] * solvals[k] );
                   break;
                }
-            }
-         }
-
       }
 
       if( !SCIPisZero(scip, conscoef) )
          SCIP_CALL( SCIPaddVarToRow(scip , mastercuts[i], newvar, conscoef) );
    }
+
+   return SCIP_OKAY;
+}
+
+/** adds new variable to the end of the priced variables array */
+static
+SCIP_RETCODE addVariableToPricedvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata,         /**< pricer data structure */
+   SCIP_VAR*             newvar              /**< variable to add */
+   )
+{
+   SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
+   pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
+   pricerdata->npricedvars++;
+
    return SCIP_OKAY;
 }
 
@@ -1035,7 +1046,6 @@ SCIP_RETCODE createNewMasterVar(
       if( !SCIPisSumNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue = %g, dualsol =%g) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
-
          *added = FALSE;
 
          return SCIP_OKAY;
@@ -1099,22 +1109,15 @@ SCIP_RETCODE createNewMasterVar(
    /* add variable */
    if( !force )
    {
-      SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost); /*lint !e644*/
       SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
    }
    else
    {
-      SCIPdebugMessage("force var %s!\n", SCIPvarGetName(newvar));
       SCIP_CALL( SCIPaddVar(scip, newvar) );
    }
 
-   SCIP_CALL( SCIPcaptureVar(scip, newvar) );
-   SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
-   pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
-   pricerdata->npricedvars++;
-
+   SCIP_CALL( addVariableToPricedvars(scip, pricerdata, newvar) );
    SCIP_CALL( addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars) );
-
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
@@ -1125,8 +1128,6 @@ SCIP_RETCODE createNewMasterVar(
 
    if( addedvar != NULL )
       *addedvar = newvar;
-
-   SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
 
    return SCIP_OKAY;
 }
