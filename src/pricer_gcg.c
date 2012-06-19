@@ -1071,7 +1071,7 @@ SCIP_RETCODE createNewMasterVar(
 
    if( SCIPisInfinity(scip, objcoeff) )
    {
-      SCIPwarningMessage("variable with infinite objective value found in pricing, change objective to SCIPinfinity()/2\n");
+      SCIPwarningMessage(scip, "variable with infinite objective value found in pricing, change objective to SCIPinfinity()/2\n");
       objcoeff = SCIPinfinity(scip) / 2;
    }
 
@@ -2169,7 +2169,7 @@ void GCGpricerPrintStatistics(
    assert(pricerdata != NULL);
 
    /**@todo add constraint statistics: how many constraints (instead of cuts) have been added? */
-   SCIPmessageFPrintInfo(file, "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
 
    for( i = 0; i < pricerdata->nsolvers; ++i )
    {
@@ -2177,8 +2177,8 @@ void GCGpricerPrintStatistics(
       solver = pricerdata->solvers[i];
       assert(solver != NULL);
 
-      SCIPmessageFPrintInfo(file, "  %-17.17s:", solver->name);
-      SCIPmessageFPrintInfo(file, " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-17.17s:", solver->name);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
          solver->heurfarkascalls, solver->optfarkascalls,
          solver->heurredcostcalls, solver->optredcostcalls,
          SCIPgetClockTime(scip, solver->heurfarkasclock),

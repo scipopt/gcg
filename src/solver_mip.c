@@ -409,7 +409,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
          if( !feasible )
          {
-            SCIPwarningMessage("solution of pricing problem %d not feasible:\n", probnr);
+            SCIPwarningMessage(scip, "solution of pricing problem %d not feasible:\n", probnr);
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
          }
 

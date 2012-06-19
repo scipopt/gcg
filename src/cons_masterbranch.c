@@ -1402,6 +1402,8 @@ SCIP_DECL_CONSLOCK(consLockMasterbranch)
 #define consDelvarsMasterbranch NULL
 #define consCopyMasterbranch NULL
 #define consParseMasterbranch NULL
+#define consGetVarsMasterbranch NULL
+#define consGetNVarsMasterbranch NULL
 
 
 /*
@@ -1679,6 +1681,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
          consActiveMasterbranch, consDeactiveMasterbranch,
          consEnableMasterbranch, consDisableMasterbranch,
          consDelvarsMasterbranch, consPrintMasterbranch, consCopyMasterbranch, consParseMasterbranch,
+         consGetVarsMasterbranch, consGetNVarsMasterbranch,
          conshdlrData) );
 
    /* create event handler data */

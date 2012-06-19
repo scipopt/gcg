@@ -28,7 +28,6 @@
 #include "gcggithash.h"
 #include "relax_gcg.h"
 
-
 /*
  * Message Handler
  */
@@ -63,13 +62,6 @@ void logMessage(
       fputs(msg, messagehdlrdata->logfile);
       fflush(messagehdlrdata->logfile);
    }
-}
-
-/** error message print method of message handler */
-static
-SCIP_DECL_MESSAGEERROR(messageErrorLog)
-{
-   logMessage(messagehdlr, file, msg);
 }
 
 /** warning message print method of message handler */
@@ -133,16 +125,19 @@ int GCGsubversion(
 
 static
 void GCGprintVersion(
+   SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */
    )
 {
-   SCIPmessageFPrintInfo(file, "GCG version %d.%d.%d",
+   assert(scip != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "GCG version %d.%d.%d",
       GCGmajorVersion(), GCGminorVersion(), GCGtechVersion());
 #if GCG_SUBVERSION > 0
-   SCIPmessageFPrintInfo(file, ".%d", GCGsubversion());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, ".%d", GCGsubversion());
 #endif
-   SCIPmessageFPrintInfo(file, " [GitHash: %s]", GCGgetGitHash());
-   SCIPmessageFPrintInfo(file, "\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
 }
 
 
@@ -376,26 +371,26 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
       messagehdlr = NULL;
       messagehdlrdata = NULL;
       error = FALSE;
-      if( logname != NULL || quiet )
-      {
-         SCIP_CALL( SCIPallocMemory(scip, &messagehdlrdata) );
-         if( logname != NULL )
-         {
-            messagehdlrdata->logfile = fopen(logname, "a"); /* append to log file */
-            if( messagehdlrdata->logfile == NULL )
-            {
-               SCIPerrorMessage("cannot open log file <%s> for writing\n", logname);
-               error = TRUE;
-            }
-         }
-         else
-            messagehdlrdata->logfile = NULL;
-         messagehdlrdata->quiet = quiet;
-         SCIP_CALL( SCIPcreateMessagehdlr(&messagehdlr, FALSE,
-               messageErrorLog, messageWarningLog, messageDialogLog, messageInfoLog,
-               messagehdlrdata) );
-         SCIP_CALL( SCIPsetMessagehdlr(messagehdlr) );
-      }
+      // if( logname != NULL || quiet )
+      // {
+      //    SCIP_CALL( SCIPallocMemory(scip, &messagehdlrdata) );
+      //    if( logname != NULL )
+      //    {
+      //       messagehdlrdata->logfile = fopen(logname, "a"); /* append to log file */
+      //       if( messagehdlrdata->logfile == NULL )
+      //       {
+      //          SCIPerrorMessage("cannot open log file <%s> for writing\n", logname);
+      //          error = TRUE;
+      //       }
+      //    }
+      //    else
+      //       messagehdlrdata->logfile = NULL;
+      //    messagehdlrdata->quiet = quiet;
+      //    SCIP_CALL( SCIPcreateMessagehdlrDefault(&messagehdlr, FALSE,
+      //          messageWarningLog, messageDialogLog, messageInfoLog,
+      //          messagehdlrdata) );
+      //    SCIP_CALL( SCIPsetMessagehdlr(scip, messagehdlr) );
+      // }
 
       if( !error )
       {
@@ -403,7 +398,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
           * Version and library information *
           ***********************************/
 
-         SCIPprintVersion(NULL);
+         SCIPprintVersion(scip, NULL);
          SCIPinfoMessage(scip, NULL, "\n");
 
          SCIPprintExternalCodes(scip, NULL);
@@ -445,14 +440,14 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
           * Close log file *
           ******************/
 
-         if( messagehdlrdata != NULL )
-         {
-            SCIP_CALL( SCIPsetDefaultMessagehdlr() );
-            SCIP_CALL( SCIPfreeMessagehdlr(&messagehdlr) );
-            if( messagehdlrdata->logfile != NULL )
-               fclose(messagehdlrdata->logfile);
-            SCIPfreeMemory(scip, &messagehdlrdata);
-         }
+         // if( messagehdlrdata != NULL )
+         // {
+         //    SCIP_CALL( SCIPsetDefaultMessagehdlr() );
+         //    SCIP_CALL( SCIPfreeMessagehdlr(&messagehdlr) );
+         //    if( messagehdlrdata->logfile != NULL )
+         //       fclose(messagehdlrdata->logfile);
+         //    SCIPfreeMemory(scip, &messagehdlrdata);
+         // }
       }
    }
    else
@@ -481,14 +476,14 @@ SCIP_RETCODE SCIPrunGCGShell(
 {
    SCIP* scip = NULL;
 
-   GCGprintVersion(NULL);
-
    /*********
     * Setup *
     *********/
 
    /* initialize SCIP */
    SCIP_CALL( SCIPcreate(&scip) );
+   GCGprintVersion(scip, NULL);
+
 
    /* include coloring plugins */
    SCIP_CALL( SCIPincludeGcgPlugins(scip) );
@@ -523,7 +518,7 @@ main(
 
   if( retcode != SCIP_OKAY )
   {
-     SCIPprintError(retcode, stderr);
+     SCIPprintError(retcode);
      return -1;
   }
 

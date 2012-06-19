@@ -1501,7 +1501,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    retstat = SCIPsolve(subscip);
    if( retstat != SCIP_OKAY )
    {
-      SCIPwarningMessage("Error while solving subMIP in Extreme Point Crossover heuristic; subSCIP terminated with code <%d>\n",
+      SCIPwarningMessage(scip, "Error while solving subMIP in Extreme Point Crossover heuristic; subSCIP terminated with code <%d>\n",
             retstat);
    }
 #else

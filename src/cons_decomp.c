@@ -312,6 +312,8 @@ SCIP_RETCODE evaluateDecomposition(
 #define consPrintDecomp NULL
 #define consCopyDecomp NULL
 #define consParseDecomp NULL
+#define consGetVarsDecomp NULL
+#define consGetNVarsDecomp NULL
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -474,6 +476,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consActiveDecomp, consDeactiveDecomp,
          consEnableDecomp, consDisableDecomp,
          consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
+         consGetVarsDecomp, consGetNVarsDecomp,
          conshdlrdata) );
 
    return SCIP_OKAY;

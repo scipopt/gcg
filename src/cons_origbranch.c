@@ -345,7 +345,8 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 #define consPrintOrigbranch NULL
 #define consCopyOrigbranch NULL
 #define consParseOrigbranch NULL
-
+#define consGetVarsOrigbranch NULL
+#define consGetNVarsOrigbranch NULL
 /*
  * interface methods
  */
@@ -379,6 +380,7 @@ SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
          consActiveOrigbranch, consDeactiveOrigbranch,
          consEnableOrigbranch, consDisableOrigbranch,
          consDelvarsOrigbranch, consPrintOrigbranch, consCopyOrigbranch, consParseOrigbranch,
+         consGetVarsOrigbranch, consGetNVarsOrigbranch,
          conshdlrData) );
 
    return SCIP_OKAY;

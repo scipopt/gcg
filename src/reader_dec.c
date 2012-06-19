@@ -1175,7 +1175,7 @@ SCIP_RETCODE SCIPwriteDecomp(
    {
       if( decdecomp == NULL )
       {
-         SCIPwarningMessage("Cannot write decomposed problem if decomposition structure empty!");
+         SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure empty!");
          writeDecomposition = FALSE;
          /* return SCIP_INVALIDDATA; */
       }

@@ -294,6 +294,8 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
 #define consPrintIntegralOrig NULL
 #define consCopyIntegralOrig NULL
 #define consParseIntegralOrig NULL
+#define consGetVarsIntegralOrig NULL
+#define consGetNVarsIntegralOrig NULL
 
 
 /*
@@ -324,6 +326,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
          consActiveIntegralOrig, consDeactiveIntegralOrig,
          consEnableIntegralOrig, consDisableIntegralOrig,
          consDelvarsIntegralOrig, consPrintIntegralOrig, consCopyIntegralOrig, consParseIntegralOrig,
+         consGetVarsIntegralOrig, consGetNVarsIntegralOrig,
          conshdlrdata) );
 
    return SCIP_OKAY;
