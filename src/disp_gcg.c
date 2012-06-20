@@ -295,6 +295,11 @@
 #define DISP_STRI_NSOLS         TRUE
 
 
+/**TODO:
+ *
+ * Degeneracy: in %
+ */
+
 /*
  * Callback methods
  */

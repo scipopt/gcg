@@ -317,6 +317,73 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
    SCIP_VAR**  newvar         /**< pointer to store new variable */
    );
 
+/** sets the creation node of this var */
+extern
+void GCGsetCreationNode(
+   SCIP*           scip,          /**< SCIP data structure */
+   SCIP_VARDATA*   vardata,       /**< created variable */
+   long long int creationNode     /**< node */
+   );
+
+/** returns the creation node of this var */
+extern
+long long int GCGgetCreationNode(
+   SCIP*           scip,          /**< SCIP data structure */
+   SCIP_VARDATA*   vardata        /**< created variable */
+   );
+
+/** sets the creation time of this var */
+extern
+void GCGsetCreationTime(
+   SCIP*          scip,          /**< SCIP data structure */
+   SCIP_VARDATA*  vardata,       /**< created variable */
+   SCIP_Real      time           /**< creation time */
+   );
+
+/** returns the creation time of this var */
+extern
+SCIP_Real GCGgetCreationTime(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata       /**< created variable */
+   );
+
+/** returns the iteration when the var was created */
+extern
+SCIP_Real GCGgetIteration(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata       /**< created variable */
+   );
+
+
+/** sets the iteration when the var was created */
+extern
+void GCGsetIteration(
+   SCIP*           scip,         /**< SCIP data structure */
+   SCIP_VARDATA*   vardata,      /**< created variable */
+   int             iteration     /**< iteration that this var was created */
+   );
+
+void GCGsetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         gap
+   );
+
+SCIP_Real GCGgetGap(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata
+   );
+
+void GCGsetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata,
+   SCIP_Real         redcost
+   );
+
+SCIP_Real GCGgetRedcost(
+   SCIP*             scip,
+   SCIP_VARDATA*     vardata);
+
 
 #ifdef __cplusplus
 }

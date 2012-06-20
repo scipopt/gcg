@@ -30,6 +30,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_decomp.h"
+#include "stat.h"
 
 
 /* display the reader information */
@@ -162,7 +163,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    SCIPdialogMessage(scip, NULL, "\n");
    GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
    SCIPdialogMessage(scip, NULL, "\n");
-
+   writeDecompositionData(scip);
+   writeVarCreationDetails(GCGrelaxGetMasterprob(scip));
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -194,6 +196,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   writeVarCreationDetails(scip);
 
    return SCIP_OKAY;
 }

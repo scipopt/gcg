@@ -88,6 +88,7 @@ MAINOBJ		=	reader_blk.o \
 			scip_misc.o \
 			misc.o \
 			gcgvar.o \
+			stat.o\
 			main.o
 
 MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
