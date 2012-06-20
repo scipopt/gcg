@@ -1778,6 +1778,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
 
+   relaxdata->nbranchrules = 0;
+
    return SCIP_OKAY;
 }
 
@@ -1823,6 +1825,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
    relaxdata->pricingprobsmemused = 0.0;
+
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
 
    return SCIP_OKAY;
 }
@@ -1897,6 +1901,8 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
+
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 4) );
 
    return SCIP_OKAY;
 }
@@ -2092,6 +2098,8 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->nbranchrules = 0;
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
+
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
