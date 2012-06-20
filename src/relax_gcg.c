@@ -1647,7 +1647,6 @@ SCIP_RETCODE initRelaxator(
 
 {
    SCIP* masterprob;
-   SCIP_CONS* cons;
    SCIP_VAR** vars;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -1726,15 +1725,6 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
 
-
-   /* create origbranch constraint for the root node */
-   assert(SCIPgetRootNode(scip) != NULL);
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", SCIPgetRootNode(scip), NULL, NULL, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
-
-   /* check consistency */
-   GCGconsOrigbranchCheckConsistency(scip);
 
    return SCIP_OKAY;
 }
@@ -1933,6 +1923,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    if(relaxdata->decdecomp == NULL)
    {
       SCIP_CALL( initRelaxator(scip, relax) );
+      SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
    }
 
    masterprob = relaxdata->masterprob;

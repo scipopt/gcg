@@ -114,12 +114,10 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    conshdlrData->nstack = 0;
 
-   assert(SCIPgetRootNode(scip) != NULL);
-
    /* create origbranch constraint corresponding to the root node */
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", SCIPgetRootNode(scip), NULL, NULL, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+   conshdlrData->stack[0] = cons;
+   conshdlrData->nstack = 1;
 
    /* check consistency */
    GCGconsOrigbranchCheckConsistency(scip);
@@ -235,6 +233,9 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    assert(conshdlrData->stack != NULL);
 
    assert(SCIPconsGetData(cons) != NULL);
+
+   if(SCIPconsGetData(cons)->node == NULL)
+      SCIPconsGetData(cons)->node = SCIPgetRootNode(scip);
 
    SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
       conshdlrData->nstack+1);
@@ -403,7 +404,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    SCIP_CONSDATA* consdata;
 
    assert(scip != NULL);
-   assert((parentcons == NULL) == (SCIPnodeGetDepth(node) == 0));
+   assert((parentcons == NULL) == (node == NULL));
 
    /* find the origbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -623,7 +624,8 @@ void GCGconsOrigbranchSetMastercons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert(consdata->mastercons == NULL || mastercons == NULL);
+   if( consdata->mastercons != mastercons )
+      assert(consdata->mastercons == NULL || mastercons == NULL);
 
    consdata->mastercons = mastercons;
 }
@@ -780,4 +782,30 @@ int GCGconsOrigbranchGetNPropBoundChgs(
    return consdata->npropbounds;
 }
 
+/** adds initial constraint to root node */
+SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONS* cons;
+   assert(scip != NULL);
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   if( conshdlr == NULL )
+   {
+      SCIPerrorMessage("original constraint handler not found\n");
+      return SCIP_ERROR;
+   }
+   conshdlrData = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrData != NULL);
 
+   cons = conshdlrData->stack[0];
+   assert(conshdlrData->nstack == 1);
+   conshdlrData->nstack = 0;
+
+   SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
+   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+
+   return SCIP_OKAY;
+}

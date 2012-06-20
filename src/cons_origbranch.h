@@ -152,6 +152,12 @@ int GCGconsOrigbranchGetNPropBoundChgs(
    SCIP_CONS*            cons                /**< origbranch constraint for which the bound changes are requested */
    );
 
+/** adds initial constraint to root node */
+extern
+SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

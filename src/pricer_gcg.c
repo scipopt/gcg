@@ -1787,8 +1787,12 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    *result = SCIP_DIDNOTRUN;
 
    if( pricerdata->redcostcalls == 0 )
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
+   {
+      if( pricerdata->farkascalls == 0 )
+         SCIPconsMasterbranchAddRootCons(scip);
 
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
+   }
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNNodes(scip) == pricerdata->currnodenr )
    {
@@ -1832,6 +1836,10 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    pricerdata = SCIPpricerGetData(pricer);
 
    assert(pricerdata != NULL);
+
+   if( pricerdata->redcostcalls == 0 &&  pricerdata->farkascalls == 0 )
+      SCIPconsMasterbranchAddRootCons(scip);
+
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
