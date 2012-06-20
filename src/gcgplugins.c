@@ -54,6 +54,7 @@
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
 #include "scip/heur_mutation.h"
+#include "scip/heur_nlpdiving.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
@@ -73,6 +74,7 @@
 #include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
 #include "scip/heur_zirounding.h"
+#include "scip/heur_zeroobj.h"
 #endif
 
 #include "scip/nodesel_bfs.h"
@@ -83,12 +85,19 @@
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
+#include "scip/presol_components.h"
+#include "scip/presol_domcol.h"
+#include "scip/presol_gateextraction.h"
+#include "scip/presol_convertinttobin.h"
 
 #if USEPROP
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
 #include "scip/prop_redcost.h"
+#include "scip/prop_genvbounds.h"
+#include "scip/prop_vbounds.h"
+#include "scip/prop_obbt.h"
 #endif
 
 #include "scip/reader_lp.h"
@@ -177,6 +186,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
+   SCIP_CALL( SCIPincludePresolComponents(scip) );
+   SCIP_CALL( SCIPincludePresolDomcol(scip) );
+   SCIP_CALL( SCIPincludePresolGateextraction(scip) );
+   SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 
    //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
    //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
@@ -184,8 +197,14 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
 #if USEPROP
-   SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
+   SCIP_CALL( SCIPincludePropRootredcost(scip) );
+   SCIP_CALL( SCIPincludePropGenvbounds(scip) );
    SCIP_CALL( SCIPincludePropProbing(scip) );
+   SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropVbounds(scip) );
+   SCIP_CALL( SCIPincludePropObbt(scip) );
+
 #endif
 
 
@@ -204,6 +223,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurLinesearchdiving(scip) );
    SCIP_CALL( SCIPincludeHeurLocalbranching(scip) );
    SCIP_CALL( SCIPincludeHeurMutation(scip) );
+   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
@@ -222,12 +242,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurZirounding(scip) );
+   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
 #endif
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
-
-
-   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
-   SCIP_CALL( SCIPincludePropRootredcost(scip) );
 
 #if USESEPA
    SCIP_CALL( SCIPincludeSepaClique(scip) );

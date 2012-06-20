@@ -356,7 +356,7 @@ SCIP_RETCODE SCIPwriteGp(
 
    if( writeDecomposition && decdecomp == NULL )
    {
-      SCIPwarningMessage("Cannot write decomposed problem if decomposition structure empty!");
+      SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure empty!");
       writeDecomposition = FALSE;
    }
    /* sanitize filename */

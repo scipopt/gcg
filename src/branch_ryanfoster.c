@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   branch_ryanfoster.c
  * @brief  branching rule for original problem in gcg implementing the Ryan and Foster branching scheme
  * @author Gerald Gamrath

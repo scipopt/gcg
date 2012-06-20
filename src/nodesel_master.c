@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   nodesel_master.c
  * @ingroup NODESELECTORS
  * @brief  node selector for coordination of master and original formulation
@@ -112,9 +112,9 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )
       {
-         assert(GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip));
+         assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
          assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
-         assert(GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip));
+            assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
 
          *selnode = SCIPgetRootNode(scip);
          SCIPdebugMessage("selected root node in the master program\n");
@@ -210,10 +210,6 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
    else
       return -1;
 }
-
-
-
-
 
 /*
  * master specific interface methods

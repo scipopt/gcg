@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   branch_orig.c
  * @brief  branching rule for original problem in gcg
  * @author Gerald Gamrath
@@ -387,6 +387,9 @@ SCIP_RETCODE branchExtern(
    return SCIP_OKAY;
 }
 
+/* copy default SCIP branching rules to allow solving restrictions of the original problem as a subSCIP without
+ * Dantzig-Wolfe decomposition
+ */
 static
 SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP* scip
@@ -405,8 +408,6 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
    return SCIP_OKAY;
 }
-
-
 
 /*
  * Callback methods for enforcing branching constraints

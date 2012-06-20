@@ -655,7 +655,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
             }
             if( retstat != SCIP_OKAY )
             {
-               SCIPwarningMessage("Error while solving LP in GCG coefdiving heuristic; LP solve terminated with code <%d>\n",retstat);
+               SCIPwarningMessage(scip, "Error while solving LP in GCG coefdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
             if( maxpricerounds == 0 )

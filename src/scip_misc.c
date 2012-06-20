@@ -349,7 +349,7 @@ SCIP_RETCODE SCIPgetVarsXXX(
    }
    else
    {
-      SCIPwarningMessage("WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
+      SCIPwarningMessage(scip, "WARNING: NOT IMPLEMENTED <%s>\n", conshdlrname);
    }
    return SCIP_OKAY;
 }

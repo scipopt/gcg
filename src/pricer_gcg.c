@@ -7,7 +7,6 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
 
 /**@file   pricer_gcg.c
  * @brief  pricer for generic column generation
@@ -30,6 +29,7 @@
 #include "struct_solver.h"
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
+#include "cons_masterbranch.h"
 
 #define PRICER_NAME            "gcg"
 #define PRICER_DESC            "pricer for gcg"
@@ -958,22 +958,33 @@ SCIP_RETCODE addVariableToMastercuts(
 
          /* if the belongs to the same block and is no linking variable, update the coef */
          if( blocknr == prob )
-         {
             for( k = 0; k < nsolvars; k++ )
-            {
                if( solvars[k] == GCGoriginalVarGetPricingVar(var) )
                {
                   conscoef += ( consvals[j] * solvals[k] );
                   break;
                }
-            }
-         }
-
       }
 
       if( !SCIPisZero(scip, conscoef) )
          SCIP_CALL( SCIPaddVarToRow(scip , mastercuts[i], newvar, conscoef) );
    }
+
+   return SCIP_OKAY;
+}
+
+/** adds new variable to the end of the priced variables array */
+static
+SCIP_RETCODE addVariableToPricedvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata,         /**< pricer data structure */
+   SCIP_VAR*             newvar              /**< variable to add */
+   )
+{
+   SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
+   pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
+   pricerdata->npricedvars++;
+
    return SCIP_OKAY;
 }
 
@@ -1035,7 +1046,6 @@ SCIP_RETCODE createNewMasterVar(
       if( !SCIPisSumNegative(scip, redcost) )
       {
          SCIPdebugMessage("var with redcost %g (objvalue = %g, dualsol =%g) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
-
          *added = FALSE;
 
          return SCIP_OKAY;
@@ -1072,7 +1082,7 @@ SCIP_RETCODE createNewMasterVar(
 
    if( SCIPisInfinity(scip, objcoeff) )
    {
-      SCIPwarningMessage("variable with infinite objective value found in pricing, change objective to SCIPinfinity()/2\n");
+      SCIPwarningMessage(scip, "variable with infinite objective value found in pricing, change objective to SCIPinfinity()/2\n");
       objcoeff = SCIPinfinity(scip) / 2;
    }
 
@@ -1099,22 +1109,15 @@ SCIP_RETCODE createNewMasterVar(
    /* add variable */
    if( !force )
    {
-      SCIPdebugMessage("found var %s with redcost %f!\n", SCIPvarGetName(newvar), redcost); /*lint !e644*/
       SCIP_CALL( SCIPaddPricedVar(scip, newvar, pricerdata->dualsolconv[prob] - objvalue) );
    }
    else
    {
-      SCIPdebugMessage("force var %s!\n", SCIPvarGetName(newvar));
       SCIP_CALL( SCIPaddVar(scip, newvar) );
    }
 
-   SCIP_CALL( SCIPcaptureVar(scip, newvar) );
-   SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
-   pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
-   pricerdata->npricedvars++;
-
+   SCIP_CALL( addVariableToPricedvars(scip, pricerdata, newvar) );
    SCIP_CALL( addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars) );
-
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
@@ -1125,8 +1128,6 @@ SCIP_RETCODE createNewMasterVar(
 
    if( addedvar != NULL )
       *addedvar = newvar;
-
-   SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
 
    return SCIP_OKAY;
 }
@@ -1640,7 +1641,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    }
 
    /* for variables in the original problem that do not belong to any block,
-    * create the corresponding variable in the master problem */
+    * create the corresponding variable in the master problem
+    */
    vars = SCIPgetVars(origprob);
    nvars = SCIPgetNVars(origprob);
    for( v = 0; v < nvars; v++ )
@@ -1650,7 +1652,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       int ncoefs;
       SCIP_VAR* var;
 
-      /*      var = SCIPvarGetProbvar(vars[v]);*/
+      /* var = SCIPvarGetProbvar(vars[v]); */
       var = vars[v];
       blocknr = GCGvarGetBlock(var);
       coefs = GCGoriginalVarGetCoefs(var);
@@ -1666,7 +1668,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
          SCIP_CALL( SCIPaddVar(scip, newvar) );
 
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
-
 
          linkconss = GCGoriginalVarGetMasterconss(var);
 
@@ -1703,7 +1704,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPhashmapCreate(&(pricerdata->mapcons2idx), SCIPblkmem(scip), 10 * nmasterconss +1) );
    for( i = 0; i < nmasterconss; i++ )
    {
-      //printf("add cons %s to hashmap: pointer %p\n", SCIPconsGetName(masterconss[i]), masterconss[i]);
       SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, masterconss[i], (void*)(size_t)i) );
       assert((int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, masterconss[i]) == i); /*lint !e507*/
    }
@@ -1740,8 +1740,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
    SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));
    SCIPfreeMemoryArray(scip, &(pricerdata->nraysprob));
-
-   //SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
@@ -1789,8 +1787,12 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    *result = SCIP_DIDNOTRUN;
 
    if( pricerdata->redcostcalls == 0 )
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
+   {
+      if( pricerdata->farkascalls == 0 )
+         SCIPconsMasterbranchAddRootCons(scip);
 
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
+   }
    /* update number of reduced cost pricing rounds at the current node */
    if( SCIPgetNNodes(scip) == pricerdata->currnodenr )
    {
@@ -1834,6 +1836,10 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    pricerdata = SCIPpricerGetData(pricer);
 
    assert(pricerdata != NULL);
+
+   if( pricerdata->redcostcalls == 0 &&  pricerdata->farkascalls == 0 )
+      SCIPconsMasterbranchAddRootCons(scip);
+
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
@@ -2173,7 +2179,7 @@ void GCGpricerPrintStatistics(
    assert(pricerdata != NULL);
 
    /**@todo add constraint statistics: how many constraints (instead of cuts) have been added? */
-   SCIPmessageFPrintInfo(file, "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Solver     : #HeurFarkas  #OptFarkas  #HeurRedcost #OptRedcost Time: HeurFarkas  OptFarkas  HeurRedcost OptRedcost\n");
 
    for( i = 0; i < pricerdata->nsolvers; ++i )
    {
@@ -2181,8 +2187,8 @@ void GCGpricerPrintStatistics(
       solver = pricerdata->solvers[i];
       assert(solver != NULL);
 
-      SCIPmessageFPrintInfo(file, "  %-17.17s:", solver->name);
-      SCIPmessageFPrintInfo(file, " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-17.17s:", solver->name);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %11d %11d   %11d %11d       %10.2f %10.2f   %10.2f %10.2f \n",
          solver->heurfarkascalls, solver->optfarkascalls,
          solver->heurredcostcalls, solver->optredcostcalls,
          SCIPgetClockTime(scip, solver->heurfarkasclock),

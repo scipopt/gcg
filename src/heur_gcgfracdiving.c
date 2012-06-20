@@ -569,7 +569,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfracdiving) /*lint --e{715}*/
             }
             if( retstat != SCIP_OKAY )
             {
-               SCIPwarningMessage("Error while solving LP in GCG fracdiving heuristic; LP solve terminated with code <%d>\n",retstat);
+               SCIPwarningMessage(scip, "Error while solving LP in GCG fracdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
             if( maxpricerounds == 0 )

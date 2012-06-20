@@ -1322,7 +1322,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    retstat = SCIPsolve(subscip);
    if( retstat != SCIP_OKAY )
    {
-      SCIPwarningMessage("Error while solving subMIP in Extreme Point RINS heuristic; subSCIP terminated with code <%d>\n",
+      SCIPwarningMessage(scip, "Error while solving subMIP in Extreme Point RINS heuristic; subSCIP terminated with code <%d>\n",
             retstat);
    }
 #else

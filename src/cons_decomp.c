@@ -312,6 +312,8 @@ SCIP_RETCODE evaluateDecomposition(
 #define consPrintDecomp NULL
 #define consCopyDecomp NULL
 #define consParseDecomp NULL
+#define consGetVarsDecomp NULL
+#define consGetNVarsDecomp NULL
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -367,8 +369,9 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 
    if( !conshdlrdata->hasrun )
    {
-      SCIP_CALL( DECdetectStructure(scip) );
-      assert( conshdlrdata->hasrun );
+
+      /*      SCIP_CALL( DECdetectStructure(scip) ); */
+      //      assert( conshdlrdata->hasrun );
    }
    return SCIP_OKAY;
 }
@@ -474,6 +477,7 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consActiveDecomp, consDeactiveDecomp,
          consEnableDecomp, consDisableDecomp,
          consDelvarsDecomp, consPrintDecomp, consCopyDecomp, consParseDecomp,
+         consGetVarsDecomp, consGetNVarsDecomp,
          conshdlrdata) );
 
    return SCIP_OKAY;
@@ -720,6 +724,7 @@ SCIP_Real DECgetRemainingTime(
 }
 
 /** interface method to detect the structure */
+extern
 SCIP_RETCODE DECdetectStructure(
    SCIP* scip                 /**< SCIP data structure */
    )

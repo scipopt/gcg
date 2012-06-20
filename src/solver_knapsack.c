@@ -24,12 +24,9 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 
-
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"
 #define SOLVER_PRIORITY      -100
-
-
 
 /** knapsack pricing solverdata */
 struct GCG_SolverData
@@ -85,7 +82,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
          solverdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
    }
 
-   solverdata->nsols = 5;
+   solverdata->nsols = 2;
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solisray), solverdata->nsols) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );

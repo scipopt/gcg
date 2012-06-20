@@ -110,4 +110,11 @@ void GCGconsMasterbranchCheckConsistency(
    SCIP* scip                 /**< SCIP data structure */
    );
 
+/** adds initial constraint to root node */
+extern
+SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+
 #endif
