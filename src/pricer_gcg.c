@@ -150,6 +150,12 @@ struct SCIP_PricerData
    int*        nodetimehist;              /**< Histogram of nodetime distribution */
    int*        foundvarshist;             /**< Histogram of foundvars distribution */
 
+   double      rootnodedegeneracy;        /**< degeneracy of the root node */
+   double*     nodedegeneracy;            /**< degeneracy of the remaining nodes */
+   double      avgnodedegeneracy;         /**< average degeneray of all nodes */
+   int         nnodes;                    /**< number of nodes handled so far */
+   int         maxnnodes;                 /**< maximal number of nodes to handle */
+   SCIP_NODE*  lastnode;                  /**< last handled node */
 };
 
 
@@ -298,6 +304,29 @@ SCIP_RETCODE ensureSizeSolvers(
    return SCIP_OKAY;
 }
 
+/* ensures size of nodes array */
+static
+SCIP_RETCODE ensureSizeAvgnodedegeneracy(
+   SCIP*                 scip,              /**< SCIP data structure        */
+   SCIP_PRICERDATA*      pricerdata         /**< Pricerdata data structure  */
+   )
+{
+   int memgrowsize;
+   assert(scip != NULL);
+   assert(pricerdata != NULL);
+
+   if(pricerdata->maxnnodes > pricerdata->nnodes)
+      return SCIP_OKAY;
+
+   memgrowsize = SCIPcalcMemGrowSize(scip, pricerdata->nnodes+1);
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->solvers), memgrowsize) );
+
+   pricerdata->maxnnodes = memgrowsize;
+
+   assert(pricerdata->maxnnodes > pricerdata->nnodes);
+   return SCIP_OKAY;
+}
+
 /** frees all solvers */
 static
 SCIP_RETCODE solversFree(
@@ -437,6 +466,73 @@ SCIP_RETCODE solversExitsol(
 
    return SCIP_OKAY;
 }
+
+
+/** returns the gegeneracy of the masterproblem */
+static
+SCIP_RETCODE computeCurrentDegeneracy(
+   SCIP*                 scip,               /**< SCIP data structure */
+   double*               degeneracy          /**< pointer to store degeneracy */
+   )
+{
+   int ncols;
+   int i;
+   int count;
+   int countz;
+   int colindex;
+   double currentVal;
+   int* indizes;
+   SCIP_COL** cols;
+   SCIP_VAR* var;
+
+   assert(scip != NULL);
+   assert(degeneracy != NULL);
+
+   *degeneracy = 0.0;
+   ncols = SCIPgetNLPCols(scip);
+   cols = SCIPgetLPCols(scip);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &indizes, ncols) );
+
+   for( i = 0; i < ncols; i++ )
+   {
+      indizes[i] = 0;
+   }
+
+   /* gives indices of Columns in Basis and indices of vars in Basis */
+   SCIP_CALL( SCIPgetLPBasisInd(scip, indizes) );
+
+   countz = 0;
+   count = 0;
+
+   for( i = 0; i < ncols; i++ )
+   {
+      colindex = indizes[i];
+      /* is column if >0 it is column in basis, <0 is for row */
+      if( colindex > 0 )
+      {
+         var = SCIPcolGetVar(cols[colindex]);
+
+         currentVal = SCIPgetSolVal(scip, NULL, var);
+
+         if( SCIPisEQ(scip, currentVal, 0) )
+            countz++;
+
+         count++;
+      }
+   }
+
+   /* Degeneracy in % */
+   if(count > 0)
+      *degeneracy = ((double)countz / count)*100;
+
+   assert(*degeneracy <= 100);
+
+   SCIPfreeBufferArray(scip, &indizes);
+
+   return SCIP_OKAY;
+}
+
 
 /** solves a specific pricing problem */
 static
@@ -1566,7 +1662,7 @@ SCIP_RETCODE performPricing(
    int i;
    int j;
    int nfoundvars;
-
+   double degeneracy;
 
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
@@ -1662,10 +1758,40 @@ SCIP_RETCODE performPricing(
    }
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
+
+   SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
+
+   if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
+   {
+      pricerdata->lastnode = SCIPgetCurrentNode(scip);
+      SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
+      ++(pricerdata->nnodes);
+
+
+      if( pricerdata->nnodes == 1 )
+         pricerdata->avgnodedegeneracy = degeneracy;
+      else if( pricerdata->nnodes > 2 )
+      {
+         /* Complicated calculation for numerical stability:
+          *     E[\sum_{i=1}^n x_i] = (E[\sum_{i=1}^{n-1} x_i]*(n-1) + x_n)/n
+          *     E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]*(n-1)/n + x_n/n
+          * <=> E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]-E[\sum_{i=1}^{n-1} x_i]/n + x_n/n
+          * <=> E_n = E_{n-1} - E_{n-1}/n + x_n/n
+          * <=> E -= E/n - x_n(n
+          */
+         pricerdata->avgnodedegeneracy -= pricerdata->avgnodedegeneracy/(pricerdata->nnodes-2) - pricerdata->nodedegeneracy[pricerdata->nnodes-1]/(pricerdata->nnodes-1);
+      }
+   }
+   if( pricerdata->lastnode == SCIPgetRootNode(scip) )
+      pricerdata->rootnodedegeneracy = degeneracy;
+
+   pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
+
+   assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
+   // SCIPinfoMessage(scip, NULL, "Degeneracy at node %p %.2f (avg: %.2f)\n", pricerdata->lastnode, degeneracy, pricerdata->avgnodedegeneracy);
+
    return SCIP_OKAY;
 }
-
-
 
 /*
  * Callback methods of variable pricer
@@ -1920,6 +2046,13 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    pricerdata->maxpricedvars = 50;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
+   pricerdata->rootnodedegeneracy = 0.0;
+   pricerdata->avgnodedegeneracy = 0.0;
+   pricerdata->nnodes = 0;
+   pricerdata->maxnnodes = 10;
+   pricerdata->lastnode = NULL;
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodedegeneracy), pricerdata->maxnnodes) );
+
    SCIP_CALL( solversInitsol(scip, pricerdata) );
 
    return SCIP_OKAY;
@@ -1961,6 +2094,7 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 
    SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
    SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));
+   SCIPfreeMemoryArray(scip, &(pricerdata->nodedegeneracy));
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {

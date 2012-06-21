@@ -2015,16 +2015,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          return SCIP_OKAY;
       }
 
-      /** TODO:
-       *  hier degeneracy check*/
-
-      if( SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED )
-      {
-         GCGprintDegeneracy(masterprob, GCGgetDegeneracy(masterprob));
-         //SCIPwriteLP(masterprob,"master.lp");
-      }
-
-
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
          *lowerbound = SCIPgetLocalDualbound(masterprob);
@@ -3296,69 +3286,5 @@ SCIP_Real GCGgetPricingprobsMemUsed(
    assert(relaxdata != NULL);
 
    return relaxdata->pricingprobsmemused;
-}
-
-/** returns the Degeneracy of the masterproblem */
-double GCGgetDegeneracy(
-   SCIP* masterproblem
-   )
-{
-   int ncols,i,count,countz,colindex;
-   double degeneracy,currentVal;
-   int* indizes;
-   SCIP_COL** cols;
-   SCIP_VAR* var;
-
-   ncols = SCIPgetNLPCols(masterproblem);
-   cols = SCIPgetLPCols(masterproblem);
-
-   SCIP_CALL( SCIPallocBufferArray(masterproblem,&indizes,ncols) );
-
-   for( i = 0; i < ncols; i++ )
-   {
-      indizes[i] = 0;
-   }
-
-   /**gives indices of Columns in Basis and indices of vars in Basis     */
-   SCIPgetLPBasisInd(masterproblem, indizes);
-
-   countz = 0;
-   count = 0;
-
-   for( i = 0; i < ncols; i++ )
-   {
-      colindex = indizes[i];
-      //is column if >0 it is column in basis, <0 is for row
-      if( colindex > 0 )
-      {
-         var=SCIPcolGetVar(cols[colindex]);
-
-         currentVal=SCIPgetSolVal(masterproblem, NULL, var);
-         if( SCIPisEQ(masterproblem, currentVal, 0) )
-         //if( SCIPcolGetObj(cols[colindex]) == 0 )
-         {
-            countz++;
-         }
-         else
-         {
-            count++;
-         }
-      }
-   }
-   //degeneracy = (double)count / countz;
-   /** Degeneracy in %    */
-   degeneracy = ((double)countz / count)*100;
-   SCIPfreeBufferArray(masterproblem, &indizes);
-
-   return degeneracy;
-}
-
-/** prints out the degeneracy of the problem */
-void GCGprintDegeneracy(
-   SCIP*                 scip,               /**< SCIP data structure */
-   double                degeneracy          /**< degeneracy to print*/
-   )
-{
-   SCIPmessageFPrintDialog(SCIPgetMessagehdlr(scip), NULL, "Degeneracy:\t%.4f\% \n", degeneracy);
 }
 
