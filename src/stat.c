@@ -22,7 +22,6 @@
 #include "cons_decomp.h"
 #include "struct_detector.h"
 #include "pub_gcgvar.h"
-#include "struct_vardata.h"
 
 /** prints information about the best decomposition*/
 SCIP_RETCODE writeDecompositionData(SCIP* scip)

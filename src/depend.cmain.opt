@@ -3092,7 +3092,7 @@ $(OBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/stat.h \
  src/scip_misc.h src/pub_decomp.h src/type_decomp.h src/type_detector.h \
- src/cons_decomp.h src/struct_detector.h
+ src/cons_decomp.h src/struct_detector.h src/pub_gcgvar.h
 $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
