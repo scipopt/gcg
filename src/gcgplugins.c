@@ -149,6 +149,7 @@
 /* Martin's detection stuff */
 #include "reader_gp.h"
 #include "reader_cluster.h"
+#include "reader_bipartite.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
 #include "dec_borderheur.h"
@@ -286,6 +287,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeReaderCluster(scip) );
+   SCIP_CALL( SCIPincludeReaderBipartite(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
    SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );

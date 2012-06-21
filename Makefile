@@ -78,6 +78,7 @@ LIBOBJ		=	reader_blk.o \
 			reader_dec.o \
 			reader_ref.o \
 			reader_cluster.o \
+			reader_bipartite.o \
 			gcgplugins.o \
 			relax_gcg.o \
 			pricer_gcg.o \
