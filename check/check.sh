@@ -201,6 +201,11 @@ do
 		echo detect                        >> $TMPFILE
 		echo write prob images\/$base-dec.gp  >> $TMPFILE
 		echo write prob decs\/$base.dec    >> $TMPFILE
+		echo write all ref                 >> $TMPFILE
+	    elif test $MODE = "bip"
+            then
+		echo presolve                      >> $TMPFILE
+		echo write prob bip\/$base-dec.bip >> $TMPFILE
 	    elif test $MODE = "detectall"
             then
 		echo detect                        >> $TMPFILE
