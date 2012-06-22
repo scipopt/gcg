@@ -30,36 +30,28 @@
 
 /** returns GCG major version */
 static
-int GCGmajorVersion(
-   void
-   )
+int GCGmajorVersion(void)
 {
    return GCG_VERSION/100;
 }
 
 /** returns GCG minor version */
 static
-int GCGminorVersion(
-   void
-   )
+int GCGminorVersion(void)
 {
    return (GCG_VERSION/10) % 10;
 }
 
 /** returns GCG technical version */
 static
-int GCGtechVersion(
-   void
-   )
+int GCGtechVersion(void)
 {
    return GCG_VERSION % 10;
 }
 #if GCG_SUBVERSION > 0
 /** returns GCG sub version number */
 static
-int GCGsubversion(
-   void
-   )
+int GCGsubversion(void)
 {
    return GCG_SUBVERSION;
 }
@@ -85,8 +77,8 @@ void GCGprintVersion(
 
 static
 SCIP_RETCODE readParams(
-   SCIP*                      scip,               /**< SCIP data structure */
-   const char*                filename            /**< parameter file name */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename            /**< parameter file name */
    )
 {
    if( SCIPfileExists(filename) )
@@ -102,9 +94,9 @@ SCIP_RETCODE readParams(
 
 static
 SCIP_RETCODE fromCommandLine(
-   SCIP*                      scip,               /**< SCIP data structure */
-   const char*                filename,           /**< input file name */
-   const char*                decname             /**< decomposition file name (or NULL) */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename,           /**< input file name */
+   const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
    /********************
@@ -151,10 +143,10 @@ SCIP_RETCODE fromCommandLine(
 /** evaluates command line parameters and runs GCG appropriately in the given SCIP instance */
 static
 SCIP_RETCODE SCIPprocessGCGShellArguments(
-   SCIP*                      scip,               /**< SCIP data structure */
-   int                        argc,               /**< number of shell parameters */
-   char**                     argv,               /**< array with shell parameters */
-   const char*                defaultsetname      /**< name of default settings file */
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   argc,               /**< number of shell parameters */
+   char**                argv,               /**< array with shell parameters */
+   const char*           defaultsetname      /**< name of default settings file */
    )
 {  /*lint --e{850}*/
    char* probname = NULL;
@@ -379,9 +371,9 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
 static
 SCIP_RETCODE SCIPrunGCGShell(
-   int                        argc,               /**< number of shell parameters */
-   char**                     argv,               /**< array with shell parameters */
-   const char*                defaultsetname      /**< name of default settings file */
+   int                   argc,               /**< number of shell parameters */
+   char**                argv,               /**< array with shell parameters */
+   const char*           defaultsetname      /**< name of default settings file */
    )
 {
    SCIP* scip = NULL;
@@ -415,11 +407,11 @@ SCIP_RETCODE SCIPrunGCGShell(
    return SCIP_OKAY;
 }
 
-
+/** main function called first */
 int
 main(
-   int                        argc,
-   char**                     argv
+   int                   argc,               /**< number of arguments */
+   char**                argv                /**< array of arguments */
    )
 {
   SCIP_RETCODE retcode;

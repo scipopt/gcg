@@ -849,7 +849,7 @@ SCIP_RETCODE addBranchcandsToData(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR**            branchcands,        /**< branching candidates */
-   int                   nbranchcands       /**< number of branching candidates */
+   int                   nbranchcands        /**< number of branching candidates */
    )
 {
 
@@ -974,49 +974,6 @@ SCIP_RETCODE incNVarProbings(
 
    return SCIP_OKAY;
 }
-
-/** evaluates whether probing should be performed on the given variable */
-//static
-//SCIP_Bool shallProbingBeUsed(
-//   SCIP*                 scip,               /**< SCIP data structure */
-//   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
-//   SCIP_VAR*             var                 /**< variable to increase number of branchings on */
-//   )
-//{
-//   SCIP_BRANCHRULEDATA* branchruledata;
-//   int pos;
-////   int maxdepth;
-//   int nvarprobings;
-//   int nvarbranchings;
-//
-//   assert(scip != NULL);
-//   assert(branchrule != NULL);
-//   assert(var != NULL);
-//
-//   /* get branching rule data */
-//   branchruledata = SCIPbranchruleGetData(branchrule);
-//   assert(branchruledata != NULL);
-//
-//   assert(SCIPhashmapExists(branchruledata->varhashmap, var) );
-//
-//   pos = (int)(size_t) SCIPhashmapGetImage(branchruledata->varhashmap, var);
-//
-////   maxdepth = SCIPgetMaxDepth(scip);
-//   nvarprobings = branchruledata->nvarprobings[pos];
-//   nvarbranchings = branchruledata->nvarbranchings[pos];
-//
-//   //return ( nvarprobings < (SCIP_Real) branchruledata->reliability * ( 1. - log(nvarprobings)/log(2) /maxdepth) );
-//
-//   //return 1. - (log(nvarprobings)/log(2)) / maxdepth < branchruledata->reliability;
-//
-//   if( SCIPgetDepth(scip) <= 2 )
-//      return TRUE;
-//
-//   return (nvarprobings+nvarbranchings) / (branchruledata->nbranchings+1) < branchruledata->reliability;
-//
-//
-//   //  return (log(nvarprobings+nvarbranchings)/log(2)) / maxdepth < branchruledata->reliability;
-//}
 
 
 /** execute generalized reliability pseudo cost probing branching */
@@ -1406,28 +1363,6 @@ SCIP_RETCODE execRelpsprob(
       SCIPfreeBufferArray(scip, &initcandscores);
       SCIPfreeBufferArray(scip, &initcands);
    }
-
-
-   /* check whether the best branching candidate leads to an infeasible rounding; if so: apply bdchgs and solve node again */
-   // if( *result != SCIP_CUTOFF && *result != SCIP_REDUCEDDOM
-   //    && *result != SCIP_CONSADDED && !SCIPisStopped(scip) )
-   // {
-   //    int pos;
-
-   //    assert(*result == SCIP_DIDNOTRUN);
-   //    assert(0 <= bestcand && bestcand < nbranchcands);
-   //    assert( SCIPhashmapExists(bdchgdata->varhashmap, branchcands[bestcand]) );
-
-   //    pos = (int)(size_t) SCIPhashmapGetImage(bdchgdata->varhashmap, branchcands[bestcand]);
-
-   //    if( bdchgdata->infroundings[pos] )
-   //    {
-   //       SCIP_CALL( applyBdchgs(scip, bdchgdata, SCIPgetCurrentNode(scip)) );
-   //       branchruledata->nresolvesinfcands++;
-   //       // *result = SCIP_REDUCEDDOM;
-   //    }
-   // }
-
 
    /* if no domain could be reduced, create the branching */
    if( *result != SCIP_CUTOFF && *result != SCIP_REDUCEDDOM

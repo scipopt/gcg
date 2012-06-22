@@ -36,11 +36,11 @@
 /** branching data for branching decisions */
 struct GCG_BranchData
 {
-   SCIP_VAR*          var1;                  /**< first original variable on which the branching is done */
-   SCIP_VAR*          var2;                  /**< second original variable on which the branching is done */
-   SCIP_Bool          same;                  /**< should each master var contain either both or none of the vars? */
-   int                blocknr;               /**< number of the block in which branching was performed */
-   SCIP_CONS*         pricecons;             /**< constraint enforcing the branching restriction in the pricing problem */
+   SCIP_VAR*             var1;               /**< first original variable on which the branching is done */
+   SCIP_VAR*             var2;               /**< second original variable on which the branching is done */
+   SCIP_Bool             same;               /**< should each master var contain either both or none of the vars? */
+   int                   blocknr;            /**< number of the block in which branching was performed */
+   SCIP_CONS*            pricecons;          /**< constraint enforcing the branching restriction in the pricing problem */
 };
 
 
