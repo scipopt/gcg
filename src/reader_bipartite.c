@@ -61,6 +61,19 @@
 #define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
 #define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
 #define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
+
+
+#define TCLIQUE_CALL(x)   do                                                                                  \
+                       {                                                                                      \
+                          SCIP_Bool _restat_;                                                                 \
+                          if( (_restat_ = (x)) != TRUE )                                                      \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
+                             return SCIP_ERROR;                                                               \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
+
 /*
  * Data structures
  */
@@ -80,7 +93,6 @@ struct SCIP_ReaderData
    int       varWeightInteger;      /**< weight of an integer variable vertex */
    int       varWeightImplint;      /**< weight of an implicit integer variable vertex */
    int       consWeight;            /**< weight of a constraint vertex */
-   int       consWeightSetppc;      /**< weight of a setppc constraint vertex */
 };
 
 /** calculates weights for variables */
@@ -136,7 +148,7 @@ static SCIP_RETCODE initReaderdata(
    assert(readerdata != NULL);
 
    SCIP_CALL( DECdecompCreate(scip, &readerdata->decomp) );
-   tcliqueCreate(&readerdata->graph);
+   TCLIQUE_CALL( tcliqueCreate(&readerdata->graph) );
    readerdata->nblocks = 0;
 
    return SCIP_OKAY;
@@ -183,7 +195,7 @@ static SCIP_RETCODE buildGraphStructure(
       else
          weight = calculateConsWeight(readerdata, conss[i]);
 
-      tcliqueAddNode(readerdata->graph, i, weight);
+      TCLIQUE_CALL( tcliqueAddNode(readerdata->graph, i, weight) );
    }
 
    /* go through all constraints */
@@ -224,12 +236,12 @@ static SCIP_RETCODE buildGraphStructure(
          assert(var != NULL);
          varIndex = SCIPvarGetProbindex(var);
 
-         tcliqueAddEdge(readerdata->graph, varIndex, nvars+i);
+         TCLIQUE_CALL( tcliqueAddEdge(readerdata->graph, varIndex, nvars+i) );
       }
       SCIPfreeBufferArray(scip, &curvars);
    }
 
-   tcliqueFlush(readerdata->graph);
+   TCLIQUE_CALL( tcliqueFlush(readerdata->graph) );
 
    return SCIP_OKAY;
 }
@@ -303,7 +315,7 @@ SCIP_RETCODE readBipartiteFromFile(
    }
 
    SCIPfclose(zfile);
-
+   readerdata->nblocks -= 1;
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
@@ -313,12 +325,11 @@ SCIP_RETCODE readBipartiteFromFile(
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READERDATA*      readerdata,         /**< presolver data data structure */
-   DEC_DECOMP*           decomp,          /**< decomp data structure */
+   DEC_DECOMP*           decomp,             /**< decomp data structure */
    int                   nblocks,            /**< number of blocks for this decomposition */
    SCIP_RESULT*          result              /**< result pointer */
    )
 {
-   SCIP_Bool *isVarHandled;
    SCIP_VAR*** subscipvars;
    SCIP_VAR** linkingvars;
    SCIP_CONS*** subscipconss;
@@ -355,8 +366,8 @@ static SCIP_RETCODE buildTransformedProblem(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipconss[i]), nconss) ); /*lint !e866 */
+      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipvars[i]), nvars) );   /*lint !e866 */
 
       nsubscipconss[i] = 0;
       nsubscipvars[i] = 0;
@@ -371,19 +382,18 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nconss) );
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &isVarHandled, nvars) );
-   for( i = 0; i < nvars; ++i )
-   {
-      isVarHandled[i] = FALSE;
-   }
-
    /* go through all of the constraints */
    for( i = 0; i < nconss; i++ )
    {
       int conspart;
-      conspart = readerdata->partition[nvars+i];
+      int consindex;
 
-      if( conspart > -1 )
+      consindex = nvars+i;
+
+      assert(consindex > nvars && consindex < nconss+nvars);
+      conspart = readerdata->partition[consindex];
+
+      if( conspart > -1 && conspart < readerdata->nblocks)
       {
          subscipconss[conspart][nsubscipconss[conspart]] = conss[i];
          ++nsubscipconss[conspart];
@@ -405,7 +415,7 @@ static SCIP_RETCODE buildTransformedProblem(
       if( !SCIPisVarRelevant(vars[i]) )
          continue;
 
-      if( varpart > -1 )
+      if( varpart > -1 && varpart < readerdata->nblocks )
       {
          subscipvars[varpart][nsubscipvars[varpart]] = vars[i];
          ++nsubscipvars[varpart];
@@ -453,16 +463,16 @@ static SCIP_RETCODE buildTransformedProblem(
       SCIPhashmapFree(&vartoblock);
    }
    /* free all local data */
-   for( i = 0; i < nblocks; ++i )
+   for( i = nblocks-1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIPfreeBufferArray(scip, &(subscipvars[i]));
+      SCIPfreeBufferArray(scip, &(subscipconss[i]));
    }
 
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &subscipconss);
 
    SCIPfreeBufferArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &linkingvars);
@@ -590,6 +600,7 @@ SCIP_RETCODE SCIPwriteBipartite(
 
    int nnodes;
    int nedges;
+   int nvars;
    int i;
    const TCLIQUE_WEIGHT* weights;
 
@@ -607,11 +618,13 @@ SCIP_RETCODE SCIPwriteBipartite(
 
    nnodes = tcliqueGetNNodes(readerdata->graph);
    nedges = tcliqueGetNEdges(readerdata->graph);
-   assert(nedges % 2 == 0);
    weights = tcliqueGetWeights(readerdata->graph);
+   nvars = SCIPgetNVars(scip);
+
+   assert(nedges % 2 == 0);
 
    /* write out graph */
-   SCIPinfoMessage(scip, file, "%d %d 10\n", nnodes, nedges/2);
+   SCIPinfoMessage(scip, file, "%d %d 10 2\n", nnodes, nedges/2);
 
    for( i = 0; i < nnodes; ++i )
    {
@@ -620,7 +633,7 @@ SCIP_RETCODE SCIPwriteBipartite(
       firstedge = tcliqueGetFirstAdjedge(readerdata->graph, i);
       lastedge = tcliqueGetLastAdjedge(readerdata->graph, i);
 
-      SCIPinfoMessage(scip, file, "%d", weights[i]);
+      SCIPinfoMessage(scip, file, "%d %d", weights[i], i < nvars? 0:1);
       while( firstedge <= lastedge )
       {
          SCIPinfoMessage(scip, file, " %d", *firstedge+1);

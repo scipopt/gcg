@@ -73,7 +73,6 @@ SCIP_RETCODE SCIPreadBipartite(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    );
 
-
 /** writes problem to file */
 extern
 SCIP_RETCODE SCIPwriteBipartite(
