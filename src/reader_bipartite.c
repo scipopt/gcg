@@ -390,7 +390,7 @@ static SCIP_RETCODE buildTransformedProblem(
 
       consindex = nvars+i;
 
-      assert(consindex > nvars && consindex < nconss+nvars);
+      assert(consindex >= nvars && consindex < nconss+nvars);
       conspart = readerdata->partition[consindex];
 
       if( conspart > -1 && conspart < readerdata->nblocks)
@@ -434,7 +434,7 @@ static SCIP_RETCODE buildTransformedProblem(
       if( nsubscipconss[i] == 0 )
       {
          SCIPdebugMessage("Block %d does not have any constraints!\n", i);
-         emptyblocks = TRUE;
+         //   emptyblocks = TRUE;
       }
    }
 
@@ -573,7 +573,10 @@ SCIP_RETCODE SCIPreadBipartite(
    assert(reader != NULL);
 
    readerdata = SCIPreaderGetData(reader);
-
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+   {
+      SCIP_CALL( SCIPtransformProb(scip) );
+   }
    SCIP_CALL( initReaderdata(scip, readerdata) );
 
    SCIP_CALL( buildGraphStructure(scip, readerdata) );

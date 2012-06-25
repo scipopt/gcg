@@ -206,6 +206,7 @@ do
             then
 		echo presolve                      >> $TMPFILE
 		echo write prob bip\/$base-dec.bip >> $TMPFILE
+		echo display statistics            >> $TMPFILE
 	    elif test $MODE = "detectall"
             then
 		echo detect                        >> $TMPFILE
