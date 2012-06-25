@@ -53,7 +53,7 @@
 
 #define READER_NAME             "clusterreader"
 #define READER_DESC             "file reader for blocks in cluster format"
-#define READER_EXTENSION        "cluster"
+#define READER_EXTENSION        "clus"
 
 
 /*
@@ -386,17 +386,17 @@ SCIP_RETCODE readClusterFromFile(
       int t1;
       if( SCIPfgets(line, SCIP_MAXSTRLEN, zfile) == NULL )
       {
-         SCIPerrorMessage("Line could not be read\n");
+         SCIPerrorMessage("Line %d could not be read\n", i);
          return SCIP_READERROR;
       }
 
       sscanf(line, "%d %d", &t1, &temp);
-      assert(t1 == i+1 || t1 == i);
+      assert(t1 == i+1);
       /*      temp = atoi(line); */
       assert(temp >= 0);
-      readerdata->blocks = MAX(temp+1, readerdata->blocks);
+      readerdata->blocks = MAX(temp, readerdata->blocks);
       partition[i] = temp;
-      SCIPdebugMessage("%d: %d\n", i, temp);
+      SCIPdebugMessage("%d: %d line: %s", i, temp, line);
       i++;
    }
 
