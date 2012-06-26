@@ -446,6 +446,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNodesleft)
 
    SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
 
+   if( SCIPgetNNodesLeft(scip) > 0 )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   }
+
    return SCIP_OKAY;
 }
 
