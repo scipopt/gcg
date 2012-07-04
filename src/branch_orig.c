@@ -68,10 +68,10 @@ struct GCG_BranchData
 /** branches on a given variable */
 static
 SCIP_RETCODE branchVar(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /** pointer of the orig branching rule */
-   SCIP_VAR*             branchvar,          /** variable to branch on */
-   SCIP_Real             solval              /** value of the variable in the current solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_VAR*             branchvar,          /**< variable to branch on */
+   SCIP_Real             solval              /**< value of the variable in the current solution */
    )
 {
    /* data for b&b child creation */
@@ -191,9 +191,9 @@ SCIP_RETCODE branchVar(
 /** branching method for relaxation solutions */
 static
 SCIP_RETCODE branchExtern(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /** pointer of the orig branching rule */
-   SCIP_RESULT*          result              /** pointer to store the result of the branching call */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
    int i;
