@@ -34,7 +34,7 @@
 #define DEC_DESC              "detects staircase matrices via graph partioning and cutpacking" /**< detector description */
 #define DEC_PRIORITY          1100           /**< priority of the detector */
 #define DEC_DECCHAR           'c'            /**< display character of detector */
-#define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
 
 /* Default parameter settings */
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */

@@ -41,7 +41,7 @@
 #define DEC_DESC              "detects staircase matrices via matrix reordering" /**< detector description */
 #define DEC_PRIORITY          1200           /**< priority of the detector */
 #define DEC_DECCHAR           's'            /**< display character of detector */
-#define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_ENABLED           FALSE         /**< should detector be called by default */
 
 /* Default parameter settings*/
 #define DEFAULT_MAXBLOCKS                       20       /**< value for the maximum number of blocks to be considered */
