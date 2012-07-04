@@ -102,6 +102,7 @@ struct SCIP_RelaxData
 
    /* data for probing */
    SCIP_Bool        masterinprobing;     /**< is the master problem in probing mode? */
+   SCIP_HEUR*       probingheur;         /**< heuristic that started probing in master problem, or NULL */
    SCIP_SOL*        storedorigsol;       /**< orig solution that was stored from before the probing */
 
    /* solution data */
@@ -1789,12 +1790,14 @@ static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
+   int origverblevel;
 
    assert(scip != NULL);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+   assert(relaxdata->masterprob != NULL);
 
    relaxdata->decdecomp = NULL;
 
@@ -1820,13 +1823,17 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   /* the output of the master problem gets the same verbosity level
+    * as the output of the original problem */
+   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", origverblevel) );
 
    return SCIP_OKAY;
 }
@@ -1901,8 +1908,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
-
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 4) );
 
    return SCIP_OKAY;
 }
@@ -2015,16 +2020,6 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          return SCIP_OKAY;
       }
 
-      /** TODO:
-       *  hier degeneracy check*/
-
-      if( SCIPgetStage(masterprob) != SCIP_STAGE_SOLVED )
-      {
-         GCGprintDegeneracy(masterprob, GCGgetDegeneracy(masterprob));
-         //SCIPwriteLP(masterprob,"master.lp");
-      }
-
-
       /* set the lower bound pointer */
       if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING )
          *lowerbound = SCIPgetLocalDualbound(masterprob);
@@ -2099,7 +2094,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
 
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+//   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -2783,7 +2778,8 @@ SCIP_Bool GCGrelaxIsMasterSetPartitioning(
 
 /** start probing mode on master problem */
 SCIP_RETCODE GCGrelaxStartProbing(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
    )
 {
    SCIP_RELAX* relax;
@@ -2806,6 +2802,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
    SCIP_CALL( SCIPstartProbing(masterscip) );
 
    relaxdata->masterinprobing = TRUE;
+   relaxdata->probingheur = probingheur;
 
    /* remember the current original solution */
    assert(relaxdata->storedorigsol == NULL);
@@ -2813,6 +2810,25 @@ SCIP_RETCODE GCGrelaxStartProbing(
       SCIP_CALL( SCIPcreateSolCopy(scip, &relaxdata->storedorigsol, relaxdata->currentorigsol) );
 
    return SCIP_OKAY;
+}
+
+/** returns the  heuristic that started probing in the master problem, or NULL */
+SCIP_HEUR* GCGrelaxGetProbingheur(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->probingheur;
 }
 
 
@@ -3003,6 +3019,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP_CALL( SCIPendProbing(masterscip) );
 
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    /* if a new primal solution was found in the master problem, transfer it to the original problem */
    if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
@@ -3296,69 +3313,5 @@ SCIP_Real GCGgetPricingprobsMemUsed(
    assert(relaxdata != NULL);
 
    return relaxdata->pricingprobsmemused;
-}
-
-/** returns the Degeneracy of the masterproblem */
-double GCGgetDegeneracy(
-   SCIP* masterproblem
-   )
-{
-   int ncols,i,count,countz,colindex;
-   double degeneracy,currentVal;
-   int* indizes;
-   SCIP_COL** cols;
-   SCIP_VAR* var;
-
-   ncols = SCIPgetNLPCols(masterproblem);
-   cols = SCIPgetLPCols(masterproblem);
-
-   SCIP_CALL( SCIPallocBufferArray(masterproblem,&indizes,ncols) );
-
-   for( i = 0; i < ncols; i++ )
-   {
-      indizes[i] = 0;
-   }
-
-   /**gives indices of Columns in Basis and indices of vars in Basis     */
-   SCIPgetLPBasisInd(masterproblem, indizes);
-
-   countz = 0;
-   count = 0;
-
-   for( i = 0; i < ncols; i++ )
-   {
-      colindex = indizes[i];
-      //is column if >0 it is column in basis, <0 is for row
-      if( colindex > 0 )
-      {
-         var=SCIPcolGetVar(cols[colindex]);
-
-         currentVal=SCIPgetSolVal(masterproblem, NULL, var);
-         if( SCIPisEQ(masterproblem, currentVal, 0) )
-         //if( SCIPcolGetObj(cols[colindex]) == 0 )
-         {
-            countz++;
-         }
-         else
-         {
-            count++;
-         }
-      }
-   }
-   //degeneracy = (double)count / countz;
-   /** Degeneracy in %    */
-   degeneracy = ((double)countz / count)*100;
-   SCIPfreeBufferArray(masterproblem, &indizes);
-
-   return degeneracy;
-}
-
-/** prints out the degeneracy of the problem */
-void GCGprintDegeneracy(
-   SCIP*                 scip,               /**< SCIP data structure */
-   double                degeneracy          /**< degeneracy to print*/
-   )
-{
-   SCIPmessageFPrintDialog(SCIPgetMessagehdlr(scip), NULL, "Degeneracy:\t%.4f\% \n", degeneracy);
 }
 

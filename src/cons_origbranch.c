@@ -41,30 +41,30 @@
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
 {
-   SCIP_NODE*         node;                  /**< the node at which the cons is sticking */
-   SCIP_CONS*         parentcons;            /**< the origbranch constraint of the parent node */
-   SCIP_CONS*         child1cons;            /**< the origbranch constraint of the first child node */
-   SCIP_CONS*         child2cons;            /**< the origbranch constraint of the second child node */
-   SCIP_CONS*         probingtmpcons;        /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
-   SCIP_CONS*         mastercons;            /**< the masterbranch constraint of the corresponding node
+   SCIP_NODE*            node;               /**< the node at which the cons is sticking */
+   SCIP_CONS*            parentcons;         /**< the origbranch constraint of the parent node */
+   SCIP_CONS*            child1cons;         /**< the origbranch constraint of the first child node */
+   SCIP_CONS*            child2cons;         /**< the origbranch constraint of the second child node */
+   SCIP_CONS*            probingtmpcons;     /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
+   SCIP_CONS*            mastercons;         /**< the masterbranch constraint of the corresponding node
                                               *   in the master program */
-   GCG_BRANCHDATA*    branchdata;            /**< branching data stored by the branching rule containing information
+   GCG_BRANCHDATA*       branchdata;         /**< branching data stored by the branching rule containing information
                                               *   about the branching restrictions */
-   SCIP_BRANCHRULE*   branchrule;            /**< branching rule that created the corresponding node and imposed
+   SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node and imposed
                                               *   branching restrictions */
-   SCIP_VAR**         propvars;              /**< original variable for which the propagation found domain reductions */
-   SCIP_BOUNDTYPE*    propboundtypes;        /**< type of the new bound found by propagation */
-   SCIP_Real*         propbounds;            /**< new lower/upper bound of the propagated original variable */
-   int                npropbounds;           /**< number of propagation bounds stored */
-   int                maxpropbounds;         /**< size of propvars, propboundtypes, and propbounds arrays */
+   SCIP_VAR**            propvars;           /**< original variable for which the propagation found domain reductions */
+   SCIP_BOUNDTYPE*       propboundtypes;     /**< type of the new bound found by propagation */
+   SCIP_Real*            propbounds;         /**< new lower/upper bound of the propagated original variable */
+   int                   npropbounds;        /**< number of propagation bounds stored */
+   int                   maxpropbounds;      /**< size of propvars, propboundtypes, and propbounds arrays */
 };
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   SCIP_CONS**        stack;                 /**< stack for storing active constraints */
-   int                nstack;                /**< number of elements on the stack */
-   int                maxstacksize;          /**< maximum size of the stack */
+   SCIP_CONS**           stack;              /**< stack for storing active constraints */
+   int                   nstack;             /**< number of elements on the stack */
+   int                   maxstacksize;       /**< maximum size of the stack */
 };
 
 

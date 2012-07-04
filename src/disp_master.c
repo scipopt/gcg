@@ -379,8 +379,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
 {  /*lint --e{715}*/
+   SCIP* origprob;
    SCIP_SOL* sol;
    SCIP_DISPDATA* dispdata;
+
+   /* get original problem */
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(origprob != NULL);
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
@@ -393,7 +398,10 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    dispdata = SCIPdispGetData(disp);
    if( sol != (SCIP_SOL*)dispdata )
    {
-      SCIPinfoMessage(scip, file, "*%c", SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
+      SCIPinfoMessage(scip, file, "%c%c",
+            GCGrelaxGetProbingheur(origprob) == NULL ? '*'
+                  : SCIPheurGetDispchar(GCGrelaxGetProbingheur(origprob)),
+                    SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
       SCIPdispSetData(disp, (SCIP_DISPDATA*)sol);
    }
    else
@@ -437,6 +445,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNodesleft)
    assert(scip != NULL);
 
    SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
+
+   if( SCIPgetNNodesLeft(scip) > 0 )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   }
 
    return SCIP_OKAY;
 }

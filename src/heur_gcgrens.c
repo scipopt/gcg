@@ -342,7 +342,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, TRUE, &valid) );
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
 
       /* get heuristic's data */
       heurdata = SCIPheurGetData(heur);

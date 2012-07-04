@@ -51,49 +51,49 @@
 /** constraint data for masterbranch constraints */
 struct SCIP_ConsData
 {
-   int                propagatedvars;        /**< number of Vars that existed, the last time, the related node was propagated,
+   int                   propagatedvars;     /**< number of Vars that existed, the last time, the related node was propagated,
                                                   used to determine whether the constraint should be repropagated */
-   SCIP_Bool          needprop;              /**< should the constraint be propagated? */
-   SCIP_Bool          created;
-   SCIP_NODE*         node;                  /**< the node at which the cons is sticking */
-   SCIP_CONS*         parentcons;            /**< the masterbranch constraint of the parent node */
-   SCIP_CONS*         child1cons;            /**< the masterbranch constraint of the first child node */
-   SCIP_CONS*         child2cons;            /**< the masterbranch constraint of the second child node */
-   SCIP_CONS*         probingtmpcons;        /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
-   SCIP_CONS*         origcons;              /**< the corresponding origbranch cons in the original program */
+   SCIP_Bool             needprop;           /**< should the constraint be propagated? */
+   SCIP_Bool             created;
+   SCIP_NODE*            node;               /**< the node at which the cons is sticking */
+   SCIP_CONS*            parentcons;         /**< the masterbranch constraint of the parent node */
+   SCIP_CONS*            child1cons;         /**< the masterbranch constraint of the first child node */
+   SCIP_CONS*            child2cons;         /**< the masterbranch constraint of the second child node */
+   SCIP_CONS*            probingtmpcons;     /**< pointer to save the second child if the child2cons pointer is overwritten in probing mode */
+   SCIP_CONS*            origcons;           /**< the corresponding origbranch cons in the original program */
 
-   GCG_BRANCHDATA*    branchdata;            /**< branching data stored by the branching rule at the corresponding origcons constraint
+   GCG_BRANCHDATA*       branchdata;         /**< branching data stored by the branching rule at the corresponding origcons constraint
                                               *   containing information about the branching restrictions */
-   SCIP_BRANCHRULE*   branchrule;            /**< branching rule that created the corresponding node in the original problem and imposed
+   SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node in the original problem and imposed
                                               *   branching restrictions */
 
-   SCIP_VAR**         boundchgvars;          /**< variables of bound changes stored at the current node */
-   SCIP_Real*         newbounds;             /**< new bounds for the bound changes stored at the current node */
-   SCIP_Real*         oldbounds;             /**< old bounds for the bound changes stored at the current node */
-   SCIP_BOUNDTYPE*    boundtypes;            /**< types of the bound changes stored at the current node */
+   SCIP_VAR**            boundchgvars;       /**< variables of bound changes stored at the current node */
+   SCIP_Real*            newbounds;          /**< new bounds for the bound changes stored at the current node */
+   SCIP_Real*            oldbounds;          /**< old bounds for the bound changes stored at the current node */
+   SCIP_BOUNDTYPE*       boundtypes;         /**< types of the bound changes stored at the current node */
 
-   int*               nboundchangestreated;  /**< number of bound changes of the nodes on the way from the current node to
-                                              *   the root node that are treated so far */
-   int                nboundchanges;         /**< number of bound changes */
-   int                nbranchingchanges;     /**< number of bound changes due to branching (<= nboundchanges) */
-   int                nactivated;            /**< number of times the constraint was activated so far */
-   char*              name;                  /** name of the constraint */
+   int*                  nboundchangestreated; /**< number of bound changes of the nodes on the way from the current node to
+                                                *   the root node that are treated so far */
+   int                   nboundchanges;      /**< number of bound changes */
+   int                   nbranchingchanges;  /**< number of bound changes due to branching (<= nboundchanges) */
+   int                   nactivated;         /**< number of times the constraint was activated so far */
+   char*                 name;               /** name of the constraint */
 };
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   SCIP_CONS**        stack;                 /**< stack for storing active constraints */
-   int                nstack;                /**< number of elements on the stack */
-   int                maxstacksize;          /**< maximum size of the stack */
-   SCIP_VAR**         pendingvars;           /**< variables corresponding to pending bound changes (global bound changes) */
-   SCIP_BOUNDTYPE*    pendingbndtypes;       /**< types of the pending bound changes (global bound changes) */
-   SCIP_Real*         pendingnewbnds;        /**< new bounds corresponding to pending bound changes (global bound changes) */
-   SCIP_Real*         pendingoldbnds;        /**< old bounds corresponding to pending bound changes (global bound changes) */
-   int                npendingbnds;          /**< number of pending bound changes (global bound changes) */
-   SCIP_Bool          pendingbndsactivated;  /**< were pending bound changes already activated? */
-   int                maxpendingbnds;        /**< size of the array corresponding to pending bound changes */
-   SCIP_Bool          enforceproper;         /**< should proper variables be enforced? */
+   SCIP_CONS**           stack;              /**< stack for storing active constraints */
+   int                   nstack;             /**< number of elements on the stack */
+   int                   maxstacksize;       /**< maximum size of the stack */
+   SCIP_VAR**            pendingvars;        /**< variables corresponding to pending bound changes (global bound changes) */
+   SCIP_BOUNDTYPE*       pendingbndtypes;    /**< types of the pending bound changes (global bound changes) */
+   SCIP_Real*            pendingnewbnds;     /**< new bounds corresponding to pending bound changes (global bound changes) */
+   SCIP_Real*            pendingoldbnds;     /**< old bounds corresponding to pending bound changes (global bound changes) */
+   int                   npendingbnds;       /**< number of pending bound changes (global bound changes) */
+   SCIP_Bool             pendingbndsactivated; /**< were pending bound changes already activated? */
+   int                   maxpendingbnds;     /**< size of the array corresponding to pending bound changes */
+   SCIP_Bool             enforceproper;      /**< should proper variables be enforced? */
 };
 
 
@@ -109,11 +109,11 @@ struct SCIP_EventhdlrData
 /** the function initializes the condata data structure */
 static
 SCIP_RETCODE GCGconsMasterbranchCreateConsData(
-      SCIP*              scip,         /**< SCIP data structure*/
-      SCIP*              origscip,     /**< Original problem SCIP data structure*/
-      SCIP_CONSDATA*     consdata,     /**< consdata to initialize*/
-      SCIP_CONSHDLRDATA* conshdlrData, /**< constraint handler data */
-      SCIP_CONS*         cons          /**< constraint for which the consdata is created */
+   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP*                 origscip,           /**< Original problem SCIP data structure*/
+   SCIP_CONSDATA*        consdata,           /**< consdata to initialize*/
+   SCIP_CONSHDLRDATA*    conshdlrData,       /**< constraint handler data */
+   SCIP_CONS*            cons                /**< constraint for which the consdata is created */
 )
 {
    SCIP_CONS* origcons_parent;
@@ -262,12 +262,12 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
 /** local method performs the bound change on pricing variables */
 static
 SCIP_RETCODE GCGresetPricingVarBound(
-   SCIP*          scip,       /**< SCIP data structure                                         */
-   SCIP*          origscip,   /**< original problem SCIP data structure                        */
-   SCIP_VAR*      pricingvar, /**< variable on which the bound change should be performed      */
-   SCIP_CONSDATA* consdata,   /**< constraint data structure                                   */
-   int            i,          /**< index of the information in the constraint data structure   */
-   int            blocknr     /**< number of the pricing problem                               */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 origscip,           /**< original problem SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< variable on which the bound change should be performed */
+   SCIP_CONSDATA*        consdata,           /**< constraint data structure */
+   int                   i,                  /**< index of the information in the constraint data structure */
+   int                   blocknr             /**< number of the pricing problem */
    )
 {
    assert( scip != NULL );
@@ -331,12 +331,12 @@ SCIP_RETCODE GCGresetPricingVarBound(
 /** local method performs the bound change on pricing variables */
 static
 SCIP_RETCODE GCGtightenPricingVarBound(
-   SCIP*          scip,       /**< SCIP data structure                                         */
-   SCIP*          origscip,   /**< original problem SCIP data structure                        */
-   SCIP_VAR*      pricingvar, /**< variable on which the bound change should be performed      */
-   SCIP_CONSDATA* consdata,   /**< constraint data structure                                   */
-   int            i,          /**< index of the information in the constraint data structure   */
-   int            blocknr     /**< number of the pricing problem                               */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 origscip,           /**< original problem SCIP data structure */
+   SCIP_VAR*             pricingvar,         /**< variable on which the bound change should be performed */
+   SCIP_CONSDATA*        consdata,           /**< constraint data structure */
+   int                   i,                  /**< index of the information in the constraint data structure */
+   int                   blocknr             /**< number of the pricing problem */
    )
 {
    assert( scip != NULL );
@@ -1006,11 +1006,11 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    int nvars;
    int nboundchanges;
 
-   SCIP_VAR**         propvars;              /**< original variable for which the propagation found domain reductions */
-   SCIP_BOUNDTYPE*    propboundtypes;        /**< type of the domain new bound found by propagation */
-   SCIP_Real*         propbounds;            /**< new lower/upper bound of the propagated original variable */
-   int                npropbounds;
-   SCIP_VAR*          mastervar;
+   SCIP_VAR** propvars;                      /**< original variable for which the propagation found domain reductions */
+   SCIP_BOUNDTYPE* propboundtypes;           /**< type of the domain new bound found by propagation */
+   SCIP_Real* propbounds;                    /**< new lower/upper bound of the propagated original variable */
+   int npropbounds;
+   SCIP_VAR* mastervar;
 
 
    assert(conshdlr != NULL);
@@ -1684,7 +1684,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
 /** creates the handler for masterbranch constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
@@ -1735,10 +1735,10 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
 
 /** creates and captures a masterbranch constraint */
 SCIP_RETCODE GCGcreateConsMasterbranch(
-   SCIP*       scip,          /**< SCIP data structure */
-   SCIP_CONS** cons,          /**< pointer to hold the created constraint */
-   SCIP_NODE*  node,          /**< node at which the constraint should be created */
-   SCIP_CONS*  parentcons     /**< parent constraint */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
+   SCIP_NODE*            node,               /**< node at which the constraint should be created */
+   SCIP_CONS*            parentcons          /**< parent constraint */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -1828,7 +1828,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 /** returns the masterbranch constraint of the current node */
 SCIP_CONS* GCGconsMasterbranchGetActiveCons(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1853,9 +1853,9 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
 
 /** returns the stack and the number of elements on it */
 void GCGconsMasterbranchGetStack(
-   SCIP*        scip,            /**< SCIP data structure */
-   SCIP_CONS*** stack,           /**< return value: pointer to the stack */
-   int*         nstackelements   /**< return value: pointer to int, for number of elements on the stack */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          stack,              /**< return value: pointer to the stack */
+   int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1878,7 +1878,7 @@ void GCGconsMasterbranchGetStack(
 
 /** returns the number of elements on the stack */
 int GCGconsMasterbranchGetNStackelements(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;
@@ -1900,7 +1900,7 @@ int GCGconsMasterbranchGetNStackelements(
 
 /** returns the branching data for a given masterbranch constraint */
 GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1913,7 +1913,7 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
 
 /** returns the node in the B&B tree at which the given masterbranch constraint is sticking */
 SCIP_NODE* GCGconsMasterbranchGetNode(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1927,7 +1927,7 @@ SCIP_NODE* GCGconsMasterbranchGetNode(
 /** returns the masterbranch constraint of the B&B father of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetParentcons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1941,7 +1941,7 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
 /** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1955,7 +1955,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
 /** returns the masterbranch constraint of the second child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1969,7 +1969,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
 /** returns the origbranch constraint of the node in the original program corresponding to the node
     at which the given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetOrigcons(
-   SCIP_CONS* cons            /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1983,8 +1983,8 @@ SCIP_CONS* GCGconsMasterbranchGetOrigcons(
 /** sets the origbranch constraint of the node in the master program corresponding to the node
     at which the given masterbranchbranch constraint is sticking */
 void GCGconsMasterbranchSetOrigcons(
-   SCIP_CONS* cons,           /**< constraint pointer */
-   SCIP_CONS* origcons        /**< original origbranch constraint */
+   SCIP_CONS*            cons,               /**< constraint pointer */
+   SCIP_CONS*            origcons            /**< original origbranch constraint */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -1999,7 +1999,7 @@ void GCGconsMasterbranchSetOrigcons(
 
 /** checks the consistency of the masterbranch constraints in the problem */
 void GCGconsMasterbranchCheckConsistency(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CONSHDLR*     conshdlr;

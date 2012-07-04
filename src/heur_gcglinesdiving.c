@@ -383,7 +383,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
-   SCIP_CALL( GCGrelaxStartProbing(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
@@ -664,8 +664,6 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
-   /** @todo since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
-    * *result != SCIP_FOUNDSOL although a solution has been found */
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
 

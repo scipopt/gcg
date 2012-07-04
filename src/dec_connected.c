@@ -40,15 +40,15 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_HASHMAP* constoblock;                   /**< hashmap mapping constraints to their associated block */
-   SCIP_HASHMAP* vartoblock;                    /**< hashmap mapping variables to their associated block */
-   SCIP_Bool blockdiagonal;                     /**< flag to indicate whether the problem is block diagonal */
+   SCIP_HASHMAP* constoblock;                /**< hashmap mapping constraints to their associated block */
+   SCIP_HASHMAP* vartoblock;                 /**< hashmap mapping variables to their associated block */
+   SCIP_Bool blockdiagonal;                  /**< flag to indicate whether the problem is block diagonal */
 
-   SCIP_CLOCK* clock;                           /**< clock to measure detection time */
-   int nblocks;                                 /**< number of blocks found */
+   SCIP_CLOCK* clock;                        /**< clock to measure detection time */
+   int nblocks;                              /**< number of blocks found */
 
-   SCIP_Bool* consismaster;                     /**< boolean array to indicate constraints which should be in the master */
-   SCIP_Bool setppcinmaster;                    /**< flag to indicate whether setppc constraints should always be in the master */
+   SCIP_Bool* consismaster;                  /**< boolean array to indicate constraints which should be in the master */
+   SCIP_Bool setppcinmaster;                 /**< flag to indicate whether setppc constraints should always be in the master */
 };
 
 

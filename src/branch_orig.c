@@ -54,13 +54,13 @@
 /** branching data for branching decisions */
 struct GCG_BranchData
 {
-   SCIP_VAR*          origvar;               /**< original variable on which the branching is done */
-   SCIP_BOUNDTYPE     boundtype;             /**< type of the new bound of original variable */
-   SCIP_Real          newbound;              /**< new lower/upper bound of the original variable */
-   SCIP_Real          oldbound;              /**< old lower/upper bound of the pricing variable */
-   SCIP_Real          oldvalue;              /**< old value of the original variable */
-   SCIP_Real          olddualbound;          /**< dual bound before the branching was performed */
-   SCIP_CONS*         cons;                  /**< constraint that enforces the branching restriction in the original
+   SCIP_VAR*             origvar;            /**< original variable on which the branching is done */
+   SCIP_BOUNDTYPE        boundtype;          /**< type of the new bound of original variable */
+   SCIP_Real             newbound;           /**< new lower/upper bound of the original variable */
+   SCIP_Real             oldbound;           /**< old lower/upper bound of the pricing variable */
+   SCIP_Real             oldvalue;           /**< old value of the original variable */
+   SCIP_Real             olddualbound;       /**< dual bound before the branching was performed */
+   SCIP_CONS*            cons;               /**< constraint that enforces the branching restriction in the original
                                               *   problem, or NULL if this is done by variable bounds */
 };
 
