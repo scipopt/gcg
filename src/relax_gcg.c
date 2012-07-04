@@ -2884,7 +2884,7 @@ SCIP_RETCODE performProbing(
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode,
          GCGconsMasterbranchGetActiveCons(masterscip)) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
-   SCIP_CALL( SCIPreleaseCons(scip, &mprobingcons) );
+   SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
 
    /* increase node limit for the master problem by 1 */
    SCIP_CALL( SCIPgetLongintParam(masterscip, "limits/nodes", &nodelimit) );
