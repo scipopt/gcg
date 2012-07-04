@@ -1758,7 +1758,7 @@ SCIP_RETCODE performPricing(
    }
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
-
+#if 0
    SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
    if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
@@ -1785,11 +1785,12 @@ SCIP_RETCODE performPricing(
    if( pricerdata->lastnode == SCIPgetRootNode(scip) )
       pricerdata->rootnodedegeneracy = degeneracy;
 
+   assert(pricerdata->nnodes < pricerdata->maxnnodes);
    pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
 
    assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
    // SCIPinfoMessage(scip, NULL, "Degeneracy at node %p %.2f (avg: %.2f)\n", pricerdata->lastnode, degeneracy, pricerdata->avgnodedegeneracy);
-
+#endif
    return SCIP_OKAY;
 }
 
