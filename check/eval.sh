@@ -8,7 +8,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id: check.sh 268 2011-07-25 12:06:35Z m_bergner $
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
@@ -16,11 +15,14 @@ BINID=$4
 TIMELIMIT=$5
 NODELIMIT=$6
 MEMLIMIT=$7
-FEASTOL=$8
-DISPFREQ=$9
-CONTINUE=${10}
-LOCK=${11}
-VERSION=${12}
+THREADS=$8
+FEASTOL=$9
+DISPFREQ=${10}
+CONTINUE=${11}
+LOCK=${12}
+VERSION=${13}
+LPS=${14}
+VALGRIND=${15}
 
 SETDIR=../settings
 
