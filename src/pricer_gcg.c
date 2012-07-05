@@ -1906,16 +1906,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodetimehist), PRICER_STAT_ARRAYLEN_TIME) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->foundvarshist), PRICER_STAT_ARRAYLEN_VARS) );
-
-
-   for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
-   {
-      pricerdata->nodetimehist[i]=0;
-   }
-   for( i = 0; i < PRICER_STAT_ARRAYLEN_VARS; i++ )
-   {
-         pricerdata->foundvarshist[i]=0;
-   }
+   BMSclearMemoryArray(pricerdata->nodetimehist, PRICER_STAT_ARRAYLEN_TIME);
+   BMSclearMemoryArray(pricerdata->foundvarshist, PRICER_STAT_ARRAYLEN_VARS);
    pricerdata->oldVars=0;
 
    pricerdata->npricingprobsnotnull = 0;
@@ -2096,6 +2088,9 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
    SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));
    SCIPfreeMemoryArray(scip, &(pricerdata->nodedegeneracy));
+   pricerdata->nodetimehist = NULL;
+   pricerdata->foundvarshist = NULL;
+   pricerdata->nodedegeneracy = NULL;
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
@@ -2224,6 +2219,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    /* initialize solvers array */
    pricerdata->solvers = NULL;
    pricerdata->nsolvers = 0;
+   pricerdata->nodetimehist = NULL;
+   pricerdata->foundvarshist = NULL;
+   pricerdata->nodedegeneracy = NULL;
+
 
    /* include variable pricer */
    SCIP_CALL( SCIPincludePricer(scip, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY,
@@ -2578,7 +2577,7 @@ void GCGpricerPrintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
    {
-      start = (i * PRICER_STAT_BUCKETSIZE_TIME)/1000.;
+      start = (i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0;
       end = start + PRICER_STAT_BUCKETSIZE_TIME/1000.0;
 
       if( pricerdata->nodetimehist[i] != 0 )

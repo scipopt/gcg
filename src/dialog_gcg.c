@@ -161,10 +161,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    SCIPdialogMessage(scip, NULL, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPdialogMessage(scip, NULL, "\n");
-   GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
-   SCIPdialogMessage(scip, NULL, "\n");
-   writeDecompositionData(scip);
-   writeVarCreationDetails(GCGrelaxGetMasterprob(scip));
+
+   /* write pricing statistics only if we are in solving or solved stage */
+   if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
+   {
+      GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
+      SCIPdialogMessage(scip, NULL, "\n");
+      GCGwriteDecompositionData(scip);
+      GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip));
+   }
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
@@ -191,13 +196,20 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) != SCIP_STAGE_INIT )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem shell is only possible before the solving process is started\n");
+
+      *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+      return SCIP_OKAY;
+   }
+
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem...\n");
    SCIP_CALL( SCIPstartInteraction(GCGrelaxGetMasterprob(scip)) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
-
-   writeVarCreationDetails(scip);
 
    return SCIP_OKAY;
 }
