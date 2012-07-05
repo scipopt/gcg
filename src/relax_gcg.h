@@ -211,6 +211,12 @@ SCIP_Bool GCGrelaxIsMasterSetPartitioning(
 /** start probing mode on master problem */
 extern
 SCIP_RETCODE GCGrelaxStartProbing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
+   );
+
+/** returns the  heuristic that started probing in the master problem, or NULL */
+SCIP_HEUR* GCGrelaxGetProbingheur(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -317,7 +323,20 @@ DECDECOMP* GCGgetStructDecdecomp(
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*       scip        /**< SCIP data structure */
+   SCIP*                 scip              /**< SCIP data structure */
    );
 
+/** returns the degeneracy of the masterproblem */
+extern
+double GCGgetDegeneracy(
+   SCIP*                 masterproblem     /**< SCIP masterproblem */
+   );
+
+
+/** prints out the degeneracy of the problem */
+extern
+void GCGprintDegeneracy(
+   SCIP*                 scip,               /**< SCIP data structure */
+   double                degeneracy          /**< degeneracy to print*/
+   );
 #endif

@@ -28,104 +28,30 @@
 #include "gcggithash.h"
 #include "relax_gcg.h"
 
-
-/*
- * Message Handler
- */
-
-/** message handler data */
-struct SCIP_MessagehdlrData
-{
-   FILE*                 logfile;            /**< log file where to copy messages into */
-   SCIP_Bool             quiet;              /**< should screen messages be suppressed? */
-};
-
-/** prints a message to the given file stream and writes the same message to the log file */
-static
-void logMessage(
-   SCIP_MESSAGEHDLR*     messagehdlr,        /**< message handler */
-   FILE*                 file,               /**< file stream to print message into */
-   const char*           msg                 /**< message to print */
-   )
-{
-   SCIP_MESSAGEHDLRDATA* messagehdlrdata;
-
-   messagehdlrdata = SCIPmessagehdlrGetData(messagehdlr);
-   assert(messagehdlrdata != NULL);
-
-   if( !messagehdlrdata->quiet || (file != stdout && file != stderr) )
-   {
-      fputs(msg, file);
-      fflush(file);
-   }
-   if( messagehdlrdata->logfile != NULL && (file == stdout || file == stderr) )
-   {
-      fputs(msg, messagehdlrdata->logfile);
-      fflush(messagehdlrdata->logfile);
-   }
-}
-
-/** error message print method of message handler */
-static
-SCIP_DECL_MESSAGEERROR(messageErrorLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-/** warning message print method of message handler */
-static
-SCIP_DECL_MESSAGEWARNING(messageWarningLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-/** dialog message print method of message handler */
-static
-SCIP_DECL_MESSAGEDIALOG(messageDialogLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-/** info message print method of message handler */
-static
-SCIP_DECL_MESSAGEINFO(messageInfoLog)
-{
-   logMessage(messagehdlr, file, msg);
-}
-
-
 /** returns GCG major version */
 static
-int GCGmajorVersion(
-   void
-   )
+int GCGmajorVersion(void)
 {
    return GCG_VERSION/100;
 }
 
 /** returns GCG minor version */
 static
-int GCGminorVersion(
-   void
-   )
+int GCGminorVersion(void)
 {
    return (GCG_VERSION/10) % 10;
 }
 
 /** returns GCG technical version */
 static
-int GCGtechVersion(
-   void
-   )
+int GCGtechVersion(void)
 {
    return GCG_VERSION % 10;
 }
 #if GCG_SUBVERSION > 0
 /** returns GCG sub version number */
 static
-int GCGsubversion(
-   void
-   )
+int GCGsubversion(void)
 {
    return GCG_SUBVERSION;
 }
@@ -133,23 +59,26 @@ int GCGsubversion(
 
 static
 void GCGprintVersion(
+   SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */
    )
 {
-   SCIPmessageFPrintInfo(file, "GCG version %d.%d.%d",
+   assert(scip != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "GCG version %d.%d.%d",
       GCGmajorVersion(), GCGminorVersion(), GCGtechVersion());
 #if GCG_SUBVERSION > 0
-   SCIPmessageFPrintInfo(file, ".%d", GCGsubversion());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, ".%d", GCGsubversion());
 #endif
-   SCIPmessageFPrintInfo(file, " [GitHash: %s]", GCGgetGitHash());
-   SCIPmessageFPrintInfo(file, "\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
 }
 
 
 static
 SCIP_RETCODE readParams(
-   SCIP*                      scip,               /**< SCIP data structure */
-   const char*                filename            /**< parameter file name */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename            /**< parameter file name */
    )
 {
    if( SCIPfileExists(filename) )
@@ -165,9 +94,9 @@ SCIP_RETCODE readParams(
 
 static
 SCIP_RETCODE fromCommandLine(
-   SCIP*                      scip,               /**< SCIP data structure */
-   const char*                filename,           /**< input file name */
-   const char*                decname             /**< decomposition file name (or NULL) */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename,           /**< input file name */
+   const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
    /********************
@@ -214,10 +143,10 @@ SCIP_RETCODE fromCommandLine(
 /** evaluates command line parameters and runs GCG appropriately in the given SCIP instance */
 static
 SCIP_RETCODE SCIPprocessGCGShellArguments(
-   SCIP*                      scip,               /**< SCIP data structure */
-   int                        argc,               /**< number of shell parameters */
-   char**                     argv,               /**< array with shell parameters */
-   const char*                defaultsetname      /**< name of default settings file */
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   argc,               /**< number of shell parameters */
+   char**                argv,               /**< array with shell parameters */
+   const char*           defaultsetname      /**< name of default settings file */
    )
 {  /*lint --e{850}*/
    char* probname = NULL;
@@ -365,94 +294,62 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
    if( !paramerror )
    {
-      SCIP_MESSAGEHDLR* messagehdlr;
-      SCIP_MESSAGEHDLRDATA* messagehdlrdata;
-      SCIP_Bool error;
 
       /***********************************
        * create log file message handler *
        ***********************************/
 
-      messagehdlr = NULL;
-      messagehdlrdata = NULL;
-      error = FALSE;
-      if( logname != NULL || quiet )
+      if( quiet )
       {
-         SCIP_CALL( SCIPallocMemory(scip, &messagehdlrdata) );
-         if( logname != NULL )
-         {
-            messagehdlrdata->logfile = fopen(logname, "a"); /* append to log file */
-            if( messagehdlrdata->logfile == NULL )
-            {
-               SCIPerrorMessage("cannot open log file <%s> for writing\n", logname);
-               error = TRUE;
-            }
-         }
-         else
-            messagehdlrdata->logfile = NULL;
-         messagehdlrdata->quiet = quiet;
-         SCIP_CALL( SCIPcreateMessagehdlr(&messagehdlr, FALSE,
-               messageErrorLog, messageWarningLog, messageDialogLog, messageInfoLog,
-               messagehdlrdata) );
-         SCIP_CALL( SCIPsetMessagehdlr(messagehdlr) );
+         SCIPsetMessagehdlrQuiet(scip, quiet);
       }
 
-      if( !error )
+      if( logname != NULL )
       {
-         /***********************************
-          * Version and library information *
-          ***********************************/
+         SCIPsetMessagehdlrLogfile(scip, logname);
+      }
 
-         SCIPprintVersion(NULL);
+
+      /***********************************
+       * Version and library information *
+       ***********************************/
+
+      SCIPprintVersion(scip, NULL);
+      SCIPinfoMessage(scip, NULL, "\n");
+
+      SCIPprintExternalCodes(scip, NULL);
+      SCIPinfoMessage(scip, NULL, "\n");
+
+      /*****************
+       * Load settings *
+       *****************/
+
+      if( settingsname != NULL )
+      {
+         SCIP_CALL( readParams(scip, settingsname) );
+      }
+      else if( defaultsetname != NULL )
+      {
+         SCIP_CALL( readParams(scip, defaultsetname) );
+      }
+
+      if( mastersetname != NULL )
+      {
+         SCIP_CALL( readParams(GCGrelaxGetMasterprob(scip), mastersetname) );
+      }
+
+      /**************
+       * Start SCIP *
+       **************/
+
+      if( probname != NULL )
+      {
+         SCIP_CALL( fromCommandLine(scip, probname, decname) );
+      }
+      else
+      {
          SCIPinfoMessage(scip, NULL, "\n");
-
-         SCIPprintExternalCodes(scip, NULL);
-         SCIPinfoMessage(scip, NULL, "\n");
-
-         /*****************
-          * Load settings *
-          *****************/
-
-         if( settingsname != NULL )
-         {
-            SCIP_CALL( readParams(scip, settingsname) );
-         }
-         else if( defaultsetname != NULL )
-         {
-            SCIP_CALL( readParams(scip, defaultsetname) );
-         }
-
-         if( mastersetname != NULL )
-         {
-            SCIP_CALL( readParams(GCGrelaxGetMasterprob(scip), mastersetname) );
-         }
-
-         /**************
-          * Start SCIP *
-          **************/
-
-         if( probname != NULL )
-         {
-            SCIP_CALL( fromCommandLine(scip, probname, decname) );
-         }
-         else
-         {
-            SCIPinfoMessage(scip, NULL, "\n");
-            SCIP_CALL( SCIPstartInteraction(scip) );
-         }
-
-         /******************
-          * Close log file *
-          ******************/
-
-         if( messagehdlrdata != NULL )
-         {
-            SCIP_CALL( SCIPsetDefaultMessagehdlr() );
-            SCIP_CALL( SCIPfreeMessagehdlr(&messagehdlr) );
-            if( messagehdlrdata->logfile != NULL )
-               fclose(messagehdlrdata->logfile);
-            SCIPfreeMemory(scip, &messagehdlrdata);
-         }
+         SCIP_CALL( SCIPstartInteraction(scip) );
       }
    }
    else
@@ -474,14 +371,12 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
 static
 SCIP_RETCODE SCIPrunGCGShell(
-   int                        argc,               /**< number of shell parameters */
-   char**                     argv,               /**< array with shell parameters */
-   const char*                defaultsetname      /**< name of default settings file */
+   int                   argc,               /**< number of shell parameters */
+   char**                argv,               /**< array with shell parameters */
+   const char*           defaultsetname      /**< name of default settings file */
    )
 {
    SCIP* scip = NULL;
-
-   GCGprintVersion(NULL);
 
    /*********
     * Setup *
@@ -489,6 +384,8 @@ SCIP_RETCODE SCIPrunGCGShell(
 
    /* initialize SCIP */
    SCIP_CALL( SCIPcreate(&scip) );
+   GCGprintVersion(scip, NULL);
+
 
    /* include coloring plugins */
    SCIP_CALL( SCIPincludeGcgPlugins(scip) );
@@ -510,11 +407,11 @@ SCIP_RETCODE SCIPrunGCGShell(
    return SCIP_OKAY;
 }
 
-
+/** main function called first */
 int
 main(
-   int                        argc,
-   char**                     argv
+   int                   argc,               /**< number of arguments */
+   char**                argv                /**< array of arguments */
    )
 {
   SCIP_RETCODE retcode;
@@ -523,7 +420,7 @@ main(
 
   if( retcode != SCIP_OKAY )
   {
-     SCIPprintError(retcode, stderr);
+     SCIPprintError(retcode);
      return -1;
   }
 

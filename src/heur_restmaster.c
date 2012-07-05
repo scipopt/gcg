@@ -447,7 +447,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, &valid) );
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
 
       if( heurdata->copycuts )
       {
@@ -552,7 +552,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    retstat = SCIPpresolve(restmaster);
    if( retstat != SCIP_OKAY )
    {
-      SCIPwarningMessage("Error while presolving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
+      SCIPwarningMessage(scip, "Error while presolving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
    }
 #else
    SCIP_CALL( SCIPpresolve(restmaster) );
@@ -574,7 +574,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
       retstat = SCIPsolve(restmaster);
       if( retstat != SCIP_OKAY )
       {
-         SCIPwarningMessage("Error while solving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
+         SCIPwarningMessage(scip, "Error while solving subMIP in Restricted Master Heuristic; Restricted Master terminated with code <%d>\n",retstat);
       }
 #else
       SCIP_CALL( SCIPsolve(restmaster) );

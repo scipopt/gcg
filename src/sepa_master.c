@@ -248,7 +248,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       /* create new cut in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
-      SCIP_CALL( SCIPcreateEmptyRow(scip, &mastercut, name,
+      SCIP_CALL( SCIPcreateEmptyRowSepa(scip, &mastercut, sepa, name,
             ( SCIPisInfinity(scip, -SCIProwGetLhs(origcut)) ?
                SCIProwGetLhs(origcut) : SCIProwGetLhs(origcut) - SCIProwGetConstant(origcut)),
             ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?

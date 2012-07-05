@@ -342,7 +342,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, &valid) );
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
 
       /* get heuristic's data */
       heurdata = SCIPheurGetData(heur);
@@ -471,7 +471,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
 #ifndef NDEBUG
       SCIP_CALL( retcode );
 #endif
-      SCIPwarningMessage("Error while presolving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      SCIPwarningMessage(scip, "Error while presolving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
    }
 
    SCIPdebugMessage("GCG RENS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
@@ -496,7 +496,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
 #ifndef NDEBUG
          SCIP_CALL( retcode );
 #endif
-         SCIPwarningMessage("Error while solving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+         SCIPwarningMessage(scip, "Error while solving subproblem in GCG RENS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
       }
 
       /* check, whether a solution was found;

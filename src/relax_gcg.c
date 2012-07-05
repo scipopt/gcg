@@ -13,6 +13,7 @@
  * @brief   gcg relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner
+ * @author  Alexander Gross
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -36,6 +37,7 @@
 #include "nodesel_master.h"
 #include "pub_gcgvar.h"
 #include "pub_decomp.h"
+#include "cons_decomp.h"
 #include "scip_misc.h"
 
 #define RELAX_NAME             "gcg"
@@ -100,6 +102,7 @@ struct SCIP_RelaxData
 
    /* data for probing */
    SCIP_Bool        masterinprobing;     /**< is the master problem in probing mode? */
+   SCIP_HEUR*       probingheur;         /**< heuristic that started probing in master problem, or NULL */
    SCIP_SOL*        storedorigsol;       /**< orig solution that was stored from before the probing */
 
    /* solution data */
@@ -1638,7 +1641,95 @@ SCIP_RETCODE solveDiagonalBlocks(
 
 }
 
+static
+SCIP_RETCODE initRelaxator(
+   SCIP* scip,
+   SCIP_RELAX* relax
+   )
 
+{
+   SCIP* masterprob;
+   SCIP_VAR** vars;
+   SCIP_RELAXDATA* relaxdata;
+   int i;
+   int nvars;
+
+   assert(scip != NULL);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( relaxdata->decdecomp == NULL )
+   {
+      SCIP_CALL( DECdetectStructure(scip) );
+
+      // SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\nYou need to specify a decomposition!\n");
+      // SCIP_CALL( SCIPinterruptSolve(scip) );
+      // return SCIP_OKAY;
+   }
+
+   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
+   if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
+      relaxdata->discretization = FALSE;
+   }
+
+   SCIP_CALL( createMaster(scip, relaxdata) );
+
+   masterprob = relaxdata->masterprob;
+   assert(masterprob != NULL);
+
+   relaxdata->lastsolvednodenr = -1;
+
+
+   SCIP_CALL( SCIPtransformProb(masterprob) );
+
+   SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
+         relaxdata->masterconss, relaxdata->masterconss) );
+
+   SCIP_CALL( DECdecdecompTransform(scip, relaxdata->decdecomp) );
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
+
+   for( i = 0; i < relaxdata->npricingprobs; i++ )
+   {
+      if( relaxdata->convconss[i] != NULL )
+      {
+         SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
+      }
+   }
+
+   nvars = SCIPgetNVars(scip);
+   vars = SCIPgetVars(scip);
+
+   /* transform the linking constraints */
+   for( i = 0; i < nvars; ++i )
+   {
+      int j;
+      assert(GCGvarIsOriginal(vars[i]));
+
+      if( GCGvarIsLinking(vars[i]) )
+      {
+         SCIP_CONS** linkconss;
+         linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
+         for( j = 0;j < relaxdata->npricingprobs; ++j )
+         {
+            SCIP_CONS* tempcons;
+            if( linkconss[j] != NULL )
+            {
+               SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
+               GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
+            }
+         }
+      }
+   }
+
+   SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
+
+
+   return SCIP_OKAY;
+}
 
 /*
  * Callback methods of relaxator
@@ -1688,6 +1779,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
 
+   relaxdata->nbranchrules = 0;
+
    return SCIP_OKAY;
 }
 
@@ -1696,17 +1789,17 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {
-   SCIP* masterprob;
-   SCIP_VAR** vars;
    SCIP_RELAXDATA* relaxdata;
-   int i;
-   int nvars;
+   int origverblevel;
 
    assert(scip != NULL);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+   assert(relaxdata->masterprob != NULL);
+
+   relaxdata->decdecomp = NULL;
 
    relaxdata->blockrepresentative = NULL;
    relaxdata->convconss = NULL;
@@ -1730,73 +1823,17 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata->lastmasterlpiters = 0;
    relaxdata->markedmasterconss = NULL;
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
-   if( relaxdata->decdecomp == NULL )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\nYou need to specify a decomposition!\n");
-      SCIP_CALL( SCIPinterruptSolve(scip) );
-      return SCIP_OKAY;
-   }
-   SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
-   if( relaxdata->discretization && (SCIPgetNContVars(scip) > 0) )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Discretization with continuous variables is currently not supported. The parameter setting will be ignored.\n");
-      relaxdata->discretization = FALSE;
-   }
-
-   masterprob = relaxdata->masterprob;
-   assert(masterprob != NULL);
-
-   SCIP_CALL( createMaster(scip, relaxdata) );
-
-   relaxdata->lastsolvednodenr = -1;
-
-
-   SCIP_CALL( SCIPtransformProb(masterprob) );
-
-   SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
-         relaxdata->masterconss, relaxdata->masterconss) );
-
-   SCIP_CALL( DECdecdecompTransform(scip, relaxdata->decdecomp) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
-
-   for( i = 0; i < relaxdata->npricingprobs; i++ )
-   {
-      if( relaxdata->convconss[i] != NULL )
-      {
-         SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
-      }
-   }
-
-   nvars = SCIPgetNVars(scip);
-   vars = SCIPgetVars(scip);
-   /* transform the linking constraints */
-   for( i = 0; i < nvars; ++i )
-   {
-      int j;
-      assert(GCGvarIsOriginal(vars[i]));
-
-      if( GCGvarIsLinking(vars[i]) )
-      {
-         SCIP_CONS** linkconss;
-         linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
-         for( j = 0;j < relaxdata->npricingprobs; ++j )
-         {
-            SCIP_CONS* tempcons;
-            if( linkconss[j] != NULL )
-            {
-               SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
-               GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
-            }
-         }
-      }
-   }
-   SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
+   /* the output of the master problem gets the same verbosity level
+    * as the output of the original problem */
+   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", origverblevel) );
 
    return SCIP_OKAY;
 }
@@ -1894,6 +1931,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   if(relaxdata->decdecomp == NULL)
+   {
+      SCIP_CALL( initRelaxator(scip, relax) );
+      SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
+   }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
@@ -2050,6 +2093,8 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->nbranchrules = 0;
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
+
+//   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -2733,7 +2778,8 @@ SCIP_Bool GCGrelaxIsMasterSetPartitioning(
 
 /** start probing mode on master problem */
 SCIP_RETCODE GCGrelaxStartProbing(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_HEUR*            probingheur         /**< heuristic that started probing mode, or NULL */
    )
 {
    SCIP_RELAX* relax;
@@ -2756,6 +2802,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
    SCIP_CALL( SCIPstartProbing(masterscip) );
 
    relaxdata->masterinprobing = TRUE;
+   relaxdata->probingheur = probingheur;
 
    /* remember the current original solution */
    assert(relaxdata->storedorigsol == NULL);
@@ -2763,6 +2810,25 @@ SCIP_RETCODE GCGrelaxStartProbing(
       SCIP_CALL( SCIPcreateSolCopy(scip, &relaxdata->storedorigsol, relaxdata->currentorigsol) );
 
    return SCIP_OKAY;
+}
+
+/** returns the  heuristic that started probing in the master problem, or NULL */
+SCIP_HEUR* GCGrelaxGetProbingheur(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->probingheur;
 }
 
 
@@ -2953,6 +3019,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP_CALL( SCIPendProbing(masterscip) );
 
    relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
 
    /* if a new primal solution was found in the master problem, transfer it to the original problem */
    if( SCIPgetBestSol(relaxdata->masterprob) != NULL && relaxdata->lastmastersol != SCIPgetBestSol(relaxdata->masterprob) )
@@ -3247,3 +3314,4 @@ SCIP_Real GCGgetPricingprobsMemUsed(
 
    return relaxdata->pricingprobsmemused;
 }
+

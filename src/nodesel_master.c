@@ -112,9 +112,9 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )
       {
-         assert(GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip));
+         assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
          assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
-         assert(GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip));
+            assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
 
          *selnode = SCIPgetRootNode(scip);
          SCIPdebugMessage("selected root node in the master program\n");

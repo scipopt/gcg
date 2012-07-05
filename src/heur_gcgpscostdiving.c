@@ -440,7 +440,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
-   SCIP_CALL( GCGrelaxStartProbing(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
 
    /* get LP objective value, and fractional variables, that should be integral */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
@@ -655,7 +655,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
             }
             if( retstat != SCIP_OKAY )
             {
-               SCIPwarningMessage("Error while solving LP in GCG coefdiving heuristic; LP solve terminated with code <%d>\n",retstat);
+               SCIPwarningMessage(scip, "Error while solving LP in GCG coefdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
             if( maxpricerounds == 0 )
@@ -753,8 +753,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
    SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
 
-   /** @todo since solutions may be "stolen" by GCGrelaxUpdateCurrentSol(), it may happen that
-    * *result != SCIP_FOUNDSOL although a solution has been found */
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
 

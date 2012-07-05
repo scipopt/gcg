@@ -49,7 +49,7 @@
  */
 static
 SCIP_RETCODE GCGincludeMasterCopyPlugins(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );

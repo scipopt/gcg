@@ -427,7 +427,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrins", TRUE, FALSE, &valid) );
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrins", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
 
       if( heurdata->copycuts )
       {
@@ -533,7 +533,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 #ifndef NDEBUG
       SCIP_CALL( retcode );
 #endif
-      SCIPwarningMessage("Error while solving subproblem in GCG RINS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      SCIPwarningMessage(scip, "Error while solving subproblem in GCG RINS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
    }
 
    heurdata->usednodes += SCIPgetNNodes(subscip);

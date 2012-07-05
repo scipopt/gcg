@@ -50,7 +50,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
    
-   SCIP_CALL( SCIPcreateSol(scip, origsol, NULL) );
+   SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
@@ -293,13 +293,13 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
       if( SCIPisFeasGT(scip, solval, ub) && EPSEQ(solval, ub, 10 * feastol) )
       {
          SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], ub) );
-         SCIPwarningMessage("Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
             SCIPvarGetName(vars[i]), solval, ub);
       }
       else if( SCIPisFeasLT(scip, solval, lb) && EPSEQ(solval, lb, 10 * feastol) )
       {
          SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], lb) );
-         SCIPwarningMessage("Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
             SCIPvarGetName(vars[i]), solval, lb);
       }
    }
