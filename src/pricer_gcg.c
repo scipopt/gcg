@@ -1609,7 +1609,7 @@ SCIP_RETCODE performOptimalPricing(
 
       pricerdata->solvedsubmipsoptimal++;
       solvedmips++;
-      if( !SCIPisInfinity(scip, pricinglowerbound) )
+      if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) )
       {
          assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
       }
