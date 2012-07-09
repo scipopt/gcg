@@ -57,6 +57,7 @@ struct GCG_Strip
    int*               sequencesizes;
 };
 
+/*
 //help structure only for ptrilocomp
 struct GCG_GeneratorAndC
 {
@@ -66,7 +67,7 @@ struct GCG_GeneratorAndC
    int                generatorsize;
    ComponentBoundSequence**   C;
 };
-
+*/
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -78,6 +79,14 @@ struct GCG_BranchData
    SCIP_CONS*            pricecons;          /**< constraint enforcing the branching restriction in the pricing problem */
 };
 
+
+/** branching data for branching decisions */
+struct GCG_Record
+{
+	ComponentBoundSequence**   record;             /**< returnvalue of separte function */
+	   int                recordsize;
+	   int*               sequencesizes;
+};
 
 /*
  * Callback methods for enforcing branching constraints
@@ -828,7 +837,7 @@ SCIP_RETCODE LexicographicSort( GCG_Strip** array, int arraysize)
 
 // compare function for ILO: returns 1 if bd1 < bd2 else -1 
 static
-int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes, ComponentBoundSequence* S, int p) //int Ssize, int* IndexSet, int indexsetsize)
+int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes, int p) // ComponentBoundSequence* S, int Ssize, int* IndexSet, int indexsetsize)
 {
 	int i;
 	int isense;
@@ -865,10 +874,15 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	
 	assert(C!=NULL);
 	assert(NBoundsequences>0);
-	//find i which is in all S in C on position p
-	i = C[0][p-1][0];
-	isense = C[0][p-1][1];
-	ivalue = C[0][p-1][2];
+	//find i which is in all S in C on position p (not exactly like pseudocode ?
+	while( sequencesizes[k] < p-1 )
+	{
+		++k;
+		assert(k<NBoundsequences);
+	}
+	i = C[k][p-1][0];
+	isense = C[k][p-1][1];
+	ivalue = C[k][p-1][2];
 	
   /*
 	
@@ -913,7 +927,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	assert(i>=0);
 	assert(i<indexsetsize);
 	
-	
+/*
 	//duplicate?
 	if(Ssize == 0)
 		SCIP_CALL( SCIPallocBufferArray(scip, &S, 1) );
@@ -932,6 +946,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 		SCIPfreeBufferArray(scip, &copyS);
 	}
 	++Ssize;
+	*/
 /*
 	//realloc I if i is in the Indexset (identical i in recursion possible if not a BP)
 	for(j=0;j<indexsetsize;++j)
@@ -1004,7 +1019,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	   
 	   SCIPfreeBufferArray(scip, &copyC);
 
-	   returnvalue = ILOcomp( strip1, strip2, C, Nupper, newsequencesizes, S, Ssize, p+1);// IndexSet, indexsetsize, p+1);
+	   returnvalue = ILOcomp( strip1, strip2, C, Nupper, newsequencesizes, p+1); // S, Ssize, IndexSet, indexsetsize, p+1);
    
 	   SCIPfreeBufferArray(scip, &newsequencesizes);
 	   
@@ -1040,7 +1055,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	   	   
 	   	   SCIPfreeBufferArray(scip, &copyC);
 
-	   	   returnvalue = ILOcomp( strip1, strip2, C, Nlower, newsequencesizes, S, Ssize, p+1);//IndexSet, indexsetsize, p+1);
+	   	   returnvalue = ILOcomp( strip1, strip2, C, Nlower, newsequencesizes, p+);// S, Ssize, IndexSet, indexsetsize, p+1);
 	      
 	   	   SCIPfreeBufferArray(scip, &newsequencesizes);
 	   	   
@@ -1067,7 +1082,7 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
    
    //&C=&(strip1->C);
    
-   returnvalue=ILOcomp(strip1, strip2, strip1->C, strip1->Csize, strip1->sequencesizes, NULL, 0, 1);//strip1->IndexSet, strip1->generatorsize, 1);
+   returnvalue=ILOcomp(strip1, strip2, strip1->C, strip1->Csize, strip1->sequencesizes, 1); //NULL, 0, strip1->IndexSet, strip1->generatorsize, 1);
 
    return returnvalue;
 }
@@ -1137,7 +1152,7 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, GCG_Strip** array, int arrays
    //ILOQSort( scip, array, arraysize, C, sequencesize, 0, arraysize-1 );
    
 	//set data in the strips for the ptrcomp
-	n=array[0]->strip->generatorsize;
+	n=array[0]->generatorsize;
 	/*
 	SCIP_CALL( SCIPallocBufferArray(scip, &IS, n) );
 	for( i=0; i<n; ++i )
@@ -1157,6 +1172,57 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, GCG_Strip** array, int arrays
 //	SCIPfreeBufferArray(scip, &IS);
 	
    return SCIP_OKAY;
+}
+
+
+// separation at the root node
+static
+struct GCG_Record Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence* S, int Ssize, struct GCG_Record record )
+{
+	int i;
+	int n;
+	int* IS;
+	
+	return record;	
+}
+
+// choose a component bound sequence 
+static
+SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record record, ComponentBoundSequence* S, int* Ssize )
+{
+	int i;
+	int n;
+	
+	
+	return SCIP_OKAY;	
+}
+
+// callup method for sepearte 
+static
+SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, struct GCG_Record record, ComponentBoundSequence* S, int* Ssize )
+{
+	int i;
+	int n;
+	int* IndexSet;
+	int IndexSetSize;
+	
+	assert(Fsize > 0);
+	assert(F!=NULL);
+	
+	//calculate IndexSet
+	IndexSetSize = F[0]->generatorsize;
+	SCIP_CALL( SCIPallocBufferArray(scip, &IndexSet, IndexSetSize) );
+	for( i=0; i<n; ++i )
+		IndexSet[i]=i;
+		
+	
+	Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
+	
+	ChoseS( scip, record, S, &Ssize );
+	
+	SCIPfreeBufferArray(scip, &IndexSet);
+	
+	return SCIP_OKAY;	
 }
 
 /** creates the most infeasible LP braching rule and includes it in SCIP */
