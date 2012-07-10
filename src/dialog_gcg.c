@@ -167,8 +167,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    {
       GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
       SCIPdialogMessage(scip, NULL, "\n");
-      GCGwriteDecompositionData(scip);
-      GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip));
+      SCIP_CALL( GCGwriteDecompositionData(scip) );
+      SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
    }
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
