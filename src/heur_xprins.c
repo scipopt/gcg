@@ -119,8 +119,6 @@ SCIP_RETCODE selectExtremePoints(
    SCIP_Real value;
    SCIP_Real* selvalue;
 
-//   POINTTUPLE* elem;
-
    int i;
    int j;
    int k;
@@ -207,15 +205,7 @@ SCIP_RETCODE selectExtremePoints(
       }
    }
 
-   /* creates an object ready to be inserted into the hashtable */
-//   SCIP_CALL( createPtTuple(scip, &elem, selection, nusedpts * nblocks, heurdata) );
-
-   /* check whether the set is already in the hashtable, if not, insert it */
-//   if( !SCIPhashtableExists(heurdata->hashtable, elem) )
-//   {
-//      SCIP_CALL( SCIPhashtableInsert(heurdata->hashtable, elem) );
-      *success = TRUE;
-//   }
+   *success = TRUE;
 
    SCIPfreeBufferArray(scip, &selvalue);
 
@@ -287,8 +277,8 @@ SCIP_RETCODE selectExtremePointsRandomized(
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      if( GCGrelaxIsPricingprobRelevant(scip, i) )
-         *success &= npts[i] > nusedpts;
+      if( GCGrelaxIsPricingprobRelevant(scip, i) && npts[i] <= nusedpts )
+               *success = FALSE;
 
    /* do not randomize if there are not enough points available */
    if( !*success )
@@ -344,9 +334,11 @@ SCIP_RETCODE selectExtremePointsRandomized(
       for( k = 0; k < nusedpts; ++k )
       {
          int idx;
+         int selidx;
 
          idx = SCIPgetRandomInt(nusedpts-k-1, lastpt-1, &heurdata->randseed);
-         selection[i * nusedpts + k] = blockpts[idx];
+         selidx = i * nusedpts + k;
+         selection[selidx] = blockpts[idx];
          lastpt = idx;
       }
 
@@ -528,6 +520,7 @@ static SCIP_RETCODE fixVariables(
    int j;
    int k;
    int l;
+   int selidx;
 
    /* get master problem and its variables */
    masterprob = GCGrelaxGetMasterprob(scip);
@@ -575,8 +568,12 @@ static SCIP_RETCODE fixVariables(
       for( i = 0; i < nblocks; ++i )
       {
          for( j = 0; j < nusedpts; ++j )
-            if( selection[i * nusedpts + j] == -1 )
+         {
+            selidx = i * nusedpts + j;
+
+            if( selection[selidx] == -1 )
                break;
+         }
          npts[i] = j;
       }
    }
@@ -716,7 +713,8 @@ static SCIP_RETCODE fixVariables(
          /* compare the relaxation solution to the selected extreme points */
          for( j = 0; j < nusedpts; ++j )
          {
-            if( selection[i * nusedpts + j] != -1 )
+            selidx = i * nusedpts + j;
+            if( selection[selidx] != -1 )
             {
                SCIP_VAR* mastervar;
                SCIP_VAR** origvars;
@@ -724,7 +722,7 @@ static SCIP_RETCODE fixVariables(
                int norigvars;
 
                /* get master variable */
-               mastervar = mastervars[selection[i * nusedpts + j]];
+               mastervar = mastervars[selection[selidx]];
                assert(mastervar != NULL);
                assert(GCGvarIsMaster(mastervar));
                assert(GCGvarGetBlock(mastervar) == i);
@@ -877,7 +875,7 @@ static SCIP_RETCODE fixVariables(
 
    SCIPdebugMessage("subSCIP: %i out of %i (%.2f percent) variables have been fixed.\n", fixingcounter, nbinvars + nintvars, fixingrate * 100.0);
    SCIPdebugMessage("subSCIP: %i out of %i (%.2f percent) fixed variables are zero.\n", zerocounter, fixingcounter,
-         (SCIP_Real)zerocounter / (SCIP_Real)fixingcounter * 100.0);
+         (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter,1.0) * 100.0);
 
    /* if all variables were fixed or amount of fixed variables is insufficient, skip residual part of
     * subproblem creation ans abort immediately */
@@ -1018,7 +1016,7 @@ void updateFailureStatistic(
    /* increase number of failures, calculate next node at which crossover should be called and update actual solutions */
    heurdata->nfailures++;
    heurdata->nextnodenumber = (heurdata->nfailures <= 25
-      ? SCIPgetNNodes(scip) + 100*(2LL << heurdata->nfailures)
+      ? SCIPgetNNodes(scip) + 100*(2LL << heurdata->nfailures) /*lint !e703*/
       : SCIP_LONGINT_MAX);
 }
 
@@ -1205,6 +1203,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
          selection[i] = -1;
 
       /* for each block, select extreme points (represented by master variables) to perform RINS */
+      success = FALSE;
       if( heurdata->randomization )
       {
          SCIPdebugMessage("selecting extreme points randomly...\n");
@@ -1273,7 +1272,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    }
 
    /* if enough variables could be fixed, create rows of the subproblem */
-   if( success && heurdata->uselprows )
+   if( heurdata->uselprows )
    {
       SCIP_CALL( createRows(scip, subscip, subvars) );
    }
@@ -1329,25 +1328,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    {
       /* if no new solution was found, run was a failure */
       updateFailureStatistic(scip, heurdata);
-      SCIPdebugMessage(" -> no subMIP solution found - ");
-      switch ( SCIPgetStatus(subscip) ) {
-      case SCIP_STATUS_INFEASIBLE:
-         SCIPdebugPrintf("subMIP infeasible.\n");
-         break;
-      case SCIP_STATUS_NODELIMIT:
-      case SCIP_STATUS_STALLNODELIMIT:
-         SCIPdebugPrintf("node limit reached.\n");
-         break;
-      case SCIP_STATUS_TIMELIMIT:
-         SCIPdebugPrintf("time limit reached.\n");
-         break;
-      case SCIP_STATUS_USERINTERRUPT:
-         SCIPdebugPrintf("solving process interrupted by user.\n");
-         break;
-      default:
-         SCIPdebugPrintf("SCIP status %d.\n", SCIPgetStatus(subscip));
-         break;
-      }
+      SCIPdebugMessage(" -> no subMIP solution found - subSCIP status is %d\n", SCIPgetStatus(subscip));
    }
 
    /* free subproblem */
