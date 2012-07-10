@@ -44,7 +44,7 @@ extern "C" {
 /** includes the dec file reader into SCIP */
 extern
 SCIP_RETCODE SCIPincludeReaderDec(
-   SCIP*                 scip             /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 

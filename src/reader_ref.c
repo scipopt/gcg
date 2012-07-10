@@ -62,26 +62,26 @@ typedef enum RefExpType REFEXPTYPE;
 /** REF reading data */
 struct RefInput
 {
-   SCIP_FILE*    file;                                /**< file to read */
-   char          linebuf[REF_MAX_LINELEN];            /**< line buffer */
-   char*         token;                               /**< current token */
-   char*         tokenbuf;                            /**< token buffer */
-   char*         pushedtokens[REF_MAX_PUSHEDTOKENS];  /**< token stack */
-   int           npushedtokens;                       /**< size of token stack */
-   int           linenumber;                          /**< current line number */
-   int           linepos;                             /**< current line position (column) */
-   int           nblocks;                             /**< number of blocks */
-   int           blocknr;                             /**< current block number */
-   int           nassignedvars;                       /**< number of assigned variables */
-   int*          blocksizes;                          /**< array of block sizes */
-   int           totalconss;                          /**< total number of constraints */
-   int           totalreadconss;                      /**< total number of read constraints */
-   SCIP_CONS**   markedmasterconss;                   /**< array of constraints to be in the master */
-   int           nmarkedmasterconss;                  /**< number of constraints to be in the master */
-   REFSECTION    section;                             /**< current section */
-   SCIP_Bool     haserror;                            /**< flag to indicate an error occurence */
-   SCIP_HASHMAP* vartoblock;                          /**< hashmap mapping variables to blocks (1..nblocks) */
-   SCIP_HASHMAP* constoblock;                         /**< hashmap mapping constraints to blocks (1..nblocks) */
+   SCIP_FILE*            file;               /**< file to read */
+   char                  linebuf[REF_MAX_LINELEN]; /**< line buffer */
+   char*                 token;              /**< current token */
+   char*                 tokenbuf;           /**< token buffer */
+   char*                 pushedtokens[REF_MAX_PUSHEDTOKENS]; /**< token stack */
+   int                   npushedtokens;      /**< size of token stack */
+   int                   linenumber;         /**< current line number */
+   int                   linepos;            /**< current line position (column) */
+   int                   nblocks;            /**< number of blocks */
+   int                   blocknr;            /**< current block number */
+   int                   nassignedvars;      /**< number of assigned variables */
+   int*                  blocksizes;         /**< array of block sizes */
+   int                   totalconss;         /**< total number of constraints */
+   int                   totalreadconss;     /**< total number of read constraints */
+   SCIP_CONS**           markedmasterconss;  /**< array of constraints to be in the master */
+   int                   nmarkedmasterconss; /**< number of constraints to be in the master */
+   REFSECTION            section;            /**< current section */
+   SCIP_Bool             haserror;           /**< flag to indicate an error occurence */
+   SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to blocks (1..nblocks) */
+   SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to blocks (1..nblocks) */
 };
 typedef struct RefInput REFINPUT;
 
@@ -737,7 +737,7 @@ SCIP_DECL_READERWRITE(readerWriteRef)
 
 /** includes the ref file reader in SCIP */
 SCIP_RETCODE SCIPincludeReaderRef(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    assert(scip != NULL);

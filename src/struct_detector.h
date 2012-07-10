@@ -26,16 +26,16 @@ extern "C" {
 
 /** detector data structure */
 struct DEC_Detector {
-   const char* name;                            /**< name of the detector */
-   DEC_DETECTORDATA* decdata;                   /**< custom data structure of the detectors */
-   char decchar;                                /**< display character of detector */
-   const char* description;                     /**< description of the detector */
-   int priority;                                /**< detector priority */
-   SCIP_Bool enabled;                           /**< flag to indicate whether detector is enabled */
+   const char*           name;               /**< name of the detector */
+   DEC_DETECTORDATA*     decdata;            /**< custom data structure of the detectors */
+   char                  decchar;            /**< display character of detector */
+   const char*           description;        /**< description of the detector */
+   int                   priority;           /**< detector priority */
+   SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
 
-   DEC_DECL_INITDETECTOR((*initDetection));     /**< initialization method of detector */
-   DEC_DECL_DETECTSTRUCTURE((*detectStructure));/**< structure detection method of detector */
-   DEC_DECL_EXITDETECTOR((*exitDetection));     /**< deinitialization method of detector */
+   DEC_DECL_INITDETECTOR((*initDetection));  /**< initialization method of detector */
+   DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */
+   DEC_DECL_EXITDETECTOR((*exitDetection));  /**< deinitialization method of detector */
 };
 
 

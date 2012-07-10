@@ -27,7 +27,7 @@ extern "C" {
 /** branching rule */
 struct GCG_Branchrule
 {
-   SCIP_BRANCHRULE*       branchrule;                       /**< pointer to the SCIP branching rule */
+   SCIP_BRANCHRULE*      branchrule;         /**< pointer to the SCIP branching rule */
    GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));     /**< node activation method of branching rule */
    GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)); /**< node deactivation method of branching rule */
    GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));         /**< propagation method of branching rule */

@@ -39,24 +39,24 @@
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
-   SCIP*       origprob;      /**< original SCIP data structure */
-   SCIP_Real** solvals;       /**< two dimensional array of values in solutions */
-   SCIP_VAR*** solvars;       /**< two dimensional array of variables in solutions */
-   SCIP_Real*  tmpsolvals;    /**< temporary solution values */
-   int*        nsolvars;      /**< number of solution variables per solution */
-   SCIP_Bool*  solisray;      /**< array to indicate whether solutions are rays */
-   int         nsols;         /**< number of solutions */
-   int         maxvars;       /**< maximal number of variables in a solution */
+   SCIP*                 origprob;           /**< original SCIP data structure */
+   SCIP_Real**           solvals;            /**< two dimensional array of values in solutions */
+   SCIP_VAR***           solvars;            /**< two dimensional array of variables in solutions */
+   SCIP_Real*            tmpsolvals;         /**< temporary solution values */
+   int*                  nsolvars;           /**< number of solution variables per solution */
+   SCIP_Bool*            solisray;           /**< array to indicate whether solutions are rays */
+   int                   nsols;              /**< number of solutions */
+   int                   maxvars;            /**< maximal number of variables in a solution */
 
-   SCIP_Bool   checksols;     /**< should solutions be checked extensively */
+   SCIP_Bool             checksols;          /**< should solutions be checked extensively */
 };
 
 /* ensures size of solution arrays */
 static
 SCIP_RETCODE ensureSizeSolvars(
-   SCIP*           scip,       /**< SCIP data structure */
-   GCG_SOLVERDATA* solverdata, /**< solver data data structure */
-   int             nsols       /**< number of solutions */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_SOLVERDATA*       solverdata,         /**< solver data data structure */
+   int                   nsols               /**< number of solutions */
    )
 {
    int i;
@@ -88,11 +88,11 @@ SCIP_RETCODE ensureSizeSolvars(
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
 SCIP_RETCODE checkSolNew(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP*      pricingprob,    /**< pricing problem SCIP data structure */
-   SCIP_SOL** sols,           /**< array of solutions */
-   int        idx,            /**< index of the solution */
-   SCIP_Bool* isnew           /**< pointer to store whether the solution is new */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP_SOL**            sols,               /**< array of solutions */
+   int                   idx,                /**< index of the solution */
+   SCIP_Bool*            isnew               /**< pointer to store whether the solution is new */
    )
 {
    SCIP_VAR** probvars;
@@ -667,7 +667,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
 /** creates the most infeasible LP braching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    GCG_SOLVERDATA* data;

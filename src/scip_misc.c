@@ -22,7 +22,7 @@
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 SCIP_Bool SCIPisVarRelevant(
-   SCIP_VAR* var              /**< variable to test */
+   SCIP_VAR*             var                 /**< variable to test */
    )
 {
    assert(var != NULL);
@@ -32,7 +32,7 @@ SCIP_Bool SCIPisVarRelevant(
 
 /** returns the relevant variable, if possible */
 SCIP_VAR* SCIPgetRelevantVariable(
-   SCIP_VAR* var              /**< variable to test */
+   SCIP_VAR*             var                 /**< variable to test */
    )
 {
    SCIP_VAR *newvar;
@@ -64,7 +64,7 @@ SCIP_VAR* SCIPgetRelevantVariable(
 
 /** returns the type of an arbitrary SCIP constraint */
 consType SCIPconsGetType(
-   SCIP_CONS* cons            /**< constraint to get type for */
+   SCIP_CONS*            cons                /**< constraint to get type for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -116,8 +116,8 @@ consType SCIPconsGetType(
 
 /** returns the rhs of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetRhsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -172,8 +172,8 @@ SCIP_Real SCIPgetRhsXXX(
 
 /** Returns the lhs of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetLhsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -228,8 +228,8 @@ SCIP_Real SCIPgetLhsXXX(
 
 /** Returns the number of variables in an arbitrary SCIP constraint */
 int SCIPgetNVarsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get number of variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get number of variables */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -278,10 +278,10 @@ int SCIPgetNVarsXXX(
 
 /** Returns the variable array of an arbitrary SCIP constraint */
 SCIP_RETCODE SCIPgetVarsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons,           /**< constraint to get variables from */
-   SCIP_VAR** vars,           /**< array where variables are stored */
-   int        nvars           /**< size of storage array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to get variables from */
+   SCIP_VAR**            vars,               /**< array where variables are stored */
+   int                   nvars               /**< size of storage array */
    )
 {
 
@@ -356,8 +356,8 @@ SCIP_RETCODE SCIPgetVarsXXX(
 
 /** Returns the dual solution value of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetDualsolXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get dual solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get dual solution */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -409,10 +409,10 @@ SCIP_Real SCIPgetDualsolXXX(
  * @todo SOS1 & SOS2 not implemented yet
  */
 SCIP_RETCODE SCIPgetValsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons,           /**< constraint to get values from */
-   SCIP_Real* vals,           /**< array where values are stored */
-   int        nvals           /**< size of storage array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to get values from */
+   SCIP_Real*            vals,               /**< array where values are stored */
+   int                   nvals               /**< size of storage array */
    )
 {
    SCIP_CONSHDLR* conshdlr;

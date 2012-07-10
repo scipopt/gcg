@@ -27,27 +27,27 @@ extern "C" {
 /** pricing problem solver data structure */
 struct GCG_Solver
 {
-   char*                 name;                     /**< solver name */
-   char*                 description;              /**< solver description */
-   int                   priority;                 /**< solver priority */
-   GCG_SOLVERDATA*       solverdata;               /**< private solver data structure */
+   char*                 name;               /**< solver name */
+   char*                 description;        /**< solver description */
+   int                   priority;           /**< solver priority */
+   GCG_SOLVERDATA*       solverdata;         /**< private solver data structure */
 
-   GCG_DECL_SOLVERSOLVE((*solversolve));           /**< solving callback method */
-   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur));   /**< heuristic solving callback method */
-   GCG_DECL_SOLVERFREE((*solverfree));             /**< destruction method */
-   GCG_DECL_SOLVERINIT((*solverinit));             /**< initialization method */
-   GCG_DECL_SOLVEREXIT((*solverexit));             /**< deinitialization method */
-   GCG_DECL_SOLVERINITSOL((*solverinitsol));       /**< solving process initialization method */
-   GCG_DECL_SOLVEREXITSOL((*solverexitsol));       /**< solving process deinitialization method */
+   GCG_DECL_SOLVERSOLVE((*solversolve));     /**< solving callback method */
+   GCG_DECL_SOLVERSOLVEHEUR((*solversolveheur)); /**< heuristic solving callback method */
+   GCG_DECL_SOLVERFREE((*solverfree));       /**< destruction method */
+   GCG_DECL_SOLVERINIT((*solverinit));       /**< initialization method */
+   GCG_DECL_SOLVEREXIT((*solverexit));       /**< deinitialization method */
+   GCG_DECL_SOLVERINITSOL((*solverinitsol)); /**< solving process initialization method */
+   GCG_DECL_SOLVEREXITSOL((*solverexitsol)); /**< solving process deinitialization method */
 
-   SCIP_CLOCK*           optfarkasclock;           /**< optimal farkas pricing time */
-   SCIP_CLOCK*           optredcostclock;          /**< optimal reduced cost pricing time */
-   SCIP_CLOCK*           heurfarkasclock;          /**< heuristic farkas pricing time */
-   SCIP_CLOCK*           heurredcostclock;         /**< heuristic reduced cost pricing time */
-   int                   optfarkascalls;           /**< optimal farkas pricing calls */
-   int                   optredcostcalls;          /**< optimal reduced cost pricing calls */
-   int                   heurfarkascalls;          /**< heuristic farkas pricing calls */
-   int                   heurredcostcalls;         /**< heuristic reduced cost pricing calls */
+   SCIP_CLOCK*           optfarkasclock;     /**< optimal farkas pricing time */
+   SCIP_CLOCK*           optredcostclock;    /**< optimal reduced cost pricing time */
+   SCIP_CLOCK*           heurfarkasclock;    /**< heuristic farkas pricing time */
+   SCIP_CLOCK*           heurredcostclock;   /**< heuristic reduced cost pricing time */
+   int                   optfarkascalls;     /**< optimal farkas pricing calls */
+   int                   optredcostcalls;    /**< optimal reduced cost pricing calls */
+   int                   heurfarkascalls;    /**< heuristic farkas pricing calls */
+   int                   heurredcostcalls;   /**< heuristic reduced cost pricing calls */
 };
 
 

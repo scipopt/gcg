@@ -33,11 +33,11 @@ extern
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
-   GCG_DECL_BRANCHACTIVEMASTER    ((*branchactivemaster)),    /**<  activation method for branchrule */
-   GCG_DECL_BRANCHDEACTIVEMASTER  ((*branchdeactivemaster)),  /**<  deactivation method for branchrule */
-   GCG_DECL_BRANCHPROPMASTER      ((*branchpropmaster)),      /**<  propagation method for branchrule */
-   GCG_DECL_BRANCHMASTERSOLVED    ((*branchmastersolved)),    /**<  master solved method for branchrule */
-   GCG_DECL_BRANCHDATADELETE      ((*branchdatadelete))       /**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHACTIVEMASTER   ((*branchactivemaster)),   /**<  activation method for branchrule */
+   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)), /**<  deactivation method for branchrule */
+   GCG_DECL_BRANCHPROPMASTER     ((*branchpropmaster)),     /**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED   ((*branchmastersolved)),   /**<  master solved method for branchrule */
+   GCG_DECL_BRANCHDATADELETE     ((*branchdatadelete))      /**<  branchdata deletion method for branchrule */
    );
 
 /** perform activation method of the given branchrule for the given branchdata */
@@ -309,27 +309,27 @@ void GCGrelaxSetOrigPrimalSol(
 
 /** sets the structure information */
 void GCGsetStructDecdecomp(
-   SCIP*       scip,       /**< SCIP data structure */
-   DEC_DECOMP*  decdecomp   /**< decomposition data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
 
 
 /** gets the structure information */
 extern
 DEC_DECOMP* GCGgetStructDecdecomp(
-   SCIP*       scip        /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*                 scip              /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the degeneracy of the masterproblem */
 extern
 double GCGgetDegeneracy(
-   SCIP*                 masterproblem     /**< SCIP masterproblem */
+   SCIP*                 masterproblem       /**< SCIP masterproblem */
    );
 
 

@@ -40,7 +40,7 @@ const char *DECgetStrType(
 /** initializes the decdecomp structure to absolutely nothing */
 SCIP_RETCODE DECdecompCreate(
    SCIP*                 scip,               /**< Pointer to the SCIP instance */
-   DEC_DECOMP**           decomp              /**< Pointer to the decdecomp instance */
+   DEC_DECOMP**          decomp              /**< Pointer to the decdecomp instance */
    )
 {
    assert(scip != NULL);
@@ -299,7 +299,7 @@ int  DECdecompGetNLinkingconss(
 /** Copies the input linkingvars array to the given decdecomp structure */
 SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*          scip,                      /**< SCIP data structure */
-   DEC_DECOMP*     decdecomp,                 /**< DEC_DECOMP data structure */
+   DEC_DECOMP*    decdecomp,                 /**< DEC_DECOMP data structure */
    SCIP_VAR**     linkingvars,               /**< Linkingvars array  */
    int            nlinkingvars               /**< number of linkingvars per block */
    )

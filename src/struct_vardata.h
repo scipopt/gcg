@@ -22,18 +22,18 @@
 /** type of the variable */
 enum GCG_Vartype
 {
-   GCG_VARTYPE_ORIGINAL   = 0,       /**< variable belongs to original problem */
-   GCG_VARTYPE_PRICING    = 1,       /**< variable belongs to a pricing problem */
-   GCG_VARTYPE_MASTER     = 2        /**< variable belongs to the master problem */
+   GCG_VARTYPE_ORIGINAL = 0,                 /**< variable belongs to original problem */
+   GCG_VARTYPE_PRICING  = 1,                 /**< variable belongs to a pricing problem */
+   GCG_VARTYPE_MASTER   = 2                  /**< variable belongs to the master problem */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
 /** additional data for linking variables */
 struct GCG_LinkingVarData
 {
-   SCIP_VAR**            pricingvars;             /**< array of corresponding variables in the pricing programs (NULL if variable is not linking this block)*/
-   SCIP_CONS**           linkconss;               /**< array of constraints in the master problem that ensure that all copies have the same values */
-   int                   nblocks;                 /**< number of blocks that this variable is linking */
+   SCIP_VAR**            pricingvars;        /**< array of corresponding variables in the pricing programs (NULL if variable is not linking this block)*/
+   SCIP_CONS**           linkconss;          /**< array of constraints in the master problem that ensure that all copies have the same values */
+   int                   nblocks;            /**< number of blocks that this variable is linking */
 };
 typedef struct GCG_LinkingVarData GCG_LINKINGVARDATA;
 
@@ -41,23 +41,23 @@ typedef struct GCG_LinkingVarData GCG_LINKINGVARDATA;
 /** data for original variables */
 struct GCG_OrigVarData
 {
-   SCIP_VAR*             pricingvar;              /**< corresponding variable in the pricing program */
-   SCIP_CONS**           masterconss;             /**< master constraints of the original program in which the variable has a nonzero entry */
-   SCIP_Real*            coefs;                   /**< coefficients in the linking constraints of the original program */
-   int                   ncoefs;                  /**< number of coefficients */
-   SCIP_VAR**            mastervars;              /**< variables in the master problem that contain the variable */
-   SCIP_Real*            mastervals;              /**< value of this variable in the master problem variables */
-   int                   nmastervars;             /**< number of corresponding master variables */
-   int                   maxmastervars;           /**< length of arrays mastervars and vals */
-   GCG_LINKINGVARDATA*   linkingvardata;          /**< additional data for linking variables */
+   SCIP_VAR*             pricingvar;         /**< corresponding variable in the pricing program */
+   SCIP_CONS**           masterconss;        /**< master constraints of the original program in which the variable has a nonzero entry */
+   SCIP_Real*            coefs;              /**< coefficients in the linking constraints of the original program */
+   int                   ncoefs;             /**< number of coefficients */
+   SCIP_VAR**            mastervars;         /**< variables in the master problem that contain the variable */
+   SCIP_Real*            mastervals;         /**< value of this variable in the master problem variables */
+   int                   nmastervars;        /**< number of corresponding master variables */
+   int                   maxmastervars;      /**< length of arrays mastervars and vals */
+   GCG_LINKINGVARDATA*   linkingvardata;     /**< additional data for linking variables */
 };
 typedef struct GCG_OrigVarData GCG_ORIGVARDATA;
 
 /** data for pricing variables */
 struct GCG_PricingVarData
 {
-   SCIP_VAR**            origvars;                /**< corresponding variables in the original program */
-   int                   norigvars;               /**< number of corresponding variables in the original program */
+   SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
+   int                   norigvars;          /**< number of corresponding variables in the original program */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
@@ -66,11 +66,11 @@ typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 /** data for master variables */
 struct GCG_MasterVarData
 {
-   int                   norigvars;               /**< number of variables in the original program corresponding to  the current variable */
-   SCIP_VAR**            origvars;                /**< variables in the original program corresponding to the current variable */
-   SCIP_Real*            origvals;                /**< this variable represents vals[i] times the variable origvars[i] in the
-                                                   *   original program */
-   SCIP_Bool             isray;                   /**< does this variable represent a ray or an extreme point? */
+   int                   norigvars;          /**< number of variables in the original program corresponding to  the current variable */
+   SCIP_VAR**            origvars;           /**< variables in the original program corresponding to the current variable */
+   SCIP_Real*            origvals;           /**< this variable represents vals[i] times the variable origvars[i] in the
+                                              *   original program */
+   SCIP_Bool             isray;              /**< does this variable represent a ray or an extreme point? */
 
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
@@ -84,15 +84,15 @@ struct SCIP_VarData
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
    } data;
-   GCG_VARTYPE        vartype;               /**< type of variable */
-   int                blocknr;               /**< number of the block and pricing problem, the variable belongs to,
+   GCG_VARTYPE           vartype;            /**< type of variable */
+   int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,
                                               *   or -1 if variable is directly transferred to the master problem,
                                               *   or -2 if variable is a linking variable */
-   SCIP_Longint       creationnode;          /**< node where the variable is created */
-   SCIP_Real          creationtime;          /**< time when the variable is created */
-   SCIP_Longint       iteration;             /**< iteration when the variable is created */
-   SCIP_Real          gap;                   /**< gap when the variable was created */
-   SCIP_Real          redcost;               /**< reduced cost of the variable  */
+   SCIP_Longint          creationnode;       /**< node where the variable is created */
+   SCIP_Real             creationtime;       /**< time when the variable is created */
+   SCIP_Longint          iteration;          /**< iteration when the variable is created */
+   SCIP_Real             gap;                /**< gap when the variable was created */
+   SCIP_Real             redcost;            /**< reduced cost of the variable  */
 };
 
 

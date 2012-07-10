@@ -89,16 +89,16 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
-   DEC_DECOMP* decdecomp;      /**< decomposition data structure */
-   int* varstoblock;          /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
-   int* nblockvars;           /**< number of variable per block that are not linkingvars */
-   int** linkingvarsblocks;   /**< array with blocks assigned to one linking var */
-   int* nlinkingvarsblocks;    /**< array with number of blocks assigned to each linking var */
-   SCIP_HASHMAP* constoblock; /**< hashmap key=constaint value=block*/
-   SCIP_CONS*** blockcons;    /**< array of assignments from constraints to their blocks [blocknr][consid]  */
-   int* nblockcons;           /**< number of block-constraints for blockID*/
-   int nlinkingcons;          /**< number of linking constraints*/
-   int nlinkingvars;          /**< number of linking vars*/
+   DEC_DECOMP*           decdecomp;          /**< decomposition data structure */
+   int*                  varstoblock;        /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
+   int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
+   int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
+   int*                  nlinkingvarsblocks; /**< array with number of blocks assigned to each linking var */
+   SCIP_HASHMAP*         constoblock;        /**< hashmap key=constaint value=block*/
+   SCIP_CONS***          blockcons;          /**< array of assignments from constraints to their blocks [blocknr][consid]  */
+   int*                  nblockcons;         /**< number of block-constraints for blockID*/
+   int                   nlinkingcons;       /**< number of linking constraints*/
+   int                   nlinkingvars;       /**< number of linking vars*/
 };
 
 static const int NOVALUE = -1;

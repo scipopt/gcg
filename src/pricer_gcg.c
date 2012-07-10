@@ -1288,8 +1288,8 @@ SCIP_RETCODE createNewMasterVar(
  */
 static
 SCIP_Bool canPricingBeAborted(
-   SCIP*             scip,          /**< SCIP data structure */
-   SCIP_PRICERDATA*  pricerdata     /**< pricerdata data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata          /**< pricerdata data structure */
    )
 {
    SCIP_Bool canabort;

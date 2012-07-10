@@ -31,13 +31,13 @@
 /** knapsack pricing solverdata */
 struct GCG_SolverData
 {
-   SCIP* origprob;      /**< original problem */
-   SCIP_Real** solvals; /**< two dimensional array of solution values */
-   SCIP_VAR*** solvars; /**< two dimensional array of solution variables */
-   int* nsolvars;       /**< array of number of variables per solution */
-   SCIP_Bool* solisray; /**< array indicating whether a solution represents a ray */
-   int nsols;           /**< number of solutions */
-   int maxvars;         /**< maximal number of variables in a solution */
+   SCIP*                 origprob;           /**< original problem */
+   SCIP_Real**           solvals;            /**< two dimensional array of solution values */
+   SCIP_VAR***           solvars;            /**< two dimensional array of solution variables */
+   int*                  nsolvars;           /**< array of number of variables per solution */
+   SCIP_Bool*            solisray;           /**< array indicating whether a solution represents a ray */
+   int                   nsols;              /**< number of solutions */
+   int                   maxvars;            /**< maximal number of variables in a solution */
 };
 
 
