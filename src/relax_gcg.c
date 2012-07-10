@@ -323,7 +323,7 @@ SCIP_RETCODE convertStructToGCG(
             curvars = NULL;
             if( ncurvars > 0 )
             {
-               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[j][k], curvars, ncurvars) );
 
                for( v = 0; v < ncurvars; ++v )
@@ -338,7 +338,7 @@ SCIP_RETCODE convertStructToGCG(
                   }
                }
 
-               SCIPfreeBufferArray(scip, &curvars);
+               SCIPfreeMemoryArray(scip, &curvars);
             }
 
             if( found )
@@ -978,10 +978,19 @@ SCIP_RETCODE createPricingVariables(
       {
          size_t tempblock;
          tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         assert(tempblock < INT_MAX);
-         assert(tempblock > 0);
-         blocknr = (int) (tempblock -1); /*lint !e806*/
+         if(tempblock == 0)
+         {
+            assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
+            blocknr = -1;
+         }
+         else
+         {
+            assert(tempblock < INT_MAX);
+            assert(tempblock > 0);
+            blocknr = (int) (tempblock -1); /*lint !e806*/
+         }
       }
+
       SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
@@ -1325,7 +1334,7 @@ SCIP_RETCODE createPricingprobConss(
             curvars = NULL;
             if( ncurvars > 0 )
             {
-               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
                for( i = 0; i < ncurvars; ++i )
@@ -1333,7 +1342,7 @@ SCIP_RETCODE createPricingprobConss(
                   assert(GCGvarIsPricing(curvars[i]));
                }
 
-               SCIPfreeBufferArrayNull(scip, &curvars);
+               SCIPfreeMemoryArrayNull(scip, &curvars);
             }
          }
 #endif
@@ -1398,7 +1407,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-
+   SCIP_CALL( GCGpricerCreateInitialMastervars(relaxdata->masterprob) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
