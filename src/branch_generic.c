@@ -49,8 +49,9 @@ struct GCG_BranchData
 struct GCG_Strip
 {
    SCIP_VAR*          mastervar;             /**< master variable */
+   SCIP_Real          mastervarValue;
    int                blocknr;               /**< number of the block in which the strip belong */
-   SCIP_Real*         generator;             /**< corresponding generator to the mastervar */
+   SCIP_Real*         generator;             /**< corresponding generator to the mastervar !!! containing only comp with integer origvars*/
    int                generatorsize;
    ComponentBoundSequence**   C;             /**< often NULL, only needed for ptrilocomp */
    int                Csize;
@@ -746,9 +747,9 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
  * branching specific interface methods
  */
 
-/** method for calculating the median over all fractional components values */
+/** method for calculating the median over all fractional components values if its the minimum return ceil(arithm middle)*/
 static
-SCIP_Real GetMedian(SCIP_Real* array, int arraysize)
+SCIP_Real GetMedian(SCIP* scip, SCIP_Real* array, int arraysize, int min)
 {  
 	SCIP_Real Median;
 	SCIP_Real swap;
@@ -757,9 +758,11 @@ SCIP_Real GetMedian(SCIP_Real* array, int arraysize)
 	int i;
 	int j;
 	int MedianIndex;
+	double arithmMiddle;
 	
 	r = arraysize -1;
 	l = 0;
+	arithmMiddle = 0;
 	
 	if( arraysize & 1)
 		MedianIndex = arraysize/2;
@@ -792,6 +795,14 @@ SCIP_Real GetMedian(SCIP_Real* array, int arraysize)
 			r = j;
 	}
 	Median = array[ MedianIndex ];
+	
+	if( Median == min )
+	{
+		for(i=0; i<arraysize; ++i)
+			arithmMiddle+=array[i];
+		arithmMiddle /= arraysize;
+		Median = SCIPceil(scip, aithmMiddle);
+	}
 	
    return Median;
 }
@@ -998,7 +1009,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	   newcompbound[2] = ivalue;
 	   S[Ssize]=newbound;
 	   k=0;
-	   SCIP_CALL( SCIPreallocBufferArray(scip, &copyC, Nupper) );
+	   SCIP_CALL( SCIPallocBufferArray(scip, &copyC, Nupper) );
 	   SCIP_CALL( SCIPreallocBufferArray(scip, &newsequencesizes, Nupper) );
 	   for(j=0; j< NBoundsequences; ++j)
 	   {
@@ -1012,16 +1023,17 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 		   }
 	   }
 
-	   SCIP_CALL( SCIPreallocBufferArray(scip, &C, Nupper) );
+	   //SCIP_CALL( SCIPreallocBufferArray(scip, &C, Nupper) );
 	   
-	   for(j=0;j<Nupper;++j)
-		   C[j]=copyC[j];
+	 //  for(j=0;j<Nupper;++j)
+	//	   C[j]=copyC[j];
 	   
-	   SCIPfreeBufferArray(scip, &copyC);
+	   
 
-	   returnvalue = ILOcomp( strip1, strip2, C, Nupper, newsequencesizes, p+1); // S, Ssize, IndexSet, indexsetsize, p+1);
+	   returnvalue = ILOcomp( strip1, strip2, copyC, Nupper, newsequencesizes, p+1); // S, Ssize, IndexSet, indexsetsize, p+1);
    
 	   SCIPfreeBufferArray(scip, &newsequencesizes);
+	   SCIPfreeBufferArray(scip, &copyC);
 	   
 	   return returnvalue;
    }
@@ -1034,7 +1046,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	   newcompbound[2] = ivalue;
 	   S[Ssize]=newbound;
 	   k=0;
-	   SCIP_CALL( SCIPreallocBufferArray(scip, &copyC, Nlower) );
+	   SCIP_CALL( SCIPallocBufferArray(scip, &copyC, Nlower) );
 	   SCIP_CALL( SCIPreallocBufferArray(scip, &newsequencesizes, Nlower) );
 	   for(j=0; j< NBoundsequences; ++j)
 	   {
@@ -1048,16 +1060,17 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 		   }
 	   }
 
-	   	   SCIP_CALL( SCIPreallocBufferArray(scip, &C, Nlower) );
+	   	   //SCIP_CALL( SCIPreallocBufferArray(scip, &C, Nlower) );
 	   	   
-	   	   for(j=0;j<Nlower;++j)
-	   		   C[j]=copyC[j];
+	   	  // for(j=0;j<Nlower;++j)
+	   	//	   C[j]=copyC[j];
 	   	   
-	   	   SCIPfreeBufferArray(scip, &copyC);
+	   	 
 
-	   	   returnvalue = ILOcomp( strip1, strip2, C, Nlower, newsequencesizes, p+);// S, Ssize, IndexSet, indexsetsize, p+1);
+	   	   returnvalue = ILOcomp( strip1, strip2, copyC, Nlower, newsequencesizes, p+1);// S, Ssize, IndexSet, indexsetsize, p+1);
 	      
 	   	   SCIPfreeBufferArray(scip, &newsequencesizes);
+	   	  SCIPfreeBufferArray(scip, &copyC);
 	   	   
 	   	   return returnvalue; 
       }
@@ -1177,22 +1190,254 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, GCG_Strip** array, int arrays
 
 // separation at the root node
 static
-struct GCG_Record Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence* S, int Ssize, struct GCG_Record record )
+struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence* S, int Ssize, struct GCG_Record* record )
 {
 	int i;
+	int j;
 	int n;
-	int* IS;
+	int k;
+	int l;
+	int Jsize;
+	int* J;
+	int median;
+	int min;
+	int Fupper;
+	int Flower;
+	//int copySsize;
+	GCG_Strip** copyF;
+	ComponentBoundSequence* upperLowerS;
+	//ComponentBoundSequence* lowerS;
+	SCIP_Real* alpha;
+	SCIP_Real* compvalues;
+	SCIP_Real  muF;
+	SCIP_Real maxPriority;
+	SCIP_Bool found;
+	
+	i = 0;
+	j = 0;
+	k = 0;
+	l = 0;
+	Jsize = 0;
+	Fupper = 0;
+	Flower = 0;
+	muF = 0;
+	//copySsize = 0;
+	min = INT_MAX;
+	maxPriority = INT_MIN;
+	found = FALSE;
+	
+	if(Fsize == 0 || IndexSetSize == 0)
+		return record;
+	
+	assert( F != NULL ); 
+	assert( IndexSetSize != NULL );
+
+	for(j=0; j<Fsize; ++j)
+		muF += F[j]->mastervarValue;
+
+	SCIP_CALL( SCIPallocBufferArray(scip, &alpha, IndexSetSize) );
+	
+	for(k=0; k<IndexSetSize; ++k)
+	{
+		ComponentBoundSequence* copyS;
+		i = IndexSet[k]; 
+		alpha[k] = 0;
+		for(j=0; j<Fsize; ++j)
+			alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
+		if( alpha[k] > 0 && alpha[k] < muF )
+			++Jsize;
+		if( alpha[k] - SCIPfloor(scip, alpha[k]) > 0 )
+		{
+			found = TRUE;
+			
+			//add to record
+			++Ssize;
+			SCIP_CALL( SCIPallocBufferArray(scip, &copyS, Ssize) );
+			for(l=0; l < Ssize-1; ++l)
+				copyS[l]=S[l];
+			
+			
+			copyS[Ssize-1][0] = i;
+			copyS[Ssize-1][1] = 1;
+			
+			SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
+			for(l=0; l<Fsize; ++l)
+			{
+				compvalues[l] = F[l]->generator[i];
+				if(compvalues[l] < min)
+					min = compvalues[l];
+			}
+			median = GetMedian(scip, compvalues, Fsize, min);
+			copyS[Ssize-1][2] = median;
+			
+			SCIPfreeBufferArray(scip, &compvalues);
+			
+			record->recordsize++;
+			SCIP_CALL( SCIPreallocBufferArray(scip, &(record->record), record->recordsize) );
+			record->record[record->recordsize-1] = copyS;
+			--Ssize;
+		}
+	}
+	
+	if(found)
+	{
+		SCIPfreeBufferArray(scip, &alpha);
+		//SCIPfreeBufferArray(scip, &copyS);
+		return record;
+	}
+	
+	//discriminating components
+	SCIP_CALL( SCIPallocBufferArray(scip, &J, Jsize) );
+	j=0;
+	for(k=0; k<IndexSetSize; ++k)
+		{
+			if( alpha[k] > 0 && alpha[k] < muF )
+			{
+				J[j] = IndexSet[k];
+				++j;
+			}
+		}
+	
+	//Partition
+	min=INT_MAX;
+	do{
+	for(j=0; j<Jsize; ++j)
+	{
+		if( getPriority(J[j]) > maxPriority )
+		    i = J[j]; 
+	}
+	
+	
+	SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
+	for(l=0; l<Fsize; ++l)
+	{
+		compvalues[l] = F[l]->generator[i];
+		if(compvalues[l] < min)
+			min = compvalues[l];
+	}
+	median = GetMedian(scip, compvalues, Fsize, min);
+	SCIPfreeBufferArray(scip, &compvalues);
+	
+	if( median == min)
+	{
+		for(j=0; j<Jsize; ++j)
+			{
+				if( i == J[j])
+				{
+					J[j]=J[Jsize-1];
+					break;
+				}
+			}
+		--Jsize;
+		
+	}
+	
+	assert(Jsize>=0);
+	}while( median == min);
+	
+	
+	++Ssize;
+	SCIP_CALL( SCIPallocBufferArray(scip, &upperLowerS, Ssize) );
+						for(l=0; l < Ssize-1; ++l)
+							upperLowerS[l]=S[l];
+						
+						upperLowerS[Ssize-1][0] = i;
+						upperLowerS[Ssize-1][1] = 1;
+						upperLowerS[Ssize-1][2] = median;
+
+	for(k=0; k<Fsize; ++k)
+	{
+		if( F[k]->generator[i] >= median)
+			++Fupper;
+		else 
+			--Flower;
+	}
+	
+    //choose smallest partition
+	
+	if( Flower < Fupper )
+	{
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyF, Flower) );
+		j = 0;
+		for(k=0; k<Fsize; ++k)
+			{
+				if( F[k]->generator[i] >= median)
+					copyF[j]=F[k];
+			}
+		Fsize = Flower;
+	}
+	else
+	{
+		upperLowerS[Ssize-1][1] = 0;
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyF, Fupper) );
+		j = 0;
+		for(k=0; k<Fsize; ++k)
+		{
+			if( F[k]->generator[i] < median)
+				copyF[j]=F[k];
+		}
+		Fsize = Fupper;
+	}
+	
+	record = Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize, record );
+	
+	SCIPfreeBufferArray(scip, &J);
+	SCIPfreeBufferArray(scip, &copyF);
+	SCIPfreeBufferArray(scip, &upperLowerS);
+	SCIPfreeBufferArray(scip, &alpha);
 	
 	return record;	
 }
 
 // choose a component bound sequence 
 static
-SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record record, ComponentBoundSequence* S, int* Ssize )
+SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record* record, ComponentBoundSequence* S, int* Ssize )
 {
+	int minSizeOfMaxPriority;  //neede if the last comp priority is euqal to the one in other bound sequences
+	int maxPriority;
 	int i;
-	int n;
+	int Index;
 	
+	minSizeOfMaxPriority = INT_MAX;
+	maxPriority = INT_MIN;
+	i = 0;
+	Index = -1;
+	
+	for( i=0; i< record->recordsize; ++i )
+	{
+		assert(record->sequencesizes > 0);
+		if(maxPriority <= getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) )
+		{
+			if( maxPriority < getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) )
+			{
+				maxPriority = getPriority( record->record[i][record->sequencesizes[i] -1 ][0] );
+				minSizeOfMaxPriority = record->sequencesizes[i];
+				Index = i;
+			}
+			else
+				if( record->sequencesizes[i] < minSize )
+				{
+					minSizeOfMaxPriority = record->sequencesizes[i];
+					Index = i;
+				}
+		}
+	}
+	assert(maxPriority!=INT_MIN);
+	assert(minSizeOfMaxPriority!=INT_MAX);
+	assert(Index>=0);
+	
+	sSize = minSizeOfMaxPriority;
+	SCIP_CALL( SCIPallocBufferArray(scip, &S, sSize) );
+	for(i=0; i< sSize;++i)
+		S[i]=record->record[Index][i];
+	//&S = &(record->record[i]);
+	
+	//free record
+	for( i=0; i< record->recordsize; ++i )
+	{
+		SCIPfreeBufferArray(scip, &(record->record[i]) );
+	}
+	SCIPfreeBufferArray(scip, &(record->record) );
 	
 	return SCIP_OKAY;	
 }
@@ -1212,9 +1457,10 @@ SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, struct GCG_Reco
 	//calculate IndexSet
 	IndexSetSize = F[0]->generatorsize;
 	SCIP_CALL( SCIPallocBufferArray(scip, &IndexSet, IndexSetSize) );
-	for( i=0; i<n; ++i )
-		IndexSet[i]=i;
-		
+	for( i=0; i<IndexSetSize; ++i )
+		//if( !continousVar(i))
+			IndexSet[i]=i;
+
 	
 	Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
 	
