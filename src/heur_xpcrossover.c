@@ -795,7 +795,6 @@ SCIP_RETCODE initializeSubproblem(
    /* if there is already a solution, add an objective cutoff */
    if( SCIPgetNSols(scip) > 0 )
    {
-      cutoff = SCIPinfinity(scip);
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);
@@ -896,8 +895,10 @@ static SCIP_RETCODE fixVariables(
       blockrep = GCGrelaxGetBlockRepresentative(scip, i);
 
       /* at least one extreme point must have been selected */
+#ifndef NDEBUG
       selidx = i * nusedpts;
       assert(selection[selidx] != -1);
+#endif
 
       /* compare the selected extreme points, where the first point is the reference point */
       for( j = 0; j < nusedpts; ++j )
@@ -933,9 +934,11 @@ static SCIP_RETCODE fixVariables(
                   SCIP_VAR** linkingpricingvars;
 
                   linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
+#ifndef NDEBUG
                   pricingvar = linkingpricingvars[blockrep];
                   assert(pricingvar != NULL);
-                  assert(GCGvarIsPricing(pricingvar));                  
+                  assert(GCGvarIsPricing(pricingvar));
+#endif
 
                   /* for linking variables, also check whether this is
                      the first block the variable appears in */
