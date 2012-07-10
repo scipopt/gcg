@@ -2898,6 +2898,10 @@ SCIP_RETCODE performProbing(
    oldnlpiters = SCIPgetNLPIterations(masterscip);
    oldpricerounds = SCIPgetNPriceRounds(masterscip);
 
+   *feasible = FALSE;
+   *lpobjvalue = 0.0;
+   *lpsolved = FALSE;
+
    /* solve the probing LP */
    if( usepricing )
    {
@@ -2936,7 +2940,7 @@ SCIP_RETCODE performProbing(
    }
    else
    {
-      SCIPdebugMessage("something went wrong, an lp error occured\n");
+      SCIPdebugMessage("something went wrong, an lp error occurred\n");
    }
 
    return SCIP_OKAY;
