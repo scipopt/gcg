@@ -1228,7 +1228,7 @@ SCIP_Real GCGgetCreationTime(
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VARDATA*         vardata,            /**< variable data structure */
-   int                   iteration           /**< iteration at which the variable is created */
+   SCIP_Longint          iteration           /**< iteration at which the variable is created */
    )
 {
    assert(scip != NULL);
@@ -1239,7 +1239,7 @@ void GCGsetIteration(
 }
 
 /** return stored iteration */
-SCIP_Real GCGgetIteration(
+SCIP_Longint GCGgetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VARDATA*         vardata             /**< variable data structure */
    )

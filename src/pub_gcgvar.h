@@ -349,7 +349,7 @@ SCIP_Real GCGgetCreationTime(
 
 /** returns the iteration when the var was created */
 extern
-SCIP_Real GCGgetIteration(
+SCIP_Longint GCGgetIteration(
    SCIP*           scip,         /**< SCIP data structure */
    SCIP_VARDATA*   vardata       /**< created variable */
    );
@@ -360,7 +360,7 @@ extern
 void GCGsetIteration(
    SCIP*           scip,         /**< SCIP data structure */
    SCIP_VARDATA*   vardata,      /**< created variable */
-   int             iteration     /**< iteration that this var was created */
+   SCIP_Longint    iteration     /**< iteration that this var was created */
    );
 
 void GCGsetGap(

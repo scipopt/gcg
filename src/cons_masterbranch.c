@@ -116,8 +116,11 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
    SCIP_CONS*            cons                /**< constraint for which the consdata is created */
 )
 {
+#ifdef SCIP_DEBUG
    SCIP_CONS* origcons_parent;
    SCIP_CONS* parent_origcons;
+#endif
+
    SCIP_CONS* origcons;
    SCIP_CONSDATA* parentdata;
    int i;
@@ -144,6 +147,7 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
    SCIP_ALLOC( BMSduplicateBlockMemoryArray(SCIPblkmem(scip), &consdata->name, SCIPconsGetName(consdata->origcons),
          strlen(SCIPconsGetName(consdata->origcons))+1) );
 
+#ifdef SCIP_DEBUG
       if( consdata->parentcons != NULL )
          parent_origcons = SCIPconsGetData(consdata->parentcons)->origcons;
       else
@@ -156,7 +160,7 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
 
       SCIPdebugMessage("cons: %s, origcons: %s, parent: %s => %s\n", SCIPconsGetName(cons), consdata->origcons == NULL? "NULL" : SCIPconsGetName( consdata->origcons ),
          parent_origcons == NULL? "NULL" :  SCIPconsGetName(parent_origcons), origcons_parent == NULL? "NULL" : SCIPconsGetName(origcons_parent) );
-
+#endif
 
    assert(SCIPgetCurrentNode(scip) == consdata->node || consdata->node == SCIPgetRootNode(scip));
    assert((SCIPgetNNodesLeft(scip)+SCIPgetNNodes(scip) == 1) == (consdata->node == SCIPgetRootNode(scip)));
@@ -2029,8 +2033,10 @@ void GCGconsMasterbranchCheckConsistency(
 
    for( i = 0; i < nconss; i++ )
    {
+#ifdef SCIP_DEBUG
       SCIP_CONS* parent_origcons;
       SCIP_CONS* origcons_parent;
+#endif
 
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
@@ -2047,6 +2053,7 @@ void GCGconsMasterbranchCheckConsistency(
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
       assert(consdata->origcons == NULL ||
          GCGconsOrigbranchGetMastercons(consdata->origcons) == conss[i]);
+
 #ifdef SCIP_DEBUG
       if( consdata->parentcons != NULL )
          parent_origcons = SCIPconsGetData(consdata->parentcons)->origcons;
@@ -2066,6 +2073,7 @@ void GCGconsMasterbranchCheckConsistency(
          parent_origcons == NULL? "NULL" :  SCIPconsGetName(parent_origcons),
          origcons_parent == NULL? "NULL" : SCIPconsGetName(origcons_parent) );
 #endif
+
    }
 #endif
 
