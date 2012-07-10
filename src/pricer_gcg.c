@@ -1569,6 +1569,10 @@ SCIP_RETCODE performOptimalPricing(
    assert(pricerdata != NULL);
    assert(pricetype == GCG_PRICETYPE_FARKAS || result != NULL);
 
+   assert(nfoundvars != NULL);
+   assert(bestredcost != NULL);
+   assert(bestredcostvalid != NULL);
+
    SCIPdebugMessage("optimal pricing\n");
 
    origprob = pricerdata->origprob;
