@@ -453,6 +453,8 @@ SCIP_RETCODE copyToDecdecomp(
    int* nsubscipconss;
    SCIP_CONS** linkingconss;
    int nlinkingconss;
+   SCIP_VAR** linkingvars;
+   int nlinkingvars;
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
    int nblocks;
@@ -468,6 +470,7 @@ SCIP_RETCODE copyToDecdecomp(
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
    nlinkingconss = 0;
+   nlinkingvars = 0;
    nblocks = detectordata->nblocks;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
@@ -475,6 +478,7 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
 
    for( i = 0; i < nblocks; ++i )
    {
@@ -514,9 +518,19 @@ SCIP_RETCODE copyToDecdecomp(
       size_t varblock;
       SCIP_VAR* var;
       var = SCIPvarGetProbvar(vars[i]);
+
       if(var == NULL)
          continue;
-      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, SCIPvarGetProbvar(vars[i])); /*lint !e507*/
+
+      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, var); /*lint !e507*/
+
+      if( varblock == 0 )
+      {
+         assert(!SCIPhashmapExists(detectordata->vartoblock, var));
+         linkingvars[nlinkingvars] = var;
+         ++nlinkingvars;
+         continue;
+      }
 
       assert(varblock > 0);
       assert(nblocks >= 0);
@@ -536,6 +550,11 @@ SCIP_RETCODE copyToDecdecomp(
       DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    }
 
+   if( nlinkingvars > 0 )
+   {
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+   }
+
    SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
    SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
@@ -545,7 +564,7 @@ SCIP_RETCODE copyToDecdecomp(
       SCIPfreeBufferArray(scip, &subscipconss[i]);
       SCIPfreeBufferArray(scip, &subscipvars[i]);
    }
-
+   SCIPfreeBufferArray(scip, &linkingvars);
    SCIPfreeBufferArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &nsubscipconss);
    SCIPfreeBufferArray(scip, &subscipconss);
