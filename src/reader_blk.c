@@ -89,7 +89,7 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
-   DECDECOMP* decdecomp;      /**< decomposition data structure */
+   DEC_DECOMP* decdecomp;      /**< decomposition data structure */
    int* varstoblock;          /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
    int* nblockvars;           /**< number of variable per block that are not linkingvars */
    int** linkingvarsblocks;   /**< array with blocks assigned to one linking var */
@@ -684,7 +684,7 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   DECDECOMP* decomp;
+   DEC_DECOMP* decomp;
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_VAR** allvars;
@@ -720,8 +720,8 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
 
-   DECdecdecompSetNBlocks(decomp, nblocks);
-   DECdecdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetNBlocks(decomp, nblocks);
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
 
    /* get memory for subscip variables and constraints */
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
@@ -782,8 +782,8 @@ SCIP_RETCODE fillDecompStruct(
    }
 
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -890,10 +890,10 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecdecompSetConstoblock(decomp, constoblock);
-   DECdecdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
+   DECdecompSetConstoblock(decomp, constoblock);
+   DECdecompSetVartoblock(decomp, vartoblock);
 
    SCIPfreeBufferArray(scip, &consvars);
    SCIPfreeBufferArray(scip, &linkingconss);
@@ -1068,8 +1068,8 @@ SCIP_DECL_READERFREE(readerFreeBlk)
    assert(readerdata != NULL);
 
    /* free decomp structure and readerdata */
-   if( DECdecdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
-      DECdecdecompFree(scip, &readerdata->decdecomp);
+   if( DECdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
+      DECdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
@@ -1107,7 +1107,7 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 
    /* create blk reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   SCIP_CALL( DECdecdecompCreate(scip, &readerdata->decdecomp) );
+   SCIP_CALL( DECdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include blk reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,

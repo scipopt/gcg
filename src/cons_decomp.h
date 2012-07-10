@@ -42,7 +42,7 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
 /** returns the decomposition structure **/
 extern
-DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
+DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
       SCIP* scip              /**< SCIP data structure */
    );
 
@@ -96,7 +96,7 @@ SCIP_Real DECgetRemainingTime(
 extern
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*      scip,           /**< SCIP data structure */
-   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+   DEC_DECOMP* decdecomp       /**< DEC_DECOMP data structure */
    );
 
 /** interface method to detect the structure */
@@ -114,7 +114,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
 /** returns the best known decomposition, if available and NULL otherwise */
 extern
-DECDECOMP* DECgetBestDecomp(
+DEC_DECOMP* DECgetBestDecomp(
    SCIP* scip                 /**< SCIP data structure */
    );
 

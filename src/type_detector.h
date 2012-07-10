@@ -72,7 +72,7 @@ typedef struct DEC_DetectorData DEC_DETECTORDATA;
  *  - SCIP_DIDNOTFIND : the method completed without finding a decomposition
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DECDECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
+#define DEC_DECL_DETECTSTRUCTURE(x) SCIP_RETCODE x (SCIP* scip, DEC_DETECTORDATA* detectordata, DEC_DECOMP*** decdecomps, int* ndecdecomps, SCIP_RESULT* result)
 
 #ifdef __cplusplus
 }

@@ -310,13 +310,13 @@ void GCGrelaxSetOrigPrimalSol(
 /** sets the structure information */
 void GCGsetStructDecdecomp(
    SCIP*       scip,       /**< SCIP data structure */
-   DECDECOMP*  decdecomp   /**< decomposition data structure */
+   DEC_DECOMP*  decdecomp   /**< decomposition data structure */
    );
 
 
 /** gets the structure information */
 extern
-DECDECOMP* GCGgetStructDecdecomp(
+DEC_DECOMP* GCGgetStructDecdecomp(
    SCIP*       scip        /**< SCIP data structure */
    );
 

@@ -68,7 +68,7 @@ static
 SCIP_RETCODE writeDecompositionHeader(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
 
@@ -128,7 +128,7 @@ static
 SCIP_RETCODE writeData(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
    SCIP_VAR** vars;
@@ -318,7 +318,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
    SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    )
 {

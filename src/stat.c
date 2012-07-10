@@ -25,7 +25,7 @@
 /** prints information about the best decomposition*/
 SCIP_RETCODE GCGwriteDecompositionData(SCIP* scip)
 {
-   DECDECOMP* decomposition = NULL;
+   DEC_DECOMP* decomposition = NULL;
    DEC_DETECTOR* detector;
    DEC_DECTYPE type;
    const char* typeName;
@@ -34,18 +34,18 @@ SCIP_RETCODE GCGwriteDecompositionData(SCIP* scip)
    int* nConsInBlocks;
 
    decomposition = DECgetBestDecomp(scip);
-   type = DECdecdecompGetType(decomposition);
+   type = DECdecompGetType(decomposition);
    typeName = DECgetStrType(type);
 
-   detector = DECdecdecompGetDetector(decomposition);
+   detector = DECdecompGetDetector(decomposition);
 
-   nBlocks = DECdecdecompGetNBlocks(decomposition);
+   nBlocks = DECdecompGetNBlocks(decomposition);
 
-   nVarsInBlocks = DECdecdecompGetNSubscipvars(decomposition);
-   nConsInBlocks = DECdecdecompGetNSubscipconss(decomposition);
+   nVarsInBlocks = DECdecompGetNSubscipvars(decomposition);
+   nConsInBlocks = DECdecompGetNSubscipconss(decomposition);
 
-   nLinkingVars = DECdecdecompGetNLinkingvars(decomposition);
-   nLinkingCons = DECdecdecompGetNLinkingconss(decomposition);
+   nLinkingVars = DECdecompGetNLinkingvars(decomposition);
+   nLinkingCons = DECdecompGetNLinkingconss(decomposition);
 
    /* print information about decomposition type and number of blocks, vars, linking vars and cons */
    SCIPinfoMessage(scip, NULL, "Decomposition:\n");

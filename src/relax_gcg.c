@@ -109,7 +109,7 @@ struct SCIP_RelaxData
    SCIP_SOL*        origprimalsol;       /**< best original primal solution */
 
    /* structure information */
-   DECDECOMP*       decdecomp;           /**< structure information */
+   DEC_DECOMP*       decdecomp;           /**< structure information */
 };
 
 /*
@@ -205,7 +205,7 @@ static
 SCIP_RETCODE convertStructToGCG(
       SCIP*             scip,       /**< SCIP data structure          */
       SCIP_RELAXDATA*   relaxdata,  /**< relaxator data structure     */
-      DECDECOMP*        decdecomp   /**< decdecom data structure      */
+      DEC_DECOMP*        decdecomp   /**< decdecom data structure      */
    )
 {
    int i;
@@ -229,22 +229,22 @@ SCIP_RETCODE convertStructToGCG(
    assert(relaxdata != NULL);
    assert(scip != NULL);
 
-   assert(DECdecdecompGetLinkingconss(decdecomp) != NULL || DECdecdecompGetNLinkingconss(decdecomp) == 0);
-   assert(DECdecdecompGetNSubscipvars(decdecomp) != 0);
-   assert(DECdecdecompGetSubscipvars(decdecomp) != NULL);
+   assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
+   assert(DECdecompGetNSubscipvars(decdecomp) != 0);
+   assert(DECdecompGetSubscipvars(decdecomp) != NULL);
 
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
-   linkingconss = DECdecdecompGetLinkingconss(decdecomp);
-   nlinkingconss = DECdecdecompGetNLinkingconss(decdecomp);
-   linkingvars = DECdecdecompGetLinkingvars(decdecomp);
-   nlinkingvars = DECdecdecompGetNLinkingvars(decdecomp);
-   subscipvars = DECdecdecompGetSubscipvars(decdecomp);
-   nsubscipvars = DECdecdecompGetNSubscipvars(decdecomp);
+   linkingconss = DECdecompGetLinkingconss(decdecomp);
+   nlinkingconss = DECdecompGetNLinkingconss(decdecomp);
+   linkingvars = DECdecompGetLinkingvars(decdecomp);
+   nlinkingvars = DECdecompGetNLinkingvars(decdecomp);
+   subscipvars = DECdecompGetSubscipvars(decdecomp);
+   nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
 
-   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
-   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
+   nblocks = DECdecompGetNBlocks(decdecomp);
 
    SCIP_CALL( SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(scip), nvars) );
    relaxdata->npricingprobs = nblocks;
@@ -413,8 +413,8 @@ SCIP_RETCODE checkSetppcStructure(
 
    assert(relaxdata->decdecomp != NULL);
 
-   masterconss = DECdecdecompGetLinkingconss(relaxdata->decdecomp);
-   nmasterconss = DECdecdecompGetNLinkingconss(relaxdata->decdecomp);
+   masterconss = DECdecompGetLinkingconss(relaxdata->decdecomp);
+   nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    assert(nmasterconss >= 0);
    assert(masterconss != NULL || nmasterconss == 0);
 
@@ -977,7 +977,7 @@ SCIP_RETCODE createPricingVariables(
       if( blocknr == -1 )
       {
          size_t tempblock;
-         tempblock = (size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
+         tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
          assert(tempblock < INT_MAX);
          assert(tempblock > 0);
          blocknr = (int) (tempblock -1); /*lint !e806*/
@@ -1233,8 +1233,8 @@ SCIP_RETCODE createMasterprobConss(
    SCIP_Bool success;
    char name[SCIP_MAXSTRLEN];
 
-   masterconss = DECdecdecompGetLinkingconss(relaxdata->decdecomp);
-   nmasterconss = DECdecdecompGetNLinkingconss(relaxdata->decdecomp);
+   masterconss = DECdecompGetLinkingconss(relaxdata->decdecomp);
+   nmasterconss = DECdecompGetNLinkingconss(relaxdata->decdecomp);
    newcons = NULL;
 
    assert(SCIPhashmapGetNEntries(relaxdata->hashorig2origvar) == SCIPgetNVars(scip));
@@ -1290,9 +1290,9 @@ SCIP_RETCODE createPricingprobConss(
    char name[SCIP_MAXSTRLEN];
    SCIP_Bool success;
 
-   subscipconss = DECdecdecompGetSubscipconss(relaxdata->decdecomp);
-   nsubscipconss = DECdecdecompGetNSubscipconss(relaxdata->decdecomp);
-   nblocks = DECdecdecompGetNBlocks(relaxdata->decdecomp);
+   subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
+   nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
+   nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1689,7 +1689,7 @@ SCIP_RETCODE initRelaxator(
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
          relaxdata->masterconss, relaxdata->masterconss) );
 
-   SCIP_CALL( DECdecdecompTransform(scip, relaxdata->decdecomp) );
+   SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -1993,7 +1993,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
 
          /* if we have a blockdetection, see whether the node is block diagonal */
-         if( DECdecdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
+         if( DECdecompGetType(relaxdata->decdecomp) == DEC_DECTYPE_DIAGONAL )
          {
             SCIP_CALL( solveDiagonalBlocks(scip, relaxdata, result, lowerbound) );
             if( *result == SCIP_SUCCESS )
@@ -3259,7 +3259,7 @@ void GCGrelaxSetOrigPrimalSol(
 /** sets the structure information */
 void GCGsetStructDecdecomp(
    SCIP*       scip,       /**< SCIP data structure */
-   DECDECOMP*  decdecomp   /**< decomposition data structure */
+   DEC_DECOMP*  decdecomp   /**< decomposition data structure */
    )
 {
    SCIP_RELAX* relax;
@@ -3278,7 +3278,7 @@ void GCGsetStructDecdecomp(
 }
 
 /** gets the structure information */
-DECDECOMP* GCGgetStructDecdecomp(
+DEC_DECOMP* GCGgetStructDecdecomp(
    SCIP*       scip        /**< SCIP data structure */
    )
 {

@@ -440,7 +440,7 @@ static
 SCIP_RETCODE copyToDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp data structure */
+   DEC_DECOMP*           decdecomp           /**< decdecomp data structure */
    )
 {
    SCIP_CONS** conss;
@@ -461,7 +461,7 @@ SCIP_RETCODE copyToDecdecomp(
    assert(detectordata != NULL);
    assert(decdecomp != NULL);
 
-   assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
+   assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
 
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
@@ -484,9 +484,9 @@ SCIP_RETCODE copyToDecdecomp(
       nsubscipconss[i] = 0;
    }
 
-   DECdecdecompSetNBlocks(decdecomp, nblocks);
-   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
-   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetNBlocks(decdecomp, nblocks);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
 
    for( i = 0; i < nconss; ++i )
    {
@@ -528,16 +528,16 @@ SCIP_RETCODE copyToDecdecomp(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
    }
    else
    {
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
    }
 
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
 
    for( i = nblocks-1; i >= 0; --i )
@@ -638,9 +638,9 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       {
          SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
          SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
-         SCIP_CALL( DECdecdecompCreate(scip, &((*decdecomps)[0])) );
+         SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
          SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
-         detectordata->blockdiagonal = DECdecdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
+         detectordata->blockdiagonal = DECdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
          *ndecdecomps = 1;
       }
       else
