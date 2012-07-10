@@ -62,18 +62,18 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
-   SCIP_Longint          maxnodes;          /**< maximum number of nodes to regard in the subproblem                 */
-   SCIP_Longint          minnodes;          /**< minimum number of nodes to regard in the subproblem                 */
-   SCIP_Longint          nodesofs;          /**< number of nodes added to the contingent of the total nodes          */
-   SCIP_Longint          usednodes;         /**< nodes already used by RENS in earlier calls                         */
-   SCIP_Real             minfixingrate;     /**< minimum percentage of integer variables that have to be fixed       */
-   SCIP_Real             minimprove;        /**< factor by which RENS should at least improve the incumbent          */
-   SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem       */
-   SCIP_Bool             binarybounds;      /**< should general integers get binary bounds [floor(.),ceil(.)] ?      */
-   SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?        */
-   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
-                                             *   to constraints in subproblem?
-                                             */
+   SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem                 */
+   SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem                 */
+   SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes          */
+   SCIP_Longint          usednodes;          /**< nodes already used by RENS in earlier calls                         */
+   SCIP_Real             minfixingrate;      /**< minimum percentage of integer variables that have to be fixed       */
+   SCIP_Real             minimprove;         /**< factor by which RENS should at least improve the incumbent          */
+   SCIP_Real             nodesquot;          /**< subproblem nodes in relation to nodes of the original problem       */
+   SCIP_Bool             binarybounds;       /**< should general integers get binary bounds [floor(.),ceil(.)] ?      */
+   SCIP_Bool             uselprows;          /**< should subproblem be created out of the rows in the LP rows?        */
+   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                              *   to constraints in subproblem?
+                                              */
 };
 
 

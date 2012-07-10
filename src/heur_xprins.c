@@ -68,26 +68,26 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
-   SCIP_Real             equalityrate;      /**< minimum percentage of coincidence of relaxation and extreme pts   */
-   SCIP_Longint          maxnodes;          /**< maximum number of nodes to regard in the subproblem               */
-   SCIP_Longint          minnodes;          /**< minimum number of nodes to regard in the subproblem               */
-   SCIP_Longint          nodesofs;          /**< number of nodes added to the contingent of the total nodes        */
-   SCIP_Longint          usednodes;         /**< nodes already used by xprins in earlier calls                     */
-   SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem     */
-   int                   nusedpts;          /**< number of extreme pts per block that will be taken into account   */
+   SCIP_Real             equalityrate;       /**< minimum percentage of coincidence of relaxation and extreme pts   */
+   SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem               */
+   SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem               */
+   SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes        */
+   SCIP_Longint          usednodes;          /**< nodes already used by xprins in earlier calls                     */
+   SCIP_Real             nodesquot;          /**< subproblem nodes in relation to nodes of the original problem     */
+   int                   nusedpts;           /**< number of extreme pts per block that will be taken into account   */
 
-   SCIP_Longint          nwaitingnodes;     /**< number of nodes without incumbent change heuristic should wait    */
-   unsigned int          nfailures;         /**< number of failures since last successful call                     */
-   SCIP_Longint          nextnodenumber;    /**< number of BnB nodes at which crossover should be called next      */
-   SCIP_Real             minfixingrate;     /**< minimum percentage of integer variables that have to be fixed     */
-   SCIP_Real             minimprove;        /**< factor by which xprins should at least improve the incumbent      */
-   SCIP_Bool             randomization;     /**< should the choice which sols to take be randomized?               */
-   SCIP_Bool             dontwaitatroot;    /**< should the nwaitingnodes parameter be ignored at the root node?   */
-   SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?      */
-   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
-                                             *   to constraints in subproblem?
-                                             */
-   unsigned int          randseed;          /**< seed value for random number generator                            */
+   SCIP_Longint          nwaitingnodes;      /**< number of nodes without incumbent change heuristic should wait    */
+   unsigned int          nfailures;          /**< number of failures since last successful call                     */
+   SCIP_Longint          nextnodenumber;     /**< number of BnB nodes at which crossover should be called next      */
+   SCIP_Real             minfixingrate;      /**< minimum percentage of integer variables that have to be fixed     */
+   SCIP_Real             minimprove;         /**< factor by which xprins should at least improve the incumbent      */
+   SCIP_Bool             randomization;      /**< should the choice which sols to take be randomized?               */
+   SCIP_Bool             dontwaitatroot;     /**< should the nwaitingnodes parameter be ignored at the root node?   */
+   SCIP_Bool             uselprows;          /**< should subproblem be created out of the rows in the LP rows?      */
+   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                              *   to constraints in subproblem?
+                                              */
+   unsigned int          randseed;           /**< seed value for random number generator                            */
 };
 
 
@@ -101,10 +101,10 @@ struct SCIP_HeurData
 /** for each block, select extreme points (represented by mastervars) to be compared to the relaxation solution */
 static
 SCIP_RETCODE selectExtremePoints(
-   SCIP*                 scip,                  /**< original SCIP data structure                                    */
-   SCIP_HEURDATA*        heurdata,              /**< primal heuristic data                                           */
-   int*                  selection,             /**< indices of selected extreme points                              */
-   SCIP_Bool*            success                /**< pointer to store whether the process was successful             */
+   SCIP*                 scip,               /**< original SCIP data structure                                    */
+   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                           */
+   int*                  selection,          /**< indices of selected extreme points                              */
+   SCIP_Bool*            success             /**< pointer to store whether the process was successful             */
    )
 {
    SCIP* masterprob;
@@ -216,10 +216,10 @@ SCIP_RETCODE selectExtremePoints(
 /** select extreme points (represented by mastervars) randomly */
 static
 SCIP_RETCODE selectExtremePointsRandomized(
-   SCIP*                 scip,              /**< original SCIP data structure                                    */
-   SCIP_HEURDATA*        heurdata,          /**< primal heuristic data                                           */
-   int*                  selection,         /**< indices of selected extreme points                              */
-   SCIP_Bool*            success            /**< pointer to store whether the process was successful             */
+   SCIP*                 scip,               /**< original SCIP data structure                                    */
+   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                           */
+   int*                  selection,          /**< indices of selected extreme points                              */
+   SCIP_Bool*            success             /**< pointer to store whether the process was successful             */
    )
 {
    SCIP* masterprob;

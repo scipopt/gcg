@@ -71,27 +71,27 @@ typedef struct PointTuple POINTTUPLE;
 /** primal heuristic data */
 struct SCIP_HeurData
 {
-   SCIP_Longint          maxnodes;          /**< maximum number of nodes to regard in the subproblem               */
-   SCIP_Longint          minnodes;          /**< minimum number of nodes to regard in the subproblem               */
-   SCIP_Longint          nodesofs;          /**< number of nodes added to the contingent of the total nodes        */
-   SCIP_Longint          usednodes;         /**< nodes already used by crossover in earlier calls                  */
-   SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem     */
+   SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem               */
+   SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem               */
+   SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes        */
+   SCIP_Longint          usednodes;          /**< nodes already used by crossover in earlier calls                  */
+   SCIP_Real             nodesquot;          /**< subproblem nodes in relation to nodes of the original problem     */
 
-   int                   nusedpts;          /**< number of extreme pts per block that will be taken into account   */
-   SCIP_Longint          nwaitingnodes;     /**< number of nodes without incumbent change heuristic should wait    */
-   unsigned int          nfailures;         /**< number of failures since last successful call                     */
-   SCIP_Longint          nextnodenumber;    /**< number of BnB nodes at which crossover should be called next      */
-   SCIP_Real             minfixingrate;     /**< minimum percentage of integer variables that have to be fixed     */
-   SCIP_Real             minimprove;        /**< factor by which crossover should at least improve the incumbent   */
-   SCIP_Bool             randomization;     /**< should the choice which sols to take be randomized?               */
-   SCIP_Bool             dontwaitatroot;    /**< should the nwaitingnodes parameter be ignored at the root node?   */
-   SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?      */
-   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
-                                             *   to constraints in subproblem?
-                                             */
-   unsigned int          randseed;          /**< seed value for random number generator                            */
-   SCIP_HASHTABLE*       hashtable;         /**< hashtable used to store the extreme point tuples already used     */
-   POINTTUPLE*           lasttuple;         /**< last tuple of extreme points                                      */
+   int                   nusedpts;           /**< number of extreme pts per block that will be taken into account   */
+   SCIP_Longint          nwaitingnodes;      /**< number of nodes without incumbent change heuristic should wait    */
+   unsigned int          nfailures;          /**< number of failures since last successful call                     */
+   SCIP_Longint          nextnodenumber;     /**< number of BnB nodes at which crossover should be called next      */
+   SCIP_Real             minfixingrate;      /**< minimum percentage of integer variables that have to be fixed     */
+   SCIP_Real             minimprove;         /**< factor by which crossover should at least improve the incumbent   */
+   SCIP_Bool             randomization;      /**< should the choice which sols to take be randomized?               */
+   SCIP_Bool             dontwaitatroot;     /**< should the nwaitingnodes parameter be ignored at the root node?   */
+   SCIP_Bool             uselprows;          /**< should subproblem be created out of the rows in the LP rows?      */
+   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                              *   to constraints in subproblem?
+                                              */
+   unsigned int          randseed;           /**< seed value for random number generator                            */
+   SCIP_HASHTABLE*       hashtable;          /**< hashtable used to store the extreme point tuples already used     */
+   POINTTUPLE*           lasttuple;          /**< last tuple of extreme points                                      */
 };
 
 /** n-tuple of extreme points and their hashkey */
@@ -161,8 +161,8 @@ SCIP_DECL_HASHKEYVAL(hashKeyValPts)
 /** calculates a hash key for a given tuple of master variable indices */
 static
 unsigned int calculateHashKey(
-   int* indices,                            /**< indices of master variables                                     */
-   int size                                 /**< number of master variables                                      */
+   int*                  indices,            /**< indices of master variables                                     */
+   int                   size                /**< number of master variables                                      */
    )
 {
    int i;
@@ -182,11 +182,11 @@ unsigned int calculateHashKey(
 /** creates a new tuple of extreme points (= mastervars) */
 static
 SCIP_RETCODE createPtTuple(
-   SCIP*                 scip,              /**< original SCIP data structure                                    */
-   POINTTUPLE**          elem,              /**< tuple of master variables which should be created               */
-   int*                  indices,           /**< indices of master variables                                     */
-   int                   size,              /**< number of master variables                                      */
-   SCIP_HEURDATA*        heurdata           /**< primal heuristic data                                           */
+   SCIP*                 scip,               /**< original SCIP data structure                                    */
+   POINTTUPLE**          elem,               /**< tuple of master variables which should be created               */
+   int*                  indices,            /**< indices of master variables                                     */
+   int                   size,               /**< number of master variables                                      */
+   SCIP_HEURDATA*        heurdata            /**< primal heuristic data                                           */
    )
 {
    /* memory allocation */
@@ -209,10 +209,10 @@ SCIP_RETCODE createPtTuple(
 /** for each block, select extreme points (represented by mastervars) to be crossed */
 static
 SCIP_RETCODE selectExtremePoints(
-   SCIP*                 scip,                  /**< original SCIP data structure                                    */
-   SCIP_HEURDATA*        heurdata,              /**< primal heuristic data                                           */
-   int*                  selection,             /**< indices of selected extreme points                              */
-   SCIP_Bool*            success                /**< pointer to store whether the process was successful             */
+   SCIP*                 scip,               /**< original SCIP data structure                                    */
+   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                           */
+   int*                  selection,          /**< indices of selected extreme points                              */
+   SCIP_Bool*            success             /**< pointer to store whether the process was successful             */
    )
 {
    SCIP* masterprob;
@@ -459,10 +459,10 @@ SCIP_RETCODE selectExtremePoints(
 /** select extreme points (represented by mastervars) to be crossed randomly*/
 static
 SCIP_RETCODE selectExtremePointsRandomized(
-   SCIP*                 scip,              /**< original SCIP data structure                                    */
-   SCIP_HEURDATA*        heurdata,          /**< primal heuristic data                                           */
-   int*                  selection,         /**< indices of selected extreme points                              */
-   SCIP_Bool*            success            /**< pointer to store whether the process was successful             */
+   SCIP*                 scip,               /**< original SCIP data structure                                    */
+   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                           */
+   int*                  selection,          /**< indices of selected extreme points                              */
+   SCIP_Bool*            success             /**< pointer to store whether the process was successful             */
    )
 {
    SCIP* masterprob;
@@ -619,9 +619,9 @@ SCIP_RETCODE selectExtremePointsRandomized(
 /** prints selected extreme points to standard output */
 static
 SCIP_RETCODE printExtremePoints(
-      SCIP*          scip,
-      int            nusedpts,
-      int*           selection
+   SCIP*                 scip,
+   int                   nusedpts,
+   int*                  selection
       )
 {
    SCIP* masterprob;
@@ -637,6 +637,7 @@ SCIP_RETCODE printExtremePoints(
    int i;
    int j;
    int k;
+   int selidx;
 
    assert(scip != NULL);
 
@@ -652,35 +653,38 @@ SCIP_RETCODE printExtremePoints(
    assert(nmastervars >= 0);
 
    /* first, print the relaxation solution */
-   printf("------------------------------------------------------------\n");
-   printf("Current relaxation solution:\n");
+   SCIPdebugPrintf("------------------------------------------------------------\n");
+   SCIPdebugPrintf("Current relaxation solution:\n");
    SCIP_CALL( SCIPprintSol(scip, GCGrelaxGetCurrentOrigSol(scip), NULL, FALSE) );
-   printf("------------------------------------------------------------\n");
+   SCIPdebugPrintf("------------------------------------------------------------\n");
 
    /* then, print the selected extreme points for each block */
    for( i = 0; i < nblocks; ++i )
    {
-      printf("Block %i\n", i+1);
-      printf("------------------------------------------------------------\n");
+      SCIPdebugPrintf("Block %i\n", i+1);
+      SCIPdebugPrintf("------------------------------------------------------------\n");
 
       for( j = 0; j < nusedpts; ++j )
       {
-         if( selection[i * nusedpts + j] != -1 )
+         selidx = i * nusedpts + j;
+         if( selection[selidx] != -1 )
          {
-            mastervar = mastervars[selection[i * nusedpts + j]];
+            mastervar = mastervars[selection[selidx]];
             assert(GCGvarIsMaster(mastervar));
 
             origvars = GCGmasterVarGetOrigvars(mastervar);
             origvals = GCGmasterVarGetOrigvals(mastervar);
             norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
-            printf("Extreme point %i, mastervar %s, masterval=%g, index=%d:\n",
+            SCIPdebugPrintf("Extreme point %i, mastervar %s, masterval=%g, index=%d:\n",
                   j+1, SCIPvarGetName(mastervar),
                   SCIPgetSolVal(masterprob, NULL, mastervar), SCIPvarGetProbindex(mastervar));
             for( k = 0; k < norigvars; ++k )
-               printf("%-32s % 20.15g \t(obj:%.15g)\n",
-                     SCIPvarGetName(origvars[k]), origvals[k], SCIPvarGetObj(origvars[k]));
-            printf("------------------------------------------------------------\n");
+            {
+               SCIPdebugPrintf("%-32s % 20.15g \t(obj:%.15g)\n",
+                  SCIPvarGetName(origvars[k]), origvals[k], SCIPvarGetObj(origvars[k]));
+            }
+            SCIPdebugPrintf("------------------------------------------------------------\n");
          }
       }
    }
