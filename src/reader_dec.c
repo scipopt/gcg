@@ -81,7 +81,7 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   DECDECOMP* decdecomp;      /**< decomposition data structure*/
+   DEC_DECOMP* decdecomp;      /**< decomposition data structure*/
    int* varstoblock;          /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
    int* nblockvars;           /**< n variable per block that are not linkingvars*/
    SCIP_CONS*** blockconss;   /**< array of assignments from constraints to their blocks [blocknr][consid]  */
@@ -695,7 +695,7 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   DECDECOMP* decomp;
+   DEC_DECOMP* decomp;
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_VAR** allvars;
@@ -731,8 +731,8 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = decinput->nblocks;
 
-   DECdecdecompSetNBlocks(decomp, nblocks);
-   DECdecdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetNBlocks(decomp, nblocks);
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
 
    /* get memory for subscip variables and constraints */
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
@@ -794,8 +794,8 @@ SCIP_RETCODE fillDecompStruct(
    }
 
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
 
    /* copy linking constraints and set them in decomposition data */
    for( i = 0; i < nconss; i ++ )
@@ -807,7 +807,7 @@ SCIP_RETCODE fillDecompStruct(
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(allcons[i]));
       }
    }
-   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -831,9 +831,9 @@ SCIP_RETCODE fillDecompStruct(
          SCIP_CALL( SCIPhashmapSetImage(constoblock, readerdata->blockconss[i][j], (void*) (size_t) i) );
       }
    }
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecdecompSetConstoblock(decomp, constoblock);
-   DECdecdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
+   DECdecompSetConstoblock(decomp, constoblock);
+   DECdecompSetVartoblock(decomp, vartoblock);
 
    SCIPfreeBufferArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &linkingvars);
@@ -984,8 +984,8 @@ SCIP_DECL_READERFREE(readerFreeDec)
    assert(readerdata != NULL);
 
    /* free decomp structure and readerdata */
-   if( DECdecdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
-      DECdecdecompFree(scip, &readerdata->decdecomp);
+   if( DECdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
+      DECdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
@@ -1027,7 +1027,7 @@ SCIPincludeReaderDec(
 
    /* create dec reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   SCIP_CALL( DECdecdecompCreate(scip, &readerdata->decdecomp) );
+   SCIP_CALL( DECdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include dec reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
@@ -1097,7 +1097,7 @@ static
 SCIP_RETCODE writeData(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
    SCIP_CONS*** subscipconss;
@@ -1112,27 +1112,27 @@ SCIP_RETCODE writeData(
    assert(file != NULL);
    assert(decdecomp != NULL);
 
-   assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
-           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_BORDERED
-           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_DIAGONAL
-           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN
-           || DECdecdecompGetType(decdecomp) == DEC_DECTYPE_STAIRCASE);
-   SCIPdebugMessage("DECDECOMP Type: %s\n", DECgetStrType(DECdecdecompGetType(decdecomp)));
+   assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
+           || DECdecompGetType(decdecomp) == DEC_DECTYPE_BORDERED
+           || DECdecompGetType(decdecomp) == DEC_DECTYPE_DIAGONAL
+           || DECdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN
+           || DECdecompGetType(decdecomp) == DEC_DECTYPE_STAIRCASE);
+   SCIPdebugMessage("DEC_DECOMP Type: %s\n", DECgetStrType(DECdecompGetType(decdecomp)));
 
    /* if we don't have staicase, but something else, go through the blocks and create the indices */
    /* subscip conss */
-   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
-   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
    assert(subscipconss != NULL);
    assert(nsubscipconss != NULL);
 
    /* linking cons */
-   linkingconss = DECdecdecompGetLinkingconss(decdecomp);
-   nlinkingconss = DECdecdecompGetNLinkingconss(decdecomp);
+   linkingconss = DECdecompGetLinkingconss(decdecomp);
+   nlinkingconss = DECdecompGetNLinkingconss(decdecomp);
    assert(nlinkingconss >= 0 && nlinkingconss < SCIPgetNConss(scip));
    assert(linkingconss != NULL || nlinkingconss == 0 );
 
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
+   nblocks = DECdecompGetNBlocks(decdecomp);
 
    SCIPinfoMessage(scip, file, "NBLOCKS\n");
    SCIPinfoMessage(scip, file, "%d\n", nblocks);
@@ -1163,7 +1163,7 @@ SCIP_RETCODE writeData(
 SCIP_RETCODE SCIPwriteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
    SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    )
 {
@@ -1188,7 +1188,7 @@ SCIP_RETCODE SCIPwriteDecomp(
    }
    else
    {
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), DECdecdecompGetNBlocks(decdecomp));
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), DECdecompGetNBlocks(decdecomp));
    }
 
    if( writeDecomposition )

@@ -551,7 +551,7 @@ SCIP_RETCODE readREFFile(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< reader data structure */
    REFINPUT*             refinput,           /**< REF reading data */
-   DECDECOMP*            decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
    const char*           filename            /**< name of the input file */
    )
 {
@@ -581,7 +581,7 @@ SCIP_RETCODE readREFFile(
 
       case REF_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, refinput) );
-         DECdecdecompSetNBlocks(decdecomp, refinput->nblocks);
+         DECdecompSetNBlocks(decdecomp, refinput->nblocks);
          break;
 
       case REF_BLOCKSIZES:
@@ -603,8 +603,8 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decdecomp */
-   DECdecdecompSetVartoblock(decdecomp, refinput->vartoblock);
-   DECdecdecompSetConstoblock(decdecomp, refinput->constoblock);
+   DECdecompSetVartoblock(decdecomp, refinput->vartoblock);
+   DECdecompSetConstoblock(decdecomp, refinput->constoblock);
 
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, refinput->vartoblock, refinput->constoblock,
          refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip)) );
@@ -624,7 +624,7 @@ SCIP_RETCODE writeREFFile(
    )
 {
    SCIP_HASHMAP *cons2origindex;
-   DECDECOMP* decdecomp;
+   DEC_DECOMP* decdecomp;
 
    SCIP_CONS** conss;
    int nconss;
@@ -649,7 +649,7 @@ SCIP_RETCODE writeREFFile(
       SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
       return SCIP_INVALIDCALL;
    }
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
+   nblocks = DECdecompGetNBlocks(decdecomp);
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
@@ -669,8 +669,8 @@ SCIP_RETCODE writeREFFile(
       SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
-   subscipconss = DECdecdecompGetSubscipconss(decdecomp);
-   nsubscipconss = DECdecdecompGetNSubscipconss(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decdecomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
    SCIPinfoMessage(scip, file, "%d ", nblocks);
 
    assert(nsubscipconss != NULL);
@@ -758,7 +758,7 @@ SCIP_RETCODE SCIPreadRef(
    )
 {
    REFINPUT refinput;
-   DECDECOMP* decdecomp;
+   DEC_DECOMP* decdecomp;
    int i;
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
@@ -793,7 +793,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    /* read the file */
-   SCIP_CALL( DECdecdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
    SCIP_CALL( readREFFile(scip, reader, &refinput, decdecomp, filename) );
 
    SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);

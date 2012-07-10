@@ -534,7 +534,7 @@ SCIP_RETCODE assignBlocksToOriginalVariables(
 static SCIP_RETCODE buildTransformedProblem(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
-   DECDECOMP*            decdecomp,          /**< decdecomp data structure */
+   DEC_DECOMP*           decdecomp,          /**< decdecomp data structure */
    int                   nblocks,            /**< number of blocks for this decomposition */
    SCIP_RESULT*          result              /**< indicates whether a structure was found*/
    )
@@ -759,17 +759,17 @@ static SCIP_RETCODE buildTransformedProblem(
    if( !emptyblocks )
    {
       /* copy the local data to the decomp structure */
-      DECdecdecompSetNBlocks(decdecomp, nblocks);
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
-      SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-      SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+      DECdecompSetNBlocks(decdecomp, nblocks);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
+      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
       if( nlinkingconss > 0 )
       {
-         SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-         DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+         SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+         DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
       }
-      DECdecdecompSetVartoblock(decdecomp, vartoblock);
-      DECdecdecompSetConstoblock(decdecomp, constoblock);
+      DECdecompSetVartoblock(decdecomp, vartoblock);
+      DECdecompSetConstoblock(decdecomp, constoblock);
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -819,7 +819,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
 
    for( i = 0; i < ndecs; ++i )
    {
-      SCIP_CALL( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+      SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[i]) );
    }
 
    SCIP_CALL( createMetisFile(scip, detectordata) );
@@ -852,7 +852,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    }
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
-      DECdecdecompFree(scip,  &(*decdecomps)[i]);
+      DECdecompFree(scip,  &(*decdecomps)[i]);
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n", *ndecdecomps );
 

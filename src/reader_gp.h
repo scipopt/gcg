@@ -42,13 +42,13 @@ SCIP_RETCODE SCIPincludeReaderGp(
 SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
    SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    );
 
 SCIP_RETCODE SCIPReaderGpSetDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    );
 
 #ifdef __cplusplus

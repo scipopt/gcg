@@ -1019,7 +1019,7 @@ static
 SCIP_RETCODE GetVartoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp pointer */
+   DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
    int i;
@@ -1061,8 +1061,8 @@ SCIP_RETCODE GetVartoblock(
       }
    }
 
-   DECdecdecompSetVartoblock(decdecomp, vartoblock);
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   DECdecompSetVartoblock(decdecomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
    for(i = 0; i < detectordata->nblocks; ++i)
    {
@@ -1079,7 +1079,7 @@ static
 SCIP_RETCODE GetConsindex(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp pointer */
+   DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
 )
 {
    int i;
@@ -1236,15 +1236,15 @@ SCIP_RETCODE GetConsindex(
    assert(consindex != NULL);
    if(!detectordata->fixedblocks )
    {
-      DECdecdecompSetNBlocks(decdecomp, detectordata->nblocks);
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
+      DECdecompSetNBlocks(decdecomp, detectordata->nblocks);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
       SCIP_CALL( GetVartoblock(scip, detectordata,decdecomp) );
-      SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss2, nsubscipconss2) );
-      SCIP_CALL( DECdecdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
-      SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars ) );
-      DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
-      DECdecdecompSetVarindex(decdecomp, varindex);
-      DECdecdecompSetConsindex(decdecomp, consindex);
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss2, nsubscipconss2) );
+      SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars ) );
+      DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
+      DECdecompSetVarindex(decdecomp, varindex);
+      DECdecompSetConsindex(decdecomp, consindex);
       for(i = 0; i < detectordata->nblocks; ++i)
       {
          SCIPfreeMemoryArray(scip, &subscipconss2[i]);
@@ -1268,7 +1268,7 @@ SCIP_RETCODE GetConsindex(
 static SCIP_RETCODE GetLinkingVars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp pointer */
+   DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
    int i;
@@ -1351,9 +1351,9 @@ static SCIP_RETCODE GetLinkingVars(
    assert(detectordata->nrelvars == SCIPhashmapGetNEntries(vartoblock));
 #endif
 
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars ) );
-   DECdecdecompSetVartoblock(decdecomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars ) );
+   DECdecompSetVartoblock(decdecomp, vartoblock);
 
    for(i = 0; i < detectordata->nblocks; ++i)
    {
@@ -1370,7 +1370,7 @@ static SCIP_RETCODE GetLinkingVars(
 static SCIP_RETCODE FixedBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp pointer */
+   DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
    int i;
@@ -1426,11 +1426,11 @@ static SCIP_RETCODE FixedBlocks(
 
    assert( SCIPhashmapGetNEntries(detectordata->constoblock) == detectordata->nrelconss);
 
-   DECdecdecompSetNBlocks(decdecomp, block);
-   DECdecdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, detectordata->subscipconss, detectordata->nsubscipconss) );
-   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
-   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   DECdecompSetNBlocks(decdecomp, block);
+   DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->subscipconss, detectordata->nsubscipconss) );
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
 
    #ifdef SCIP_DEBUG
    for(i = 0; i < block-1; ++i)
@@ -1927,7 +1927,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    SCIP_CALL(buildGraphStructure(scip, detectordata));
    SCIPdebugMessage("buildGraphstructure successful \n");
 
-   SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[0]) );
+   SCIP_CALL_ABORT( DECdecompCreate(scip, &(*decdecomps)[0]) );
 
 
    /* get the partitions for the new variables from metis */

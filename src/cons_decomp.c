@@ -71,7 +71,7 @@ struct SCIP_ConsData
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
-   DECDECOMP**           decdecomps;         /**< array of decomposition structures */
+   DEC_DECOMP**          decdecomps;         /**< array of decomposition structures */
    DEC_DETECTOR**        detectors;          /**< array of structure detectors */
    int*                  priorities;         /**< priorities of the detectors */
    int                   ndetectors;         /**< number of detectors */
@@ -91,7 +91,7 @@ struct SCIP_ConshdlrData
 static
 SCIP_RETCODE evaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp,          /**< decomposition data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
    SCIP_DECSCORES*       score               /**< returns the score of the decomposition */
       )
 {
@@ -118,7 +118,7 @@ SCIP_RETCODE evaluateDecomposition(
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
-   nblocks = DECdecdecompGetNBlocks(decdecomp);
+   nblocks = DECdecompGetNBlocks(decdecomp);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nlinkvarsblocks, nblocks) );
@@ -152,8 +152,8 @@ SCIP_RETCODE evaluateDecomposition(
       {
          ishandled[j] = FALSE;
       }
-      curconss = DECdecdecompGetSubscipconss(decdecomp)[i];
-      ncurconss = DECdecdecompGetNSubscipconss(decdecomp)[i];
+      curconss = DECdecompGetSubscipconss(decdecomp)[i];
+      ncurconss = DECdecompGetNSubscipconss(decdecomp)[i];
 
       for( j = 0; j < ncurconss; ++j )
       {
@@ -178,14 +178,14 @@ SCIP_RETCODE evaluateDecomposition(
             assert(SCIPvarIsActive(var));
             assert(!SCIPvarIsDeleted(var));
             ++(nzblocks[i]);
-            if( !SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var) )
+            if( !SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), var) )
             {
-               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), curvars[k]); /*lint !e507*/
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), curvars[k]); /*lint !e507*/
             }
             else
             {
-               assert(SCIPhashmapExists(DECdecdecompGetVartoblock(decdecomp), var));
-               block = (int)(size_t) SCIPhashmapGetImage(DECdecdecompGetVartoblock(decdecomp), var); /*lint !e507*/
+               assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), var));
+               block = (int)(size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var); /*lint !e507*/
             }
 
             if( block == nblocks+1 && ishandled[SCIPvarGetProbindex(var)] == FALSE )
@@ -222,7 +222,7 @@ SCIP_RETCODE evaluateDecomposition(
    }
 
    /* calculate border area */
-   borderarea = DECdecdecompGetNLinkingconss(decdecomp)*nvars+DECdecdecompGetNLinkingvars(decdecomp)*(nconss-DECdecdecompGetNLinkingconss(decdecomp));
+   borderarea = DECdecompGetNLinkingconss(decdecomp)*nvars+DECdecompGetNLinkingvars(decdecomp)*(nconss-DECdecompGetNLinkingconss(decdecomp));
 
    /*   blockarea = 0; */
    density = 1E20;
@@ -237,9 +237,9 @@ SCIP_RETCODE evaluateDecomposition(
       density = MIN(density, blockdensities[i]);
 
       /* calculate linking var ratio */
-      if( DECdecdecompGetNLinkingvars(decdecomp) > 0 )
+      if( DECdecompGetNLinkingvars(decdecomp) > 0 )
       {
-         varratio *= 1.0*nlinkvarsblocks[i]/DECdecdecompGetNLinkingvars(decdecomp);
+         varratio *= 1.0*nlinkvarsblocks[i]/DECdecompGetNLinkingvars(decdecomp);
       }
       else
       {
@@ -251,7 +251,7 @@ SCIP_RETCODE evaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
-   switch(DECdecdecompGetType(decdecomp))
+   switch(DECdecompGetType(decdecomp))
    {
    case DEC_DECTYPE_ARROWHEAD:
       score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
@@ -263,11 +263,11 @@ SCIP_RETCODE evaluateDecomposition(
       score->totalscore = 0.0;
       break;
    case DEC_DECTYPE_STAIRCASE:
-      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
+      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecompGetType(decdecomp)));
       score->totalscore = 1.0;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecdecompGetType(decdecomp)));
+      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecompGetType(decdecomp)));
       assert(FALSE);
       break;
    default:
@@ -342,7 +342,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    {
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
@@ -392,7 +392,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
       conshdlrdata->decdecomps = NULL;
@@ -520,7 +520,7 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 /** sets (and adds) the decomposition structure **/
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -550,7 +550,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 
 
 /** returns the decomposition structure **/
-DECDECOMP** SCIPconshdlrDecompGetDecdecomps(
+DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -776,7 +776,7 @@ SCIP_RETCODE DECdetectStructure(
       for( i = 0; i < conshdlrdata->ndetectors; ++i )
       {
          DEC_DETECTOR* detector;
-         DECDECOMP** decdecomps;
+         DEC_DECOMP** decdecomps;
          int ndecdecomps;
 
          ndecdecomps = -1;
@@ -800,7 +800,7 @@ SCIP_RETCODE DECdetectStructure(
             for( j = 0; j < ndecdecomps; ++j )
             {
                assert(decdecomps != NULL);
-               DECdecdecompSetDetector(decdecomps[j], detector);
+               DECdecompSetDetector(decdecomps[j], detector);
             }
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
             BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
@@ -815,7 +815,7 @@ SCIP_RETCODE DECdetectStructure(
    }
    else 
    {
-      SCIP_CALL( DECdecdecompTransform(scip, conshdlrdata->decdecomps[0]) );
+      SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
    /* evaluate all decompositions and sort them by score */
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
@@ -836,7 +836,7 @@ SCIP_RETCODE DECdetectStructure(
    if( conshdlrdata->ndecomps > 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
-         DECdecdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecdecompGetType(conshdlrdata->decdecomps[0])));
+         DECdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecompGetType(conshdlrdata->decdecomps[0])));
       GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
    }
    else
@@ -868,7 +868,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   DECDECOMP *tmp;
+   DEC_DECOMP *tmp;
    DEC_DETECTOR *detector;
 
    assert(scip != NULL);
@@ -891,13 +891,13 @@ SCIP_RETCODE DECwriteAllDecomps(
 
       conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
 
-      detector = DECdecdecompGetDetector(conshdlrdata->decdecomps[i]);
+      detector = DECdecompGetDetector(conshdlrdata->decdecomps[i]);
       if( detector == NULL )
          decchar = '?';
       else
          decchar = detector->decchar;
 
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s", pname, decchar, DECdecdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s", pname, decchar, DECdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
 
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
@@ -907,7 +907,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 }
 
 /** returns the best known decomposition, if available and NULL otherwise */
-DECDECOMP* DECgetBestDecomp(
+DEC_DECOMP* DECgetBestDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

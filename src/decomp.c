@@ -38,9 +38,9 @@ const char *DECgetStrType(
 }
 
 /** initializes the decdecomp structure to absolutely nothing */
-SCIP_RETCODE DECdecdecompCreate(
+SCIP_RETCODE DECdecompCreate(
    SCIP*                 scip,               /**< Pointer to the SCIP instance */
-   DECDECOMP**           decomp              /**< Pointer to the decdecomp instance */
+   DEC_DECOMP**           decomp              /**< Pointer to the decdecomp instance */
    )
 {
    assert(scip != NULL);
@@ -68,12 +68,12 @@ SCIP_RETCODE DECdecdecompCreate(
 }
 
 /** frees the decdecomp structure */
-void DECdecdecompFree(
+void DECdecompFree(
    SCIP*                 scip,               /**< pointer to the SCIP instance */
-   DECDECOMP**           decdecomp           /**< pointer to the decdecomp instance */
+   DEC_DECOMP**          decdecomp           /**< pointer to the decdecomp instance */
    )
 {
-   DECDECOMP* decomp;
+   DEC_DECOMP* decomp;
    int i;
 
    assert( scip!= NULL );
@@ -117,8 +117,8 @@ void DECdecdecompFree(
 }
 
 /** sets the type of the decomposition */
-void DECdecdecompSetType(
-   DECDECOMP*            decdecomp,          /**< pointer to the decdecomp instance */
+void DECdecompSetType(
+   DEC_DECOMP*           decdecomp,          /**< pointer to the decdecomp instance */
    DEC_DECTYPE           type                /**< type of the decomposition */
    )
 {
@@ -127,8 +127,8 @@ void DECdecdecompSetType(
 }
 
 /** gets the type of the decomposition */
-DEC_DECTYPE DECdecdecompGetType(
-   DECDECOMP*            decdecomp           /**< Pointer to the decdecomp instance */
+DEC_DECTYPE DECdecompGetType(
+   DEC_DECOMP*           decdecomp           /**< Pointer to the decdecomp instance */
    )
 {
    assert(decdecomp != NULL);
@@ -137,8 +137,8 @@ DEC_DECTYPE DECdecdecompGetType(
 
 
 /** sets the number of blocks for decomposition */
-void DECdecdecompSetNBlocks(
-   DECDECOMP*            decdecomp,          /**< Pointer to the decdecomp instance */
+void DECdecompSetNBlocks(
+   DEC_DECOMP*           decdecomp,          /**< Pointer to the decdecomp instance */
    int                   nblocks             /**< number of blocks for decomposition */
    )
 {
@@ -148,8 +148,8 @@ void DECdecdecompSetNBlocks(
 }
 
 /** gets the number of blocks for decomposition */
-int DECdecdecompGetNBlocks(
-   DECDECOMP*            decdecomp           /**< Pointer to the decdecomp instance */
+int DECdecompGetNBlocks(
+   DEC_DECOMP*           decdecomp           /**< Pointer to the decdecomp instance */
    )
 {
    assert(decdecomp != NULL);
@@ -157,9 +157,9 @@ int DECdecdecompGetNBlocks(
 }
 
 /** Copies the input subscipvars array to the given decdecomp structure */
-SCIP_RETCODE DECdecdecompSetSubscipvars(
+SCIP_RETCODE DECdecompSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp,          /**< DECDECOMP data structure */
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_VAR***           subscipvars,        /**< Subscipvars array  */
    int*                  nsubscipvars        /**< number of subscipvars per block */
    )
@@ -193,8 +193,8 @@ SCIP_RETCODE DECdecdecompSetSubscipvars(
 }
 
 /** Returns the subscipvars array of the given decdecomp structure */
-SCIP_VAR***  DECdecdecompGetSubscipvars(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_VAR***  DECdecompGetSubscipvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -202,8 +202,8 @@ SCIP_VAR***  DECdecdecompGetSubscipvars(
 }
 
 /** Returns the nsubscipvars array of the given decdecomp structure */
-int*  DECdecdecompGetNSubscipvars(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+int*  DECdecompGetNSubscipvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -211,9 +211,9 @@ int*  DECdecdecompGetNSubscipvars(
 }
 
 /** Copies the input subscipconss array to the given decdecomp structure */
-SCIP_RETCODE DECdecdecompSetSubscipconss(
+SCIP_RETCODE DECdecompSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp,          /**< DECDECOMP data structure */
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_CONS***          subscipconss,       /**< Subscipconss array  */
    int*                  nsubscipconss       /**< number of subscipconss per block */
    )
@@ -247,8 +247,8 @@ SCIP_RETCODE DECdecdecompSetSubscipconss(
 }
 
 /** Returns the subscipconss array of the given decdecomp structure */
-SCIP_CONS***  DECdecdecompGetSubscipconss(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_CONS***  DECdecompGetSubscipconss(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -256,8 +256,8 @@ SCIP_CONS***  DECdecdecompGetSubscipconss(
 }
 
 /** Returns the nsubscipconss array of the given decdecomp structure */
-int*  DECdecdecompGetNSubscipconss(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+int*  DECdecompGetNSubscipconss(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -265,9 +265,9 @@ int*  DECdecdecompGetNSubscipconss(
 }
 
 /** Copies the input linkingconss array to the given decdecomp structure */
-SCIP_RETCODE DECdecdecompSetLinkingconss(
+SCIP_RETCODE DECdecompSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp,          /**< DECDECOMP data structure */
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_CONS**           linkingconss,       /**< Linkingconss array  */
    int                   nlinkingconss       /**< number of linkingconss per block */
    )
@@ -288,8 +288,8 @@ SCIP_RETCODE DECdecdecompSetLinkingconss(
 }
 
 /** Returns the linkingconss array of the given decdecomp structure */
-SCIP_CONS**  DECdecdecompGetLinkingconss(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_CONS**  DECdecompGetLinkingconss(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -297,8 +297,8 @@ SCIP_CONS**  DECdecdecompGetLinkingconss(
 }
 
 /** Returns the nlinkingconss array of the given decdecomp structure */
-int  DECdecdecompGetNLinkingconss(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+int  DECdecompGetNLinkingconss(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -307,9 +307,9 @@ int  DECdecdecompGetNLinkingconss(
 }
 
 /** Copies the input linkingvars array to the given decdecomp structure */
-SCIP_RETCODE DECdecdecompSetLinkingvars(
+SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*          scip,                      /**< SCIP data structure */
-   DECDECOMP*     decdecomp,                 /**< DECDECOMP data structure */
+   DEC_DECOMP*     decdecomp,                 /**< DEC_DECOMP data structure */
    SCIP_VAR**     linkingvars,               /**< Linkingvars array  */
    int            nlinkingvars               /**< number of linkingvars per block */
    )
@@ -332,8 +332,8 @@ SCIP_RETCODE DECdecdecompSetLinkingvars(
 }
 
 /** Returns the linkingvars array of the given decdecomp structure */
-SCIP_VAR**  DECdecdecompGetLinkingvars(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_VAR**  DECdecompGetLinkingvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -341,8 +341,8 @@ SCIP_VAR**  DECdecdecompGetLinkingvars(
 }
 
 /** Returns the nlinkingvars array of the given decdecomp structure */
-int  DECdecdecompGetNLinkingvars(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+int  DECdecompGetNLinkingvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -351,9 +351,9 @@ int  DECdecdecompGetNLinkingvars(
 }
 
 /** Copies the input stairlinkingvars array to the given decdecomp structure */
-SCIP_RETCODE DECdecdecompSetStairlinkingvars(
+SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP* scip,                 /**< SCIP data structure */
-   DECDECOMP* decdecomp,       /**< DECDECOMP data structure */
+   DEC_DECOMP* decdecomp,       /**< DEC_DECOMP data structure */
    SCIP_VAR*** stairlinkingvars,    /**< Linkingvars array  */
    int* nstairlinkingvars           /**< number of linkingvars per block */
    )
@@ -387,8 +387,8 @@ SCIP_RETCODE DECdecdecompSetStairlinkingvars(
 }
 
 /** Returns the stairlinkingvars array of the given decdecomp structure */
-SCIP_VAR***  DECdecdecompGetStairlinkingvars(
-   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+SCIP_VAR***  DECdecompGetStairlinkingvars(
+   DEC_DECOMP* decdecomp       /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -396,8 +396,8 @@ SCIP_VAR***  DECdecdecompGetStairlinkingvars(
 }
 
 /** Returns the nstairlinkingvars array of the given decdecomp structure */
-int*  DECdecdecompGetNStairlinkingvars(
-   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+int*  DECdecompGetNStairlinkingvars(
+   DEC_DECOMP* decdecomp       /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -406,8 +406,8 @@ int*  DECdecdecompGetNStairlinkingvars(
 }
 
 /** Sets the vartoblock hashmap of the given decdecomp structure */
-void  DECdecdecompSetVartoblock(
-   DECDECOMP*            decdecomp,          /**< DECDECOMP data structure */
+void  DECdecompSetVartoblock(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
    )
 {
@@ -417,8 +417,8 @@ void  DECdecdecompSetVartoblock(
 }
 
 /** Returns the vartoblock hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecdecompGetVartoblock(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_HASHMAP*  DECdecompGetVartoblock(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -426,8 +426,8 @@ SCIP_HASHMAP*  DECdecdecompGetVartoblock(
 }
 
 /** Sets the constoblock hashmap of the given decdecomp structure */
-void  DECdecdecompSetConstoblock(
-   DECDECOMP*            decdecomp,          /**< DECDECOMP data structure */
+void  DECdecompSetConstoblock(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
    )
 {
@@ -437,8 +437,8 @@ void  DECdecdecompSetConstoblock(
 }
 
 /** Returns the constoblock hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecdecompGetConstoblock(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+SCIP_HASHMAP*  DECdecompGetConstoblock(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -446,8 +446,8 @@ SCIP_HASHMAP*  DECdecdecompGetConstoblock(
 }
 
 /** Sets the varindex hashmap of the given decdecomp structure */
-void  DECdecdecompSetVarindex(
-   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+void  DECdecompSetVarindex(
+   DEC_DECOMP*    decdecomp,      /**< DEC_DECOMP data structure */
    SCIP_HASHMAP* varindex        /**< Varindex hashmap */
    )
 {
@@ -457,8 +457,8 @@ void  DECdecdecompSetVarindex(
 }
 
 /** Returns the varindex hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecdecompGetVarindex(
-   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+SCIP_HASHMAP*  DECdecompGetVarindex(
+   DEC_DECOMP* decdecomp       /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -466,8 +466,8 @@ SCIP_HASHMAP*  DECdecdecompGetVarindex(
 }
 
 /** Sets the consindex hashmap of the given decdecomp structure */
-void  DECdecdecompSetConsindex(
-   DECDECOMP*    decdecomp,      /**< DECDECOMP data structure */
+void  DECdecompSetConsindex(
+   DEC_DECOMP*    decdecomp,      /**< DEC_DECOMP data structure */
    SCIP_HASHMAP* consindex       /**< Consindex hashmap */
    )
 {
@@ -477,8 +477,8 @@ void  DECdecdecompSetConsindex(
 }
 
 /** Returns the consindex hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecdecompGetConsindex(
-   DECDECOMP* decdecomp       /**< DECDECOMP data structure */
+SCIP_HASHMAP*  DECdecompGetConsindex(
+   DEC_DECOMP* decdecomp       /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -488,7 +488,7 @@ SCIP_HASHMAP*  DECdecdecompGetConsindex(
 /** completely initializes decdecomp from the values of the hashmaps */
 SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
@@ -603,18 +603,18 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
    }
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
    }
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   DECdecdecompSetVartoblock(decdecomp, vartoblock);
-   DECdecdecompSetConstoblock(decdecomp, constoblock);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   DECdecompSetVartoblock(decdecomp, vartoblock);
+   DECdecompSetConstoblock(decdecomp, constoblock);
 
    SCIPfreeBufferArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &nsubscipconss);
@@ -634,8 +634,8 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 }
 
 /** sets the detector for the given decdecomp structure */
-void DECdecdecompSetDetector(
-   DECDECOMP*            decdecomp,          /**< decdecomp instance */
+void DECdecompSetDetector(
+   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    DEC_DETECTOR*         detector            /**< detector data structure */
    )
 {
@@ -646,8 +646,8 @@ void DECdecdecompSetDetector(
 }
 
 /** gets the detector for the given decdecomp structure */
-DEC_DETECTOR* DECdecdecompGetDetector(
-   DECDECOMP*            decdecomp           /**< DECDECOMP data structure */
+DEC_DETECTOR* DECdecompGetDetector(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    )
 {
    assert(decdecomp != NULL);
@@ -656,9 +656,9 @@ DEC_DETECTOR* DECdecdecompGetDetector(
 }
 
 /** transforms all constraints and variables, updating the arrays */
-SCIP_RETCODE DECdecdecompTransform(
+SCIP_RETCODE DECdecompTransform(
    SCIP*                 scip,               /**< SCIP data structure */
-   DECDECOMP*            decdecomp           /**< decdecomp instance */
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    )
 {
    int b;
@@ -748,16 +748,16 @@ SCIP_RETCODE DECdecdecompTransform(
 }
 
 /** prints out detailed information on the contents of decdecomp*/
-void DECdecdecompPrintDecomp(
+void DECdecompPrintDecomp(
    SCIP*      scip,           /**< SCIP data structure */
-   DECDECOMP* decdecomp       /**< decdecomp instance */
+   DEC_DECOMP* decdecomp       /**< decdecomp instance */
    )
 {
    int i;
    int j;
    SCIP_VAR* var;
    SCIP_CONS* cons;
-   SCIPinfoMessage(scip, NULL, "================DECDECOMP===============\n");
+   SCIPinfoMessage(scip, NULL, "================DEC_DECOMP===============\n");
    SCIPinfoMessage(scip, NULL, "# blocks: %i\n", decdecomp->nblocks);
    for(i = 0; i < decdecomp->nblocks; ++i)
    {

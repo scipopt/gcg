@@ -24,19 +24,16 @@ extern "C" {
 #endif
 
 /** prints information about the best decomposition*/
-SCIP_RETCODE writeDecompositionData(
+extern
+SCIP_RETCODE GCGwriteDecompositionData(
    SCIP* scip           /**< SCIP data structure */
    );
 
 /** prints information about the creation of the Vars*/
-SCIP_RETCODE writeVarCreationDetails(
+extern
+SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP* scip           /**< SCIP data structure */
 );
-
-int checkNodes(
-   int* nodes,
-   int node
-   );
 
 
 #ifdef __cplusplus

@@ -716,7 +716,7 @@ typedef struct IndexMap INDEXMAP;
 /** detector data */
 struct DEC_DetectorData
 {
-//   DECDECOMP* decdecomp;
+//   DEC_DECOMP* decdecomp;
    SCIP_VAR*** varsperblock;
    int* nvarsperblock;
    SCIP_CONS*** consperblock;
@@ -2161,27 +2161,27 @@ static
 SCIP_RETCODE copyDetectorDataToDecomp(
       SCIP*             scip,         /**< SCIP data structure */
       DEC_DETECTORDATA* detectordata, /**< presolver data data structure */
-      DECDECOMP*        decdecomp        /**< DECOMP data structure */
+      DEC_DECOMP*        decdecomp        /**< DECOMP data structure */
       )
 {
    assert(scip != 0);
    assert(detectordata != 0);
    assert(decdecomp != 0);
 
-   DECdecdecompSetNBlocks(decdecomp, detectordata->blocks);
-   DECdecdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock) );
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock) );
-   SCIP_CALL( DECdecdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars) );
-   SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss) );
+   DECdecompSetNBlocks(decdecomp, detectordata->blocks);
+   DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars) );
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss) );
    //hashmaps: shallow copy
-   DECdecdecompSetVarindex(decdecomp, detectordata->indexmap->varindex);
-   DECdecdecompSetConsindex(decdecomp, detectordata->indexmap->consindex);
-   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
-   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
+   DECdecompSetVarindex(decdecomp, detectordata->indexmap->varindex);
+   DECdecompSetConsindex(decdecomp, detectordata->indexmap->consindex);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
    //debug
 //   PrintDetectordata(scip, detectordata);
-//   DECdecdecompPrintDecomp(scip, decdecomp);
+//   DECdecompPrintDecomp(scip, decdecomp);
    return SCIP_OKAY;
 }
 
@@ -2199,7 +2199,7 @@ static
 SCIP_RETCODE blocking(
       SCIP* scip,
       DEC_DETECTORDATA* detectordata,
-      DECDECOMP*** decdecomps,
+      DEC_DECOMP*** decdecomps,
       int* ndecdecomps,
       int nvars,
       int ncons,
@@ -2301,7 +2301,7 @@ SCIP_RETCODE blocking(
             SCIPdebugMessage("dynamic blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
             copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
             //debug
-            DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+            DECdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
             *ndecdecomps += 1;
          }
       }
@@ -2317,7 +2317,7 @@ SCIP_RETCODE blocking(
          SCIPdebugMessage("dynamic blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
          copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
          //debug
-         DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+         DECdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
          *ndecdecomps += 1;
       }
    }
@@ -2337,7 +2337,7 @@ SCIP_RETCODE blocking(
             blockingStatic(scip, detectordata, tau, nvars);
             copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
             //debug
-            DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+            DECdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
             *ndecdecomps += 1;
          }
       }
@@ -2353,7 +2353,7 @@ SCIP_RETCODE blocking(
          SCIPdebugMessage("static blocking: copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[%i]);\n", *ndecdecomps);
          copyDetectorDataToDecomp(scip, detectordata, (*decdecomps)[*ndecdecomps]);
          //debug
-         DECdecdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
+         DECdecompPrintDecomp(scip, (*decdecomps)[*ndecdecomps]);
          *ndecdecomps += 1;
       }
    }
@@ -2532,11 +2532,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
    for(i = 0; i < ndecs; ++i)
    {
-      SCIP_CALL_ABORT( DECdecdecompCreate(scip, &(*decdecomps)[i]) );
+      SCIP_CALL_ABORT( DECdecompCreate(scip, &(*decdecomps)[i]) );
    }
    //remove empty constraints
    SCIP_CALL( findRelevantConss(scip, detectordata) );
-   //SCIP_CALL(DECdecdecompCreate(scip, &detectordata->decdecomp));
+   //SCIP_CALL(DECdecompCreate(scip, &detectordata->decdecomp));
    nvars = SCIPgetNVars(scip);
    vars_array = SCIPgetVars(scip);
    ncons = detectordata->nRelevantConss;
@@ -2609,7 +2609,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIPdebugMessage("Detected %i decompositions. Block sizes are ", *ndecdecomps);
    for(i = 0; i < *ndecdecomps; ++i)
    {
-      SCIPinfoMessage(scip, NULL, "%i ", DECdecdecompGetNBlocks( (*decdecomps)[i] ));
+      SCIPinfoMessage(scip, NULL, "%i ", DECdecompGetNBlocks( (*decdecomps)[i] ));
    }
    SCIPinfoMessage(scip, NULL, "\n");
 
