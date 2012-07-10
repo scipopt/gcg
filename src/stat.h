@@ -13,8 +13,8 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef STAT_H_
-#define STAT_H_
+#ifndef GCG_STAT_H_
+#define GCG_STAT_H_
 
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
@@ -25,18 +25,19 @@ extern "C" {
 
 /** prints information about the best decomposition*/
 extern
-SCIP_RETCODE GCGwriteDecompositionData(
-   SCIP* scip           /**< SCIP data structure */
+SCIP_RETCODE
+GCGwriteDecompositionData(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** prints information about the creation of the Vars*/
 extern
 SCIP_RETCODE GCGwriteVarCreationDetails(
-   SCIP* scip           /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
 );
 
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* STAT_H_ */
+#endif /* GCG_STAT_H_ */
