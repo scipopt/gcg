@@ -634,7 +634,9 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          {
             SCIP_VAR* pricingvar;
             SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
             int norigpricingvars;
+#endif
 
             /* if the variable is zero, nothing happens */
             if( SCIPisZero(scip, origvals[i]) )
@@ -644,8 +646,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             assert(pricingvar != NULL);
             assert(GCGvarIsPricing(pricingvar));
 
-            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
             origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(blocknr[block] < norigpricingvars);
+#endif
 
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
@@ -692,14 +698,20 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             {
                SCIP_VAR* pricingvar;
                SCIP_VAR** origpricingvars;
-               int norigpricingvars;
+#ifndef NDEBUG
+            int norigpricingvars;
+#endif
 
                pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
                assert(pricingvar != NULL);
                assert(GCGvarIsPricing(pricingvar));
 
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(blocknr[block] < norigpricingvars);
+#endif
 
                /* decrease the corresponding value */
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], -origvals[k]) );

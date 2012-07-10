@@ -302,7 +302,9 @@ SCIP_RETCODE initializeStartsol(
                {
                   SCIP_VAR* pricingvar;
                   SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
                   int norigpricingvars;
+#endif
 
                   assert(GCGvarGetBlock(origvar) == block);
 
@@ -312,13 +314,17 @@ SCIP_RETCODE initializeStartsol(
                   assert(GCGvarIsPricing(pricingvar));
 
                   /* get original variables represented by origvar */
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                   origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+#ifndef NDEBUG
+                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+#endif
 
                   /* increase the corresponding value */
                   for( k = 0; k < (int) roundval; ++k )
                   {
+#ifndef NDEBUG
                      assert(blocknr[block] + k < norigpricingvars);
+#endif
                      SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block] + k], origval) );
                   }
                }
@@ -689,7 +695,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       if( block == -1 )
       {
          SCIP_VAR* origvar;
+#ifndef NDEBUG
          int origblock;
+#endif
 
          /* get original variable and the block it belongs to;
           * the variable should not be a linking variable
@@ -698,8 +706,10 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
          origvar = origvars[0];
          assert(GCGvarIsOriginal(origvar));
          assert(origvals[0] == 1.0);
+#ifndef NDEBUG
          origblock = GCGvarGetBlock(origvar);
          assert(origblock == -1);
+#endif
 
          /* set solution value to rounded up value */
          SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, 1.0) );
@@ -766,7 +776,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             {
                SCIP_VAR* pricingvar;
                SCIP_VAR** origpricingvars;
-               int norigpricingvars;
+#ifndef NDEBUG
+            int norigpricingvars;
+#endif
 
                /* if the variable is zero, nothing happens */
                if( SCIPisZero(scip, origval) )
@@ -776,8 +788,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                assert(pricingvar != NULL);
                assert(GCGvarIsPricing(pricingvar));
 
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(blocknr[block] < norigpricingvars);
+#endif
 
                /* increase the corresponding value */
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origval) );
@@ -827,14 +843,20 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                {
                   SCIP_VAR* pricingvar;
                   SCIP_VAR** origpricingvars;
-                  int norigpricingvars;
+#ifndef NDEBUG
+            int norigpricingvars;
+#endif
 
                   pricingvar = GCGoriginalVarGetPricingVar(origvar);
                   assert(pricingvar != NULL);
                   assert(GCGvarIsPricing(pricingvar));
 
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                   origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(blocknr[block] < norigpricingvars);
+#endif
 
                   /* decrease the corresponding value */
                   SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], -origval) );

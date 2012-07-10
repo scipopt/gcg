@@ -224,7 +224,9 @@ SCIP_RETCODE selectExtremePoints(
 
    int nusedpts;
    int block;
+#ifndef NDEBUG
    int nidentblocks;
+#endif
    int* blocknrs;
    int* identblock;
    SCIP_Real* blockvalue;
@@ -310,7 +312,9 @@ SCIP_RETCODE selectExtremePoints(
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
+#ifndef NDEBUG
       nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+#endif
 
       while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
       {
@@ -334,7 +338,9 @@ SCIP_RETCODE selectExtremePoints(
                break;
             }
 
+#ifndef NDEBUG
          assert(blocknrs[block] >= nidentblocks || j < nblocks);
+#endif
       }
    }
 
@@ -372,7 +378,9 @@ SCIP_RETCODE selectExtremePoints(
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
+#ifndef NDEBUG
       nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+#endif
 
       assert(SCIPisFeasGE(scip, mastervals[i], 0.0) && SCIPisFeasLT(scip, mastervals[i], 1.0));
 
@@ -420,7 +428,9 @@ SCIP_RETCODE selectExtremePoints(
                   break;
                }
 
+#ifndef NDEBUG
             assert(blocknrs[block] >= nidentblocks || j < nblocks);
+#endif
          }
       }
    }

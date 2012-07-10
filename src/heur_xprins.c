@@ -243,9 +243,6 @@ SCIP_RETCODE selectExtremePointsRandomized(
    int* blockpts;        /* all points of a block which to be considered           */
    SCIP_Real* ptvals;    /* solution values of extreme points in master problem    */
    int lastpt;           /* the worst extreme point possible to choose             */
-   int iters;            /* iteration counter                                      */
-
-//   POINTTUPLE* elem;
 
    int i;
    int j;
@@ -305,72 +302,58 @@ SCIP_RETCODE selectExtremePointsRandomized(
    }
 
    *success = FALSE;
-   iters = 0;
 
-   /* perform at maximum 10 restarts and stop as soon as a new set of solutions is found */
-//   do
+   /* perform randomization: for each block, select a set of extreme points to be considered */
+   for( i = 0; i < nblocks; ++i )
    {
-      for( i = 0; i < nblocks; ++i )
+      int blockrep;
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
+
+      /* get representative of this block */
+      blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+      assert(blockrep >= 0 && blockrep <= i);
+
+      /* get all relevant extreme points for this block */
+      k = 0;
+      for( j = 0; j < nmastervars; ++j )
       {
-         int blockrep;
+         SCIP_VAR* mastervar;
+         SCIP_Real solval;
+         int block;
 
-         SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
-         SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
+         mastervar = mastervars[j];
+         solval = SCIPgetSolVal(masterprob, NULL, mastervar);
+         block = GCGvarGetBlock(mastervar);
 
-         /* get representative of this block */
-         blockrep = GCGrelaxGetBlockRepresentative(scip, i);
-         assert(blockrep >= 0 && blockrep <= i);
-
-         /* get all relevant extreme points for this block */
-         k = 0;
-         for( j = 0; j < nmastervars; ++j )
+         if( block == blockrep && !SCIPisFeasZero(scip, solval) )
          {
-            SCIP_VAR* mastervar;
-            SCIP_Real solval;
-            int block;
-
-            mastervar = mastervars[j];
-            solval = SCIPgetSolVal(masterprob, NULL, mastervar);
-            block = GCGvarGetBlock(mastervar);
-
-            if( block == blockrep && !SCIPisFeasZero(scip, solval) )
-            {
-               assert(k < npts[blockrep]);
-               blockpts[k] = j;
-               ++k;
-            }
+            assert(k < npts[blockrep]);
+            blockpts[k] = j;
+            ++k;
          }
-         assert(k == npts[blockrep]);
+      }
+      assert(k == npts[blockrep]);
 
-         /* sort the extreme points */
-         SCIPsortRealInt(ptvals, blockpts, npts[blockrep]);
-         lastpt = npts[blockrep];
+      /* sort the extreme points */
+      SCIPsortRealInt(ptvals, blockpts, npts[blockrep]);
+      lastpt = npts[blockrep];
 
-         /* perform a random selection for this block */
-         for( k = 0; k < nusedpts; ++k )
-         {
-            int idx;
+      /* perform a random selection for this block */
+      for( k = 0; k < nusedpts; ++k )
+      {
+         int idx;
 
-            idx = SCIPgetRandomInt(nusedpts-k-1, lastpt-1, &heurdata->randseed);
-            selection[i * nusedpts + k] = blockpts[idx];
-            lastpt = idx;
-         }
-
-         SCIPfreeBufferArray(scip, &blockpts);
-         SCIPfreeBufferArray(scip, &ptvals);
+         idx = SCIPgetRandomInt(nusedpts-k-1, lastpt-1, &heurdata->randseed);
+         selection[i * nusedpts + k] = blockpts[idx];
+         lastpt = idx;
       }
 
-      /* creates an object ready to be inserted into the hashtable */
-//      SCIP_CALL( createPtTuple(scip, &elem, selection, nusedpts * nblocks, heurdata) );
-
-      /* check whether the randomized set is already in the hashtable, if not, insert it */
-//      if( !SCIPhashtableExists(heurdata->hashtable, elem) )
-//      {
-//         SCIP_CALL( SCIPhashtableInsert(heurdata->hashtable, elem) );
-//         *success = TRUE;
-//      }
-//      ++iters;
+      SCIPfreeBufferArray(scip, &blockpts);
+      SCIPfreeBufferArray(scip, &ptvals);
    }
+
    *success = TRUE;
 
    /* free memory */
@@ -1091,25 +1074,10 @@ SCIP_DECL_HEURINIT(heurInitXprins)
 }
 
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
-static
-SCIP_DECL_HEUREXIT(heurExitXprins)
-{  /*lint --e{715}*/
-   SCIP_HEURDATA* heurdata;
-
-   assert(heur != NULL);
-   assert(scip != NULL);
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
-
-   return SCIP_OKAY;
-}
-
+#define heurExitXprins NULL
 
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
 #define heurInitsolXprins NULL
-
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
 #define heurExitsolXprins NULL
