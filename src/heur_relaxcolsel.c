@@ -49,11 +49,11 @@
 struct SCIP_HeurData
 {
    /* parameters */
-   int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
+   int                   mincolumns;         /**< minimum number of columns to regard in the master problem */
 
    /* data */
-   SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
-   int                  lastncols;            /**< number of columns in the last call of the heuristic       */
+   SCIP_VAR**            zerovars;           /**< array of master variables corresponding to zero solutions */
+   int                   lastncols;          /**< number of columns in the last call of the heuristic       */
 };
 
 
