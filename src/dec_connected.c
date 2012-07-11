@@ -675,11 +675,6 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       }
    }
 
-   if( *ndecdecomps == 0 )
-   {
-         SCIPfreeMemoryArray(scip, decdecomps);
-   }
-
    SCIPfreeBufferArray(scip, &detectordata->consismaster);
 
    return SCIP_OKAY;
