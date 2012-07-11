@@ -51,12 +51,12 @@
 struct SCIP_HeurData
 {
    /* parameters */
-   int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
-   SCIP_Bool            useobj;               /**< use objective coefficients as tie breakers                */
+   int                   mincolumns;         /**< minimum number of columns to regard in the master problem */
+   SCIP_Bool             useobj;             /**< use objective coefficients as tie breakers                */
 
    /* data */
-   SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
-   int                  lastncols;            /**< number of columns in the last call of the heuristic       */
+   SCIP_VAR**            zerovars;           /**< array of master variables corresponding to zero solutions */
+   int                   lastncols;          /**< number of columns in the last call of the heuristic       */
 };
 
 
@@ -325,7 +325,7 @@ SCIP_RETCODE getZeroMastervar(
    /* if no zero solution is known for the block, look if a master variable has been added
     * and remember the variable for future use */
    if( heurdata->zerovars[block] == NULL )
-      searchZeroMastervar(scip, block, zeromastervar);
+      SCIP_CALL( searchZeroMastervar(scip, block, zeromastervar) );
    else
       *zeromastervar = heurdata->zerovars[block];
 
@@ -490,7 +490,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    /* calculate minimum number of new columns necessary for calling the heuristic;
     * this number is influenced by how successful the heuristic was in the past */
-   minnewcols = heurdata->mincolumns * (int) 1.0 * ((1.0 + SCIPheurGetNCalls(heur)) / (1.0 + SCIPheurGetNBestSolsFound(heur)));
+   minnewcols = heurdata->mincolumns * (int) (1.0 * ((1.0 + SCIPheurGetNCalls(heur)) / (1.0 + SCIPheurGetNBestSolsFound(heur))));
 
    /* if there are not enough new columns since last call, abort heuristic */
    if( nmastervars - heurdata->lastncols < minnewcols )
@@ -539,7 +539,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       if( !SCIProwIsLocal(row) )
       {
          activities[i] = 0;
-         if( SCIPisFeasLT(scip, 0, SCIProwGetLhs(row)) || SCIPisFeasGT(scip, 0, SCIProwGetRhs(row)) )
+         if( SCIPisFeasLT(scip, 0.0, SCIProwGetLhs(row)) || SCIPisFeasGT(scip, 0.0, SCIProwGetRhs(row)) )
             nviolrows++;
       }
    }
@@ -634,7 +634,9 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          {
             SCIP_VAR* pricingvar;
             SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
             int norigpricingvars;
+#endif
 
             /* if the variable is zero, nothing happens */
             if( SCIPisZero(scip, origvals[i]) )
@@ -644,8 +646,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             assert(pricingvar != NULL);
             assert(GCGvarIsPricing(pricingvar));
 
-            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
             origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            assert(blocknr[block] < norigpricingvars);
+#endif
 
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origvals[i]) );
@@ -692,14 +698,20 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             {
                SCIP_VAR* pricingvar;
                SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
                int norigpricingvars;
+#endif
 
                pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
                assert(pricingvar != NULL);
                assert(GCGvarIsPricing(pricingvar));
 
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+               assert(blocknr[block] < norigpricingvars);
+#endif
 
                /* decrease the corresponding value */
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], -origvals[k]) );
@@ -737,7 +749,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
             /* fill the block with the zero solution */
             zeromastervar = NULL;
-            getZeroMastervar(scip, heurdata, i, &zeromastervar);
+            SCIP_CALL( getZeroMastervar(scip, heurdata, i, &zeromastervar) );
             if( zeromastervar != NULL )
             {
                SCIPdebugMessage("  -> (block %d) selected zero master variable %s (%d times)\n",
@@ -750,7 +762,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          }
 
          /** @todo >= should not happen, replace it by == ? */
-         allblocksfull &= blocknr[i] >= nidentblocks;
+         if( !(blocknr[i] >= nidentblocks) )
+            allblocksfull = FALSE;
       }
 
       /* if we found a solution for the original instance,
@@ -789,8 +802,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       SCIPdebugMessage("no feasible solution found or solution already known; %d constraints violated.\n", nviolrows);
    }
 
-   SCIPfreeSol(origprob, &origsol);
-   SCIPfreeSol(scip, &mastersol);
+   SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
+   SCIP_CALL( SCIPfreeSol(scip, &mastersol) );
    SCIPfreeBufferArray(scip, &activities);
    SCIPfreeBufferArray(scip, &blocknr);
    SCIPfreeBufferArray(scip, &ignored);

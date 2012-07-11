@@ -58,58 +58,59 @@
 struct SCIP_RelaxData
 {
    /* problems and convexity constraints */
-   SCIP*            masterprob;          /**< the master problem */
-   SCIP**           pricingprobs;        /**< the array of pricing problems */
-   int              npricingprobs;       /**< the number of pricing problems */
-   int              nrelpricingprobs;    /**< the number of relevantpricing problems */
-   int*             blockrepresentative; /**< number of the pricing problem, that represents the i-th problem */
-   int*             nblocksidentical;    /**< number of pricing blocks represented by the i-th pricing problem */
-   SCIP_CONS**      convconss;           /**< array of convexity constraints, one for each block */
-   int              nlinkingvars;        /**< number of linking variables */
-   int              nvarlinkconss;       /**< number of constraints that ensure that copies of linking variables have the same value */
-   SCIP_Real        pricingprobsmemused; /**< sum of memory used after problem creation stage of all pricing problems */
+   SCIP*                 masterprob;         /**< the master problem */
+   SCIP**                pricingprobs;       /**< the array of pricing problems */
+   int                   npricingprobs;      /**< the number of pricing problems */
+   int                   nrelpricingprobs;   /**< the number of relevantpricing problems */
+   int*                  blockrepresentative;/**< number of the pricing problem, that represents the i-th problem */
+   int*                  nblocksidentical;   /**< number of pricing blocks represented by the i-th pricing problem */
+   SCIP_CONS**           convconss;          /**< array of convexity constraints, one for each block */
+   int                   nlinkingvars;       /**< number of linking variables */
+   int                   nvarlinkconss;      /**< number of constraints that ensure that copies of linking variables have the same value */
+   SCIP_Real             pricingprobsmemused; /**< sum of memory used after problem creation stage of all pricing problems */
 
    /* hashmaps for transformation */
-   SCIP_HASHMAP*    hashorig2origvar;    /**< hashmap mapping original variables to themselves */
+   SCIP_HASHMAP*         hashorig2origvar;   /**< hashmap mapping original variables to themselves */
 
    /* constraint data */
-   SCIP_CONS**      masterconss;         /**< array of constraints in the master problem */
-   SCIP_CONS**      origmasterconss;     /**< array of constraints in the original problem that belong to the
-                                          * master problem */
-   SCIP_CONS**      linearmasterconss;   /**< array of linear constraints equivalent to the cons in
-                                          * the original problem that belong to the master problem */
-   SCIP_CONS**      varlinkconss;        /**< array of constraints ensuring linking vars equality */
-   int              maxmasterconss;      /**< length of the array mastercons */
-   int              nmasterconss;        /**< number of constraints saved in mastercons */
+   SCIP_CONS**           masterconss;        /**< array of constraints in the master problem */
+   SCIP_CONS**           origmasterconss;    /**< array of constraints in the original problem that belong to the
+                                              * master problem */
+   SCIP_CONS**           linearmasterconss;  /**< array of linear constraints equivalent to the cons in
+                                              * the original problem that belong to the master problem */
+   SCIP_CONS**           varlinkconss;       /**< array of constraints ensuring linking vars equality */
+   int                   maxmasterconss;     /**< length of the array mastercons */
+   int                   nmasterconss;       /**< number of constraints saved in mastercons */
 
-   SCIP_SOL*        currentorigsol;      /**< current lp solution transformed into the original space */
-   SCIP_Longint     lastmasterlpiters;   /**< number of lp iterations when currentorigsol was updated the last time */
-   SCIP_SOL*        lastmastersol;       /**< last feasible master solution that was added to the original problem */
-   SCIP_CONS**      markedmasterconss;   /**< array of conss that are marked to be in the master */
-   int              nmarkedmasterconss;  /**< number of elements in array of conss that are marked to be in the master */
-   SCIP_Longint     lastsolvednodenr;    /**< node number of the node that was solved at the last call of the relaxator */
+   SCIP_SOL*             currentorigsol;     /**< current lp solution transformed into the original space */
+   SCIP_Longint          lastmasterlpiters;  /**< number of lp iterations when currentorigsol was updated the last time */
+   SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
+   SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
+   int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
+   SCIP_Longint          lastsolvednodenr;   /**< node number of the node that was solved at the last call of the relaxator */
 
    /* branchrule data */
-   GCG_BRANCHRULE** branchrules;         /**< branching rules registered in the relaxator */
-   int              nbranchrules;        /**< number of branching rules registered in the relaxator */
+   GCG_BRANCHRULE**      branchrules;        /**< branching rules registered in the relaxator */
+   int                   nbranchrules;       /**< number of branching rules registered in the relaxator */
 
    /* parameter data */
-   SCIP_Bool        discretization;      /**< TRUE: use discretization approach; FALSE: use convexification approach */
-   SCIP_Bool        mergeidenticalblocks;/**< should identical blocks be merged (only for discretization approach)? */
-   SCIP_Bool        masterissetpart;     /**< is the master a set partitioning problem? */
-   SCIP_Bool        masterissetcover;    /**< is the master a set covering problem? */
-   SCIP_Bool        dispinfos;           /**< should additional information be displayed? */
+   SCIP_Bool             discretization;     /**< TRUE: use discretization approach; FALSE: use convexification approach */
+   SCIP_Bool             mergeidenticalblocks; /**< should identical blocks be merged (only for discretization approach)? */
+   SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
+   SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
+   SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
 
    /* data for probing */
-   SCIP_Bool        masterinprobing;     /**< is the master problem in probing mode? */
-   SCIP_HEUR*       probingheur;         /**< heuristic that started probing in master problem, or NULL */
-   SCIP_SOL*        storedorigsol;       /**< orig solution that was stored from before the probing */
+   SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
+   SCIP_HEUR*            probingheur;        /**< heuristic that started probing in master problem, or NULL */
+   SCIP_SOL*             storedorigsol;      /**< orig solution that was stored from before the probing */
 
    /* solution data */
-   SCIP_SOL*        origprimalsol;       /**< best original primal solution */
+   SCIP_SOL*             origprimalsol;      /**< best original primal solution */
 
    /* structure information */
-   DEC_DECOMP*       decdecomp;           /**< structure information */
+   DEC_DECOMP*           decdecomp;          /**< structure information */
+   SCIP_Bool             relaxisinitialized; /**< indicates whether the relaxator is initialized */
 };
 
 /*
@@ -203,9 +204,9 @@ SCIP_RETCODE markConsMaster(
 /** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
 static
 SCIP_RETCODE convertStructToGCG(
-      SCIP*             scip,       /**< SCIP data structure          */
-      SCIP_RELAXDATA*   relaxdata,  /**< relaxator data structure     */
-      DEC_DECOMP*        decdecomp   /**< decdecom data structure      */
+   SCIP*                 scip,               /**< SCIP data structure          */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data structure     */
+   DEC_DECOMP*           decdecomp           /**< decdecomp data structure     */
    )
 {
    int i;
@@ -286,7 +287,7 @@ SCIP_RETCODE convertStructToGCG(
          {
             SCIP_VAR* origvar;
 
-            origvar = SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]);
+            origvar = (SCIP_VAR*) SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]);
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
@@ -323,7 +324,7 @@ SCIP_RETCODE convertStructToGCG(
             curvars = NULL;
             if( ncurvars > 0 )
             {
-               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[j][k], curvars, ncurvars) );
 
                for( v = 0; v < ncurvars; ++v )
@@ -338,7 +339,7 @@ SCIP_RETCODE convertStructToGCG(
                   }
                }
 
-               SCIPfreeBufferArray(scip, &curvars);
+               SCIPfreeMemoryArray(scip, &curvars);
             }
 
             if( found )
@@ -402,8 +403,8 @@ SCIP_RETCODE ensureSizeBranchrules(
 /** check whether the master problem has a set partitioning or set covering structure */
 static
 SCIP_RETCODE checkSetppcStructure(
-   SCIP*             scip,       /**< SCIP data structure */
-   SCIP_RELAXDATA*   relaxdata   /**< relaxator data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata           /**< relaxator data structure */
    )
 {
    SCIP_CONS** masterconss;
@@ -481,11 +482,11 @@ SCIP_RETCODE checkSetppcStructure(
  */
 static
 SCIP_Bool realArraysAreEqual(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_Real* array1,         /**< first array */
-   int        array1length,   /**< length of first array */
-   SCIP_Real* array2,         /**< second array */
-   int        array2length    /**< length of second array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            array1,             /**< first array */
+   int                   array1length,       /**< length of first array */
+   SCIP_Real*            array2,             /**< second array */
+   int                   array2length        /**< length of second array */
    )
 {
    int i;
@@ -944,9 +945,9 @@ SCIP_RETCODE createLinkingPricingVars(
 /** create pricing problem variables */
 static
 SCIP_RETCODE createPricingVariables(
-   SCIP*             scip,                /**< SCIP data structure */
-   SCIP_RELAXDATA*   relaxdata,           /**< relaxator data data structure */
-   SCIP_HASHMAP**    hashorig2pricingvar  /**< hashmap mapping original variables to pricing variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
+   SCIP_HASHMAP**        hashorig2pricingvar /**< hashmap mapping original variables to pricing variables */
    )
 {
    SCIP_VAR** vars;
@@ -978,10 +979,19 @@ SCIP_RETCODE createPricingVariables(
       {
          size_t tempblock;
          tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         assert(tempblock < INT_MAX);
-         assert(tempblock > 0);
-         blocknr = (int) (tempblock -1); /*lint !e806*/
+         if(tempblock == 0)
+         {
+            assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
+            blocknr = -1;
+         }
+         else
+         {
+            assert(tempblock < INT_MAX);
+            assert(tempblock > 0);
+            blocknr = (int) (tempblock -1); /*lint !e806*/
+         }
       }
+
       SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
@@ -1045,10 +1055,10 @@ SCIP_RETCODE createPricingVariables(
 /** displays statistics of the pricing problems */
 static
 SCIP_RETCODE displayPricingStatistics(
-   SCIP*    scip,               /**< SCIP data structure */
-   SCIP**   pricingprobs,       /**< array of pricing problems */
-   int      npricingprobs,      /**< number of pricingproblems */
-   int*     blockrepresentative /**< array of representation information */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP**                pricingprobs,       /**< array of pricing problems */
+   int                   npricingprobs,      /**< number of pricingproblems */
+   int*                  blockrepresentative /**< array of representation information */
 )
 {
    char name[SCIP_MAXSTRLEN];
@@ -1084,8 +1094,8 @@ SCIP_RETCODE displayPricingStatistics(
 /** allocates initial problem specific data */
 static
 SCIP_RETCODE initRelaxProblemdata(
-   SCIP*             scip,       /**< SCIP data structure */
-   SCIP_RELAXDATA*   relaxdata   /**< relaxatordata data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata           /**< relaxatordata data structure */
    )
 {
    assert(scip != NULL);
@@ -1151,9 +1161,9 @@ SCIP_RETCODE createMasterProblem(
 /** creates the pricing problem with the specified name */
 static
 SCIP_RETCODE createPricingProblem(
-   SCIP**                pricingscip,         /**< Pricing scip data structure */
-   const char*           name,                /**< name of the pricing problem */
-   int                   clocktype            /**< clocktype to use in the pricing problem */
+   SCIP**                pricingscip,        /**< Pricing scip data structure */
+   const char*           name,               /**< name of the pricing problem */
+   int                   clocktype           /**< clocktype to use in the pricing problem */
    )
 {
    assert(pricingscip != NULL);
@@ -1325,7 +1335,7 @@ SCIP_RETCODE createPricingprobConss(
             curvars = NULL;
             if( ncurvars > 0 )
             {
-               SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
                for( i = 0; i < ncurvars; ++i )
@@ -1333,7 +1343,7 @@ SCIP_RETCODE createPricingprobConss(
                   assert(GCGvarIsPricing(curvars[i]));
                }
 
-               SCIPfreeBufferArrayNull(scip, &curvars);
+               SCIPfreeMemoryArrayNull(scip, &curvars);
             }
          }
 #endif
@@ -1398,7 +1408,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-
+   SCIP_CALL( GCGpricerCreateInitialMastervars(relaxdata->masterprob) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
@@ -1508,9 +1518,9 @@ SCIP_RETCODE combineSolutions(
 /** sets the pricing objective function to what is necessary */
 static
 SCIP_RETCODE setPricingObjsOriginal(
-   SCIP*    scip,    /**< SCIP data structure */
-   SCIP**   probs,   /**< array of subproblems */
-   int      nprobs   /**< number of subproblems */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP**                probs,              /**< array of subproblems */
+   int                   nprobs              /**< number of subproblems */
    )
 {
    int v;
@@ -1545,10 +1555,10 @@ SCIP_RETCODE setPricingObjsOriginal(
 /** solves the blocks diagonal and individually */
 static
 SCIP_RETCODE solveDiagonalBlocks(
-   SCIP*             scip,       /**< SCIP data structure */
-   SCIP_RELAXDATA*   relaxdata,  /**< relaxator data structure */
-   SCIP_RESULT*      result,     /**< result pointer to indicate success or failure */
-   SCIP_Real*        lowerbound  /**< lower bound pointer to return the lower bound */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< relaxator data structure */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_Real*            lowerbound          /**< lower bound pointer to return the lower bound */
    )
 {
    int i;
@@ -1641,12 +1651,12 @@ SCIP_RETCODE solveDiagonalBlocks(
 
 }
 
+/** initializes and transforms relaxator data */
 static
 SCIP_RETCODE initRelaxator(
-   SCIP* scip,
-   SCIP_RELAX* relax
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< relaxator data structure */
    )
-
 {
    SCIP* masterprob;
    SCIP_VAR** vars;
@@ -1663,10 +1673,6 @@ SCIP_RETCODE initRelaxator(
    if( relaxdata->decdecomp == NULL )
    {
       SCIP_CALL( DECdetectStructure(scip) );
-
-      // SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\nYou need to specify a decomposition!\n");
-      // SCIP_CALL( SCIPinterruptSolve(scip) );
-      // return SCIP_OKAY;
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
@@ -1682,7 +1688,6 @@ SCIP_RETCODE initRelaxator(
    assert(masterprob != NULL);
 
    relaxdata->lastsolvednodenr = -1;
-
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
 
@@ -1727,8 +1732,49 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
 
-
    return SCIP_OKAY;
+}
+
+/** initializes relaxator data */
+static
+void initRelaxdata(
+   SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
+   )
+{
+   assert(relaxdata != NULL);
+
+   relaxdata->decdecomp = NULL;
+
+   relaxdata->blockrepresentative = NULL;
+   relaxdata->convconss = NULL;
+   relaxdata->hashorig2origvar = NULL;
+   relaxdata->lastsolvednodenr = 0;
+
+   relaxdata->linearmasterconss = NULL;
+   relaxdata->origmasterconss = NULL;
+   relaxdata->masterconss = NULL;
+   relaxdata->nmasterconss = 0;
+
+   relaxdata->npricingprobs = -1;
+   relaxdata->pricingprobs = NULL;
+   relaxdata->nrelpricingprobs = 0;
+   relaxdata->currentorigsol = NULL;
+   relaxdata->storedorigsol = NULL;
+   relaxdata->origprimalsol = NULL;
+   relaxdata->nblocksidentical = NULL;
+
+   relaxdata->lastmastersol = NULL;
+   relaxdata->lastmasterlpiters = 0;
+   relaxdata->markedmasterconss = NULL;
+   relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
+
+   relaxdata->nlinkingvars = 0;
+   relaxdata->nvarlinkconss = 0;
+   relaxdata->varlinkconss = NULL;
+   relaxdata->pricingprobsmemused = 0.0;
+
+   relaxdata->relaxisinitialized = FALSE;
 }
 
 /*
@@ -1780,6 +1826,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    }
 
    relaxdata->nbranchrules = 0;
+   relaxdata->relaxisinitialized = FALSE;
 
    return SCIP_OKAY;
 }
@@ -1799,36 +1846,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
 
-   relaxdata->decdecomp = NULL;
 
-   relaxdata->blockrepresentative = NULL;
-   relaxdata->convconss = NULL;
-   relaxdata->hashorig2origvar = NULL;
-   relaxdata->lastsolvednodenr = 0;
-
-   relaxdata->linearmasterconss = NULL;
-   relaxdata->origmasterconss = NULL;
-   relaxdata->masterconss = NULL;
-   relaxdata->nmasterconss = 0;
-
-   relaxdata->npricingprobs = -1;
-   relaxdata->pricingprobs = NULL;
-   relaxdata->nrelpricingprobs = 0;
-   relaxdata->currentorigsol = NULL;
-   relaxdata->storedorigsol = NULL;
-   relaxdata->origprimalsol = NULL;
-   relaxdata->nblocksidentical = NULL;
-
-   relaxdata->lastmastersol = NULL;
-   relaxdata->lastmasterlpiters = 0;
-   relaxdata->markedmasterconss = NULL;
-   relaxdata->masterinprobing = FALSE;
-   relaxdata->probingheur = NULL;
-
-   relaxdata->nlinkingvars = 0;
-   relaxdata->nvarlinkconss = 0;
-   relaxdata->varlinkconss = NULL;
-   relaxdata->pricingprobsmemused = 0.0;
+   initRelaxdata(relaxdata);
 
    /* the output of the master problem gets the same verbosity level
     * as the output of the original problem */
@@ -1932,10 +1951,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   if(relaxdata->decdecomp == NULL)
+   if( relaxdata->decdecomp == NULL )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
       SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
+      relaxdata->relaxisinitialized = TRUE;
    }
 
    masterprob = relaxdata->masterprob;
@@ -2094,7 +2114,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
 
-//   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   initRelaxdata(relaxdata);
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -2138,11 +2158,11 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
-   GCG_DECL_BRANCHACTIVEMASTER     ((*branchactivemaster)),      /**<  activation method for branchrule */
-   GCG_DECL_BRANCHDEACTIVEMASTER   ((*branchdeactivemaster)),    /**<  deactivation method for branchrule */
-   GCG_DECL_BRANCHPROPMASTER       ((*branchpropmaster)),        /**<  propagation method for branchrule */
-   GCG_DECL_BRANCHMASTERSOLVED     ((*branchmastersolved)),      /**<  master solved method for branchrule */
-   GCG_DECL_BRANCHDATADELETE       ((*branchdatadelete))         /**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
+   GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
+   GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
+   GCG_DECL_BRANCHDATADELETE((*branchdatadelete))/**<  branchdata deletion method for branchrule */
    )
 {
    SCIP_RELAX* relax;
@@ -2898,6 +2918,10 @@ SCIP_RETCODE performProbing(
    oldnlpiters = SCIPgetNLPIterations(masterscip);
    oldpricerounds = SCIPgetNPriceRounds(masterscip);
 
+   *feasible = FALSE;
+   *lpobjvalue = 0.0;
+   *lpsolved = FALSE;
+
    /* solve the probing LP */
    if( usepricing )
    {
@@ -2936,7 +2960,7 @@ SCIP_RETCODE performProbing(
    }
    else
    {
-      SCIPdebugMessage("something went wrong, an lp error occured\n");
+      SCIPdebugMessage("something went wrong, an lp error occurred\n");
    }
 
    return SCIP_OKAY;
@@ -3258,8 +3282,8 @@ void GCGrelaxSetOrigPrimalSol(
 
 /** sets the structure information */
 void GCGsetStructDecdecomp(
-   SCIP*       scip,       /**< SCIP data structure */
-   DEC_DECOMP*  decdecomp   /**< decomposition data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
    SCIP_RELAX* relax;
@@ -3279,7 +3303,7 @@ void GCGsetStructDecdecomp(
 
 /** gets the structure information */
 DEC_DECOMP* GCGgetStructDecdecomp(
-   SCIP*       scip        /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAX* relax;
@@ -3298,7 +3322,7 @@ DEC_DECOMP* GCGgetStructDecdecomp(
 
 /** gets the total memory used after problem creation stage for all pricingproblems */
 SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*       scip        /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAX* relax;
@@ -3315,3 +3339,23 @@ SCIP_Real GCGgetPricingprobsMemUsed(
    return relaxdata->pricingprobsmemused;
 }
 
+/** returns whether the relaxator has been initialized */
+extern
+SCIP_Bool GCGrelaxIsInitialized(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->relaxisinitialized;
+}

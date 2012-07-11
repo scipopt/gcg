@@ -403,6 +403,8 @@ void GCGrelaxTransformOrigvalsToMastervals(
  * and the list of all variables related to the given variable
  */
 void GCGrelaxPrintVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File to write information to, or NULL for stdout */
    SCIP_VAR*             var                 /**< variable that should be printed */
    )
 {
@@ -425,32 +427,32 @@ void GCGrelaxPrintVar(
          int j;
          pricingvars = GCGlinkingVarGetPricingVars(var);
          nblocks = GCGlinkingVarGetNBlocks(var);
-         printf("Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
+         SCIPinfoMessage(scip, file, "Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
          /*lint --e{440}*/
          for( i = 0, j = 0; j < nblocks; ++i )
          {
             if( pricingvars[i] != NULL )
             {
-               printf("%d ", i);
+               SCIPinfoMessage(scip, file, "%d ", i);
                ++j;
             }
          }
-         printf(")\n");
+         SCIPinfoMessage(scip, file, ")\n");
       }
       else
       {
-         printf("Variable %s (original): block %d\n", SCIPvarGetName(var), blocknr);
+         SCIPinfoMessage(scip, file, "Variable %s (original): block %d\n", SCIPvarGetName(var), blocknr);
       }
 
       mastervars = GCGoriginalVarGetMastervars(var);
       mastervals = GCGoriginalVarGetMastervals(var);
       nmastervars = GCGoriginalVarGetNMastervars(var);
-      printf("mastervars:");
+      SCIPinfoMessage(scip, file, "mastervars:");
       for( i = 0; i < nmastervars-1; i++ )
       {
-         printf("%s (%g), ", SCIPvarGetName(mastervars[i]), mastervals[i]);
+         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(mastervars[i]), mastervals[i]);
       }
-      printf("%s (%g)\n", SCIPvarGetName(mastervars[nmastervars-1]), mastervals[nmastervars-1]);
+      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(mastervars[nmastervars-1]), mastervals[nmastervars-1]);
    }
    else if( GCGvarIsPricing(var) )
    {
@@ -460,13 +462,13 @@ void GCGrelaxPrintVar(
       origvars = GCGpricingVarGetOrigvars(var);
       norigvars = GCGpricingVarGetNOrigvars(var);
 
-      printf("Variable %s (pricing): block %d\n", SCIPvarGetName(var), blocknr);
-      printf("origvars:");
+      SCIPinfoMessage(scip, file, "Variable %s (pricing): block %d\n", SCIPvarGetName(var), blocknr);
+      SCIPinfoMessage(scip, file, "origvars:");
       for( i = 0; i < norigvars-1; i++ )
       {
-         printf("%s, ", SCIPvarGetName(origvars[i]));
+         SCIPinfoMessage(scip, file, "%s, ", SCIPvarGetName(origvars[i]));
       }
-      printf("%s\n", SCIPvarGetName(origvars[norigvars-1]));
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(origvars[norigvars-1]));
    }
    else if( GCGvarIsMaster(var) )
    {
@@ -477,12 +479,12 @@ void GCGrelaxPrintVar(
       origvars = GCGmasterVarGetOrigvars(var);
       norigvars = GCGmasterVarGetNOrigvars(var);
       origvals = GCGmasterVarGetOrigvals(var);
-      printf("Variable %s (master): block %d\n", SCIPvarGetName(var), blocknr);
-      printf("origvars:");
+      SCIPinfoMessage(scip, file, "Variable %s (master): block %d\n", SCIPvarGetName(var), blocknr);
+      SCIPinfoMessage(scip, file, "origvars:");
       for( i = 0; i < norigvars-1; i++ )
       {
-         printf("%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
+         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
       }
-      printf("%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
+      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
 }

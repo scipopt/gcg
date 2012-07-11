@@ -132,7 +132,11 @@ endif
 
 .PHONY: scip
 scip:
-		@$(MAKE) -C $(SCIPDIR) libs $^
+		@$(MAKE) -C $(SCIPDIR) $^ libs
+
+.PHONY: scip_clean
+scip_clean:
+		@$(MAKE) -C $(SCIPDIR) $^ clean
 
 
 .PHONY: doc
@@ -185,7 +189,7 @@ depend:		$(SCIPDIR)
 
 -include	$(MAINDEP)
 
-$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES)
+$(MAINFILE):	scip $(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \

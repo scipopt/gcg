@@ -45,11 +45,11 @@
 /** separator data */
 struct SCIP_SepaData
 {
-   SCIP_ROW** mastercuts;     /**< cuts in the master problem */
-   SCIP_ROW** origcuts;       /**< cuts in the original problem */
-   int        norigcuts;      /**< number of cuts in the original problem */
-   int        nmastercuts;    /**< number of cuts in the master problem */
-   int        maxcuts;        /**< maximal number of allowed cuts */
+   SCIP_ROW**            mastercuts;         /**< cuts in the master problem */
+   SCIP_ROW**            origcuts;           /**< cuts in the original problem */
+   int                   norigcuts;          /**< number of cuts in the original problem */
+   int                   nmastercuts;        /**< number of cuts in the master problem */
+   int                   maxcuts;            /**< maximal number of allowed cuts */
 };
 
 
@@ -61,9 +61,9 @@ struct SCIP_SepaData
 /** allocates enough memory to hold more cuts */
 static
 SCIP_RETCODE ensureSizeCuts(
-   SCIP*          scip,     /**< SCIP data structure */
-   SCIP_SEPADATA* sepadata, /**< separator data data structure */
-   int            size      /**< new size of cut arrays */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SEPADATA*        sepadata,           /**< separator data data structure */
+   int                   size                /**< new size of cut arrays */
    )
 {
    assert(scip != NULL);
@@ -339,7 +339,7 @@ SCIP_ROW** GCGsepaGetOrigcuts(
 
 /* returns the number of original cuts saved in the separator data */
 int GCGsepaGetNOrigcuts(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
@@ -358,7 +358,7 @@ int GCGsepaGetNOrigcuts(
 
 /* returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetMastercuts(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;
@@ -377,7 +377,7 @@ SCIP_ROW** GCGsepaGetMastercuts(
 
 /* returns the number of master cuts saved in the separator data */
 int GCGsepaGetNMastercuts(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_SEPA* sepa;

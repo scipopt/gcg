@@ -133,8 +133,8 @@ SCIP_RETCODE writeDecompositionHeader(
 /** write the plot commands */
 static
 SCIP_RETCODE writePlotCommands(
-   SCIP*                scip,                /**< SCIP data structure */
-   FILE*                file                 /**< File pointer to write to */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< File pointer to write to */
    )
 {
    assert(scip != NULL);

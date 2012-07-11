@@ -25,9 +25,9 @@
 
 enum GCG_Pricetype
 {
-   GCG_PRICETYPE_INIT      = 0,       /**< initial pricing */
-   GCG_PRICETYPE_FARKAS    = 1,       /**< farkas pricing */
-   GCG_PRICETYPE_REDCOST   = 2        /**< redcost pricing */
+   GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                /**< farkas pricing */
+   GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
 };
 typedef enum GCG_Pricetype GCG_PRICETYPE;
 
@@ -87,16 +87,16 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 /** returns the solverdata of a solver */
 extern
 GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*       scip,          /**< SCIP data structure */
-   GCG_SOLVER* solver         /**< pointer so solver */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_SOLVER*           solver              /**< pointer so solver */
    );
 
 /** sets solver data of specific solver */
 extern
 void GCGpricerSetSolverdata(
-   SCIP*           scip,      /**< SCIP data structure */
-   GCG_SOLVER*     solver,    /**< pointer to solver  */
-   GCG_SOLVERDATA* solverdata /**< solverdata data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_SOLVER*           solver,             /**< pointer to solver  */
+   GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
 
 extern
@@ -113,21 +113,9 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
    );
 
-void GCGpricerGetStatistic(
-   SCIP_PRICERDATA* pricerdata,
-   GCG_PRICETYPE type,
-   int probindex,
-   SCIP_Real time
-   );
-
-void GCGpricerGetNodeTimeHistogram(
-   SCIP_PRICERDATA* pricerdata,
-   SCIP_Real time
-   );
-
-void GCGpricerGetFoundVarsHistogram(
-   SCIP_PRICERDATA* pricerdata,
-   int foundvars
+/** create initial master variables */
+SCIP_RETCODE GCGpricerCreateInitialMastervars(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #endif

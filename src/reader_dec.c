@@ -81,14 +81,14 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   DEC_DECOMP* decdecomp;      /**< decomposition data structure*/
-   int* varstoblock;          /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
-   int* nblockvars;           /**< n variable per block that are not linkingvars*/
-   SCIP_CONS*** blockconss;   /**< array of assignments from constraints to their blocks [blocknr][consid]  */
-   int* nblockconss;          /**< number of block-constraints for blockID*/
-   SCIP_HASHMAP* constoblock; /**< hashmap key=constaint value=block*/
-   int nlinkingconss;         /**< number of linking constraints*/
-   int nlinkingvars;          /**< number of linking vars*/
+   DEC_DECOMP*           decdecomp;          /**< decomposition data structure*/
+   int*                  varstoblock;        /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
+   int*                  nblockvars;         /**< n variable per block that are not linkingvars*/
+   SCIP_CONS***          blockconss;         /**< array of assignments from constraints to their blocks [blocknr][consid]  */
+   int*                  nblockconss;        /**< number of block-constraints for blockID*/
+   SCIP_HASHMAP*         constoblock;        /**< hashmap key=constaint value=block*/
+   int                   nlinkingconss;      /**< number of linking constraints*/
+   int                   nlinkingvars;       /**< number of linking vars*/
 };
 static const int NOVALUE = -1;
 static const int LINKINGVALUE = -2;
@@ -163,11 +163,11 @@ SCIP_Bool isTokenChar(
 /** returns whether the current character is member of a value string */
 static
 SCIP_Bool isValueChar(
-   char                 c,                   /**< input character */
-   char                 nextc,               /**< next input character */
-   SCIP_Bool            firstchar,           /**< is the given character the first char of the token? */
-   SCIP_Bool*           hasdot,              /**< pointer to update the dot flag */
-   DECEXPTYPE*          exptype              /**< pointer to update the exponent type */
+   char                  c,                  /**< input character */
+   char                  nextc,              /**< next input character */
+   SCIP_Bool             firstchar,          /**< is the given character the first char of the token? */
+   SCIP_Bool*            hasdot,             /**< pointer to update the dot flag */
+   DECEXPTYPE*           exptype             /**< pointer to update the exponent type */
    )
 {
    assert(hasdot != NULL);
@@ -388,9 +388,9 @@ void swapTokenBuffer(
 /** returns whether the current token is a value */
 static
 SCIP_Bool isInt(
-   SCIP*                 scip,                /**< SCIP data structure */
-   DECINPUT*             decinput,            /**< DEC reading data */
-   int*                  value                /**< pointer to store the value (unchanged, if token is no value) */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput,           /**< DEC reading data */
+   int*                  value               /**< pointer to store the value (unchanged, if token is no value) */
    )
 {
    long val;
@@ -722,8 +722,6 @@ SCIP_RETCODE fillDecompStruct(
    assert(readerdata != NULL);
    assert(readerdata->decdecomp != NULL);
    decomp = readerdata->decdecomp;
-
-   printf("decomp = %p\n", decomp);
 
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);

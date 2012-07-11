@@ -7,13 +7,16 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
-/**@file stat.c
+
+/**
+ * @file stat.c
  * @brief  Some printing methods for statistics
  * @author Alexander Gross
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
 #include "scip/scip.h"
 #include "stat.h"
 #include "scip_misc.h"
@@ -23,15 +26,25 @@
 #include "pub_gcgvar.h"
 
 /** prints information about the best decomposition*/
-SCIP_RETCODE GCGwriteDecompositionData(SCIP* scip)
+SCIP_RETCODE
+GCGwriteDecompositionData(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
 {
-   DEC_DECOMP* decomposition = NULL;
+   DEC_DECOMP* decomposition;
+
    DEC_DETECTOR* detector;
    DEC_DECTYPE type;
    const char* typeName;
-   int i, nBlocks, nLinkingCons, nLinkingVars;
-   int* nVarsInBlocks;
-   int* nConsInBlocks;
+
+   int i;
+   int nblocks;
+   int nlinkingconss;
+   int nlinkingvars;
+   int* nvarsinblocks;
+   int* nconssinblocks;
+
+   assert(scip != NULL);
 
    decomposition = DECgetBestDecomp(scip);
    type = DECdecompGetType(decomposition);
@@ -39,36 +52,39 @@ SCIP_RETCODE GCGwriteDecompositionData(SCIP* scip)
 
    detector = DECdecompGetDetector(decomposition);
 
-   nBlocks = DECdecompGetNBlocks(decomposition);
+   nblocks = DECdecompGetNBlocks(decomposition);
 
-   nVarsInBlocks = DECdecompGetNSubscipvars(decomposition);
-   nConsInBlocks = DECdecompGetNSubscipconss(decomposition);
+   nvarsinblocks = DECdecompGetNSubscipvars(decomposition);
+   nconssinblocks = DECdecompGetNSubscipconss(decomposition);
 
-   nLinkingVars = DECdecompGetNLinkingvars(decomposition);
-   nLinkingCons = DECdecompGetNLinkingconss(decomposition);
+   nlinkingvars = DECdecompGetNLinkingvars(decomposition);
+   nlinkingconss = DECdecompGetNLinkingconss(decomposition);
 
    /* print information about decomposition type and number of blocks, vars, linking vars and cons */
    SCIPinfoMessage(scip, NULL, "Decomposition:\n");
    SCIPinfoMessage(scip, NULL, "Decomposition Type: %s \n", typeName);
 
    SCIPinfoMessage(scip, NULL, "Decomposition Detector: %s\n", detector == NULL ? "reader": detector->name);
-   SCIPinfoMessage(scip, NULL, "Number of Blocks: %d \n", nBlocks);
-   SCIPinfoMessage(scip, NULL, "Number of LinkingVars: %d\n", nLinkingVars);
-   SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nLinkingCons);
+   SCIPinfoMessage(scip, NULL, "Number of Blocks: %d \n", nblocks);
+   SCIPinfoMessage(scip, NULL, "Number of LinkingVars: %d\n", nlinkingvars);
+   SCIPinfoMessage(scip, NULL, "Number of LinkingCons: %d\n", nlinkingconss);
 
    /* print number of variables and constraints per block */
    SCIPinfoMessage(scip, NULL, "Block Information\n");
    SCIPinfoMessage(scip, NULL, "no.:\t\t#Vars\t\t#Constraints\n");
-   for( i = 0; i < nBlocks; i++ )
+   for( i = 0; i < nblocks; i++ )
    {
-      SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nVarsInBlocks[i], nConsInBlocks[i]);
+      SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
    }
 
    return SCIP_OKAY;
 }
 
 /** prints information about the creation of the Vars*/
-SCIP_RETCODE GCGwriteVarCreationDetails(SCIP* scip)
+SCIP_RETCODE
+GCGwriteVarCreationDetails(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
 {
    SCIP_VAR** vars;
    SCIP_VARDATA* vardata;
@@ -78,16 +94,18 @@ SCIP_RETCODE GCGwriteVarCreationDetails(SCIP* scip)
    SCIP_Longint nnodes;
 
    int nvars, i, n;
-   long long int node;
-   long long int* createnodestat;
+   SCIP_Longint  node;
+   SCIP_Longint* createnodestat;
    int* nodes;         /** < Wurzel Knoten und nicht wurzelknoten  */
-   int* createtimestat;
+   SCIP_Longint* createtimestat;
    int* createiterstat;
-   int iteration;
+   SCIP_Longint iteration;
    int m;
 
    SCIP_Real redcost;
    SCIP_Real gap;
+
+   assert(scip != NULL);
 
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
@@ -96,10 +114,12 @@ SCIP_RETCODE GCGwriteVarCreationDetails(SCIP* scip)
 
    solvingtime = SCIPgetSolvingTime(scip);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &nodes, 2) ); /** 0= WurzelKnoten, 1= alle anderen */
-   SCIP_CALL( SCIPallocBufferArray(scip, &createnodestat, nnodes) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &createtimestat, 10) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &createiterstat, 10) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, 2) ); /** 0= WurzelKnoten, 1= alle anderen */
+
+   assert(nnodes < INT_MAX);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &createtimestat, 10) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &createiterstat, 10) );
 
    SCIPinfoMessage(scip, NULL, "AddedVarDetails:\n");
 
@@ -122,7 +142,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(SCIP* scip)
       redcost = GCGgetRedcost(scip, vardata);
       gap = GCGgetGap(scip, vardata);
 
-      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%d\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
+      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
          iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));
 
       if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
@@ -163,10 +183,10 @@ SCIP_RETCODE GCGwriteVarCreationDetails(SCIP* scip)
       SCIPinfoMessage(scip, NULL, "Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
    }
 
-   SCIPfreeBufferArray(scip, &createiterstat);
-   SCIPfreeBufferArray(scip, &createtimestat);
-   SCIPfreeBufferArray(scip, &createnodestat);
-   SCIPfreeBufferArray(scip, &nodes);
+   SCIPfreeMemoryArray(scip, &createiterstat);
+   SCIPfreeMemoryArray(scip, &createtimestat);
+   SCIPfreeMemoryArray(scip, &createnodestat);
+   SCIPfreeMemoryArray(scip, &nodes);
 
    return SCIP_OKAY;
 }

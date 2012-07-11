@@ -48,9 +48,9 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 /* reads problem from file */
 extern
 SCIP_RETCODE SCIPreadBlk(
-   SCIP*              scip,               /**< SCIP data structure */
-   const char*        filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*       result              /**< pointer to store the result of the file reading call */
+   SCIP*                 scip,               /**< SCIP data structure */
+   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
+   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    );
 
 #ifdef __cplusplus

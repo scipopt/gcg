@@ -724,7 +724,6 @@ SCIP_Real DECgetRemainingTime(
 }
 
 /** interface method to detect the structure */
-extern
 SCIP_RETCODE DECdetectStructure(
    SCIP*                 scip                /**< SCIP data structure */
    )
