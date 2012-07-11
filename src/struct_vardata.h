@@ -23,8 +23,8 @@
 enum GCG_Vartype
 {
    GCG_VARTYPE_ORIGINAL = 0,                 /**< variable belongs to original problem */
-   GCG_VARTYPE_PRICING  = 1,                 /**< variable belongs to a pricing problem */
-   GCG_VARTYPE_MASTER   = 2                  /**< variable belongs to the master problem */
+   GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
+   GCG_VARTYPE_MASTER = 2                  /**< variable belongs to the master problem */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 

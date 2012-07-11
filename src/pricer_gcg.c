@@ -1233,9 +1233,6 @@ SCIP_RETCODE createNewMasterVar(
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
 
-//   printf("\n\nAUSGABE IN CREATE NEW MASTER VAR\n\n");
-
-
    if( addedvar != NULL )
       *addedvar = NULL;
 

@@ -33,11 +33,11 @@ extern
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
-   GCG_DECL_BRANCHACTIVEMASTER   ((*branchactivemaster)),   /**<  activation method for branchrule */
-   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)), /**<  deactivation method for branchrule */
-   GCG_DECL_BRANCHPROPMASTER     ((*branchpropmaster)),     /**<  propagation method for branchrule */
-   GCG_DECL_BRANCHMASTERSOLVED   ((*branchmastersolved)),   /**<  master solved method for branchrule */
-   GCG_DECL_BRANCHDATADELETE     ((*branchdatadelete))      /**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
+   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)),/**<  deactivation method for branchrule */
+   GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
+   GCG_DECL_BRANCHDATADELETE((*branchdatadelete))/**<  branchdata deletion method for branchrule */
    );
 
 /** perform activation method of the given branchrule for the given branchdata */
@@ -291,7 +291,9 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
  * and the list of all variables related to the given variable */
 extern
 void GCGrelaxPrintVar(
-   SCIP_VAR*             var                 /**< variable that shpuld be printed */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File to write information to, or NULL for stdout */
+   SCIP_VAR*             var                 /**< variable that should be printed */
    );
 
 /** returns the stored primal solution of the original problem  */

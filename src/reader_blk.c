@@ -712,8 +712,6 @@ SCIP_RETCODE fillDecompStruct(
    assert(readerdata->decdecomp != NULL);
    decomp = readerdata->decdecomp;
 
-   printf("decomp = %p\n", decomp);
-
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
    nvars = SCIPgetNVars(scip);
@@ -1025,7 +1023,6 @@ SCIP_RETCODE readBLKFile(
       assert(readerdata->linkingvarsblocks[i] != NULL || readerdata->nlinkingvarsblocks[i] == 0);
       if( readerdata->nlinkingvarsblocks[i] > 0 )
       {
-         printf("free linkingvarsblock\n");
          SCIPfreeMemoryArray(scip, &readerdata->linkingvarsblocks[i]);
       }
    }

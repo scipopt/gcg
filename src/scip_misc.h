@@ -104,7 +104,7 @@ SCIP_RETCODE SCIPgetValsXXX(
    int                   nvals               /**< size of storage array */
    );
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 

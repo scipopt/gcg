@@ -1227,10 +1227,6 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
 
          return SCIP_OKAY;
       }
-
-#ifdef PRINTPOINTS
-      SCIP_CALL( printExtremePoints(scip, heurdata->nusedpts, selection) );
-#endif
    }
 
    /* initialize the subproblem */

@@ -723,8 +723,6 @@ SCIP_RETCODE fillDecompStruct(
    assert(readerdata->decdecomp != NULL);
    decomp = readerdata->decdecomp;
 
-   printf("decomp = %p\n", decomp);
-
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
    nvars = SCIPgetNVars(scip);

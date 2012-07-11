@@ -25,8 +25,8 @@
 
 enum GCG_Pricetype
 {
-   GCG_PRICETYPE_INIT    = 0,                /**< initial pricing */
-   GCG_PRICETYPE_FARKAS  = 1,                /**< farkas pricing */
+   GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                /**< farkas pricing */
    GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
 };
 typedef enum GCG_Pricetype GCG_PRICETYPE;
@@ -111,6 +111,11 @@ extern
 SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
+   );
+
+/** create initial master variables */
+SCIP_RETCODE GCGpricerCreateInitialMastervars(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #endif
