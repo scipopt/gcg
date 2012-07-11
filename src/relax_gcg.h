@@ -341,4 +341,11 @@ void GCGprintDegeneracy(
    SCIP*                 scip,               /**< SCIP data structure */
    double                degeneracy          /**< degeneracy to print*/
    );
+
+/** returns whether the relaxator has been initialized */
+extern
+SCIP_Bool GCGrelaxIsInitialized(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #endif

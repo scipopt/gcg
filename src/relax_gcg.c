@@ -110,6 +110,7 @@ struct SCIP_RelaxData
 
    /* structure information */
    DEC_DECOMP*           decdecomp;          /**< structure information */
+   SCIP_Bool             relaxisinitialized; /**< indicates whether the relaxator is initialized */
 };
 
 /*
@@ -1650,12 +1651,12 @@ SCIP_RETCODE solveDiagonalBlocks(
 
 }
 
+/** initializes and transforms relaxator data */
 static
 SCIP_RETCODE initRelaxator(
-   SCIP* scip,
-   SCIP_RELAX* relax
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAX*           relax               /**< relaxator data structure */
    )
-
 {
    SCIP* masterprob;
    SCIP_VAR** vars;
@@ -1672,10 +1673,6 @@ SCIP_RETCODE initRelaxator(
    if( relaxdata->decdecomp == NULL )
    {
       SCIP_CALL( DECdetectStructure(scip) );
-
-      // SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "\nYou need to specify a decomposition!\n");
-      // SCIP_CALL( SCIPinterruptSolve(scip) );
-      // return SCIP_OKAY;
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
@@ -1691,7 +1688,6 @@ SCIP_RETCODE initRelaxator(
    assert(masterprob != NULL);
 
    relaxdata->lastsolvednodenr = -1;
-
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
 
@@ -1736,8 +1732,49 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( SCIPgetTransformedConss(masterprob, relaxdata->nvarlinkconss, relaxdata->varlinkconss, relaxdata->varlinkconss) );
 
-
    return SCIP_OKAY;
+}
+
+/** initializes relaxator data */
+static
+void initRelaxdata(
+   SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
+   )
+{
+   assert(relaxdata != NULL);
+
+   relaxdata->decdecomp = NULL;
+
+   relaxdata->blockrepresentative = NULL;
+   relaxdata->convconss = NULL;
+   relaxdata->hashorig2origvar = NULL;
+   relaxdata->lastsolvednodenr = 0;
+
+   relaxdata->linearmasterconss = NULL;
+   relaxdata->origmasterconss = NULL;
+   relaxdata->masterconss = NULL;
+   relaxdata->nmasterconss = 0;
+
+   relaxdata->npricingprobs = -1;
+   relaxdata->pricingprobs = NULL;
+   relaxdata->nrelpricingprobs = 0;
+   relaxdata->currentorigsol = NULL;
+   relaxdata->storedorigsol = NULL;
+   relaxdata->origprimalsol = NULL;
+   relaxdata->nblocksidentical = NULL;
+
+   relaxdata->lastmastersol = NULL;
+   relaxdata->lastmasterlpiters = 0;
+   relaxdata->markedmasterconss = NULL;
+   relaxdata->masterinprobing = FALSE;
+   relaxdata->probingheur = NULL;
+
+   relaxdata->nlinkingvars = 0;
+   relaxdata->nvarlinkconss = 0;
+   relaxdata->varlinkconss = NULL;
+   relaxdata->pricingprobsmemused = 0.0;
+
+   relaxdata->relaxisinitialized = FALSE;
 }
 
 /*
@@ -1789,6 +1826,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    }
 
    relaxdata->nbranchrules = 0;
+   relaxdata->relaxisinitialized = FALSE;
 
    return SCIP_OKAY;
 }
@@ -1808,36 +1846,8 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
 
-   relaxdata->decdecomp = NULL;
 
-   relaxdata->blockrepresentative = NULL;
-   relaxdata->convconss = NULL;
-   relaxdata->hashorig2origvar = NULL;
-   relaxdata->lastsolvednodenr = 0;
-
-   relaxdata->linearmasterconss = NULL;
-   relaxdata->origmasterconss = NULL;
-   relaxdata->masterconss = NULL;
-   relaxdata->nmasterconss = 0;
-
-   relaxdata->npricingprobs = -1;
-   relaxdata->pricingprobs = NULL;
-   relaxdata->nrelpricingprobs = 0;
-   relaxdata->currentorigsol = NULL;
-   relaxdata->storedorigsol = NULL;
-   relaxdata->origprimalsol = NULL;
-   relaxdata->nblocksidentical = NULL;
-
-   relaxdata->lastmastersol = NULL;
-   relaxdata->lastmasterlpiters = 0;
-   relaxdata->markedmasterconss = NULL;
-   relaxdata->masterinprobing = FALSE;
-   relaxdata->probingheur = NULL;
-
-   relaxdata->nlinkingvars = 0;
-   relaxdata->nvarlinkconss = 0;
-   relaxdata->varlinkconss = NULL;
-   relaxdata->pricingprobsmemused = 0.0;
+   initRelaxdata(relaxdata);
 
    /* the output of the master problem gets the same verbosity level
     * as the output of the original problem */
@@ -1941,10 +1951,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   if(relaxdata->decdecomp == NULL)
+   if( relaxdata->decdecomp == NULL )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
       SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
+      relaxdata->relaxisinitialized = TRUE;
    }
 
    masterprob = relaxdata->masterprob;
@@ -2103,7 +2114,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->branchrules = NULL;
    relaxdata->masterprob = NULL;
 
-//   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   initRelaxdata(relaxdata);
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -3328,3 +3339,23 @@ SCIP_Real GCGgetPricingprobsMemUsed(
    return relaxdata->pricingprobsmemused;
 }
 
+/** returns whether the relaxator has been initialized */
+extern
+SCIP_Bool GCGrelaxIsInitialized(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->relaxisinitialized;
+}

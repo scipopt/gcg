@@ -1400,6 +1400,13 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
    SCIPdebugMessage("eventexec: eventtype = 0x%x, var = %s, oldbound = %f, newbound = %f\n", eventtype, SCIPvarGetName(var), oldbound, newbound);
 
+   if( !GCGrelaxIsInitialized(scip) )
+   {
+      assert(SCIPvarGetData(var) == NULL);
+      SCIPdebugMessage("Ignoring since in presolving / propagating.\n");
+      return SCIP_OKAY;
+   }
+
    assert(GCGvarIsOriginal(var));
    blocknr = GCGvarGetBlock(var);
 
