@@ -262,11 +262,12 @@ SCIP_RETCODE findConnectedComponents(
          /** @todo what about deleted variables? */
          /* get block of variable */
          varblock = vartoblock[varindex];
+
          SCIPdebugMessage("\tVar %s (%d): ", SCIPvarGetName(probvar), varblock);
          /* if variable is assigned to a block, assign constraint to that block */
          if( varblock > -1 && varblock != consblock )
          {
-            consblock = MIN(consblock, varblock);
+            consblock = MIN(consblock, blockrepresentative[varblock]);
             SCIPdebugPrintf("still in block %d.\n",  varblock);
          }
          else if( varblock == -1 )
@@ -283,7 +284,10 @@ SCIP_RETCODE findConnectedComponents(
             assert((varblock > 0) && (consblock == varblock));
             SCIPdebugPrintf("no change.\n");
          }
+
+         SCIPdebugPrintf("VARINDEX: %d (%d)\n", varindex, vartoblock[varindex]);
       }
+
 
       /* if the constraint belongs to a new block, mark it as such */
       if( consblock == nextblock )
@@ -312,8 +316,9 @@ SCIP_RETCODE findConnectedComponents(
          {
             SCIPdebugPrintf("reset from %d to block %d.\n", oldblock, consblock);
             vartoblock[curvarindex] = consblock;
+            SCIPdebugPrintf("VARINDEX: %d (%d)\n", curvarindex, consblock);
 
-            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > consblock))
+            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]))
             {
                int oldrepr;
                oldrepr = blockrepresentative[oldblock];
