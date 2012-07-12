@@ -725,12 +725,13 @@ SCIP_Real DECgetRemainingTime(
 
 /** interface method to detect the structure */
 SCIP_RETCODE DECdetectStructure(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RESULT*          result              /**< Result pointer to indicate whether some structure was found */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   SCIP_RESULT result;
+
    SCIP_Real* scores;
    int i;
    int j;
@@ -790,8 +791,8 @@ SCIP_RETCODE DECdetectStructure(
          }
 
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
-         SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  &result) );
-         if( result == SCIP_SUCCESS )
+         SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  result) );
+         if( *result == SCIP_SUCCESS )
          {
             assert(ndecdecomps >= 0);
             assert(decdecomps != NULL || ndecdecomps == 0);
@@ -837,15 +838,18 @@ SCIP_RETCODE DECdetectStructure(
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Chosen decomposition with %d blocks of type %s.\n",
          DECdecompGetNBlocks(conshdlrdata->decdecomps[0]), DECgetStrType(DECdecompGetType(conshdlrdata->decdecomps[0])));
       GCGsetStructDecdecomp(scip, conshdlrdata->decdecomps[0]);
+      *result = SCIP_SUCCESS;
    }
    else
    {
+      *result = SCIP_DIDNOTFIND;
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "No decomposition found!\n");
    }
    SCIPdebugMessage("Detection took %fs\n", SCIPclockGetTime(conshdlrdata->detectorclock));
 
    /* show that we done our duty */
    conshdlrdata->hasrun = TRUE;
+
    return SCIP_OKAY;
 }
 
@@ -953,4 +957,23 @@ void DECprintListOfDetectors(
       SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);
       SCIPdialogMessage(scip, NULL,  " %s\n", conshdlrdata->detectors[i]->description);
    }
+}
+
+/** returns whether the detection has been performed */
+SCIP_Bool DEChasDetectionRun(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   return conshdlrdata->hasrun;
 }

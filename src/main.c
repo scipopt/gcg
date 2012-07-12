@@ -25,6 +25,7 @@
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
 #include "gcgplugins.h"
+#include "cons_decomp.h"
 #include "gcggithash.h"
 #include "relax_gcg.h"
 
@@ -99,6 +100,7 @@ SCIP_RETCODE fromCommandLine(
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
+   SCIP_RESULT result;
    /********************
     * Problem Creation *
     ********************/
@@ -121,6 +123,18 @@ SCIP_RETCODE fromCommandLine(
    /* solve problem */
    SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
    SCIPinfoMessage(scip, NULL, "=============\n\n");
+   SCIP_CALL( SCIPpresolve(scip) );
+
+   if( decname == NULL )
+   {
+      SCIP_CALL( DECdetectStructure(scip, &result) );
+      if( result != SCIP_SUCCESS )
+      {
+         SCIPinfoMessage(scip, NULL, "No decomposition exists and could be detected. You need to specify one.\n");
+         return SCIP_OKAY;
+      }
+   }
+
    SCIP_CALL( SCIPsolve(scip) );
 
    SCIPinfoMessage(scip, NULL, "\nprimal solution:\n");

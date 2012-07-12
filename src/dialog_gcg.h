@@ -45,6 +45,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 
+/** dialog execution method for the detect command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize);
+
 /** creates a root dialog */
 extern
 SCIP_RETCODE GCGcreateRootDialog(
