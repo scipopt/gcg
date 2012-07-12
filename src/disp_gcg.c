@@ -355,7 +355,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MVARS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MVARS);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MVARS);
+   }
+   else
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_MVARS);
+   }
 
    return SCIP_OKAY;
 }
@@ -368,7 +375,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCONSS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCONSS);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCONSS);
+   }
+   else
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_MCONSS);
+   }
 
    return SCIP_OKAY;
 }
@@ -399,6 +413,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
 {  /*lint --e{715}*/
+   SCIP* masterprob;
    SCIP_SOL* origsol;
    SCIP_SOL* mastersol;
    SCIP_DISPDATA* dispdata;
@@ -407,10 +422,18 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
    assert(scip != NULL);
 
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
    origsol = SCIPgetBestSol(scip);
-   mastersol = SCIPgetBestSol(GCGrelaxGetMasterprob(scip));
    if( origsol == NULL )
       SCIPdispSetData(disp, NULL);
+
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
+      mastersol = SCIPgetBestSol(masterprob);
+   else
+      mastersol = NULL;
 
    dispdata = SCIPdispGetData(disp);
    if( origsol != (SCIP_SOL*)dispdata )
@@ -421,8 +444,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
        * LP relaxation or from the master heuristics */
       if( SCIPgetSolHeur(scip, origsol) == NULL && (mastersol != NULL) )
       {
-         SCIPinfoMessage(scip, file, "%c", (SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol) == NULL ? '*'
-               : SCIPheurGetDispchar(SCIPgetSolHeur(GCGrelaxGetMasterprob(scip), mastersol))));
+         SCIPinfoMessage(scip, file, "%c", (SCIPgetSolHeur(masterprob, mastersol) == NULL ? '*'
+               : SCIPheurGetDispchar(SCIPgetSolHeur(masterprob, mastersol))));
       }
       else
       {
@@ -647,7 +670,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSeparounds)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SEPAROUNDS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGrelaxGetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING )
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGrelaxGetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
+   }
+   else
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_SEPAROUNDS);
+   }
 
    return SCIP_OKAY;
 }
@@ -660,7 +690,14 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPoolsize)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_POOLSIZE) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGrelaxGetMasterprob(scip)), DISP_WIDT_POOLSIZE);
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGrelaxGetMasterprob(scip)), DISP_WIDT_POOLSIZE);
+   }
+   else
+   {
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_POOLSIZE);
+   }
 
    return SCIP_OKAY;
 }
@@ -701,11 +738,18 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLpobj)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPOBJ) == 0);
    assert(scip != NULL);
 
-   lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
-   if( SCIPisInfinity(scip, REALABS(lpobj)) )
-      SCIPinfoMessage(scip, file, "      --      ");
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING )
+   {
+      lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
+      if( SCIPisInfinity(scip, REALABS(lpobj)) )
+         SCIPinfoMessage(scip, file, "      --      ");
+      else
+         SCIPinfoMessage(scip, file, "%13.6e ", lpobj);
+   }
    else
-      SCIPinfoMessage(scip, file, "%13.6e ", lpobj);
+   {
+      SCIPinfoMessage(scip, file, "      --      ");
+   }
 
    return SCIP_OKAY;
 }
