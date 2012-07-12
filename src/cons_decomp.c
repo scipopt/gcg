@@ -63,11 +63,6 @@ struct SCIP_DecScores
 };
 typedef struct SCIP_DecScores SCIP_DECSCORES;
 
-/** constraint data for decomp constraints */
-struct SCIP_ConsData
-{
-};
-
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
