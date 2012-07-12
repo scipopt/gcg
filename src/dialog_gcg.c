@@ -260,18 +260,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
       if( !DEChasDetectionRun(scip) )
       {
          SCIP_CALL( DECdetectStructure(scip, &result) );
-      }
-      else
-      {
-         result = SCIP_DIDNOTFIND;
+         if( result == SCIP_DIDNOTFIND )
+         {
+            assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+            SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
+            break;
+         }
+
       }
 
-      if( result == SCIP_DIDNOTFIND )
-      {
-         assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
-         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
-         break;
-      }
    case SCIP_STAGE_SOLVING:
       SCIP_CALL( SCIPsolve(scip) );
       break;

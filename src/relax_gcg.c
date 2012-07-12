@@ -1673,8 +1673,12 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->decdecomp == NULL )
    {
-      SCIPerrorMessage("No decomposition specified!\n");
-      return SCIP_ERROR;
+      relaxdata->decdecomp = DECgetBestDecomp(scip);
+      if( relaxdata->decdecomp == NULL )
+      {
+         SCIPerrorMessage("No decomposition specified!\n");
+         return SCIP_ERROR;
+      }
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
