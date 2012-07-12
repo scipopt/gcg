@@ -1,15 +1,10 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
-/*                                                                           */
-/*    Copyright (C) 2002-2008 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
-/*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
-/*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -23,23 +18,43 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /**@mainpage Generic Column Genration
- * @version  1.0.0
- * @author   Gerald Gamrath
- * @author   Martin Bergner
- * @author   Christian Puchert
+ *
+ * <b>What is GCG?</b>
+ *
+ * GCG is a generic branch-cut-and-price solver for mixed integer programs. It is based on the branch-and-cut-and-price
+ * framework SCIP and is also part of the <a href="http://scip.zib.de">SCIP Optimization Suite</a>.
+ *
+ * After the standard presolving process of SCIP, GCG performs a Dantzig-Wolfe decomposition of the problem to obtain an
+ * extended formulation of the problem. The decomposition is based on a structure either provided by the user or
+ * automatically detected by one of the structure detectors included in GCG .
+ *
+ * During the solving process, GCG manages two SCIP instances, one holding the original problem, the other one
+ * representing the reformulated problem. The original instance coordinates the solving process while the other one
+ * builds the tree in the same way, transfers branching decisions and bound changes from the original problem and
+ * solves the LP relaxation of the extended formulation via columns generation.
+ *
+ * GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a
+ * href="http://www.zib.de">Zuse-Institute Berlin</a>
+ * and has more than 40,000 lines of C code.
+ *
  *
  * <table cellpadding="0px" border="0" width="100%">
  *   <tr>
  *     <td nowrap >
- * <b>GCG Information</b>
+ * <b>How to get started</b>
  *
+ * - \ref INSTALL      "Installation information"
+ * - \ref FILEFORMATS  "Input file formats"
+ *
+ * <table cellpadding="0px" border="0" width="100%">
+ *   <tr>
+ *     <td nowrap >
+ * <b>Further Information</b>
+ * - \ref AUTHORS      "Current GCG developers"
  * - \ref CHANGELOG    "Change log"
  * - \ref RELEASENOTES "Release notes"
- * - \ref INSTALL      "Installation information"
  *
- * <b>GCG Authors</b>
- * - <a class="el" href="AUTHORS.html#main">Current main developers</a>
- * - <a class="el" href="AUTHORS.html#further">Further developers</a>
+ * @version  1.0
  *
  * <b>Further Documentation</b>
  * - \ref DETECT "How to write a custom structure detection"
@@ -69,7 +84,7 @@
  *
  */
 
-/**@page AUTHORS SCIP Authors
+/**@page AUTHORS GCG Authors
  * \htmlinclude authors.inc
  */
 
@@ -78,26 +93,11 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/**@page CODE Coding style guidelines
+/**@page FILEFORMATS Input file formats supported by GCG.
  *
- * We follow the following coding style guidlines and we recommend to use it in your code.
+ * GCG supports all file formats supported by SCIP to read in problems, solution, etc.
+ * E.g., the original problem can be read in as an .lp, .mps, or .cip file.
  *
- * - Indentation is 3 spaces. No tabs anywhere in the code.
- * - Always only one declaration in a line.
- * - Braces are on a new line and not indented.
- * - Spaces around all operators.
- * - No spaces between control structure keywords like "if", "for", "while", "switch" and the corresponding brackets.
- * - No spaces between a function name and the parenthesis in both the definition and function calls.
- * - Use assert() to show preconditions for the parameters, invariants and postconditions.
- * - All global functions start with "SCIP". In the usual naming scheme this is followed by the object and a method name
- *   like in SCIPlpAddRow(). Functions return TRUE or FALSE should be named like SCIPisFeasEQ().
- * - Make all functions that are not used outside the module 'static'. Naming should start with a lower case letter.
- * - Variable names should be all lower case.
- * - For each structure there is a typedef with the name in all upper case.
- * - Defines should be named all upper case.
- * - Document functions, parameters, and variables in a doxygen conform way.
- *
- * As an example have a look at tree.c .
  */
 
 /**@defgroup TYPEDEFINITIONS Type Definitions
