@@ -2599,7 +2599,7 @@ void GCGpricerPrintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
    {
-      start = (1.0 * i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0; /** @todo: ?*/
+      start = (1.0 * i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0;
       end = start + PRICER_STAT_BUCKETSIZE_TIME/1000.0;
 
       if( pricerdata->nodetimehist[i] != 0 )
