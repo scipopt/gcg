@@ -3346,7 +3346,6 @@ SCIP_Real GCGgetPricingprobsMemUsed(
 }
 
 /** returns whether the relaxator has been initialized */
-extern
 SCIP_Bool GCGrelaxIsInitialized(
    SCIP*                 scip                /**< SCIP data structure */
    )

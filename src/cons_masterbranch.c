@@ -97,11 +97,6 @@ struct SCIP_ConshdlrData
 };
 
 
-/** event handler data */
-struct SCIP_EventhdlrData
-{
-};
-
 /*
  * Local methods
  */
