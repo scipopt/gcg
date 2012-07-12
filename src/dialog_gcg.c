@@ -255,7 +255,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
    case SCIP_STAGE_PRESOLVING:
-      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+
    case SCIP_STAGE_PRESOLVED:
       if( !DEChasDetectionRun(scip) )
       {
@@ -266,8 +267,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
             break;
          }
-
-      }
+      }  /*lint -fallthrough*/
 
    case SCIP_STAGE_SOLVING:
       SCIP_CALL( SCIPsolve(scip) );

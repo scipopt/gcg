@@ -96,9 +96,9 @@ GCGwriteVarCreationDetails(
    int nvars, i, n;
    SCIP_Longint  node;
    SCIP_Longint* createnodestat;
-   int* nodes;         /** < Wurzel Knoten und nicht wurzelknoten  */
-   SCIP_Longint* createtimestat;
-   int* createiterstat;
+   int nodes[2];         /** < Wurzel Knoten und nicht wurzelknoten  */
+   SCIP_Longint createtimestat[10];
+   int createiterstat[10];
    SCIP_Longint iteration;
    int m;
 
@@ -114,12 +114,8 @@ GCGwriteVarCreationDetails(
 
    solvingtime = SCIPgetSolvingTime(scip);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &nodes, 2) ); /** 0= WurzelKnoten, 1= alle anderen */
-
    assert(nnodes < INT_MAX);
    SCIP_CALL( SCIPallocMemoryArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &createtimestat, 10) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &createiterstat, 10) );
 
    SCIPinfoMessage(scip, NULL, "AddedVarDetails:\n");
 
@@ -183,10 +179,7 @@ GCGwriteVarCreationDetails(
       SCIPinfoMessage(scip, NULL, "Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
    }
 
-   SCIPfreeMemoryArray(scip, &createiterstat);
-   SCIPfreeMemoryArray(scip, &createtimestat);
    SCIPfreeMemoryArray(scip, &createnodestat);
-   SCIPfreeMemoryArray(scip, &nodes);
 
    return SCIP_OKAY;
 }

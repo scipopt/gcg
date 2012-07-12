@@ -315,7 +315,7 @@ SCIP_RETCODE ensureSizeAvgnodedegeneracy(
    assert(scip != NULL);
    assert(pricerdata != NULL);
 
-   if(pricerdata->maxnnodes > pricerdata->nnodes)
+   if( pricerdata->maxnnodes > pricerdata->nnodes )
       return SCIP_OKAY;
 
    memgrowsize = SCIPcalcMemGrowSize(scip, pricerdata->nnodes+1);
@@ -338,11 +338,11 @@ void GCGpricerGetNodeTimeHistogram(
    int i;
 
    /** 1000* because mapping milliseconds on the index i */
-   i=1000*time/PRICER_STAT_BUCKETSIZE_TIME;
+   i = 1000*time/PRICER_STAT_BUCKETSIZE_TIME; /*lint !e524 */
 
-   if(i>PRICER_STAT_ARRAYLEN_TIME)
+   if( i >= PRICER_STAT_ARRAYLEN_TIME )
    {
-      i=PRICER_STAT_ARRAYLEN_TIME;
+      i = PRICER_STAT_ARRAYLEN_TIME-1;
    }
    pricerdata->nodetimehist[i]++;
 
@@ -357,11 +357,11 @@ void GCGpricerGetFoundVarsHistogram(
    )
 {
    int i;
-   i=foundvars/PRICER_STAT_BUCKETSIZE_VARS;
+   i = foundvars/PRICER_STAT_BUCKETSIZE_VARS;
 
-   if(i>PRICER_STAT_ARRAYLEN_VARS)
+   if( i >= PRICER_STAT_ARRAYLEN_VARS )
    {
-      i=PRICER_STAT_ARRAYLEN_VARS;
+      i = PRICER_STAT_ARRAYLEN_VARS-1;
    }
    pricerdata->foundvarshist[i]++;
 
@@ -379,7 +379,7 @@ void GCGpricerCollectStatistic(
 {
    int foundvars;
 
-   foundvars=(pricerdata->npricedvars-pricerdata->oldvars);
+   foundvars = pricerdata->npricedvars - pricerdata->oldvars;
 
    if( type == GCG_PRICETYPE_FARKAS )
    {
@@ -554,6 +554,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
    )
 {
    int ncols;
+   int nrows;
    int i;
    int count;
    int countz;
@@ -568,11 +569,12 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    *degeneracy = 0.0;
    ncols = SCIPgetNLPCols(scip);
+   nrows = SCIPgetNLPRows(scip);
    cols = SCIPgetLPCols(scip);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &indizes, ncols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &indizes, ncols+nrows) );
 
-   for( i = 0; i < ncols; i++ )
+   for( i = 0; i < ncols+nrows; i++ )
    {
       indizes[i] = 0;
    }
@@ -1701,7 +1703,7 @@ SCIP_RETCODE performOptimalPricing(
 
       if( status != SCIP_STATUS_OPTIMAL )
       {
-         bestredcostvalid = FALSE;
+         *bestredcostvalid = FALSE;
          if( result != NULL)
             *result = SCIP_DIDNOTRUN;
       }
@@ -1841,15 +1843,13 @@ SCIP_RETCODE performPricing(
    }
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
-#if 0
+
    SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
    if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
    {
       pricerdata->lastnode = SCIPgetCurrentNode(scip);
       SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
-      ++(pricerdata->nnodes);
-
 
       if( pricerdata->nnodes == 1 )
          pricerdata->avgnodedegeneracy = degeneracy;
@@ -1870,10 +1870,9 @@ SCIP_RETCODE performPricing(
 
    assert(pricerdata->nnodes < pricerdata->maxnnodes);
    pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
-
+   ++(pricerdata->nnodes);
    assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
-   // SCIPinfoMessage(scip, NULL, "Degeneracy at node %p %.2f (avg: %.2f)\n", pricerdata->lastnode, degeneracy, pricerdata->avgnodedegeneracy);
-#endif
+
    return SCIP_OKAY;
 }
 
@@ -2600,7 +2599,7 @@ void GCGpricerPrintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
    {
-      start = (i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0; /** @todo: ?*/
+      start = (1.0 * i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0; /** @todo: ?*/
       end = start + PRICER_STAT_BUCKETSIZE_TIME/1000.0;
 
       if( pricerdata->nodetimehist[i] != 0 )
