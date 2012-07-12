@@ -1370,8 +1370,9 @@ SCIP_RETCODE createMaster(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
-   if( relaxdata->decdecomp != NULL )
-      SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
+   assert(relaxdata->decdecomp != NULL);
+
+   SCIP_CALL( convertStructToGCG(scip, relaxdata, relaxdata->decdecomp) );
 
    npricingprobs = relaxdata->npricingprobs;
    hashorig2pricingvar = NULL;
@@ -1672,7 +1673,8 @@ SCIP_RETCODE initRelaxator(
 
    if( relaxdata->decdecomp == NULL )
    {
-      SCIP_CALL( DECdetectStructure(scip) );
+      SCIPerrorMessage("No decomposition specified!\n");
+      return SCIP_ERROR;
    }
 
    SCIP_CALL( SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &relaxdata->discretization) );
@@ -1950,18 +1952,18 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+   *result = SCIP_DIDNOTRUN;
 
-   if( relaxdata->decdecomp == NULL )
+   if( !relaxdata->relaxisinitialized )
    {
       SCIP_CALL( initRelaxator(scip, relax) );
       SCIP_CALL( SCIPconsOrigbranchAddRootCons(scip) );
       relaxdata->relaxisinitialized = TRUE;
+      assert(relaxdata->decdecomp != NULL);
    }
 
    masterprob = relaxdata->masterprob;
    assert(masterprob != NULL);
-
-   *result = SCIP_DIDNOTRUN;
 
    SCIPdebugMessage("solving node %lld's relaxation!\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
 

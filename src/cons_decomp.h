@@ -102,7 +102,8 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
 /** interface method to detect the structure */
 extern
 SCIP_RETCODE DECdetectStructure(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RESULT*          result              /**< Result pointer to indicate whether some structure was found */
    );
 
 
@@ -122,6 +123,12 @@ DEC_DECOMP* DECgetBestDecomp(
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+/** returns whether the detection has been performed */
+SCIP_Bool DEChasDetectionRun(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 
 #ifdef __cplusplus
 }
