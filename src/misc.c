@@ -23,9 +23,9 @@
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method*/
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_SOL*             mastersol,          /** solution of the master problem, or NULL for current LP solution */
-   SCIP_SOL**            origsol             /** pointer to store the new created original problem's solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             mastersol,          /**< solution of the master problem, or NULL for current LP solution */
+   SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
    )
 {
    SCIP* masterprob;
@@ -310,13 +310,13 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
 /** transforms given values of the given original variables into values of the given master variables */
 void GCGrelaxTransformOrigvalsToMastervals(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
-   SCIP_Real*            origvals,           /** array with values (coefs) for the given original variables */
-   int                   norigvars,          /** number of given original variables */
-   SCIP_VAR**            mastervars,         /** array of (all present) master variables */
-   SCIP_Real*            mastervals,         /** array to store the values of the master variables */
-   int                   nmastervars         /** number of master variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
+   SCIP_Real*            origvals,           /**< array with values (coefs) for the given original variables */
+   int                   norigvars,          /**< number of given original variables */
+   SCIP_VAR**            mastervars,         /**< array of (all present) master variables */
+   SCIP_Real*            mastervals,         /**< array to store the values of the master variables */
+   int                   nmastervars         /**< number of master variables */
    )
 {
    int i;
