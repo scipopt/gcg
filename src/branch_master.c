@@ -159,7 +159,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of master branching\n");
-//   printf("Execps method of master branching\n");
 
    /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -179,8 +178,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
 
    return SCIP_OKAY;
 }
-
-
 
 
 /*

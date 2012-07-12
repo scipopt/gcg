@@ -191,7 +191,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             logname = argv[i];
          else
          {
-            printf("missing log filename after parameter '-l'\n");
+            SCIPinfoMessage(scip, NULL, "missing log filename after parameter '-l'\n");
             paramerror = TRUE;
          }
       }
@@ -204,7 +204,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             settingsname = argv[i];
          else
          {
-            printf("missing settings filename after parameter '-s'\n");
+            SCIPinfoMessage(scip, NULL, "missing settings filename after parameter '-s'\n");
             paramerror = TRUE;
          }
       }
@@ -215,7 +215,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             mastersetname = argv[i];
          else
          {
-            printf("missing master settings filename after parameter '-m'\n");
+            SCIPinfoMessage(scip, NULL, "missing master settings filename after parameter '-m'\n");
             paramerror = TRUE;
          }
       }
@@ -226,7 +226,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             probname = argv[i];
          else
          {
-            printf("missing problem filename after parameter '-f'\n");
+            SCIPinfoMessage(scip, NULL, "missing problem filename after parameter '-f'\n");
             paramerror = TRUE;
          }
       }
@@ -237,7 +237,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             decname = argv[i];
          else
          {
-            printf("missing decomposition filename after parameter '-d'\n");
+            SCIPinfoMessage(scip, NULL, "missing decomposition filename after parameter '-d'\n");
             paramerror = TRUE;
          }
       }
@@ -251,7 +251,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
          }
          else
          {
-            printf("missing command line after parameter '-c'\n");
+            SCIPinfoMessage(scip, NULL, "missing command line after parameter '-c'\n");
             paramerror = TRUE;
          }
       }
@@ -265,7 +265,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             file = SCIPfopen(argv[i], "r");
             if( file == NULL )
             {
-               printf("cannot read command batch file <%s>\n", argv[i]);
+               SCIPinfoMessage(scip, NULL, "cannot read command batch file <%s>\n", argv[i]);
                SCIPprintSysError(argv[i]);
                paramerror = TRUE;
             }
@@ -287,24 +287,24 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
          }
          else
          {
-            printf("missing command batch filename after parameter '-b'\n");
+            SCIPinfoMessage(scip, NULL, "missing command batch filename after parameter '-b'\n");
             paramerror = TRUE;
          }
       }
       else
       {
-         printf("invalid parameter <%s>\n", argv[i]);
+         SCIPinfoMessage(scip, NULL, "invalid parameter <%s>\n", argv[i]);
          paramerror = TRUE;
       }
    }
    if( interactive && probname != NULL )
    {
-      printf("cannot mix batch mode '-c' and '-b' with file mode '-f'\n");
+      SCIPinfoMessage(scip, NULL, "cannot mix batch mode '-c' and '-b' with file mode '-f'\n");
       paramerror = TRUE;
    }
    if( probname == NULL && decname != NULL )
    {
-      printf("cannot read decomposition file without given problem\n");
+      SCIPinfoMessage(scip, NULL, "cannot read decomposition file without given problem\n");
       paramerror = TRUE;
    }
 
@@ -370,7 +370,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    }
    else
    {
-      printf("\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
+      SCIPinfoMessage(scip, NULL, "\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
          "  -l <logfile>        : copy output into log file\n"
          "  -q                  : suppress screen messages\n"
          "  -s <settings>       : load parameter settings (.set) file\n"

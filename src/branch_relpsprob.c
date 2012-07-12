@@ -208,8 +208,6 @@ SCIP_RETCODE addBdchg(
    /* if variable is not in hashmap insert it and increase array sizes */
    if( !SCIPhashmapExists(bdchgdata->varhashmap, var) )
    {
-      //      printf("capture additional variable <%s>\n", SCIPvarGetName(var) );
-      //SCIP_CALL( SCIPcaptureVar(scip, var) );
       SCIP_CALL( SCIPhashmapInsert(bdchgdata->varhashmap, var, (void*) (size_t)nvars) );
       SCIP_CALL( SCIPreallocBufferArray(scip, &bdchgdata->lbchgs, nvars + 1) );
       SCIP_CALL( SCIPreallocBufferArray(scip, &bdchgdata->ubchgs, nvars + 1) );
@@ -321,13 +319,8 @@ SCIP_RETCODE applyBdchgs(
    }
 
    SCIPdebugMessage("applied %d bound changes\n", nbdchgs);
-//   printf("applied %d bound changes\n", nbdchgs);
-
    return SCIP_OKAY;
 }
-
-
-
 
 
 /** calculates an overall score value for the given individual score values */
@@ -1214,8 +1207,7 @@ SCIP_RETCODE execRelpsprob(
             /* both roundings are infeasible -> node is infeasible */
             SCIPdebugMessage(" -> variable <%s> is infeasible in both directions\n",
                SCIPvarGetName(branchcands[c]));
-//            printf(" -> variable <%s> is infeasible in both directions\n",
-//               SCIPvarGetName(branchcands[c]));
+
             *result = SCIP_CUTOFF;
             break; /* terminate initialization loop, because node is infeasible */
          }
