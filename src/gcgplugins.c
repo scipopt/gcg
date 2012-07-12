@@ -134,6 +134,9 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
+#include "dec_borderheur.h"
+#include "dec_arrowheur.h"
+#include "dec_stairheur.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -150,6 +153,10 @@
 #include "heur_gcgzirounding.h"
 #include "heur_xpcrossover.h"
 #include "heur_xprins.h"
+
+/* Friedrike's detection stuff */
+#include "dec_cutpacking.h"
+
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -263,8 +270,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
-   SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
+   SCIP_CALL(SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
+   SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
@@ -281,6 +291,10 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
+
+   /* Friederike's */
+   SCIP_CALL(SCIPincludeDetectionCutpacking(scip));
+
 
    //SCIP_CALL( SCIPincludeDispDefault(scip) );
    //SCIP_CALL( SCIPincludeDialogDefault(scip) );

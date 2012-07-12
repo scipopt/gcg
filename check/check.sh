@@ -8,6 +8,9 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3

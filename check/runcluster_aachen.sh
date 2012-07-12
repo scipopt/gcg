@@ -15,11 +15,11 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 module switch intel gcc/4.6
 
-#BSUB -J SCIP$SHORTFILENAME 
-#BSUB -M $HARDMEMLIMIT 
+#BSUB -J SCIP$SHORTFILENAME
+#BSUB -M $HARDMEMLIMIT
 #BSUB -W $TLIMIT
 
-# check if tmp-path exists 
+# check if tmp-path exists
 if test ! -d $CLIENTTMPDIR
 then
     echo Skipping test since the path for the tmp-dir does not exist.
@@ -48,7 +48,7 @@ cd $CLIENTTMPDIR
 
 uname -a                            > $OUTFILE
 uname -a                            > $ERRFILE
-echo "@01 $FILENAME ==========="    >> $OUTFILE 
+echo "@01 $FILENAME ==========="    >> $OUTFILE
 echo "@01 $FILENAME ==========="    >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE

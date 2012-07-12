@@ -29,7 +29,7 @@
 #define DEC_DETECTORNAME         "connected"    /**< name of detector */
 #define DEC_DESC                 "Detector for classical and block diagonal problems" /**< description of detector*/
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR              'b'            /**< display character of detector */
+#define DEC_DECCHAR              'C'            /**< display character of detector */
 
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
@@ -646,6 +646,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    runs = detectordata->setppcinmaster ? 2:1;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
+   *ndecdecomps = 0;
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
@@ -678,6 +679,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
          detectordata->setppcinmaster = FALSE;
       }
    }
+
    SCIPfreeBufferArray(scip, &detectordata->consismaster);
 
    return SCIP_OKAY;

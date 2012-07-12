@@ -837,7 +837,7 @@ static SCIP_RETCODE fixVariables(
 
    SCIP_VAR** vars;                          /* original scip variables                */
    SCIP_Real fixingrate;                     /* percentage of variables that are fixed */
-   
+
    int nblocks;                              /* number of blocks                                   */
    int nusedpts;                             /* number of extreme points per block                 */
    int nvars;                                /* number of original variables                       */
