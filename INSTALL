@@ -1,1 +1,24 @@
-Here to be how to install
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                                                                           *
+*                  This file is part of the program                         *
+*          GCG --- Generic Column Generation                                *
+*                  a Dantzig-Wolfe decomposition based extension            *
+*                  of the branch-cut-and-price framework                    *
+*         SCIP --- Solving Constraint Integer Programs                      *
+*                                                                           *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+In order to use GCG, you need a running version of SCIP and you need
+to create a (soft-)link "scip" in the lib/ directory pointing to the
+main directory of your SCIP version (e.g., "../../scip").
+
+The Makefile options are the same as in SCIP, for a detailed description
+of those, have a look at the INSTALL file in your SCIP directory.
+
+The compilation only works, if SCIP was previously compiled with exactly
+the same options. For example, if you want to compile in optimzed
+compilation mode and use Soplex as LP solver, you should first compile SCIP
+via "make OPT=opt LPS=spx", then switch to the GCG directory and compile
+GCG with "make OPT=opt LPS=spx". too.
+The GCG makefile also provides the possibility to compile SCIP from your
+GCG directory via the "SCIP" target, e.g., "make OPT=opt LPS=spx scip".
