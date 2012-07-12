@@ -29,6 +29,10 @@
 #include "gcggithash.h"
 #include "relax_gcg.h"
 
+#if SCIP_VERSION < 300
+#error GCG can only be compiled with SCIP version 3.0.0 or higher
+#endif
+
 /** returns GCG major version */
 static
 int GCGmajorVersion(void)

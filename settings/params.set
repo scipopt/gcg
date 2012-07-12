@@ -1,0 +1,1437 @@
+# SCIP version 3.0.0
+
+# branching score function ('s'um, 'p'roduct)
+# [type: char, range: {sp}, default: p]
+branching/scorefunc = p
+
+# branching score factor to weigh downward and upward gain prediction in sum score function
+# [type: real, range: [0,1], default: 0.167]
+branching/scorefac = 0.167
+
+# should branching on binary variables be preferred?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+branching/preferbinary = FALSE
+
+# minimal relative distance of branching point to bounds when branching on a continuous variable
+# [type: real, range: [0,0.5], default: 0.2]
+branching/clamp = 0.2
+
+# strategy for normalization of LP gain when updating pseudocosts of continuous variables (divide by movement of 'l'p value, reduction in 'd'omain width, or reduction in domain width of 's'ibling)
+# [type: char, range: {dls}, default: s]
+branching/lpgainnormalize = s
+
+# should updating pseudo costs for continuous variables be delayed to the time after separation?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+branching/delaypscostupdate = TRUE
+
+# maximum age an unnecessary constraint can reach before it is deleted (0: dynamic, -1: keep all constraints)
+# [type: int, range: [-1,2147483647], default: 0]
+constraints/agelimit = 0
+
+# age of a constraint after which it is marked obsolete (0: dynamic, -1 do not mark constraints obsolete)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/obsoleteage = -1
+
+# should enforcement of pseudo solution be disabled?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+constraints/disableenfops = FALSE
+
+# verbosity level of output
+# [type: int, range: [0,5], default: 4]
+display/verblevel = 4
+
+# maximal number of characters in a node information line
+# [type: int, range: [0,2147483647], default: 139]
+display/width = 139
+
+# frequency for displaying node information lines
+# [type: int, range: [-1,2147483647], default: 100]
+display/freq = 100
+
+# frequency for displaying header lines (every n'th node information line)
+# [type: int, range: [-1,2147483647], default: 15]
+display/headerfreq = 15
+
+# should the LP solver display status messages?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+display/lpinfo = FALSE
+
+# maximal time in seconds to run
+# [type: real, range: [0,1.79769313486232e+308], default: 1e+20]
+limits/time = 1e+20
+
+# maximal number of nodes to process (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+limits/nodes = -1
+
+# maximal number of total nodes (incl. restarts) to process (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+limits/totalnodes = -1
+
+# solving stops, if the given number of nodes was processed since the last improvement of the primal solution value (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+limits/stallnodes = -1
+
+# maximal memory usage in MB; reported memory usage is lower than real memory usage!
+# [type: real, range: [0,1.79769313486232e+308], default: 1e+20]
+limits/memory = 1e+20
+
+# solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+limits/gap = 0
+
+# solving stops, if the absolute gap = |primalbound - dualbound| is below the given value
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+limits/absgap = 0
+
+# solving stops, if the given number of solutions were found (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+limits/solutions = -1
+
+# solving stops, if the given number of solution improvements were found (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+limits/bestsol = -1
+
+# maximal number of solutions to store in the solution storage
+# [type: int, range: [1,2147483647], default: 100]
+limits/maxsol = 100
+
+# maximal number of solutions candidates to store in the solution storage of the original problem
+# [type: int, range: [0,2147483647], default: 10]
+limits/maxorigsol = 10
+
+# solving stops, if the given number of restarts was triggered (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+limits/restarts = -1
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# iteration limit for each single LP solve (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+lp/iterlim = -1
+
+# iteration limit for initial root LP solve (-1: no limit)
+# [type: longint, range: [-1,9223372036854775807], default: -1]
+lp/rootiterlim = -1
+
+# maximal depth for solving LP at the nodes (-1: no depth limit)
+# [type: int, range: [-1,2147483647], default: -1]
+lp/solvedepth = -1
+
+# LP algorithm for solving initial LP relaxations (automatic 's'implex, 'p'rimal simplex, 'd'ual simplex, 'b'arrier, barrier with 'c'rossover)
+# [type: char, range: {spdbc}, default: s]
+lp/initalgorithm = s
+
+# LP algorithm for resolving LP relaxations if a starting basis exists (automatic 's'implex, 'p'rimal simplex, 'd'ual simplex, 'b'arrier, barrier with 'c'rossover)
+# [type: char, range: {spdbc}, default: s]
+lp/resolvealgorithm = s
+
+# LP pricing strategy ('l'pi default, 'a'uto, 'f'ull pricing, 'p'artial, 's'teepest edge pricing, 'q'uickstart steepest edge pricing, 'd'evex pricing)
+# [type: char, range: {lafpsqd}, default: l]
+lp/pricing = l
+
+# should lp state be cleared at the end of probing mode when lp was initially unsolved, e.g., when called right after presolving?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/clearinitialprobinglp = TRUE
+
+# should the LP be resolved to restore the state at start of diving (if FALSE we buffer the solution values)?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/resolverestore = FALSE
+
+# should the buffers for storing LP solution values during diving be freed at end of diving?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/freesolvalbuffers = FALSE
+
+# maximum age a dynamic column can reach before it is deleted from the LP (-1: don't delete columns due to aging)
+# [type: int, range: [-1,2147483647], default: 10]
+lp/colagelimit = 10
+
+# maximum age a dynamic row can reach before it is deleted from the LP (-1: don't delete rows due to aging)
+# [type: int, range: [-1,2147483647], default: 10]
+lp/rowagelimit = 10
+
+# should new non-basic columns be removed after LP solving?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/cleanupcols = FALSE
+
+# should new non-basic columns be removed after root LP solving?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/cleanupcolsroot = FALSE
+
+# should new basic rows be removed after LP solving?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/cleanuprows = TRUE
+
+# should new basic rows be removed after root LP solving?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/cleanuprowsroot = TRUE
+
+# should LP solver's return status be checked for stability?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/checkstability = TRUE
+
+# should LP solutions be checked, resolving LP when numerical troubles occur?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/checkfeas = TRUE
+
+# which FASTMIP setting of LP solver should be used? 0: off, 1: low
+# [type: int, range: [0,1], default: 1]
+lp/fastmip = 1
+
+# should scaling of LP solver be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/scaling = TRUE
+
+# should presolving of LP solver be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/presolving = TRUE
+
+# should the lexicographic dual alogrithm be used?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/lexdualalgo = FALSE
+
+# should the lexicographic dual algorithm be applied only at the root node
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/lexdualrootonly = TRUE
+
+# maximum number of rounds in the  lexicographic dual algorithm (-1: unbounded)
+# [type: int, range: [-1,2147483647], default: 2]
+lp/lexdualmaxrounds = 2
+
+# choose fractional basic variables in lexicographic dual algorithm?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+lp/lexdualbasic = FALSE
+
+# turn on the lex dual algorithm only when stalling?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+lp/lexdualstalling = TRUE
+
+# simplex algorithm shall use row representation of the basis if number of rows divided by number of columns exceeds this value (-1.0 to disable row representation)
+# [type: real, range: [-1,1.79769313486232e+308], default: -1]
+lp/rowrepswitch = -1
+
+# number of threads used for solving the LP (0: automatic)
+# [type: int, range: [0,64], default: 0]
+lp/threads = 0
+
+# factor of average LP iterations that is used as LP iteration limit for LP resolve (-1: unlimited)
+# [type: real, range: [-1,1.79769313486232e+308], default: -1]
+lp/resolveiterfac = -1
+
+# minimum number of iterations that are allowed for LP resolve
+# [type: int, range: [1,2147483647], default: 1000]
+lp/resolveitermin = 1000
+
+# fraction of maximal memory usage resulting in switch to memory saving mode
+# [type: real, range: [0,1], default: 0.8]
+memory/savefac = 0.8
+
+# memory growing factor for dynamically allocated arrays
+# [type: real, range: [1,10], default: 1.2]
+memory/arraygrowfac = 1.2
+
+# initial size of dynamically allocated arrays
+# [type: int, range: [0,2147483647], default: 4]
+memory/arraygrowinit = 4
+
+# memory growing factor for tree array
+# [type: real, range: [1,10], default: 2]
+memory/treegrowfac = 2
+
+# initial size of tree array
+# [type: int, range: [0,2147483647], default: 65536]
+memory/treegrowinit = 65536
+
+# memory growing factor for path array
+# [type: real, range: [1,10], default: 2]
+memory/pathgrowfac = 2
+
+# initial size of path array
+# [type: int, range: [0,2147483647], default: 256]
+memory/pathgrowinit = 256
+
+# should the CTRL-C interrupt be caught by SCIP?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/catchctrlc = TRUE
+
+# should a hashtable be used to map from variable names to variables?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/usevartable = TRUE
+
+# should a hashtable be used to map from constraint names to constraints?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/useconstable = TRUE
+
+# should smaller hashtables be used? yields better performance for small problems with about 100 variables
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+misc/usesmalltables = FALSE
+
+# seed value for permuting the problem after the problem was transformed (-1: no permutation)
+# [type: int, range: [-1,2147483647], default: -1]
+misc/permutationseed = -1
+
+# should the statistics be reseted if the transformed problem is freed (in case of a benders decomposition this parameter should be set to FALSE)
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/resetstat = TRUE
+
+# should only solutions be checked which improve the primal bound
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+misc/improvingsols = FALSE
+
+# should the reason be printed if a given start solution is infeasible
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/printreason = TRUE
+
+# should the usage of external memory be estimated?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/estimexternmem = TRUE
+
+# should SCIP try to transfer original solutions to the extended space (after presolving)?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/transorigsols = TRUE
+
+# child selection rule ('d'own, 'u'p, 'p'seudo costs, 'i'nference, 'l'p value, 'r'oot LP value difference, 'h'ybrid inference/root LP value difference)
+# [type: char, range: {dupilrh}, default: h]
+nodeselection/childsel = h
+
+# values larger than this are considered infinity
+# [type: real, range: [10000000000,1e+98], default: 1e+20]
+numerics/infinity = 1e+20
+
+# absolute values smaller than this are considered zero
+# [type: real, range: [1e-20,0.001], default: 1e-09]
+numerics/epsilon = 1e-09
+
+# absolute values of sums smaller than this are considered zero
+# [type: real, range: [1e-17,0.001], default: 1e-06]
+numerics/sumepsilon = 1e-06
+
+# feasibility tolerance for constraints
+# [type: real, range: [1e-17,0.001], default: 1e-06]
+numerics/feastol = 1e-06
+
+# primal feasibility tolerance of LP solver
+# [type: real, range: [1e-17,0.001], default: 1e-06]
+numerics/lpfeastol = 1e-06
+
+# feasibility tolerance for reduced costs in LP solution
+# [type: real, range: [1e-17,0.001], default: 1e-09]
+numerics/dualfeastol = 1e-09
+
+# LP convergence tolerance used in barrier algorithm
+# [type: real, range: [1e-17,0.001], default: 1e-10]
+numerics/barrierconvtol = 1e-10
+
+# minimal relative improve for strengthening bounds
+# [type: real, range: [1e-17,1e+98], default: 0.05]
+numerics/boundstreps = 0.05
+
+# minimal variable distance value to use for branching pseudo cost updates
+# [type: real, range: [1e-17,1], default: 0.1]
+numerics/pseudocosteps = 0.1
+
+# minimal objective distance value to use for branching pseudo cost updates
+# [type: real, range: [0,1.79769313486232e+308], default: 0.0001]
+numerics/pseudocostdelta = 0.0001
+
+# minimal decrease factor that causes the recomputation of a value (e.g., pseudo objective) instead of an update
+# [type: real, range: [0,1.79769313486232e+308], default: 10000000]
+numerics/recomputefac = 10000000
+
+# values larger than this are considered huge and should be handled separately (e.g., in activity computation)
+# [type: real, range: [0,1e+98], default: 1e+15]
+numerics/hugeval = 1e+15
+
+# maximal number of presolving rounds (-1: unlimited, 0: off)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrounds = -1
+
+# abort presolve, if at most this fraction of the problem was changed in last presolve round
+# [type: real, range: [0,1], default: 0.0001]
+presolving/abortfac = 0.0001
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# fraction of integer variables that were fixed in the root node triggering a restart with preprocessing after root node evaluation
+# [type: real, range: [0,1], default: 0.05]
+presolving/restartfac = 0.05
+
+# fraction of integer variables that were fixed in the root node triggering an immediate restart with preprocessing
+# [type: real, range: [0,1], default: 0.2]
+presolving/immrestartfac = 0.2
+
+# fraction of integer variables that were globally fixed during the solving process triggering a restart with preprocessing
+# [type: real, range: [0,1], default: 1]
+presolving/subrestartfac = 1
+
+# minimal fraction of integer variables removed after restart to allow for an additional restart
+# [type: real, range: [0,1], default: 0.1]
+presolving/restartminred = 0.1
+
+# should multi-aggregation of variables be forbidden?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+presolving/donotmultaggr = FALSE
+
+# should aggregation of variables be forbidden?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+presolving/donotaggr = FALSE
+
+# maximal number of variables priced in per pricing round
+# [type: int, range: [1,2147483647], default: 100]
+pricing/maxvars = 100
+
+# maximal number of priced variables at the root node
+# [type: int, range: [1,2147483647], default: 2000]
+pricing/maxvarsroot = 2000
+
+# pricing is aborted, if fac * pricing/maxvars pricing candidates were found
+# [type: real, range: [1,1.79769313486232e+308], default: 2]
+pricing/abortfac = 2
+
+# should variables created at the current node be deleted when the node is solved in case they are not present in the LP anymore?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+pricing/delvars = FALSE
+
+# should variables created at the root node be deleted when the root is solved in case they are not present in the LP anymore?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+pricing/delvarsroot = FALSE
+
+# maximal number of propagation rounds per node (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: 100]
+propagating/maxrounds = 100
+
+# maximal number of propagation rounds in the root node (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: 1000]
+propagating/maxroundsroot = 1000
+
+# should propagation be aborted immediately? setting this to FALSE could help conflict analysis to produce more conflict constraints
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+propagating/abortoncutoff = TRUE
+
+# maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying separation (0.0: only on current best node, 1.0: on all nodes)
+# [type: real, range: [0,1], default: 1]
+separating/maxbounddist = 1
+
+# minimal efficacy for a cut to enter the LP
+# [type: real, range: [0,1e+98], default: 0.05]
+separating/minefficacy = 0.05
+
+# minimal efficacy for a cut to enter the LP in the root node
+# [type: real, range: [0,1e+98], default: 0.01]
+separating/minefficacyroot = 0.01
+
+# minimal orthogonality for a cut to enter the LP
+# [type: real, range: [0,1], default: 0.5]
+separating/minortho = 0.5
+
+# minimal orthogonality for a cut to enter the LP in the root node
+# [type: real, range: [0,1], default: 0.5]
+separating/minorthoroot = 0.5
+
+# factor to scale objective parallelism of cut in separation score calculation
+# [type: real, range: [0,1e+98], default: 0.0001]
+separating/objparalfac = 0.0001
+
+# factor to scale orthogonality of cut in separation score calculation (0.0 to disable orthogonality calculation)
+# [type: real, range: [0,1e+98], default: 1]
+separating/orthofac = 1
+
+# function used for calc. scalar prod. in orthogonality test ('e'uclidean, 'd'iscrete)
+# [type: char, range: {ed}, default: e]
+separating/orthofunc = e
+
+# row norm to use for efficacy calculation ('e'uclidean, 'm'aximum, 's'um, 'd'iscrete)
+# [type: char, range: {emsd}, default: e]
+separating/efficacynorm = e
+
+# maximal number of runs for which separation is enabled (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+separating/maxruns = -1
+
+# maximal number of separation rounds per node (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: 5]
+separating/maxrounds = 5
+
+# maximal number of separation rounds in the root node (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+separating/maxroundsroot = -1
+
+# maximal number of separation rounds in the root node of a subsequent run (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: 1]
+separating/maxroundsrootsubrun = 1
+
+# maximal additional number of separation rounds in subsequent price-and-cut loops (-1: no additional restriction)
+# [type: int, range: [-1,2147483647], default: 1]
+separating/maxaddrounds = 1
+
+# maximal number of consecutive separation rounds without objective or integrality improvement (-1: no additional restriction)
+# [type: int, range: [-1,2147483647], default: 5]
+separating/maxstallrounds = 5
+
+# maximal number of cuts separated per separation round (0: disable local separation)
+# [type: int, range: [0,2147483647], default: 100]
+separating/maxcuts = 100
+
+# maximal number of separated cuts at the root node (0: disable root node separation)
+# [type: int, range: [0,2147483647], default: 2000]
+separating/maxcutsroot = 2000
+
+# maximum age a cut can reach before it is deleted from the global cut pool, or -1 to keep all cuts
+# [type: int, range: [-1,2147483647], default: 100]
+separating/cutagelimit = 100
+
+# separation frequency for the global cut pool (-1: disable global cut pool, 0: only separate pool at the root)
+# [type: int, range: [-1,2147483647], default: 0]
+separating/poolfreq = 0
+
+# priority of relaxation handler <gcg>
+# [type: int, range: [-536870912,536870911], default: -1]
+relaxing/gcg/priority = -1
+
+# frequency for calling relaxation handler <gcg> (-1: never, 0: only in root node)
+# [type: int, range: [-1,2147483647], default: 1]
+relaxing/gcg/freq = 1
+
+# maximal number of pricing mips leading to new variables solved solved in one redcost pricing round
+# [type: int, range: [1,2147483647], default: 2147483647]
+pricing/masterpricer/maxsuccessfulmipsredcost = 2147483647
+
+# maximal number of variables created in one redcost pricing round
+# [type: int, range: [0,2147483647], default: 100]
+pricing/masterpricer/maxvarsroundredcost = 100
+
+# maximal number of variables created in one redcost pricing round at the root node
+# [type: int, range: [0,2147483647], default: 100]
+pricing/masterpricer/maxvarsroundredcostroot = 100
+
+# maximal number of variables created in one farkas pricing round
+# [type: int, range: [1,2147483647], default: 10]
+pricing/masterpricer/maxvarsroundfarkas = 10
+
+# maximal number of pricing rounds per node after the root node
+# [type: int, range: [0,2147483647], default: 2147483647]
+pricing/masterpricer/maxroundsredcost = 2147483647
+
+# maximal number of variables added for each block in a pricinground
+# [type: int, range: [0,2147483647], default: 2147483647]
+pricing/masterpricer/maxsolsprob = 2147483647
+
+# should pricing be performed heuristically before solving the MIPs to optimality?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+pricing/masterpricer/useheurpricing = FALSE
+
+# should pricing be aborted due to integral objective function?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+pricing/masterpricer/abortpricingint = TRUE
+
+# should pricing be aborted due to small gap between dual bound and RMP objective?
+# [type: real, range: [0,1], default: 0]
+pricing/masterpricer/abortpricinggap = 0
+
+# part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)
+# [type: real, range: [0,1], default: 1]
+pricing/masterpricer/successfulsubmipsrel = 1
+
+# part of the submips that are solved before redcost pricing round is aborted at the root node, if variables have been found yed? (1.0 = solve all pricing MIPs)
+# [type: real, range: [0,1], default: 1]
+pricing/masterpricer/mipsrelredcostroot = 1
+
+# part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)
+# [type: real, range: [0,1], default: 1]
+pricing/masterpricer/mipsrelredcost = 1
+
+# part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)
+# [type: real, range: [0,1], default: 1]
+pricing/masterpricer/mipsrelfarkas = 1
+
+# should additional informations concerning the pricing process be displayed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+pricing/masterpricer/dispinfos = FALSE
+
+# which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)
+# [type: int, range: [0,5], default: 2]
+pricing/masterpricer/sorting = 2
+
+# should solutions of the pricing MIPs be checked for duplicity?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+pricingsolver/mip/checksols = TRUE
+
+# should propagated bound changes in the original be enforced in the master (only proper vars)?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/enforceproper = TRUE
+
+# should discretization (TRUE) or convexification (FALSE) approach be used?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+relaxing/gcg/discretization = FALSE
+
+# should identical blocks be merged (only for discretization approach)?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/mergeidenticalblocks = TRUE
+
+# should additional information about the blocks be displayed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+relaxing/gcg/dispinfos = FALSE
+
+# priority of branching rule <orig>
+# [type: int, range: [-536870912,536870911], default: 100]
+branching/orig/priority = 100
+
+# maximal depth level, up to which branching rule <orig> should be used (-1 for no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+branching/orig/maxdepth = -1
+
+# maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying branching rule (0.0: only on current best node, 1.0: on all nodes)
+# [type: real, range: [0,1], default: 1]
+branching/orig/maxbounddist = 1
+
+# should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+branching/orig/enforcebycons = FALSE
+
+# should branching be performed on the most fractional variable instead of the first variable?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+branching/orig/mostfrac = FALSE
+
+# should pseudocosts be used to determine the variable on which the branching is performed?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+branching/orig/usepseudocosts = TRUE
+
+# should strong branching with propagation be used to determine the variable on which the branching is performed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+branching/orig/usepsstrong = FALSE
+
+# priority of branching rule <ryanfoster>
+# [type: int, range: [-536870912,536870911], default: 10]
+branching/ryanfoster/priority = 10
+
+# maximal depth level, up to which branching rule <ryanfoster> should be used (-1 for no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+branching/ryanfoster/maxdepth = -1
+
+# maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying branching rule (0.0: only on current best node, 1.0: on all nodes)
+# [type: real, range: [0,1], default: 1]
+branching/ryanfoster/maxbounddist = 1
+
+# priority of branching rule <relpsprob>
+# [type: int, range: [-536870912,536870911], default: -100]
+branching/relpsprob/priority = -100
+
+# maximal depth level, up to which branching rule <relpsprob> should be used (-1 for no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+branching/relpsprob/maxdepth = -1
+
+# maximal relative distance from current node's dual bound to primal bound compared to best node's dual bound for applying branching rule (0.0: only on current best node, 1.0: on all nodes)
+# [type: real, range: [0,1], default: 1]
+branching/relpsprob/maxbounddist = 1
+
+# weight in score calculations for conflict score
+# [type: real, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 0.01]
+branching/relpsprob/conflictweight = 0.01
+
+# weight in score calculations for conflict length score
+# [type: real, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 0.0001]
+branching/relpsprob/conflictlengthweight = 0.0001
+
+# weight in score calculations for inference score
+# [type: real, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 0.1]
+branching/relpsprob/inferenceweight = 0.1
+
+# weight in score calculations for cutoff score
+# [type: real, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 0.0001]
+branching/relpsprob/cutoffweight = 0.0001
+
+# weight in score calculations for pseudo cost score
+# [type: real, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1]
+branching/relpsprob/pscostweight = 1
+
+# minimal value for minimum pseudo cost size to regard pseudo cost value as reliable
+# [type: real, range: [0,1.79769313486232e+308], default: 1]
+branching/relpsprob/minreliable = 1
+
+# maximal value for minimum pseudo cost size to regard pseudo cost value as reliable
+# [type: real, range: [0,1.79769313486232e+308], default: 8]
+branching/relpsprob/maxreliable = 8
+
+# maximal fraction of branching LP iterations compared to node relaxation LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.5]
+branching/relpsprob/iterquot = 0.5
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 100000]
+branching/relpsprob/iterofs = 100000
+
+# maximal number of further variables evaluated without better score
+# [type: int, range: [1,2147483647], default: 8]
+branching/relpsprob/maxlookahead = 8
+
+# maximal number of candidates initialized with strong branching per node
+# [type: int, range: [0,2147483647], default: 100]
+branching/relpsprob/initcand = 100
+
+# maximal number of bound tightenings before the node is immediately reevaluated (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: 20]
+branching/relpsprob/maxbdchgs = 20
+
+# minimal number of bound tightenings before bound changes are applied
+# [type: int, range: [1,2147483647], default: 1]
+branching/relpsprob/minbdchgs = 1
+
+# shall the LP be solved during probing? (TRUE)
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+branching/relpsprob/uselp = TRUE
+
+# reliability value for probing
+# [type: real, range: [0,1], default: 0.8]
+branching/relpsprob/reliability = 0.8
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/origbranch/sepafreq = -1
+
+# frequency for propagating domains (-1: never, 0: only in root node)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/origbranch/propfreq = -1
+
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# [type: int, range: [1,15], default: 15]
+constraints/origbranch/timingmask = 15
+
+# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
+# [type: int, range: [-1,2147483647], default: 100]
+constraints/origbranch/eagerfreq = 100
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/origbranch/maxprerounds = -1
+
+# should separation method be delayed, if other separators found cuts?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+constraints/origbranch/delaysepa = FALSE
+
+# should propagation method be delayed, if other propagators found reductions?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+constraints/origbranch/delayprop = FALSE
+
+# should presolving method be delayed, if other presolvers found reductions?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+constraints/origbranch/delaypresol = FALSE
+
+# frequency for separating cuts (-1: never, 0: only in root node)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/decomp/sepafreq = -1
+
+# frequency for propagating domains (-1: never, 0: only in root node)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/decomp/propfreq = -1
+
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# [type: int, range: [1,15], default: 8]
+constraints/decomp/timingmask = 8
+
+# frequency for using all instead of only the useful constraints in separation, propagation and enforcement (-1: never, 0: only in first evaluation)
+# [type: int, range: [-1,2147483647], default: -1]
+constraints/decomp/eagerfreq = -1
+
+# maximal number of presolving rounds the constraint handler participates in (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+constraints/decomp/maxprerounds = 0
+
+# should separation method be delayed, if other separators found cuts?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+constraints/decomp/delaysepa = TRUE
+
+# should propagation method be delayed, if other propagators found reductions?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+constraints/decomp/delayprop = TRUE
+
+# should presolving method be delayed, if other presolvers found reductions?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+constraints/decomp/delaypresol = TRUE
+
+# flag to indicate whether detector <connected> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/connected/enabled = TRUE
+
+# priority of detector <connected>
+# [type: int, range: [-2147483648,2147483647], default: 0]
+detectors/connected/priority = 0
+
+# Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/connected/setppcinmaster = TRUE
+
+# priority of heuristic <gcgcoefdiving>
+# [type: int, range: [-536870912,536870911], default: -1001000]
+heuristics/gcgcoefdiving/priority = -1001000
+
+# frequency for calling primal heuristic <gcgcoefdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgcoefdiving/freq = 10
+
+# frequency offset for calling primal heuristic <gcgcoefdiving>
+# [type: int, range: [0,2147483647], default: 1]
+heuristics/gcgcoefdiving/freqofs = 1
+
+# maximal depth level to call primal heuristic <gcgcoefdiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgcoefdiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgcoefdiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcgcoefdiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcgcoefdiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcgcoefdiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgcoefdiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgcoefdiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcgcoefdiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgcoefdiving/maxdiveavgquot = 0
+
+# maximal UBQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgcoefdiving/maxdiveubquotnosol = 0.1
+
+# maximal AVGQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgcoefdiving/maxdiveavgquotnosol = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgcoefdiving/backtrack = TRUE
+
+# priority of heuristic <gcgfracdiving>
+# [type: int, range: [-536870912,536870911], default: -1003000]
+heuristics/gcgfracdiving/priority = -1003000
+
+# frequency for calling primal heuristic <gcgfracdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgfracdiving/freq = 10
+
+# frequency offset for calling primal heuristic <gcgfracdiving>
+# [type: int, range: [0,2147483647], default: 3]
+heuristics/gcgfracdiving/freqofs = 3
+
+# maximal depth level to call primal heuristic <gcgfracdiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgfracdiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgfracdiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcgfracdiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcgfracdiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcgfracdiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgfracdiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgfracdiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcgfracdiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgfracdiving/maxdiveavgquot = 0
+
+# maximal UBQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgfracdiving/maxdiveubquotnosol = 0.1
+
+# maximal AVGQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgfracdiving/maxdiveavgquotnosol = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgfracdiving/backtrack = TRUE
+
+# priority of heuristic <gcgguideddiving>
+# [type: int, range: [-536870912,536870911], default: -1007000]
+heuristics/gcgguideddiving/priority = -1007000
+
+# frequency for calling primal heuristic <gcgguideddiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgguideddiving/freq = -1
+
+# frequency offset for calling primal heuristic <gcgguideddiving>
+# [type: int, range: [0,2147483647], default: 7]
+heuristics/gcgguideddiving/freqofs = 7
+
+# maximal depth level to call primal heuristic <gcgguideddiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgguideddiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgguideddiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcgguideddiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcgguideddiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcgguideddiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgguideddiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgguideddiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcgguideddiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgguideddiving/maxdiveavgquot = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgguideddiving/backtrack = TRUE
+
+# priority of heuristic <gcglinesdiving>
+# [type: int, range: [-536870912,536870911], default: -1006000]
+heuristics/gcglinesdiving/priority = -1006000
+
+# frequency for calling primal heuristic <gcglinesdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcglinesdiving/freq = -1
+
+# frequency offset for calling primal heuristic <gcglinesdiving>
+# [type: int, range: [0,2147483647], default: 6]
+heuristics/gcglinesdiving/freqofs = 6
+
+# maximal depth level to call primal heuristic <gcglinesdiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcglinesdiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcglinesdiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcglinesdiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcglinesdiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcglinesdiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcglinesdiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcglinesdiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcglinesdiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcglinesdiving/maxdiveavgquot = 0
+
+# maximal UBQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcglinesdiving/maxdiveubquotnosol = 0.1
+
+# maximal AVGQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcglinesdiving/maxdiveavgquotnosol = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcglinesdiving/backtrack = TRUE
+
+# priority of heuristic <gcgpscostdiving>
+# [type: int, range: [-536870912,536870911], default: -1002000]
+heuristics/gcgpscostdiving/priority = -1002000
+
+# frequency for calling primal heuristic <gcgpscostdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgpscostdiving/freq = 10
+
+# frequency offset for calling primal heuristic <gcgpscostdiving>
+# [type: int, range: [0,2147483647], default: 2]
+heuristics/gcgpscostdiving/freqofs = 2
+
+# maximal depth level to call primal heuristic <gcgpscostdiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgpscostdiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgpscostdiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcgpscostdiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcgpscostdiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcgpscostdiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgpscostdiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgpscostdiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcgpscostdiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgpscostdiving/maxdiveavgquot = 0
+
+# maximal UBQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgpscostdiving/maxdiveubquotnosol = 0.1
+
+# maximal AVGQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgpscostdiving/maxdiveavgquotnosol = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgpscostdiving/backtrack = TRUE
+
+# priority of heuristic <gcgrens>
+# [type: int, range: [-536870912,536870911], default: -1100000]
+heuristics/gcgrens/priority = -1100000
+
+# frequency for calling primal heuristic <gcgrens> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgrens/freq = 0
+
+# frequency offset for calling primal heuristic <gcgrens>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/gcgrens/freqofs = 0
+
+# maximal depth level to call primal heuristic <gcgrens> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgrens/maxdepth = -1
+
+# minimum percentage of integer variables that have to be fixable
+# [type: real, range: [0,1], default: 0.5]
+heuristics/gcgrens/minfixingrate = 0.5
+
+# maximum number of nodes to regard in the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 5000]
+heuristics/gcgrens/maxnodes = 5000
+
+# number of nodes added to the contingent of the total nodes
+# [type: longint, range: [0,9223372036854775807], default: 500]
+heuristics/gcgrens/nodesofs = 500
+
+# minimum number of nodes required to start the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 500]
+heuristics/gcgrens/minnodes = 500
+
+# contingent of sub problem nodes in relation to the number of nodes of the original problem
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgrens/nodesquot = 0.1
+
+# factor by which RENS should at least improve the incumbent
+# [type: real, range: [0,1], default: 0.01]
+heuristics/gcgrens/minimprove = 0.01
+
+# should general integers get binary bounds [floor(.),ceil(.)] ?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgrens/binarybounds = TRUE
+
+# should subproblem be created out of the rows in the LP rows?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/gcgrens/uselprows = FALSE
+
+# if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgrens/copycuts = TRUE
+
+# priority of heuristic <gcgrins>
+# [type: int, range: [-536870912,536870911], default: -1101000]
+heuristics/gcgrins/priority = -1101000
+
+# frequency for calling primal heuristic <gcgrins> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 20]
+heuristics/gcgrins/freq = 20
+
+# frequency offset for calling primal heuristic <gcgrins>
+# [type: int, range: [0,2147483647], default: 5]
+heuristics/gcgrins/freqofs = 5
+
+# maximal depth level to call primal heuristic <gcgrins> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgrins/maxdepth = -1
+
+# number of nodes added to the contingent of the total nodes
+# [type: int, range: [0,2147483647], default: 500]
+heuristics/gcgrins/nodesofs = 500
+
+# maximum number of nodes to regard in the subproblem
+# [type: int, range: [0,2147483647], default: 5000]
+heuristics/gcgrins/maxnodes = 5000
+
+# minimum number of nodes required to start the subproblem
+# [type: int, range: [0,2147483647], default: 500]
+heuristics/gcgrins/minnodes = 500
+
+# contingent of sub problem nodes in relation to the number of nodes of the original problem
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgrins/nodesquot = 0.1
+
+# number of nodes without incumbent change that heuristic should wait
+# [type: int, range: [0,2147483647], default: 200]
+heuristics/gcgrins/nwaitingnodes = 200
+
+# factor by which gcgrins should at least improve the incumbent
+# [type: real, range: [0,1], default: 0.01]
+heuristics/gcgrins/minimprove = 0.01
+
+# minimum percentage of integer variables that have to be fixed
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgrins/minfixingrate = 0
+
+# should subproblem be created out of the rows in the LP rows?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/gcgrins/uselprows = FALSE
+
+# if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgrins/copycuts = TRUE
+
+# priority of heuristic <gcgrounding>
+# [type: int, range: [-536870912,536870911], default: -1000]
+heuristics/gcgrounding/priority = -1000
+
+# frequency for calling primal heuristic <gcgrounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 1]
+heuristics/gcgrounding/freq = 1
+
+# frequency offset for calling primal heuristic <gcgrounding>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/gcgrounding/freqofs = 0
+
+# maximal depth level to call primal heuristic <gcgrounding> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgrounding/maxdepth = -1
+
+# number of calls per found solution that are considered as standard success, a higher factor causes the heuristic to be called more often
+# [type: int, range: [-1,2147483647], default: 100]
+heuristics/gcgrounding/successfactor = 100
+
+# priority of heuristic <gcgshifting>
+# [type: int, range: [-536870912,536870911], default: -5000]
+heuristics/gcgshifting/priority = -5000
+
+# frequency for calling primal heuristic <gcgshifting> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgshifting/freq = 10
+
+# frequency offset for calling primal heuristic <gcgshifting>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/gcgshifting/freqofs = 0
+
+# maximal depth level to call primal heuristic <gcgshifting> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgshifting/maxdepth = -1
+
+# priority of heuristic <gcgsimplerounding>
+# [type: int, range: [-536870912,536870911], default: 0]
+heuristics/gcgsimplerounding/priority = 0
+
+# frequency for calling primal heuristic <gcgsimplerounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 1]
+heuristics/gcgsimplerounding/freq = 1
+
+# frequency offset for calling primal heuristic <gcgsimplerounding>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/gcgsimplerounding/freqofs = 0
+
+# maximal depth level to call primal heuristic <gcgsimplerounding> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgsimplerounding/maxdepth = -1
+
+# priority of heuristic <gcgveclendiving>
+# [type: int, range: [-536870912,536870911], default: -1003100]
+heuristics/gcgveclendiving/priority = -1003100
+
+# frequency for calling primal heuristic <gcgveclendiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgveclendiving/freq = -1
+
+# frequency offset for calling primal heuristic <gcgveclendiving>
+# [type: int, range: [0,2147483647], default: 4]
+heuristics/gcgveclendiving/freqofs = 4
+
+# maximal depth level to call primal heuristic <gcgveclendiving> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgveclendiving/maxdepth = -1
+
+# minimal relative depth to start diving
+# [type: real, range: [0,1], default: 0]
+heuristics/gcgveclendiving/minreldepth = 0
+
+# maximal relative depth to start diving
+# [type: real, range: [0,1], default: 1]
+heuristics/gcgveclendiving/maxreldepth = 1
+
+# maximal fraction of diving LP iterations compared to node LP iterations
+# [type: real, range: [0,1.79769313486232e+308], default: 0.05]
+heuristics/gcgveclendiving/maxlpiterquot = 0.05
+
+# additional number of allowed LP iterations
+# [type: int, range: [0,2147483647], default: 1000]
+heuristics/gcgveclendiving/maxlpiterofs = 1000
+
+# maximal fraction of pricing rounds compared to node pricing rounds
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgveclendiving/maxpricequot = 0
+
+# additional number of allowed pricing rounds (-1: no limit)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/gcgveclendiving/maxpriceofs = 0
+
+# maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1], default: 0.8]
+heuristics/gcgveclendiving/maxdiveubquot = 0.8
+
+# maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgveclendiving/maxdiveavgquot = 0
+
+# maximal UBQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1], default: 0.1]
+heuristics/gcgveclendiving/maxdiveubquotnosol = 0.1
+
+# maximal AVGQUOT when no solution was found yet (0.0: no limit)
+# [type: real, range: [0,1.79769313486232e+308], default: 0]
+heuristics/gcgveclendiving/maxdiveavgquotnosol = 0
+
+# use one level of backtracking if infeasibility is encountered?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgveclendiving/backtrack = TRUE
+
+# priority of heuristic <gcgzirounding>
+# [type: int, range: [-536870912,536870911], default: -500]
+heuristics/gcgzirounding/priority = -500
+
+# frequency for calling primal heuristic <gcgzirounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgzirounding/freq = -1
+
+# frequency offset for calling primal heuristic <gcgzirounding>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/gcgzirounding/freqofs = 0
+
+# maximal depth level to call primal heuristic <gcgzirounding> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/gcgzirounding/maxdepth = -1
+
+# determines maximum number of rounding loops
+# [type: int, range: [0,2147483647], default: 2]
+heuristics/gcgzirounding/maxroundingloops = 2
+
+# flag to determine if Zirounding is deactivated after a certain percentage of unsuccessful calls
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/gcgzirounding/stopziround = TRUE
+
+# if percentage of found solutions falls below this parameter, Zirounding will be deactivated
+# [type: real, range: [0,1], default: 0.02]
+heuristics/gcgzirounding/stoppercentage = 0.02
+
+# determines the minimum number of calls before percentage-based deactivation of Zirounding is applied
+# [type: int, range: [1,2147483647], default: 1000]
+heuristics/gcgzirounding/minstopncalls = 1000
+
+# priority of heuristic <xpcrossover>
+# [type: int, range: [-536870912,536870911], default: -1100500]
+heuristics/xpcrossover/priority = -1100500
+
+# frequency for calling primal heuristic <xpcrossover> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/xpcrossover/freq = 0
+
+# frequency offset for calling primal heuristic <xpcrossover>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/xpcrossover/freqofs = 0
+
+# maximal depth level to call primal heuristic <xpcrossover> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/xpcrossover/maxdepth = -1
+
+# number of nodes added to the contingent of the total nodes
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xpcrossover/nodesofs = 200
+
+# maximum number of nodes to regard in the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 1000]
+heuristics/xpcrossover/maxnodes = 1000
+
+# minimum number of nodes required to start the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xpcrossover/minnodes = 200
+
+# number of extreme pts per block that will be taken into account
+# [type: int, range: [2,2147483647], default: 2]
+heuristics/xpcrossover/nusedpts = 2
+
+# number of nodes without incumbent change that heuristic should wait
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xpcrossover/nwaitingnodes = 200
+
+# contingent of sub problem nodes in relation to the number of nodes of the original problem
+# [type: real, range: [0,1], default: 0.1]
+heuristics/xpcrossover/nodesquot = 0.1
+
+# minimum percentage of integer variables that have to be fixed
+# [type: real, range: [0,1], default: 0.5]
+heuristics/xpcrossover/minfixingrate = 0.5
+
+# factor by which crossover should at least improve the incumbent
+# [type: real, range: [0,1], default: 0.01]
+heuristics/xpcrossover/minimprove = 0.01
+
+# should the choice which sols to take be randomized?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xpcrossover/randomization = FALSE
+
+# should the nwaitingnodes parameter be ignored at the root node?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xpcrossover/dontwaitatroot = FALSE
+
+# should subproblem be created out of the rows in the LP rows?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xpcrossover/uselprows = FALSE
+
+# if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/xpcrossover/copycuts = TRUE
+
+# priority of heuristic <xprins>
+# [type: int, range: [-536870912,536870911], default: -1100600]
+heuristics/xprins/priority = -1100600
+
+# frequency for calling primal heuristic <xprins> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/xprins/freq = 0
+
+# frequency offset for calling primal heuristic <xprins>
+# [type: int, range: [0,2147483647], default: 0]
+heuristics/xprins/freqofs = 0
+
+# maximal depth level to call primal heuristic <xprins> (-1: no limit)
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/xprins/maxdepth = -1
+
+# minimum percentage of coincidence of relaxation and extreme pts
+# [type: real, range: [0,1], default: 0.5]
+heuristics/xprins/equalityrate = 0.5
+
+# number of nodes added to the contingent of the total nodes
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xprins/nodesofs = 200
+
+# maximum number of nodes to regard in the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 1000]
+heuristics/xprins/maxnodes = 1000
+
+# minimum number of nodes required to start the subproblem
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xprins/minnodes = 200
+
+# number of extreme pts per block that will be taken into account
+# [type: int, range: [-1,2147483647], default: -1]
+heuristics/xprins/nusedpts = -1
+
+# number of nodes without incumbent change that heuristic should wait
+# [type: longint, range: [0,9223372036854775807], default: 200]
+heuristics/xprins/nwaitingnodes = 200
+
+# contingent of sub problem nodes in relation to the number of nodes of the original problem
+# [type: real, range: [0,1], default: 0.1]
+heuristics/xprins/nodesquot = 0.1
+
+# minimum percentage of integer variables that have to be fixed
+# [type: real, range: [0,1], default: 0.5]
+heuristics/xprins/minfixingrate = 0.5
+
+# factor by which crossover should at least improve the incumbent
+# [type: real, range: [0,1], default: 0.01]
+heuristics/xprins/minimprove = 0.01
+
+# should the choice which sols to take be randomized?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xprins/randomization = FALSE
+
+# should the nwaitingnodes parameter be ignored at the root node?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xprins/dontwaitatroot = FALSE
+
+# should subproblem be created out of the rows in the LP rows?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xprins/uselprows = FALSE
+
+# if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/xprins/copycuts = TRUE
