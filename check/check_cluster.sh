@@ -160,6 +160,9 @@ do
       FILENAME=$USER.$QUEUE.$TSTNAME.$COUNT"_"$SHORTFILENAME.$BINID.$SETNAME
       BASENAME=$SCIPPATH/results/$FILENAME
 
+      DIRNAME=`dirname $i`
+      DECFILE=$SCIPPATH/$DIRNAME/$SHORTFILENAME.dec.gz
+
       TMPFILE=$BASENAME.tmp
       SETFILE=$BASENAME.set
 
@@ -196,6 +199,10 @@ do
       echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
       echo set save $SETFILE                 >> $TMPFILE
       echo read $SCIPPATH/$i                 >> $TMPFILE
+      if test -f $DECFILE
+      then
+	  echo read $DECFILE                 >> $TMPFILE
+      fi
 #  echo presolve                         >> $TMPFILE
       if test $MODE = "detect"
       then
