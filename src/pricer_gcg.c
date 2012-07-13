@@ -303,7 +303,7 @@ SCIP_RETCODE ensureSizeSolvers(
 
    return SCIP_OKAY;
 }
-
+#ifdef ENABLESTATISTICS
 /* ensures size of nodes array */
 static
 SCIP_RETCODE ensureSizeAvgnodedegeneracy(
@@ -319,14 +319,14 @@ SCIP_RETCODE ensureSizeAvgnodedegeneracy(
       return SCIP_OKAY;
 
    memgrowsize = SCIPcalcMemGrowSize(scip, pricerdata->nnodes+1);
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->solvers), memgrowsize) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->nodedegeneracy), memgrowsize) );
 
    pricerdata->maxnnodes = memgrowsize;
 
    assert(pricerdata->maxnnodes > pricerdata->nnodes);
    return SCIP_OKAY;
 }
-
+#endif
 
 /** gets the NodeTimeDistribution in the form of a histogram */
 static
@@ -545,7 +545,7 @@ SCIP_RETCODE solversExitsol(
    return SCIP_OKAY;
 }
 
-
+#ifdef ENABLESTATISTICS
 /** returns the gegeneracy of the masterproblem */
 static
 SCIP_RETCODE computeCurrentDegeneracy(
@@ -612,7 +612,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    return SCIP_OKAY;
 }
-
+#endif
 
 /** solves a specific pricing problem */
 static
@@ -1747,8 +1747,9 @@ SCIP_RETCODE performPricing(
    int i;
    int j;
    int nfoundvars;
+#ifdef ENABLESTATISTICS
    double degeneracy;
-
+#endif
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool duringheurpricing;
@@ -1844,12 +1845,15 @@ SCIP_RETCODE performPricing(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
+#ifdef ENABLESTATISTICS
    SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
    if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
    {
       pricerdata->lastnode = SCIPgetCurrentNode(scip);
+
       SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
+      assert(pricerdata->nnodes < pricerdata->maxnnodes);
 
       if( pricerdata->nnodes == 1 )
          pricerdata->avgnodedegeneracy = degeneracy;
@@ -1868,11 +1872,10 @@ SCIP_RETCODE performPricing(
    if( pricerdata->lastnode == SCIPgetRootNode(scip) )
       pricerdata->rootnodedegeneracy = degeneracy;
 
-   assert(pricerdata->nnodes < pricerdata->maxnnodes);
    pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
    ++(pricerdata->nnodes);
    assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
-
+#endif
    return SCIP_OKAY;
 }
 
