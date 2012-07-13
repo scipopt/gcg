@@ -29,21 +29,21 @@ fi
 ulimit -v $ULIMITMEMLIMIT
 ulimit -m $ULIMITMEMLIMIT
 
-export ILOG_LICENSE_FILE=/home/mb322053/access.ilm
+export ILOG_LICENSE_FILE=$HOME/access.ilm
 OUTFILE=$CLIENTTMPDIR/$BASENAME.out
 ERRFILE=$CLIENTTMPDIR/$BASENAME.err
 TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
 
 #if test ! -f $CLIENTTMPDIR/hmetis
 #then
-#    cp /home/mb322053/bin/hmetis $CLIENTTMPDIR/
+#    cp $HOME/bin/hmetis $CLIENTTMPDIR/
 #fi
 if test -f $CLIENTTMPDIR/hmetis
 then
      rm $CLIENTTMPDIR/hmetis
 fi
 
-export PATH=$PATH:/home/mb322053/bin/
+export PATH=$PATH:$HOME/bin/
 cd $CLIENTTMPDIR
 
 uname -a                            > $OUTFILE
