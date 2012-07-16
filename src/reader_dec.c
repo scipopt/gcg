@@ -593,7 +593,7 @@ SCIP_RETCODE readBlock(
       vars = NULL;
       if( nvars > 0 )
       {
-         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
          SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
       }
 
@@ -643,7 +643,7 @@ SCIP_RETCODE readBlock(
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) blockid)) );
       --(readerdata->nlinkingconss);
 
-      SCIPfreeBufferArrayNull(scip, &vars);
+      SCIPfreeMemoryArrayNull(scip, &vars);
    }
 
    return SCIP_OKAY;
@@ -733,22 +733,22 @@ SCIP_RETCODE fillDecompStruct(
    DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
 
    /* get memory for subscip variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
       nsubscipvars[i] = 0;
       nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], readerdata->nblockconss[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], readerdata->nblockconss[i]) ); /*lint !e866*/
    }
 
    /* get memory for linking variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, readerdata->nlinkingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, readerdata->nlinkingconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingvars, readerdata->nlinkingvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, readerdata->nlinkingconss) );
    nlinkingvars = 0;
    nlinkingconss = 0;
 
@@ -833,17 +833,17 @@ SCIP_RETCODE fillDecompStruct(
    DECdecompSetConstoblock(decomp, constoblock);
    DECdecompSetVartoblock(decomp, vartoblock);
 
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
+   SCIPfreeMemoryArray(scip, &linkingconss);
+   SCIPfreeMemoryArray(scip, &linkingvars);
    for( i = nblocks - 1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIPfreeMemoryArray(scip, &subscipconss[i]);
+      SCIPfreeMemoryArray(scip, &subscipvars[i]);
    }
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeMemoryArray(scip, &subscipconss);
+   SCIPfreeMemoryArray(scip, &subscipvars);
+   SCIPfreeMemoryArray(scip, &nsubscipconss);
+   SCIPfreeMemoryArray(scip, &nsubscipvars);
 
    return SCIP_OKAY;
 }
@@ -895,7 +895,7 @@ SCIP_RETCODE readDECFile(
    nconss = SCIPgetNConss(scip);
 
    /* alloc: var -> block mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->varstoblock, nvars) );
    for( i = 0; i < nvars; i ++ )
    {
       readerdata->varstoblock[i] = NOVALUE;
@@ -926,14 +926,14 @@ SCIP_RETCODE readDECFile(
             if( nblocksread == FALSE )
             {
                /* alloc n vars per block */
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, decinput->nblocks) );
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockconss, decinput->nblocks) );
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockconss, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockvars, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockconss, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->blockconss, decinput->nblocks) );
                for( i = 0; i < decinput->nblocks; i ++ )
                {
                   readerdata->nblockvars[i] = 0;
                   readerdata->nblockconss[i] = 0;
-                  SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockconss[i]), nconss) ); /*lint !e866*/
+                  SCIP_CALL( SCIPallocMemoryArray(scip, &(readerdata->blockconss[i]), nconss) ); /*lint !e866*/
                }
                nblocksread = TRUE;
             }
@@ -959,12 +959,12 @@ SCIP_RETCODE readDECFile(
 
    for( i = decinput->nblocks - 1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &readerdata->blockconss[i]);
+      SCIPfreeMemoryArray(scip, &readerdata->blockconss[i]);
    }
-   SCIPfreeBufferArray(scip, &readerdata->blockconss);
-   SCIPfreeBufferArray(scip, &readerdata->nblockconss);
-   SCIPfreeBufferArray(scip, &readerdata->nblockvars);
-   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
+   SCIPfreeMemoryArray(scip, &readerdata->blockconss);
+   SCIPfreeMemoryArray(scip, &readerdata->nblockconss);
+   SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
+   SCIPfreeMemoryArray(scip, &readerdata->varstoblock);
    SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */
