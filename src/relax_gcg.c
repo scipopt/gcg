@@ -2052,10 +2052,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       else
       {
          SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
-         assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
+         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2065,6 +2065,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                return SCIP_OKAY;
             }
             *lowerbound = SCIPinfinity(scip);
+         }
+         else
+         {
+            SCIPwarningMessage(scip, "Stage <%d> is not handled\n!", SCIPgetStage(masterprob));
+            *result = SCIP_DIDNOTRUN;
+            return SCIP_OKAY;
          }
       }
 
