@@ -708,7 +708,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       return SCIP_OKAY;
 
    /* aggregate only if the master problem has a set partitioning or set covering structure */
-   if( !relaxdata->masterissetcover || !relaxdata->masterissetpart )
+   if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
       return SCIP_OKAY;
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
