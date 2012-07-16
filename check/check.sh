@@ -133,7 +133,6 @@ do
 
     if test "$LASTPROB" = ""
     then
-#	blkfile=`echo $i | sed 's/lp/blk/g'`
         DIR=`dirname $i`
         NAME=`basename $i .gz`
         NAME=`basename $NAME .mps`
@@ -173,11 +172,6 @@ do
             echo read $i                           >> $TMPFILE
 #            echo write genproblem cipreadparsetest.cip >> $TMPFILE
 #            echo read cipreadparsetest.cip         >> $TMPFILE
-#	    echo read $blkfile                     >> $TMPFILE
-            if test -f $DECFILE
-            then
-                echo read $DECFILE         >> $TMPFILE
-            fi
 	    if test $MODE = "detect"
             then
 		echo write prob images\/$base.gp  >> $TMPFILE
@@ -190,6 +184,10 @@ do
 		echo detect                        >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    else
+            if test -f $DECFILE -a $MODE = "readdec"
+            then
+                echo read $DECFILE         >> $TMPFILE
+            fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
 #            echo display solution                  >> $TMPFILE

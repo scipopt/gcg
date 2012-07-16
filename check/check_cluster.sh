@@ -199,10 +199,6 @@ do
       echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
       echo set save $SETFILE                 >> $TMPFILE
       echo read $SCIPPATH/$i                 >> $TMPFILE
-      if test -f $DECFILE
-      then
-	  echo read $DECFILE                 >> $TMPFILE
-      fi
 #  echo presolve                         >> $TMPFILE
       if test $MODE = "detect"
       then
@@ -211,6 +207,10 @@ do
 	  echo display statistics            >> $TMPFILE
 	  echo presolve                      >> $TMPFILE
       else
+          if test -f $DECFILE -a $MODE = "readdec"
+          then
+              echo read $DECFILE         >> $TMPFILE
+          fi
 	  echo optimize                      >> $TMPFILE
 	  echo display statistics            >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
