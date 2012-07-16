@@ -1195,6 +1195,7 @@ SCIP_RETCODE writeData(
    int* nsubscipconss;
    int nlinkingconss;
    int nblocks;
+   SCIP_Bool presolved;
    int i;
    int j;
 
@@ -1221,6 +1222,11 @@ SCIP_RETCODE writeData(
    nlinkingconss = DECdecompGetNLinkingconss(decdecomp);
    assert(nlinkingconss >= 0 && nlinkingconss < SCIPgetNConss(scip));
    assert(linkingconss != NULL || nlinkingconss == 0 );
+
+   presolved = DECdecompGetPresolved(decdecomp);
+
+   SCIPinfoMessage(scip, file, "PRESOLVED\n");
+   SCIPinfoMessage(scip, file, "%d\n", presolved ? 1 : 0);
 
    nblocks = DECdecompGetNBlocks(decdecomp);
 
