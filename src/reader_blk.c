@@ -56,7 +56,7 @@
 /** Section in BLK File */
 enum BlkSection
 {
-   BLK_START, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END
+   BLK_START, BLK_PRESOLVED, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END
 };
 typedef enum BlkSection BLKSECTION;
 
@@ -79,6 +79,7 @@ struct BlkInput
    int npushedtokens;                        /**< size of token buffer */
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
+   SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    BLKSECTION section;                       /**< current section */
@@ -453,6 +454,13 @@ SCIP_Bool isNewSection(
    if( iscolon )
       return FALSE;
 
+   if( strcasecmp(blkinput->token, "PRESOLVED") == 0 )
+   {
+      SCIPdebugMessage("(line %d) new section: PRESOLVED\n", blkinput->linenumber);
+      blkinput->section = BLK_PRESOLVED;
+      return TRUE;
+   }
+
    if( strcasecmp(blkinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", blkinput->linenumber);
@@ -524,6 +532,41 @@ SCIP_RETCODE readStart(
          return SCIP_OKAY;
    }
    while( !isNewSection(scip, blkinput) );
+
+   return SCIP_OKAY;
+}
+
+/** reads the presolved section */
+static
+SCIP_RETCODE readPresolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   BLKINPUT*             blkinput            /**< DEC reading data */
+   )
+{
+   int presolved;
+
+   assert(scip != NULL);
+   assert(blkinput != NULL);
+
+   while( getNextToken(blkinput) )
+   {
+      /* check if we reached a new section */
+      if( isNewSection(scip, blkinput) )
+         return SCIP_OKAY;
+
+      /* read number of blocks */
+      if( isInt(scip, blkinput, &presolved) )
+      {
+         if( presolved == 1 )
+            blkinput->presolved = TRUE;
+         else if ( presolved == 0 )
+            blkinput->presolved = FALSE;
+         else
+            syntaxError(scip, blkinput, "presolved parameter must be 0 or 1");
+         SCIPdebugMessage("Decomposition is%s from presolved problem\n",
+            blkinput->presolved ? "" : " not");
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -718,6 +761,7 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
 
+   DECdecompSetPresolved(decomp, blkinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
    DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
 
@@ -977,6 +1021,10 @@ SCIP_RETCODE readBLKFile(
       {
       case BLK_START:
          SCIP_CALL( readStart(scip, blkinput) );
+         break;
+
+      case BLK_PRESOLVED:
+         SCIP_CALL( readPresolved(scip, blkinput) );
          break;
 
       case BLK_NBLOCKS:

@@ -13,6 +13,7 @@
  * @author Lukas Kirchhart
  * @author Martin Bergner
  * @author Gerald Gamrath
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -49,7 +50,7 @@
 /** section in DEC File */
 enum DecSection
 {
-   DEC_START, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
+   DEC_START, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
@@ -71,6 +72,7 @@ struct DecInput
    int npushedtokens;                        /**< size of token buffer */
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
+   SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
@@ -442,6 +444,13 @@ SCIP_Bool isNewSection(
    if( iscolon )
       return FALSE;
 
+   if( strcasecmp(decinput->token, "PRESOLVED") == 0 )
+   {
+      SCIPdebugMessage("(line %d) new section: PRESOLVED\n", decinput->linenumber);
+      decinput->section = DEC_PRESOLVED;
+      return TRUE;
+   }
+
    if( strcasecmp(decinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", decinput->linenumber);
@@ -513,6 +522,41 @@ SCIP_RETCODE readStart(
          return SCIP_OKAY;
    }
    while( ! isNewSection(scip, decinput) );
+
+   return SCIP_OKAY;
+}
+
+/** reads the presolved section */
+static
+SCIP_RETCODE readPresolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
+   )
+{
+   int presolved;
+
+   assert(scip != NULL);
+   assert(decinput != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         return SCIP_OKAY;
+
+      /* read number of blocks */
+      if( isInt(scip, decinput, &presolved) )
+      {
+         if( presolved == 1 )
+            decinput->presolved = TRUE;
+         else if ( presolved == 0 )
+            decinput->presolved = FALSE;
+         else
+            syntaxError(scip, decinput, "presolved parameter must be 0 or 1");
+         SCIPdebugMessage("Decomposition is%s from presolved problem\n",
+            decinput->presolved ? "" : " not");
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -729,6 +773,7 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = decinput->nblocks;
 
+   DECdecompSetPresolved(decomp, decinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
    DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
 
@@ -918,6 +963,10 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readStart(scip, decinput) );
             break;
 
+         case DEC_PRESOLVED:
+            SCIP_CALL( readPresolved(scip, decinput) );
+            break;
+
          case DEC_NBLOCKS:
             SCIP_CALL( readNBlocks(scip, decinput) );
             break;
@@ -1070,6 +1119,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.linenumber = 0;
    decinput.linepos = 0;
    decinput.section = DEC_START;
+   decinput.presolved = FALSE;
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;

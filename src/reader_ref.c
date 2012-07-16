@@ -603,6 +603,7 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decdecomp */
+   DECdecompSetPresolved(decdecomp, FALSE);
    DECdecompSetVartoblock(decdecomp, refinput->vartoblock);
    DECdecompSetConstoblock(decdecomp, refinput->constoblock);
 

@@ -61,6 +61,17 @@ DEC_DECTYPE DECdecompGetType(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/** sets the presolved flag for decomposition */
+void DECdecompSetPresolved(
+   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   SCIP_Bool             presolved           /**< presolved flag for decomposition */
+   );
+
+/** gets the presolved flag for decomposition */
+SCIP_Bool DECdecompGetPresolved(
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
+
 /** sets the number of blocks for decomposition */
 void DECdecompSetNBlocks(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */

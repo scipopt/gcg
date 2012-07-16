@@ -29,6 +29,7 @@ extern "C" {
 /** decomposition structure information */
 struct DecDecomp
 {
+   SCIP_Bool             presolved;          /**< does the decomposition refer to the presolved problem? */
    int                   nblocks;            /**< number of blocks in this decomposition */
    SCIP_VAR***           subscipvars;        /**< two dimensional array of variables in each block */
    int*                  nsubscipvars;       /**< array of number of variables in each block */

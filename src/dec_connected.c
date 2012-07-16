@@ -493,6 +493,8 @@ SCIP_RETCODE copyToDecdecomp(
       nsubscipconss[i] = 0;
    }
 
+
+   DECdecompSetPresolved(decdecomp, SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED);
    DECdecompSetNBlocks(decdecomp, nblocks);
    DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
    DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
