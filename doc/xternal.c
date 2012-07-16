@@ -100,6 +100,16 @@
  *
  */
 
+/**@defgroup PUBLICMETHODS Public Methods
+ *
+ * This page lists headers containing branch-and-price specific public methods provided by GCG.
+ *
+ * All of the headers listed below include functions that are allowed to be called by external users. Besides those
+ * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plugins; in
+ * particular, this holds for relax_gcg.h and pricer_gcg.h.
+ *
+ */
+
 /**@defgroup TYPEDEFINITIONS Type Definitions
  * This page lists headers which contain type definitions of callback methods.
  *
