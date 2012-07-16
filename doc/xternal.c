@@ -59,6 +59,7 @@
  * <b>Further Documentation</b>
  * - \ref DETECT "How to write a custom structure detection"
  * - \ref HEUR "How to write custom heuristics"
+ * - \ref PUBLICMETHODS "List of callable functions"
  *
  *     </td>
  *     <td valign="bottom" width="200">
