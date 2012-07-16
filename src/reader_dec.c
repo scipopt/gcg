@@ -18,9 +18,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
-
-/* @todo really needed? #include <stdlib.h> */
 #include <assert.h>
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
@@ -614,6 +611,7 @@ SCIP_RETCODE readBlock(
    int nvars;
    SCIP_CONS* cons;
    SCIP_VAR** vars;
+   SCIP_Bool conshasvar;
 
    assert(decinput != NULL);
    assert(readerdata != NULL);
@@ -632,6 +630,7 @@ SCIP_RETCODE readBlock(
          break;
       }
 
+      conshasvar = FALSE;
       /* get all vars for the specific constraint */
       nvars = SCIPgetNVarsXXX(scip, cons);
       vars = NULL;
@@ -645,11 +644,24 @@ SCIP_RETCODE readBlock(
 
       for( i = 0; i < nvars; i ++ )
       {
+         SCIP_VAR* var;
          assert(vars != NULL); /* for flexelint */
+         if( decinput->presolved )
+         {
+            var = SCIPvarGetProbvar(vars[i]);
+            if( !SCIPisVarRelevant(var) )
+               continue;
+         }
+         else
+            var = vars[i];
 
+         conshasvar = TRUE;
          /* store for each var whether it is in none, one or more blocks */
-         varidx = SCIPvarGetProbindex(vars[i]);
+         varidx = SCIPvarGetProbindex(var);
+         assert(varidx >= 0 && varidx < SCIPgetNVars(scip));
          oldblock = readerdata->varstoblock[varidx];
+
+         assert(oldblock == NOVALUE || oldblock == LINKINGVALUE || (oldblock >= 0 && oldblock < decinput->nblocks));
 
          /* variable was assigned to no block before, just assign it to the new block */
          if( oldblock == NOVALUE )
@@ -671,7 +683,14 @@ SCIP_RETCODE readBlock(
             ++(readerdata->nlinkingvars);
          }
       }
+      SCIPfreeMemoryArrayNull(scip, &vars);
 
+      if( !conshasvar )
+      {
+         assert(!SCIPhashmapExists(readerdata->constoblock, cons));
+         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n",  SCIPconsGetName(cons));
+         continue;
+      }
       /*
        * saving block <-> constraint
        */
@@ -687,7 +706,7 @@ SCIP_RETCODE readBlock(
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) blockid)) );
       --(readerdata->nlinkingconss);
 
-      SCIPfreeMemoryArrayNull(scip, &vars);
+
    }
 
    return SCIP_OKAY;
@@ -722,6 +741,12 @@ SCIP_RETCODE readMasterconss(
       }
       else
       {
+         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         {
+            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            continue;
+         }
+
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
 
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
@@ -861,9 +886,11 @@ SCIP_RETCODE fillDecompStruct(
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(allcons[i]));
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
-   if( !valid )
-      goto TERMINATE;
+   if( nlinkingconss > 0) {
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
+      if( !valid )
+         goto TERMINATE;
+   }
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -950,6 +977,7 @@ SCIP_RETCODE readDECFile(
    assert(reader != NULL);
 
    nblocksread = FALSE;
+
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not read structure!\n");
@@ -1001,6 +1029,11 @@ SCIP_RETCODE readDECFile(
 
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
+            if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+            {
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "The decomposition belongs to the presolved problem, please presolve the problem first.\n");
+               goto TERMINATE;
+            }
             break;
 
          case DEC_NBLOCKS:
@@ -1042,13 +1075,20 @@ SCIP_RETCODE readDECFile(
    /* add decomp to cons_decomp */
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
 
-   for( i = decinput->nblocks - 1; i >= 0; --i )
+
+ TERMINATE:
+   if(nblocksread)
    {
-      SCIPfreeMemoryArray(scip, &readerdata->blockconss[i]);
+      for( i = decinput->nblocks - 1; i >= 0; --i )
+      {
+         SCIPfreeMemoryArray(scip, &readerdata->blockconss[i]);
+      }
+
+      SCIPfreeMemoryArray(scip, &readerdata->blockconss);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockconss);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
    }
-   SCIPfreeMemoryArray(scip, &readerdata->blockconss);
-   SCIPfreeMemoryArray(scip, &readerdata->nblockconss);
-   SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
+
    SCIPfreeMemoryArray(scip, &readerdata->varstoblock);
    SCIPhashmapFree(&readerdata->constoblock);
 
