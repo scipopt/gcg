@@ -748,6 +748,7 @@ SCIP_RETCODE fillDecompStruct(
    int idx;
    int nconss;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(blkinput != NULL);
@@ -763,25 +764,26 @@ SCIP_RETCODE fillDecompStruct(
 
    DECdecompSetPresolved(decomp, blkinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
+   assert(valid);
 
    /* get memory for subscip variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
       nsubscipvars[i] = 0;
       nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
    }
 
    /* get memory for linking variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, readerdata->nlinkingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingvars, readerdata->nlinkingvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
    nlinkingvars = 0;
    nlinkingconss = 0;
 
@@ -824,13 +826,15 @@ SCIP_RETCODE fillDecompStruct(
    }
 
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, &valid) );
+   assert(valid);
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nvars) );
 
    /* assign constraints to blocks or declare them linking */
    for( i = 0; i < nconss; i ++ )
@@ -932,23 +936,27 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecompSetConstoblock(decomp, constoblock);
-   DECdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+   DECdecompSetConstoblock(decomp, constoblock, &valid);
+   assert(valid);
+   DECdecompSetVartoblock(decomp, vartoblock, &valid);
+   assert(valid);
 
-   SCIPfreeBufferArray(scip, &consvars);
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
+   SCIPfreeMemoryArray(scip, &consvars);
+   SCIPfreeMemoryArray(scip, &linkingconss);
+   SCIPfreeMemoryArray(scip, &linkingvars);
    for( i = nblocks - 1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIPfreeMemoryArray(scip, &subscipconss[i]);
+      SCIPfreeMemoryArray(scip, &subscipvars[i]);
    }
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeMemoryArray(scip, &subscipconss);
+   SCIPfreeMemoryArray(scip, &subscipvars);
+   SCIPfreeMemoryArray(scip, &nsubscipconss);
+   SCIPfreeMemoryArray(scip, &nsubscipvars);
 
    return SCIP_OKAY;
 }
@@ -984,15 +992,15 @@ SCIP_RETCODE readBLKFile(
    nconss = SCIPgetNConss(scip);
 
    /* alloc: var -> block mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->varstoblock, nvars) );
    for( i = 0; i < nvars; i ++ )
    {
       readerdata->varstoblock[i] = NOVALUE;
    }
 
    /* alloc: linkingvar -> blocks mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->linkingvarsblocks, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nlinkingvarsblocks, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->linkingvarsblocks, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nlinkingvarsblocks, nvars) );
    BMSclearMemoryArray(readerdata->linkingvarsblocks, nvars);
    BMSclearMemoryArray(readerdata->nlinkingvarsblocks, nvars);
 
@@ -1035,14 +1043,14 @@ SCIP_RETCODE readBLKFile(
          if( nblocksread == FALSE )
          {
             /* alloc n vars per block */
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, blkinput->nblocks) );
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockcons, blkinput->nblocks) );
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockvars, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockcons, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->blockcons, blkinput->nblocks) );
             for( i = 0; i < blkinput->nblocks; ++i )
             {
                readerdata->nblockvars[i] = 0;
                readerdata->nblockcons[i] = 0;
-               SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
+               SCIP_CALL( SCIPallocMemoryArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
             }
             nblocksread = TRUE;
          }
@@ -1079,18 +1087,18 @@ SCIP_RETCODE readBLKFile(
    {
       for( i = blkinput->nblocks - 1; i >= 0; --i )
       {
-         SCIPfreeBufferArray(scip, &(readerdata->blockcons[i]));
+         SCIPfreeMemoryArray(scip, &(readerdata->blockcons[i]));
       }
-      SCIPfreeBufferArray(scip, &readerdata->blockcons);
-      SCIPfreeBufferArray(scip, &readerdata->nblockcons);
-      SCIPfreeBufferArray(scip, &readerdata->nblockvars);
+      SCIPfreeMemoryArray(scip, &readerdata->blockcons);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockcons);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
    }
 
    SCIPhashmapFree(&readerdata->constoblock);
 
-   SCIPfreeBufferArray(scip, &readerdata->nlinkingvarsblocks);
-   SCIPfreeBufferArray(scip, &readerdata->linkingvarsblocks);
-   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
+   SCIPfreeMemoryArray(scip, &readerdata->nlinkingvarsblocks);
+   SCIPfreeMemoryArray(scip, &readerdata->linkingvarsblocks);
+   SCIPfreeMemoryArray(scip, &readerdata->varstoblock);
 
    /* close file */
    SCIPfclose(blkinput->file);

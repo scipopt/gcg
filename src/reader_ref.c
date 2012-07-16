@@ -555,6 +555,8 @@ SCIP_RETCODE readREFFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   SCIP_Bool valid;
+
    assert(scip != NULL);
    assert(reader != NULL);
    assert(refinput != NULL);
@@ -604,12 +606,15 @@ SCIP_RETCODE readREFFile(
 
    /* copy information to decdecomp */
    DECdecompSetPresolved(decdecomp, FALSE);
-   DECdecompSetVartoblock(decdecomp, refinput->vartoblock);
-   DECdecompSetConstoblock(decdecomp, refinput->constoblock);
+   DECdecompSetVartoblock(decdecomp, refinput->vartoblock, &valid);
+   assert(valid);
+   DECdecompSetConstoblock(decdecomp, refinput->constoblock, &valid);
+   assert(valid);
 
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip)) );
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid) );
 
+   assert(valid);
    SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
 
    return SCIP_OKAY;

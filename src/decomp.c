@@ -109,10 +109,34 @@ void DECdecompFree(
 /** sets the type of the decomposition */
 void DECdecompSetType(
    DEC_DECOMP*           decdecomp,          /**< pointer to the decdecomp instance */
-   DEC_DECTYPE           type                /**< type of the decomposition */
+   DEC_DECTYPE           type,               /**< type of the decomposition */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    assert(decdecomp != NULL);
+   switch(type)
+   {
+   case DEC_DECTYPE_DIAGONAL:
+      *valid = decdecomp->nlinkingconss == 0 && decdecomp->linkingconss == NULL;
+      *valid = *valid && decdecomp->nlinkingvars == 0 && decdecomp->linkingvars == NULL;
+      break;
+   case DEC_DECTYPE_ARROWHEAD:
+      *valid = TRUE;
+      break;
+   case DEC_DECTYPE_UNKNOWN:
+      *valid = FALSE;
+      break;
+   case DEC_DECTYPE_BORDERED:
+      *valid = decdecomp->nlinkingvars == 0 && decdecomp->linkingvars == NULL;
+      break;
+   case DEC_DECTYPE_STAIRCASE:
+      *valid = decdecomp->nlinkingconss == 0 && decdecomp->linkingconss == NULL;
+      break;
+   default:
+      *valid = FALSE;
+      break;
+   }
+
    decdecomp->type = type;
 }
 
@@ -170,7 +194,8 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_VAR***           subscipvars,        /**< Subscipvars array  */
-   int*                  nsubscipvars        /**< number of subscipvars per block */
+   int*                  nsubscipvars,       /**< number of subscipvars per block */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    int b;
@@ -183,6 +208,8 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    assert(decdecomp->subscipvars == NULL);
    assert(decdecomp->nsubscipvars == NULL);
 
+   *valid = TRUE;
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipvars, decdecomp->nblocks) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, decdecomp->nblocks) );
 
@@ -191,10 +218,12 @@ SCIP_RETCODE DECdecompSetSubscipvars(
 
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      assert(nsubscipvars[b] > 0);
+      if( nsubscipvars[b] < 0 )
+         *valid = FALSE;
+
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
-      assert(subscipvars[b] != NULL);
+      assert(subscipvars[b] != NULL || nsubscipvars[b] == 0);
       SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipvars[b], subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
    }
 
@@ -224,7 +253,8 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_CONS***          subscipconss,       /**< Subscipconss array  */
-   int*                  nsubscipconss       /**< number of subscipconss per block */
+   int*                  nsubscipconss,      /**< number of subscipconss per block */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    int b;
@@ -232,10 +262,13 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    assert(decdecomp != NULL);
    assert(subscipconss != NULL);
    assert(nsubscipconss != NULL);
-   assert(decdecomp->nblocks > 0);
+   assert(valid != NULL);
 
+   assert(decdecomp->nblocks > 0);
    assert(decdecomp->subscipconss == NULL);
    assert(decdecomp->nsubscipconss == NULL);
+
+   *valid = TRUE;
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipconss, decdecomp->nblocks) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, decdecomp->nblocks) );
@@ -245,11 +278,16 @@ SCIP_RETCODE DECdecompSetSubscipconss(
 
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      assert(nsubscipconss[b] > 0);
+      if( nsubscipconss[b] <= 0 || subscipconss[b] == NULL)
+         *valid = FALSE;
+
       decdecomp->nsubscipconss[b] = nsubscipconss[b];
 
-      assert(subscipconss[b] != NULL);
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) ); /*lint !e866*/
+      if( nsubscipconss[b] > 0 )
+      {
+         assert(subscipconss[b] != NULL);
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) ); /*lint !e866*/
+      }
    }
 
    return SCIP_OKAY;
@@ -278,7 +316,8 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_CONS**           linkingconss,       /**< Linkingconss array  */
-   int                   nlinkingconss       /**< number of linkingconss per block */
+   int                   nlinkingconss,      /**< number of linkingconss per block */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    assert(scip != NULL);
@@ -291,7 +330,12 @@ SCIP_RETCODE DECdecompSetLinkingconss(
 
    decdecomp->nlinkingconss = nlinkingconss;
 
-   SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );
+   if(nlinkingconss > 0)
+   {
+      assert(linkingconss != NULL);
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );
+   }
+   *valid = linkingconss != NULL || nlinkingconss == 0;
 
    return SCIP_OKAY;
 }
@@ -317,10 +361,11 @@ int  DECdecompGetNLinkingconss(
 
 /** Copies the input linkingvars array to the given decdecomp structure */
 SCIP_RETCODE DECdecompSetLinkingvars(
-   SCIP*          scip,                      /**< SCIP data structure */
-   DEC_DECOMP*    decdecomp,                 /**< DEC_DECOMP data structure */
-   SCIP_VAR**     linkingvars,               /**< Linkingvars array  */
-   int            nlinkingvars               /**< number of linkingvars per block */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_VAR**            linkingvars,        /**< Linkingvars array  */
+   int                   nlinkingvars,       /**< number of linkingvars per block */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    assert(scip != NULL);
@@ -334,8 +379,11 @@ SCIP_RETCODE DECdecompSetLinkingvars(
 
    if( nlinkingvars > 0 )
    {
+      assert(linkingvars != NULL);
       SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
    }
+
+   *valid = linkingvars != NULL || nlinkingvars == 0;
 
    return SCIP_OKAY;
 }
@@ -362,11 +410,15 @@ int  DECdecompGetNLinkingvars(
 /** Sets the vartoblock hashmap of the given decdecomp structure */
 void  DECdecompSetVartoblock(
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
+   SCIP_HASHMAP*         vartoblock,         /**< Vartoblock hashmap */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    assert(decdecomp != NULL);
    assert(vartoblock != NULL);
+
+   *valid = TRUE;
+
    decdecomp->vartoblock = vartoblock;
 }
 
@@ -382,11 +434,15 @@ SCIP_HASHMAP*  DECdecompGetVartoblock(
 /** Sets the constoblock hashmap of the given decdecomp structure */
 void  DECdecompSetConstoblock(
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
+   SCIP_HASHMAP*         constoblock,        /**< Constoblock hashmap */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    assert(decdecomp != NULL);
    assert(constoblock != NULL);
+
+   *valid = TRUE;
+
    decdecomp->constoblock = constoblock;
 }
 
@@ -409,7 +465,8 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP_VAR**            vars,               /**< variable array */
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss              /**< number of constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
    )
 {
    SCIP_CONS** linkingconss;
@@ -431,6 +488,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    assert(nvars > 0);
    assert(conss != NULL);
    assert(nconss > 0);
+   assert(valid != NULL);
 
    SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
@@ -516,18 +574,26 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, valid) );
+      assert(*valid);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, valid);
+      assert(*valid);
    }
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
-      DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, valid) );
+      assert(*valid);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, valid);
+      assert(*valid);
    }
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-   DECdecompSetVartoblock(decdecomp, vartoblock);
-   DECdecompSetConstoblock(decdecomp, constoblock);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, valid) );
+   assert(*valid);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, valid) );
+   assert(*valid);
+   DECdecompSetVartoblock(decdecomp, vartoblock, valid);
+   assert(*valid);
+   DECdecompSetConstoblock(decdecomp, constoblock, valid);
+   assert(*valid);
 
    SCIPfreeBufferArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &linkingvars);

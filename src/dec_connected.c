@@ -463,6 +463,7 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -496,8 +497,10 @@ SCIP_RETCODE copyToDecdecomp(
 
    DECdecompSetPresolved(decdecomp, SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED);
    DECdecompSetNBlocks(decdecomp, nblocks);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
-   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
+   assert(valid);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
+   assert(valid);
 
    for( i = 0; i < nconss; ++i )
    {
@@ -549,22 +552,27 @@ SCIP_RETCODE copyToDecdecomp(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+      assert(valid);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+      assert(valid);
    }
    else
    {
-      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
+      assert(valid);
    }
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
+      assert(valid);
    }
 
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
 
    for( i = nblocks-1; i >= 0; --i )
    {

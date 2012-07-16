@@ -760,6 +760,7 @@ SCIP_RETCODE fillDecompStruct(
    int ind;
    int nconss;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(decinput != NULL);
@@ -775,7 +776,8 @@ SCIP_RETCODE fillDecompStruct(
 
    DECdecompSetPresolved(decomp, decinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
+   assert(valid);
 
    /* get memory for subscip variables and constraints */
    SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
@@ -836,9 +838,18 @@ SCIP_RETCODE fillDecompStruct(
       }
    }
 
+
+   /* check read structure for consistency */
+   valid = FALSE;
+
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars, &valid) );
+   if( !valid )
+      goto TERMINATE;
+
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, &valid) );
+   if( !valid )
+      goto TERMINATE;
 
    /* copy linking constraints and set them in decomposition data */
    for( i = 0; i < nconss; i ++ )
@@ -850,7 +861,9 @@ SCIP_RETCODE fillDecompStruct(
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(allcons[i]));
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
+   if( !valid )
+      goto TERMINATE;
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -874,9 +887,29 @@ SCIP_RETCODE fillDecompStruct(
          SCIP_CALL( SCIPhashmapSetImage(constoblock, readerdata->blockconss[i][j], (void*) (size_t) i) );
       }
    }
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecompSetConstoblock(decomp, constoblock);
-   DECdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss, &valid) );
+   if( !valid )
+      goto TERMINATE;
+
+   DECdecompSetConstoblock(decomp, constoblock, &valid);
+   if( !valid )
+      goto TERMINATE;
+
+   DECdecompSetVartoblock(decomp, vartoblock, &valid);
+   if( !valid )
+      goto TERMINATE;
+
+
+ TERMINATE:
+   if( !valid )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "Decomposition does not fit the problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "Possible causes:\n  The structure information was detected after presolve and the problem is not presolved.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "  The structure information is wrong.\n");
+   }
 
    SCIPfreeMemoryArray(scip, &linkingconss);
    SCIPfreeMemoryArray(scip, &linkingvars);
@@ -890,7 +923,10 @@ SCIP_RETCODE fillDecompStruct(
    SCIPfreeMemoryArray(scip, &nsubscipconss);
    SCIPfreeMemoryArray(scip, &nsubscipvars);
 
-   return SCIP_OKAY;
+   if( !valid)
+      return SCIP_READERROR;
+   else
+      return SCIP_OKAY;
 }
 
 /** reads a DEC file */
