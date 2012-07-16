@@ -114,8 +114,11 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    conshdlrData->nstack = 0;
 
-   /* create origbranch constraint corresponding to the root node */
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+   /* create origbranch constraint corresponding to the root node only if there is some problem */
+   if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
+   {
+      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+   }
    conshdlrData->stack[0] = cons;
    conshdlrData->nstack = 1;
 

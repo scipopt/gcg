@@ -715,6 +715,12 @@ SCIP_RETCODE writeREFFile(
 static
 SCIP_DECL_READERREAD(readerReadRef)
 {
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not detect structure!\n");
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPreadRef(scip, reader, filename, result) );
 
    return SCIP_OKAY;

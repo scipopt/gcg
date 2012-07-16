@@ -869,6 +869,12 @@ SCIP_RETCODE readDECFile(
    assert(reader != NULL);
 
    nblocksread = FALSE;
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not read structure!\n");
+
+      return SCIP_OKAY;
+   }
 
    /* open file */
    decinput->file = SCIPfopen(filename, "r");

@@ -1078,6 +1078,11 @@ static
 SCIP_DECL_READERREAD(readerReadBlk)
 {  /*lint --e{715} */
 
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not detect structure!\n");
+      return SCIP_OKAY;
+   }
    SCIP_CALL( SCIPreadBlk(scip, filename, result) );
 
    return SCIP_OKAY;
