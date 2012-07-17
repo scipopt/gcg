@@ -342,8 +342,8 @@ SCIP_RETCODE selectExtremePointsRandomized(
          lastpt = idx;
       }
 
-      SCIPfreeBufferArray(scip, &blockpts);
       SCIPfreeBufferArray(scip, &ptvals);
+      SCIPfreeBufferArray(scip, &blockpts);
    }
 
    *success = TRUE;
@@ -885,8 +885,8 @@ static SCIP_RETCODE fixVariables(
    }
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &npts);
    SCIPfreeBufferArray(scip, &neqpts);
+   SCIPfreeBufferArray(scip, &npts);
 
    return SCIP_OKAY;
 }
@@ -1335,9 +1335,9 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    SCIP_CALL( SCIPfree(&subscip) );
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &subvars);
    if( heurdata->nusedpts > 0 )
       SCIPfreeBufferArray(scip, &selection);
+   SCIPfreeBufferArray(scip, &subvars);
 
    return SCIP_OKAY;
 }

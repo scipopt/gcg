@@ -495,28 +495,28 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    nblocks = GCGrelaxGetNPricingprobs(origprob);
    assert(nblocks >= 0);
 
-   /* initialize the block numbers for the pricing problems */
-   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
-   for( i = 0; i < nblocks; i++ )
-   {
-      blocknr[i] = 0;
-   }
-   allblocksfull = FALSE;
-
-   /* initialize master variable information */
-   SCIP_CALL( SCIPallocBufferArray(scip, &ignored, nmastervars) );
-   for( i = 0; i < nmastervars; i++ )
-      ignored[i] = FALSE;
-
    /* get master LP rows data */
    SCIP_CALL( SCIPgetLPRowsData(scip, &lprows, &nlprows) );
    assert( lprows != NULL );
    assert( nlprows >= 0);
 
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &ignored, nmastervars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
+
    /* get memory for working solutions and row activities */
    SCIP_CALL( SCIPcreateSol(scip, &mastersol, heur) );
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
+
+   /* initialize the block numbers for the pricing problems */
+   for( i = 0; i < nblocks; i++ )
+      blocknr[i] = 0;
+   allblocksfull = FALSE;
+
+   /* initialize master variable information */
+   for( i = 0; i < nmastervars; i++ )
+      ignored[i] = FALSE;
 
    /* initialize activities with zero and get number of violated rows of zero master solution */
    nviolrows = 0;
@@ -796,8 +796,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
    SCIP_CALL( SCIPfreeSol(scip, &mastersol) );
    SCIPfreeBufferArray(scip, &activities);
-   SCIPfreeBufferArray(scip, &blocknr);
    SCIPfreeBufferArray(scip, &ignored);
+   SCIPfreeBufferArray(scip, &blocknr);
 
    heurdata->lastncols = nmastervars;
 

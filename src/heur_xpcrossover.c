@@ -446,11 +446,11 @@ SCIP_RETCODE selectExtremePoints(
    }
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &mastervals);
    SCIPfreeBufferArray(scip, &identblock);
-   SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
+   SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &selvalue);
+   SCIPfreeBufferArray(scip, &mastervals);
 
    return SCIP_OKAY;
 }
@@ -591,8 +591,8 @@ SCIP_RETCODE selectExtremePointsRandomized(
             lastpt = idx;
          }
 
-         SCIPfreeBufferArray(scip, &blockpts);
          SCIPfreeBufferArray(scip, &ptvals);
+         SCIPfreeBufferArray(scip, &blockpts);
       }
 
       /* creates an object ready to be inserted into the hashtable */
@@ -1092,9 +1092,9 @@ static SCIP_RETCODE fixVariables(
    }
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &ptcounter);
-   SCIPfreeBufferArray(scip, &fixable);
    SCIPfreeBufferArray(scip, &fixvals);
+   SCIPfreeBufferArray(scip, &fixable);
+   SCIPfreeBufferArray(scip, &ptcounter);
 
    return SCIP_OKAY;
 }
@@ -1494,9 +1494,9 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
       }
 
       /* free memory */
-      SCIPfreeBufferArray(scip, &selection);
-      SCIPfreeBufferArray(scip, &subvars);
       SCIP_CALL( SCIPfree(&subscip) );
+      SCIPfreeBufferArray(scip, &subvars);
+      SCIPfreeBufferArray(scip, &selection);
 
       /* this run will be counted as a failure since no new solution tuple could be generated or the neighborhood of the
        * solution was not fruitful in the sense that it was too big
@@ -1575,8 +1575,8 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    SCIP_CALL( SCIPfree(&subscip) );
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &subvars);
    SCIPfreeBufferArray(scip, &selection);
+   SCIPfreeBufferArray(scip, &subvars);
 
    return SCIP_OKAY;
 }
