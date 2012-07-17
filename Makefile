@@ -20,15 +20,25 @@
 #-----------------------------------------------------------------------------
 VERSION         :=	1.0.0
 SCIPDIR         =       lib/scip
+#-----------------------------------------------------------------------------
+# necessary information
+#-----------------------------------------------------------------------------
+
+
+LIBDIR          =       lib
+DIRECTORIES     =       $(LIBDIR)
+MAKESOFTLINKS	=	true
+
+SHELL		= 	bash
+READ		=	read -e
+LN_s		= 	ln -s
+GCGDIR		=	$(realpath .)
 
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
-include $(SCIPDIR)/make/make.project
-
-
-
+-include $(SCIPDIR)/make/make.project
 
 #-----------------------------------------------------------------------------
 # Main Program
@@ -95,17 +105,23 @@ MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 
+SOFTLINKS	+=	$(LIBDIR)/scip
+LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
+
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
+
 
 ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK)
 endif
 
-
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+
+$(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
 .PHONY: lint
 lint:		$(MAINSRC)
@@ -202,5 +218,51 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
+
+
+$(LINKSMARKERFILE): links
+#		@$(MAKE) links
+
+.PHONY: links
+links:		$(LIBDIR) $(SOFTLINKS)
+		@rm -f $(LINKSMARKERFILE)
+		@echo "this is only a marker" > $(LINKSMARKERFILE)
+
+$(DIRECTORIES):
+		@echo
+		@echo "- creating directory \"$@\""
+		@-mkdir -p $@
+
+.PHONY: $(SOFTLINKS)
+$(SOFTLINKS):
+ifeq ($(MAKESOFTLINKS), true)
+		@$(SHELL) -ec 'if test ! -e $@ ; \
+			then \
+				DIRNAME=`dirname $@` ; \
+				echo ; \
+		                echo "* GCG needs a softlink to SCIP" ; \
+		                echo "* Please insert the paths to scip below." ; \
+		                echo "* The link will be installed in the 'lib' directory." ; \
+		                echo "* For more information and if you experience problems see the INSTALL file." ; \
+		                echo ; \
+		                echo -e $(LPIINSTMSG) ; \
+				echo "> Enter soft-link target file or directory for \"$@\" (return if not needed): " ; \
+				echo -n "> " ; \
+				cd $$DIRNAME ; \
+				eval $(READ) TARGET ; \
+				cd $(GCGDIR) ; \
+				if test "$$TARGET" != "" ; \
+				then \
+					echo "-> creating softlink \"$@\" -> \"$$TARGET\"" ; \
+					pwd;\
+					rm -f $@ ; \
+					$(LN_s) $$TARGET $@ ; \
+				else \
+					echo "* skipped creation of softlink \"$@\". Call \"make links\" if needed later." ; \
+				fi ; \
+				echo ; \
+			fi'
+endif
+
 
 #---- EOF --------------------------------------------------------------------

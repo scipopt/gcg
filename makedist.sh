@@ -16,13 +16,16 @@ tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*cvs*" \
 --exclude="*~" \
 --exclude=".*" \
-$NAME/COPYING $NAME/README $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
+$NAME/COPYING $NAME/README $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
 $NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk \
-$NAME/check/cpmp100.test $NAME/check/cpmp100.solu $NAME/check/cmpres.awk \
+$NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres.awk \
 $NAME/settings/*.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.h \
-$NAME/check/instances/cpmp/*100*
+$NAME/check/instances/cpmp/*.gz \
+$NAME/check/instances/bpp/*.gz \
+$NAME/check/instances/gap/*.gz \
+$NAME/check/instances/cs/*.gz
 rm -f $NAME
 echo ""
 echo "finished"
