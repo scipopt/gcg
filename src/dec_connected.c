@@ -140,7 +140,8 @@ static
 SCIP_RETCODE findConnectedComponents(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success oder failuer */
+   SCIP_Bool             findextended,       /**< whether the classical structure should be detected */
+   SCIP_RESULT*          result              /**< result pointer to indicate success oder failure */
    )
 {
    SCIP_VAR** vars;
@@ -155,7 +156,6 @@ SCIP_RETCODE findConnectedComponents(
    int j;
    int k;
    int tempblock;
-   SCIP_Bool findextended;
 
    int* blockrepresentative;
    int nextblock;
@@ -191,7 +191,6 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[0] = 0;
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
-   findextended = detectordata->setppcinmaster;
 
    /* in a first preprocessing step, indicate which constraints should go in the master */
    if( findextended )
@@ -648,21 +647,22 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    int runs;
    int i;
    int nconss;
-
+   SCIP_Bool detectextended;
    *result = SCIP_DIDNOTFIND;
    nconss = SCIPgetNConss(scip);
 
    runs = detectordata->setppcinmaster ? 2:1;
+   detectextended = FALSE;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectordata->setppcinmaster ? "extended":"blockdiagonal" );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "extended":"blockdiagonal" );
 
       SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
 
-      SCIP_CALL( findConnectedComponents(scip, detectordata, result) );
+      SCIP_CALL( findConnectedComponents(scip, detectordata, detectextended, result) );
 
       SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
 
@@ -684,7 +684,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       }
       if( detectordata->setppcinmaster == TRUE && *result != SCIP_SUCCESS )
       {
-         detectordata->setppcinmaster = FALSE;
+         detectextended = TRUE;
       }
    }
    SCIPfreeBufferArray(scip, &detectordata->consismaster);
