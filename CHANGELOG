@@ -9,6 +9,9 @@ features
 - decompositions from multiple detectors are compared in cons_decomp.h
 - added block diagonal detection code, GCG solves these more intelligently
 - added detection of standard problems to block detection code
+- add additional statistics
+- structure information can now contain
+- GCG works with SCIP version 3.0
 
 plugins
 - reworked decdecomp structure handling
@@ -32,19 +35,22 @@ bug fixes
 - fixed bugs related to presolving
 - fixed bugs related to linking variables
 - fixed bugs in Ryan-Foster branching
+- fix some memory issues
 
 code cleanup
 - updated the documentation
 - cleaned up code (whitespace and code style changes)
 - removed all vardata accesses from all files
 - removed a lot of old code
-- remove dead code give the code some love
-- refactored source
+- remove dead code and give the code some love
+- refactored some parts to remove large methods
 - cleaned up detector interface
+- make sure code is clean with all our compilers and code checking tools
 
 performance
 - adjusted default parameters
 - improve memory handling by switching to buffer memory in appropriate cases
+  and away from buffer in others
 
 interface
 - make githash look nicer
@@ -52,17 +58,18 @@ interface
 
 Makefile and scripts
 - add lint directory for static code analysis
-- add scip target to makefile
+- add SCIP target to makefile
 - fix scripts for RWTH Aachens high performing cluster
-
+- add possibility to create SCIP link automatically
+- add small testset to enable small functionality tests
+- add some modes to test script in order to create and collect
+  decompositions
+- fix clean rule to a safer version
 
 GCG Version 0.9
 ===============
 
 features
-- included structure detection
-  * arrowhead detection using hmetis
-  * bordered detection using hmetis
 - included new heuristics
 - included new reader for the ref file format
 - added support for linking variables
@@ -71,6 +78,7 @@ features
 - allow for unbounded pricing problems
 - branch also on pseudosolutions
 - support probing for heuristics
+- GCG works with SCIP version 2.0
 
 bug fixes
 - fixed multiple bugs related to timing issues
@@ -88,7 +96,6 @@ GCG Version 0.81
 ================
 
 features
-- added interface to define pricing problems
 - polished source code
 
 bug fixes
@@ -138,19 +145,19 @@ GCG Version 0.4
 ===============
 
 design
-- working scip represents the original problem
+- working SCIP represents the original problem
 - read in problem is standard format (e.g., .lp-file, .mps-file) and
   corresponding blk-file
 - the master problem is represented by a relaxator, which replaces the LP-solving
-- separation is done by a separator included in the master scip, which calls the
+- separation is done by a separator included in the master SCIP, which calls the
   SCIPseparateSol() method in the original SCIP
-- branching is done simultaneously in the master and in the original scip
+- branching is done simultaneously in the master and in the original SCIP
 - variables in the master are extreme points of conv(X) (and extreme rays, but
   functionality currently not implemented) -> convexification approach
 - many identical pricing problems -> fat too much effort for pricing,
   especially farkas pricing!
-- 2 constraint handler assure that nodes in the master scip are linked to
-  nodes in the original scip and vice versa
+- 2 constraint handler assure that nodes in the master SCIP are linked to
+  nodes in the original SCIP and vice versa
 - branching rules are implemented as branching rules in the master that
   have to define the additional callbacks specified in "type_branchgcg.h"
 
