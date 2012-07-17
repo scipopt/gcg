@@ -399,9 +399,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolfound)
    if( sol != (SCIP_SOL*)dispdata )
    {
       SCIPinfoMessage(scip, file, "%c%c",
-            GCGrelaxGetProbingheur(origprob) == NULL ? '*'
-                  : SCIPheurGetDispchar(GCGrelaxGetProbingheur(origprob)),
-                    SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
+            GCGrelaxGetProbingheur(origprob) == NULL ? '*' : SCIPheurGetDispchar(GCGrelaxGetProbingheur(origprob)),
+            SCIPgetSolHeur(scip, sol) == NULL ? '*' : SCIPheurGetDispchar(SCIPgetSolHeur(scip, sol)));
       SCIPdispSetData(disp, (SCIP_DISPDATA*)sol);
    }
    else
