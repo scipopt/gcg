@@ -169,7 +169,8 @@ eval:
 .PHONY: clean
 clean:
 ifneq ($(OBJDIR),)
-		-rm -rf $(OBJDIR)/*
+		-rm -rf ./$(OBJDIR)/*.o
+		-rmdir $(OBJDIR)
 endif
 		-rm -f $(MAINFILE)
 
