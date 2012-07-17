@@ -213,6 +213,7 @@ do
           fi
 	  echo optimize                      >> $TMPFILE
 	  echo display statistics            >> $TMPFILE
+	  echo display additionalstatistics  >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
 	  echo checksol                      >> $TMPFILE
       fi

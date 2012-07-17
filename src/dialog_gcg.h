@@ -29,6 +29,11 @@
 extern "C" {
 #endif
 
+
+/** dialog execution method for the display additionalstatistics command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics);
+
 /** dialog execution method for the display statistics command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);

@@ -162,19 +162,33 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
 
-   /* write pricing statistics only if we are in solving or solved stage */
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
+
+/** dialog execution method for the display additionalstatistics command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
       GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
       SCIP_CALL( GCGwriteDecompositionData(scip) );
       SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
    }
-
+   else
+   {
+      SCIPdialogMessage(scip, NULL, "Problem needs to solved first for additional statistics");
+   }
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
 }
+
 
 /** dialog execution method for the display detectors command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors)
@@ -366,6 +380,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayStatistics, NULL, NULL,
             "statistics", "display problem and optimization statistics", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display statistics */
+   if( !SCIPdialogHasEntry(submenu, "additionalstatistics") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayAdditionalStatistics, NULL, NULL,
+            "additionalstatistics", "display additional solving statistics", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
