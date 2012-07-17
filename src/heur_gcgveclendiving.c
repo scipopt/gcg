@@ -227,11 +227,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
    *result = SCIP_DELAYED;
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( !SCIPhasCurrentNodeLP(masterprob) || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
-   {
-//      SCIPdebugMessage("not executing GCG veclendiving: master LP not solved at this node\n");
+   if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING ||
+         !SCIPhasCurrentNodeLP(masterprob) || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
-   }
 
    /* only call heuristic, if the LP solution is basic (which allows fast resolve in diving) */
    if( !SCIPisLPSolBasic(masterprob) )

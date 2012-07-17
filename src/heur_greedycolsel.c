@@ -509,14 +509,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_CALL( SCIPcreateSol(scip, &mastersol, heur) );
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
 
-   /* initialize the block numbers for the pricing problems */
-   for( i = 0; i < nblocks; i++ )
-      blocknr[i] = 0;
+   /* initialize block and master variable information */
+   BMSclearMemoryArray(&blocknr, nblocks);
+   BMSclearMemoryArray(&ignored, nmastervars);
    allblocksfull = FALSE;
-
-   /* initialize master variable information */
-   for( i = 0; i < nmastervars; i++ )
-      ignored[i] = FALSE;
 
    /* initialize activities with zero and get number of violated rows of zero master solution */
    nviolrows = 0;

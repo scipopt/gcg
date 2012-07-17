@@ -589,19 +589,14 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIP_CALL( SCIPallocBufferArray(scip, &mastercands, nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &candfracs, nmastervars) );
 
-   /* initialize the block numbers for the pricing problems */
-   for( i = 0; i < nblocks; i++ )
-   {
-      blocknr[i] = 0;
-   }
+   /* initialize the block information */
+   BMSclearMemoryArray(&blocknr, nblocks);
+   BMSclearMemoryArray(&candfracs, nmastervars);
    allblocksfull = FALSE;
 
    /* initialize empty candidate list */
    for( i = 0; i < nmastervars; ++i )
-   {
       mastercands[i] = -1;
-      candfracs[i] = 0.0;
-   }
 
    /* initialize working original solution as transformation of rounded down master LP solution
     * and get the candidate master variables for rounding up */
