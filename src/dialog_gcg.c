@@ -156,17 +156,17 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIPdialogMessage(scip, NULL, "\nMaster Program statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\nMaster Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), NULL) );
-   SCIPdialogMessage(scip, NULL, "\nOriginal Program statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, NULL) );
-   SCIPdialogMessage(scip, NULL, "\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
 
    /* write pricing statistics only if we are in solving or solved stage */
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
       GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
-      SCIPdialogMessage(scip, NULL, "\n");
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
       SCIP_CALL( GCGwriteDecompositionData(scip) );
       SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
    }
