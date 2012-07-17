@@ -225,7 +225,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
    if( SCIPgetStage(scip) > SCIP_STAGE_INIT )
    {
       SCIP_CALL( DECdetectStructure(scip, &result) );
-      if( result != SCIP_SUCCESS )
+      if( result == SCIP_SUCCESS )
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was successful.\n");
       else
             SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Detection was not successful.\n");
