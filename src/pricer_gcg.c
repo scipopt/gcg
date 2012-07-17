@@ -2202,6 +2202,9 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {
    SCIP_RETCODE retcode;
    SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL** origsols;
+   int norigsols;
+   int i;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -2210,9 +2213,23 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 
    assert(pricerdata != NULL);
 
-   if( pricerdata->redcostcalls == 0 &&  pricerdata->farkascalls == 0 )
+   if( pricerdata->redcostcalls == 0 && pricerdata->farkascalls == 0 )
    {
       SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+   }
+
+   /* get solutions from the original problem */
+   origsols = SCIPgetSols(pricerdata->origprob);
+   norigsols = SCIPgetNSols(pricerdata->origprob);
+   assert(norigsols >= 0);
+
+   /* Add already known solutions for the original problem to the master variable space
+    * @todo: This is just a workaround!
+    */
+   for( i = 0; i < norigsols; ++i )
+   {
+      assert(origsols[i] != NULL);
+      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
    }
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
@@ -2680,7 +2697,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
 
    /* get solution values */
    SCIP_CALL( SCIPgetSolVals(scip, origsol, norigvars, origvars, origsolvals) );
-   SCIP_CALL( SCIPcreateSol(scip, &mastersol, NULL) );
+   SCIP_CALL( SCIPcreateSol(scip, &mastersol, SCIPgetSolHeur(origprob, origsol)) );
 
    /* store variables and solutions into arrays */
    for( i = 0; i < norigvars; i++ )
@@ -2777,7 +2794,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
 
-   npricingprobs = GCGrelaxGetNPricingprobs(scip);
+   npricingprobs = GCGrelaxGetNPricingprobs(origprob);
    assert(npricingprobs >= 0);
 
    /* for variables in the original problem that do not belong to any block,
