@@ -2763,6 +2763,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    SCIP* origprob;
    SCIP_VAR** vars;
    int nvars;
+   int npricingprobs;
    int v;
 
    assert(scip != NULL);
@@ -2775,6 +2776,9 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
 
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
+
+   npricingprobs = GCGrelaxGetNPricingprobs(scip);
+   assert(npricingprobs >= 0);
 
    /* for variables in the original problem that do not belong to any block,
     * create the corresponding variable in the master problem
@@ -2822,7 +2826,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
             SCIP_CONS** linkingconss;
             linkingconss = GCGlinkingVarGetLinkingConss(var);
 
-            for( i = 0; i < pricerdata->npricingprobs; i++ )
+            for( i = 0; i < npricingprobs; i++ )
             {
                if( linkingconss[i] != NULL )
                {
