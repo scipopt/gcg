@@ -352,12 +352,13 @@ void GCGrelaxTransformOrigvalsToMastervals(
       if( blocknr < 0 )
       {
          assert(blocknr == -1 || blocknr == -2);
+         assert(SCIPvarIsOriginal(varmastervars[0]));
+         assert(SCIPvarGetTransVar(varmastervars[0]) != NULL);
+
          for( k = 0; k < nmastervars; k++ )
          {
-            assert(!SCIPvarIsTransformedOrigvar(mastervars[k]));
-            if( mastervars[k] == varmastervars[0] )
+            if( mastervars[k] == SCIPvarGetTransVar(varmastervars[0]) )
             {
-               assert(!SCIPvarIsTransformedOrigvar(varmastervars[0]));
                mastervals[k] += (varmastervals[0] * origvals[i]);
                break;
             }
@@ -386,6 +387,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
 
          for( j = 0; j < ncurmastervars; j++ )
          {
+            assert(SCIPvarIsTransformed(curmastervars[j]));
             for( k = 0; k < nmastervars; k++ )
                if( mastervars[k] == curmastervars[j] )
                {
