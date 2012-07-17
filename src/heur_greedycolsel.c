@@ -510,8 +510,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
 
    /* initialize block and master variable information */
-   BMSclearMemoryArray(&blocknr, nblocks);
-   BMSclearMemoryArray(&ignored, nmastervars);
+   BMSclearMemoryArray(blocknr, nblocks);
+   BMSclearMemoryArray(ignored, nmastervars);
    allblocksfull = FALSE;
 
    /* initialize activities with zero and get number of violated rows of zero master solution */

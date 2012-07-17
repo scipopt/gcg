@@ -590,8 +590,8 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIP_CALL( SCIPallocBufferArray(scip, &candfracs, nmastervars) );
 
    /* initialize the block information */
-   BMSclearMemoryArray(&blocknr, nblocks);
-   BMSclearMemoryArray(&candfracs, nmastervars);
+   BMSclearMemoryArray(blocknr, nblocks);
+   BMSclearMemoryArray(candfracs, nmastervars);
    allblocksfull = FALSE;
 
    /* initialize empty candidate list */
