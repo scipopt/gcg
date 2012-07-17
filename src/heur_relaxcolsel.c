@@ -151,7 +151,7 @@ SCIP_RETCODE initializeStartsol(
                block, SCIPvarGetName(mastervar), (int) roundval);
 
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
 
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; ++j )
@@ -215,16 +215,16 @@ SCIP_RETCODE initializeStartsol(
          if( (vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
                && !SCIPisFeasFracIntegral(scip, frac) )
          {
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, roundval) );
             mastercands[*nmastercands] = i;
             candfracs[*nmastercands] = frac;
             ++(*nmastercands);
          }
          else
          {
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, solval) );
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, solval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, solval) );
+            SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, solval) );
          }
       }
 
@@ -234,7 +234,7 @@ SCIP_RETCODE initializeStartsol(
          if( !SCIPisFeasZero(scip, roundval) )
          {
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
 
             SCIPdebugMessage("  -> (block %d) select master variable %s (%d times)\n",
                   block, SCIPvarGetName(mastervar), (int) roundval);
@@ -281,8 +281,8 @@ SCIP_RETCODE initializeStartsol(
 
                      linkingmastervar = GCGoriginalVarGetMastervars(origvar)[0];
                      assert(linkingmastervar != NULL);
-                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, origval) );
-                     SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, origval) );
+                     SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, origval) );
+                     SCIP_CALL( SCIPsetSolVal(scip, mastersol, linkingmastervar, origval) );
                   }
                   /* otherwise, exclude the current master variable, if the point has a different value for it */
                   else
@@ -609,6 +609,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIP_CALL( initializeStartsol(scip, mastersol, origsol, blocknr,
          mastercands, candfracs, &nmastercands, &success) );
 
+   if( !success )
+   {
+      SCIPdebugMessage(" -> not successful.\n");
+      goto TERMINATE;
+   }
+
    masterfeas = FALSE;
    success = FALSE;
 
@@ -925,11 +931,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       SCIPdebugMessage("  -> no feasible solution found.\n");
    }
 
+TERMINATE:
    SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
    SCIP_CALL( SCIPfreeSol(scip, &mastersol) );
-   SCIPfreeBufferArray(scip, &blocknr);
-   SCIPfreeBufferArray(scip, &mastercands);
    SCIPfreeBufferArray(scip, &candfracs);
+   SCIPfreeBufferArray(scip, &mastercands);
+   SCIPfreeBufferArray(scip, &blocknr);
 
    heurdata->lastncols = nmastervars;
 
