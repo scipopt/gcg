@@ -152,7 +152,7 @@ SCIP_RETCODE getBestMastervar(
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
-   assert( origprob != NULL );
+   assert(origprob != NULL);
 
    /* get variable data of the master problem */
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -340,12 +340,12 @@ SCIP_DECL_HEURFREE(heurFreeGreedycolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -398,12 +398,12 @@ SCIP_DECL_HEUREXIT(heurExitGreedycolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free memory */
    SCIPfreeMemoryArrayNull(scip, &heurdata->zerovars);
@@ -454,17 +454,17 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    int k;
    int index;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
-   assert( result != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
+   assert(result != NULL);
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
-   assert( origprob != NULL );
+   assert(origprob != NULL);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -497,8 +497,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    /* get master LP rows data */
    SCIP_CALL( SCIPgetLPRowsData(scip, &lprows, &nlprows) );
-   assert( lprows != NULL );
-   assert( nlprows >= 0);
+   assert(lprows != NULL);
+   assert(nlprows >= 0);
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );

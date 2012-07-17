@@ -437,12 +437,12 @@ SCIP_DECL_HEURFREE(heurFreeRelaxcolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -495,12 +495,12 @@ SCIP_DECL_HEUREXIT(heurExitRelaxcolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free memory */
    SCIPfreeMemoryArrayNull(scip, &heurdata->zerovars);
@@ -541,9 +541,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    int j;
    int k;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
-   assert( result != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
+   assert(result != NULL);
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -551,7 +551,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    *result = SCIP_DELAYED;
 

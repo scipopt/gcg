@@ -171,7 +171,7 @@ SCIP_RETCODE setupSubproblem(
          nnonz = SCIProwGetNNonz(rows[i]);
          cols = SCIProwGetCols(rows[i]);
 
-         assert( lhs <= rhs );
+         assert(lhs <= rhs);
 
          /* allocate memory array to be filled with the corresponding subproblem variables */
          SCIP_CALL( SCIPallocBufferArray(restmaster, &consvars, nnonz) );
@@ -214,16 +214,16 @@ SCIP_RETCODE createNewSol(
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
    SCIP_Bool  masterfeas;                    /* is the solution feasible for the master problem ? */
 
-   assert( origprob != NULL );
-   assert( scip != NULL );
-   assert( restmaster != NULL );
-   assert( restmastervars != NULL );
-   assert( restmastersol != NULL );
+   assert(origprob != NULL);
+   assert(scip != NULL);
+   assert(restmaster != NULL);
+   assert(restmastervars != NULL);
+   assert(restmastersol != NULL);
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(origprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert( nmastervars == SCIPgetNOrigVars(restmaster) );
+   assert(nmastervars == SCIPgetNOrigVars(restmaster));
 
    SCIP_CALL( SCIPallocBufferArray(scip, &restmastervals, nmastervars) );
 
@@ -277,12 +277,12 @@ SCIP_DECL_HEURFREE(heurFreeRestmaster)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -298,12 +298,12 @@ SCIP_DECL_HEURINIT(heurInitRestmaster)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* initialize data */
    heurdata->usednodes = 0;
@@ -525,7 +525,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;
-      assert( !SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)) );
+      assert(!SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)));
 
       upperbound = SCIPgetUpperbound(origprob) - SCIPsumepsilon(origprob);
 
