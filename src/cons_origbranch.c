@@ -118,9 +118,9 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
    {
       SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+      conshdlrData->stack[0] = cons;
+      conshdlrData->nstack = 1;
    }
-   conshdlrData->stack[0] = cons;
-   conshdlrData->nstack = 1;
 
    /* check consistency */
    GCGconsOrigbranchCheckConsistency(scip);
