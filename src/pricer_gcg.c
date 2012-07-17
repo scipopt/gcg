@@ -2226,10 +2226,13 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    /* Add already known solutions for the original problem to the master variable space
     * @todo: This is just a workaround!
     */
-   for( i = 0; i < norigsols; ++i )
+   if( pricerdata->farkascalls == 0 )
    {
-      assert(origsols[i] != NULL);
-      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+      for( i = 0; i < norigsols; ++i )
+      {
+         assert(origsols[i] != NULL);
+         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+      }
    }
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
