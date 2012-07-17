@@ -70,15 +70,15 @@ struct SCIP_HeurData
  */
 static
 SCIP_RETCODE initializeStartsol(
-      SCIP*                   scip,
-      SCIP_SOL*               mastersol,
-      SCIP_SOL*               origsol,
-      int*                    blocknr,
-      int*                    mastercands,
-      SCIP_Real*              candfracs,
-      int*                    nmastercands,
-      SCIP_Bool*              success
-      )
+   SCIP*                 scip,
+   SCIP_SOL*             mastersol,
+   SCIP_SOL*             origsol,
+   int*                  blocknr,
+   int*                  mastercands,
+   SCIP_Real*            candfracs,
+   int*                  nmastercands,
+   SCIP_Bool*            success
+   )
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
@@ -354,10 +354,10 @@ SCIP_RETCODE initializeStartsol(
  * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
-      SCIP*             scip,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -405,11 +405,11 @@ SCIP_RETCODE searchZeroMastervar(
  *  or NULL is there is no such variable available */
 static
 SCIP_RETCODE getZeroMastervar(
-      SCIP*             scip,
-      SCIP_HEURDATA*    heurdata,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   SCIP_HEURDATA*        heurdata,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    /* if no zero solution is known for the block, look if a master variable has been added
     * and remember the variable for future use */

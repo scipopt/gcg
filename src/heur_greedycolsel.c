@@ -70,10 +70,10 @@ struct SCIP_HeurData
 /** How would the number of violated rows change if mastervar were increased?  */
 static
 int getViolationChange(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      SCIP_VAR*               mastervar
-      )
+   SCIP*                 scip,
+   SCIP_Real*            activities,
+   SCIP_VAR*             mastervar
+   )
 {
    SCIP_COL* col;
    SCIP_ROW** colrows;
@@ -127,14 +127,15 @@ int getViolationChange(
 /** get the index of the "best" master variable w.r.t. pseudo costs */
 static
 SCIP_RETCODE getBestMastervar(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      int*                    blocknr,
-      SCIP_Bool*              ignored,
-      SCIP_Bool               useobj,
-      int*                    index,
-      int*                    violchange
-      )
+   SCIP*                 scip,
+   SCIP_SOL*             mastersol,
+   SCIP_Real*            activities,
+   int*                  blocknr,
+   SCIP_Bool*            ignored,
+   SCIP_Bool             useobj,
+   int*                  index,
+   int*                  violchange
+   )
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
@@ -161,20 +162,6 @@ SCIP_RETCODE getBestMastervar(
    *violchange = INT_MAX;
    curobj = SCIPinfinity(scip);
 
-//   j = nmastervars - 1;
-//   do
-//   {
-//      *index = j;
-//      *violchange = getViolationChange(scip, activities, mastervars[j]);
-//
-//      vardata = SCIPvarGetData(mastervars[j]);
-//      assert(vardata != NULL);
-//      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-//
-//      j--;
-//   }
-//   while( blocknr[vardata->blocknr] >= GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) );
-
    for( i = nmastervars - 1; i >= 0; i-- )
    {
       mastervar = mastervars[i];
@@ -189,9 +176,13 @@ SCIP_RETCODE getBestMastervar(
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
-      /* ignore the master variable if the corresponding block is already full */
+      /* ignore the master variable if the corresponding block is already full
+       * or which are fixed
+       */
       if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block )
-            && !ignored[i])
+            && !ignored[i]
+            && SCIPvarGetStatus(mastervar) != SCIP_VARSTATUS_FIXED
+            && SCIPisFeasGE(scip, SCIPgetSolVal(scip, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);
          tmpobj = SCIPvarGetObj(mastervar);
@@ -211,10 +202,10 @@ SCIP_RETCODE getBestMastervar(
 /** update activities */
 static
 SCIP_RETCODE updateActivities(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      SCIP_VAR*               mastervar
-      )
+   SCIP*                 scip,
+   SCIP_Real*            activities,
+   SCIP_VAR*             mastervar
+   )
 {
    SCIP_COL* col;
    SCIP_ROW** colrows;
@@ -265,10 +256,10 @@ SCIP_RETCODE updateActivities(
  * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
-      SCIP*             scip,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -316,11 +307,11 @@ SCIP_RETCODE searchZeroMastervar(
  *  or NULL is there is no such variable available */
 static
 SCIP_RETCODE getZeroMastervar(
-      SCIP*             scip,
-      SCIP_HEURDATA*    heurdata,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   SCIP_HEURDATA*        heurdata,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    /* if no zero solution is known for the block, look if a master variable has been added
     * and remember the variable for future use */
@@ -552,7 +543,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
-      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(scip, mastersol, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
