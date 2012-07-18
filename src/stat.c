@@ -9,7 +9,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**
- * @file stat.c
+ * @file   stat.c
  * @brief  Some printing methods for statistics
  * @author Alexander Gross
  * @author Martin Bergner
@@ -26,8 +26,7 @@
 #include "pub_gcgvar.h"
 
 /** prints information about the best decomposition*/
-SCIP_RETCODE
-GCGwriteDecompositionData(
+SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -81,8 +80,7 @@ GCGwriteDecompositionData(
 }
 
 /** prints information about the creation of the Vars*/
-SCIP_RETCODE
-GCGwriteVarCreationDetails(
+SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -7,7 +7,7 @@
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**@file stat.h
+/**@file   stat.h
  * @brief  Prints information about the best decomposition
  * @author Alexander Gross
  */
@@ -25,8 +25,7 @@ extern "C" {
 
 /** prints information about the best decomposition*/
 extern
-SCIP_RETCODE
-GCGwriteDecompositionData(
+SCIP_RETCODE GCGwriteDecompositionData(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
