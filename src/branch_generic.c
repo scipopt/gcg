@@ -1274,7 +1274,9 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 			
 			record->recordsize++;
 			SCIP_CALL( SCIPreallocBufferArray(scip, &(record->record), record->recordsize) );
+			SCIP_CALL( SCIPreallocBufferArray(scip, &(record->sequencesizes), record->recordsize) );
 			record->record[record->recordsize-1] = copyS;
+			record->sequencesizes[record->recordsize-1] = Ssize;
 			--Ssize;
 		}
 	}
@@ -1361,7 +1363,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 			{
-				if( F[k]->generator[i] >= median)
+				if( F[k]->generator[i] < median)
 					copyF[j]=F[k];
 			}
 		Fsize = Flower;
@@ -1373,7 +1375,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 		{
-			if( F[k]->generator[i] < median)
+			if( F[k]->generator[i] >= median)
 				copyF[j]=F[k];
 		}
 		Fsize = Fupper;
@@ -1442,17 +1444,267 @@ SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record* record, ComponentBoundSequen
 	return SCIP_OKAY;	
 }
 
-// callup method for sepearte 
+
+
+// separation at a node other than the root node
 static
-SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, struct GCG_Record record, ComponentBoundSequence* S, int* Ssize )
+struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* sequencesizes, int p, GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence* S, int Ssize, struct GCG_Record* record )
+{
+	int i;
+	int j;
+	int n;
+	int k;
+	int l;
+	int* newsequencesizes;
+	int isense;
+	int ivalue;
+	int median;
+	int min;
+	int Fupper;
+	int Flower;
+	int Cupper;
+	int Clower;
+	int copyCsize;
+	//int copySsize;
+	GCG_Strip** copyF;
+	ComponentBoundSequence** copyC;
+	//ComponentBoundSequence* lowerS;
+	SCIP_Real alpha_i;
+	SCIP_Real* compvalues;
+	SCIP_Real  muF;
+	SCIP_Bool found;
+	
+	i = 0;
+	j = 0;
+	k = 0;
+	l = 0;
+	Jsize = 0;
+	Fupper = 0;
+	Flower = 0;
+	Cupper = 0;
+	Clower = 0;
+	copyCsize = 0;
+	muF = 0;
+	//copySsize = 0;
+	min = INT_MAX;
+	maxPriority = INT_MIN;
+	found = FALSE;
+
+	//call separate?
+	if( C == NULL || Fsize==0 || IndexSetSize==0 ) //   || NBoundsequences==1
+		return Separate( scip, F, Fsize, IndexSet, IndexSetSize, S, Ssize, record );
+
+	assert( C!=NULL );
+	assert( Csize>0 );
+	assert( F != NULL ); 
+	assert( IndexSetSize != NULL );
+
+	//find i which is in all S in C on position p (not exactly like pseudocode ?
+	while( sequencesizes[k] < p-1 )
+	{
+		++k;
+		assert( k<Csize );
+	}
+	i = C[k][p-1][0];
+	isense = C[k][p-1][1];
+	ivalue = C[k][p-1][2];
+
+
+	for(j=0; j<Fsize; ++j)
+		muF += F[j]->mastervarValue;
+
+	SCIP_CALL( SCIPallocBufferArray(scip, &alpha, IndexSetSize) );
+	
+	
+	alpha_i = 0;
+	for(j=0; j<Fsize; ++j)
+		if(F[j]->generator[i] >= ivalue)
+			alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
+
+		if( alpha_i - SCIPfloor(scip, alpha_i) > 0 )
+		{
+			found = TRUE;
+			
+			//add to record
+			++Ssize;
+			SCIP_CALL( SCIPallocBufferArray(scip, &copyS, Ssize) );
+			for(l=0; l < Ssize-1; ++l)
+				copyS[l]=S[l];
+			
+			
+			copyS[Ssize-1][0] = i;
+			copyS[Ssize-1][1] = 1;
+			copyS[Ssize-1][2] = ivalue;
+			
+			
+			record->recordsize++;
+			SCIP_CALL( SCIPreallocBufferArray(scip, &(record->record), record->recordsize) );
+			SCIP_CALL( SCIPreallocBufferArray(scip, &(record->sequencesizes), record->recordsize) );
+			record->record[record->recordsize-1] = copyS;
+			record->sequencesizes[record->recordsize-1] = Ssize;
+			--Ssize;
+		}
+	
+	
+	if(found)
+	{
+		SCIPfreeBufferArray(scip, &alpha);
+		//SCIPfreeBufferArray(scip, &copyS);
+		return record;
+	}
+	
+
+	
+	//Partition
+	min=INT_MAX;
+	do{	
+	
+	SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
+	for(l=0; l<Fsize; ++l)
+	{
+		compvalues[l] = F[l]->generator[i];
+		if(compvalues[l] < min)
+			min = compvalues[l];
+	}
+	median = GetMedian(scip, compvalues, Fsize, min);
+	SCIPfreeBufferArray(scip, &compvalues);
+	
+	if( median == min)
+	{
+		for(j=0; j<IndexSetSize; ++j)
+			{
+				if( i == IndexSet[j])
+				{
+					IndexSet[j]=IndexSet[IndexSetSize-1];
+					break;
+				}
+			}
+		--IndexSetSize;
+		
+	}
+	
+	assert(IndexSetSize>=0);
+	}while( median == min);
+	
+	
+	++Ssize;
+	SCIP_CALL( SCIPreallocBufferArray(scip, &S, Ssize) );
+					//	for(l=0; l < Ssize-1; ++l)
+				//			upperLowerS[l]=S[l];
+						
+						S[Ssize-1][0] = i;
+						S[Ssize-1][1] = 1;
+						S[Ssize-1][2] = median;
+
+	for(k=0; k<Fsize; ++k)
+	{
+		if( F[k]->generator[i] >= median)
+			++Fupper;
+		else 
+			--Flower;
+	}
+	
+	//calculate subset of C
+		for(j=0; j< Csize; ++j)
+		{
+			if(C[j][p-1][0] == 1)
+				++Cupper;
+			else 
+				++Clower;
+		}
+	
+	if( alpha_i<=0)
+		Cupper = INT_MAX;
+	if( alpha_i==muF)
+		Clower = INT_MAX;
+		
+    //choose smallest partition
+	
+	if( Fupper <= Flower )
+	{
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyF, Flower) );
+		j = 0;
+		for(k=0; k<Fsize; ++k)
+		{
+			if( F[k]->generator[i] >= median)
+				copyF[j]=F[k];
+		}
+		Fsize = Fupper;
+
+		//new C
+		k=0;
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyC, Cupper) );
+		SCIP_CALL( SCIPallocBufferArray(scip, &newsequencesizes, Cupper) );
+		for(j=0; j< Csize; ++j)
+		{
+			assert(C[j][p-1][0] == i);
+
+			if(C[j][p-1][1] == 1)
+			{
+				copyC[k]=C[j];
+				newsequencesizes[k]=sequencesizes[j];
+				++k;
+			}
+		}
+		Csize = Cupper;
+
+	}
+	else
+	{
+		upperLowerS[Ssize-1][1] = 0;
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyF, Fupper) );
+		j = 0;
+		for(k=0; k<Fsize; ++k)
+		{
+			if( F[k]->generator[i] < median)
+				copyF[j]=F[k];
+		}
+		Fsize = Flower;
+
+		//new C
+		k=0;
+		SCIP_CALL( SCIPallocBufferArray(scip, &copyC, Clower) );
+		SCIP_CALL( SCIPallocBufferArray(scip, &newsequencesizes, Clower) );
+		for(j=0; j< Csize; ++j)
+		{
+			assert(C[j][p-1][0] == i);
+
+			if(C[j][p-1][1] == 0)
+			{
+				copyC[k]=C[j];
+				newsequencesizes[k]=sequencesizes[j];
+				++k;
+			}
+		}
+		Csize = Clower;
+		S[Ssize-1][1] = 0;
+	}
+
+	record = Separate( scip, CopyC, Csize, newsequencesizes, p+1, copyF, Fsize, IndexSet, IndexSetSize, S, Ssize, record );
+	
+	
+	SCIPfreeBufferArray(scip, &copyF);
+	SCIPfreeBufferArray(scip, &copyC);
+	SCIPfreeBufferArray(scip, &newsequencesizes);
+	
+	return record;	
+}
+
+
+// callup method for seperate 
+static
+SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, ComponentBoundSequence* S, int* Ssize, ComponentBoundSequence** C, int Csize, int* CompSizes )
 {
 	int i;
 	int n;
 	int* IndexSet;
 	int IndexSetSize;
+    struct GCG_Record* record;
 	
 	assert(Fsize > 0);
 	assert(F!=NULL);
+	
+	record = (struct GCG_Record*) malloc(sizeof(struct GCG_Record));
 	
 	//calculate IndexSet
 	IndexSetSize = F[0]->generatorsize;
@@ -1461,8 +1713,15 @@ SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, struct GCG_Reco
 		//if( !continousVar(i))
 			IndexSet[i]=i;
 
+	//rootnode?
+	if( Csize<=0 )
+		Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
+	else
+	{
+		assert( C!=NULL );
+		Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record);
+	}	
 	
-	Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
 	
 	ChoseS( scip, record, S, &Ssize );
 	
@@ -1471,7 +1730,7 @@ SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, struct GCG_Reco
 	return SCIP_OKAY;	
 }
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the most infeasible LP branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    )
