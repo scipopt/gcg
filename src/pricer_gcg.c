@@ -1952,6 +1952,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_Bool discretization;
    SCIP_CONS** masterconss;
    int nmasterconss;
+   int origverblevel;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -1961,6 +1962,11 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
+
+   /* at the beginning, the output of the master problem gets the same verbosity level
+    * as the output of the original problem */
+   SCIP_CALL( SCIPgetIntParam(origprob, "display/verblevel", &origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
    pricerdata->currnodenr = -1;
 

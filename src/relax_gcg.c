@@ -1137,6 +1137,9 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
+   /* disable display output in the master problem */
+   SCIP_CALL( SCIPsetIntParam(masterscip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+
    /* set parameters */
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvarsroot", INT_MAX) );
@@ -1840,7 +1843,6 @@ static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
-   int origverblevel;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1851,11 +1853,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
 
    initRelaxdata(relaxdata);
-
-   /* the output of the master problem gets the same verbosity level
-    * as the output of the original problem */
-   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &origverblevel) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", origverblevel) );
 
    return SCIP_OKAY;
 }
