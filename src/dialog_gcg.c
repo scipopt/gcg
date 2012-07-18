@@ -256,6 +256,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
 {  /*lint --e{715}*/
    SCIP_RESULT result;
+   int presolrounds;
+   presolrounds = -1;
 
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
@@ -269,8 +271,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    case SCIP_STAGE_PROBLEM:
    case SCIP_STAGE_TRANSFORMED:
    case SCIP_STAGE_PRESOLVING:
-      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-
+      if( DEChasDetectionRun(scip) || (DECgetBestDecomp(scip) != NULL) )
+      {
+         SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
+         SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+      }
    case SCIP_STAGE_PRESOLVED:
       if( !DEChasDetectionRun(scip) )
       {
@@ -305,6 +314,11 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   if( presolrounds != -1 )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", presolrounds) );
+   }
 
    return SCIP_OKAY;
 }
