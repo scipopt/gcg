@@ -29,39 +29,6 @@ SCIP_Bool SCIPisVarRelevant(
    return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
 }
 
-
-/** returns the relevant variable, if possible */
-SCIP_VAR* SCIPgetRelevantVariable(
-   SCIP_VAR*             var                 /**< variable to test */
-   )
-{
-   SCIP_VAR *newvar;
-   newvar = NULL;
-   assert(var != NULL);
-   if( !SCIPisVarRelevant(var) )
-   {
-      return NULL;
-   }
-
-   /*lint -e{788}*/
-   switch (SCIPvarGetStatus(var))
-   {
-   case SCIP_VARSTATUS_AGGREGATED:
-      newvar = SCIPvarGetAggrVar(var);
-      break;
-   case SCIP_VARSTATUS_NEGATED:
-      newvar = SCIPvarGetNegationVar(var);
-      break;
-   case SCIP_VARSTATUS_MULTAGGR:
-      SCIPABORT();
-      break;
-   default:
-      newvar = var;
-      break;
-   }
-   return newvar;
-}
-
 /** returns the type of an arbitrary SCIP constraint */
 consType SCIPconsGetType(
    SCIP_CONS*            cons                /**< constraint to get type for */

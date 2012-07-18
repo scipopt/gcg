@@ -39,13 +39,6 @@ SCIP_Bool SCIPisVarRelevant(
    );
 
 
-/** returns the relevant variable, if possible */
-extern
-SCIP_VAR* SCIPgetRelevantVariable(
-   SCIP_VAR*             var                 /**< variable to test */
-   );
-
-
 /** returns the type of an arbitrary SCIP constraint */
 extern
 consType SCIPconsGetType(

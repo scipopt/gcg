@@ -278,10 +278,7 @@ SCIP_RETCODE convertStructToGCG(
       {
          SCIP_VAR* relevantvar;
          assert(subscipvars[i][j] != NULL);
-         if( SCIPisVarRelevant(subscipvars[i][j]) )
-            relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
-         else
-            relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
+         relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
 
          if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
@@ -333,7 +330,7 @@ SCIP_RETCODE convertStructToGCG(
                   {
                      SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
+                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPvarGetProbvar(linkingvars[i]), j) );
                      found = TRUE;
                      break;
                   }
