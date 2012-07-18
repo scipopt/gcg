@@ -13,6 +13,7 @@
  * @author Gerald Gamrath
  * @author Martin Bergner
  * @author Alexander Gross
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -2092,8 +2093,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));
    SCIPfreeMemoryArray(scip, &(pricerdata->nraysprob));
 
-
-
    SCIPfreeMemoryArray(scip, &(pricerdata->farkascallsdist));
    SCIPfreeMemoryArray(scip, &(pricerdata->farkasfoundvars));
    SCIPfreeMemoryArray(scip, &(pricerdata->farkasnodetimedist));
@@ -2117,15 +2116,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
       SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->pricedvars[i]) );
    }
    SCIPfreeBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars);
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "calls = %d\n", pricerdata->calls);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs heur = %d\n", pricerdata->solvedsubmipsheur);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs optimal = %d\n", pricerdata->solvedsubmipsoptimal);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "farkas calls = %d, redcost calls = %d\n", pricerdata->farkascalls, pricerdata->redcostcalls);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for farkas pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for transformation: %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkasclock)) );
@@ -2635,6 +2625,17 @@ void GCGpricerPrintStatistics(
       if( pricerdata->foundvarshist[i] != 0 )
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%.0f\t-\t%.0f\tvars:\t\t%d \n", start, end, pricerdata->foundvarshist[i]);
    }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Summary:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Calls                            : %d\n", pricerdata->calls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Calls             : %d\n", pricerdata->farkascalls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Time              : %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Calls       : %d\n", pricerdata->redcostcalls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Time        : %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Heuristic Pricing : %d\n", pricerdata->solvedsubmipsheur);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Optimal Pricing   : %d\n", pricerdata->solvedsubmipsoptimal);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for transformation          : %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for freeing subMIPs         : %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
 }
 
