@@ -12,6 +12,7 @@
  * @ingroup DISPLAYS
  * @brief  master display columns
  * @author Gerald Gamrath
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -814,7 +815,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
 
-   gap = SCIPgetGap(GCGpricerGetOrigprob(scip));
+   gap = SCIPgetGap(scip);
 
    if( SCIPisInfinity(scip, gap) )
       SCIPinfoMessage(scip, file, "    Inf ");
