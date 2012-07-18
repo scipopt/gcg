@@ -657,11 +657,15 @@ void GCGconsOrigbranchCheckConsistency(
    )
 {
 #ifdef CHECKCONSISTENCY
+
    SCIP_CONSHDLR*     conshdlr;
+
+#ifndef NDEBUG
    SCIP_CONS** conss;
-   SCIP_CONSDATA* consdata;
    int nconss;
    int i;
+   SCIP_CONSDATA* consdata;
+#endif
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -670,7 +674,7 @@ void GCGconsOrigbranchCheckConsistency(
       SCIPerrorMessage("origbranch constraint handler not found\n");
       return;
    }
-
+#ifndef NDEBUG
    conss = SCIPconshdlrGetConss(conshdlr);
    nconss = SCIPconshdlrGetNConss(conshdlr);
 
@@ -690,6 +694,7 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata->mastercons == NULL ||
          GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
    }
+#endif
 #endif
 }
 

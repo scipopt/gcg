@@ -1742,7 +1742,6 @@ SCIP_RETCODE performPricing(
    )
 {
    SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-   SCIP* origprob;
 
    int i;
    int j;
@@ -1760,9 +1759,6 @@ SCIP_RETCODE performPricing(
    /* get pricer data */
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
-
-   origprob = pricerdata->origprob;
-   assert(origprob != NULL);
 
    assert(result != NULL || pricetype == GCG_PRICETYPE_FARKAS);
    assert(lowerbound != NULL || pricetype == GCG_PRICETYPE_FARKAS);
