@@ -10,7 +10,7 @@ features
 - added block diagonal detection code, GCG solves these more intelligently
 - added detection of standard problems to block detection code
 - add additional statistics
-- structure information can now contain
+- structure information can now contain presolving information
 - GCG works with SCIP version 3.0
 
 plugins
@@ -18,7 +18,6 @@ plugins
 - merge recent SCIP heuristic changes to their GCG counterparts
 
 bug fixes
-- fixed a bug in borderheur related to empty hyperedges
 - try to deal with the time limit of the master by looping until the
   original instance hits the time limit
 - try to avoid infeasible problems if the timelimit is hit during farkas
