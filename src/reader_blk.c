@@ -80,6 +80,7 @@ struct BlkInput
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
    SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
+   SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    BLKSECTION section;                       /**< current section */
@@ -557,6 +558,7 @@ SCIP_RETCODE readPresolved(
       /* read number of blocks */
       if( isInt(scip, blkinput, &presolved) )
       {
+         blkinput->haspresolvesection = TRUE;
          if( presolved == 1 )
             blkinput->presolved = TRUE;
          else if ( presolved == 0 )
@@ -1033,10 +1035,25 @@ SCIP_RETCODE readBLKFile(
 
       case BLK_PRESOLVED:
          SCIP_CALL( readPresolved(scip, blkinput) );
+         if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+         {
+            assert(blkinput->haspresolvesection);
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
+            goto TERMINATE;
+         }
          break;
 
       case BLK_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, blkinput) );
+         if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED)
+            {
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
+               goto TERMINATE;
+            }
+            if( !blkinput->haspresolvesection )
+            {
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+            }
          break;
 
       case BLK_BLOCK:
@@ -1205,6 +1222,8 @@ SCIP_RETCODE SCIPreadBlk(
    blkinput.linenumber = 0;
    blkinput.linepos = 0;
    blkinput.section = BLK_START;
+   blkinput.presolved = FALSE;
+   blkinput.haspresolvesection = FALSE;
    blkinput.nblocks = -1;
    blkinput.blocknr = -2;
    blkinput.haserror = FALSE;

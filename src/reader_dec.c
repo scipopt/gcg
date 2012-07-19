@@ -70,6 +70,7 @@ struct DecInput
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
    SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
+   SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
@@ -544,6 +545,7 @@ SCIP_RETCODE readPresolved(
       /* read number of blocks */
       if( isInt(scip, decinput, &presolved) )
       {
+         decinput->haspresolvesection = TRUE;
          if( presolved == 1 )
             decinput->presolved = TRUE;
          else if ( presolved == 0 )
@@ -1031,13 +1033,23 @@ SCIP_RETCODE readDECFile(
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
             {
-               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "The decomposition belongs to the presolved problem, please presolve the problem first.\n");
+               assert(decinput->haspresolvesection);
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
                goto TERMINATE;
             }
             break;
 
          case DEC_NBLOCKS:
             SCIP_CALL( readNBlocks(scip, decinput) );
+            if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED)
+            {
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
+               goto TERMINATE;
+            }
+            if( !decinput->haspresolvesection )
+            {
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+            }
             break;
 
          case DEC_BLOCK:
@@ -1196,6 +1208,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.linepos = 0;
    decinput.section = DEC_START;
    decinput.presolved = FALSE;
+   decinput.haspresolvesection = FALSE;
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;
