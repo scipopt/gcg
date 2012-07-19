@@ -276,10 +276,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
          SCIP_CALL( SCIPgetIntParam(scip, "presolving/maxrounds", &presolrounds) );
          SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
       }
-      else
-      {
-         SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
-      }
+
+      SCIP_CALL( SCIPpresolve(scip) ); /*lint -fallthrough*/
+
    case SCIP_STAGE_PRESOLVED:
       if( !DEChasDetectionRun(scip) )
       {
