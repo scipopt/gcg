@@ -1101,6 +1101,7 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
+ TERMINATE:
    if( nblocksread  )
    {
       for( i = blkinput->nblocks - 1; i >= 0; --i )
