@@ -20,6 +20,7 @@
  * forced into the master, even if they could be transferred to one block.
  *
  * The keywords are:
+ * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the presolved or unpresolved problem
  * - NBlocks: to be followed by a line giving the number of blocks
  * - Block i with 1 <= i <= nblocks: to be followed by the names of the variables belonging to block i, one per line.
  * - Masterconss: to be followed by names of constraints, one per line, that should go into the master,
