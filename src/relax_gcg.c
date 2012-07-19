@@ -756,8 +756,8 @@ SCIP_RETCODE checkIdenticalBlocks(
       }
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, %d %s relevant!\n", relaxdata->npricingprobs, nrelevant,
-      (nrelevant == 1 ? "is" : "are"));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d identical blocks, using only %d aggregated pricing problem%s!\n",
+      relaxdata->npricingprobs, nrelevant, (nrelevant == 1 ? "" : "s"));
 
    relaxdata->nrelpricingprobs = nrelevant;
 
