@@ -46,6 +46,7 @@
 #include "dialog_gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "stat.h"
 
@@ -192,10 +193,19 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
    if( SCIPgetStage(scip) == SCIP_STAGE_SOLVING || SCIPgetStage(scip) == SCIP_STAGE_SOLVED )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
-      GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
-      SCIP_CALL( GCGwriteDecompositionData(scip) );
-      SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
+      if( DECdecompGetType(DECgetBestDecomp(scip)) == DEC_DECTYPE_DIAGONAL )
+      {
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
+         SCIP_CALL( GCGwriteDecompositionData(scip) );
+
+      }
+      else
+      {
+         GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
+         SCIP_CALL( GCGwriteDecompositionData(scip) );
+         SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
+      }
    }
    else
    {

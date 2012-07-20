@@ -636,7 +636,6 @@ void DECdecompSetDetector(
    )
 {
    assert(decdecomp != NULL);
-   assert(detector != NULL);
 
    decdecomp->detector = detector;
 }

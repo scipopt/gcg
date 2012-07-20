@@ -1157,7 +1157,7 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
    /* disable display output in the master problem */
-   SCIP_CALL( SCIPsetIntParam(masterscip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(masterscip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 
    /* set parameters */
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
@@ -1595,6 +1595,8 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    objvalue = 0.0;
 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Block diagonal structure detected, solving blocks individually.\n");
+
    /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
@@ -1605,7 +1607,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIPinfoMessage(scip, NULL, "Solving pricing %i.\n", i);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
@@ -1663,8 +1665,7 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
-   /* TODO: maybe add a constraint to the node to indicate that it has been decomposed */
-   SCIPinfoMessage(scip, NULL, "We need code for this situation here!\n");
+   /** @todo: maybe add a constraint here to indicate that it has been decomposed */
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1720,7 +1721,6 @@ SCIP_RETCODE initRelaxator(
          relaxdata->masterconss, relaxdata->masterconss) );
 
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {

@@ -109,7 +109,6 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
-   DEC_DECOMP*           decdecomp;          /**< decomposition data structure */
    int*                  varstoblock;        /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
    int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
    int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
@@ -744,10 +743,11 @@ static
 SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< blk reading data */
+   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   DEC_DECOMP* decomp;
+
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_VAR** allvars;
@@ -773,8 +773,6 @@ SCIP_RETCODE fillDecompStruct(
    assert(scip != NULL);
    assert(blkinput != NULL);
    assert(readerdata != NULL);
-   assert(readerdata->decdecomp != NULL);
-   decomp = readerdata->decdecomp;
 
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
@@ -784,6 +782,8 @@ SCIP_RETCODE fillDecompStruct(
 
    DECdecompSetPresolved(decomp, blkinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
+   DECdecompSetDetector(decomp, NULL);
+
    DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
    assert(valid);
 
@@ -990,6 +990,7 @@ SCIP_RETCODE readBLKFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   DEC_DECOMP *decdecomp;
    int i;
    int nconss;
    int nblocksread;
@@ -1065,14 +1066,14 @@ SCIP_RETCODE readBLKFile(
       case BLK_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, blkinput) );
          if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED)
-            {
-               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
-               goto TERMINATE;
+         {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
+            goto TERMINATE;
             }
-            if( !blkinput->haspresolvesection )
-            {
-               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
-            }
+         if( !blkinput->haspresolvesection )
+         {
+            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+         }
          break;
 
       case BLK_BLOCK:
@@ -1104,11 +1105,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
+
+   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+
    /* fill decomp */
-   SCIP_CALL( fillDecompStruct(scip, blkinput, readerdata) );
+   SCIP_CALL( fillDecompStruct(scip, blkinput, decdecomp, readerdata) );
 
    /* add decomp to cons_decomp */
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1157,9 +1161,6 @@ SCIP_DECL_READERFREE(readerFreeBlk)
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   /* free decomp structure and readerdata */
-   if( DECdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
-      DECdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
@@ -1202,7 +1203,6 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 
    /* create blk reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   SCIP_CALL( DECdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include blk reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,

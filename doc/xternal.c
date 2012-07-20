@@ -35,7 +35,7 @@
  *
  * GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a
  * href="http://www.zib.de">Zuse-Institute Berlin</a>
- * and has more than 40,000 lines of C code.
+ * and has more than 30,000 lines of C code.
  *
  *
  * <table cellpadding="0px" border="0" width="100%">
