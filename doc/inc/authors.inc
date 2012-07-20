@@ -7,7 +7,7 @@
 	<a href="http://www.or.rwth-aachen.de/~luebbecke">Marco Lübbecke</a>
       </td>
       <td>
-	Project initiator and leader
+	Project initiator and head
       </td>
     </tr>
   </table>
