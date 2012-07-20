@@ -568,9 +568,9 @@ relaxing/gcg/enforceproper = TRUE
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 relaxing/gcg/discretization = FALSE
 
-# should identical blocks be merged (only for discretization approach)?
+# should identical blocks be aggregated (only for discretization approach)?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-relaxing/gcg/mergeidenticalblocks = TRUE
+relaxing/gcg/aggregation = TRUE
 
 # should additional information about the blocks be displayed?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]

@@ -46,7 +46,7 @@
 #define RELAX_FREQ             1
 
 #define DEFAULT_DISCRETIZATION FALSE
-#define DEFAULT_MERGEIDENTICALBLOCS TRUE
+#define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
 
 
@@ -95,7 +95,7 @@ struct SCIP_RelaxData
 
    /* parameter data */
    SCIP_Bool             discretization;     /**< TRUE: use discretization approach; FALSE: use convexification approach */
-   SCIP_Bool             mergeidenticalblocks; /**< should identical blocks be merged (only for discretization approach)? */
+   SCIP_Bool             aggregation;        /**< should identical blocks be aggregated (only for discretization approach)? */
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
@@ -701,7 +701,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
-   if( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
+   if( !relaxdata->discretization || !relaxdata->aggregation )
       return SCIP_OKAY;
 
    /* aggregate only if the master problem has a set partitioning or set covering structure */
@@ -2145,9 +2145,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mergeidenticalblocks",
-         "should identical blocks be merged (only for discretization approach)?",
-         &(relaxdata->mergeidenticalblocks), FALSE, DEFAULT_MERGEIDENTICALBLOCS, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
+         "should identical blocks be aggegrated (only for discretization approach)?",
+         &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
