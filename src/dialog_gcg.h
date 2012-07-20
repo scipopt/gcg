@@ -59,6 +59,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors);
 
+/** dialog execution method for the display decomposition command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition);
+
 /** dialog execution method for the master command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);

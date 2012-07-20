@@ -185,6 +185,23 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display decomposition command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
+{  /*lint --e{715}*/
+   DEC_DECOMP* decomp;
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   decomp = DECgetBestDecomp(scip);
+   if( decomp != NULL )
+   {
+      SCIP_CALL( SCIPwriteDecomp(scip, NULL, decomp, TRUE) );
+   }
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 
 /** dialog execution method for the display additionalstatistics command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
@@ -423,8 +440,16 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
+   /* display decomposition */
+   if( !SCIPdialogHasEntry(submenu, "decomposition") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDecomposition, NULL, NULL,
+            "decomposition", "display decomposition", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
 
-   /* display statistics */
+   /* display additionalstatistics */
    if( !SCIPdialogHasEntry(submenu, "additionalstatistics") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayAdditionalStatistics, NULL, NULL,

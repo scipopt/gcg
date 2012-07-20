@@ -1269,7 +1269,6 @@ SCIP_RETCODE writeData(
    int j;
 
    assert(scip != NULL);
-   assert(file != NULL);
    assert(decdecomp != NULL);
 
    assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
@@ -1334,7 +1333,6 @@ SCIP_RETCODE SCIPwriteDecomp(
 {
    char outname[SCIP_MAXSTRLEN];
    assert(scip != NULL);
-   assert(file != NULL);
 
    if( writeDecomposition )
    {
