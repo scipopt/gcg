@@ -204,8 +204,8 @@ div.ah {
     -moz-border-radius: .5em;
     -webkit-box-shadow: 2px 2px 3px #999;
     -moz-box-shadow: rgba(0, 0, 0, 0.15) 2px 2px 2px;
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),color-stop(0.3, #444));
-    background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000);
+/*    background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),color-stop(0.3, #444));
+    background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000); */
 }
 
 div.groupHeader {
@@ -268,6 +268,8 @@ div.center img {
 
 td.footer {
     font-size: 75%;
+    vertical-align:  top;
+
 }
 
 img.footer {
