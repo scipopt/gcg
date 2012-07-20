@@ -49,7 +49,7 @@
 #include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "stat.h"
-
+#include "reader_dec.h"
 
 /* display the reader information */
 static

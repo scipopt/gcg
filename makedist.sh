@@ -25,7 +25,8 @@ $NAME/src/*.c $NAME/src/*.h \
 $NAME/check/instances/cpmp/*.gz \
 $NAME/check/instances/bpp/*.gz \
 $NAME/check/instances/gap/*.gz \
-$NAME/check/instances/cs/*.gz
+$NAME/check/instances/cs/*.gz \
+$NAME/check/instances/miplib/*.gz
 rm -f $NAME
 echo ""
 echo "finished"
