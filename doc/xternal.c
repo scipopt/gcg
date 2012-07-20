@@ -61,6 +61,7 @@
  * - \ref HEUR "How to write custom heuristics"
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref FAQ "Frequently asked questions"
+ * - \ref bug "Known bugs"
  *     </td>
  *   </tr>
  * </table>
@@ -215,7 +216,7 @@
  * in SCIP heuristics).
  * \n
  * Note also that heuristics using LP solutions should use another timing than SCIP heuristics. Heuristics that are called after
- * solving a node's relaxation typically have the timing SCIP_HEURTIMING_AFTERLPNODE. 
+ * solving a node's relaxation typically have the timing SCIP_HEURTIMING_AFTERLPNODE.
  * By default, no LPs are solved on the original problem. A heuristic relying on a linearly feasible solution should therefore
  * have the timing SCIP_HEURTIMING_AFTERNODE to ensure that the heuristic is called at all. One then must ensure that the node's
  * relaxation has indeed been solved to optimality and that the relaxation solution is valid. This can be done by placing
@@ -256,7 +257,7 @@
  * \n
  * For heuristics that are included in the original instance and make use of the extended instance as well (in
  * particular, most of the heur_gcg* and heur_xp* plugins), this callback should be set to null. This is because
- * sub-SCIPs are solved by SCIP rather than GCG and therefore do not know any master problem; including a GCG 
+ * sub-SCIPs are solved by SCIP rather than GCG and therefore do not know any master problem; including a GCG
  * specific heuristic into them would cause errors.
  *
  */

@@ -1056,6 +1056,7 @@ SCIP_RETCODE readBLKFile(
          if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
          {
             assert(blkinput->haspresolvesection);
+            /** @bug GCG should be able to presolve the problem first */
             SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
             goto TERMINATE;
          }
