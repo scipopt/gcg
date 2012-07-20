@@ -17,7 +17,7 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/**@mainpage Generic Column Genration
+/**@mainpage Generic Column Generation
  *
  * <b>What is GCG?</b>
  *
@@ -42,8 +42,9 @@
  *   <tr>
  *     <td nowrap >
  * <b>How to get started</b>
- *
+ * - \ref DOWNLOAD     "Download locations"
  * - \ref INSTALL      "Installation information"
+ * - \ref EXAMPLE      "How to get started (example)"
  * - \ref FILEFORMATS  "Input file formats"
  *
  * <table cellpadding="0px" border="0" width="100%">
@@ -53,6 +54,7 @@
  * - \ref AUTHORS      "Current GCG developers"
  * - \ref CHANGELOG    "Change log"
  * - \ref RELEASENOTES "Release notes"
+ * - \ref LICENSE      "Licensing information"
  *
  * @version  1.0
  *
@@ -67,10 +69,317 @@
  * </table>
  */
 
+
+/**@page LICENSE Licensing Information
+ *
+ * GCG is released under the GNU Lesser General Public License:
+ *
+ * \verbinclude LICENSE
+ */
+
+/**@page EXAMPLE How to get started
+ *
+ *
+ * If you want to use GCG as a solver for your problem, you'll find some starting information on this page
+ *
+ * You need a compiled GCG binary. The \ref INSTALL "Install section" will guide you through the correct steps. You'll further
+ * need a problem you want to solve and you need to know what the structure information for the Dantzig-Wolfe reformulation does
+ * look like for your problem.  GCG can read various file formats that SCIP can read, namely MPS, LP, CIP, and many more.
+ *
+ * If you want to download the complete source code of the GCG, we recommend downloading the complete SCIP optimization suite as
+ * it will contain everything you will need in order to produce a working binary. The bin packing instance N1C2W2_O, which will
+ * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/bpp/N1C2W2_O.BPP.lg.gz</code>.
+ *
+ * Now start your binary, without any arguments. This opens the interactive shell, which should look somehow like this:
+ *
+ * \code
+ * GCG version 1.0.0 [GitHash: v100-0-g2e15c6e]
+ * Copyright (c) 2010-2012 Operations Research, RWTH Aachen University
+ *                         Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
+ *
+ * SCIP version 3.0.0 [precision: 8 byte] [memory: block] [mode: optimized] [LP solver: SoPlex 1.6.0.7] [GitHash: 8330fdf]
+ * Copyright (c) 2002-2012 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
+ *
+ * External codes:
+ *   Readline 6.2         GNU library for command line editing (gnu.org/s/readline)
+ *   SoPlex 1.6.0.7       Linear Programming Solver developed at Zuse Institute Berlin (soplex.zib.de) [GitHash: 257a622]
+ *   cppad-20120101.3     Algorithmic Differentiation of C++ algorithms developed by B. Bell (www.coin-or.org/CppAD)
+ *   ZLIB 1.2.5           General purpose compression library by J. Gailly and M. Adler (zlib.net)
+ *
+ * user parameter file <gcg.set> not found - using default parameters
+ *
+ * GCG>
+ *
+ * \endcode
+ *
+ * First of all "help" shows you a list of all available shell commands. Brackets indicate a submenu with further options.
+ * \code
+ * GCG> help
+
+ *  <display>             display information
+ *  <set>                 load/save/change parameters
+ * ...
+ *  read                  read a problem
+ * \endcode
+ *
+ * Let's solve a problem with Dantzig-Wolfe reformulation... use "read <path/to/file>" to parse a problem file,
+ * "read <path/to/file>" to provide structure information, "optimize" to solve it and "display
+ * solution" to show the nonzero variables of the best found solution.
+
+ * \code
+ * GCG> read check/instances/bpp/N1C2W2_O.BPP.lp.gz
+ * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
+ * GCG> read check/instances/bpp/N1C2W2_O.BPP.dec.gz
+ * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
+ *
+ * GCG> optimize
+ *
+ * presolving:
+ * presolving (0 rounds):
+ *  0 deleted vars, 0 deleted constraints, 0 added constraints, 0 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
+ *  0 implications, 0 cliques
+ * presolved problem has 2550 variables (2550 bin, 0 int, 0 impl, 0 cont) and 100 constraints
+ *     100 constraints of type <linear>
+ * transformed objective value is always integral (scale: 1)
+ * Presolving Time: 0.07
+ * Chosen decomposition with 50 blocks of type arrowhead.
+ *
+ *
+ *   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
+ *    0.2s|     1 |     0 |     0 |      1 |     - |  16M|   0 |2550 |  10 | 101 | 101 |   0 |   0 | 0.000000e+00 |      --      |    Inf
+ * *r 1.1s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
+ * Starting reduced cost pricing...
+ * *r 1.3s|     1 |     0 |     0 |    255 |     - |  17M|   0 |2550 | 600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 4.600000e+01 |    Inf
+ * ...
+ * *r 7.4s|     1 |     0 |     0 |    799 |     - |  22M|   0 |2550 |3350 | 101 | 101 |   0 |   0 | 0.000000e+00 | 3.000000e+01 |    Inf
+ *   10.2s|     1 |     0 |     0 |   1086 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 3.000000e+01 |   3.45%
+ *   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
+ * *r10.2s|     1 |     0 |     0 |   1086 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 3.000000e+01 |    Inf
+ *   10.3s|     1 |     2 |     0 |   1086 |     - |  26M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 3.000000e+01 |   3.45%
+ *   10.4s|     1 |     2 |     0 |   1086 |     - |  26M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 3.000000e+01 |   3.45%
+ * R 10.4s|    10 |     0 |     0 |   1348 |  29.1 |  26M|   9 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
+ *
+ * SCIP Status        : problem is solved [optimal solution found]
+ * Solving Time (sec) : 10.45
+ * Solving Nodes      : 10
+ * Primal Bound       : +2.90000000000000e+01 (4 solutions)
+ * Dual Bound         : +2.90000000000000e+01
+ * Gap                : 0.00 %
+ *
+ * GCG> display solution
+ *
+ * objective value:                                   29
+ * x#1#10                                              1 	(obj:0)
+ * x#2#49                                              1 	(obj:0)
+ * x#3#33                                              1 	(obj:0)
+ * ...
+ * y#1                                                 1 	(obj:1)
+ * y#2                                                 1 	(obj:1)
+ * ...
+ * y#50                                                1 	(obj:1)
+ *
+ * GCG>
+ * \endcode
+ *
+ * This tells us the following: After "optimize", GCG would first goe into presolving. Since we have specified an structure
+ * information for the original problem, GCG will currently disable presolving to not interfere with the decomposition.
+ * Each round of presolving will be displayed in a single line, with a short summary at the end. Here, there has been
+ * no round. Thus, it is not displayed and presolving is stopped. Afterwards, GCG will print out short information about
+ * the currently used decomposition. Then, we see the actual solving process. The second output line indicate that new
+ * incumbent solutions were found by the primal heuristic with display character "r"; see, how the "primalbound" column
+ * goes down from 50 to 30.  Up to here, we needed 1086 "LP iter"ations. Little later, the root node processing is finished.
+ * We see that there are now two open nodes in the "left" column. From now on, we will see an output line every hundredth
+ * node or whenever a new incumbent is found (e.g. at node 10 in the above output). In our case, the "dualbound" at the
+ * root node was optimal, this is why it is not changing anymore. At one point, both primal bound and dualbound will be the
+ * same, and the solving process terminates, showing us some wrap-up  information.
+ *
+ * The exact performance varies amongst different architectures, operating systems, and so on. Do not be worried if
+ * your installation needs more or less time or nodes to solve.
+ *
+ * We might want to have some more information now. Which were the heuristics that found the solutions? What plugins
+ *  were called during the solutions process and how much time did they spend? How did the instance that we were solving
+ *  look?  Information on certain plugin types (e.g., heuristics, branching rules, separators) we get by
+ *  "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
+ *  shows us the current instance.
+ *
+  \code
+
+ * SCIP> display heuristics
+ *  primal heuristic     c priority freq ofs  description
+ *  ----------------     - -------- ---- ---  -----------
+ *  trivial              t    10000    0   0  start heuristic which tries some trivial solutions
+ * ...
+ *  rounding             R    -1000    1   0  LP rounding heuristic with infeasibility recovering
+ *  shifting             s    -5000   10   0  LP rounding heuristic with infeasibility recovering also using continuous variables
+ * ...
+ * GCG> display statistics
+ *
+ * Master Program statistics:
+ * SCIP Status        : solving was interrupted [node limit reached]
+ * Total Time         :      10.17
+ * ...
+ * Pricers            :   ExecTime  SetupTime      Calls       Vars
+ *   problem variables:       0.01          -        106       2776
+ *   gcg              :       9.84       0.00        142       4600
+ * Primal Heuristics  :   ExecTime  SetupTime      Calls      Found
+ * ...
+ *   simplerounding   :       0.03       0.00         58          8
+ * ...
+ * Original Program statistics:
+ * SCIP Status        : problem is solved [optimal solution found]
+ * Total Time         :      10.46
+ * ...
+ *   gcgrounding      :       0.00       0.00         10          1
+ *   xpcrossover      :       0.04       0.00          1          1
+ *   xprins           :       0.03       0.00          1          1
+ *   zeroobj          :       0.07       0.00          1          0
+ * Relaxators         :       Time      Calls
+ *   gcg              :      10.28         10
+ * ...
+ * GCG>
+ *  * \endcode
+ *
+ * We see statistics for two different problems: The Dantzig-Wolfe master problem and the original problem.
+ * We see that rounding and shifting were the heuristics producing the solutions in the beginning. Rounding is called at
+ * every node, shifting only at every tenth level of the tree. The statistics are quite comprehensive, thus, we just
+ * explain a few lines here. We get information for all types of plugins and for the overall solving process. Besides
+ * others, we see that in six calls, the gomory cut separator and the strong Chv&aacute;tal-Gomory separator each produced
+ * several hundred cuts (of which only a few entered the LP). The oneopt heuristic found one solution in 4 calls,
+ * whereas coefdiving failed all 57 times it was called. All the LPs have been solved with the dual simplex algorithm, which
+ * took about 0.2 seconds of the 0.7 seconds overall solving time.
+ *
+ * Now, we can start playing around with parameters. Rounding and shifting seem to be quite successful on this instance,
+ * wondering what happens if we disable them? Or what happens, if we are even more rigorous and disable all heuristics?
+ * Or if we do the opposite and use aggressive heuristics?
+ *
+ * \code
+ * SCIP> set
+ *
+ *   <branching>           change parameters for branching rules
+ *  ...
+ *   <heuristics>          change parameters for primal heuristics
+ *
+ * SCIP/set> heuristics
+ *
+ *   <actconsdiving>       LP diving heuristic that chooses fixings w.r.t. the active constraints
+ *  ...
+ *   <shifting>            LP rounding heuristic with infeasibility recovering also using continuous variables
+ *  ...
+ *
+ * SCIP/set/heuristics> shifting
+ *
+ *   <advanced>            advanced parameters
+ *   freq                  frequency for calling primal heuristic <shifting> (-1: never, 0: only at depth freqofs) [10]
+ *   freqofs               frequency offset for calling primal heuristic <shifting> [0]
+ *
+ * SCIP/set/heuristics/shifting> freq
+ * current value: 10, new value [-1,2147483647]: -1
+ * heuristics/shifting/freq = -1
+ *
+ * SCIP> se he rou freq -1
+ * heuristics/rounding/freq = -1
+ *
+ * SCIP> re check/instances/MIP/stein27.mps
+ * original problem has 27 variables (27 bin, 0 int, 0 impl, 0 cont) and 118 constraints
+ * SCIP> o
+ *
+ * feasible solution found by trivial heuristic, objective value  2.700000e+01
+ * ...
+ * z 0.1s|     3 |     4 |   140 |  10.5 |1060k|   2 |  22 |  27 | 118 |  27 | 123 |  14 |   0 |  66 | 1.300000e+01 | 1.900000e+01 |  46.15%
+ * z 0.1s|     6 |     7 |   176 |  11.4 |1063k|   5 |  18 |  27 | 118 |  27 | 123 |  14 |   0 | 118 | 1.300000e+01 | 1.900000e+01 |  46.15%
+ * * 0.1s|    39 |    28 |   386 |   7.0 |1092k|  14 |   - |  27 | 118 |  27 | 123 |  14 |   0 | 199 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ * ...
+ * SCIP Status        : problem is solved [optimal solution found]
+ * Solving Time (sec) : 0.75
+ * Solving Nodes      : 4253
+ * Primal Bound       : +1.80000000000000e+01 (287 solutions)
+ * Dual Bound         : +1.80000000000000e+01
+ * Gap                : 0.00 %
+ *
+ * SCIP>
+ * \endcode
+ *
+ * We can navigate through the menus step-by-step and get a list of available options and submenus. Thus, we select
+ * "set" to change settings, "heuristics" to change settings of primal heuristics, "shifting" for that particular
+ * heuristic. Then we see a list of parameters (and yet another submenu for advanced parameters), and disable this
+ * heuristic by setting its calling frequency to -1. If we already know the path to a certain setting, we can directly
+ * type it (as for the rounding heuristic in the above example). Note that we do not have to use the full names, but we
+ * may use short versions, as long as they are unique.
+ *
+ * To solve a problem a second time, we have to read it and start the optimization process again.
+ *
+ * \code
+ * SCIP> set default
+ * reset parameters to their default values
+ * SCIP> set heuristics emphasis
+ *
+ *   aggressive            sets heuristics <aggressive>
+ *   fast                  sets heuristics <fast>
+ *   off                   turns <off> all heuristics
+ *
+ * SCIP/set/heuristics/emphasis> aggr
+ * heuristics/veclendiving/freq = 5
+ * ...
+ * heuristics/crossover/minfixingrate = 0.5
+ * SCIP> read check/instances/MIP/stein27.mps
+ * original problem has 27 variables (27 bin, 0 int, 0 impl, 0 cont) and 118 constraints
+
+ * SCIP> opt
+ * ...
+ * D 0.1s|     1 |     0 |   107 |     - | 971k|   0 |  24 |  27 | 122 |  27 | 131 |  13 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ *   0.1s|     1 |     0 |   107 |     - | 971k|   0 |  24 |  27 | 122 |  27 | 131 |  13 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ *   0.1s|     1 |     0 |   119 |     - |1111k|   0 |  24 |  27 | 122 |  27 | 132 |  14 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ *   0.1s|     1 |     2 |   119 |     - |1112k|   0 |  24 |  27 | 122 |  27 | 132 |  14 |   4 |  24 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ *  time | node  | left  |LP iter|LP it/n| mem |mdpt |frac |vars |cons |cols |rows |cuts |confs|strbr|  dualbound   | primalbound  |  gap
+ *   0.2s|   100 |    59 |   698 |   5.8 |1138k|  14 |  11 |  27 | 122 |  27 | 123 |  14 |   4 | 204 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ *   0.2s|   200 |    91 |  1226 |   5.6 |1155k|  14 |   - |  27 | 122 |  27 | 123 |  14 |   4 | 207 | 1.300000e+01 | 1.800000e+01 |  38.46%
+ * ^Cpressed CTRL-C 1 times (5 times for forcing termination)
+ *
+ * SCIP Status        : solving was interrupted [user interrupt]
+ * Solving Time (sec) : 0.32
+ * Solving Nodes      : 216
+ * Primal Bound       : +1.80000000000000e+01 (283 solutions)
+ * Dual Bound         : +1.30000000000000e+01
+ * Gap                : 38.46 %
+ *
+ * SCIP>
+ * \endcode
+ *
+ * Okay, what happened here? First, we reset all parameters to their default values, using "set default". Next, we
+ * loaded some meta-parameter settings (also see <a href="FAQ.html#Section2">the FAQ</a>), to apply primal heuristics
+ * more aggressively. SCIP shows us, which single parameters it changed therefor. Now, the optimal solution is already
+ * found at the root node, by a heuristic which is deactivated by default.  Then, after node 200, the user pressed
+ * CTRL-C which interrupts the solving process, We see that now in the short status report, primal and dual bound are
+ * different, thus, the problem is not solved yet.  Nevertheless, we could access statistics, see the current incumbent
+ * solution, change parameters and so on. Entering "optimize" we continue the solving process from the point on at which
+ * it has been interrupted.
+ *
+ * SCIP can also write information to files. E.g., we could store the incumbent solution to a file, or output the
+ * problem instance in another file format (the LP format is much more human readable than the MPS format, for example).
+ *
+ * \code
+ * SCIP> write solution stein27.sol
+ *
+ * written solution information to file <stein27.sol>
+ *
+ * SCIP> write problem stein27.lp
+ * written original problem to file <stein27.lp>
+ *
+ * SCIP> q
+ * ...
+ * \endcode
+ *
+ * We hope this tutorial gave you an overview of what is possible using the SCIP interactive shell. Please also read our
+ * \ref FAQ, in particular the section <a href="FAQ.html#Section2">Using SCIP as a standalone MIP/MINLP-Solver</a>.
+ *
+ *
+ */
+
 /**@page CHANGELOG CHANGELOG
  *
  * \verbinclude CHANGELOG
  */
+
 
 /**@page INSTALL INSTALL
  *
@@ -91,12 +400,30 @@
  * \verbinclude INSTALL
  */
 
+/**@page DOWNLOAD Downloading Locations
+ * @section Downloading GCG
+ *
+ * GCG can be downloaded from two locations
+ * - Standalone from the server at <a href="http://or.rwth-aachen.de/gcg/download"> RWTH Aachen</a>
+ * - Complete with SCIP in the SCIPoptSuite from <a href="http://scipoptsuite.zib.de/download">Zuse Institute Berlin</a>
+ *
+ * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
+ *
+ * We will not offer precompiled binaries and GCG may not compile on Microsoft Windows. It is developed and tested on GNU/Linux.
+ */
+
+
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /**@page FILEFORMATS Input file formats supported by GCG.
  *
  * GCG supports all file formats supported by SCIP to read in problems, solution, etc.
  * E.g., the original problem can be read in as an .lp, .mps, or .cip file.
  *
+ * If GCG is not able to automatically detect a structure suitable to perform a Dantzig-Wolfe reformulation, you need
+ * to specify the structure yourself and make it available to GCG. There are some file formats for structure information.
+ * If in doubt, we recommend the <code>dec</code> format which is documented in \ref reader_dec.h .
+ *
+ * You can find examples in the <code>check/instances/</code> directory.
  */
 
 /**@defgroup PUBLICMETHODS Public Methods
