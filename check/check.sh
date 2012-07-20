@@ -186,6 +186,7 @@ do
 	    else
             if test -f $DECFILE -a $MODE = "readdec"
             then
+                echo presolve              >> $TMPFILE
                 echo read $DECFILE         >> $TMPFILE
             fi
 		echo optimize                      >> $TMPFILE
