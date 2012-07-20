@@ -153,7 +153,7 @@ scip_clean:
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy
+		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
 
 $(MAINSHORTLINK):	$(MAINFILE)
 		@rm -f $@

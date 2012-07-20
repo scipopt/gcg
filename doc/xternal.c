@@ -62,9 +62,6 @@
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref FAQ "Frequently asked questions"
  *     </td>
- *     <td valign="bottom" width="200">
- *       \image html scippy.png
- *     </td>
  *   </tr>
  * </table>
  */

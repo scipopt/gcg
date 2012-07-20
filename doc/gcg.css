@@ -3,7 +3,7 @@
 body, div {
   color:            black;
 /*  background-color: #ffffe6; */
-  font-size: 12pt;
+  font-size: 11pt;
   font-family: sans-serif;
 }
 
@@ -23,6 +23,26 @@ div.inner {
   border:     1px solid #BDBDBD;
   min-height: 450px;
   min-width: 1150px;
+}
+
+
+#top {
+    border-top: 40px solid #000000;
+    background-color:  #00539f;
+}
+
+#projectname {
+
+    font-size: 14pt;
+    color: #fff;
+}
+
+/* tabg */
+.tabs, .tabs2, .tabs3 {
+  /*  background-image: url("tab_b.png");*/
+    font-size: 13px;
+    width: 100%;
+    z-index: 101;
 }
 
 /* @group Heading Levels */
@@ -107,12 +127,12 @@ div.note{
 /* @group Link Styling */
 
 a {
-    color: #5050C0;
+    color: #00539F;
     text-decoration: none;
 }
 
 .contents a:visited {
-    color: #5050C0;
+    color: #00539F;
 }
 
 a:hover {
@@ -161,7 +181,7 @@ dl.el {
 }
 
 pre.fragment {
-    border: 1px solid #8080A0;
+    border: 1px solid #00539f;
     background-color: #FBFCFD;
     padding: 4px 6px;
     margin: 4px 8px 4px 2px;
@@ -201,19 +221,20 @@ div.groupText {
 }
 
 div.contents {
+    padding: 10px;
 }
 
 td.indexkey {
     background-color: #EBEFF6;
     font-weight: bold;
-    border: 1px solid #8080A0;
+    border: 1px solid #00539f;
     margin: 2px 0px 2px 0;
     padding: 2px 10px;
 }
 
 td.indexvalue {
     background-color: #EBEFF6;
-    border: 1px solid #8080A0;
+    border: 1px solid #00539f;
     padding: 2px 10px;
     margin: 2px 0px;
 }
@@ -339,7 +360,8 @@ th.dirtab {
 hr {
     height: 0px;
     border: none;
-    border-top: 2px solid #8080A0;
+/*    border-top: 2px solid #8080A0; */
+    border-top: 2px solid #00539f;
 }
 
 hr.footer {
@@ -374,7 +396,7 @@ table.memberdecls {
 }
 
 .memItemLeft, .memItemRight, .memTemplParams {
-    border-top: 1px solid #8080A0;
+    border-top: 1px solid #00539f;
 }
 
 .memItemLeft, .memTemplItemLeft {
@@ -420,9 +442,9 @@ table.memberdecls {
 }
 
 .memproto {
-    border-top: 1px solid #A8B8D9;
-    border-left: 1px solid #A8B8D9;
-    border-right: 1px solid #A8B8D9;
+    border-top: 1px solid #00539f;
+    border-left: 1px solid #00539f;
+    border-right: 1px solid #00539f;
     padding: 6px 0px 6px 0px;
     color: #253555;
     font-weight: bold;
@@ -435,28 +457,29 @@ table.memberdecls {
     -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
     -webkit-border-top-right-radius: 8px;
     -webkit-border-top-left-radius: 8px;
-    background-image:url('nav_f.png');
+    /* background-image:url('nav_f.png');*/
+
     background-repeat:repeat-x;
-    background-color: #E2E8F2;
+    background-color: #fffbd5;
 }
 
 .memdoc {
-    border-bottom: 1px solid #A8B8D9;
-    border-left: 1px solid #A8B8D9;
-    border-right: 1px solid #A8B8D9;
+    border-bottom: 1px solid #00539f;
+    border-left: 1px solid #00539f;
+    border-right: 1px solid #00539f;
     padding: 2px 5px;
-    background-color: #FBFCFD;
+    background-color: #fff;
     border-top-width: 0;
     /* firefox specific markup */
     -moz-border-radius-bottomleft: 8px;
     -moz-border-radius-bottomright: 8px;
     -moz-box-shadow: rgba(0, 0, 0, 0.15) 5px 5px 5px;
-    background-image: -moz-linear-gradient(center top, #FFFFFF 0%, #FFFFFF 60%, #F7F8FB 95%, #EEF1F7);
+/*    background-image: -moz-linear-gradient(center top, #FFFFFF 0%, #FFFFFF 60%, #F7F8FB 95%, #EEF1F7);*/
     /* webkit specific markup */
     -webkit-border-bottom-left-radius: 8px;
     -webkit-border-bottom-right-radius: 8px;
     -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
-    background-image: -webkit-gradient(linear,center top,center bottom,from(#FFFFFF), color-stop(0.6,#FFFFFF), color-stop(0.60,#FFFFFF), color-stop(0.95,#F7F8FB), to(#EEF1F7));
+/*    background-image: -webkit-gradient(linear,center top,center bottom,from(#FFFFFF), color-stop(0.6,#FFFFFF), color-stop(0.60,#FFFFFF), color-stop(0.95,#F7F8FB), to(#EEF1F7));*/
 }
 
 .paramkey {
@@ -651,7 +674,7 @@ div.summary a
 
 div.header
 {
-    background-image:url('nav_h.png');
+/*    background-image:url('nav_h.png');*/
     background-repeat:repeat-x;
     margin:  0px;
 }
@@ -686,7 +709,7 @@ td.mainheadertitle
     text-align:left;
     vertical-align: middle;
     padding: 0px 0px 0px 0px;
-    color: #5050C0;
+    color: #00539F;
 }
 
 
@@ -707,7 +730,7 @@ td.mainheadertitle
 }
 
 #menu li.hdr {
-  color: #5050C0;
+  color: #00539F;
   font-weight:   bold;
   padding:       2px 0px 3px 6px;
   background:    #d0d0ff;
