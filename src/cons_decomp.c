@@ -329,7 +329,7 @@ SCIP_RETCODE evaluateDecomposition(
 /** initialization method of constraint handler (called after problem was transformed) */
 static
 SCIP_DECL_CONSINIT(consInitDecomp)
-{
+{ /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
