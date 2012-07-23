@@ -30,4 +30,8 @@ GCG directory via the "SCIP" target, e.g., "make OPT=opt LPS=spx scip".
 GCG is currently only tested on GNU/Linux and may not compile under
 Microsoft Windows.
 
-Bugs can be reported via email to  gcg-bugs@or.rwth-aachen.
+You can create the documentation via "make doc". Please visit
+doc/html/index.html with your favorite web browser. You need doxygen 1.8.0
+to build the documentation.
+
+Bugs can be reported via email to gcg-bugs@or.rwth-aachen.de
