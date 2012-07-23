@@ -1572,7 +1572,6 @@ SCIP_RETCODE performHeuristicPricing(
       SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
             &nsolvars, &solisray, &nsols, &status) );
 
-      //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
 
       nfoundvarsprob = 0;
 

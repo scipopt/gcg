@@ -1463,7 +1463,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-         //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
@@ -1473,7 +1472,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-         //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
       {
@@ -1520,7 +1518,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-            //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */
@@ -1546,7 +1543,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-            //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */

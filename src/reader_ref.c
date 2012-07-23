@@ -362,7 +362,6 @@ SCIP_Bool getNextToken(
    refinput->token[tokenlen] = '\0';
 
 //   SCIPdebugMessage("(line %d) read token: '%s'\n", refinput->linenumber, refinput->token);
-   //printf("(line %d) read token: '%s'\n", refinput->linenumber, refinput->token);
 
    return TRUE;
 }
