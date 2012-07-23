@@ -474,6 +474,33 @@ SCIP_RETCODE checkSetppcStructure(
          relaxdata->masterissetpart = FALSE;
          break;
       }
+      else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[i])), "linear") == 0 )
+      {
+         SCIP_SETPPCTYPE type;
+
+         if( SCIPgetConsIsSetppc(scip, masterconss[i], &type) )
+         {
+            switch( type )
+            {
+            case SCIP_SETPPCTYPE_COVERING:
+               relaxdata->masterissetpart = FALSE;
+               break;
+            case SCIP_SETPPCTYPE_PARTITIONING:
+               relaxdata->masterissetcover = FALSE;
+               break;
+            case SCIP_SETPPCTYPE_PACKING:
+               relaxdata->masterissetcover = FALSE;
+               relaxdata->masterissetpart = FALSE;
+               break;
+            }
+         }
+         else
+         {
+            relaxdata->masterissetcover = FALSE;
+            relaxdata->masterissetpart = FALSE;
+         }
+         break;
+      }
       else
       {
          relaxdata->masterissetcover = FALSE;

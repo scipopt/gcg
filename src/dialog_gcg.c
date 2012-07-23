@@ -333,8 +333,15 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize)
             SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
             break;
          }
-      }  /*lint -fallthrough*/
-
+      }
+      else if( DECgetBestDecomp(scip) == NULL )
+      {
+         assert(DECgetBestDecomp(scip) == NULL && DEChasDetectionRun(scip));
+         SCIPdialogMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
+         break;
+      }
+      assert(DECgetBestDecomp(scip) != NULL && DEChasDetectionRun(scip));
+      /*lint -fallthrough*/
    case SCIP_STAGE_SOLVING:
       SCIP_CALL( SCIPsolve(scip) );
       break;

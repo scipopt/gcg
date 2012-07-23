@@ -476,3 +476,92 @@ SCIP_RETCODE SCIPgetValsXXX(
    }
    return SCIP_OKAY;
 }
+
+
+/* returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool SCIPgetConsIsSetppc(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
+   )
+{
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int i;
+   SCIP_Real rhs;
+   SCIP_Real lhs;
+
+   int nvars;
+   SCIP_Bool relevant = TRUE;
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(setppctype != NULL);
+
+   *setppctype = SCIP_SETPPCTYPE_PACKING;
+   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
+
+   if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+   {
+      SCIPdebugPrintf("setcov, part or logicor.\n");
+      return TRUE;
+   }
+   nvars = SCIPgetNVarsXXX(scip, cons);
+   vars = NULL;
+   vals = NULL;
+   if( nvars > 0 )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
+   }
+
+   /* check vars and vals for integrality */
+   for( i = 0; i < nvars && relevant; ++i )
+   {
+      assert(vars != NULL);
+      assert(vals != NULL);
+
+      if( !SCIPvarIsBinary(vars[i]) )
+      {
+         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+         relevant = FALSE;
+      }
+      if( !SCIPisEQ(scip, vals[i], 1.0) )
+      {
+         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
+         relevant = FALSE;
+      }
+   }
+
+   if( relevant )
+   {
+      rhs = SCIPgetRhsXXX(scip, cons);
+      lhs = SCIPgetLhsXXX(scip, cons);
+      SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
+
+      if( SCIPisEQ(scip, lhs, 1.0) && SCIPisEQ(scip, rhs, 1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_PARTITIONING;
+      }
+      else if( SCIPisEQ(scip, lhs, 1.0) && SCIPisGE(scip, rhs, nvars*1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_COVERING;
+      }
+      else if( SCIPisLE(scip, lhs, 0.0) && SCIPisEQ(scip, rhs, 1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_PACKING;
+      }
+      else
+      {
+         relevant = FALSE;
+      }
+   }
+
+   /* free temporary data  */
+   SCIPfreeBufferArrayNull(scip, &vals);
+   SCIPfreeBufferArrayNull(scip, &vars);
+
+   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
+   return relevant;
+}

@@ -304,7 +304,6 @@ SCIP_RETCODE evaluateDecomposition(
  */
 
 #define conshdlrCopyDecomp NULL
-#define consInitDecomp NULL
 #define consExitDecomp NULL
 #define consInitpreDecomp NULL
 #define consExitpreDecomp NULL
@@ -326,6 +325,18 @@ SCIP_RETCODE evaluateDecomposition(
 #define consParseDecomp NULL
 #define consGetVarsDecomp NULL
 #define consGetNVarsDecomp NULL
+
+/** initialization method of constraint handler (called after problem was transformed) */
+static
+SCIP_DECL_CONSINIT(consInitDecomp)
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->hasrun = FALSE;
+   return SCIP_OKAY;
+}
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -410,6 +421,8 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       conshdlrdata->decdecomps = NULL;
       conshdlrdata->ndecomps = 0;
    }
+   conshdlrdata->hasrun = FALSE;
+
    return SCIP_OKAY;
 }
 
