@@ -186,7 +186,7 @@
  * Each round of presolving will be displayed in a single line, with a short summary at the end. Here, there has been
  * no round. Thus, it is not displayed and presolving is stopped. Afterwards, GCG will print out short information about
  * the currently used decomposition. Then, we see the actual solving process. The second output line indicate that new
- * incumbent solutions were found by the primal heuristic with display character "r"; see, how the "primalbound" column
+ * incumbent solutions were found by the primal heuristic with display character "r" in the master (indicated by a *); see, how the "primalbound" column
  * goes down from 50 to 30.  Up to here, we needed 1086 "LP iter"ations. Little later, the root node processing is finished.
  * We see that there are now two open nodes in the "left" column. From now on, we will see an output line every hundredth
  * node or whenever a new incumbent is found (e.g. at node 10 in the above output). In our case, the "dualbound" at the
@@ -202,15 +202,15 @@
  *  "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
  *  shows us the current instance.
  *
-  \code
-
- * SCIP> display heuristics
+ * \code
+ * GCG> dis heur
+ *
  *  primal heuristic     c priority freq ofs  description
  *  ----------------     - -------- ---- ---  -----------
- *  trivial              t    10000    0   0  start heuristic which tries some trivial solutions
+ *  oneopt               b   -20000    1   0  1-opt heuristic which tries to improve setting of single integer variables
  * ...
- *  rounding             R    -1000    1   0  LP rounding heuristic with infeasibility recovering
- *  shifting             s    -5000   10   0  LP rounding heuristic with infeasibility recovering also using continuous variables
+ *  simplerounding       r        0    1   0  simple and fast LP rounding heuristic
+ *  gcgsimplerounding    r        0    1   0  simple and fast LP rounding heuristic on original variables
  * ...
  * GCG> display statistics
  *
@@ -237,141 +237,145 @@
  *   gcg              :      10.28         10
  * ...
  * GCG>
- *  * \endcode
+ * \endcode
  *
  * We see statistics for two different problems: The Dantzig-Wolfe master problem and the original problem.
  * We see that rounding and shifting were the heuristics producing the solutions in the beginning. Rounding is called at
  * every node, shifting only at every tenth level of the tree. The statistics are quite comprehensive, thus, we just
  * explain a few lines here. We get information for all types of plugins and for the overall solving process. Besides
- * others, we see that in six calls, the gomory cut separator and the strong Chv&aacute;tal-Gomory separator each produced
- * several hundred cuts (of which only a few entered the LP). The oneopt heuristic found one solution in 4 calls,
- * whereas coefdiving failed all 57 times it was called. All the LPs have been solved with the dual simplex algorithm, which
- * took about 0.2 seconds of the 0.7 seconds overall solving time.
+ * others, we see that in 10 calls of the gcgrounding heuristic, 1 solution was found and that the relaxator gcg got called
+ * 10 times and took a total of 10.28 seconds to execute. Further on top, we can see that pricing produced 4600 variables
+ * in 9.84 seconds.
  *
- * Now, we can start playing around with parameters. Rounding and shifting seem to be quite successful on this instance,
- * wondering what happens if we disable them? Or what happens, if we are even more rigorous and disable all heuristics?
- * Or if we do the opposite and use aggressive heuristics?
+ * To solve a problem a second time, we have to read it and start the optimization process again. This time, we let GCG
+ * discover the decomposition and display it.
+ *
+ * Lets first see what detectors are available:
+ * \code
+ * GCG> dis dete
+ *  detector             priority char  description
+ *  --------------       -------- ----  -----------
+ *  connected                   0    b  Detector for classical and block diagonal problems
+ * \endcode
+ *
+ * We only have the "connected" detector available which claims to detect classical set partitioning master problems.
+ * Let's see if that works:
  *
  * \code
- * SCIP> set
+ * GCG> read check/instances/bpp/N1C2W2_O.BPP.lp.gz
+ * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
+ * GCG> detect
+ * Starting detection
+ * Detecting purely blockdiagonal structure: not found.
+ * Detecting set partitioning master structure: found 50 blocks.
+ * Chosen decomposition with 50 blocks of type bordered.
+ * Detection was successful.
+ * \endcode
  *
+ * The "connected" detector has found 50 blocks. Let's inspect the decomposition:
+ *
+ * \code
+ * GCG> display dec
+ * PRESOLVED
+ * 0
+ * NBLOCKS
+ * 50
+ * BLOCK 1
+ * b_Capacity_1
+ * BLOCK 2
+ * b_Capacity_2
+ * BLOCK 3
+ * b_Capacity_3
+ * BLOCK 4
+ * b_Capacity_4
+ * BLOCK 5
+ * b_Capacity_5
+ * ...
+ * MASTERCONSS
+ * m_Allocate_1
+ * m_Allocate_2
+ * m_Allocate_3
+ * m_Allocate_4
+ * m_Allocate_5
+ *...
+ * \endcode
+ *
+ * This tells us the following: The structure was detected from the unpresolved problem, contains 50 blocks. Next,
+ * The constraints per block (b_Capacity_1 in block 1) are listed. Finally, all constraints in the master are listed.
+ * This is the DEC format also described in \ref reader_dec.h .
+ *
+ * Now, we can start playing around with parameters. We have a binpacking example and we now that it can be solved
+ * efficiently with discretization, so let us set this parameter.
+ *
+ * \code
+ * GCG> set
  *   <branching>           change parameters for branching rules
- *  ...
- *   <heuristics>          change parameters for primal heuristics
+ *   ...
+ *   <relaxing>            parameters for <relaxing>
+ *   ...
  *
- * SCIP/set> heuristics
+ * GCG/set> relax
  *
- *   <actconsdiving>       LP diving heuristic that chooses fixings w.r.t. the active constraints
- *  ...
- *   <shifting>            LP rounding heuristic with infeasibility recovering also using continuous variables
- *  ...
+ *   <gcg>                 parameters for <gcg>
  *
- * SCIP/set/heuristics> shifting
+ * GCG/set/relaxing> gcg
  *
- *   <advanced>            advanced parameters
- *   freq                  frequency for calling primal heuristic <shifting> (-1: never, 0: only at depth freqofs) [10]
- *   freqofs               frequency offset for calling primal heuristic <shifting> [0]
+ *   aggregation           should identical blocks be aggegrated (only for discretization approach)? [TRUE]
+ *   discretization        should discretization (TRUE) or convexification (FALSE) approach be used? [TRUE]
+ *   dispinfos             should additional information about the blocks be displayed? [FALSE]
+ *   enforceproper         should propagated bound changes in the original be enforced in the master (only proper vars)? [TRUE]
+ *   freq                  frequency for calling relaxation handler <gcg> (-1: never, 0: only in root node) [1]
+ *   priority              priority of relaxation handler <gcg> [-1]
  *
- * SCIP/set/heuristics/shifting> freq
- * current value: 10, new value [-1,2147483647]: -1
- * heuristics/shifting/freq = -1
- *
- * SCIP> se he rou freq -1
- * heuristics/rounding/freq = -1
- *
- * SCIP> re check/instances/MIP/stein27.mps
- * original problem has 27 variables (27 bin, 0 int, 0 impl, 0 cont) and 118 constraints
- * SCIP> o
- *
- * feasible solution found by trivial heuristic, objective value  2.700000e+01
+ * GCG/set/relaxing/gcg> discretization
+ * current value: FALSE, new value (TRUE/FALSE): true
+ * relaxing/gcg/discretization = TRUE
+ * GCG> o
+ *   ...
+ *   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
+ *    0.2s|     1 |     0 |     0 |      1 |     - |  16M|   0 |2550 |  10 | 101 | 101 |   0 |   0 | 0.000000e+00 |      --      |    Inf
+ *   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
+ * *  0.8s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
+ * *P 0.8s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
+ * Starting reduced cost pricing...
+ * *r 1.0s|     1 |     0 |     0 |    255 |     - |  17M|   0 |2550 | 600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 4.600000e+01 |    Inf
  * ...
- * z 0.1s|     3 |     4 |   140 |  10.5 |1060k|   2 |  22 |  27 | 118 |  27 | 123 |  14 |   0 |  66 | 1.300000e+01 | 1.900000e+01 |  46.15%
- * z 0.1s|     6 |     7 |   176 |  11.4 |1063k|   5 |  18 |  27 | 118 |  27 | 123 |  14 |   0 | 118 | 1.300000e+01 | 1.900000e+01 |  46.15%
- * * 0.1s|    39 |    28 |   386 |   7.0 |1092k|  14 |   - |  27 | 118 |  27 | 123 |  14 |   0 | 199 | 1.300000e+01 | 1.800000e+01 |  38.46%
- * ...
+ * *F 7.4s|     1 |     0 |     0 |   1212 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
+ *    7.4s|     1 |     0 |     0 |   1212 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
+ *
  * SCIP Status        : problem is solved [optimal solution found]
- * Solving Time (sec) : 0.75
- * Solving Nodes      : 4253
- * Primal Bound       : +1.80000000000000e+01 (287 solutions)
- * Dual Bound         : +1.80000000000000e+01
+ * Solving Time (sec) : 7.44
+ * Solving Nodes      : 1
+ * Primal Bound       : +2.90000000000000e+01 (2 solutions)
+ * Dual Bound         : +2.90000000000000e+01
  * Gap                : 0.00 %
- *
- * SCIP>
  * \endcode
  *
  * We can navigate through the menus step-by-step and get a list of available options and submenus. Thus, we select
- * "set" to change settings, "heuristics" to change settings of primal heuristics, "shifting" for that particular
- * heuristic. Then we see a list of parameters (and yet another submenu for advanced parameters), and disable this
- * heuristic by setting its calling frequency to -1. If we already know the path to a certain setting, we can directly
+ * "set" to change settings, "relax" to change settings of relaxators, "gcg" for that particular
+ * relaxator. Then we see a list of parameters (and sometimes yet another submenu for advanced parameters), and set
+ * discretization to TRUE. If we already know the path to a certain setting, we can directly
  * type it (as for the rounding heuristic in the above example). Note that we do not have to use the full names, but we
  * may use short versions, as long as they are unique.
  *
- * To solve a problem a second time, we have to read it and start the optimization process again.
- *
- * \code
- * SCIP> set default
- * reset parameters to their default values
- * SCIP> set heuristics emphasis
- *
- *   aggressive            sets heuristics <aggressive>
- *   fast                  sets heuristics <fast>
- *   off                   turns <off> all heuristics
- *
- * SCIP/set/heuristics/emphasis> aggr
- * heuristics/veclendiving/freq = 5
- * ...
- * heuristics/crossover/minfixingrate = 0.5
- * SCIP> read check/instances/MIP/stein27.mps
- * original problem has 27 variables (27 bin, 0 int, 0 impl, 0 cont) and 118 constraints
-
- * SCIP> opt
- * ...
- * D 0.1s|     1 |     0 |   107 |     - | 971k|   0 |  24 |  27 | 122 |  27 | 131 |  13 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
- *   0.1s|     1 |     0 |   107 |     - | 971k|   0 |  24 |  27 | 122 |  27 | 131 |  13 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
- *   0.1s|     1 |     0 |   119 |     - |1111k|   0 |  24 |  27 | 122 |  27 | 132 |  14 |   4 |   0 | 1.300000e+01 | 1.800000e+01 |  38.46%
- *   0.1s|     1 |     2 |   119 |     - |1112k|   0 |  24 |  27 | 122 |  27 | 132 |  14 |   4 |  24 | 1.300000e+01 | 1.800000e+01 |  38.46%
- *  time | node  | left  |LP iter|LP it/n| mem |mdpt |frac |vars |cons |cols |rows |cuts |confs|strbr|  dualbound   | primalbound  |  gap
- *   0.2s|   100 |    59 |   698 |   5.8 |1138k|  14 |  11 |  27 | 122 |  27 | 123 |  14 |   4 | 204 | 1.300000e+01 | 1.800000e+01 |  38.46%
- *   0.2s|   200 |    91 |  1226 |   5.6 |1155k|  14 |   - |  27 | 122 |  27 | 123 |  14 |   4 | 207 | 1.300000e+01 | 1.800000e+01 |  38.46%
- * ^Cpressed CTRL-C 1 times (5 times for forcing termination)
- *
- * SCIP Status        : solving was interrupted [user interrupt]
- * Solving Time (sec) : 0.32
- * Solving Nodes      : 216
- * Primal Bound       : +1.80000000000000e+01 (283 solutions)
- * Dual Bound         : +1.30000000000000e+01
- * Gap                : 38.46 %
- *
- * SCIP>
- * \endcode
- *
- * Okay, what happened here? First, we reset all parameters to their default values, using "set default". Next, we
- * loaded some meta-parameter settings (also see <a href="FAQ.html#Section2">the FAQ</a>), to apply primal heuristics
- * more aggressively. SCIP shows us, which single parameters it changed therefor. Now, the optimal solution is already
- * found at the root node, by a heuristic which is deactivated by default.  Then, after node 200, the user pressed
- * CTRL-C which interrupts the solving process, We see that now in the short status report, primal and dual bound are
- * different, thus, the problem is not solved yet.  Nevertheless, we could access statistics, see the current incumbent
- * solution, change parameters and so on. Entering "optimize" we continue the solving process from the point on at which
- * it has been interrupted.
- *
- * SCIP can also write information to files. E.g., we could store the incumbent solution to a file, or output the
+ * GCG can also write information to files. E.g., we could store the incumbent solution to a file, or output the
  * problem instance in another file format (the LP format is much more human readable than the MPS format, for example).
+ * We can also write out the currently used decomposition by saving the problem as a decomposition format (DEC, BLK or REF).
  *
  * \code
- * SCIP> write solution stein27.sol
+ * GCG> write sol N1C2W2_O.BBP.sol
  *
- * written solution information to file <stein27.sol>
+ * written solution information to file <N1C2W2_O.BBP.sol>
  *
- * SCIP> write problem stein27.lp
- * written original problem to file <stein27.lp>
+ * GCG> write prob "N1C2W2_O.BBP.dec"
+ * written original problem to file <N1C2W2_O.BBP.dec>
  *
- * SCIP> q
+ * GCG> q
  * ...
  * \endcode
  *
- * We hope this tutorial gave you an overview of what is possible using the SCIP interactive shell. Please also read our
- * \ref FAQ, in particular the section <a href="FAQ.html#Section2">Using SCIP as a standalone MIP/MINLP-Solver</a>.
- *
+ * We hope this tutorial gave you an overview of what is possible using the SCIP interactive shell withing GCG. Please also read our
+ * \ref FAQ.
  *
  */
 
@@ -746,7 +750,7 @@
  *  - subscipvars - an array of arrays of variables in each block - array[blocknr][varid]
  *  - nsubscipvars - an array of the number of constraints in each blocks
  *  - nblocks - number of blocks
- *  - type - Type of the decomposition (DEC_STAIRCASE is the most general)
+ *  - type - Type of the decomposition (DEC_DECTYPE_ARROWHEAD is the most general)
  *  - constoblock - SCIP_HASHMAP linking constraints to blocks
  *  - vartoblock - SCIP_HASHMAP linking variables to blocks
  *  - linkingvars - array of linking variables (to be in the master)
