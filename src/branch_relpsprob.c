@@ -553,7 +553,7 @@ SCIP_RETCODE applyProbing(
    /* apply propagation */
    if( !(*cutoff) )
    {
-      SCIP_CALL( SCIPpropagateProbing(scip, -1 /** @todo maxproprounds */, cutoff, NULL) );
+      SCIP_CALL( SCIPpropagateProbing(scip, -1, cutoff, NULL) ); /** @todo use maxproprounds */
    }
 
    /* evaluate propagation */
@@ -571,13 +571,10 @@ SCIP_RETCODE applyProbing(
    /* if parameter is set, we want to use the outcome of the LP relaxation */
    if( !(*cutoff) && solvelp )
    {
-      //printf("before probing = %lld\n", *nlpiterations);
       *nlpiterations -= SCIPgetNLPIterations(masterscip);
 
       SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
             lpobjvalue, lpsolved, lperror, cutoff, &feasible) );
-
-      //printf("after probing = %lld\n", *nlpiterations);
    }
 
    /* exit probing mode */
@@ -1144,7 +1141,6 @@ SCIP_RETCODE execRelpsprob(
          score = calcScore(scip, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
             inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, branchcandsfrac[c]);
 
-         //printf("var <%s> is not reliable\n",SCIPvarGetName(branchcands[c]));
          /* pseudo cost of variable is not reliable: insert candidate in initcands buffer */
          for( j = ninitcands; j > 0 && score > initcandscores[j-1]; --j )
          {
