@@ -90,7 +90,7 @@
  * it will contain everything you will need in order to produce a working binary. The bin packing instance N1C2W2_O, which will
  * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/bpp/N1C2W2_O.BPP.lg.gz</code>.
  *
- * Now start your binary, without any arguments. This opens the interactive shell, which should look somehow like this:
+ * Now start your binary, without any arguments. The usual place is <code>bin/gcg</code>. This opens the interactive shell, which should look somehow like this:
  *
  * \code
  * GCG version 1.0.0 [GitHash: v100-0-g2e15c6e]
@@ -128,8 +128,16 @@
 
  * \code
  * GCG> read check/instances/bpp/N1C2W2_O.BPP.lp.gz
+ *
+ * read problem <check/instances/bpp/N1C2W2_O.BPP.lp.gz>
+ * ============
+ *
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
  * GCG> read check/instances/bpp/N1C2W2_O.BPP.dec.gz
+ *
+ * read problem <check/instances/bpp/N1C2W2_O.BPP.lp.gz>
+ * ============
+ *
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
  *
  * GCG> optimize
@@ -181,7 +189,7 @@
  * GCG>
  * \endcode
  *
- * This tells us the following: After "optimize", GCG would first goe into presolving. Since we have specified an structure
+ * This tells us the following: After "optimize", GCG would first go into presolving. Since we have specified an structure
  * information for the original problem, GCG will currently disable presolving to not interfere with the decomposition.
  * Each round of presolving will be displayed in a single line, with a short summary at the end. Here, there has been
  * no round. Thus, it is not displayed and presolving is stopped. Afterwards, GCG will print out short information about
@@ -263,6 +271,10 @@
  *
  * \code
  * GCG> read check/instances/bpp/N1C2W2_O.BPP.lp.gz
+ *
+ * read problem <check/instances/bpp/N1C2W2_O.BPP.lp.gz>
+ * ============
+ *
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
  * GCG> detect
  * Starting detection
@@ -304,7 +316,7 @@
  * The constraints per block (b_Capacity_1 in block 1) are listed. Finally, all constraints in the master are listed.
  * This is the DEC format also described in \ref reader_dec.h .
  *
- * Now, we can start playing around with parameters. We have a binpacking example and we now that it can be solved
+ * Now, we can start playing around with parameters. We have a binpacking example and we know that it can be solved
  * efficiently with discretization, so let us set this parameter.
  *
  * \code
@@ -355,7 +367,7 @@
  * "set" to change settings, "relax" to change settings of relaxators, "gcg" for that particular
  * relaxator. Then we see a list of parameters (and sometimes yet another submenu for advanced parameters), and set
  * discretization to TRUE. If we already know the path to a certain setting, we can directly
- * type it (as for the rounding heuristic in the above example). Note that we do not have to use the full names, but we
+ * type it (<code>set relaxing/gcg/discretization TRUE</code>). Note that we do not have to use the full names, but we
  * may use short versions, as long as they are unique.
  *
  * GCG can also write information to files. E.g., we could store the incumbent solution to a file, or output the
