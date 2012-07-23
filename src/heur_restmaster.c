@@ -248,7 +248,7 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPgetSolVals(restmaster, restmastersol, nmastervars, restmastervars, restmastervals) );
 
    /* create new solution for the master problem and translate it to the original problem;
-    * @todo: GCG does not recognize that the solution comes from this heuristic */
+    * @todo GCG does not recognize that the solution comes from this heuristic */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
@@ -464,7 +464,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {
@@ -538,7 +538,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* if there is already a solution, add an objective cutoff */
-   /* @todo: origprob or scip? */
+   /* @todo origprob or scip? */
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;

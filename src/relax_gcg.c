@@ -32,7 +32,12 @@
  * @author  Martin Bergner
  * @author  Alexander Gross
  *
- * \bug Reading in the wrong decomposition leads to a crash
+ * \bug
+ * - Reading in the wrong decomposition leads to a crash
+ * - The memory limit is not strictly enforced
+ * - Dealing with timelimits is a working hack only
+ *
+ * \endbug
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -328,7 +333,7 @@ SCIP_RETCODE convertStructToGCG(
          continue;
 
       SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
-      /* HACK; @todo find out constraint blocks */
+      /* HACK; @todo find out constraint blocks more intelligently */
       for( j = 0; j < nblocks; ++j )
       {
          found = FALSE;
@@ -493,9 +498,7 @@ SCIP_RETCODE checkSetppcStructure(
 }
 
 
-/** checks whether two arrays of SCIP_Real's are identical
- * @todo What about using SCIPisEq()
- */
+/** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -687,7 +690,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
 }
 
 /** checks whether there are identical pricing blocks
-  * @todo we should really use something more sophisticated such as graph isomorphisms or similar
+  * @todo we should really use something more sophisticated
   */
 static
 SCIP_RETCODE checkIdenticalBlocks(
@@ -734,7 +737,10 @@ SCIP_RETCODE checkIdenticalBlocks(
          if( relaxdata->blockrepresentative[j] != j )
             continue;
 
-         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** @todo +1 to deal with empty subproblems */
+         SCIP_CALL( SCIPhashmapCreate(&varmap,
+               SCIPblkmem(scip),
+               5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** +1 to deal with empty subproblems */
+
          SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
          if( identical )
@@ -1529,7 +1535,7 @@ SCIP_RETCODE combineSolutions(
       assert(probs[block] != NULL);
       sol = SCIPgetBestSol(probs[block]);
 
-      /* @todo gg solval should be 0 before, anyway */
+      /* @todo solval should be 0 before, anyway, check it with an assert */
       SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
    }
    return SCIP_OKAY;
@@ -1665,7 +1671,7 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
-   /** @todo: maybe add a constraint here to indicate that it has been decomposed */
+   /** @todo maybe add a constraint here to indicate that it has been decomposed */
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -3170,12 +3176,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    }
    SCIPclearExternBranchCands(scip);
 
-   /** @todo remove the TRUE of the if condition and use correct abort criteria */
-   /* nothing has to be done, if no LP was solved after the last update */
-   /*if( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )*/
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
-      //printf("nlpiterations = %lld, lastlpiterations = %lld\n", SCIPgetNLPIterations(relaxdata->masterprob), relaxdata->lastmasterlpiters);
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
       /* create new solution */
@@ -3252,13 +3254,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
-      /** @todo Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.
-       *  Remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+      /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+       *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
        */
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-      /** @todo Martin will disable that here, because at the current stage, it does not have to be true!
-       *       assert(stored);
-       */
+
       if( stored )
          SCIPdebugMessage("updated current best primal feasible solution!\n");
    }

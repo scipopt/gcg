@@ -2233,7 +2233,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    assert(norigsols >= 0);
 
    /* Add already known solutions for the original problem to the master variable space
-    * @todo: This is just a workaround!
+    * @todo This is just a workaround!
     */
    if( pricerdata->farkascalls == 0 )
    {

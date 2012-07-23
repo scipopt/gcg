@@ -1112,15 +1112,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       origvals = GCGmasterVarGetOrigvals(vars[i]);
       norigvars = GCGmasterVarGetNOrigvars(vars[i]);
       origvars = GCGmasterVarGetOrigvars(vars[i]);
-      /** @todo LINK: mb: This might work*/
+      /** @todo check if this really works with linking variables */
 
       /* only look at variables not already fixed to 0 or that belong to no block */
       if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
          continue;
 
       /* the variable was copied from original to master */
-      /** @todo cp: I think this code will never be executed
-       * as the vars array only contains variables generated during pricing */
+      /** @todo This code might never be executed as the vars array only contains variables generated
+        * during pricing. We might want to check that with an assert */
       if( blocknr == -1 )
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
@@ -1161,8 +1161,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             bndchgblocknr = GCGvarGetBlock(consdata->boundchgvars[k]);
             assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
-
-            /** @todo LINK: mb: This needs to be changed */
 
             /* ignore master variables that contain no original variables */
             /** @todo move this statement one for loop higher? */
@@ -1245,7 +1243,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    {
 
       assert(GCGvarIsOriginal(propvars[i]));
-      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo LINK: mb: this might not work */
+      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
       assert(GCGoriginalVarGetNMastervars(propvars[i]) >= 1);
       mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
 
@@ -1493,7 +1491,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
 
-         /** @todo do we also have to iterate over the pricing problems? */
+         /** @todo do we also have to iterate over the pricing problems or is this handled elsewhere? */
       }
    }
    /* deal with linking variables */

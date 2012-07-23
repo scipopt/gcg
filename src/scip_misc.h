@@ -105,7 +105,6 @@ SCIP_Real SCIPgetDualsolXXX(
 
 /**
  * Returns the value array of an arbitrary SCIP constraint
- * @todo SOS1 & SOS2 not implemented yet
  */
 SCIP_RETCODE SCIPgetValsXXX(
    SCIP*                 scip,               /**< SCIP data structure */

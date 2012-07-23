@@ -38,7 +38,8 @@
 #include "pub_gcgvar.h"
 
 /** transforms given solution of the master problem into solution of the original problem
- *  @todo think about types of epsilons used in this method*/
+ *  @todo think about types of epsilons used in this method
+ */
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol,          /**< solution of the master problem, or NULL for current LP solution */

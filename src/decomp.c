@@ -713,8 +713,6 @@ SCIP_RETCODE DECdecompTransform(
       assert(decdecomp->linkingconss[c] != NULL);
    }
 
-   /** @todo include Friederikes code */
-
    /* transform all linking variables */
    for( v = 0; v < decdecomp->nlinkingvars; ++v )
    {

@@ -269,7 +269,6 @@ SCIP_Bool GCGisLinkingVarInBlock(
 /** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
- * @todo this method needs a little love
  */
 extern
 SCIP_RETCODE GCGoriginalVarAddMasterVar(
@@ -282,7 +281,6 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
 /* informs an original variable, that a variable in the master problem was deleted,
  * that contains a part of the original variable.
  * Update the information in the original variable's data
- * @todo this method needs a little love
  */
 extern
 SCIP_RETCODE GCGoriginalVarRemoveMasterVar(

@@ -88,7 +88,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
    assert(GCGvarIsOriginal(branchdata->var1));
-   /** @todo it is not clear to Martin if linking variables interfere with ryan foster branching */
+   /** @todo it is not clear if linking variables interfere with ryan foster branching */
    assert(GCGvarGetBlock(branchdata->var1) == branchdata->blocknr);
 
    assert(GCGvarIsOriginal(branchdata->var2));

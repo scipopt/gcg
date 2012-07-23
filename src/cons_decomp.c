@@ -502,8 +502,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
    const char*           name                /**< name of constraint */
    )
 {
-   /** @todo (optional) modify the definition of the SCIPcreateConsDecomp() call, if you don't need all the information */
-
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
 
@@ -520,7 +518,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
    /* create constraint data */
    consdata = NULL;
-   /** @todo create and store constraint specific data here */
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -865,10 +862,7 @@ SCIP_RETCODE DECdetectStructure(
    return SCIP_OKAY;
 }
 
-/** write out all known decompositions
- *
- * @todo use detector character to distinguish
- */
+/** write out all known decompositions */
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 extension           /**< extension for decompositions */

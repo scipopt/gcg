@@ -442,7 +442,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrins", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrins", TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {

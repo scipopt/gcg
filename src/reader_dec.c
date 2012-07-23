@@ -852,7 +852,7 @@ SCIP_RETCODE fillDecompStruct(
       if( blocknr == NOVALUE )
       {
          SCIPdebugMessage("is unknown\n" );
-         /** @todo What should be done in this case? gg: copy directly into master */
+         /** @todo variable should be copied directly into master */
       }
       else if( blocknr == LINKINGVALUE )
       {
