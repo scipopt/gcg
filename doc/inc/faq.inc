@@ -92,6 +92,38 @@
       <a href="#Q??"previous question</a> for more information.
     </p>
 
+    <h4><a name="Section5">Miscellaneous</a></h4>
+    <p class="q">
+      <a name="Q1">Why is CTRL-C unsafe to use?</a>
+    </p>
+    <p class="a">
+       In its current version, SCIP will finish the current node when pressing
+    CTRL-C. This is a problem if the master problem has is completely finished
+    solving. The current node will be marked as finished and two branching
+    children are created. Depending on when you press CTRL-C, this may and
+    will lead to different solving processes. If an optimal solution is found,
+    they will be the same in all runs, however, it might take a substantially
+    different amount of time to do so.
+    </p>
+
+    <p class="q">
+      <a name="Q1">How does aggregation work in GCG?</a>
+    </p>
+    <p class="a">
+       Currently, aggregation in GCG is very simple. If the same variables
+      appear in the same order with the same coefficients in the same
+      constraints for all pricing problems to be aggregated, GCG will detect
+      that. However, it currently does not do more then that e.g., trying to
+      permute the pricing problems in order to find out if they can be
+      aggregated.<br />
+
+      Furthermore, aggregation is only supported if the master problem
+      consists of set partitioning or (in case of a minimization problem) set
+      covering constraints. We are currently implementing a generic branching
+      scheme as well as more sophisticated detection methods in order to
+      improve the aggregation in the future.
+    </p>
+
     <h4><a name="Section6">Known Bugs</a></h4>
     <p class="q">
       <a name="Q1">Known Bugs</a>
