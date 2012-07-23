@@ -34,7 +34,7 @@
 
 #define BRANCHRULE_NAME          "generic"
 #define BRANCHRULE_DESC          "generic branching rule by Vanderbeck"
-#define BRANCHRULE_PRIORITY      10  //?
+#define BRANCHRULE_PRIORITY      100  //?
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
@@ -43,7 +43,9 @@ typedef int ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1
 struct GCG_BranchData
 {
    ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
-   int*               sizeS;                 /**< number of bounds in S[k] */
+   int*               sequencsizes;                 /**< number of bounds in S[k] */
+   int                Csize;
+   SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
 };
 
 struct GCG_Strip
@@ -51,7 +53,8 @@ struct GCG_Strip
    SCIP_VAR*          mastervar;             /**< master variable */
    SCIP_Real          mastervarValue;
    int                blocknr;               /**< number of the block in which the strip belong */
-   SCIP_Real*         generator;             /**< corresponding generator to the mastervar !!! containing only comp with integer origvars*/
+   SCIP_Real*         generator;             /**< corresponding generator to the mastervar */
+   SCIP_Bool*         compisinteger;         /**< ? is comp with integer origvars? */
    int                generatorsize;
    ComponentBoundSequence**   C;             /**< often NULL, only needed for ptrilocomp */
    int                Csize;
@@ -81,7 +84,7 @@ struct GCG_BranchData
 };
 
 
-/** branching data for branching decisions */
+/** set of component bounds in separate */
 struct GCG_Record
 {
 	ComponentBoundSequence**   record;             /**< returnvalue of separte function */
@@ -1074,7 +1077,7 @@ int ILOcomp( GCG_Strip* strip1, GCG_Strip* strip2, ComponentBoundSequence** C, i
 	   	   
 	   	   return returnvalue; 
       }
-   if(strip1->generator[i] > strip2->generator[i])
+   if( strip1->generator[i] > strip2->generator[i])
 	   return 1;
    else 
 	   return -1;
@@ -1244,9 +1247,9 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		alpha[k] = 0;
 		for(j=0; j<Fsize; ++j)
 			alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
-		if( alpha[k] > 0 && alpha[k] < muF )
+		if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
 			++Jsize;
-		if( alpha[k] - SCIPfloor(scip, alpha[k]) > 0 )
+		if( SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) )
 		{
 			found = TRUE;
 			
@@ -1264,7 +1267,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 			for(l=0; l<Fsize; ++l)
 			{
 				compvalues[l] = F[l]->generator[i];
-				if(compvalues[l] < min)
+				if( SCIPisLT(scip, compvalues[l], min) )
 					min = compvalues[l];
 			}
 			median = GetMedian(scip, compvalues, Fsize, min);
@@ -1293,7 +1296,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 	j=0;
 	for(k=0; k<IndexSetSize; ++k)
 		{
-			if( alpha[k] > 0 && alpha[k] < muF )
+			if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
 			{
 				J[j] = IndexSet[k];
 				++j;
@@ -1314,13 +1317,13 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 	for(l=0; l<Fsize; ++l)
 	{
 		compvalues[l] = F[l]->generator[i];
-		if(compvalues[l] < min)
+		if( SCIPisLT(scip, compvalues[l], min) )
 			min = compvalues[l];
 	}
 	median = GetMedian(scip, compvalues, Fsize, min);
 	SCIPfreeBufferArray(scip, &compvalues);
 	
-	if( median == min)
+	if( SCIPisEQ(scip, median, min) )
 	{
 		for(j=0; j<Jsize; ++j)
 			{
@@ -1335,7 +1338,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 	}
 	
 	assert(Jsize>=0);
-	}while( median == min);
+	}while( SCIPisEQ(scip, median, min) );
 	
 	
 	++Ssize;
@@ -1349,7 +1352,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 
 	for(k=0; k<Fsize; ++k)
 	{
-		if( F[k]->generator[i] >= median)
+		if( SCIPisGE(scip, F[k]->generator[i], median) )
 			++Fupper;
 		else 
 			--Flower;
@@ -1363,7 +1366,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 			{
-				if( F[k]->generator[i] < median)
+				if( SCIPisLT(scip, F[k]->generator[i], median) )
 					copyF[j]=F[k];
 			}
 		Fsize = Flower;
@@ -1375,7 +1378,7 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 		{
-			if( F[k]->generator[i] >= median)
+			if( SCIPisGE(scip, F[k]->generator[i], median) )
 				copyF[j]=F[k];
 		}
 		Fsize = Fupper;
@@ -1521,7 +1524,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 		if(F[j]->generator[i] >= ivalue)
 			alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
 
-		if( alpha_i - SCIPfloor(scip, alpha_i) > 0 )
+		if( SCIPisGT(scip, alpha_i - SCIPfloor(scip, alpha_i), 0) )
 		{
 			found = TRUE;
 			
@@ -1556,20 +1559,20 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 
 	
 	//Partition
-	min=INT_MAX;
+	min = INT_MAX;
 	do{	
 	
 	SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
 	for(l=0; l<Fsize; ++l)
 	{
 		compvalues[l] = F[l]->generator[i];
-		if(compvalues[l] < min)
+		if( SCIPisLT(scip, compvalues[l], min) )
 			min = compvalues[l];
 	}
 	median = GetMedian(scip, compvalues, Fsize, min);
 	SCIPfreeBufferArray(scip, &compvalues);
 	
-	if( median == min)
+	if( SCIPisEQ(scip, median, min) )
 	{
 		for(j=0; j<IndexSetSize; ++j)
 			{
@@ -1584,7 +1587,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 	}
 	
 	assert(IndexSetSize>=0);
-	}while( median == min);
+	}while( SCIPisEQ(scip, median, min) );
 	
 	
 	++Ssize;
@@ -1598,7 +1601,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 
 	for(k=0; k<Fsize; ++k)
 	{
-		if( F[k]->generator[i] >= median)
+		if( SCIPisGE(scip, F[k]->generator[i], median) )
 			++Fupper;
 		else 
 			--Flower;
@@ -1613,9 +1616,9 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 				++Clower;
 		}
 	
-	if( alpha_i<=0)
+	if( SCIPisLE(scip, alpha_i, 0) )
 		Cupper = INT_MAX;
-	if( alpha_i==muF)
+	if( SCIPisEQ(scip, alpha_i, muF) )
 		Clower = INT_MAX;
 		
     //choose smallest partition
@@ -1626,7 +1629,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 		{
-			if( F[k]->generator[i] >= median)
+			if( SCIPisGE(scip, F[k]->generator[i], median) )
 				copyF[j]=F[k];
 		}
 		Fsize = Fupper;
@@ -1656,7 +1659,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 		j = 0;
 		for(k=0; k<Fsize; ++k)
 		{
-			if( F[k]->generator[i] < median)
+			if( SCIPisLT(scip, F[k]->generator[i], median) )
 				copyF[j]=F[k];
 		}
 		Fsize = Flower;
@@ -1729,6 +1732,213 @@ SCIP_RETCODE CallSeparate( SCIP* scip, GCG_Strip** F, int Fsize, ComponentBoundS
 	
 	return SCIP_OKAY;	
 }
+
+
+/** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
+static
+SCIP_RETCODE createChildNodesGeneric(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   ComponentBoundSequence* S,              /**< Component Bound Sequence defining the nodes */
+   int                   Ssize,
+   ComponentBoundSequence** C,              /**< previous Component Bound Sequences */
+   int                   Csize,
+   int*                  sequencesizes,
+   int                   blocknr,             /**< number of the block */
+   GCG_Strip**           F,                   /**< strips with mu>0 */  //for rhs, will be small than
+   int                   Fsize
+   )
+{
+	//SCIP_NODE* childsame;
+	//SCIP_NODE* childdiffer;
+	//SCIP_CONS* origbranchsame;
+	//SCIP_CONS* origbranchdiffer;
+	//GCG_BRANCHDATA* branchsamedata;
+	//GCG_BRANCHDATA* branchdifferdata;
+	//char samename[SCIP_MAXSTRLEN];
+	//char differname[SCIP_MAXSTRLEN];
+
+	SCIP*  masterscip;
+	int norigvars;
+	int v;
+	int i;
+	int p;
+	int pL;
+	int L;
+	int lhs;
+	int nmastervars;
+	int newnmastervars;
+	int newFsize;
+	SCIP_Real mu;  // mu(S)
+	SCIP_VAR** mastervars;
+	SCIP_VAR* mvar;
+	SCIP_VARDATA* vardata;
+	SCIP_Bool nodeRedundant;
+
+
+	lhs = 0;
+	p = 0;
+	i = 0;
+	L = 0;
+	pL = nblocks;  // Npricingprobs??? ändert sich bei vanderbeckpricing??
+	mu = 0;
+	nodeRedundant = FALSE;
+
+
+	// get variable data of the master problem 
+	SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+	assert(nmastervars >= 0); 
+
+	assert(scip != NULL);
+	assert(branchrule != NULL);
+	assert(Ssize != 0);
+	assert(S != NULL);
+
+	masterscip = GCGrelaxGetMasterprob(scip);
+	SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+	SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, &branchcandssol, &branchcandsfrac, &nbranchcands, NULL) );
+
+
+	SCIPdebugMessage("Vanderbeck branching rule: creating %d nodes\n", Ssize+1);
+
+
+	for( p=0; p<Ssize+1; ++p )
+	{
+		SCIP_NODE* child;
+		SCIP_CONS* branchcons;
+		SCIP_CONS* mastercons;
+		GCG_BRANCHDATA* branchchilddata;
+		char childname[SCIP_MAXSTRLEN];
+
+		mu = 0;
+
+		//last node?
+		if( p == Ssize )
+		{
+			//vardata = SCIPvarGetData(mvar);
+			// assert(vardata->vartype == GCG_VARTYPE_MASTER);
+
+			lhs = pL;
+		}
+		else
+		{
+			newFsize = Fsize;
+			for( i=0; i<newFsize; ++i)
+			{
+				if(S[p][1] == 1 )
+				{
+					if(F[i]->generator[S[p][0]] >= S[p][2] )
+						mu += F[i]->mastervarValue;
+				}
+				else  //nested erasing
+				{
+					if(newFsize > 0)
+					{
+						F[i] = F[newFsize-1];
+						--newFsize;
+						--i;
+					}
+				}
+			}
+			Fsize = newFsize;
+
+			if( p == Ssize-1)
+				L = SCIPceil(scip, mu);
+			else
+			{
+				L = mu;
+			}
+			lhs = pL-L+1;
+		}
+		pL = L;
+
+		// define name for constraint 
+		(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", p, lhs);
+
+		//create cons
+		SCIP_CALL( GCGcreateConsMasterbranch(scip, &branchcons, child, GCGconsMasterbranchGetActiveCons(scip)) );
+
+		//addNode
+		SCIP_CALL( SCIPaddConsNode(scip, child, branchcons, NULL) );
+
+		//release constraint 
+		SCIP_CALL( SCIPreleaseCons(scip, &branchcons) );
+
+		// create constraint for child
+		SCIP_CALL( SCIPcreateConsLinear(scip, &mastercons, childname, 0, NULL, NULL,
+				lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+
+		//Node redundant?
+
+
+		//add variables to constraint
+		if(!nodeRedundant)
+		{
+
+			newnmastervars = nmastervars;
+			for( i=0; i<newnmastervars; ++i)
+			{
+				if( GCGvarGetBlock(mastervars[i]) == blocknr )
+				{
+					if(p==Ssize)
+					{
+						assert( (mastervars[i].generator[S[p][0]] >= S[p][2] && S[p][1]==1) || (mastervars[i].generator[S[p][0]] < S[p][2] && S[p][1]!=1) );
+						SCIP_CALL( SCIPaddCoefLinear(scip, mastercons, mastervars[i], 1.0) );
+						//small down array
+						&mastervars[i] = &mastervars[newmastervars-1];
+						--newnmastervars;
+						--i;
+					}
+					else
+					{
+						if( S[p][1] == 1 )
+						{
+							// if( mastervar[i] >= S[p][2] ) current mastervars stays in array
+							if( mastervars[i].generator[S[p][0]] < S[p][2] )
+							{
+								//add var to constraint
+								SCIP_CALL( SCIPaddCoefLinear(scip, mastercons, mastervars[i], 1.0) );
+
+								//small down array
+								&mastervars[i] = &mastervars[newmastervars-1];
+								--newnmastervars;
+								--i;
+							}
+						}
+						else
+						{
+							// if( mastervar[i] < S[p][2] ) current mastervars stays in array
+							if( mastervars[i].generator[S[p][0]] >= S[p][2] )
+							{
+								//add var to constraint
+								SCIP_CALL( SCIPaddCoefLinear(scip, mastercons, mastervars[i], 1.0) );
+
+								//small down array
+								&mastervars[i] = &mastervars[newmastervars-1];
+								--newnmastervars;
+								--i;
+							}    	    				
+						}
+					}
+				}
+				//small down array
+				&mastervars[i] = &mastervars[newmastervars-1];
+				--newnmastervars;
+				--i;
+			}
+			nmastervars = newnmastervars;
+		}
+
+		//add cons locally to the problem and release it
+		SCIP_CALL( SCIPaddConsNode(scip, child, mastercons, NULL) );
+		SCIP_CALL( SCIPreleaseCons(scip, &mastercons) );
+	}
+
+
+	return SCIP_OKAY;
+}
+
+
 
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
