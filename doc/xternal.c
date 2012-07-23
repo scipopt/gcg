@@ -135,7 +135,7 @@
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
  * GCG> read check/instances/bpp/N1C2W2_O.BPP.dec.gz
  *
- * read problem <check/instances/bpp/N1C2W2_O.BPP.lp.gz>
+ * read problem <check/instances/bpp/N1C2W2_O.BPP.dec.gz>
  * ============
  *
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
@@ -189,13 +189,13 @@
  * GCG>
  * \endcode
  *
- * This tells us the following: After "optimize", GCG would first go into presolving. Since we have specified an structure
+ * This tells us the following: After "optimize", GCG would first go into presolving. Since we have specified a structure
  * information for the original problem, GCG will currently disable presolving to not interfere with the decomposition.
  * Each round of presolving will be displayed in a single line, with a short summary at the end. Here, there has been
  * no round. Thus, it is not displayed and presolving is stopped. Afterwards, GCG will print out short information about
  * the currently used decomposition. Then, we see the actual solving process. The second output line indicate that new
  * incumbent solutions were found by the primal heuristic with display character "r" in the master (indicated by a *); see, how the "primalbound" column
- * goes down from 50 to 30.  Up to here, we needed 1086 "LP iter"ations. Little later, the root node processing is finished.
+ * goes down from 50 to 30.  Up to here, we needed 1086 master LP iterations (MLP iter). Little later, the root node processing is finished.
  * We see that there are now two open nodes in the "left" column. From now on, we will see an output line every hundredth
  * node or whenever a new incumbent is found (e.g. at node 10 in the above output). In our case, the "dualbound" at the
  * root node was optimal, this is why it is not changing anymore. At one point, both primal bound and dualbound will be the
@@ -206,7 +206,7 @@
  *
  * We might want to have some more information now. Which were the heuristics that found the solutions? What plugins
  *  were called during the solutions process and how much time did they spend? How did the instance that we were solving
- *  look?  Information on certain plugin types (e.g., heuristics, branching rules, separators) we get by
+ *  look like?  Information on certain plugin types (e.g., heuristics, branching rules, separators) we get by
  *  "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
  *  shows us the current instance.
  *
@@ -278,7 +278,7 @@
  * original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
  * GCG> detect
  * Starting detection
- * Detecting purely blockdiagonal structure: not found.
+ * Detecting purely block diagonal structure: not found.
  * Detecting set partitioning master structure: found 50 blocks.
  * Chosen decomposition with 50 blocks of type bordered.
  * Detection was successful.
@@ -312,11 +312,11 @@
  *...
  * \endcode
  *
- * This tells us the following: The structure was detected from the unpresolved problem, contains 50 blocks. Next,
- * The constraints per block (b_Capacity_1 in block 1) are listed. Finally, all constraints in the master are listed.
- * This is the DEC format also described in \ref reader_dec.h .
+ * This tells us the following: The structure was detected from the unpresolved problem and contains 50 blocks. Next,
+ * the constraints per block (b_Capacity_1 in block 1) are listed. Finally, all constraints in the master are listed.
+ * This DEC format is described in \ref reader_dec.h .
  *
- * Now, we can start playing around with parameters. We have a binpacking example and we know that it can be solved
+ * Now, we can start playing around with parameters. We have a bin packing example and we know that it can be solved
  * efficiently with discretization, so let us set this parameter.
  *
  * \code
@@ -332,7 +332,7 @@
  *
  * GCG/set/relaxing> gcg
  *
- *   aggregation           should identical blocks be aggegrated (only for discretization approach)? [TRUE]
+ *   aggregation           should identical blocks be aggregated (only for discretization approach)? [TRUE]
  *   discretization        should discretization (TRUE) or convexification (FALSE) approach be used? [TRUE]
  *   dispinfos             should additional information about the blocks be displayed? [FALSE]
  *   enforceproper         should propagated bound changes in the original be enforced in the master (only proper vars)? [TRUE]
@@ -386,7 +386,7 @@
  * ...
  * \endcode
  *
- * We hope this tutorial gave you an overview of what is possible using the SCIP interactive shell withing GCG. Please also read our
+ * We hope this tutorial gave you an overview of what is possible using the SCIP interactive shell within GCG. Please also read our
  * \ref FAQ.
  *
  */
@@ -710,7 +710,7 @@
  *
  * The DETECTSTRUCTURE callback is called detection loop and should perform the actual detection.
  * It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
- * It needs to store the structure information in DECDECOMP.
+ * It needs to store the structure information in DEC_DECOMP.
  *
  * Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss, DECdecompSetNBlocks() .
  *
@@ -756,7 +756,7 @@
  * struct_decomp.h is responsible for storing structure information. The memory has to be allocated by caller and is freed
  * later
  *
- * Very quick until more elaborate, these are the relavant fields of the structure:
+ * Very quick until more elaborate, these are the relevant fields of the structure:
  *  - subscipconss - an array of array of constraints in each block - array[blocknr][constraintid]
  *  - nsubscipconss - an array of the number of constraints in each block
  *  - subscipvars - an array of arrays of variables in each block - array[blocknr][varid]

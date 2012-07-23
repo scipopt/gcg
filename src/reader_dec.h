@@ -37,7 +37,7 @@
  * they could be transferred to one block.
  *
  * The keywords are:
- * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the presolved or unpresolved problem
+ * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the unpresolved or presolved problem
  * - NBlocks: to be followed by a line giving the number of blocks
  * - Block i with 1 <= i <= nblocks: to be followed by the names of the constraints belonging to block i,
                   one per line.

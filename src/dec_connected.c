@@ -675,7 +675,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely blockdiagonal" );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely block diagonal" );
 
       SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
 

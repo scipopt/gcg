@@ -2170,7 +2170,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
-         "should identical blocks be aggegrated (only for discretization approach)?",
+         "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
