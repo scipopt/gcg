@@ -35,6 +35,11 @@ then
     mkdir locks
 fi
 
+if test "x$MODE" = "x"
+then
+    MODE=solve
+fi
+
 LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.lock
 RUNFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.run.$BINID
 DONEFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.done

@@ -312,8 +312,8 @@ BEGIN {
    if( inmasterprob )
    {
       pricetime = $3;
-      pricecall = $4;
-      pricevars = $5;
+      pricecall = $5;
+      pricevars = $6;
    }
 }
 
@@ -351,14 +351,20 @@ BEGIN {
    }
    else
    {
-      if( inoriginalprob )
+#      if( inoriginalprob )
          mcons = $3;
    }
 }
 
+
+/^Chosen decomposition/ {
+   blocks = $4;
+   rel = $4;
+}
+
 /^Matrix has / {
    blocks = $3;
-   rel = $5;
+   rel = $8;
 }
 /^GCG                : Performing Dantzig-Wolfe with [0-9]+ blocks./ {
    blocks = $6;

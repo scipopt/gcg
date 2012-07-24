@@ -210,13 +210,13 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
          {
             if( origvars[j] == branchdata->var1 )
             {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
+               // assert(SCIPisEQ(scip, origvals[j], 1.0));
                val1 = origvals[j];
                continue;
             }
             if( origvars[j] == branchdata->var2 )
             {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
+               //assert(SCIPisEQ(scip, origvals[j], 1.0));
                val2 = origvals[j];
             }
          }
@@ -439,7 +439,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(scip) || !GCGrelaxIsMasterSetPartitioning(scip) )
+   if( !GCGrelaxIsMasterSetCovering(scip) && !GCGrelaxIsMasterSetPartitioning(scip) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
@@ -489,7 +489,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
          ovar1 = origvars1[o1];
-         assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]));
+         /* if we deal with a trivial variable, skip it */
+         if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
+            continue;
 
          /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
@@ -504,7 +506,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
-               assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]));
+               /* if we deal with a trivial variable, skip it */
+               if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+                  continue;
+
                if( origvars2[j] == ovar1 )
                {
                   contained = TRUE;
@@ -519,7 +524,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             /* mvar2 also contains ovar1, now look for ovar2 contained in mvar1, but not in mvar2 */
             for( o2 = 0; o2 < norigvars1; o2++ )
             {
-               assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]));
+               /* if we deal with a trivial variable, skip it */
+               if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]) )
+                  continue;
 
                ovar2 = origvars1[o2];
                if( ovar2 == ovar1 )
@@ -529,7 +536,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
-                  assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]));
+                  /* if we deal with a trivial variable, skip it */
+                  if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+                     continue;
 
                   if( origvars2[j] == ovar2 )
                   {
@@ -556,7 +565,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             {
                for( o2 = 0; o2 < norigvars2; o2++ )
                {
-                  assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]));
+                  /* if we deal with a trivial variable, skip it */
+                  if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]) )
+                     continue;
 
                   ovar2 = origvars2[o2];
 
@@ -566,7 +577,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                   contained = FALSE;
                   for( j = 0; j < norigvars1; j++ )
                   {
-                     assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]));
+                     /* if we deal with a trivial variable, skip it */
+                     if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]) )
+                        continue;
                      if( origvars1[j] == ovar2 )
                      {
                         contained = TRUE;

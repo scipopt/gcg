@@ -1046,7 +1046,7 @@ SCIP_RETCODE readDECFile(
          case DEC_START:
             SCIP_CALL( readStart(scip, decinput) );
             break;
-
+            /**@bug the reader should presolve the problem */
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
             if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
