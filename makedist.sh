@@ -10,6 +10,22 @@ if test ! -e release
 then
     mkdir release
 fi
+
+# run git status to clean the dirty git hash
+git status
+
+echo generating default setting files
+make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false scip -j4
+make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false -j4
+bin/gcg -c "set default set save doc/inc/parameters.set quit"
+
+# Before we create a tarball change the director and file rights in a command way
+echo adjust file modes
+find ./ -type d -exec chmod 750 {} \;
+find ./ -type f -exec chmod 640 {} \;
+find ./ -name "*.sh" -exec chmod 750 {} \;
+chmod 750 bin/*
+
 rm -f release/$NAME.tgz
 tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*CVS*" \
@@ -35,4 +51,9 @@ $NAME/check/instances/miplib/*.dec \
 $NAME/doc/inc/*.inc
 rm -f $NAME
 echo ""
+echo "check version numbers in src/scip/def.h, doc/xternal.c, Makefile and makedist.sh ($VERSION):"
+grep "VERSION" src/main.c
+grep "@version" doc/xternal.c
+grep "^VERSION" Makefile
+tail src/githash.c
 echo "finished"
