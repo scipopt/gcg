@@ -22,11 +22,16 @@ $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres
 $NAME/settings/*.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.h \
-$NAME/check/instances/cpmp/*.gz \
-$NAME/check/instances/bpp/*.gz \
-$NAME/check/instances/gap/*.gz \
-$NAME/check/instances/cs/*.gz \
-$NAME/check/instances/miplib/*.gz \
+$NAME/check/instances/cpmp/*.lp \
+$NAME/check/instances/bpp/*.lp \
+$NAME/check/instances/gap/*.lp \
+$NAME/check/instances/cs/*.lp \
+$NAME/check/instances/miplib/*.mps \
+$NAME/check/instances/cpmp/*.dec \
+$NAME/check/instances/bpp/*.dec \
+$NAME/check/instances/gap/*.dec \
+$NAME/check/instances/cs/*.dec \
+$NAME/check/instances/miplib/*.dec \
 $NAME/doc/inc/*.inc
 rm -f $NAME
 echo ""
