@@ -2571,6 +2571,39 @@ void GCGpricerSetSolverdata(
    solver->solverdata = solverdata;
 }
 
+/** writes out a list of all pricing problem solvers */
+void GCGpricerPrintListOfSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   int nsolvers;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
+
+   nsolvers = pricerdata->nsolvers;
+
+   SCIPdialogMessage(scip, NULL, " solver               priority description\n --------------       -------- -----------\n");
+
+   for( i = 0; i < nsolvers; ++i)
+   {
+      SCIPdialogMessage(scip, NULL,  " %-20s", pricerdata->solvers[i]->name);
+      SCIPdialogMessage(scip, NULL,  " %8d", pricerdata->solvers[i]->priority);
+      SCIPdialogMessage(scip, NULL,  " %s\n", pricerdata->solvers[i]->description);
+   }
+}
+
 /** prints pricer statistics */
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */

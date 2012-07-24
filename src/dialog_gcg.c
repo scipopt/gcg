@@ -242,12 +242,23 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDetectors)
    DECprintListOfDetectors(scip);
    SCIPdialogMessage(scip, NULL, "\n");
 
-
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the display solvers command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplaySolvers)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   GCGpricerPrintListOfSolvers(GCGrelaxGetMasterprob(scip));
+   SCIPdialogMessage(scip, NULL, "\n");
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
 
 /** dialog execution method for the master command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
@@ -470,6 +481,15 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplayDetectors, NULL, NULL,
             "detectors", "display available detectors", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* display solvers */
+   if( !SCIPdialogHasEntry(submenu, "solvers") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog, NULL, GCGdialogExecDisplaySolvers, NULL, NULL,
+            "solvers", "display available pricing problem solvers", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }

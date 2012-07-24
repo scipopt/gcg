@@ -116,6 +116,12 @@ void GCGpricerSetSolverdata(
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
 
+/** writes out a list of all pricing problem solvers */
+extern
+void GCGpricerPrintListOfSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 extern
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
