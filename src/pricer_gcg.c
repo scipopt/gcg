@@ -1848,6 +1848,11 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
          }
 
+   if( nfoundvars == 0 && SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   }
+
    if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid && duringheurpricing == FALSE )
    {
       assert(lowerbound != NULL);

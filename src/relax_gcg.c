@@ -847,6 +847,7 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/dualfix/maxrounds", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "presolving/dualfix/maxrounds") );
 
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
