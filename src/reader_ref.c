@@ -674,8 +674,8 @@ SCIP_RETCODE writeREFFile(
 
    if( decomp == NULL )
    {
-      SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
-      return SCIP_INVALIDCALL;
+      SCIPwarningMessage(scip, "No reformulation exists, cannot write reformulation file!\n");
+      return SCIP_OKAY;
    }
    nblocks = DECdecompGetNBlocks(decomp);
    conss = SCIPgetOrigConss(scip);

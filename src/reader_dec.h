@@ -76,11 +76,10 @@ SCIP_RETCODE SCIPreadDec(
 
 
 /** write a DEC file for a given decomposition */
-SCIP_RETCODE SCIPwriteDecomp(
+SCIP_RETCODE GCGwriteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    );
 
 #ifdef __cplusplus

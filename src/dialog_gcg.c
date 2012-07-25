@@ -194,7 +194,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
    decomp = DECgetBestDecomp(scip);
    if( decomp != NULL )
    {
-      SCIP_CALL( SCIPwriteDecomp(scip, NULL, decomp, TRUE) );
+      SCIP_CALL( GCGwriteDecomp(scip, NULL, decomp) );
    }
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);

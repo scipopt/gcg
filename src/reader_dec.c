@@ -1153,6 +1153,12 @@ SCIP_DECL_READERFREE(readerFreeDec)
 static
 SCIP_DECL_READERREAD(readerReadDec)
 {  /*lint --e{715}*/
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPreadDec(scip, filename, result) );
 
    return SCIP_OKAY;
@@ -1165,7 +1171,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIP_CALL( SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE) );
+   SCIP_CALL( GCGwriteDecomp(scip, file, DECgetBestDecomp(scip)) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -1324,39 +1330,25 @@ SCIP_RETCODE writeData(
 }
 
 /** write a DEC file for a given decomposition */
-SCIP_RETCODE SCIPwriteDecomp(
+SCIP_RETCODE GCGwriteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
    char outname[SCIP_MAXSTRLEN];
    assert(scip != NULL);
 
-   if( writeDecomposition )
-   {
-      if( decdecomp == NULL )
-      {
-         SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure empty!");
-         writeDecomposition = FALSE;
-         /* return SCIP_INVALIDDATA; */
-      }
-   }
-
-   /* print header */
    if( decdecomp == NULL )
    {
+      SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure is empty!\n");
+
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    }
    else
    {
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), DECdecompGetNBlocks(decdecomp));
-   }
 
-   if( writeDecomposition )
-   {
-      /* write data */
       SCIP_CALL( writeData(scip, file, decdecomp) );
    }
 
