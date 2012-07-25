@@ -304,7 +304,6 @@ SCIP_RETCODE evaluateDecomposition(
  */
 
 #define conshdlrCopyDecomp NULL
-#define consExitDecomp NULL
 #define consInitpreDecomp NULL
 #define consExitpreDecomp NULL
 #define consDeleteDecomp NULL
@@ -334,6 +333,31 @@ SCIP_DECL_CONSINIT(consInitDecomp)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
+   conshdlrdata->hasrun = FALSE;
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of constraint handler (called before transformed problem is freed) */
+static
+SCIP_DECL_CONSEXIT(consExitDecomp)
+{ /*lint --e{715}*/
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(conshdlr != NULL);
+   assert(scip != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->ndecomps > 0 )
+   {
+      int i;
+      for( i = 0; i < conshdlrdata->ndecomps; ++i )
+      {
+         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+      }
+      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
+      conshdlrdata->decdecomps = NULL;
+      conshdlrdata->ndecomps = 0;
+   }
    conshdlrdata->hasrun = FALSE;
    return SCIP_OKAY;
 }
@@ -835,7 +859,7 @@ SCIP_RETCODE DECdetectStructure(
          }
       }
    }
-   else 
+   else
    {
       SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }

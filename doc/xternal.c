@@ -723,9 +723,11 @@ GCG> q
  *
  * The DETECTSTRUCTURE callback is called detection loop and should perform the actual detection.
  * It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
- * It needs to store the structure information in DEC_DECOMP.
+ * It needs to store the structure information in DEC_DECOMP and needs to allocate the array where to store the
+ * information.
  *
- * Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss, DECdecompSetNBlocks() .
+ * Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss(), DECdecompSetNBlocks(),
+ * DECdecompSet*(), etc. .
  *
  * @section DEC_ADDITIONALCALLBACKS Additional Callback Methods of a Detector
  *
@@ -759,7 +761,7 @@ GCG> q
  * If you have allocated memory for fields in your detector data, remember to free this memory
  * before freeing the detector data itself.
  * The DETECTOREXIT callback is executed before the solution process is started.
- * In this method, the detector should free all resources that have been allocated for the solving process in \ref DETECTORINIT.
+ * In this method, the detector should free all resources that have been allocated for the detection process in \ref DETECTORINIT.
  *
  */
 
@@ -767,7 +769,7 @@ GCG> q
 /**@page DEC_DECOMP Storing structure information
  *
  * struct_decomp.h is responsible for storing structure information. The memory has to be allocated by caller and is freed
- * later
+ * later. You should use getter and setter functions ins pub_decomp.h to fill this structure.
  *
  * Very quick until more elaborate, these are the relevant fields of the structure:
  *  - subscipconss - an array of array of constraints in each block - array[blocknr][constraintid]

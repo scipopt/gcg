@@ -98,7 +98,7 @@
     </p>
     <p class="a">
        In its current version, SCIP will finish the current node when pressing
-    CTRL-C. This is a problem if the master problem has is completely finished
+    CTRL-C. This is a problem if the master problem is not completely finished
     solving. The current node will be marked as finished and two branching
     children are created. Depending on when you press CTRL-C, this may and
     will lead to different solving processes. If an optimal solution is found,
