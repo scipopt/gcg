@@ -24,6 +24,8 @@ echo adjust file modes
 find ./ -type d -exec chmod 750 {} \;
 find ./ -type f -exec chmod 640 {} \;
 find ./ -name "*.sh" -exec chmod 750 {} \;
+find ./ -name "*.prl" -exec chmod 750 {} \;
+find ./ -name "hmetis" -exec chmod 750 {} \;
 chmod 750 bin/*
 
 rm -f release/$NAME.tgz
