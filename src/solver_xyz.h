@@ -25,22 +25,22 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_mip.c
- * @brief  mip solver for pricing problems
+/**@file   solver_xyz.c
+ * @brief  xyz solver for pricing problems
  * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __GCG_SOLVER_MIP_H__
-#define __GCG_SOLVER_MIP_H__
+#ifndef __GCG_SOLVER_XYZ_H__
+#define __GCG_SOLVER_XYZ_H__
 
 #include "scip/scip.h"
 
 
-/** creates the mip solver for pricing problems and includes it in GCG */
+/** creates the xyz solver for pricing problems and includes it in GCG */
 extern
-SCIP_RETCODE GCGincludeSolverMip(
+SCIP_RETCODE GCGincludeSolverXyz(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

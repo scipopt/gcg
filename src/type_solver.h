@@ -131,7 +131,8 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call:
- *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite solution value
+ *                      - SCIP_STATUS_OPTIMAL if the problem was solved heuristically with a finite solution value
+ *                                            (not necessarily to optimality)
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */

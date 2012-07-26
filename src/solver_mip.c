@@ -581,6 +581,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
+      *lowerbound = SCIPgetDualbound(pricingprob);
    }
    else
    {

@@ -60,6 +60,9 @@
  *
  * <b>Further Documentation</b>
  * - \ref DETECT "How to write a custom structure detection"
+ * - \ref SOLVER "How to write a custom pricing problem solver"
+ * - \ref BRANCH "How to write a custom branching rule"
+ * - \ref SEPA "How to write custom separators"
  * - \ref HEUR "How to write custom heuristics"
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref FAQ "Frequently asked questions"
@@ -633,7 +636,7 @@ GCG> q
  * Take the basic detector (src/dec_connected.c) as an example.
  * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
  *
- * Additional documentation for the callback methods of a structure detection, in particular for their input parameters,
+ * Additional documentation for the callback methods of structure detectors, in particular for their input parameters,
  * can be found in the file type_detector.h.
  *
  * Here is what you have to do to implement a detector:
@@ -670,7 +673,7 @@ GCG> q
  * \n
  * The priority of the detector should be set according to the complexity of the detection algorithm and the quality of the decomposition:
  * detectors that provide fast algorithms that usually have a good decomposition (i.e., provide good dual bound) should have a high
- * priority. An easy way to list the priorities of all detectors "display detectors" in the interactive shell of GCG.
+ * priority. An easy way to list the priorities of all detectors is "display detectors" in the interactive shell of GCG.
  *
  * \par DEC_DECCHAR: Display character of the detector.
  * The unique display character for the detector. It can be used to quickly distinguish similar structures by the detector which found them.
@@ -706,7 +709,7 @@ GCG> q
  * You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
  * detector data, see \ref DETECTOREXIT.
  *
- * You may also add user parameters for your detector, see \ref PARAM for how to add user parameters and
+ * You may also add user parameters for your detector, see the SCIP documentation for how to add user parameters and
  * the method SCIPincludeDetectionBorderheur() in src/dec_borderheur.c for an example.
  *
  *
@@ -721,7 +724,7 @@ GCG> q
  *
  * @subsection DETECTSTRUCTURE
  *
- * The DETECTSTRUCTURE callback is called detection loop and should perform the actual detection.
+ * The DETECTSTRUCTURE callback is called during the detection loop and should perform the actual detection.
  * It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
  * It needs to store the structure information in DEC_DECOMP and needs to allocate the array where to store the
  * information.
@@ -762,6 +765,181 @@ GCG> q
  * before freeing the detector data itself.
  * The DETECTOREXIT callback is executed before the solution process is started.
  * In this method, the detector should free all resources that have been allocated for the detection process in \ref DETECTORINIT.
+ *
+ */
+
+ /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/**@page SOLVER How to add pricing problem solvers
+ *
+ * Pricing problem solvers are called by the pricer to solve a single pricing problem either heuristically or to optimality
+ * and return a set of solutions.
+ * \n
+ * A complete list of all pricing problem solvers contained in this release can be found \ref SOLVERS "here".
+ *
+ * In the following, we explain how the user can add his own pricing problem solver.
+ * Take the generic MIP pricing problem solver (src/solver_mip.c) as an example.
+ * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
+ *
+ * Additional documentation for the callback methods of pricing problem solvers, in particular for their input parameters,
+ * can be found in the file type_solver.h.
+ *
+ * Here is what you have to do to implement a pricing problem solver:
+ * -# Copy the template files src/solver_xyz.c and src/solver_xyz.h into files named "solver_mysolver.c"
+ *    and "solver_mysolver.h".
+ *    \n
+ *    Make sure to adjust your Makefile such that these files are compiled and linked to your project.
+ * -# Open the new files with a text editor and replace all occurrences of "xyz" by "mysolver".
+ * -# Adjust the properties of the solver (see \ref SOLVER_PROPERTIES).
+ * -# Define the solver data (see \ref SOLVER_DATA). This is optional.
+ * -# Implement the interface methods (see \ref SOLVER_INTERFACE).
+ * -# Implement the fundamental callback methods (see \ref SOLVER_FUNDAMENTALCALLBACKS).
+ * -# Implement the additional callback methods (see \ref SOLVER_ADDITIONALCALLBACKS). This is optional.
+ *
+ *
+ * @section SOLVER_PROPERTIES Properties of a pricing problem solver
+ *
+ * At the top of the new file "solver_mysolver.c", you can find the solver properties.
+ * These are given as compiler defines.
+ * The properties you have to set have the following meaning:
+ *
+ * \par SOLVER_NAME: the name of the solver.
+ * This name is used in the interactive shell to address the solver.
+ * Names have to be unique: no two solvers may have the same name.
+ *
+ * \par SOLVER_DESC: the description of the solver.
+ * This string is printed as description of the solver in the interactive shell.
+ *
+ * \par SOLVER_PRIORITY: the priority of the solver.
+ * Whenever a pricing problem has to be solver, the solvers are called in a predefined order, until one of the solvers solved the
+ * pricing problem. This order is given by the priorities of the solvers; they are called in the order of decreasing priority.
+ * \n
+ * The priority of the solver should be set according to the range of problems it can solve. The more specialized a solver is,
+ * the higher its priority should be in order to be called before more general solvers that also cover this type of problem.
+ * The default pricing solver that solves the pricing problem as a MIP using SCIP has priority 0, so all other pricing solvers
+ * should have positive priority.
+ * An easy way to list the priorities and descriptions of all solvers is "display solvers" in the interactive shell of GCG.
+ *
+ * @section SOLVER_DATA Solver Data
+ *
+ * Below the header "Data structures" you can find the struct "struct GCG_SolverData".
+ * In this data structure, you can store the data of your solver. For example, you should store the adjustable parameters
+ * of the solver in this data structure and also arrays to store the solutions that you return after solving a pricing problem.
+ * \n
+ * Defining solver data is optional. You can leave this struct empty.
+ *
+ *
+ * @section SOLVER_INTERFACE Interface Methods
+ *
+ * At the bottom of "solver_mysolver.c", you can find the interface method GCGincludeSolverMysolver(),
+ * which also appears in "solver_mysolver.h".
+ * \n
+ * This method has to be adjusted only slightly.
+ * It is responsible for notifying GCG (and especially the pricer in the master SCIP instance) of the presence of the solver by
+ * calling the method GCGpricerIncludeSolver().
+ * SCIPincludeSolverMysolver() is should be called by the user, if he wants to include the solver,
+ * i.e., if he wants to use the solver in his application. This can done for example by adding
+ * \code SCIP_CALL( GCGincludeSolverMysolver(scip) );\endcode to masterplugins.c
+ *
+ * If you are using solver data, you have to allocate the memory for the data at this point.
+ * You can do this by calling
+ * \code
+ * SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+ * \endcode
+ * You can also initialize the fields in struct SCIP_SolverData afterwards. For freeing the
+ * solver data, see \ref SOLVEREXIT. Alternatively, you can also initialize and free the fields in the solver data
+ * in the SOLVERINITSOL and SOLVEREXITSOL callback methods, respectively. For an example see, solver_mip.c.
+ *
+ * You may also add user parameters for your solver, see the SCIP documentation for how to add user parameters and
+ * the method SCIPincludeSolverMip() in src/solver_mip.c for an example.
+ *
+ *
+ * @section SOLVER_FUNDAMENTALCALLBACKS Fundamental Callback Methods of a Solver
+ *
+ * The fundamental callback methods of the plugins are the ones that have to be implemented in order to obtain
+ * an operational algorithm. Pricing problem solvers do not have fundamental callback methods, but they should
+ * implement at least of the SOLVERSOLVE and SOVLERSOLVEHEUR methods.
+ *
+ * Additional documentation to the callback methods, in particular to their input parameters,
+ * can be found in type_solver.h.
+ *
+ * @section SOLVER_ADDITIONALCALLBACKS Additional Callback Methods of a Solver
+ *
+ * @subsection SOLVERSOLVE
+ *
+ * The SOLVERSOLVE callback is called when the variable pricer in the master SCIP instance wants to solve a pricing problem
+ * to optimality.
+ * It is given a SCIP instance representing the pricing problem that should be solved and should check whether the pricing
+ * problem has a structure that can be handled by the solver. If so, it should solve the pricing problem to optimality
+ * and return the optimal objective value of the problem (to be stored in the lowerbound pointer) along with a set of
+ * primal feasible solutions (including the optimal one).
+ *
+ * The solutions should be returned by setting some given pointers:
+ * solvars should store the number of solutions returned, nsolvars should point to an array storing for each solution
+ * the number of variables with non-zero value, and solisray should point to an array storing for each solution whether it
+ * represents an extreme point of the pricing problem or an extreme ray. Furthermore, solvars and solvals should point to
+ * arrays storing for each solution an array of variables and corresponding solution values, respectively (variables with
+ * value 0 can be omitted). Therefore, a pricing problem solver should manage these arrays in its own data structure,
+ * fill them after solving a pricing problem and set the return pointers to these arrays. Have a look at solver_mip for
+ * an example of how this can be done.
+ *
+ * Last, the callback should adjust the given result pointer to SCIP_STATUS_OPTIMAL if the problem was solved to optimality,
+ * to SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded, or SCIP_STATUS_UNKNOWN if the solver was not applicable
+ * to the pricing problem or if the solving was stopped.
+ *
+ * @subsection SOLVERSOLVEHEUR
+ *
+ * The SOLVERSOLVEHEUR callback is called during heuristical pricing when the variable pricer in the master SCIP instance
+ * wants to solve a pricing problem heuristically.
+ * It has the same input and return parameters as the SOLVERSOLVE callback. It does not need to solve the pricing problem to
+ * optimality, but should try to construct good feasible solutions using fast methods. Nevertheless, it can return a lower bound
+ * for the optimal solution value of the problem, if it computes one.
+ *
+ * @subsection SOLVERFREE
+ *
+ * If you are using solver data, you have to implement this method in order to free the solver data.
+ * This can be done by the following procedure:
+ * \code
+ * static
+ * GCG_DECL_SOLVERFREE(solverFreeMip)
+ * {
+ *    GCG_SOLVERDATA* solverdata;
+ *
+ *    assert(scip != NULL);
+ *    assert(solver != NULL);
+ *
+ *    solverdata = GCGpricerGetSolverdata(scip, solver);
+ *    assert(solverdata != NULL);
+ *
+ *    SCIPfreeMemory(scip, &solverdata);
+ *
+ *    GCGpricerSetSolverdata(scip, solver, NULL);
+ *
+ *    return SCIP_OKAY;
+ * }
+ * \endcode
+ * If you have allocated memory for fields in your solver data, remember to free this memory
+ * before freeing the pricer data itself.
+ *
+ * @subsection SOLVERINIT
+ *
+ * The SOLVERINIT callback is executed after the problem is transformed.
+ * The pricing problem solver may, e.g., use this call to replace the original constraints stored in its solver data by transformed
+ * constraints, or to initialize other elements of his solver data.
+ *
+ * @subsection SOLVEREXIT
+ *
+ * The SOLVEREXIT callback is executed before the transformed problem is freed.
+ * In this method the pricing problem solver should free all resources that have been allocated for the solving process in SOLVERINIT.
+ *
+ * @subsection SOLVERINITSOL
+ *
+ * The SOLVERINITSOL callback is executed when the presolving is finished and the branch-and-bound process is about to begin.
+ * The pricing problem solver may use this call to initialize its branch-and-bound specific data.
+ *
+ * @subsection PRICEREXITSOL
+ *
+ * The SOLVEREXITSOL callback is executed before the branch-and-bound process is freed.
+ * The pricing problem solver should use this call to clean up its branch-and-bound data, which was allocated in SOLVERINITSOL.
  *
  */
 
