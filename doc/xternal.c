@@ -59,7 +59,7 @@
  * @version  1.0.0
  *
  * <b>Further Documentation</b>
- * - \ref DETECT "How to write a custom structure detection"
+ * - \ref DETECT "How to write custom structure detectors"
  * - \ref HEUR "How to write custom heuristics"
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref FAQ "Frequently asked questions"
