@@ -10,9 +10,9 @@ Here is what you have to do to get the standalone version of GCG running:
 1. You need SCIP version 3.0.0 or higher and a reasonable compiler suite with
    libraries installed.
    Under Ubuntu, you can install these with
-     "sudo apt-get install build-essential readline-dev zlib-dev"
+     "sudo apt-get install build-essential libreadline-dev libz-dev"
    With OpenSuSE 11.4and 12.1 this is
-     "sudo zypper in libreadline-devel zlib-devel-static"
+     "sudo zypper in -t pattern devel_C_C++ && sudo zypper in readline-devel zlib-devel-static"
    The package names may differ on your linux distribution.
 
 2. Create a folder lib/ in your gcg directory and create a softlink there
