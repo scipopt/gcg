@@ -57,7 +57,7 @@ SCIP_RETCODE GCGcreateRootMasterDialog(
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    )
 {
-   SCIP_CALL( SCIPincludeDialog(scip, root, 
+   SCIP_CALL( SCIPincludeDialog(scip, root,
          NULL, SCIPdialogExecMenuLazy, NULL, NULL,
          "GCG (master)", "GCG's master main menu", TRUE, NULL) );
    
@@ -160,7 +160,6 @@ SCIP_RETCODE SCIPincludeDialogMaster(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
-
 
    return SCIP_OKAY;
 }

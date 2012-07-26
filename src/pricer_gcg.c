@@ -273,7 +273,7 @@ static SCIP_Bool isRootNode(
 }
 
 
-/* ensures size of pricedvars array */
+/** ensures size of pricedvars array */
 static
 SCIP_RETCODE ensureSizePricedvars(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -299,7 +299,7 @@ SCIP_RETCODE ensureSizePricedvars(
 }
 
 
-/* ensures size of solvers array */
+/** ensures size of solvers array */
 static
 SCIP_RETCODE ensureSizeSolvers(
    SCIP*                 scip,               /**< SCIP data structure        */
@@ -322,7 +322,7 @@ SCIP_RETCODE ensureSizeSolvers(
    return SCIP_OKAY;
 }
 #ifdef ENABLESTATISTICS
-/* ensures size of nodes array */
+/** ensures size of nodes array */
 static
 SCIP_RETCODE ensureSizeAvgnodedegeneracy(
    SCIP*                 scip,               /**< SCIP data structure        */
@@ -355,7 +355,7 @@ void GCGpricerGetNodeTimeHistogram(
 {
    int i;
 
-   /** 1000* because mapping milliseconds on the index i */
+   /* 1000* because mapping milliseconds on the index i */
    i = 1000*time/PRICER_STAT_BUCKETSIZE_TIME; /*lint !e524 */
 
    if( i >= PRICER_STAT_ARRAYLEN_TIME )
@@ -2641,7 +2641,7 @@ void GCGpricerPrintStatistics(
          SCIPgetClockTime(scip, solver->optredcostclock));
    }
 
-   /** print of Pricing Statistics */
+   /* print of Pricing Statistics */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas pricing Statistic:\nno.\t#Calls\t\t#Vars\t\ttime(s)\n");
 
@@ -2661,7 +2661,7 @@ void GCGpricerPrintStatistics(
 
    }
 
-   /** print of Histogram Buckets !=0      */
+   /* print of Histogram Buckets !=0      */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )

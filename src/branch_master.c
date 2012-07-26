@@ -201,7 +201,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
  * branching specific interface methods
  */
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the master branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleMaster(
    SCIP*                 scip                /**< SCIP data structure */
    )

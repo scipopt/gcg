@@ -469,7 +469,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    return SCIP_OKAY;
 }
 
-
+/** heuristic solving method of mip solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 {  /*lint --e{715}*/
@@ -652,7 +652,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the mip solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    )

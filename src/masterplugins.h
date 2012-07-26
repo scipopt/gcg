@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   masterplugins.h
- * @brief  SCIP plugins for coloring
+ * @brief  SCIP plugins for generic column generation
  * @author Gerald Gamrath
  */
 
@@ -35,17 +35,11 @@
 #ifndef __SCIP_SCIPMASTERPLUGINS_H__
 #define __SCIP_SCIPMASTERPLUGINS_H__
 
-
 #include "scip/scip.h"
 
-
-
-
-/** includes default SCIP plugins into SCIP */
 extern
 SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );
-
 
 #endif

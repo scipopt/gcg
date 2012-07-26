@@ -29,6 +29,8 @@
  * @ingroup PUBLICMETHODS
  * @brief   GCG relaxator
  * @author  Gerald Gamrath
+ * @author  Christian Puchert
+ * @author  Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -275,7 +277,6 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data */
 extern
@@ -333,7 +334,6 @@ void GCGsetStructDecdecomp(
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
 
-
 /** gets the structure information */
 extern
 DEC_DECOMP* GCGgetStructDecdecomp(
@@ -351,7 +351,6 @@ extern
 double GCGgetDegeneracy(
    SCIP*                 masterproblem       /**< SCIP masterproblem */
    );
-
 
 /** prints out the degeneracy of the problem */
 extern

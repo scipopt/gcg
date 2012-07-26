@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_ref.c
- * @brief  REF file reader for decomposition files
+ * @brief  REF file reader for structure information
  * @author Gerald Gamrath
  * @author Christian Puchert
  * @author Martin Bergner

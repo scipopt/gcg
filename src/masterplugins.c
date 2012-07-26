@@ -128,10 +128,7 @@
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
 
-
-
-
-/** includes default plugins for generic column generation into SCIP */
+/** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_dec.c
- * @brief  DEC file reader
+ * @brief  DEC file reader for structure information
  * @author Lukas Kirchhart
  * @author Martin Bergner
  * @author Gerald Gamrath
@@ -1354,4 +1354,3 @@ SCIP_RETCODE GCGwriteDecomp(
 
    return SCIP_OKAY;
 }
-

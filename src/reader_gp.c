@@ -26,8 +26,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.c
- * @brief  GP file reader
+ * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @todo change output file type based on parameter
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -366,7 +367,7 @@ SCIP_RETCODE SCIPwriteGp(
 }
 
 
-/** includes the gp file reader in SCIP */
+/** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )

@@ -185,7 +185,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    return SCIP_OKAY;
 }
 
-/** dialog execution method for the display statistics command */
+/** dialog execution method for the display decomposition command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition)
 {  /*lint --e{715}*/
    DEC_DECOMP* decomp;

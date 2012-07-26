@@ -27,7 +27,7 @@
 
 /**@file   cons_integralorig.h
  * @brief  constraint handler for the integrality constraint
- * @author Tobias Achterberg
+ * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

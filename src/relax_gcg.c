@@ -141,7 +141,7 @@ struct SCIP_RelaxData
  */
 
 
-/* sets the number of the block, the given original variable belongs to */
+/** sets the number of the block, the given original variable belongs to */
 static
 SCIP_RETCODE setOriginalVarBlockNr(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -185,7 +185,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
    return SCIP_OKAY;
 }
 
-/* marks the constraint to be transferred to the master problem */
+/** marks the constraint to be transferred to the master problem */
 static
 SCIP_RETCODE markConsMaster(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -372,7 +372,7 @@ SCIP_RETCODE convertStructToGCG(
    return SCIP_OKAY;
 }
 
-/* ensures size of masterconss array */
+/** ensures size of masterconss array */
 static
 SCIP_RETCODE ensureSizeMasterConss(
    SCIP*                 scip,
@@ -396,7 +396,7 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
-/* ensures size of branchrules array: enlarges the array by 1 */
+/** ensures size of branchrules array: enlarges the array by 1 */
 static
 SCIP_RETCODE ensureSizeBranchrules(
    SCIP*                 scip,
@@ -765,7 +765,7 @@ SCIP_RETCODE checkIdenticalBlocks(
 
          SCIP_CALL( SCIPhashmapCreate(&varmap,
                SCIPblkmem(scip),
-               5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** +1 to deal with empty subproblems */
+               5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
 
          SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 

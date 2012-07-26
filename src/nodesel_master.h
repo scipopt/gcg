@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   nodesel_master.h
- * @brief  node selector for depth first search
+ * @brief  Node selector for coordination of master and original formulation
  * @author Gerald Gamrath
  */
 
@@ -43,12 +43,6 @@
 extern
 SCIP_RETCODE SCIPincludeNodeselMaster(
    SCIP*                 scip                /**< SCIP data structure */
-   );
-
-extern
-void GCGnodeselMasterSetOrigscip(
-   SCIP*                 scip,
-   SCIP*                 origscip
    );
 
 #endif

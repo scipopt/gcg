@@ -28,6 +28,7 @@
 /**@file   solver_knapsack.c
  * @brief  knapsack solver for pricing problems
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -62,6 +63,7 @@ struct GCG_SolverData
  * Callback methods for pricing problem solver
  */
 
+/** free method of knapsack solver */
 static
 GCG_DECL_SOLVERFREE(solverFreeKnapsack)
 {
@@ -80,6 +82,7 @@ GCG_DECL_SOLVERFREE(solverFreeKnapsack)
    return SCIP_OKAY;
 }
 
+/** initialization method of knapsack solver */
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
 {
@@ -144,6 +147,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
 #define solverInitKnapsack NULL
 #define solverExitKnapsack NULL
 
+/** exact solving method for knapsack solver */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
@@ -335,6 +339,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 }
 
 
+/** heuristic solving method of knapsack solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/

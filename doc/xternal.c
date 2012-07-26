@@ -486,21 +486,21 @@ GCG> q
  * @brief This page contains a list of all constraint handlers which are currently available.
  *
  * A detailed description what a constraint handler does and how to add a constraint handler to \SCIP can be found
- * \ref CONS "here".
+ * in the SCIP documentation.
  */
 
 /**@defgroup DIALOGS Dialogs
  * @brief This page contains a list of all dialogs which are currently available.
  *
  * A detailed description what a dialog does and how to add a dialog to \SCIP can be found
- * \ref DIALOG "here".
+ * n the SCIP documentation.
  */
 
 /**@defgroup DISPLAYS Displays
  * @brief This page contains a list of all displays (output columns)  which are currently available.
  *
  * A detailed description what a display does and how to add a display to \SCIP can be found
- * \ref DISP "here".
+ * in the SCIP documentation.
  *
  */
 
@@ -508,28 +508,28 @@ GCG> q
  * @brief This page contains a list of all file readers which are currently available.
  *
  * A detailed description what a file reader does and how to add a file reader to \SCIP can be found
- * \ref READER "here".
+ * in the SCIP documentation.
  */
 
 /**@defgroup NODESELECTORS Node Selectors
  * @brief This page contains a list of all node selectors which are currently available.
  *
  * A detailed description what a node selector does and how to add a node selector to \SCIP can be found
- * \ref NODESEL "here".
+ * in the SCIP documentation.
  */
 
 /**@defgroup PRESOLVERS Presolvers
  * @brief This page contains a list of all presolvers which are currently available.
  *
  * A detailed description what a presolver does and how to add a presolver to \SCIP can be found
- * \ref PRESOL "here".
+ * in the SCIP documentation.
  */
 
 /**@defgroup PRICERS Pricers
  * @brief This page contains a list of all pricers which are currently available.
  *
  * Per default there exist no variable pricer. A detailed description what a variable pricer does and how to add a
- * variable pricer to \SCIP can be found \ref PRICER "here".
+ * variable pricer to \SCIP can be found in the SCIP documentation.
  */
 
 /**@defgroup PRIMALHEURISTICS Primal Heuristics
@@ -539,7 +539,6 @@ GCG> q
  * \ref HEUR "here".
  */
 
-
 /**@defgroup RELAXATORS Relaxators
  * @brief This page contains a list of all relaxators which are currently available.
  */
@@ -548,7 +547,7 @@ GCG> q
  * @brief This page contains a list of all separators  which are currently available.
  *
  * A detailed description what a separator does and how to add a separator to \SCIP can be found
- * \ref SEPA "here".
+ * in the SCIP documentation.
  */
 
 /**@defgroup DETECTORS Detectors
@@ -556,6 +555,13 @@ GCG> q
  *
  * A detailed description what a detector does and how to add a detector to GCG can be found
  * \ref DETECT "here".
+ */
+
+/**@defgroup PRICINGSOLVERS Pricing solvers
+ * @brief This page contains a list of all pricing solvers which are currently available.
+ *
+ * A detailed description what a pricing solver does and how to add a pricing solver to GCG can be found
+ * \ref PRICINGSOLVER "here".
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -633,7 +639,7 @@ GCG> q
  * A complete list of all detectors/enforcers contained in this release can be found \ref DETECTORS "here".
  *
  * In the following, we explain how the user can add its own structure enforcement plugin.
- * Take the basic detector (src/dec_connected.c) as an example.
+ * Take the basic detector (dec_connected.c) as an example.
  * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
  *
  * Additional documentation for the callback methods of structure detectors, in particular for their input parameters,
@@ -709,8 +715,8 @@ GCG> q
  * You also have to initialize the fields in struct SCIP_DetectorData afterwards. For freeing the
  * detector data, see \ref DETECTOREXIT.
  *
- * You may also add user parameters for your detector, see the SCIP documentation for how to add user parameters and
- * the method SCIPincludeDetectionBorderheur() in src/dec_borderheur.c for an example.
+ * You may also add user parameters for your detector, see the parameters documentation of \SCIP for how to add user parameters and
+ * the method SCIPincludeDetectionBorderheur() in dec_connected.c for an example.
  *
  *
  * @section DEC_FUNDAMENTALCALLBACKS Fundamental Callback Methods of a Detector
@@ -744,7 +750,7 @@ GCG> q
  * @subsection DETECTOREXIT
  *
  * If you are using detection data (see \ref DEC_DATA and \ref DEC_INTERFACE), you have to implement this method in order to free the detection data.
- * This can be done by the following procedure: (TODO)
+ * This can be done by the following procedure:
  * \code
  * static
  * DEC_DECL_EXITDETECTOR(decExitMydetector)

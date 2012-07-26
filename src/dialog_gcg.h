@@ -75,7 +75,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 
-/** dialog execution method for the detect command */
+/** dialog execution method for the optimize command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize);
 
