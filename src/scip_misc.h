@@ -45,7 +45,7 @@ extern "C" {
 
 /** constraint types */
 typedef enum  {
-   linear, knapsack, varbound, setpacking, setcovering, setpartitioning, 
+   linear, knapsack, varbound, setpacking, setcovering, setpartitioning,
    logicor, sos1, sos2, unknown, nconsTypeItems
 } consType;
 
@@ -56,13 +56,11 @@ SCIP_Bool SCIPisVarRelevant(
    SCIP_VAR*             var                 /**< variable to test */
    );
 
-
 /** returns the type of an arbitrary SCIP constraint */
 extern
 consType SCIPconsGetType(
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
-
 
 /** returns the rhs of an arbitrary SCIP constraint */
 extern
@@ -71,7 +69,6 @@ SCIP_Real SCIPgetRhsXXX(
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
-
 /** returns the lhs of an arbitrary SCIP constraint */
 extern
 SCIP_Real SCIPgetLhsXXX(
@@ -79,14 +76,12 @@ SCIP_Real SCIPgetLhsXXX(
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
-
 /** returns the number of variables in an arbitrary SCIP constraint */
 extern
 int SCIPgetNVarsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    );
-
 
 /** returns the variable array of an arbitrary SCIP constraint */
 extern
@@ -97,14 +92,12 @@ SCIP_RETCODE SCIPgetVarsXXX(
    int                   nvars               /**< size of storage array */
    );
 
-
 /** returns the dual solution value of an arbitrary SCIP constraint */
 extern
 SCIP_Real SCIPgetDualsolXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get dual solution */
    );
-
 
 /** returns the value array of an arbitrary SCIP constraint */
 extern
@@ -115,8 +108,7 @@ SCIP_RETCODE SCIPgetValsXXX(
    int                   nvals               /**< size of storage array */
    );
 
-/* returns true if the constraint should be a master constraint and false otherwise */
-extern
+/** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool SCIPgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */

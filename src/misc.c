@@ -27,7 +27,7 @@
 /* #define SCIP_DEBUG */
 /* #define CHECKCONSISTENCY */
 /**@file    misc.c
- * @brief   miscellaneous methods 
+ * @brief   miscellaneous methods
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  */

@@ -369,7 +369,6 @@ SCIP_Longint GCGgetIteration(
    SCIP_VARDATA*         vardata             /**< created variable */
    );
 
-
 /** sets the iteration when the var was created */
 extern
 void GCGsetIteration(
@@ -378,27 +377,31 @@ void GCGsetIteration(
    SCIP_Longint          iteration           /**< iteration that this var was created */
    );
 
+/** store gap */
 void GCGsetGap(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata,
-   SCIP_Real             gap
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_Real             gap                 /**< present gap when variable is created */
    );
 
+/** return stored gap */
 SCIP_Real GCGgetGap(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata             /**< variable data structure */
    );
 
+/** store reduced cost */
 void GCGsetRedcost(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata,
-   SCIP_Real             redcost
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    );
 
+/** return stored reduced cost */
 SCIP_Real GCGgetRedcost(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata);
-
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata             /**< variable data structure */
+   );
 
 #ifdef __cplusplus
 }

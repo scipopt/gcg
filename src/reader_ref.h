@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_ref.h
- * @brief  REF file reader for files .ref
+ * @brief  REF file reader for structure information
  * @ingroup FILEREADERS
  * @author Gerald Gamrath
  * @author Christian Puchert

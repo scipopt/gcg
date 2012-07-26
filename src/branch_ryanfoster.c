@@ -732,7 +732,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
  * branching specific interface methods
  */
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the Ryan-Foster LP braching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
    SCIP*                 scip                /**< SCIP data structure */
    )

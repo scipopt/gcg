@@ -79,6 +79,7 @@ int GCGsubversion(void)
 }
 #endif
 
+/** prints out GCG version */
 static
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -98,7 +99,7 @@ void GCGprintVersion(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
 }
 
-
+/** read in parameter file */
 static
 SCIP_RETCODE readParams(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -116,6 +117,7 @@ SCIP_RETCODE readParams(
    return SCIP_OKAY;
 }
 
+/** Runs GCG from the command line */
 static
 SCIP_RETCODE fromCommandLine(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -404,6 +406,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    return SCIP_OKAY;
 }
 
+/** runs the interactive shell */
 static
 SCIP_RETCODE SCIPrunGCGShell(
    int                   argc,               /**< number of shell parameters */

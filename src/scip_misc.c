@@ -31,7 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
@@ -478,7 +477,7 @@ SCIP_RETCODE SCIPgetValsXXX(
 }
 
 
-/* returns true if the constraint should be a master constraint and false otherwise */
+/** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool SCIPgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */

@@ -26,8 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricingplugins.c
- * @brief  default SCIP plugins
- * @author Tobias Achterberg
+ * @brief  default GCG pricing plugins
  * @author Gerald Gamrath
  * @author Martin Bergner
  */

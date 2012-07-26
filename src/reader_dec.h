@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_dec.h
- * @brief  DEC file reader
+ * @brief  DEC file reader for structure information
  * @author Martin Bergner
  * @author Lukas Kirchhart
  * @ingroup FILEREADERS

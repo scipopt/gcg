@@ -249,7 +249,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    for( i = 0; i < ncuts; i++ )
    {
-      origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i]; /*lint !e679*/ 
+      origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i]; /*lint !e679*/
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
@@ -335,7 +335,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 }
 
 
-/* returns the array of original cuts saved in the separator data */
+/** returns the array of original cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -354,7 +354,7 @@ SCIP_ROW** GCGsepaGetOrigcuts(
    return sepadata->origcuts;
 }
 
-/* returns the number of original cuts saved in the separator data */
+/** returns the number of original cuts saved in the separator data */
 int GCGsepaGetNOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -373,7 +373,7 @@ int GCGsepaGetNOrigcuts(
    return sepadata->norigcuts;
 }
 
-/* returns the array of master cuts saved in the separator data */
+/** returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -392,7 +392,7 @@ SCIP_ROW** GCGsepaGetMastercuts(
    return sepadata->mastercuts;
 }
 
-/* returns the number of master cuts saved in the separator data */
+/** returns the number of master cuts saved in the separator data */
 int GCGsepaGetNMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )

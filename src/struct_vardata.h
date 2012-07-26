@@ -28,6 +28,7 @@
 /**@file   struct_vardata.h
  * @brief  data structures for GCG variable data
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

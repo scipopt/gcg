@@ -29,7 +29,6 @@
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
- *
  */
 
 #include <assert.h>

@@ -26,8 +26,9 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_blk.h
- * @brief  BLK file reader
+ * @brief  BLK file reader for structure information
  * @author Gerald Gamrath
+ * @author Martin Bergner
  * @ingroup FILEREADERS
  *
  * This reader reads in a blk-file that defines the structur to be used for the decomposition.

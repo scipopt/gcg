@@ -40,7 +40,7 @@
 #include "scip/scip.h"
 
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the master branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleMaster(
    SCIP*                 scip                /**< SCIP data structure */
