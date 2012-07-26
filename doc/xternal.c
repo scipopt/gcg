@@ -428,7 +428,7 @@ GCG> q
 
 /**@page RELEASENOTES Release notes
  *
- * \verbinclude GCG-release-notes-1.0
+ * \verbinclude release-notes-1.0.0
  *
  */
 
@@ -517,7 +517,7 @@ GCG> q
  * @brief This page contains a list of all pricing solvers which are currently available.
  *
  * A detailed description what a pricing solver does and how to add a pricing solver to GCG can be found
- * \ref SOLVER "here".
+ * \ref PRICINGSOLVER "here".
  */
 
 /**@defgroup PRIMALHEURISTICS Primal Heuristics
