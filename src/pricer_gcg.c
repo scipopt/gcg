@@ -1690,8 +1690,8 @@ SCIP_RETCODE performOptimalPricing(
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
-      /* set objective limit, such that only solutions with negative reduced costs are accepted */
-      //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      /* @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+      /* SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) ); */
 
       SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 

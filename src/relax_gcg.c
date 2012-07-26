@@ -910,7 +910,6 @@ SCIP_RETCODE createLinkingPricingVars(
    SCIP_VAR** pricingvars;
    int i;
 
-
    assert(origvar != NULL);
    assert(relaxdata != NULL);
 
@@ -929,12 +928,10 @@ SCIP_RETCODE createLinkingPricingVars(
       count = 0;
       for( i = 0; i < relaxdata->npricingprobs; i++ )
       {
-         if( pricingvars[i] != NULL )
-         {
-            count++;
-            //assert(pricingvars[i] == vars[v]);
-         }
          assert(linkconss[i] == NULL);
+
+         if( pricingvars[i] != NULL )
+            count++;
       }
       assert(nblocks == count);
    }
@@ -2189,9 +2186,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
-
-   /* include masterbranch constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",

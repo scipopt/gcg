@@ -32,7 +32,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -48,18 +47,11 @@
 #define READERGP_GNUPLOT_BOXTEMPLATE(i, x1, y1, x2, y2) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"grey\"\n", (i), (x1), (y1), (x2), (y2)
 #define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [0:%d]\nset yrange[%d:0]\n", (xmax), (ymax)
-//#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset border\n", (outputname)
-
 #define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 with circles fc rgb \"black\"\n"
-/*
- * Data structures
- */
 
 /*
  * Local methods
  */
-
-/* put your local methods here, and declare them static */
 
 /** write file header with terminal etc. */
 static

@@ -282,9 +282,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       sepadata->nmastercuts++;
 
 #ifdef SCIP_DEBUG
-      //SCIPdebugMessage("Cut %d:\n", i);
-      //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
-      //SCIPdebugMessage("\n\n");
+      SCIPdebugMessage("Cut %d:\n", i);
+      SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
+      SCIPdebugMessage("\n\n");
 #endif
 
       SCIPfreeBufferArray(scip, &rowvars);

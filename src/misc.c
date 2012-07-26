@@ -24,10 +24,9 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
-/* #define CHECKCONSISTENCY */
+
 /**@file    misc.c
- * @brief   miscellaneous methods 
+ * @brief   miscellaneous methods
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  */

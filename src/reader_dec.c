@@ -98,7 +98,7 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   int*                  varstoblock;        /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
+   int*                  varstoblock;        /**< index=var id; value= -1 or blockID or -2 for multipleblocks*/
    int*                  nblockvars;         /**< n variable per block that are not linkingvars*/
    SCIP_CONS***          blockconss;         /**< array of assignments from constraints to their blocks [blocknr][consid]  */
    int*                  nblockconss;        /**< number of block-constraints for blockID*/

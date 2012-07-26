@@ -34,8 +34,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
-
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -360,8 +358,6 @@ SCIP_Bool getNextToken(
    }
    assert(tokenlen < REF_MAX_LINELEN);
    refinput->token[tokenlen] = '\0';
-
-//   SCIPdebugMessage("(line %d) read token: '%s'\n", refinput->linenumber, refinput->token);
 
    return TRUE;
 }

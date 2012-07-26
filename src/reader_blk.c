@@ -109,7 +109,7 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
-   int*                  varstoblock;        /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
+   int*                  varstoblock;        /**< index=varid; value= -1 or blockID or -2 for multipleblocks */
    int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
    int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
    int*                  nlinkingvarsblocks; /**< array with number of blocks assigned to each linking var */

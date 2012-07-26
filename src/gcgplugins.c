@@ -54,7 +54,6 @@
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
-//#include "scip/dialog_default.h"
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -201,9 +200,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolGateextraction(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
 
-   //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
-   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
 #if USEPROP
@@ -276,7 +272,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
 
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
@@ -299,10 +294,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
-   //SCIP_CALL( SCIPincludeDispDefault(scip) );
-   //SCIP_CALL( SCIPincludeDialogDefault(scip) );
+   SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
-   //SCIP_CALL( SCIPdebugIncludeProp(scip) );
 
 
    return SCIP_OKAY;

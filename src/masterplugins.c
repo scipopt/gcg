@@ -166,7 +166,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   //SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
 
@@ -227,6 +226,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
+
+   /* include masterbranch constraint handler */
+   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
    return SCIP_OKAY;
 }

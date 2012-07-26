@@ -186,7 +186,6 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
-   //   assert(vardata->data.origvardata.pricingvar != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
    assert(!GCGvarIsLinking(var));
    if( vardata->data.origvardata.pricingvar != NULL )
@@ -440,9 +439,8 @@ int GCGoriginalVarGetNMastervars(
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
-
    assert(vardata->data.origvardata.nmastervars >= 0);
-   //   assert(vardata->data.origvardata.nmastervars == 1 || GCGvarGetBlock(var) >= 0);
+
    return vardata->data.origvardata.nmastervars;
 }
 
