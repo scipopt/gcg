@@ -71,7 +71,7 @@
 #define BLK_MAX_LINELEN       65536
 #define BLK_MAX_PUSHEDTOKENS  2
 
-/** Section in BLK File */
+/** section in BLK File */
 enum BlkSection
 {
    BLK_START, BLK_PRESOLVED, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END

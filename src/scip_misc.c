@@ -154,7 +154,7 @@ SCIP_Real SCIPgetRhsXXX(
    return -SCIPinfinity(scip);
 }
 
-/** Returns the lhs of an arbitrary SCIP constraint */
+/** returns the lhs of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetLhsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
@@ -210,7 +210,7 @@ SCIP_Real SCIPgetLhsXXX(
    return SCIPinfinity(scip);
 }
 
-/** Returns the number of variables in an arbitrary SCIP constraint */
+/** returns the number of variables in an arbitrary SCIP constraint */
 int SCIPgetNVarsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
@@ -260,7 +260,7 @@ int SCIPgetNVarsXXX(
    }
 }
 
-/** Returns the variable array of an arbitrary SCIP constraint */
+/** returns the variable array of an arbitrary SCIP constraint */
 SCIP_RETCODE SCIPgetVarsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
@@ -338,7 +338,7 @@ SCIP_RETCODE SCIPgetVarsXXX(
    return SCIP_OKAY;
 }
 
-/** Returns the dual solution value of an arbitrary SCIP constraint */
+/** returns the dual solution value of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetDualsolXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get dual solution */

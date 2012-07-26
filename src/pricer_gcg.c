@@ -155,7 +155,7 @@ struct SCIP_PricerData
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
 
 
-   /** Statistics */
+   /** statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
    int*                  farkascallsdist;    /**< Calls of each farkas pricing problem */
    int*                  farkasfoundvars;    /**< Found vars of each farkas pricing problem */
@@ -2643,7 +2643,7 @@ void GCGpricerPrintStatistics(
          SCIPgetClockTime(scip, solver->optredcostclock));
    }
 
-   /** Print of Pricing Statistics */
+   /** print of Pricing Statistics */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas pricing Statistic:\nno.\t#Calls\t\t#Vars\t\ttime(s)\n");
 
@@ -2663,7 +2663,7 @@ void GCGpricerPrintStatistics(
 
    }
 
-   /** Print of Histogram Buckets !=0      */
+   /** print of Histogram Buckets !=0      */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )

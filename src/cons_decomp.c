@@ -972,7 +972,7 @@ DEC_DECOMP* DECgetBestDecomp(
       return NULL;
 }
 
-/** Writes out a list of all detectors */
+/** writes out a list of all detectors */
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    )
