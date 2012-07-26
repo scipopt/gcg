@@ -52,7 +52,7 @@
  *     <td nowrap >
  * <b>Further Information</b>
  * - \ref AUTHORS      "Current GCG developers"
- * - \ref CHANGELOG    "Change log"
+ * - \ref CHANGELOG    "Changelog"
  * - \ref RELEASENOTES "Release notes"
  * - \ref LICENSE      "Licensing information"
  *
@@ -72,12 +72,6 @@
  *   </tr>
  * </table>
  */
-
-/**@page PARAMS GCG default parameter settings
- *
- * \verbinclude inc/parameters.set
- */
-
 
 /**@page LICENSE Licensing Information
  *
@@ -407,32 +401,11 @@ GCG> q
  *
  */
 
-/**@page CHANGELOG CHANGELOG
- *
- * \verbinclude CHANGELOG
+/**@page FAQ Frequently Asked Questions (FAQ)
+ * \htmlinclude faq.inc
  */
 
-
-/**@page INSTALL INSTALL
- *
- * \verbinclude INSTALL
- */
-
-/**@page RELEASENOTES Release notes
- *
- * \verbinclude GCG-release-notes-1.0
- *
- */
-
-/**@page AUTHORS GCG Authors
- * \htmlinclude authors.inc
- */
-
-/**@page INSTALL Installation information
- * \verbinclude INSTALL
- */
-
-/**@page DOWNLOAD Downloading Locations
+/**@page DOWNLOAD Download Locations
  * @section Downloading GCG
  *
  * GCG can be downloaded from two locations
@@ -444,6 +417,24 @@ GCG> q
  * We will not offer precompiled binaries and GCG may not compile on Microsoft Windows. It is developed and tested on GNU/Linux.
  */
 
+/**@page INSTALL Installation information
+ * \verbinclude INSTALL
+ */
+
+/**@page CHANGELOG Changelog
+ *
+ * \verbinclude CHANGELOG
+ */
+
+/**@page RELEASENOTES Release notes
+ *
+ * \verbinclude GCG-release-notes-1.0
+ *
+ */
+
+/**@page AUTHORS GCG Authors
+ * \htmlinclude authors.inc
+ */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /**@page FILEFORMATS Input file formats supported by GCG.
@@ -458,23 +449,6 @@ GCG> q
  * You can find examples in the <code>check/instances/</code> directory.
  */
 
-/**@defgroup PUBLICMETHODS Public Methods
- *
- * This page lists headers containing branch-and-price specific public methods provided by GCG.
- *
- * All of the headers listed below include functions that are allowed to be called by external users. Besides those
- * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plugins; in
- * particular, this holds for relax_gcg.h and pricer_gcg.h.
- *
- */
-
-/**@defgroup TYPEDEFINITIONS Type Definitions
- * This page lists headers which contain type definitions of callback methods.
- *
- * All headers below include the descriptions of callback methods of
- * certain plugins. For more detail see the corresponding header.
- */
-
 /**@defgroup BRANCHINGRULES Branching Rules
  * @brief This page contains a list of all branching rule which are currently available.
  *
@@ -487,6 +461,13 @@ GCG> q
  *
  * A detailed description what a constraint handler does and how to add a constraint handler to \SCIP can be found
  * in the SCIP documentation.
+ */
+
+/**@defgroup DETECTORS Detectors
+ * @brief This page contains a list of all detectors which are currently available.
+ *
+ * A detailed description what a detector does and how to add a detector to GCG can be found
+ * \ref DETECT "here".
  */
 
 /**@defgroup DIALOGS Dialogs
@@ -532,11 +513,28 @@ GCG> q
  * variable pricer to \SCIP can be found in the SCIP documentation.
  */
 
+/**@defgroup PRICINGSOLVERS Pricing solvers
+ * @brief This page contains a list of all pricing solvers which are currently available.
+ *
+ * A detailed description what a pricing solver does and how to add a pricing solver to GCG can be found
+ * \ref SOLVER "here".
+ */
+
 /**@defgroup PRIMALHEURISTICS Primal Heuristics
  * @brief This page contains a list of all primal heuristics which are currently available.
  *
  * A detailed description what a primal heuristic does and how to add a primal heuristic to \SCIP can be found
  * \ref HEUR "here".
+ */
+
+/**@defgroup PUBLICMETHODS Public Methods
+ *
+ * This page lists headers containing branch-and-price specific public methods provided by GCG.
+ *
+ * All of the headers listed below include functions that are allowed to be called by external users. Besides those
+ * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plugins; in
+ * particular, this holds for relax_gcg.h and pricer_gcg.h.
+ *
  */
 
 /**@defgroup RELAXATORS Relaxators
@@ -550,18 +548,11 @@ GCG> q
  * in the SCIP documentation.
  */
 
-/**@defgroup DETECTORS Detectors
- * @brief This page contains a list of all detectors which are currently available.
+/**@defgroup TYPEDEFINITIONS Type Definitions
+ * This page lists headers which contain type definitions of callback methods.
  *
- * A detailed description what a detector does and how to add a detector to GCG can be found
- * \ref DETECT "here".
- */
-
-/**@defgroup PRICINGSOLVERS Pricing solvers
- * @brief This page contains a list of all pricing solvers which are currently available.
- *
- * A detailed description what a pricing solver does and how to add a pricing solver to GCG can be found
- * \ref PRICINGSOLVER "here".
+ * All headers below include the descriptions of callback methods of
+ * certain plugins. For more detail see the corresponding header.
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -621,10 +612,6 @@ GCG> q
  * sub-SCIPs are solved by SCIP rather than GCG and therefore do not know any master problem; including a GCG
  * specific heuristic into them would cause errors.
  *
- */
-
-/**@page FAQ Frequently Asked Questions (FAQ)
- * \htmlinclude faq.inc
  */
 
  /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -776,7 +763,7 @@ GCG> q
  * Pricing problem solvers are called by the pricer to solve a single pricing problem either heuristically or to optimality
  * and return a set of solutions.
  * \n
- * A complete list of all pricing problem solvers contained in this release can be found \ref SOLVERS "here".
+ * A complete list of all pricing problem solvers contained in this release can be found \ref PRICINGSOLVERS "here".
  *
  * In the following, we explain how the user can add his own pricing problem solver.
  * Take the generic MIP pricing problem solver (src/solver_mip.c) as an example.
@@ -943,6 +930,11 @@ GCG> q
  * The SOLVEREXITSOL callback is executed before the branch-and-bound process is freed.
  * The pricing problem solver should use this call to clean up its branch-and-bound data, which was allocated in SOLVERINITSOL.
  *
+ */
+
+/**@page PARAMS GCG default parameter settings
+ *
+ * \verbinclude inc/parameters.set
  */
 
  /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

@@ -40,11 +40,11 @@
       benefit from the automatic detection, your problem must contain only set
       partitioning or set covering constraints in the master and non set
       covering or set partitioning constraints in each of the pricing
-      subproblems. <br>
+      subproblems. <br />
       After removing all set partitioning or covering constraints from the
       problem, the pricing problems need to be disjoint, e.g. they share no
       common variables. In these cases, GCG can detect the structure
-      automatically. <br>
+      automatically. <br />
       This works for bin packing, coloring, capacitated p-median, generalized
       assignment problems as well as for cutting stock, in which the set
       partitioning is relaxed to set partitioning with integer right hand side.
@@ -74,7 +74,7 @@
       some basic sanity checks, however, it doesn't handle all problems and may
       crash if the decomposition is read at the wrong time (e.g. a
       decomposition found after presolving is read before the problem is
-      presolved).<br>
+      presolved).<br />
       Use only non presolved decompositions and disable presolving if you are
       in doubt!
     </p>
