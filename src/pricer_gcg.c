@@ -1475,12 +1475,10 @@ SCIP_Bool abortHeuristicPricing(
    }
    else
    {
-      assert(FALSE);
+      SCIPABORT();
    }
-#ifdef NDEBUG
-   return FALSE;
-#endif
 
+   return FALSE;
 }
 
 static
