@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricer_gcg.h
+ * @ingroup PUBLICMETHODS
  * @brief  GCG variable pricer
  * @author Gerald Gamrath
  * @author Martin Bergner
