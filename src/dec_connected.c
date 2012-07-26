@@ -333,7 +333,7 @@ SCIP_RETCODE findConnectedComponents(
             vartoblock[curvarindex] = consblock;
             SCIPdebugPrintf("VARINDEX: %d (%d)\n", curvarindex, consblock);
 
-            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]))
+            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]) )
             {
                int oldrepr;
                oldrepr = blockrepresentative[oldblock];
@@ -358,7 +358,7 @@ SCIP_RETCODE findConnectedComponents(
       assert(consblock <= nextblock);
 
       /* store the constraint block */
-      if(consblock != -1)
+      if( consblock != -1 )
       {
          SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
          SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
@@ -404,7 +404,7 @@ SCIP_RETCODE findConnectedComponents(
       if( detectordata->consismaster[i] )
          continue;
 
-      if(!SCIPhashmapExists(constoblock, cons))
+      if( !SCIPhashmapExists(constoblock, cons) )
          continue;
 
       consblock = (int)(size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
@@ -544,7 +544,7 @@ SCIP_RETCODE copyToDecdecomp(
       SCIP_VAR* var;
       var = SCIPvarGetProbvar(vars[i]);
 
-      if(var == NULL)
+      if( var == NULL )
          continue;
 
       varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, var); /*lint !e507*/

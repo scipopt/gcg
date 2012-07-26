@@ -151,7 +151,7 @@ void DECdecompSetType(
    )
 {
    assert(decdecomp != NULL);
-   switch(type)
+   switch( type )
    {
    case DEC_DECTYPE_DIAGONAL:
       *valid = decdecomp->nlinkingconss == 0 && decdecomp->linkingconss == NULL;
@@ -324,7 +324,7 @@ SCIP_RETCODE DECdecompSetSubscipconss(
 
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      if( nsubscipconss[b] <= 0 || subscipconss[b] == NULL)
+      if( nsubscipconss[b] <= 0 || subscipconss[b] == NULL )
          *valid = FALSE;
 
       decdecomp->nsubscipconss[b] = nsubscipconss[b];
@@ -382,7 +382,7 @@ SCIP_RETCODE DECdecompSetLinkingconss(
 
    decdecomp->nlinkingconss = nlinkingconss;
 
-   if(nlinkingconss > 0)
+   if( nlinkingconss > 0 )
    {
       assert(linkingconss != NULL);
       SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );

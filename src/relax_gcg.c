@@ -1028,7 +1028,7 @@ SCIP_RETCODE createPricingVariables(
       {
          size_t tempblock;
          tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         if(tempblock == 0)
+         if( tempblock == 0 )
          {
             assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
             blocknr = -1;
@@ -1440,7 +1440,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
-   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype));
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
@@ -1651,7 +1651,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       {
          pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
       }
-      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit));
+      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 
 #ifdef SCIP_DEBUG
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
@@ -2039,7 +2039,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
 
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
-      while( !SCIPisStopped(scip))
+      while( !SCIPisStopped(scip) )
       {
          SCIP_Real mastertimelimit = SCIPinfinity(scip);
 

@@ -969,7 +969,7 @@ SCIP_RETCODE fillDecompStruct(
    SCIPfreeMemoryArray(scip, &nsubscipconss);
    SCIPfreeMemoryArray(scip, &nsubscipvars);
 
-   if( !valid)
+   if( !valid )
       return SCIP_READERROR;
    else
       return SCIP_OKAY;
@@ -1049,7 +1049,7 @@ SCIP_RETCODE readDECFile(
             /**@bug the reader should presolve the problem */
          case DEC_PRESOLVED:
             SCIP_CALL( readPresolved(scip, decinput) );
-            if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+            if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
             {
                assert(decinput->haspresolvesection);
                SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
@@ -1059,7 +1059,7 @@ SCIP_RETCODE readDECFile(
 
          case DEC_NBLOCKS:
             SCIP_CALL( readNBlocks(scip, decinput) );
-            if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED)
+            if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
             {
                SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
                goto TERMINATE;
@@ -1109,7 +1109,7 @@ SCIP_RETCODE readDECFile(
 
 
  TERMINATE:
-   if(nblocksread)
+   if( nblocksread )
    {
       for( i = decinput->nblocks - 1; i >= 0; --i )
       {

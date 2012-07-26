@@ -263,7 +263,7 @@ SCIP_RETCODE evaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
-   switch(DECdecompGetType(decdecomp))
+   switch( DECdecompGetType(decdecomp) )
    {
    case DEC_DECTYPE_ARROWHEAD:
       score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
@@ -994,7 +994,7 @@ void DECprintListOfDetectors(
 
    SCIPdialogMessage(scip, NULL, " detector             priority char  description\n --------------       -------- ----  -----------\n");
 
-   for( i = 0; i < ndetectors; ++i)
+   for( i = 0; i < ndetectors; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
       SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);

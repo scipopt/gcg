@@ -266,7 +266,7 @@ SCIP_RETCODE GCGorigVarCreateData(
          vardata->data.origvardata.maxmastervars) );
 
    SCIPvarSetData(var, vardata);
-   if(SCIPvarIsOriginal(var))
+   if( SCIPvarIsOriginal(var) )
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
       if( SCIPvarGetTransVar(var) != NULL )

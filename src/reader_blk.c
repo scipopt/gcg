@@ -1054,7 +1054,7 @@ SCIP_RETCODE readBLKFile(
 
       case BLK_PRESOLVED:
          SCIP_CALL( readPresolved(scip, blkinput) );
-         if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED)
+         if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          {
             assert(blkinput->haspresolvesection);
             /** @bug GCG should be able to presolve the problem first */
@@ -1065,7 +1065,7 @@ SCIP_RETCODE readBLKFile(
 
       case BLK_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, blkinput) );
-         if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED)
+         if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
          {
             SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
             goto TERMINATE;
@@ -1124,7 +1124,7 @@ SCIP_RETCODE readBLKFile(
    }
 
  TERMINATE:
-   if( nblocksread  )
+   if( nblocksread )
    {
       for( i = blkinput->nblocks - 1; i >= 0; --i )
       {

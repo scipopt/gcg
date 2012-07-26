@@ -85,7 +85,7 @@
    } else {\
       SCIPdebugMessage(__VA_ARGS__); \
    }\
-   }while(FALSE)
+   }while( FALSE )
 
 #define PRICER_STAT_ARRAYLEN_TIME 1024                /**< length of the array for Time histogram representation */
 #define PRICER_STAT_BUCKETSIZE_TIME 10                /**< size of the buckets for Time histogram representation */
@@ -621,7 +621,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
    }
 
    /* Degeneracy in % */
-   if(count > 0)
+   if( count > 0 )
       *degeneracy = ((double)countz / count)*100;
 
    assert(*degeneracy <= 100);
@@ -1431,7 +1431,7 @@ void sortPricingProblemsByScore(
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       pricerdata->permu[i] = i;
-      switch(pricerdata->sorting)
+      switch( pricerdata->sorting )
       {
       case 1:
          pricerdata->score[i] = pricerdata->dualsolconv[i];
@@ -1543,7 +1543,7 @@ SCIP_RETCODE performHeuristicPricing(
    /* solve the pricing MIPs heuristically and check whether solutions
     * corresponding to variables with negative reduced costs where found
     */
-   for( i = 0; i < pricerdata->npricingprobs; i++)
+   for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       if( abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
@@ -1595,7 +1595,7 @@ SCIP_RETCODE performHeuristicPricing(
       }
    }
    for( j = 0; j < pricerdata->npricingprobs; j++ )
-      if( pricerdata->pricingprobs[j] != NULL && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
+      if( pricerdata->pricingprobs[j] != NULL && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM )
       {
          SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
@@ -1721,7 +1721,7 @@ SCIP_RETCODE performOptimalPricing(
       if( status != SCIP_STATUS_OPTIMAL )
       {
          *bestredcostvalid = FALSE;
-         if( result != NULL)
+         if( result != NULL )
             *result = SCIP_DIDNOTRUN;
       }
       nfoundvarsprob = 0;
@@ -2596,7 +2596,7 @@ void GCGpricerPrintListOfSolvers(
 
    SCIPdialogMessage(scip, NULL, " solver               priority description\n --------------       -------- -----------\n");
 
-   for( i = 0; i < nsolvers; ++i)
+   for( i = 0; i < nsolvers; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", pricerdata->solvers[i]->name);
       SCIPdialogMessage(scip, NULL,  " %8d", pricerdata->solvers[i]->priority);
