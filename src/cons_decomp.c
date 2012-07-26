@@ -407,19 +407,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(conshdlr != NULL);
-   assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( !conshdlrdata->hasrun )
-   {
-
-      /*      SCIP_CALL( DECdetectStructure(scip) ); */
-      //      assert( conshdlrdata->hasrun );
-   }
    return SCIP_OKAY;
 }
 

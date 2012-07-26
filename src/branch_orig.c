@@ -249,9 +249,6 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
 
-   /* get current sol */
-//   currentsol = GCGrelaxGetCurrentOrigSol(scip);
-
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
          &npriobranchcands, NULL, NULL, NULL) );

@@ -181,8 +181,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(*consdata != NULL);
 
-//   conshdlrData = SCIPconshdlrGetData(conshdlr);
-
    SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
    /* set the origcons pointer of the corresponding mastercons to NULL */

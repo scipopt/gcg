@@ -210,13 +210,11 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
          {
             if( origvars[j] == branchdata->var1 )
             {
-               // assert(SCIPisEQ(scip, origvals[j], 1.0));
                val1 = origvals[j];
                continue;
             }
             if( origvars[j] == branchdata->var2 )
             {
-               //assert(SCIPisEQ(scip, origvals[j], 1.0));
                val2 = origvals[j];
             }
          }
