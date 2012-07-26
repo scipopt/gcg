@@ -197,8 +197,7 @@ do
             fi
             echo set save $SETFILE                 >> $TMPFILE
             echo read $i                           >> $TMPFILE
-#            echo write genproblem cipreadparsetest.cip >> $TMPFILE
-#            echo read cipreadparsetest.cip         >> $TMPFILE
+
 	    if test $MODE = "detect"
             then
 		echo write prob images\/$base.gp  >> $TMPFILE
@@ -215,11 +214,34 @@ do
 	    then
 		if test -f $DECFILE
 		then
-                    echo presolve              >> $TMPFILE
-                    echo read $DECFILE         >> $TMPFILE
+		    presol=`grep -A1 PRESOLVE $DECFILE`
+		    # if we find a presolving file
+		    if test $? = 0
+		    then
+                        # look if its in there
+			if grep -xq 1 - <<EOF
+$presol
+EOF
+			then
+			    echo presolve          >> $TMPFILE
+			fi
+		    fi
+                    echo read $DECFILE             >> $TMPFILE
 		elif test -f $BLKFILE
 		then
-                    echo read $BLKFILE         >> $TMPFILE
+		    presol=`grep -A1 PRESOLVE $BLKFILE`
+		    # if we find a presolving file
+		    if test $? = 0
+		    then
+                        # look if its in there
+			if grep -xq 1 - <<EOF
+$presol
+EOF
+			then
+			    echo presolve          >> $TMPFILE
+			fi
+		    fi
+                    echo read $BLKFILE             >> $TMPFILE
 		fi
             fi
 		echo optimize                      >> $TMPFILE
