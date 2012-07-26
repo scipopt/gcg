@@ -52,6 +52,8 @@ struct GCG_BranchData
    int                blocknr;             /**< number of block branching was performed */
    int                childnr;
    int                lhs;
+   int                nchildNodes;
+   int*               childlhs;
    SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
 };
 
@@ -97,117 +99,11 @@ struct GCG_Record
 
 
 
-/** callback propagation method */
-static
-GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
-{
-   SCIP_VAR** vars;
-   SCIP_Real val1;
-   SCIP_Real val2;
-   int nvars;
-   int propcount;
-   int i;
-   int j;
-
-   assert(scip != NULL);
-   assert(branchdata != NULL);
-   assert(branchdata->var1 != NULL);
-   assert(branchdata->var2 != NULL);
-   assert(branchdata->pricecons != NULL);
-
-   assert(GCGpricerGetOrigprob(scip) != NULL);
-
-   SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
-      SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
-
-   *result = SCIP_DIDNOTFIND;
-
-   propcount = 0;
-
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-
-   /* iterate over all master variables */
-   for( i = 0; i < nvars; i++ )
-   {
-      int norigvars;
-      SCIP_Real* origvals;
-      SCIP_VAR** origvars;
-
-      origvars = GCGmasterVarGetOrigvars(vars[i]);
-      origvals = GCGmasterVarGetOrigvals(vars[i]);
-      norigvars = GCGmasterVarGetNOrigvars(vars[i]);
-
-      /* only look at variables not fixed to 0 */
-      if( !SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
-      {
-         assert(GCGvarIsMaster(vars[i]));
-
-         /* if variable belongs to a different block than the branching restriction, we do not have to look at it */
-         if( branchdata->blocknr != GCGvarGetBlock(vars[i]) )
-            continue;
-
-         /* save the values of the original variables for the current master variable */
-         val1 = 0.0;
-         val2 = 0.0;
-         for( j = 0; j < norigvars; j++ )
-         {
-            if( origvars[j] == branchdata->var1 )
-            {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
-               val1 = origvals[j];
-               continue;
-            }
-            if( origvars[j] == branchdata->var2 )
-            {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
-               val2 = origvals[j];
-            }
-         }
-
-         /* if branching enforces that both original vars are either both contained or none of them is contained
-          * and the current master variable has different values for both of them, fix the variable to 0 */
-         if( branchdata->same && !SCIPisEQ(scip, val1, val2) )
-         {
-            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-            propcount++;
-         }
-         /* if branching enforces that both original vars must be in different mastervars, fix all
-          * master variables to 0 that contain both */
-         if( !branchdata->same && SCIPisEQ(scip, val1, 1.0) && SCIPisEQ(scip, val2, 1.0) )
-         {
-            SCIP_CALL( SCIPchgVarUb(scip, vars[i], 0.0) );
-            propcount++;
-         }
-      }
-   }
-
-   SCIPdebugMessage("Finished propagation of branching decision constraint: %s(%s, %s), %d vars fixed.\n",
-      ( branchdata->same ? "same" : "differ" ), SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2), propcount);
-
-   if( propcount > 0 )
-   {
-      *result = SCIP_REDUCEDDOM;
-   }
-
-   return SCIP_OKAY;
-}
 
 /*
  * Callback methods
  */
 
-
-/** branching execution method for fractional LP solutions */
-static
-SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
-{  /*lint --e{715}*/
-   SCIPdebugMessage("Execlp method of ryanfoster branching\n");
-
-   *result = SCIP_DIDNOTRUN;
-
-   return SCIP_OKAY;
-}
 
 /** branching execution method for relaxation solutions */
 static
@@ -1531,10 +1427,68 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
    if( (*branchddata)->childS !=NULL )
 	   SCIPfreeBufferArray(scip, &((*branchdata)->childS));
    
+   if( (*branchddata)->nchildNodes > 0 )
+   	   SCIPfreeBufferArray(scip, &((*branchdata)->childlhs));
+      
+   
    SCIPfreeMemory(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
+}
+
+/** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
+static
+SCIP_Bool pruneChildNodeByDominanceGeneric(
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   lhs,                /**< lhs for childnode which is checkes to be pruned */
+   ComponentBoundSequence* childS,           /**< Component Bound Sequence defining the childnode */
+   int                   childSsize,
+   SCIP_CONS*            masterbranch,
+   int                   childBlocknr,             /**< number of the block for the childnode */
+   )
+{
+	SCIP_CONS* cons;
+	int i;
+	int childnr;
+	
+	i = 0;
+	childnr = 0;
+	cons = GCGconsMasterbranchGetParentcons(masterbranch);
+	
+	while( GCGconsMasterbranchGetParentcons(cons) != NULL )
+	{
+		GCG_BRANCHDATA* parentdata;
+		
+		cons = GCGconsMasterbranchGetParentcons(cons);  //skip the first ancestor node
+		parentdata = GCGconsMasterbranchGetBranchdata(cons);
+		
+		
+		if(parentdata->blocknr == childBlocknr && parentdata->childSsize >= childSsize)
+		{
+			for( i=0; i<childSsize; ++i)
+			{
+				if( parentdata->childlhs[i] == lhs && parentdata->childS[i][0] == childS[i][0] && parentdata->childS[i][2] == childS[i][2] )
+				{
+					if(parentdata->childS[i][1] != childS[i][1] && i < childSsize-1 )
+						break;
+					if( i == childSsize-1 )
+					{
+						if(childSsize == parentdata->childSsize)
+							return TRUE;
+						if( parentdata->childS[i][1] != childS[i][1] )  //child is induced by parantdata->childS
+							return TRUE;
+					}
+				}
+				else 
+					break;  //no subset or other lhs
+			}
+		}
+		
+	}
+	
+	
+	return FALSE;
 }
 
 
@@ -1545,12 +1499,12 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    ComponentBoundSequence* S,              /**< Component Bound Sequence defining the nodes */
    int                   Ssize,
-   ComponentBoundSequence** C,              /**< previous Component Bound Sequences */
-   int                   Csize,
-   int*                  sequencesizes,
+   GCG_BRANCHDATA*       branchdata,
+   SCIP_NODE*            currentnode,
    int                   blocknr,             /**< number of the block */
    GCG_Strip**           F,                   /**< strips with mu>0 */  //for rhs, will be small than
-   int                   Fsize
+   int                   Fsize,
+   SCIP_CONS*            parentcons
    )
 {
 	//SCIP_NODE* childsame;
@@ -1580,6 +1534,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	SCIP_VAR* mvar;
 	SCIP_VARDATA* vardata;
 	SCIP_Bool nodeRedundant;
+	GCG_BRANCHDATA* parentdata;
 
 
 	lhs = 0;
@@ -1590,7 +1545,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	pL = nblocks;  // Npricingprobs??? ändert sich bei vanderbeckpricing??
 	mu = 0;
 	nodeRedundant = FALSE;
-
+	parentdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
 	// get variable data of the master problem 
 	SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -1628,7 +1583,7 @@ SCIP_RETCODE createChildNodesGeneric(
 		   branchchilddata->same = TRUE;
 		   branchchilddata->blocknr = blocknr;
 		   branchchilddata->cons = NULL;
-		   branchchilddata->chidnr = p;
+		   branchchilddata->childnr = p;
 		   
 		   if( p == Ssize )
 		   {
@@ -1711,30 +1666,38 @@ SCIP_RETCODE createChildNodesGeneric(
 		pL = L;
 		
 		branchchilddata->lhs = lhs;
-
-		// define name for constraint 
-		(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", p, lhs);
-
-		//create cons
-		SCIP_CALL( GCGcreateConsMasterbranch(scip, &branchcons, childname, child, GCGconsMasterbranchGetActiveCons(scip)), branchrule, branchchilddata );
 		
-
-		//addNode
-		SCIP_CALL( SCIPaddConsNode(scip, child, branchcons, NULL) );
-
-		//release constraint 
-		SCIP_CALL( SCIPreleaseCons(scip, &branchcons) );
-
-		// create constraint for child
-		SCIP_CALL( SCIPcreateConsLinear(scip, &mastercons, childname, 0, NULL, NULL,
-				lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-
-		//Node redundant?
-
-
-		//add variables to constraint
-		if(!nodeRedundant)
+		
+		if( parentcons == NULL || !pruneChildNodeByDominanceGeneric(scip, lhs, branchchilddata->S, branchchilddata->Ssize, parentcons, blocknr) )
 		{
+
+			++parentdata->nchildNodes;
+			SCIP_CALL( SCIPreallocBufferArray(scip, &(parentdata->childlhs), parentdata->nchildNodes-1) );
+			parentdata->childlhs[p] = lhs;
+			assert( p == parentdata->nchildNodes-1 );
+			
+			// define name for constraint 
+			(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", p, lhs);
+
+			//create cons
+			SCIP_CALL( GCGcreateConsMasterbranch(scip, &branchcons, childname, child, GCGconsMasterbranchGetActiveCons(scip)), branchrule, branchchilddata );
+
+
+			//addNode
+			SCIP_CALL( SCIPaddConsNode(scip, child, branchcons, NULL) );
+
+			//release constraint 
+			SCIP_CALL( SCIPreleaseCons(scip, &branchcons) );
+
+			// create constraint for child
+			SCIP_CALL( SCIPcreateConsLinear(scip, &mastercons, childname, 0, NULL, NULL,
+					lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+
+			//Node redundant?
+
+
+			//add variables to constraint
+
 
 			newnmastervars = nmastervars;
 			for( i=0; i<newnmastervars; ++i)
@@ -1791,11 +1754,12 @@ SCIP_RETCODE createChildNodesGeneric(
 				}
 			}
 			nmastervars = newnmastervars;
-		}
 
-		//add cons locally to the problem and release it
-		SCIP_CALL( SCIPaddConsNode(scip, child, mastercons, NULL) );
-		SCIP_CALL( SCIPreleaseCons(scip, &mastercons) );
+
+			//add cons locally to the problem and release it
+			SCIP_CALL( SCIPaddConsNode(scip, child, mastercons, NULL) );
+			SCIP_CALL( SCIPreleaseCons(scip, &mastercons) );
+		}
 	}
 
 
@@ -1934,6 +1898,38 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterGeneric)
 
    return SCIP_OKAY;
 }
+
+
+
+/** callback propagation method */
+static
+GCG_DECL_BRANCHPROPMASTER(branchPropMasterGeneric)
+{
+ 
+   assert(scip != NULL);
+   assert(branchdata != NULL);
+   assert(branchdata->cons != NULL);
+   assert(branchdata->S != NULL);
+
+
+   SCIPdebugMessage("branchPropMasterGeneric: Block %d ,Ssize %d)\n", branchdata->blocknr,
+      branchdata->Ssize);
+
+   return SCIP_OKAY;
+}
+
+
+/** branching execution method for fractional LP solutions */
+static
+SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
+{  /*lint --e{715}*/
+   SCIPdebugMessage("Execlp method of generic branching\n");
+
+   *result = SCIP_DIDNOTRUN;
+
+   return SCIP_OKAY;
+}
+
 
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
