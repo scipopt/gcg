@@ -418,9 +418,10 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    assert(vardata->data.pricingvardata.origvars != NULL);
    assert(vardata->data.pricingvardata.origvars[0] != NULL);
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
-   if( vardata->data.pricingvardata.norigvars >= 2 )
+   if( vardata->data.pricingvardata.norigvars >= 1 )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.norigvars+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
+            vardata->data.pricingvardata.norigvars + 1) );
    }
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
