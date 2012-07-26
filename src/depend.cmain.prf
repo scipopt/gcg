@@ -48,7 +48,7 @@ $(OBJDIR)/reader_blk.o: src/reader_blk.c src/reader_blk.h lib/scip/src/scip/scip
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/relax_gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/pub_gcgvar.h src/pub_decomp.h src/type_detector.h \
- src/cons_decomp.h src/scip_misc.h
+ src/cons_decomp.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h
 $(OBJDIR)/reader_dec.o: src/reader_dec.c src/reader_dec.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
@@ -98,7 +98,8 @@ $(OBJDIR)/reader_dec.o: src/reader_dec.c src/reader_dec.h lib/scip/src/scip/scip
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/type_decomp.h src/scip_misc.h \
- src/pub_gcgvar.h src/cons_decomp.h src/type_detector.h src/pub_decomp.h
+ lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h src/cons_decomp.h \
+ src/type_detector.h src/pub_decomp.h
 $(OBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_reader.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -430,8 +431,8 @@ $(OBJDIR)/pricer_gcg.o: src/pricer_gcg.c lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  lib/scip/src/scip/cons_knapsack.h src/pricer_gcg.h src/type_solver.h \
  src/sepa_master.h src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
- src/struct_solver.h src/scip_misc.h src/pub_gcgvar.h \
- src/cons_masterbranch.h
+ src/struct_solver.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
+ src/pub_gcgvar.h src/cons_masterbranch.h
 $(OBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2669,8 +2670,8 @@ $(OBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/type_detector.h src/type_decomp.h src/dec_connected.h \
  src/relax_gcg.h src/type_branchgcg.h src/struct_detector.h \
- src/scip_misc.h lib/scip/src/scip/clock.h src/pub_gcgvar.h \
- src/pub_decomp.h
+ src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/clock.h src/pub_gcgvar.h src/pub_decomp.h
 $(OBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/pub_decomp.h \
  lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/type_var.h lib/scip/src/scip/type_cons.h \
@@ -2771,7 +2772,7 @@ $(OBJDIR)/dec_connected.o: src/dec_connected.c src/dec_connected.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
- src/pub_decomp.h
+ lib/scip/src/scip/cons_setppc.h src/pub_decomp.h
 $(OBJDIR)/gcggithash.o: src/gcggithash.c src/gcggithash.h src/githash.c
 $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -2822,7 +2823,8 @@ $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/type_decomp.h src/scip_misc.h \
- src/struct_decomp.h src/type_detector.h src/cons_decomp.h
+ lib/scip/src/scip/cons_setppc.h src/struct_decomp.h src/type_detector.h \
+ src/cons_decomp.h
 $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
@@ -2871,7 +2873,8 @@ $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/struct_event.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
@@ -2887,9 +2890,9 @@ $(OBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
  lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
  lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
- lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_sos1.h \
- lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_superindicator.h \
+ lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_soc.h \
+ lib/scip/src/scip/cons_sos1.h lib/scip/src/scip/cons_sos2.h \
+ lib/scip/src/scip/cons_superindicator.h \
  lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
@@ -3042,7 +3045,7 @@ $(OBJDIR)/gcgvar.o: src/gcgvar.c src/pub_gcgvar.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/struct_vardata.h src/relax_gcg.h \
  src/type_branchgcg.h src/type_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_linear.h
+ lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/cons_linear.h
 $(OBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
@@ -3091,8 +3094,9 @@ $(OBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/stat.h \
- src/scip_misc.h src/pub_decomp.h src/type_decomp.h src/type_detector.h \
- src/cons_decomp.h src/struct_detector.h src/pub_gcgvar.h
+ src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/cons_decomp.h \
+ src/struct_detector.h src/pub_gcgvar.h
 $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
