@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricer_gcg.h
- * @brief  gcg variable pricer
+ * @brief  GCG variable pricer
  * @author Gerald Gamrath
  * @author Martin Bergner
  * @ingroup PRICERS
@@ -50,7 +50,7 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 
 
 
-/** creates the gcg variable pricer and includes it in SCIP */
+/** creates the GCG variable pricer and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */

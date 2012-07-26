@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_knapsack.c
+/**@file   solver_knapsack.h
  * @brief  knapsack solver for pricing problems
  * @author Gerald Gamrath
  */

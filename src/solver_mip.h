@@ -24,8 +24,8 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
-/**@file   solver_mip.c
+
+/**@file   solver_mip.h
  * @brief  mip solver for pricing problems
  * @author Gerald Gamrath
  */

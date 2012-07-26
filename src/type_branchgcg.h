@@ -27,7 +27,7 @@
 
 /**@file   type_branchgcg.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for branching rules in gcg projects
+ * @brief  type definitions for branching rules in GCG projects
  * @author Gerald Gamrath
  */
 

@@ -27,7 +27,7 @@
 
 /**@file    relax_gcg.h
  * @ingroup PUBLICMETHODS
- * @brief   gcg relaxator
+ * @brief   GCG relaxator
  * @author  Gerald Gamrath
  */
 
@@ -40,7 +40,7 @@
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 
-/** creates the gcg relaxator and includes it in SCIP */
+/** creates the GCG relaxator and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */

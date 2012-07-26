@@ -2261,7 +2261,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
  * variable pricer specific interface methods
  */
 
-/** creates the gcg variable pricer and includes it in SCIP */
+/** creates the GCG variable pricer and includes it in SCIP */
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */

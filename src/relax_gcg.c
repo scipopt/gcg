@@ -27,7 +27,7 @@
 
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
- * @brief   gcg relaxator
+ * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
@@ -224,7 +224,7 @@ SCIP_RETCODE markConsMaster(
 }
 
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+/** converts the structure to the GCG format by setting the appropriate blocks and master constraints */
 static
 SCIP_RETCODE convertStructToGCG(
    SCIP*                 scip,               /**< SCIP data structure          */
@@ -2157,14 +2157,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
  * relaxator specific interface methods
  */
 
-/** creates the gcg relaxator and includes it in SCIP */
+/** creates the GCG relaxator and includes it in SCIP */
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAXDATA* relaxdata;
 
-   /* create gcg relaxator data */
+   /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
 
    relaxdata->decdecomp = NULL;
@@ -2193,7 +2193,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
 
-   /* add gcg relaxator parameters */
+   /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );

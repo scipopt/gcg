@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dialog_gcg.h
- * @brief  gcg user interface dialog
+ * @brief  GCG user interface dialog
  * @author Tobias Achterberg
  * @author Timo Berthold
  * @author Gerald Gamrath
@@ -86,7 +86,7 @@ SCIP_RETCODE GCGcreateRootDialog(
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    );
 
-/** includes or updates the gcg dialog menus in SCIP */
+/** includes or updates the GCG dialog menus in SCIP */
 extern
 SCIP_RETCODE SCIPincludeDialogGcg(
    SCIP*                 scip                /**< SCIP data structure */
