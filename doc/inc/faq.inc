@@ -27,7 +27,7 @@
     <p class="a">
       GCG can solve all problems for which a structure for Dantzig-Wolfe
       reformulation is known. The structure is either automatically detected by
-      GCG (see  <a href="#Q2">next question</a>) or supplied as a decomposition
+      GCG (see  <a href="#Q3">next question</a>) or supplied as a decomposition
       file (see <a href="group__FILEREADERS.html">filereaders</a>).
    </p>
 

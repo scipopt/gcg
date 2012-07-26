@@ -648,7 +648,7 @@ $(OBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c src/cons_masterbranch.h \
  src/type_branchgcg.h lib/scip/src/scip/cons_linear.h \
  src/cons_origbranch.h src/relax_gcg.h src/type_decomp.h src/pricer_gcg.h \
  src/type_solver.h src/pub_gcgvar.h
-$(OBJDIR)/cons_integralOrig.o: src/cons_integralOrig.c src/cons_integralOrig.h \
+$(OBJDIR)/cons_integralorig.o: src/cons_integralorig.c src/cons_integralorig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/scip/struct_message.h \
@@ -2104,7 +2104,7 @@ $(OBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
  lib/scip/src/scip/reader_cip.h lib/scip/src/scip/reader_lp.h \
  lib/scip/src/scip/scipshell.h src/pricer_gcg.h src/type_solver.h \
  src/nodesel_master.h src/cons_masterbranch.h src/type_branchgcg.h \
- src/cons_integralOrig.h src/sepa_master.h src/branch_master.h \
+ src/cons_integralorig.h src/sepa_master.h src/branch_master.h \
  lib/scip/src/scip/debug.h src/dialog_master.h src/disp_master.h \
  src/solver_knapsack.h src/solver_mip.h src/heur_greedycolsel.h \
  src/heur_relaxcolsel.h src/heur_restmaster.h

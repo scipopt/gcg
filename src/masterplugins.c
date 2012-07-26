@@ -114,7 +114,7 @@
 #include "pricer_gcg.h"
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
-#include "cons_integralOrig.h"
+#include "cons_integralorig.h"
 #include "sepa_master.h"
 #include "branch_master.h"
 #include "scip/debug.h"
