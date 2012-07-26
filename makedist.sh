@@ -35,7 +35,8 @@ tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*~" \
 --exclude=".*" \
 $NAME/COPYING $NAME/README $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
-$NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk \
+$NAME/release-notes/release-notes* \
+$NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk $NAME/check/eval.sh \
 $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres.awk \
 $NAME/settings/*.set \
 $NAME/src/depend.* \
