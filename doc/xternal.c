@@ -586,13 +586,9 @@ GCG> q
  * have the timing SCIP_HEURTIMING_AFTERNODE to ensure that the heuristic is called at all. One then must ensure that the node's
  * relaxation has indeed been solved to optimality and that the relaxation solution is valid. This can be done by placing
  * \code
- * /* do not execute the heuristic on invalid relaxation solutions
- *  * (which is the case if the node has been cut off)
- *  */
  *  if( !SCIPisRelaxSolValid(scip) )
  *     return SCIP_OKAY;
  *
- *  /* only call heuristic, if an optimal LP solution is at hand */
  *  if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(GCGrelaxGetMasterprob(scip)) != SCIP_LPSOLSTAT_OPTIMAL )
  *     return SCIP_OKAY;
  * \endcode
