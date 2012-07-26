@@ -59,12 +59,12 @@
  * @version  1.0.0
  *
  * <b>Further Documentation</b>
- * - \ref DETECT "How to write custom structure detectors"
- * - \ref SOLVER "How to write a custom pricing problem solver"
- * - \ref BRANCH "How to write a custom branching rule"
- * - \ref SEPA "How to write custom separators"
- * - \ref HEUR "How to write custom heuristics"
+ * - \ref IMPORTANTMETHODS "Important methods for writing GCG plugins"
  * - \ref PUBLICMETHODS "List of callable functions"
+ * - \ref PRICINGSOLVER "How to write a custom pricing problem solver"
+ * - \ref BRANCH "How to write a custom branching rule"
+ * - \ref HEUR "How to write custom heuristics"
+ * - \ref DETECT "How to write custom structure detectors"
  * - \ref FAQ "Frequently asked questions"
  * - \ref PARAMS "Default parameter settings"
  * - \ref bug "Known bugs"
@@ -478,7 +478,7 @@ GCG> q
 /**@defgroup BRANCHINGRULES Branching Rules
  * @brief This page contains a list of all branching rule which are currently available.
  *
- * A detailed description what a branching rule does and how to add a branching rule to \SCIP can be found
+ * A detailed description what a branching rule does and how to add a branching rule to GCG can be found
  * \ref BRANCH "here".
  */
 
@@ -515,13 +515,6 @@ GCG> q
  * @brief This page contains a list of all node selectors which are currently available.
  *
  * A detailed description what a node selector does and how to add a node selector to \SCIP can be found
- * in the SCIP documentation.
- */
-
-/**@defgroup PRESOLVERS Presolvers
- * @brief This page contains a list of all presolvers which are currently available.
- *
- * A detailed description what a presolver does and how to add a presolver to \SCIP can be found
  * in the SCIP documentation.
  */
 
@@ -775,12 +768,12 @@ GCG> q
  */
 
  /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/**@page SOLVER How to add pricing problem solvers
+/**@page PRICINGSOLVER How to add pricing problem solvers
  *
  * Pricing problem solvers are called by the pricer to solve a single pricing problem either heuristically or to optimality
  * and return a set of solutions.
  * \n
- * A complete list of all pricing problem solvers contained in this release can be found \ref SOLVERS "here".
+ * A complete list of all pricing problem solvers contained in this release can be found \ref PRICINGSOLVERS "here".
  *
  * In the following, we explain how the user can add his own pricing problem solver.
  * Take the generic MIP pricing problem solver (src/solver_mip.c) as an example.
@@ -942,10 +935,116 @@ GCG> q
  * The SOLVERINITSOL callback is executed when the presolving is finished and the branch-and-bound process is about to begin.
  * The pricing problem solver may use this call to initialize its branch-and-bound specific data.
  *
- * @subsection PRICEREXITSOL
+ * @subsection SOLVEREXITSOL
  *
  * The SOLVEREXITSOL callback is executed before the branch-and-bound process is freed.
  * The pricing problem solver should use this call to clean up its branch-and-bound data, which was allocated in SOLVERINITSOL.
+ *
+ */
+
+ /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/**@page BRANCH How to add branching rules to GCG
+ *
+ * Branching in the branch-cut-and-price context is a bit more complicated than in a branch-and-cut algorithm.
+ * GCG manages two SCIP instances, one for the original instance and one for the reformulated instance, that are solved jointly.
+ * The original SCIP instance coordinates the solving process, while the reformulated instance builds the tree in the same
+ * way, with each node representing the Dantzig-Wolfe reformulated subproblem of the related node in the original instance.
+ *
+ * Therefore, if you want to implement a new branching rule, it has to be added to the original SCIP instance, but it gets some
+ * more callback methods, e.g., to transfer the branching decision to the corresponding nodes of the master problem and
+ * enforce these changes during propagation.
+ * \n
+ *
+ * The linking of the nodes of the two trees is done via two constraint handler, cons_origbranch and cons_masterbranch,
+ * that add local constraints to the nodes whoch know about the corresponding constraint in the other SCIP instance and by
+ * this also the corresponding node. Therefore, each branchrule in GCG has to add one of the origbranch constraints to each
+ * child node it creates. This origbranch constraint also stores a branching data, as described \ref BRANCHDATA "below", that
+ * can be used to store information about the branching decisions.
+ *
+ * \code
+ *  SCIP_NODE* childleft;
+ *  SCIP_NODE* childright;
+ *  GCG_BRANCHDATA* branchleftdata;
+ *  GCG_BRANCHDATA* branchrightdata;
+ *  SCIP_CONS* origbranchleft;
+ *  SCIP_CONS* origbranchright;
+ *
+ *  /* create the branching data for the children */
+ *  SCIP_CALL( SCIPallocMemory(scip, &(branchleftdata)) );
+ *  SCIP_CALL( SCIPallocMemory(scip, &(branchrightdata)) );
+ *
+ *  /* add branching decision to the subproblems and store them in the branching data */
+ *  (...)
+ *
+ *  /* create the origbranch constraints */
+ *  SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchleft, "left", childleft,
+ *        GCGconsOrigbranchGetActiveCons(scip), branchrule, branchleftdata) );
+ *  SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchright, "right", childright,
+ *        GCGconsOrigbranchGetActiveCons(scip), branchrule, branchrightdata) );
+ *
+ *  /* add constraints to nodes */
+ *  SCIP_CALL( SCIPaddConsNode(scip, childleft, origbranchleft, NULL) );
+ *  SCIP_CALL( SCIPaddConsNode(scip, childright, origbranchright, NULL) );
+ *
+ *  /* release constraints */
+ *  SCIP_CALL( SCIPreleaseCons(scip, &origbranchleft) );
+ *  SCIP_CALL( SCIPreleaseCons(scip, &origbranchright) );
+ * \endcode
+ *
+ * A complete list of all branching rules contained in this release can be found \ref BRANCHINGRULES "here".
+ *
+ * In the following, we explain how the user can add his own pricing problem solver.
+ * Take the branching rule that branches on original variables (src/branch_orig.c) as an example.
+ * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
+ *
+ * In the following, we will only explain the additional callback methods which a branching rule in GCG can implement.
+ * For a general introduction about how to write a branching rule in SCIP and a description of the default callback methods
+ * of a branching rule in SCIP, we refer to the SCIP documentation and the "How to add constraint handlers" there.
+ *
+ * Additional documentation for the GCG-specific callback methods of branching rules, in particular for their input parameters,
+ * can be found in the file type_branchgcg.h.
+ *
+ * @section BRANCHDATA GCG specific branching data
+ *
+ * Below the header "Data structures" you can find the new struct "struct GCG_BranchData".
+ * In this data structure, each branching rule can store information about the branching decisions applied to a newly created node.
+ * Later, this information is used to transfer the branching decisions to the corresponding nodes in the reformulated SCIP instance.
+ * \n
+ * Defining branching data is optional. You can leave this struct empty.
+ *
+ * @section BRANCH_CALLBACKS GCG-specific callbacks of branching rules
+ *
+ * @subsection BRANCHACTIVEMASTER
+ *
+ * The BRANCHACTIVEMASTER callback is called whenever a node in the master problem is activated.
+ * It should transfer the branching decisions that were made at the corresponding node in the original SCIP instance to the
+ * current node of the reformulated SCIP instance. Therefore, it gets branching data stored at the corresponding node in the
+ * original SCIP instance as a parameter. It should then for example reformulate a banching constraint to the
+ * reformulated problem space and add it locally to the current node or update the pricing problem according to the
+ * branching decision.
+ *
+ * @subsection BRANCHDEACTIVEMASTER
+ *
+ * The BRANCHDEACTIVEMASTER callback is called whenever a node in the master problem is deactivated.
+ * It should undo all changes that were performed in the BRANCHACTIVEMASTER callback, e.g., remove branching restrictions
+ * from the pricing problems.
+ *
+ * @subsection BRANCHPROPMASTER
+ *
+ * The BRANCHPROPMASTER callback is called whenever a node in the master problem is propagated by the masterbranch
+ * constraint handler.
+ * It should perform propagation according to the branching changes done at the related original node, which are stored in
+ * the given banching data. In particular, it should fix all variable locally to 0, that contradict the branching decision
+ * and represent an extreme point or extreme ray which is not feasible for the current pricing problem.
+ *
+ * @subsection BRANCHMASTERSOLVED
+ *
+ * The BRANCHMASTERSOLVED callback is called whenever the relaxation of a node is solved for the first time. It can be used
+ * to collect statistical information about branching decision, e.g., update pseudocost values.
+ *
+ * @subsection BRANCHDATADELETE
+ *
+ * The BRANCHDATADELETE callback is called when a branch-and-bound node is freed and should free the branching data.
  *
  */
 
