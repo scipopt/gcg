@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_mip.c
+/**@file   solver_mip.h
  * @brief  mip solver for pricing problems
  * @author Gerald Gamrath
  */

@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   disp_gcg.h
- * @brief  gcg display columns
+ * @brief  GCG display columns
  * @author Gerald Gamrath
  */
 
@@ -39,7 +39,7 @@
 #include "scip/scip.h"
 
 
-/** includes the gcg display columns in SCIP */
+/** includes the GCG display columns in SCIP */
 extern
 SCIP_RETCODE SCIPincludeDispGcg(
    SCIP*                 scip                /**< SCIP data structure */

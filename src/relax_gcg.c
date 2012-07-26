@@ -27,7 +27,7 @@
 
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
- * @brief   gcg relaxator
+ * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
@@ -224,7 +224,7 @@ SCIP_RETCODE markConsMaster(
 }
 
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+/** converts the structure to the GCG format by setting the appropriate blocks and master constraints */
 static
 SCIP_RETCODE convertStructToGCG(
    SCIP*                 scip,               /**< SCIP data structure          */
@@ -807,7 +807,7 @@ SCIP_RETCODE checkIdenticalBlocks(
       }
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d identical blocks, using only %d aggregated pricing problem%s!\n",
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, using %d aggregated pricing problem%s!\n",
       relaxdata->npricingprobs, nrelevant, (nrelevant == 1 ? "" : "s"));
 
    relaxdata->nrelpricingprobs = nrelevant;
@@ -1028,7 +1028,7 @@ SCIP_RETCODE createPricingVariables(
       {
          size_t tempblock;
          tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         if(tempblock == 0)
+         if( tempblock == 0 )
          {
             assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
             blocknr = -1;
@@ -1440,7 +1440,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
-   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype));
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
@@ -1651,7 +1651,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       {
          pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
       }
-      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit));
+      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 
 #ifdef SCIP_DEBUG
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
@@ -2039,7 +2039,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
 
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
-      while( !SCIPisStopped(scip))
+      while( !SCIPisStopped(scip) )
       {
          SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
@@ -2157,14 +2157,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
  * relaxator specific interface methods
  */
 
-/** creates the gcg relaxator and includes it in SCIP */
+/** creates the GCG relaxator and includes it in SCIP */
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAXDATA* relaxdata;
 
-   /* create gcg relaxator data */
+   /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
 
    relaxdata->decdecomp = NULL;
@@ -2193,7 +2193,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
 
-   /* add gcg relaxator parameters */
+   /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );

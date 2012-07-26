@@ -27,7 +27,7 @@
 
 /**@file   disp_gcg.c
  * @ingroup DISPLAYS
- * @brief  gcg display columns
+ * @brief  GCG display columns
  * @author Gerald Gamrath
  * @author Christian Puchert
  */

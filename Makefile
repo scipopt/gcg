@@ -55,7 +55,7 @@ MAINOBJ		=	reader_blk.o \
 			branch_ryanfoster.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
-			cons_integralOrig.o \
+			cons_integralorig.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \

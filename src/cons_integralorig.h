@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   cons_integralOrig.h
+/**@file   cons_integralorig.h
  * @brief  constraint handler for the integrality constraint
  * @author Tobias Achterberg
  */

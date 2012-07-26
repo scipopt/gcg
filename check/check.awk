@@ -381,7 +381,7 @@ BEGIN {
 
 /^Matrix has / {
    blocks = $3;
-   rel = $8;
+   rel = $6;
 }
 /^GCG                : Performing Dantzig-Wolfe with [0-9]+ blocks./ {
    blocks = $6;

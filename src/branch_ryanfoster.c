@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_ryanfoster.c
- * @brief  branching rule for original problem in gcg implementing the Ryan and Foster branching scheme
+ * @brief  branching rule for original problem in GCG implementing the Ryan and Foster branching scheme
  * @author Gerald Gamrath
  */
 
@@ -676,7 +676,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
             branchdata = GCGconsOrigbranchGetBranchdata(origbranchconss[c]);
 
-            if( (branchdata->var1 == ovar1 && branchdata->var2 == ovar2)
+            if( (branchdata->var1 == ovar1 && branchdata->var2 == ovar2 )
                || (branchdata->var1 == ovar2 && branchdata->var2 == ovar1) )
             {
                break;

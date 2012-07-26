@@ -94,7 +94,7 @@ struct SCIP_ConsData
    int                   nboundchanges;      /**< number of bound changes */
    int                   nbranchingchanges;  /**< number of bound changes due to branching (<= nboundchanges) */
    int                   nactivated;         /**< number of times the constraint was activated so far */
-   char*                 name;               /** name of the constraint */
+   char*                 name;               /**< name of the constraint */
 };
 
 /** constraint handler data */

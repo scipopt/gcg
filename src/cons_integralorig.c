@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   cons_integralOrig.c
+/**@file   cons_integralorig.c
  * @ingroup CONSHDLRS
  * @brief  constraint handler for enforcing integrality of the transferred master solution in the original problem
  * @author Gerald Gamrath
@@ -36,12 +36,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "cons_integralOrig.h"
+#include "cons_integralorig.h"
 #include "pricer_gcg.h"
 #include "cons_masterbranch.h"
 #include "pub_gcgvar.h"
 
-#define CONSHDLR_NAME          "integralOrig"
+#define CONSHDLR_NAME          "integralorig"
 #define CONSHDLR_DESC          "integrality constraint"
 #define CONSHDLR_SEPAPRIORITY         0 /**< priority of the constraint handler for separation */
 #define CONSHDLR_ENFOPRIORITY      1000 /**< priority of the constraint handler for constraint enforcing */
@@ -90,7 +90,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
 
-   SCIPdebugMessage("LP solution enforcing method of integralOrig constraint\n");
+   SCIPdebugMessage("LP solution enforcing method of integralorig constraint\n");
 
    *result = SCIP_FEASIBLE;
 
@@ -227,7 +227,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
 
-   SCIPdebugMessage("Check method of integralOrig constraint\n");
+   SCIPdebugMessage("Check method of integralorig constraint\n");
 
    *result = SCIP_FEASIBLE;
 

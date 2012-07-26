@@ -4,7 +4,7 @@
   <table class="desc">
     <tr>
       <td width="180px">
-	<a href="http://www.or.rwth-aachen.de/~luebbecke">Marco Lübbecke</a>
+	<a href="http://www.or.rwth-aachen.de/luebbecke">Marco Lübbecke</a>
       </td>
       <td>
 	Project initiator and head
@@ -16,7 +16,7 @@
   <table class="desc">
     <tr>
       <td width="180px">
-	<a href="http://www.or.rwth-aachen.de/people/bergner">Martin Bergner</a>
+	<a href="http://www.or.rwth-aachen.de/bergner">Martin Bergner</a>
       </td>
       <td>
 	Detection, main developer
@@ -32,7 +32,7 @@
     </tr>
     <tr>
       <td>
-	<a href="http://www.or.rwth-aachen.de/people/puchert/">Christian Puchert</a>
+	<a href="http://www.or.rwth-aachen.de/puchert/">Christian Puchert</a>
       </td>
       <td>
         Primal heuristics, main developer

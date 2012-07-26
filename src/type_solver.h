@@ -27,7 +27,7 @@
 
 /**@file   type_solver.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for pricing problem solvers in gcg project
+ * @brief  type definitions for pricing problem solvers in GCG project
  * @author Gerald Gamrath
  */
 

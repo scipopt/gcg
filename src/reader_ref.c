@@ -62,7 +62,7 @@
 #define REF_MAX_LINELEN       65536
 #define REF_MAX_PUSHEDTOKENS  2
 
-/** Section in REF File */
+/** section in REF File */
 enum RefSection
 {
    REF_START, REF_NBLOCKS, REF_BLOCKSIZES, REF_BLOCKS, REF_END

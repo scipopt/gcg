@@ -84,7 +84,7 @@ struct SCIP_HeurData
  */
 
 
-/** How would the number of violated rows change if mastervar were increased?  */
+/** how would the number of violated rows change if mastervar were increased?  */
 static
 int getViolationChange(
    SCIP*                 scip,

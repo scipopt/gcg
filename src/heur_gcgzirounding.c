@@ -252,10 +252,10 @@ SCIP_RETCODE updateSlacks(
    int                   nslacks             /**< size of the arrays */
    )
 {
-   SCIP_COL*    col;        /** the corresponding column of variable var */
-   SCIP_ROW**   rows;       /** pointer to the nonzero coefficient rows for variable var */
-   int          nrows;      /** the number of nonzeros */
-   SCIP_Real*   colvals;    /** array to store the nonzero coefficients */
+   SCIP_COL*    col;        /* the corresponding column of variable var */
+   SCIP_ROW**   rows;       /* pointer to the nonzero coefficient rows for variable var */
+   int          nrows;      /* the number of nonzeros */
+   SCIP_Real*   colvals;    /* array to store the nonzero coefficients */
    int i;
 
    assert(scip != NULL);

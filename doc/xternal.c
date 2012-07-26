@@ -59,7 +59,7 @@
  * @version  1.0.0
  *
  * <b>Further Documentation</b>
- * - \ref DETECT "How to write a custom structure detection"
+ * - \ref DETECT "How to write custom structure detectors"
  * - \ref SOLVER "How to write a custom pricing problem solver"
  * - \ref BRANCH "How to write a custom branching rule"
  * - \ref SEPA "How to write custom separators"

@@ -1,13 +1,10 @@
 <div id="faq">
 
-    <h4><a name="Section0">Sections</a></h4>
+    <h3><a name="Section0">Sections</a></h3>
     <ul>
      <li><a href="#Section1">General Questions about GCG</a></li>
-     <li><a href="#Section2">Using SCIP as a standalone MIP-Solver</a></li>
-     <li><a href="#Section3">Using SCIP included in another source code</a></li>
-     <li><a href="#Section4">Using SCIP as a Branch-Cut-And-Price-Framework</a></li>
-     <li><a href="#Section5">Specific questions about Column Generation and Branch-And-Price with SCIP</a></li>
-     <li><a href="#Section6">Known Bugs</a></li>
+     <li><a href="#Section2">Decomposition file related questions</a></li>
+     <li><a href="#Section3">Miscellaneous</a></li>
     </ul>
 
     <h4><a name="Section1">General Questions about GCG</a></h4>
@@ -30,12 +27,12 @@
     <p class="a">
       GCG can solve all problems for which a structure for Dantzig-Wolfe
       reformulation is known. The structure is either automatically detected by
-      GCG (see  <a href="#Q2">next question</a>) or supplied as a decomposition
+      GCG (see  <a href="#Q3">next question</a>) or supplied as a decomposition
       file (see <a href="group__FILEREADERS.html">filereaders</a>).
    </p>
 
     <p class="q">
-      <a name="Q2">What are the detected structures?</a>
+      <a name="Q3">What are the detected structures?</a>
     </p>
     <p class="a">
       GCG has built in detection code for block diagonal problems and for
@@ -55,7 +52,7 @@
 
     <h4><a name="Section2">Decomposition file related questions</a></h4>
     <p class="q">
-      <a name="Q1">Which filereaders can read decompositions</a>
+      <a name="Q4">Which filereaders can read decompositions</a>
     </p>
     <p class="a">
       Currently GCG reads three different decomposition structure information:
@@ -67,7 +64,7 @@
     </p>
 
     <p class="q">
-      <a name="Q1">Why is presolving important for the decomposition</a>
+      <a name="Q5">Why is presolving important for the decomposition</a>
     </p>
     <p class="a">
       As GCG uses several presolving methods from SCIP, the transformed problem
@@ -83,18 +80,18 @@
     </p>
 
     <p class="q">
-      <a name="Q1">After reading the decomposition file, GCG tells me that the
+      <a name="Q6">After reading the decomposition file, GCG tells me that the
 	behaviour is undefined</a>
     </p>
     <p class="a">
       If GCG can not detect whether your decomposition is for the presolved or
       the original problem, it cannot guard you against errors. See the
-      <a href="#Q??"previous question</a> for more information.
+      <a href="#Q5"previous question</a> for more information.
     </p>
 
-    <h4><a name="Section5">Miscellaneous</a></h4>
+    <h4><a name="Section3">Miscellaneous</a></h4>
     <p class="q">
-      <a name="Q1">Why is CTRL-C unsafe to use?</a>
+      <a name="Q7">Why is CTRL-C unsafe to use?</a>
     </p>
     <p class="a">
        In its current version, SCIP will finish the current node when pressing
@@ -107,7 +104,7 @@
     </p>
 
     <p class="q">
-      <a name="Q1">How does aggregation work in GCG?</a>
+      <a name="Q8">How does aggregation work in GCG?</a>
     </p>
     <p class="a">
        Currently, aggregation in GCG is very simple. If the same variables
@@ -123,30 +120,5 @@
       scheme as well as more sophisticated detection methods in order to
       improve the aggregation in the future.
     </p>
-
-    <h4><a name="Section6">Known Bugs</a></h4>
-    <p class="q">
-      <a name="Q1">Known Bugs</a>
-    </p>
-    <p class="a">
-      GCG contains bugs which should be reported
-      per <a href="mailto:gcg-bugs@or.rwth-aachen.de?subject=New GCG bug&body=Please describe your bug here.">mail</a>.<br>
-      The following bugs are known to the developers and will be fixed in
-      future bugfix versions:
-      <ul>
-	<li>Reading in the wrong decomposition leads to a crash</li>
-	<li>Presolved decompositions are unstable with respect to SCIP
-	  improvements</li>
-	<li>Reading presolved decompositions should cause GCG to presolve the problem</li>
-	<li>Unsafe presolving reductions should be disabled if a decomposition
-	  is read before presolving</li>
-	<li>GCG can not recover from some numerical errors and may not fail
-	  gracefully</li>
-	<li>GCG does not fail gracefully on most bogus inputs</li>
-	<li>GCG may consume a lot of memory</li>
-      </ul>
-    </p>
-
-
 </div>
 

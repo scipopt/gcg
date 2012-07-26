@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_orig.h
- * @brief  branching rule for original problem in gcg
+ * @brief  branching rule for original problem in GCG
  * @author Gerald Gamrath
  * @ingroup BRANCHINGRULES
  */

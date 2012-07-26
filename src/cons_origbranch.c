@@ -254,7 +254,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 
    assert(SCIPconsGetData(cons) != NULL);
 
-   if(SCIPconsGetData(cons)->node == NULL)
+   if( SCIPconsGetData(cons)->node == NULL )
       SCIPconsGetData(cons)->node = SCIPgetRootNode(scip);
 
    SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
