@@ -1460,7 +1460,9 @@ SCIP_Bool abortHeuristicPricing(
    )
 {
 
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   assert( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_REDCOST );
+
+   if( pricetype == GCG_PRICETYPE_REDCOST)
    {
       return !((nfoundvars < pricerdata->maxvarsroundredcost)
          && successfulmips < pricerdata->maxsuccessfulmipsredcost
@@ -1468,17 +1470,12 @@ SCIP_Bool abortHeuristicPricing(
          && (nfoundvars == 0 ||
             solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull ));
    }
-   else if( pricetype == GCG_PRICETYPE_FARKAS )
+   else 
    {
+      assert(pricetype == GCG_PRICETYPE_FARKAS);
       return !(nfoundvars < pricerdata->maxvarsroundfarkas
          && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull));
    }
-   else
-   {
-      SCIPABORT();
-   }
-
-   return FALSE;
 }
 
 static
