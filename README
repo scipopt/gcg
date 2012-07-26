@@ -20,7 +20,7 @@ Here is what you have to do to get the standalone version of GCG running:
    the link to the SCIP directory.
 
 3. Compile the GCG project, by entering "make [options]" where the options are
-   the same as in SCIP. You can find the SCIP and its documentation on
+   the same as in SCIP. You can find SCIP and its documentation on
    http://scip.zib.de .
 
 USAGE:
