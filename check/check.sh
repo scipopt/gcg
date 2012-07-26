@@ -164,8 +164,8 @@ do
         NAME=`basename $i .gz`
         NAME=`basename $NAME .mps`
         NAME=`basename $NAME .lp`
-        BLKFILE=$DIR/$NAME.blk.gz
-        DECFILE=$DIR/$NAME.dec.gz
+        BLKFILE=$DIR/$NAME.blk
+        DECFILE=$DIR/$NAME.dec
         LASTPROB=""
         if test -f $i
         then
@@ -211,10 +211,16 @@ do
 		echo detect                        >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    else
-            if test -f $DECFILE -a $MODE = "readdec"
-            then
-                echo presolve              >> $TMPFILE
-                echo read $DECFILE         >> $TMPFILE
+	    if test $MODE = "readdec"
+	    then
+		if test -f $DECFILE
+		then
+                    echo presolve              >> $TMPFILE
+                    echo read $DECFILE         >> $TMPFILE
+		elif test -f $BLKFILE
+		then
+                    echo read $BLKFILE         >> $TMPFILE
+		fi
             fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
