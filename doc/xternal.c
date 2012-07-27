@@ -59,7 +59,7 @@
  * @version  1.0.0
  *
  * <b>Further Documentation</b>
- * - \ref IMPORTANTMETHODS "Important methods for writing GCG plugins"
+ * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plugins"
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref PRICINGSOLVER "How to write a custom pricing problem solver"
  * - \ref BRANCH "How to write a custom branching rule"
@@ -878,6 +878,13 @@ GCG> q
  * Last, the callback should adjust the given result pointer to SCIP_STATUS_OPTIMAL if the problem was solved to optimality,
  * to SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded, or SCIP_STATUS_UNKNOWN if the solver was not applicable
  * to the pricing problem or if the solving was stopped.
+ *
+ * The given SCIP instance representing the pricing problem can be seen as a container to store all information about the pricing
+ * problem. During the solving process, especially the objective function coefficients change according to the current dual
+ * solution and branching might change bounds in the pricing problem or add constraints.
+ * If the structure of the problem is independent of the changes that can occur with the selected branching rule, the structure
+ * detection for the pricing problems can also be done in the SOLVERINITSOL callback and stored internally to avoid doing it every
+ * time a pricing problem is solved.
  *
  * @subsection SOLVERSOLVEHEUR
  *
