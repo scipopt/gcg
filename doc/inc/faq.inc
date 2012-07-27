@@ -86,7 +86,7 @@
     <p class="a">
       If GCG can not detect whether your decomposition is for the presolved or
       the original problem, it cannot guard you against errors. See the
-      <a href="#Q5"previous question</a> for more information.
+      <a href="#Q5">previous question</a> for more information.
     </p>
 
     <h4><a name="Section3">Miscellaneous</a></h4>

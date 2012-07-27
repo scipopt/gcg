@@ -34,4 +34,4 @@ You can create the documentation via "make doc". Please visit
 doc/html/index.html with your favorite web browser. You need doxygen 1.8.0
 to build the documentation.
 
-Bugs can be reported via email to gcg-bugs@or.rwth-aachen.de
+Bugs can be reported via email to gcg-bugs AT or.rwth-aachen.de

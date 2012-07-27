@@ -34,11 +34,12 @@ tar --no-recursion --ignore-failed-read -cvzhf release/$NAME.tgz \
 --exclude="*cvs*" \
 --exclude="*~" \
 --exclude=".*" \
-$NAME/COPYING $NAME/README $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
+$NAME/README $NAME/LICENSE $NAME/INSTALL $NAME/CHANGELOG $NAME/Makefile $NAME/doc/* \
 $NAME/release-notes/release-notes* \
 $NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk $NAME/check/eval.sh \
 $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres.awk \
-$NAME/settings/*.set \
+$NAME/settings/earlybranching.set \
+$NAME/settings/heurpricing.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.h \
 $NAME/check/instances/cpmp/*.lp \
