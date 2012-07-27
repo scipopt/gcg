@@ -76,7 +76,6 @@ SCIP_RETCODE DECdecompCreate(
    (*decomp)->nblocks = 0;
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
-   (*decomp)->transformed = FALSE;
 
    return SCIP_OKAY;
 }
@@ -728,11 +727,6 @@ SCIP_RETCODE DECdecompTransform(
    SCIP_VAR* newvar;
 
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
-
-   if( decdecomp->transformed == TRUE )
-      return SCIP_OKAY;
-
-   decdecomp->transformed = TRUE;
 
    SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
