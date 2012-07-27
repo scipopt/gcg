@@ -62,6 +62,7 @@
  * - \ref CHANGELOG    "Changelog"
  * - \ref RELEASENOTES "Release notes"
  * - \ref LICENSE      "Licensing information"
+ * - \ref LITERATURE   "Papers dealing with GCG"
  *
  * @version  1.0.0
  *
@@ -448,6 +449,24 @@ GCG> q
  * \htmlinclude authors.inc
  */
 
+/**@page LITERATURE Papers dealing with GCG
+ *
+ * We are currently preparing a paper about GCG including a description of the design and extensive computational
+ * studies.
+ *
+ * Until then, an introduction and computational results for an older GCG version can be found in the following
+ * references.
+ *
+ * <a href="http://www.zib.de/gamrath/publications/gamrath2010_genericBCP.pdf">Generic Branch-Cut-and-Price</a>,
+ * Gerald Gamrath\n
+ * Diploma Thesis, TU Berlin, 2010
+ *
+ * <a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf">Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</a>,
+ * Gerald Gamrath and Marco E. Lübbecke\n
+ * In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin.
+ * DOI: 10.1007/978-3-642-13193-6_21
+ *
+ */
 
 /**@page PARAMS GCG default parameter settings
  *
@@ -459,13 +478,15 @@ GCG> q
 /**@page FILEFORMATS Input file formats supported by GCG.
  *
  * GCG supports all file formats supported by SCIP to read in problems, solution, etc.
- * E.g., the original problem can be read in as an .lp, .mps, or .cip file.
+ * The original problem can for example be read in as an .lp, .mps, or .cip file.
  *
  * If GCG is not able to automatically detect a structure suitable to perform a Dantzig-Wolfe reformulation, you need
  * to specify the structure yourself and make it available to GCG. There are some file formats for structure information.
- * If in doubt, we recommend the <code>dec</code> format which is documented in \ref reader_dec.h .
+ * If in doubt, we recommend the <code>dec</code> or <code>blk</code> format which are documented in \ref reader_dec.h
+ * and \ref reader_blk.h, respectively.
  *
- * You can find examples in the <code>check/instances/</code> directory.
+ * You can find examples for <code>dec</code> as well as <code>blk</code> files in the <code>check/instances/</code>
+ * directory.
  */
 
 /**@defgroup BRANCHINGRULES Branching Rules
@@ -565,6 +586,13 @@ GCG> q
  *
  * All headers below include the descriptions of callback methods of
  * certain plugins. For more detail see the corresponding header.
+ */
+
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/**@page IMPORTANTMETHODS Methods you should know for writing GCG plugins
+ *
+ * work in progress...
+ *
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
