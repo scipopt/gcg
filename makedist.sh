@@ -60,4 +60,10 @@ grep "VERSION" src/main.c
 grep "@version" doc/xternal.c
 grep "^VERSION" Makefile
 tail src/githash.c
+
+echo "Collecting webpage"
+rm -f web-$NAME
+ln -s doc/html web-$NAME
+tar jchf release/web-$NAME.tbz2 web-$NAME
+rm -f web-$NAME
 echo "finished"
