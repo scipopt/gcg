@@ -21,11 +21,11 @@ bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
 # Before we create a tarball change the director and file rights in a command way
 echo adjust file modes
-find ./ -type d -exec chmod 750 {} \;
-find ./ -type f -exec chmod 640 {} \;
-find ./ -name "*.sh" -exec chmod 750 {} \;
-find ./ -name "*.prl" -exec chmod 750 {} \;
-find ./ -name "hmetis" -exec chmod 750 {} \;
+find ./ -name lib -prune -o -type d -exec chmod 750 {} \;
+find ./ -name lib -prune -o -type f -exec chmod 640 {} \;
+find ./ -name lib -prune -o -name "*.sh" -exec chmod 750 {} \;
+find ./ -name lib -prune -o -name "*.prl" -exec chmod 750 {} \;
+find ./ -name lib -prune -o -name "hmetis" -exec chmod 750 {} \;
 chmod 750 bin/*
 
 rm -f release/$NAME.tgz
