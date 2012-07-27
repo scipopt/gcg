@@ -1210,6 +1210,9 @@ SCIP_RETCODE SCIPreadDec(
    DECINPUT decinput;
    int i;
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
 

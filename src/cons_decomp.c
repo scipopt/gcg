@@ -352,7 +352,7 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
       conshdlrdata->decdecomps = NULL;
@@ -389,7 +389,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    {
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
@@ -426,7 +426,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
       conshdlrdata->decdecomps = NULL;

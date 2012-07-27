@@ -76,12 +76,13 @@ SCIP_RETCODE DECdecompCreate(
    (*decomp)->nblocks = 0;
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
+   (*decomp)->transformed = FALSE;
 
    return SCIP_OKAY;
 }
 
 /** frees the decdecomp structure */
-void DECdecompFree(
+SCIP_RETCODE DECdecompFree(
    SCIP*                 scip,               /**< pointer to the SCIP instance */
    DEC_DECOMP**          decdecomp           /**< pointer to the decdecomp instance */
    )
@@ -100,13 +101,13 @@ void DECdecompFree(
    {
       for( j = 0; j < decomp->nsubscipvars[i]; ++j )
       {
-         SCIP_CALL_ABORT( SCIPreleaseVar(scip, &(decomp->subscipvars[i][j])) );
+         SCIP_CALL( SCIPreleaseVar(scip, &(decomp->subscipvars[i][j])) );
       }
       SCIPfreeMemoryArray(scip, &decomp->subscipvars[i]);
 
       for( j = 0; j < decomp->nsubscipconss[i]; ++j )
       {
-         SCIP_CALL_ABORT( SCIPreleaseCons(scip, &(decomp->subscipconss[i][j])) );
+         SCIP_CALL( SCIPreleaseCons(scip, &(decomp->subscipconss[i][j])) );
       }
       SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
    }
@@ -125,20 +126,21 @@ void DECdecompFree(
    if( decomp->consindex != NULL )
       SCIPhashmapFree(&decomp->consindex);
 
-
    for( i = 0; i < decomp->nlinkingconss; ++i )
    {
-      SCIP_CALL_ABORT( SCIPreleaseCons(scip, &(decomp->linkingconss[i])) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(decomp->linkingconss[i])) );
    }
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
 
    for( i = 0; i < decomp->nlinkingvars; ++i )
    {
-      SCIP_CALL_ABORT( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
+      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
    }
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
 
    SCIPfreeMemory(scip, decdecomp);
+
+   return SCIP_OKAY;
 }
 
 /** sets the type of the decomposition */
@@ -181,6 +183,7 @@ DEC_DECTYPE DECdecompGetType(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->type;
 }
 
@@ -192,6 +195,7 @@ void DECdecompSetPresolved(
    )
 {
    assert(decdecomp != NULL);
+
    decdecomp->presolved = presolved;
 }
 
@@ -201,6 +205,7 @@ SCIP_Bool DECdecompGetPresolved(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->presolved;
 }
 
@@ -212,6 +217,7 @@ void DECdecompSetNBlocks(
 {
    assert(decdecomp != NULL);
    assert(nblocks >= 0);
+
    decdecomp->nblocks = nblocks;
 }
 
@@ -221,6 +227,7 @@ int DECdecompGetNBlocks(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->nblocks;
 }
 
@@ -259,9 +266,10 @@ SCIP_RETCODE DECdecompSetSubscipvars(
 
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
-      assert(subscipvars[b] != NULL || nsubscipvars[b] == 0);
       if( nsubscipvars[b] > 0 )
       {
+         assert(subscipvars[b] != NULL);
+
          SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipvars[b], subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
          for( i = 0; i < nsubscipvars[b]; ++i )
          {
@@ -279,6 +287,7 @@ SCIP_VAR***  DECdecompGetSubscipvars(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->subscipvars;
 }
 
@@ -288,6 +297,7 @@ int*  DECdecompGetNSubscipvars(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->nsubscipvars;
 }
 
@@ -383,7 +393,9 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    if( nlinkingconss > 0 )
    {
       assert(linkingconss != NULL);
+
       SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );
+
       for( i = 0; i < nlinkingconss; ++i )
       {
          SCIP_CALL( SCIPcaptureCons(scip, decdecomp->linkingconss[i]) );
@@ -401,6 +413,7 @@ SCIP_CONS**  DECdecompGetLinkingconss(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->linkingconss;
 }
 
@@ -411,6 +424,7 @@ int  DECdecompGetNLinkingconss(
 {
    assert(decdecomp != NULL);
    assert(decdecomp->nlinkingconss >= 0);
+
    return decdecomp->nlinkingconss;
 }
 
@@ -437,7 +451,9 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    if( nlinkingvars > 0 )
    {
       assert(linkingvars != NULL);
+
       SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
+
       for( i = 0; i < nlinkingvars; ++i )
       {
          SCIP_CALL( SCIPcaptureVar(scip, decdecomp->linkingvars[i]) );
@@ -455,6 +471,7 @@ SCIP_VAR**  DECdecompGetLinkingvars(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->linkingvars;
 }
 
@@ -465,6 +482,7 @@ int  DECdecompGetNLinkingvars(
 {
    assert(decdecomp != NULL);
    assert(decdecomp->nlinkingvars >= 0);
+
    return decdecomp->nlinkingvars;
 }
 
@@ -489,6 +507,7 @@ SCIP_HASHMAP*  DECdecompGetVartoblock(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->vartoblock;
 }
 
@@ -513,6 +532,7 @@ SCIP_HASHMAP*  DECdecompGetConstoblock(
    )
 {
    assert(decdecomp != NULL);
+
    return decdecomp->constoblock;
 }
 
@@ -706,7 +726,13 @@ SCIP_RETCODE DECdecompTransform(
    SCIP_HASHMAP* newconstoblock;
    SCIP_HASHMAP* newvartoblock;
    SCIP_VAR* newvar;
+
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
+
+   if( decdecomp->transformed == TRUE )
+      return SCIP_OKAY;
+
+   decdecomp->transformed = TRUE;
 
    SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
@@ -760,9 +786,17 @@ SCIP_RETCODE DECdecompTransform(
    /* transform all linking constraints */
    for( c = 0; c < decdecomp->nlinkingconss; ++c )
    {
+      SCIP_CONS* newcons;
+
       SCIPdebugMessage("m, %d: %s (%s)\n", c, SCIPconsGetName(decdecomp->linkingconss[c]), SCIPconsIsTransformed(decdecomp->linkingconss[c])?"t":"o" );
       assert(decdecomp->linkingconss[c] != NULL);
-      decdecomp->linkingconss[c] = SCIPfindCons(scip, SCIPconsGetName(decdecomp->linkingconss[c]));
+      newcons = SCIPfindCons(scip, SCIPconsGetName(decdecomp->linkingconss[c]));
+      if( newcons != decdecomp->linkingconss[c] )
+      {
+         SCIP_CALL( SCIPcaptureCons(scip, newcons) );
+         SCIP_CALL( SCIPreleaseCons(scip, &(decdecomp->linkingconss[c])) );
+         decdecomp->linkingconss[c] = newcons;
+      }
       assert(decdecomp->linkingconss[c] != NULL);
    }
 

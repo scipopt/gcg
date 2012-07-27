@@ -1005,6 +1005,9 @@ SCIP_RETCODE readBLKFile(
    assert(reader != NULL);
    assert(blkinput != NULL);
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 

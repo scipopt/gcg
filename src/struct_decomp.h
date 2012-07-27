@@ -62,6 +62,7 @@ struct DecDecomp
    SCIP_HASHMAP*         consindex;          /**< hashmap mapping constraints to indices for visual ordering */
    DEC_DECTYPE           type;               /**< type of the decomposition */
    DEC_DETECTOR*         detector;           /**< detector that found this decomposition */
+   SCIP_Bool             transformed;        /**< stores whether the decomposition structure was already transformed */
 };
 
 #ifdef __cplusplus

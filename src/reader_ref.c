@@ -574,6 +574,9 @@ SCIP_RETCODE readREFFile(
    assert(refinput != NULL);
    assert(filename != NULL);
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
    /* open file */
    refinput->file = SCIPfopen(filename, "r");
    if( refinput->file == NULL )

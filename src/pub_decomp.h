@@ -60,7 +60,7 @@ SCIP_RETCODE DECdecompCreate(
    );
 
 /** frees the decdecomp structure */
-void DECdecompFree(
+SCIP_RETCODE DECdecompFree(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP**          decdecomp           /**< decdecomp instance */
    );
