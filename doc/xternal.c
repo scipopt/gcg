@@ -40,6 +40,11 @@
  * You can report any bug you find to \BUGEMAIL .
  *
  *
+ * <b> Latest Version </b>
+ *  - The latest version is 1.0.0.
+ *  - Get it \ref DOWNLOAD "here"
+ *
+ *
  * <table cellpadding="0px" border="0" width="100%">
  *   <tr>
  *     <td nowrap >
@@ -77,7 +82,9 @@
 
 /**@page LICENSE Licensing Information
  *
- * GCG is released under the GNU Lesser General Public License:
+ * GCG is released under the GNU Lesser General Public License.
+
+ * For information about the origin of the test instances, consult <code>check/instances/readme</code>.
  *
  * \verbinclude LICENSE
  */
@@ -85,13 +92,18 @@
 /**@page DOWNLOAD Download Locations
  * @section Downloading GCG
  *
- * GCG can be downloaded from two locations
- * - Standalone from the server at <a href="http://or.rwth-aachen.de/gcg/download"> RWTH Aachen</a>
- * - Complete with SCIP in the SCIPoptSuite from <a href="http://scipoptsuite.zib.de/download">Zuse Institute Berlin</a>
+ * GCG can be downloaded from two locations in two versions
+ * - Standalone from the server at  RWTH Aachen
+ *  - <a href="http://or.rwth-aachen.de/gcg/download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (610K)
+ * - Complete with SCIP in the SCIP Optimization Suite 3.0.0 from the Zuse Institute Berlin
+ *  - <a href="http://scip.zib.de">http://scip.zib.de</a>
+ *
+ * You'll need SCIP to compile GCG, which you can download it <a href="http://scip.zib.de">here</a>.
  *
  * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
  *
- * We will not offer precompiled binaries and GCG may not compile on Microsoft Windows. It is developed and tested on GNU/Linux.
+ * We will not offer precompiled binaries and GCG. It is developed and tested on GNU/Linux. It will compile under
+ * Windows using the Intel compiler, we don't provide any help on that, however.
  */
 
 /**@page INSTALL Installation information
