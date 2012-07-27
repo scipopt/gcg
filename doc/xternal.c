@@ -80,6 +80,22 @@
  * \verbinclude LICENSE
  */
 
+/**@page DOWNLOAD Download Locations
+ * @section Downloading GCG
+ *
+ * GCG can be downloaded from two locations
+ * - Standalone from the server at <a href="http://or.rwth-aachen.de/gcg/download"> RWTH Aachen</a>
+ * - Complete with SCIP in the SCIPoptSuite from <a href="http://scipoptsuite.zib.de/download">Zuse Institute Berlin</a>
+ *
+ * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
+ *
+ * We will not offer precompiled binaries and GCG may not compile on Microsoft Windows. It is developed and tested on GNU/Linux.
+ */
+
+/**@page INSTALL Installation information
+ * \verbinclude INSTALL
+ */
+
 /**@page EXAMPLE How to get started
  *
  *
@@ -403,22 +419,6 @@ GCG> q
 
 /**@page FAQ Frequently Asked Questions (FAQ)
  * \htmlinclude faq.inc
- */
-
-/**@page DOWNLOAD Download Locations
- * @section Downloading GCG
- *
- * GCG can be downloaded from two locations
- * - Standalone from the server at <a href="http://or.rwth-aachen.de/gcg/download"> RWTH Aachen</a>
- * - Complete with SCIP in the SCIPoptSuite from <a href="http://scipoptsuite.zib.de/download">Zuse Institute Berlin</a>
- *
- * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
- *
- * We will not offer precompiled binaries and GCG may not compile on Microsoft Windows. It is developed and tested on GNU/Linux.
- */
-
-/**@page INSTALL Installation information
- * \verbinclude INSTALL
  */
 
 /**@page CHANGELOG Changelog
