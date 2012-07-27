@@ -37,6 +37,8 @@
  * href="http://www.zib.de">Zuse-Institute Berlin</a>
  * and has more than 30,000 lines of C code.
  *
+ * You can report any bug you find to \BUGEMAIL .
+ *
  *
  * <table cellpadding="0px" border="0" width="100%">
  *   <tr>
@@ -107,12 +109,12 @@
  *
  * If you want to download the complete source code of the GCG, we recommend downloading the complete SCIP optimization suite as
  * it will contain everything you will need in order to produce a working binary. The bin packing instance N1C2W2_O, which will
- * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/bpp/N1C2W2_O.BPP.lg</code>.
+ * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/bpp/N1C2W2_O.BPP.lp</code>.
  *
  * Now start your binary, without any arguments. The usual place is <code>bin/gcg</code>. This opens the interactive shell, which should look somehow like this:
  *
  * \verbatim
-GCG version 1.0.0 [GitHash: v100-0-g2e15c6e]
+GCG version 1.0.0 [GitHash: v100]
 Copyright (c) 2010-2012 Operations Research, RWTH Aachen University
                         Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)
 
@@ -134,7 +136,7 @@ GCG>
  * First of all "help" shows you a list of all available shell commands. Brackets indicate a submenu with further options.
  * \verbatim
 GCG> help
-
+ <change>              change the problem
  <display>             display information
  <set>                 load/save/change parameters
 ...

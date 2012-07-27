@@ -190,7 +190,8 @@ TAB_SIZE               = 3
 # will result in a user-defined paragraph with heading "Side Effects:".
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                = "SCIP=<a href= http://scip.zib.de>SCIP</a>"
+ALIASES                = "SCIP=<a href=http://scip.zib.de>SCIP</a>"\
+		         "BUGEMAIL=\htmlonly gcg-bugs<img src=klammeraffe.png alt=klammeraffe>or.rwth-aachen.de\endhtmlonly"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C
 # sources only. Doxygen will then generate output that is more tailored for C.
@@ -842,6 +843,15 @@ HTML_FOOTER            = gcgfooter.html
 # stylesheet in the HTML output directory as well, or it will be erased!
 
 HTML_STYLESHEET        = gcg.css
+
+# The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
+# other source files which should be copied to the HTML output directory. Note
+# that these files will be copied to the base HTML output directory. Use the
+# $relpath$ marker in the HTML_HEADER and/or HTML_FOOTER files to load these
+# files. In the HTML_STYLESHEET file, use the file name only. Also note that
+# the files will be copied as-is; there are no commands or markers available.
+
+HTML_EXTRA_FILES       = klammeraffe.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the stylesheet and background images
