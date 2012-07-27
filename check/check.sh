@@ -45,6 +45,7 @@ LOCK=${12}
 VERSION=${13}
 LPS=${14}
 VALGRIND=${15}
+MODE=${16}
 
 SETDIR=../settings
 
@@ -55,11 +56,6 @@ fi
 if test ! -e locks
 then
     mkdir locks
-fi
-
-if test "x$MODE" = "x"
-then
-    MODE=solve
 fi
 
 LOCKFILE=locks/$TSTNAME.$SETNAME.$VERSION.$LPS.lock

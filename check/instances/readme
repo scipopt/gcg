@@ -12,6 +12,7 @@ The instances
  OR Spektrum 18 (1996), 131-144
 
 The instances
+ p1250-2.lp
  p2050-1.txt.lp
  p1650-2.txt.lp
  are from the website
@@ -27,7 +28,7 @@ The instances
  Y. Cui*, X. Zhao, Y. Yang, and P. Yu, A heuristic for the one-dimensional cutting stock problem with
  pattern reduction, 2008
 
-The nowswot.mps instance is from the MIPLIB2003 under http://miplib.zib.de
+The nowswot.mps instance is from the MIPLIB2003 available under http://miplib.zib.de
 
 The testset files
  gap4_2.txt.lp
