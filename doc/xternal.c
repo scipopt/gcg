@@ -108,10 +108,11 @@
  * look like for your problem.  GCG can read various file formats that SCIP can read, namely MPS, LP, CIP, and many more.
  *
  * If you want to download the complete source code of the GCG, we recommend downloading the complete SCIP optimization suite as
- * it will contain everything you will need in order to produce a working binary. The bin packing instance N1C2W2_O, which will
- * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/bpp/N1C2W2_O.BPP.lp</code>.
+ * it will contain everything you will need in order to produce a working binary. The cutting stock instance TEST0055, which will
+ * serve as an example in this tutorial, can be found under <code>gcg-[version]/check/instances/cs/TEST0055.lp</code>.
  *
- * Now start your binary, without any arguments. The usual place is <code>bin/gcg</code>. This opens the interactive shell, which should look somehow like this:
+ * Now start your binary, without any arguments. The usual place after compilation is <code>bin/gcg</code>. This opens the
+ * interactive shell, which should look somehow like this:
  *
  * \verbatim
 GCG version 1.0.0 [GitHash: v100]
@@ -130,7 +131,6 @@ External codes:
 user parameter file <gcg.set> not found - using default parameters
 
 GCG>
-
 \endverbatim
  *
  * First of all "help" shows you a list of all available shell commands. Brackets indicate a submenu with further options.
@@ -148,63 +148,58 @@ GCG> help
  * solution" to show the nonzero variables of the best found solution.
 
  * \verbatim
-GCG> read check/instances/bpp/N1C2W2_O.BPP.lp
+GCG> r check/instances/cs/TEST0055.lp
 
-read problem <check/instances/bpp/N1C2W2_O.BPP.lp>
+read problem <check/instances/cs/TEST0055.lp>
 ============
 
-original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
-GCG> read check/instances/bpp/N1C2W2_O.BPP.dec
+original problem has 220 variables (0 bin, 220 int, 0 impl, 0 cont) and 30 constraints
+GCG> read check/instances/cs/TEST0055.dec
 
-read problem <check/instances/bpp/N1C2W2_O.BPP.dec>
+read problem <check/instances/cs/TEST0055.dec>
 ============
 
-original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
-
+original problem has 220 variables (0 bin, 220 int, 0 impl, 0 cont) and 30 constraints
 GCG> optimize
 
 presolving:
 presolving (0 rounds):
  0 deleted vars, 0 deleted constraints, 0 added constraints, 0 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
  0 implications, 0 cliques
-presolved problem has 2550 variables (2550 bin, 0 int, 0 impl, 0 cont) and 100 constraints
-    100 constraints of type <linear>
+presolved problem has 220 variables (20 bin, 200 int, 0 impl, 0 cont) and 30 constraints
+     30 constraints of type <linear>
 transformed objective value is always integral (scale: 1)
-Presolving Time: 0.07
-Chosen decomposition with 50 blocks of type arrowhead.
+Presolving Time: 0.01
+Chosen decomposition with 20 blocks of type arrowhead.
 
 
   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
-   0.2s|     1 |     0 |     0 |      1 |     - |  16M|   0 |2550 |  10 | 101 | 101 |   0 |   0 | 0.000000e+00 |      --      |    Inf
-*r 1.1s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
+   0.2s|     1 |     0 |     0 |      1 |     - |3876k|   0 | 220 |  10 |  31 |  31 |   0 |   0 | 0.000000e+00 |      --      |    Inf
 Starting reduced cost pricing...
-*r 1.3s|     1 |     0 |     0 |    255 |     - |  17M|   0 |2550 | 600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 4.600000e+01 |    Inf
-...
-*r 7.4s|     1 |     0 |     0 |    799 |     - |  22M|   0 |2550 |3350 | 101 | 101 |   0 |   0 | 0.000000e+00 | 3.000000e+01 |    Inf
   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
-*r10.2s|     1 |     0 |     0 |   1086 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 3.000000e+01 |    Inf
-  10.3s|     1 |     2 |     0 |   1086 |     - |  26M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 3.000000e+01 |   3.45%
-  10.4s|     1 |     2 |     0 |   1086 |     - |  26M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 3.000000e+01 |   3.45%
-R 10.4s|    10 |     0 |     0 |   1348 |  29.1 |  26M|   9 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
+s  6.1s|     1 |     0 |     0 |    375 |     - |6575k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.300000e+01 |  18.35%
+X  6.2s|     1 |     0 |     0 |    375 |     - |6578k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.200000e+01 |   9.25%
+   6.3s|     1 |     2 |     0 |    375 |     - |6582k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.200000e+01 |   9.25%
+R  8.0s|    82 |     0 |     0 |   2432 |  25.4 |8115k|  27 | 220 |1778 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.100000e+01 |   0.15%
 
 SCIP Status        : problem is solved [optimal solution found]
-Solving Time (sec) : 10.45
-Solving Nodes      : 10
-Primal Bound       : +2.90000000000000e+01 (4 solutions)
-Dual Bound         : +2.90000000000000e+01
+Solving Time (sec) : 7.98
+Solving Nodes      : 82
+Primal Bound       : +1.10000000000000e+01 (8 solutions)
+Dual Bound         : +1.10000000000000e+01
 Gap                : 0.00 %
 
 GCG> display solution
 
-objective value:                                   29
-x#1#10                                              1 	(obj:0)
-x#2#49                                              1 	(obj:0)
-x#3#33                                              1 	(obj:0)
+objective value:                                   11
+x#3                                                 1 	(obj:1)
+x#4                                                 1 	(obj:1)
+x#5                                                 1 	(obj:1)
 ...
-y#1                                                 1 	(obj:1)
-y#2                                                 1 	(obj:1)
+y#9#10                                              3 	(obj:0)
+y#9#15                                             13 	(obj:0)
 ...
-y#50                                                1 	(obj:1)
+y#10#16                                             1 	(obj:0)
 
 GCG>
 \endverbatim
@@ -215,34 +210,35 @@ GCG>
  * no round. Thus, it is not displayed and presolving is stopped. Afterwards, GCG will print out short information about
  * the currently used decomposition.
  *
- * Then, we see the actual solving process. The second output line and some of the
- * following lines indicate that new incumbent solutions were found by the primal heuristic with display character "r"
- * in the master (indicated by a '*' followed by the character); see, how the "primalbound" column changes from "--"
- * (no feasible solution found so far) to 50 and goes down to 30 in the following lines.
- * The third line indicates that reduced cost pricing is started. Before that, variables are added to the (initially empty)
- * master problem by so-called Farkas pricing to render it feasible. Reduced cost pricing now adds variables with negative
- * reduced costs to the master problem to improve its LP value.
- * After 10.4 seconds, the root node processing is finished. We needed 1086 master LP iterations (MLP iter) to solve the
- * LP relaxation of the master problem to an optimal value of 29, that is why the "dualbound" column changes from 0 to 29.
- * We see that there are now two open nodes in the "left" column. From now on, we will see an output line every hundredth
- * node or whenever a new incumbent is found (e.g. at node 10 in the above output). In our case, the "dualbound" at the
- * root node was optimal, this is why it is not changing anymore. At one point, both primal bound and dualbound will be the
- * same, and the solving process terminates, showing us some wrap-up information.
+ * Then, we see the actual solving process. The following lines indicate that new incumbent solutions were found by the
+ * primal heuristic with display character "s" in the original problem (master solutions are indicated by a '*' followed by
+ * the character); see, how the "primalbound" column changes from "--" (no feasible solution found so far) to 13 and goes
+ * down to 11 in the following lines. The second line indicates that reduced cost pricing is started. Before that,
+ * variables are added to the (initially empty) master problem by so-called Farkas pricing to render it feasible. Reduced
+ * cost pricing now adds variables with negative reduced costs to the master problem to improve its LP value.  After 6.3
+ * seconds, the root node processing is finished. We needed 375 master LP iterations (MLP iter) to solve the LP relaxation
+ * of the master problem to an near optimal value of 10.98, that is why the "dualbound" column changes from 0 to 10.98. We
+ * see that there are now two open nodes in the "left" column. From now on, we will see an output line every hundredth node
+ * or whenever a new incumbent is found (e.g. at node 82 in the above output). In our case, the "dualbound" at the root
+ * node was optimal (you could round it to the optimal integer dual bound), this is why it is not changing anymore. At one
+ * point, both primal bound and dualbound will be the same, and the solving process terminates, showing us some wrap-up
+ * information.
  *
  * The exact performance varies amongst different architectures, operating systems, and so on. Do not be worried if
  * your installation needs more or less time or nodes to solve.
  *
  * We might want to have some more information now. Which were the primal heuristics that found the solutions? What plugins
- *  were called during the solutions process and how much time did they spend? How did the instance that we were solving
- *  look like?  Information on certain plugin types (e.g., primal heuristics, branching rules, separators) we get by
- *  "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
- *  shows us the current instance.
+ * were called during the solutions process and how much time did they spend? How did the instance that we were solving
+ * look like?  Information on certain plugin types (e.g., primal heuristics, branching rules, separators) we get by
+ * "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
+ * shows us the current instance.
  *
  * \verbatim
-GCG> dis heur
+GCG> display heuristics
 
  primal heuristic     c priority freq ofs  description
  ----------------     - -------- ---- ---  -----------
+ gcgrins              N -1101000   20   5  relaxation induced neighborhood search by Danna, Rothberg, and Le Pape
  oneopt               b   -20000    1   0  1-opt heuristic which tries to improve setting of single integer variables
 ...
  simplerounding       r        0    1   0  simple and fast LP rounding heuristic
@@ -252,43 +248,43 @@ GCG> display statistics
 
 Master Program statistics:
 SCIP Status        : solving was interrupted [node limit reached]
-Total Time         :      10.17
+Total Time         :       7.58
 ...
 Pricers            :   ExecTime  SetupTime      Calls       Vars
-  problem variables:       0.01          -        106       2776
-  gcg              :       9.84       0.00        142       4600
-Primal Heuristics  :   ExecTime  SetupTime      Calls      Found
+  problem variables:       0.03          -         94        747
+  gcg              :       7.19       0.00        119       1778
 ...
-  simplerounding   :       0.03       0.00         58          8
+  simplerounding   :       0.01       0.00        122          0
 ...
 Original Program statistics:
 SCIP Status        : problem is solved [optimal solution found]
-Total Time         :      10.46
+Total Time         :       8.00
 ...
-  gcgrounding      :       0.00       0.00         10          1
-  xpcrossover      :       0.04       0.00          1          1
-  xprins           :       0.03       0.00          1          1
-  zeroobj          :       0.07       0.00          1          0
+Primal Heuristics  :   ExecTime  SetupTime      Calls      Found
+...
+  gcgrounding      :       0.00       0.00         82          1
+  gcgshifting      :       0.00       0.00          7          5
+...
 Relaxators         :       Time      Calls
-  gcg              :      10.28         10
+  gcg              :       7.75         83
 ...
 GCG>
 \endverbatim
  *
  * We see statistics for two different problems: The Dantzig-Wolfe master problem and the original problem.
- * We see that rounding and shifting were the heuristics producing the solutions in the beginning. Rounding is called at
- * every node, shifting only at every tenth level of the tree. The statistics are quite comprehensive, thus, we just
+ * We see that gcgrounding and gcgshifting were the heuristics producing the solutions in the beginning. Rounding is called at
+ * every node, gcgshifting only at every tenth level of the tree. The statistics are quite comprehensive, thus, we just
  * explain a few lines here. We get information for all types of plugins and for the overall solving process. Besides
- * others, we see that in 10 calls of the gcgrounding heuristic, 1 solution was found and that the relaxator gcg got called
- * 10 times and took a total of 10.28 seconds to execute. Further on top, we can see that pricing produced 4600 variables
- * in 9.84 seconds.
+ * others, we see that in 82 calls of the gcgrounding heuristic, 1 solution was found and that the relaxator gcg got called
+ * 83 times and took a total of 7.75 seconds to execute. Further on top, we can see that pricing produced 1778 variables
+ * in 7.19 seconds.
  *
  * To solve a problem a second time, we have to read it and start the optimization process again. This time, we let GCG
  * discover the decomposition and display it.
  *
  * Lets first see what detectors are available:
  * \verbatim
-GCG> dis dete
+GCG> display detectors
  detector             priority char  description
  --------------       -------- ----  -----------
  connected                   0    b  Detector for classical and block diagonal problems
@@ -298,104 +294,107 @@ GCG> dis dete
  * Let's see if that works:
  *
  * \verbatim
-GCG> read check/instances/bpp/N1C2W2_O.BPP.lp
+GCG> read check/instances/cs/TEST0055.lp
 
-read problem <check/instances/bpp/N1C2W2_O.BPP.lp>
+read problem <check/instances/cs/TEST0055.lp>
 ============
 
-original problem has 2550 variables (0 bin, 2550 int, 0 impl, 0 cont) and 100 constraints
+original problem has 220 variables (0 bin, 220 int, 0 impl, 0 cont) and 30 constraints
 GCG> detect
 Starting detection
 Detecting purely block diagonal structure: not found.
-Detecting set partitioning master structure: found 50 blocks.
-Chosen decomposition with 50 blocks of type bordered.
+Detecting set partitioning master structure: found 20 blocks.
+Chosen decomposition with 20 blocks of type bordered.
 Detection was successful.
 \endverbatim
  *
- * The "connected" detector has found 50 blocks. Let's inspect the decomposition:
+ * The "connected" detector has found 20 blocks. Let's inspect the decomposition:
  *
  * \verbatim
 GCG> display dec
 PRESOLVED
 0
 NBLOCKS
-50
+20
 BLOCK 1
-b_Capacity_1
+b_capa_;1;
 BLOCK 2
-b_Capacity_2
-BLOCK 3
-b_Capacity_3
-BLOCK 4
-b_Capacity_4
-BLOCK 5
-b_Capacity_5
+b_capa_;2;
 ...
 MASTERCONSS
-m_Allocate_1
-m_Allocate_2
-m_Allocate_3
-m_Allocate_4
-m_Allocate_5
+m_link_;1;
+m_link_;2;
+m_link_;3;
 ...
 \endverbatim
  *
- * This tells us the following: The structure was detected from the unpresolved problem and contains 50 blocks. Next,
- * the constraints per block (b_Capacity_1 in block 1) are listed. Finally, all constraints in the master are listed.
+ * This tells us the following: The structure was detected from the unpresolved problem and contains 20 blocks. Next,
+ * the constraints per block (b_capa_;1; in block 1) are listed. Finally, all constraints in the master are listed.
  * This DEC format is described in \ref reader_dec.h .
  *
- * Now, we can start playing around with parameters. We have a bin packing example and we know that it can be solved
- * efficiently with discretization, so let us enable this by changing the parameter "relaxing/gcg/discretization".
+ * Now, we can start playing around with parameters. We have a know that the root bound was optimal and we may want to branch
+ * early, e.g. we don't want to solve the master problem to optimality in all cases and explore branching decisions earlier.
+ * This is an advanced parameter, so we have to look into that section of the pricer.
  *
  * \verbatim
 GCG> set
   <branching>           change parameters for branching rules
   ...
-  <relaxing>            parameters for <relaxing>
+  <pricing>             change parameters for pricing variables
   ...
 
-GCG/set> relax
+GCG/set> pricing
 
-  <gcg>                 parameters for <gcg>
+  <masterpricer>        parameters for <masterpricer>
+  abortfac              pricing is aborted, if fac * pricing/maxvars pricing candidates were found [2.0]
+  delvars               should variables created at the current node be deleted when the node is solved in case they are not present in the LP anymore? [FALSE]
+  delvarsroot           should variables created at the root node be deleted when the root is solved in case they are not present in the LP anymore? [FALSE]
+  maxvars               maximal number of variables priced in per pricing round [100]
+  maxvarsroot           maximal number of priced variables at the root node [2000]
 
-GCG/set/relaxing> gcg
+GCG/set/pricing> masterpricer
 
-  aggregation           should identical blocks be aggregated (only for discretization approach)? [TRUE]
-  discretization        should discretization (TRUE) or convexification (FALSE) approach be used? [TRUE]
-  dispinfos             should additional information about the blocks be displayed? [FALSE]
-  enforceproper         should propagated bound changes in the original be enforced in the master (only proper vars)? [TRUE]
-  freq                  frequency for calling relaxation handler <gcg> (-1: never, 0: only in root node) [1]
-  priority              priority of relaxation handler <gcg> [-1]
+  <advanced>            advanced parameters
+  ...
+   successfulsubmipsrel  part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs) [1.0]
 
-GCG/set/relaxing/gcg> discretization
-current value: FALSE, new value (TRUE/FALSE): true
-relaxing/gcg/discretization = TRUE
+GCG/set/pricing/masterpricer> adv
+
+  abortpricinggap       should pricing be aborted due to small gap between dual bound and RMP objective? [0.0]
+  abortpricingint       should pricing be aborted due to integral objective function? [TRUE]
+  useheurpricing        should pricing be performed heuristically before solving the MIPs to optimality? [FALSE]
+
+GCG/set/pricing/masterpricer/advanced> abortpricinggap
+current value: 0, new value [0,1]: 0.05
+pricing/masterpricer/abortpricinggap = 0.05
+
 GCG> o
   ...
   time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
-   0.2s|     1 |     0 |     0 |      1 |     - |  16M|   0 |2550 |  10 | 101 | 101 |   0 |   0 | 0.000000e+00 |      --      |    Inf
-  time | node  | left  |LP iter|MLP iter|LP it/n| mem |mdpt |ovars|mvars|ocons|mcons|mcuts|confs|  dualbound   | primalbound  |  gap
-*  0.8s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
-*P 0.8s|     1 |     0 |     0 |    230 |     - |  17M|   0 |2550 | 500 | 101 | 101 |   0 |   0 | 0.000000e+00 | 5.000000e+01 |    Inf
-Starting reduced cost pricing...
-*r 1.0s|     1 |     0 |     0 |    255 |     - |  17M|   0 |2550 | 600 | 101 | 101 |   0 |   0 | 0.000000e+00 | 4.600000e+01 |    Inf
-...
-*F 7.4s|     1 |     0 |     0 |   1212 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
-   7.4s|     1 |     0 |     0 |   1212 |     - |  24M|   0 |2550 |4600 | 101 | 101 |   0 |   0 | 2.900000e+01 | 2.900000e+01 |   0.00%
+s  6.3s|     1 |     0 |     0 |    375 |     - |6586k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.300000e+01 |  18.35%
+X  6.3s|     1 |     0 |     0 |    375 |     - |6589k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.200000e+01 |   9.25%
+   6.5s|     1 |     2 |     0 |    375 |     - |6593k|   0 | 220 |1445 |  31 |  31 |   0 |   0 | 1.098400e+01 | 1.200000e+01 |   9.25%
+*r 7.3s|    83 |     0 |     0 |   2443 |  25.2 |7281k|  26 | 220 |1550 |  31 |  31 |   0 |   0 | 1.100000e+01 | 1.100000e+01 |   0.00%
 
 SCIP Status        : problem is solved [optimal solution found]
-Solving Time (sec) : 7.44
-Solving Nodes      : 1
-Primal Bound       : +2.90000000000000e+01 (2 solutions)
-Dual Bound         : +2.90000000000000e+01
+Solving Time (sec) : 7.34
+Solving Nodes      : 83
+Primal Bound       : +1.10000000000000e+01 (6 solutions)
+Dual Bound         : +1.10000000000000e+01
 Gap                : 0.00 %
+
+GCG>
 \endverbatim
  *
+ * Indeed, we gained an impressive improvement of 0.5s. Note that we generated less variables (1550 compared to 1778) but
+ * needed one more branching node. Note further that this time, the optimal solution was found in the master problem by the simple
+ * rounding heuristic, indicated by the "*r" characters.
+ *
  * We can navigate through the menus step-by-step and get a list of available options and submenus. Thus, we select
- * "set" to change settings, "relax" to change settings of relaxators, "gcg" for that particular
- * relaxator. Then we see a list of parameters (and sometimes yet another submenu for advanced parameters), and set
- * discretization to TRUE. If we already know the path to a certain setting, we can directly
- * type it (<code>set relaxing gcg discretization TRUE</code>). Note that we do not have to use the full names, but we
+ * "set" to change settings, "pricer" to change settings of pricers, "masterpricer" for that particular
+ * pricer. Then we see a list of parameters (and sometimes yet another submenu for advanced parameters), and set
+ * the pricinggap to 0.05 in the advanced submenu. If we already know the path to a certain setting, we can directly
+ * type it (<code>set pricing/masterpricer/abortpricinggap = 0.05</code>). Note that we do not have to use the full names, but we
  * may use short versions, as long as they are unique.
  *
  * GCG can also write information to files. E.g., we could store the incumbent solution to a file, or output the
@@ -403,13 +402,12 @@ Gap                : 0.00 %
  * We can also write out the currently used decomposition by saving the problem as a decomposition format (DEC, BLK or REF).
  *
  * \verbatim
-GCG> write sol N1C2W2_O.BBP.sol
+GCG> write sol TEST0055.sol
 
-written solution information to file <N1C2W2_O.BBP.sol>
+written solution information to file <TEST0055.sol>
 
-GCG> write prob "N1C2W2_O.BBP.dec"
-written original problem to file <N1C2W2_O.BBP.dec>
-
+GCG> write prob TEST0055.dec
+written original problem to file <TEST0055.dec>
 GCG> q
 ...
 \endverbatim
