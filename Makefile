@@ -188,10 +188,10 @@ eval:
 .PHONY: clean
 clean:
 ifneq ($(OBJDIR),)
-		-rm -rf ./$(OBJDIR)/*.o
+		-(cd ./$(OBJDIR) && rm -f *.o)
 		-rmdir $(OBJDIR)
 endif
-		-rm -f $(MAINFILE)
+		-rm -f $(MAINFILE) $(MAINSHORTLINK)
 
 .PHONY: tags
 tags:
