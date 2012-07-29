@@ -467,7 +467,7 @@ GCG> q
  * DOI: 10.1007/978-3-642-13193-6_21
  *
  * Primal Heuristics for Branch-and-Price Algorithms, Christian Puchert\n
- * Master Thesis, Technische Universität Darmstadt, 2011
+ * Master's Thesis, Technische Universität Darmstadt, 2011
  */
 
 /**@page PARAMS GCG default parameter settings
@@ -593,16 +593,32 @@ GCG> q
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /**@page IMPORTANTMETHODS Methods you should know for writing GCG plug-ins
  *
- * This page is still work in progress.
+ * In the following, we list the most important methods you should know when starting to write a plugin for GCG.
+ * We assume knowledge of basic SCIP methods and only list GCG-specific methods. The complete list of public interface
+ * methods provided by GCG can be found \ref PUBLICMETHODS "here".
+ * The SCIP pointer that a methods takes as argument should be either the original or the reformulated SCIP instance,
+ * depending on the context. In general, methods defined in relax_gcg.h need a pointer to the original SCIP instance
+ * while methods defined in pricer_gcg.h need a pointer to the reformulated SCIP instance.
  *
- * In the mean time, consult the following information:
- *
- * - \ref PUBLICMETHODS "Public interface methods"
- * - \ref PRICINGSOLVER
- * - \ref HEUR
- * - \ref BRANCH
- * - \ref DETECT
- *
+ * \li GCGpricerGetOrigprob(): given the pointer to the SCIP instance representing the master problem, returns the pointer to the original SCIP instance
+ * \li GCGrelaxGetMasterprob(): given the pointer to the original SCIP instance, returns the pointer to the SCIP instance representing the master problem
+ * \li GCGrelaxGetNPricingprobs(): returns the number of pricing problems
+ * \li GCGrelaxGetPricingprob(): returns a specific pricing problem
+ * \li GCGrelaxGetCurrentOrigSol(): returns the current original solution candidate, i.e., the current solution of the
+ * master LP transferred back to the original problem space
+ * \li GCGrelaxUpdateCurrentSol(): updates the current original solution candidate, i.e., transfers the current solution
+ * of the master LP back to the original problem space and stores it
+ * \li GCGrelaxTransformMastersolToOrigsol(): transforms a given primal solution of the master problem to the original
+ * problem
+ * \li GCGrelaxStartProbing(): starts probing mode in master problem (probing in the original problem should have been started
+ * directly before that)
+ * \li GCGrelaxPerformProbing() and GCGrelaxPerformProbingWithPricing(): After both SCIP instance were switched to probing
+ * mode by SCIPstartProbing() and GCGrelaxStartProbing(), a probing node in the original problem was created and
+ * changes were performed at this node, these methods create a corresponding probing node in the master SCIP instance,
+ * transfer changes to this node, and solve the master LP of that node with or without pricing. An origbranch constraint
+ * should be added to the original probing node and the necessary data and a branching rule that is able to transfer the
+ * bound changes needs to be stored in this constraint (see \ref BRANCH).
+ * \li GCGrelaxEndProbing(): ends probing mode in the master problem
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -853,7 +869,7 @@ GCG> q
  * This string is printed as description of the solver in the interactive shell.
  *
  * \par SOLVER_PRIORITY: the priority of the solver.
- * Whenever a pricing problem has to be solver, the solvers are called in a predefined order, until one of the solvers solved the
+ * Whenever a pricing problem has to be solved, the solvers are called in a predefined order, until one of the solvers solved the
  * pricing problem. This order is given by the priorities of the solvers; they are called in the order of decreasing priority.
  * \n
  * The priority of the solver should be set according to the range of problems it can solve. The more specialized a solver is,
@@ -866,8 +882,8 @@ GCG> q
  *
  * Below the header "Data structures" you can find the struct "struct GCG_SolverData".
  * In this data structure, you can store the data of your solver. For example, you should store the adjustable parameters
- * of the solver in this data structure and also arrays to store the solutions that you return after solving a pricing problem.
- * \n
+ * of the solver in this data structure and also arrays to store the solutions that you return after solving a pricing problem
+ * (see solver_mip.c).
  * Defining solver data is optional. You can leave this struct empty.
  *
  *
@@ -879,7 +895,7 @@ GCG> q
  * This method has to be adjusted only slightly.
  * It is responsible for notifying GCG (and especially the pricer in the master SCIP instance) of the presence of the solver by
  * calling the method GCGpricerIncludeSolver().
- * SCIPincludeSolverMysolver() is should be called by the user, if he wants to include the solver,
+ * SCIPincludeSolverMysolver() should be called by the user, if he wants to include the solver,
  * i.e., if he wants to use the solver in his application. This can done for example by adding
  * \code SCIP_CALL( GCGincludeSolverMysolver(scip) );\endcode to masterplugins.c
  *
@@ -890,10 +906,10 @@ GCG> q
  * \endcode
  * You can also initialize the fields in struct SCIP_SolverData afterwards. For freeing the
  * solver data, see \ref SOLVEREXIT. Alternatively, you can also initialize and free the fields in the solver data
- * in the SOLVERINITSOL and SOLVEREXITSOL callback methods, respectively. For an example see, solver_mip.c.
+ * in the SOLVERINITSOL and SOLVEREXITSOL callback methods, respectively. For an example, see solver_mip.c.
  *
  * You may also add user parameters for your solver, see the SCIP documentation for how to add user parameters and
- * the method SCIPincludeSolverMip() in src/solver_mip.c for an example.
+ * the method SCIPincludeSolverMip() in solver_mip.c for an example.
  *
  *
  * @section SOLVER_FUNDAMENTALCALLBACKS Fundamental Callback Methods of a Solver
@@ -920,9 +936,9 @@ GCG> q
  * solvars should store the number of solutions returned, nsolvars should point to an array storing for each solution
  * the number of variables with non-zero value, and solisray should point to an array storing for each solution whether it
  * represents an extreme point of the pricing problem or an extreme ray. Furthermore, solvars and solvals should point to
- * arrays storing for each solution an array of variables and corresponding solution values, respectively (variables with
- * value 0 can be omitted). Therefore, a pricing problem solver should manage these arrays in its own data structure,
- * fill them after solving a pricing problem and set the return pointers to these arrays. Have a look at solver_mip for
+ * arrays storing for each solution an array of variables and corresponding solution values, respectively (leaving out
+ * variables with value 0). Therefore, a pricing problem solver should manage these arrays in its own data structure,
+ * fill them after solving a pricing problem and set the return pointers to these arrays. Have a look at solver_mip.c for
  * an example of how this can be done.
  *
  * Last, the callback should adjust the given result pointer to SCIP_STATUS_OPTIMAL if the problem was solved to optimality,
@@ -950,7 +966,7 @@ GCG> q
  * This can be done by the following procedure:
  * \code
  * static
- * GCG_DECL_SOLVERFREE(solverFreeMip)
+ * GCG_DECL_SOLVERFREE(solverFreeMysolver)
  * {
  *    GCG_SOLVERDATA* solverdata;
  *
@@ -968,7 +984,7 @@ GCG> q
  * }
  * \endcode
  * If you have allocated memory for fields in your solver data, remember to free this memory
- * before freeing the pricer data itself.
+ * before freeing the pricing solver data itself.
  *
  * @subsection SOLVERINIT
  *
@@ -1006,7 +1022,7 @@ GCG> q
  * enforce these changes during propagation.
  * \n
  *
- * The linking of the nodes of the two trees is done via two constraint handler, cons_origbranch and cons_masterbranch,
+ * The linking of the nodes of the two trees is done via two constraint handler, cons_origbranch.h and cons_masterbranch.h,
  * that add local constraints to the nodes which know about the corresponding constraint in the other SCIP instance and by
  * this also the corresponding node. Therefore, each branching rule in GCG has to add one of the origbranch constraints to each
  * child node it creates. This origbranch constraint also stores a branching data, as described \ref BRANCHDATA "below", that
@@ -1044,7 +1060,10 @@ GCG> q
  *
  * A complete list of all branching rules contained in this release can be found \ref BRANCHINGRULES "here".
  *
- * In the following, we explain how the user can add his own pricing problem solver.
+ * In the following, we explain how the user can add his own branching rule.
+ * Start by copying the template files src/branch_xyz.c and src/branch_xyz.h into files named "branch_mybranchrule.c"
+    * and "branch_mybranchrule.h".
+
  * Take the branching rule that branches on original variables (src/branch_orig.c) as an example.
  * As all other default plug-ins, it is written in C. There is currently no C++ wrapper available.
  *
@@ -1055,12 +1074,24 @@ GCG> q
  * Additional documentation for the GCG-specific callback methods of branching rules, in particular for their input parameters,
  * can be found in the file type_branchgcg.h.
  *
+ * Here is what you have to do to implement a branching rule in GCG:
+ * -# Copy the template files src/branch_xyz.c and src/branch_xyz.h into files named "branch_mybranchrule.c"
+ *    and "branch_mybranchrule.h".
+ *    \n
+ *    Make sure to adjust your Makefile such that these files are compiled and linked to your project.
+ * -# Open the new files with a text editor and replace all occurrences of "xyz" by "mybranchrule".
+ * -# Adjust the properties of the branching rule (see SCIP manual).
+ * -# Define the branching rule data (see SCIP manual) and the branching data (see \ref BRANCHDATA). This is optional.
+ * -# Implement the interface methods and the callback methods as described in the SCIP manual.
+ * Besides including the branching rule in SCIP via SCIPincludeBranchrule(), the branching rule and the additional callbacks
+ * have to be registered by a call of GCGrelaxIncludeBranchrule(), as it is done in the BANCHINIT callback of branch_mybranchrule.
+ * -# Implement the GCG-specific callback methods (see \ref BRANCH_CALLBACKS).
+ *
  * @section BRANCHDATA GCG specific branching data
  *
  * Below the header "Data structures" you can find the new struct "struct GCG_BranchData".
  * In this data structure, each branching rule can store information about the branching decisions applied to a newly created node.
  * Later, this information is used to transfer the branching decisions to the corresponding nodes in the reformulated SCIP instance.
- * \n
  * Defining branching data is optional. You can leave this struct empty.
  *
  * @section BRANCH_CALLBACKS GCG-specific callbacks of branching rules
@@ -1095,7 +1126,7 @@ GCG> q
  *
  * @subsection BRANCHDATADELETE
  *
- * The BRANCHDATADELETE callback is called when a branch-and-bound node is freed and should free the branching data.
+ * The BRANCHDATADELETE callback is called when a branch-and-bound node is freed and its branching data should be freed, too.
  *
  */
 
