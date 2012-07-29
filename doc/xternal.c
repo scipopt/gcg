@@ -466,6 +466,8 @@ GCG> q
  * In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin.
  * DOI: 10.1007/978-3-642-13193-6_21
  *
+ * Primal Heuristics for Branch-and-Price Algorithms, Christian Puchert\n
+ * Master Thesis, Technische Universität Darmstadt, 2011
  */
 
 /**@page PARAMS GCG default parameter settings

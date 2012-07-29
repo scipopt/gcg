@@ -55,6 +55,10 @@ $NAME/check/instances/miplib/*.dec \
 $NAME/doc/inc/*.inc
 rm -f $NAME
 echo ""
+echo "Building documentation and webpage"
+make doc
+
+echo ""
 echo "check version numbers in main.c, doc/xternal.c, Makefile and makedist.sh ($VERSION):"
 grep "VERSION" src/main.c
 grep "@version" doc/xternal.c
