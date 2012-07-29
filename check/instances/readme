@@ -1,6 +1,7 @@
 The instances
  N1C1W4_M.BPP.lp
  N1C2W2_O.BPP.lp
+ N1C3W1_A.BPP.lp
  are from the first bison set accessible under http://www.wiwi.uni-jena.de/entscheidung/binpp/
 
 The instances
@@ -24,6 +25,7 @@ The instances
 The instances
  TEST0055.lp
  TEST0059.lp
+ are introduced in the paper
  Y. Cui*, X. Zhao, Y. Yang, and P. Yu, A heuristic for the one-dimensional cutting stock problem with
  pattern reduction, 2008
 
