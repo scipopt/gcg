@@ -47,11 +47,11 @@ $NAME/check/instances/bpp/*.lp \
 $NAME/check/instances/gap/*.lp \
 $NAME/check/instances/cs/*.lp \
 $NAME/check/instances/miplib/*.mps \
-$NAME/check/instances/cpmp/*.dec \
-$NAME/check/instances/bpp/*.dec \
-$NAME/check/instances/gap/*.dec \
-$NAME/check/instances/cs/*.dec \
-$NAME/check/instances/miplib/*.dec \
+$NAME/check/instances/cpmp/*.dec $NAME/check/instances/cpmp/*.blk \
+$NAME/check/instances/bpp/*.dec $NAME/check/instances/bpp/*.blk \
+$NAME/check/instances/gap/*.dec $NAME/check/instances/gap/*.blk \
+$NAME/check/instances/cs/*.dec $NAME/check/instances/cs/*.blk \
+$NAME/check/instances/miplib/*.dec $NAME/check/instances/miplib/*.blk \
 $NAME/doc/inc/*.inc
 rm -f $NAME
 echo ""
