@@ -48,7 +48,7 @@ $NAME/check/instances/gap/*.lp \
 $NAME/check/instances/cs/*.lp \
 $NAME/check/instances/miplib/*.mps \
 $NAME/check/instances/cpmp/*.dec $NAME/check/instances/cpmp/*.blk \
-$NAME/check/instances/bpp/*.dec \
+$NAME/check/instances/bpp/*.dec $NAME/check/instances/bpp/*.blk \
 $NAME/check/instances/gap/*.dec \
 $NAME/check/instances/cs/*.dec \
 $NAME/check/instances/miplib/*.dec \
