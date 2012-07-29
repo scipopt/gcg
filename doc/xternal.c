@@ -31,7 +31,7 @@
  * During the solving process, GCG manages two SCIP instances, one holding the original problem, the other one
  * representing the reformulated problem. The original instance coordinates the solving process while the other one
  * builds the tree in the same way, transfers branching decisions and bound changes from the original problem and
- * solves the LP relaxation of the extended formulation via columns generation.
+ * solves the LP relaxation of the extended formulation via column generation.
  *
  * GCG is developed jointly by <a href="http://www.or.rwth-aachen.de">RWTH Aachen</a> and <a
  * href="http://www.zib.de">Zuse-Institute Berlin</a>
@@ -67,7 +67,7 @@
  * @version  1.0.0
  *
  * <b>Further Documentation</b>
- * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plugins"
+ * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
  * - \ref PUBLICMETHODS "List of callable functions"
  * - \ref PRICINGSOLVER "How to write a custom pricing problem solver"
  * - \ref BRANCH "How to write a custom branching rule"
@@ -99,7 +99,7 @@
  * - Complete with SCIP in the SCIP Optimization Suite 3.0.0 from the Zuse Institute Berlin
  *  - <a href="http://scip.zib.de">http://scip.zib.de</a>
  *
- * You'll need SCIP to compile GCG, which you can download it <a href="http://scip.zib.de">here</a>.
+ * You will need SCIP to compile GCG, which you can download <a href="http://scip.zib.de">here</a>.
  *
  * Instructions how to compile and build GCG can be found in the \ref INSTALL "Install section".
  *
@@ -114,9 +114,9 @@
 /**@page EXAMPLE How to get started
  *
  *
- * If you want to use GCG as a solver for your problem, you'll find some starting information on this page
+ * If you want to use GCG as a solver for your problem, you will find some starting information on this page.
  *
- * You need a compiled GCG binary. The \ref INSTALL "Install section" will guide you through the correct steps. You'll further
+ * You need a compiled GCG binary. The \ref INSTALL "Install section" will guide you through the correct steps. You will further
  * need a problem you want to solve and you need to know what the structure information for the Dantzig-Wolfe reformulation does
  * look like for your problem.  GCG can read various file formats that SCIP can read, namely MPS, LP, CIP, and many more.
  *
@@ -240,10 +240,10 @@ GCG>
  * The exact performance varies amongst different architectures, operating systems, and so on. Do not be worried if
  * your installation needs more or less time or nodes to solve.
  *
- * We might want to have some more information now. Which were the primal heuristics that found the solutions? What plugins
+ * We might want to have some more information now. Which were the primal heuristics that found the solutions? What plug-ins
  * were called during the solutions process and how much time did they spend? How did the instance that we were solving
- * look like?  Information on certain plugin types (e.g., primal heuristics, branching rules, separators) we get by
- * "display <plugin-type>", information on the solution process, we get by "display statistics", and "display problem"
+ * look like?  Information on certain plug-in types (e.g., primal heuristics, branching rules, separators) we get by
+ * "display <plug-in-type>", information on the solution process, we get by "display statistics", and "display problem"
  * shows us the current instance.
  *
  * \verbatim
@@ -287,7 +287,7 @@ GCG>
  * We see statistics for two different problems: The Dantzig-Wolfe master problem and the original problem.
  * We see that gcgrounding and gcgshifting were the heuristics producing the solutions in the beginning. Rounding is called at
  * every node, gcgshifting only at every tenth level of the tree. The statistics are quite comprehensive, thus, we just
- * explain a few lines here. We get information for all types of plugins and for the overall solving process. Besides
+ * explain a few lines here. We get information for all types of plug-ins and for the overall solving process. Besides
  * others, we see that in 82 calls of the gcgrounding heuristic, 1 solution was found and that the relaxator gcg got called
  * 83 times and took a total of 7.75 seconds to execute. Further on top, we can see that pricing produced 1778 variables
  * in 7.19 seconds.
@@ -345,7 +345,7 @@ m_link_;3;
  * the constraints per block (b_capa_;1; in block 1) are listed. Finally, all constraints in the master are listed.
  * This DEC format is described in \ref reader_dec.h .
  *
- * Now, we can start playing around with parameters. We have a know that the root bound was optimal and we may want to branch
+ * Now, we can start playing around with parameters. We know that the root bound was optimal and we may want to branch
  * early, e.g. we don't want to solve the master problem to optimality in all cases and explore branching decisions earlier.
  * This is an advanced parameter, so we have to look into that section of the pricer.
  *
@@ -406,7 +406,7 @@ GCG>
  * We can navigate through the menus step-by-step and get a list of available options and submenus. Thus, we select
  * "set" to change settings, "pricer" to change settings of pricers, "masterpricer" for that particular
  * pricer. Then we see a list of parameters (and sometimes yet another submenu for advanced parameters), and set
- * the pricinggap to 0.05 in the advanced submenu. If we already know the path to a certain setting, we can directly
+ * pricinggap to 0.05 in the advanced submenu. If we already know the path to a certain setting, we can directly
  * type it (<code>set pricing/masterpricer/abortpricinggap = 0.05</code>). Note that we do not have to use the full names, but we
  * may use short versions, as long as they are unique.
  *
@@ -565,7 +565,7 @@ GCG> q
  * This page lists headers containing branch-and-price specific public methods provided by GCG.
  *
  * All of the headers listed below include functions that are allowed to be called by external users. Besides those
- * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plugins; in
+ * functions it is also valid to call methods that are listed in one of the headers of the (default) GCG plug-ins; in
  * particular, this holds for relax_gcg.h and pricer_gcg.h.
  *
  */
@@ -585,13 +585,21 @@ GCG> q
  * This page lists headers which contain type definitions of callback methods.
  *
  * All headers below include the descriptions of callback methods of
- * certain plugins. For more detail see the corresponding header.
+ * certain plug-ins. For more detail see the corresponding header.
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/**@page IMPORTANTMETHODS Methods you should know for writing GCG plugins
+/**@page IMPORTANTMETHODS Methods you should know for writing GCG plug-ins
  *
- * work in progress...
+ * This page is still work in progress.
+ *
+ * In the mean time, consult the following information:
+ *
+ * - \ref PUBLICMETHODS "Public interface methods"
+ * - \ref PRICINGSOLVER
+ * - \ref HEUR
+ * - \ref BRANCH
+ * - \ref DETECT
  *
  */
 
@@ -606,7 +614,7 @@ GCG> q
  *
  * Many MIP heuristics make use of an LP feasible solution. In SCIP, such a solution is obtained by solving the LP relaxation.
  * In GCG however, no LP relaxation is solved by default. A linearly feasible solution on the original variables comes from the
- * GCG relaxator plugin; it is a solution of the master LP that has been translated back into the original variables. To access
+ * GCG relaxator plug-in; it is a solution of the master LP that has been translated back into the original variables. To access
  * it, one should use the method GCGrelaxGetCurrentOrigSol() in relax_gcg.h.
  * Its fractional variables can be accessed by SCIPgetExternBranchCands() (rather than SCIPgetLPBranchCands() which is used
  * in SCIP heuristics).
@@ -652,7 +660,7 @@ GCG> q
  * of primal heuristics using sub-SCIPs.
  * \n
  * For heuristics that are included in the original instance and make use of the extended instance as well (in
- * particular, most of the heur_gcg* and heur_xp* plugins), this callback should be set to null. This is because
+ * particular, most of the heur_gcg* and heur_xp* plug-ins), this callback should be set to null. This is because
  * sub-SCIPs are solved by SCIP rather than GCG and therefore do not know any master problem; including a GCG
  * specific heuristic into them would cause errors.
  *
@@ -665,9 +673,9 @@ GCG> q
  * \n
  * A complete list of all detectors/enforcers contained in this release can be found \ref DETECTORS "here".
  *
- * In the following, we explain how the user can add its own structure enforcement plugin.
+ * In the following, we explain how the user can add its own structure enforcement plug-in.
  * Take the basic detector (dec_connected.c) as an example.
- * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
+ * As all other default plug-ins, it is written in C. There is currently no C++ wrapper available.
  *
  * Additional documentation for the callback methods of structure detectors, in particular for their input parameters,
  * can be found in the file type_detector.h.
@@ -748,8 +756,8 @@ GCG> q
  *
  * @section DEC_FUNDAMENTALCALLBACKS Fundamental Callback Methods of a Detector
  *
- * The fundamental callback methods of the plugins are the ones that have to be implemented in order to obtain
- * an operational algorithm. Detector plugins have only one fundamental callback method, namely the DETECTSTRUCTURE method.
+ * The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
+ * an operational algorithm. Detector plug-ins have only one fundamental callback method, namely the DETECTSTRUCTURE method.
  * This method has to be implemented for every detector; the other callback methods are optional.
  *
  * Additional documentation to the callback methods, in particular to their input parameters,
@@ -811,7 +819,7 @@ GCG> q
  *
  * In the following, we explain how the user can add his own pricing problem solver.
  * Take the generic MIP pricing problem solver (src/solver_mip.c) as an example.
- * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
+ * As all other default plug-ins, it is written in C. There is currently no C++ wrapper available.
  *
  * Additional documentation for the callback methods of pricing problem solvers, in particular for their input parameters,
  * can be found in the file type_solver.h.
@@ -888,7 +896,7 @@ GCG> q
  *
  * @section SOLVER_FUNDAMENTALCALLBACKS Fundamental Callback Methods of a Solver
  *
- * The fundamental callback methods of the plugins are the ones that have to be implemented in order to obtain
+ * The fundamental callback methods of the plug-ins are the ones that have to be implemented in order to obtain
  * an operational algorithm. Pricing problem solvers do not have fundamental callback methods, but they should
  * implement at least of the SOLVERSOLVE and SOVLERSOLVEHEUR methods.
  *
@@ -928,7 +936,7 @@ GCG> q
  *
  * @subsection SOLVERSOLVEHEUR
  *
- * The SOLVERSOLVEHEUR callback is called during heuristical pricing when the variable pricer in the master SCIP instance
+ * The SOLVERSOLVEHEUR callback is called during heuristic pricing when the variable pricer in the master SCIP instance
  * wants to solve a pricing problem heuristically.
  * It has the same input and return parameters as the SOLVERSOLVE callback. It does not need to solve the pricing problem to
  * optimality, but should try to construct good feasible solutions using fast methods. Nevertheless, it can return a lower bound
@@ -997,8 +1005,8 @@ GCG> q
  * \n
  *
  * The linking of the nodes of the two trees is done via two constraint handler, cons_origbranch and cons_masterbranch,
- * that add local constraints to the nodes whoch know about the corresponding constraint in the other SCIP instance and by
- * this also the corresponding node. Therefore, each branchrule in GCG has to add one of the origbranch constraints to each
+ * that add local constraints to the nodes which know about the corresponding constraint in the other SCIP instance and by
+ * this also the corresponding node. Therefore, each branching rule in GCG has to add one of the origbranch constraints to each
  * child node it creates. This origbranch constraint also stores a branching data, as described \ref BRANCHDATA "below", that
  * can be used to store information about the branching decisions.
  *
@@ -1036,7 +1044,7 @@ GCG> q
  *
  * In the following, we explain how the user can add his own pricing problem solver.
  * Take the branching rule that branches on original variables (src/branch_orig.c) as an example.
- * As all other default plugins, it is written in C. There is currently no C++ wrapper available.
+ * As all other default plug-ins, it is written in C. There is currently no C++ wrapper available.
  *
  * In the following, we will only explain the additional callback methods which a branching rule in GCG can implement.
  * For a general introduction about how to write a branching rule in SCIP and a description of the default callback methods
