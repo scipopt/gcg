@@ -1,15 +1,32 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_dec.h
- * @brief  DEC file reader
+ * @brief  DEC file reader for structure information
  * @author Martin Bergner
  * @author Lukas Kirchhart
  * @ingroup FILEREADERS
@@ -20,6 +37,7 @@
  * they could be transferred to one block.
  *
  * The keywords are:
+ * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the unpresolved or presolved problem
  * - NBlocks: to be followed by a line giving the number of blocks
  * - Block i with 1 <= i <= nblocks: to be followed by the names of the constraints belonging to block i,
                   one per line.
@@ -58,11 +76,10 @@ SCIP_RETCODE SCIPreadDec(
 
 
 /** write a DEC file for a given decomposition */
-SCIP_RETCODE SCIPwriteDecomp(
+SCIP_RETCODE GCGwriteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    );
 
 #ifdef __cplusplus

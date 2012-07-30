@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   masterplugins.c
@@ -97,7 +114,7 @@
 #include "pricer_gcg.h"
 #include "nodesel_master.h"
 #include "cons_masterbranch.h"
-#include "cons_integralOrig.h"
+#include "cons_integralorig.h"
 #include "sepa_master.h"
 #include "branch_master.h"
 #include "scip/debug.h"
@@ -111,10 +128,7 @@
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
 
-
-
-
-/** includes default plugins for generic column generation into SCIP */
+/** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -149,7 +163,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   //SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
 
@@ -210,6 +223,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
+
+   /* include masterbranch constraint handler */
+   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
    return SCIP_OKAY;
 }

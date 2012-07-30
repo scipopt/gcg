@@ -11,4 +11,3 @@ presolving/maxrestarts = 0
 # should discretization (TRUE) or convexification (FALSE) approach be used?
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 relaxing/gcg/discretization = TRUE
-

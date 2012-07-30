@@ -1,25 +1,40 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
-/*          GCG --- Generic Colum Generation                                 */
+/*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_dec.c
- * @brief  DEC file reader
+ * @brief  DEC file reader for structure information
  * @author Lukas Kirchhart
  * @author Martin Bergner
  * @author Gerald Gamrath
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
-
-/* @todo really needed? #include <stdlib.h> */
 #include <assert.h>
 #include <string.h>
 #if defined(_WIN32) || defined(_WIN64)
@@ -49,7 +64,7 @@
 /** section in DEC File */
 enum DecSection
 {
-   DEC_START, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
+   DEC_START, DEC_PRESOLVED, DEC_NBLOCKS, DEC_BLOCK, DEC_MASTERCONSS, DEC_END
 };
 typedef enum DecSection DECSECTION;
 
@@ -71,6 +86,8 @@ struct DecInput
    int npushedtokens;                        /**< size of token buffer */
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
+   SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
+   SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    DECSECTION section;                       /**< current section */
@@ -81,8 +98,7 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-   DEC_DECOMP*           decdecomp;          /**< decomposition data structure*/
-   int*                  varstoblock;        /**< index=var id // value= -1 or blockID or -2 for multipleblocks*/
+   int*                  varstoblock;        /**< index=var id; value= -1 or blockID or -2 for multipleblocks*/
    int*                  nblockvars;         /**< n variable per block that are not linkingvars*/
    SCIP_CONS***          blockconss;         /**< array of assignments from constraints to their blocks [blocknr][consid]  */
    int*                  nblockconss;        /**< number of block-constraints for blockID*/
@@ -442,6 +458,13 @@ SCIP_Bool isNewSection(
    if( iscolon )
       return FALSE;
 
+   if( strcasecmp(decinput->token, "PRESOLVED") == 0 )
+   {
+      SCIPdebugMessage("(line %d) new section: PRESOLVED\n", decinput->linenumber);
+      decinput->section = DEC_PRESOLVED;
+      return TRUE;
+   }
+
    if( strcasecmp(decinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", decinput->linenumber);
@@ -517,6 +540,42 @@ SCIP_RETCODE readStart(
    return SCIP_OKAY;
 }
 
+/** reads the presolved section */
+static
+SCIP_RETCODE readPresolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DECINPUT*             decinput            /**< DEC reading data */
+   )
+{
+   int presolved;
+
+   assert(scip != NULL);
+   assert(decinput != NULL);
+
+   while( getNextToken(decinput) )
+   {
+      /* check if we reached a new section */
+      if( isNewSection(scip, decinput) )
+         return SCIP_OKAY;
+
+      /* read number of blocks */
+      if( isInt(scip, decinput, &presolved) )
+      {
+         decinput->haspresolvesection = TRUE;
+         if( presolved == 1 )
+            decinput->presolved = TRUE;
+         else if ( presolved == 0 )
+            decinput->presolved = FALSE;
+         else
+            syntaxError(scip, decinput, "presolved parameter must be 0 or 1");
+         SCIPdebugMessage("Decomposition is%s from presolved problem\n",
+            decinput->presolved ? "" : " not");
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** reads the nblocks section */
 static
 SCIP_RETCODE readNBlocks(
@@ -570,6 +629,7 @@ SCIP_RETCODE readBlock(
    int nvars;
    SCIP_CONS* cons;
    SCIP_VAR** vars;
+   SCIP_Bool conshasvar;
 
    assert(decinput != NULL);
    assert(readerdata != NULL);
@@ -588,12 +648,13 @@ SCIP_RETCODE readBlock(
          break;
       }
 
+      conshasvar = FALSE;
       /* get all vars for the specific constraint */
       nvars = SCIPgetNVarsXXX(scip, cons);
       vars = NULL;
       if( nvars > 0 )
       {
-         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
          SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
       }
 
@@ -601,11 +662,24 @@ SCIP_RETCODE readBlock(
 
       for( i = 0; i < nvars; i ++ )
       {
+         SCIP_VAR* var;
          assert(vars != NULL); /* for flexelint */
+         if( decinput->presolved )
+         {
+            var = SCIPvarGetProbvar(vars[i]);
+            if( !SCIPisVarRelevant(var) )
+               continue;
+         }
+         else
+            var = vars[i];
 
+         conshasvar = TRUE;
          /* store for each var whether it is in none, one or more blocks */
-         varidx = SCIPvarGetProbindex(vars[i]);
+         varidx = SCIPvarGetProbindex(var);
+         assert(varidx >= 0 && varidx < SCIPgetNVars(scip));
          oldblock = readerdata->varstoblock[varidx];
+
+         assert(oldblock == NOVALUE || oldblock == LINKINGVALUE || (oldblock >= 0 && oldblock < decinput->nblocks));
 
          /* variable was assigned to no block before, just assign it to the new block */
          if( oldblock == NOVALUE )
@@ -627,7 +701,14 @@ SCIP_RETCODE readBlock(
             ++(readerdata->nlinkingvars);
          }
       }
+      SCIPfreeMemoryArrayNull(scip, &vars);
 
+      if( !conshasvar )
+      {
+         assert(!SCIPhashmapExists(readerdata->constoblock, cons));
+         SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n",  SCIPconsGetName(cons));
+         continue;
+      }
       /*
        * saving block <-> constraint
        */
@@ -643,7 +724,7 @@ SCIP_RETCODE readBlock(
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) blockid)) );
       --(readerdata->nlinkingconss);
 
-      SCIPfreeBufferArrayNull(scip, &vars);
+
    }
 
    return SCIP_OKAY;
@@ -678,6 +759,12 @@ SCIP_RETCODE readMasterconss(
       }
       else
       {
+         if( !SCIPhashmapExists( readerdata->constoblock, cons) )
+         {
+            SCIPwarningMessage(scip, "Cons <%s> has been deleted by presolving, skipping.\n", SCIPconsGetName(cons));
+            continue;
+         }
+
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
 
          SCIPdebugMessage("cons %s is linking constraint\n", decinput->token);
@@ -692,10 +779,10 @@ static
 SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    DECINPUT*             decinput,           /**< DEC reading data */
+   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   DEC_DECOMP* decomp;
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_VAR** allvars;
@@ -716,12 +803,12 @@ SCIP_RETCODE fillDecompStruct(
    int ind;
    int nconss;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(decinput != NULL);
+   assert(decomp != NULL);
    assert(readerdata != NULL);
-   assert(readerdata->decdecomp != NULL);
-   decomp = readerdata->decdecomp;
 
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
@@ -729,26 +816,30 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = decinput->nblocks;
 
+   DECdecompSetPresolved(decomp, decinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetDetector(decomp, NULL);
+
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
+   assert(valid);
 
    /* get memory for subscip variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
       nsubscipvars[i] = 0;
       nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], readerdata->nblockconss[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], readerdata->nblockconss[i]) ); /*lint !e866*/
    }
 
    /* get memory for linking variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, readerdata->nlinkingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, readerdata->nlinkingconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingvars, readerdata->nlinkingvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, readerdata->nlinkingconss) );
    nlinkingvars = 0;
    nlinkingconss = 0;
 
@@ -761,7 +852,7 @@ SCIP_RETCODE fillDecompStruct(
       if( blocknr == NOVALUE )
       {
          SCIPdebugMessage("is unknown\n" );
-         /** @todo What should be done in this case? gg: copy directly into master */
+         /** @todo variable should be copied directly into master */
       }
       else if( blocknr == LINKINGVALUE )
       {
@@ -791,9 +882,18 @@ SCIP_RETCODE fillDecompStruct(
       }
    }
 
+
+   /* check read structure for consistency */
+   valid = FALSE;
+
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars, &valid) );
+   if( !valid )
+      goto TERMINATE;
+
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, &valid) );
+   if( !valid )
+      goto TERMINATE;
 
    /* copy linking constraints and set them in decomposition data */
    for( i = 0; i < nconss; i ++ )
@@ -805,7 +905,11 @@ SCIP_RETCODE fillDecompStruct(
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(allcons[i]));
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
+   if( nlinkingconss > 0) {
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
+      if( !valid )
+         goto TERMINATE;
+   }
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -829,23 +933,46 @@ SCIP_RETCODE fillDecompStruct(
          SCIP_CALL( SCIPhashmapSetImage(constoblock, readerdata->blockconss[i][j], (void*) (size_t) i) );
       }
    }
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecompSetConstoblock(decomp, constoblock);
-   DECdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss, &valid) );
+   if( !valid )
+      goto TERMINATE;
 
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
+   DECdecompSetConstoblock(decomp, constoblock, &valid);
+   if( !valid )
+      goto TERMINATE;
+
+   DECdecompSetVartoblock(decomp, vartoblock, &valid);
+   if( !valid )
+      goto TERMINATE;
+
+
+ TERMINATE:
+   if( !valid )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "Decomposition does not fit the problem.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "Possible causes:\n  The structure information was detected after presolve and the problem is not presolved.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL,
+         "  The structure information is wrong.\n");
+   }
+
+   SCIPfreeMemoryArray(scip, &linkingconss);
+   SCIPfreeMemoryArray(scip, &linkingvars);
    for( i = nblocks - 1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIPfreeMemoryArray(scip, &subscipconss[i]);
+      SCIPfreeMemoryArray(scip, &subscipvars[i]);
    }
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeMemoryArray(scip, &subscipconss);
+   SCIPfreeMemoryArray(scip, &subscipvars);
+   SCIPfreeMemoryArray(scip, &nsubscipconss);
+   SCIPfreeMemoryArray(scip, &nsubscipvars);
 
-   return SCIP_OKAY;
+   if( !valid )
+      return SCIP_READERROR;
+   else
+      return SCIP_OKAY;
 }
 
 /** reads a DEC file */
@@ -859,6 +986,7 @@ SCIP_RETCODE readDECFile(
 {
    SCIP_READERDATA* readerdata;
    SCIP_CONS** conss;
+   DEC_DECOMP* decdecomp;
    int nconss;
    int nblocksread;
    int nvars;
@@ -869,6 +997,13 @@ SCIP_RETCODE readDECFile(
    assert(reader != NULL);
 
    nblocksread = FALSE;
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not read structure!\n");
+
+      return SCIP_OKAY;
+   }
 
    /* open file */
    decinput->file = SCIPfopen(filename, "r");
@@ -889,7 +1024,7 @@ SCIP_RETCODE readDECFile(
    nconss = SCIPgetNConss(scip);
 
    /* alloc: var -> block mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->varstoblock, nvars) );
    for( i = 0; i < nvars; i ++ )
    {
       readerdata->varstoblock[i] = NOVALUE;
@@ -911,23 +1046,42 @@ SCIP_RETCODE readDECFile(
          case DEC_START:
             SCIP_CALL( readStart(scip, decinput) );
             break;
+            /**@bug the reader should presolve the problem */
+         case DEC_PRESOLVED:
+            SCIP_CALL( readPresolved(scip, decinput) );
+            if( decinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+            {
+               assert(decinput->haspresolvesection);
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
+               goto TERMINATE;
+            }
+            break;
 
          case DEC_NBLOCKS:
             SCIP_CALL( readNBlocks(scip, decinput) );
+            if( decinput->haspresolvesection && !decinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
+            {
+               SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
+               goto TERMINATE;
+            }
+            if( !decinput->haspresolvesection )
+            {
+               SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+            }
             break;
 
          case DEC_BLOCK:
             if( nblocksread == FALSE )
             {
                /* alloc n vars per block */
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, decinput->nblocks) );
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockconss, decinput->nblocks) );
-               SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockconss, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockvars, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockconss, decinput->nblocks) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->blockconss, decinput->nblocks) );
                for( i = 0; i < decinput->nblocks; i ++ )
                {
                   readerdata->nblockvars[i] = 0;
                   readerdata->nblockconss[i] = 0;
-                  SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockconss[i]), nconss) ); /*lint !e866*/
+                  SCIP_CALL( SCIPallocMemoryArray(scip, &(readerdata->blockconss[i]), nconss) ); /*lint !e866*/
                }
                nblocksread = TRUE;
             }
@@ -945,20 +1099,29 @@ SCIP_RETCODE readDECFile(
       }
    }
 
+   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+
    /* fill decomp */
-   SCIP_CALL( fillDecompStruct(scip, decinput, readerdata) );
+   SCIP_CALL( fillDecompStruct(scip, decinput, decdecomp, readerdata) );
 
    /* add decomp to cons_decomp */
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
 
-   for( i = decinput->nblocks - 1; i >= 0; --i )
+
+ TERMINATE:
+   if( nblocksread )
    {
-      SCIPfreeBufferArray(scip, &readerdata->blockconss[i]);
+      for( i = decinput->nblocks - 1; i >= 0; --i )
+      {
+         SCIPfreeMemoryArray(scip, &readerdata->blockconss[i]);
+      }
+
+      SCIPfreeMemoryArray(scip, &readerdata->blockconss);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockconss);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
    }
-   SCIPfreeBufferArray(scip, &readerdata->blockconss);
-   SCIPfreeBufferArray(scip, &readerdata->nblockconss);
-   SCIPfreeBufferArray(scip, &readerdata->nblockvars);
-   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
+
+   SCIPfreeMemoryArray(scip, &readerdata->varstoblock);
    SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */
@@ -981,9 +1144,6 @@ SCIP_DECL_READERFREE(readerFreeDec)
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   /* free decomp structure and readerdata */
-   if( DECdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
-      DECdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
@@ -993,6 +1153,12 @@ SCIP_DECL_READERFREE(readerFreeDec)
 static
 SCIP_DECL_READERREAD(readerReadDec)
 {  /*lint --e{715}*/
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPreadDec(scip, filename, result) );
 
    return SCIP_OKAY;
@@ -1005,7 +1171,7 @@ SCIP_DECL_READERWRITE(readerWriteDec)
    assert(scip != NULL);
    assert(reader != NULL);
 
-   SCIP_CALL( SCIPwriteDecomp(scip, file, DECgetBestDecomp(scip), TRUE) );
+   SCIP_CALL( GCGwriteDecomp(scip, file, DECgetBestDecomp(scip)) );
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -1025,7 +1191,6 @@ SCIPincludeReaderDec(
 
    /* create dec reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   SCIP_CALL( DECdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include dec reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
@@ -1044,6 +1209,9 @@ SCIP_RETCODE SCIPreadDec(
    SCIP_READER* reader;
    DECINPUT decinput;
    int i;
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
 
    reader = SCIPfindReader(scip, READER_NAME);
    assert(reader != NULL);
@@ -1064,6 +1232,8 @@ SCIP_RETCODE SCIPreadDec(
    decinput.linenumber = 0;
    decinput.linepos = 0;
    decinput.section = DEC_START;
+   decinput.presolved = FALSE;
+   decinput.haspresolvesection = FALSE;
    decinput.nblocks = NOVALUE;
    decinput.blocknr = - 2;
    decinput.haserror = FALSE;
@@ -1103,11 +1273,11 @@ SCIP_RETCODE writeData(
    int* nsubscipconss;
    int nlinkingconss;
    int nblocks;
+   SCIP_Bool presolved;
    int i;
    int j;
 
    assert(scip != NULL);
-   assert(file != NULL);
    assert(decdecomp != NULL);
 
    assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_ARROWHEAD
@@ -1129,6 +1299,11 @@ SCIP_RETCODE writeData(
    nlinkingconss = DECdecompGetNLinkingconss(decdecomp);
    assert(nlinkingconss >= 0 && nlinkingconss < SCIPgetNConss(scip));
    assert(linkingconss != NULL || nlinkingconss == 0 );
+
+   presolved = DECdecompGetPresolved(decdecomp);
+
+   SCIPinfoMessage(scip, file, "PRESOLVED\n");
+   SCIPinfoMessage(scip, file, "%d\n", presolved ? 1 : 0);
 
    nblocks = DECdecompGetNBlocks(decdecomp);
 
@@ -1158,40 +1333,25 @@ SCIP_RETCODE writeData(
 }
 
 /** write a DEC file for a given decomposition */
-SCIP_RETCODE SCIPwriteDecomp(
+SCIP_RETCODE GCGwriteDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
-   SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
    char outname[SCIP_MAXSTRLEN];
    assert(scip != NULL);
-   assert(file != NULL);
 
-   if( writeDecomposition )
-   {
-      if( decdecomp == NULL )
-      {
-         SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure empty!");
-         writeDecomposition = FALSE;
-         /* return SCIP_INVALIDDATA; */
-      }
-   }
-
-   /* print header */
    if( decdecomp == NULL )
    {
+      SCIPwarningMessage(scip, "Cannot write decomposed problem if decomposition structure is empty!\n");
+
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    }
    else
    {
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", SCIPgetProbName(scip), DECdecompGetNBlocks(decdecomp));
-   }
 
-   if( writeDecomposition )
-   {
-      /* write data */
       SCIP_CALL( writeData(scip, file, decdecomp) );
    }
 

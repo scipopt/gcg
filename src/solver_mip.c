@@ -6,11 +6,32 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   solver_mip.c
  * @brief  pricing solver solving the pricing problem as a sub-MIP, using SCIP
  * @author Gerald Gamrath
+ * @author Martin Bergner
+ *
+ * \bug
+ * there are some issues with unstable or infinite pricing problem solutions
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -448,7 +469,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    return SCIP_OKAY;
 }
 
-
+/** heuristic solving method of mip solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 {  /*lint --e{715}*/
@@ -560,6 +581,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
+      *lowerbound = SCIPgetDualbound(pricingprob);
    }
    else
    {
@@ -630,7 +652,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the mip solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    )

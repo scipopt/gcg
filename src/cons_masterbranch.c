@@ -6,13 +6,30 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_masterbranch.c
+ * @ingroup CONSHDLRS
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
- *
  */
 
 #include <assert.h>
@@ -77,7 +94,7 @@ struct SCIP_ConsData
    int                   nboundchanges;      /**< number of bound changes */
    int                   nbranchingchanges;  /**< number of bound changes due to branching (<= nboundchanges) */
    int                   nactivated;         /**< number of times the constraint was activated so far */
-   char*                 name;               /** name of the constraint */
+   char*                 name;               /**< name of the constraint */
 };
 
 /** constraint handler data */
@@ -1095,15 +1112,15 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       origvals = GCGmasterVarGetOrigvals(vars[i]);
       norigvars = GCGmasterVarGetNOrigvars(vars[i]);
       origvars = GCGmasterVarGetOrigvars(vars[i]);
-      /** @todo LINK: mb: This might work*/
+      /** @todo check if this really works with linking variables */
 
       /* only look at variables not already fixed to 0 or that belong to no block */
       if( (SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))) && blocknr >= 0 )
          continue;
 
       /* the variable was copied from original to master */
-      /** @todo cp: I think this code will never be executed
-       * as the vars array only contains variables generated during pricing */
+      /** @todo This code might never be executed as the vars array only contains variables generated
+        * during pricing. We might want to check that with an assert */
       if( blocknr == -1 )
       {
          /* iterate over bound changes performed at the current node's equivalent in the original tree */
@@ -1144,8 +1161,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             bndchgblocknr = GCGvarGetBlock(consdata->boundchgvars[k]);
             assert(GCGvarIsOriginal(consdata->boundchgvars[k]));
             assert(bndchgblocknr < GCGrelaxGetNPricingprobs(origscip));
-
-            /** @todo LINK: mb: This needs to be changed */
 
             /* ignore master variables that contain no original variables */
             /** @todo move this statement one for loop higher? */
@@ -1228,7 +1243,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    {
 
       assert(GCGvarIsOriginal(propvars[i]));
-      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo LINK: mb: this might not work */
+      assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
       assert(GCGoriginalVarGetNMastervars(propvars[i]) >= 1);
       mastervar = GCGoriginalVarGetMastervars(propvars[i])[0];
 
@@ -1445,20 +1460,16 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-         //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
       {
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
          SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-         //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
       }
       if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
       {
@@ -1476,7 +1487,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
          SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, GCGconsOrigbranchGetActiveCons(scip), var,
                SCIP_BOUNDTYPE_UPPER, newbound) );
 
-         /** @todo do we also have to iterate over the pricing problems? */
+         /** @todo do we also have to iterate over the pricing problems or is this handled elsewhere? */
       }
    }
    /* deal with linking variables */
@@ -1505,7 +1516,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
-            //printf("-> saved change of lb of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */
@@ -1531,7 +1541,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
-            //printf("-> saved change of ub of var %s to %g\n", SCIPvarGetName(mastervars[0]), newbound);
          }
 
          /* add the bound change to the pricing problems */

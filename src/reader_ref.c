@@ -6,18 +6,33 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_ref.c
- * @brief  REF file reader for decomposition files
+ * @brief  REF file reader for structure information
  * @author Gerald Gamrath
  * @author Christian Puchert
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-/* #define SCIP_DEBUG */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -45,7 +60,7 @@
 #define REF_MAX_LINELEN       65536
 #define REF_MAX_PUSHEDTOKENS  2
 
-/** Section in REF File */
+/** section in REF File */
 enum RefSection
 {
    REF_START, REF_NBLOCKS, REF_BLOCKSIZES, REF_BLOCKS, REF_END
@@ -344,9 +359,6 @@ SCIP_Bool getNextToken(
    assert(tokenlen < REF_MAX_LINELEN);
    refinput->token[tokenlen] = '\0';
 
-//   SCIPdebugMessage("(line %d) read token: '%s'\n", refinput->linenumber, refinput->token);
-   //printf("(line %d) read token: '%s'\n", refinput->linenumber, refinput->token);
-
    return TRUE;
 }
 
@@ -551,14 +563,19 @@ SCIP_RETCODE readREFFile(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< reader data structure */
    REFINPUT*             refinput,           /**< REF reading data */
-   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
    const char*           filename            /**< name of the input file */
    )
 {
+   SCIP_Bool valid;
+
    assert(scip != NULL);
    assert(reader != NULL);
    assert(refinput != NULL);
    assert(filename != NULL);
+
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
 
    /* open file */
    refinput->file = SCIPfopen(filename, "r");
@@ -567,6 +584,12 @@ SCIP_RETCODE readREFFile(
       SCIPerrorMessage("cannot open file <%s> for reading\n", filename);
       SCIPprintSysError(filename);
       return SCIP_NOFILE;
+   }
+
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "Reader 'ref' can only read in unpresolved structures.\n Please re-read the problem and read the decomposition again.\n");
+      return SCIP_OKAY;
    }
 
    /* parse the file */
@@ -581,7 +604,7 @@ SCIP_RETCODE readREFFile(
 
       case REF_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, refinput) );
-         DECdecompSetNBlocks(decdecomp, refinput->nblocks);
+         DECdecompSetNBlocks(decomp, refinput->nblocks);
          break;
 
       case REF_BLOCKSIZES:
@@ -602,14 +625,18 @@ SCIP_RETCODE readREFFile(
    /* close file */
    SCIPfclose(refinput->file);
 
-   /* copy information to decdecomp */
-   DECdecompSetVartoblock(decdecomp, refinput->vartoblock);
-   DECdecompSetConstoblock(decdecomp, refinput->constoblock);
+   /* copy information to decomp */
+   DECdecompSetDetector(decomp, NULL);
+   DECdecompSetPresolved(decomp, FALSE);
+   DECdecompSetVartoblock(decomp, refinput->vartoblock, &valid);
+   assert(valid);
+   DECdecompSetConstoblock(decomp, refinput->constoblock, &valid);
+   assert(valid);
 
-   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip)) );
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid) );
 
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
+   assert(valid);
 
    return SCIP_OKAY;
 }
@@ -624,7 +651,7 @@ SCIP_RETCODE writeREFFile(
    )
 {
    SCIP_HASHMAP *cons2origindex;
-   DEC_DECOMP* decdecomp;
+   DEC_DECOMP* decomp;
 
    SCIP_CONS** conss;
    int nconss;
@@ -637,19 +664,19 @@ SCIP_RETCODE writeREFFile(
    assert(reader != NULL);
    assert(file != NULL);
 
-   decdecomp = DECgetBestDecomp(scip);
+   decomp = DECgetBestDecomp(scip);
 
-   if( decdecomp == NULL )
+   if( decomp == NULL )
    {
-      decdecomp = GCGgetStructDecdecomp(scip);
+      decomp = GCGgetStructDecdecomp(scip);
    }
 
-   if( decdecomp == NULL )
+   if( decomp == NULL )
    {
-      SCIPerrorMessage("No reformulation exists, cannot write reformulation file!\n");
-      return SCIP_INVALIDCALL;
+      SCIPwarningMessage(scip, "No reformulation exists, cannot write reformulation file!\n");
+      return SCIP_OKAY;
    }
-   nblocks = DECdecompGetNBlocks(decdecomp);
+   nblocks = DECdecompGetNBlocks(decomp);
    conss = SCIPgetOrigConss(scip);
    nconss = SCIPgetNOrigConss(scip);
 
@@ -669,8 +696,8 @@ SCIP_RETCODE writeREFFile(
       SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
-   subscipconss = DECdecompGetSubscipconss(decdecomp);
-   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decomp);
    SCIPinfoMessage(scip, file, "%d ", nblocks);
 
    assert(nsubscipconss != NULL);
@@ -715,6 +742,12 @@ SCIP_RETCODE writeREFFile(
 static
 SCIP_DECL_READERREAD(readerReadRef)
 {
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not detect structure!\n");
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPreadRef(scip, reader, filename, result) );
 
    return SCIP_OKAY;
@@ -758,7 +791,7 @@ SCIP_RETCODE SCIPreadRef(
    )
 {
    REFINPUT refinput;
-   DEC_DECOMP* decdecomp;
+   DEC_DECOMP* decomp;
    int i;
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
@@ -793,8 +826,11 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    /* read the file */
-   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
-   SCIP_CALL( readREFFile(scip, reader, &refinput, decdecomp, filename) );
+   SCIP_CALL( DECdecompCreate(scip, &decomp) );
+
+   SCIP_CALL( readREFFile(scip, reader, &refinput, decomp, filename) );
+
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
 
    SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
    SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);

@@ -6,11 +6,29 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   solver_knapsack.c
  * @brief  knapsack solver for pricing problems
  * @author Gerald Gamrath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -45,6 +63,7 @@ struct GCG_SolverData
  * Callback methods for pricing problem solver
  */
 
+/** free method of knapsack solver */
 static
 GCG_DECL_SOLVERFREE(solverFreeKnapsack)
 {
@@ -63,6 +82,7 @@ GCG_DECL_SOLVERFREE(solverFreeKnapsack)
    return SCIP_OKAY;
 }
 
+/** initialization method of knapsack solver */
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
 {
@@ -127,6 +147,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
 #define solverInitKnapsack NULL
 #define solverExitKnapsack NULL
 
+/** exact solving method for knapsack solver */
 static
 GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
@@ -318,6 +339,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 }
 
 
+/** heuristic solving method of knapsack solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/

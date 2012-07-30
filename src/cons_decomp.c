@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_decomp.c
@@ -19,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+
 #include <assert.h>
 
 #include "cons_decomp.h"
@@ -246,7 +263,7 @@ SCIP_RETCODE evaluateDecomposition(
    score->borderscore = (1.0*(borderarea)/matrixarea);
    score->densityscore = (1-density);
 
-   switch(DECdecompGetType(decdecomp))
+   switch( DECdecompGetType(decdecomp) )
    {
    case DEC_DECTYPE_ARROWHEAD:
       score->totalscore = score->borderscore*score->linkingscore*score->densityscore;
@@ -287,8 +304,6 @@ SCIP_RETCODE evaluateDecomposition(
  */
 
 #define conshdlrCopyDecomp NULL
-#define consInitDecomp NULL
-#define consExitDecomp NULL
 #define consInitpreDecomp NULL
 #define consExitpreDecomp NULL
 #define consDeleteDecomp NULL
@@ -309,6 +324,43 @@ SCIP_RETCODE evaluateDecomposition(
 #define consParseDecomp NULL
 #define consGetVarsDecomp NULL
 #define consGetNVarsDecomp NULL
+
+/** initialization method of constraint handler (called after problem was transformed) */
+static
+SCIP_DECL_CONSINIT(consInitDecomp)
+{ /*lint --e{715}*/
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   conshdlrdata->hasrun = FALSE;
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of constraint handler (called before transformed problem is freed) */
+static
+SCIP_DECL_CONSEXIT(consExitDecomp)
+{ /*lint --e{715}*/
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   assert(conshdlr != NULL);
+   assert(scip != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->ndecomps > 0 )
+   {
+      int i;
+      for( i = 0; i < conshdlrdata->ndecomps; ++i )
+      {
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
+      }
+      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
+      conshdlrdata->decdecomps = NULL;
+      conshdlrdata->ndecomps = 0;
+   }
+   conshdlrdata->hasrun = FALSE;
+   return SCIP_OKAY;
+}
 
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
@@ -337,7 +389,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
    {
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
    }
@@ -355,19 +407,6 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
 static
 SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrdata;
-
-   assert(conshdlr != NULL);
-   assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( !conshdlrdata->hasrun )
-   {
-
-      /*      SCIP_CALL( DECdetectStructure(scip) ); */
-      //      assert( conshdlrdata->hasrun );
-   }
    return SCIP_OKAY;
 }
 
@@ -387,12 +426,14 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
-         DECdecompFree(scip, &conshdlrdata->decdecomps[i]);
+         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
       }
       SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
       conshdlrdata->decdecomps = NULL;
       conshdlrdata->ndecomps = 0;
    }
+   conshdlrdata->hasrun = FALSE;
+
    return SCIP_OKAY;
 }
 
@@ -485,8 +526,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
    const char*           name                /**< name of constraint */
    )
 {
-   /** @todo (optional) modify the definition of the SCIPcreateConsDecomp() call, if you don't need all the information */
-
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
 
@@ -503,7 +542,6 @@ SCIP_RETCODE SCIPcreateConsDecomp(
 
    /* create constraint data */
    consdata = NULL;
-   /** @todo create and store constraint specific data here */
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -808,7 +846,7 @@ SCIP_RETCODE DECdetectStructure(
          }
       }
    }
-   else 
+   else
    {
       SCIP_CALL( DECdecompTransform(scip, conshdlrdata->decdecomps[0]) );
    }
@@ -848,10 +886,7 @@ SCIP_RETCODE DECdetectStructure(
    return SCIP_OKAY;
 }
 
-/** write out all known decompositions
- *
- * @todo use detector character to distinguish
- */
+/** write out all known decompositions */
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 extension           /**< extension for decompositions */
@@ -924,7 +959,7 @@ DEC_DECOMP* DECgetBestDecomp(
       return NULL;
 }
 
-/** Writes out a list of all detectors */
+/** writes out a list of all detectors */
 void DECprintListOfDetectors(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -946,7 +981,7 @@ void DECprintListOfDetectors(
 
    SCIPdialogMessage(scip, NULL, " detector             priority char  description\n --------------       -------- ----  -----------\n");
 
-   for( i = 0; i < ndetectors; ++i)
+   for( i = 0; i < ndetectors; ++i )
    {
       SCIPdialogMessage(scip, NULL,  " %-20s", conshdlrdata->detectors[i]->name);
       SCIPdialogMessage(scip, NULL,  " %8d    %c ", conshdlrdata->detectors[i]->priority, conshdlrdata->detectors[i]->decchar);

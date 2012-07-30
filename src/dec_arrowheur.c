@@ -245,7 +245,7 @@ SCIP_RETCODE computeHyperedgeWeight(
 
    if( (strcmp("setppc", hdlrname) == 0) )
    {
-      switch(SCIPgetTypeSetppc(scip, upgdcons))
+      switch( SCIPgetTypeSetppc(scip, upgdcons) )
       {
       case SCIP_SETPPCTYPE_COVERING:
          *cost = detectordata->consWeightSetppc;
@@ -785,6 +785,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_VAR **vars;
    int nvars;
    SCIP_Bool emptyblocks = FALSE;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -1012,21 +1013,32 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       /* copy the local data to the decomp structure */
       DECdecompSetNBlocks(decdecomp, nblocks);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
-      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+      assert(valid);
+
+      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+      assert(valid);
+
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+      assert(valid);
       if( nlinkingconss > 0 )
       {
-         SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-         DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+         SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+         assert(valid);
+         DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+         assert(valid);
       }
       if( nlinkingvars > 0 )
       {
-         DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD);
-         SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+         DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, &valid);
+         assert(valid);
+         SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
+         assert(valid);
       }
-      DECdecompSetVartoblock(decdecomp, vartoblock);
-      DECdecompSetConstoblock(decdecomp, constoblock);
+      DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
+      assert(valid);
+      DECdecompSetConstoblock(decdecomp, constoblock, &valid);
+      assert(valid);
    }
    else {
       SCIPhashmapFree(&constoblock);

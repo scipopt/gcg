@@ -6,9 +6,25 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* #define SCIP_DEBUG */
-/* #define CHECKCONSISTENCY */
+
 /**@file    misc.c
  * @brief   miscellaneous methods
  * @author  Gerald Gamrath
@@ -21,7 +37,8 @@
 #include "pub_gcgvar.h"
 
 /** transforms given solution of the master problem into solution of the original problem
- *  @todo think about types of epsilons used in this method*/
+ *  @todo think about types of epsilons used in this method
+ */
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol,          /**< solution of the master problem, or NULL for current LP solution */
@@ -111,7 +128,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                if( GCGvarIsLinking(origvars[j]) )
                   continue;
 
-//               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[j]), origvals[j] * mastervals[i], SCIPvarGetName(mastervars[i]));
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[j]), origvals[j] * mastervals[i], SCIPvarGetName(mastervars[i]));
                /* increase the corresponding value */
                SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[j], origvals[j] * mastervals[i]) );
             }
@@ -132,7 +149,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             assert(origvals[0] == 1.0);
 
             /* increase the corresponding value */
-//            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i],  SCIPvarGetName(mastervars[i]));
+            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i],  SCIPvarGetName(mastervars[i]));
             SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;
          }
@@ -162,7 +179,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* just in case a variable has a value higher than the number of blocks, it represents */
                if( norigpricingvars <= blocknrs[blocknr] )
                {
-//                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), mastervals[i] * origvals[j], SCIPvarGetName(mastervars[i]));
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), mastervals[i] * origvals[j], SCIPvarGetName(mastervars[i]));
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], mastervals[i] * origvals[j]) );
                   mastervals[i] = 1.0;
@@ -170,7 +187,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                /* this should be default */
                else
                {
-//                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j], SCIPvarGetName(mastervars[i]) );
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j], SCIPvarGetName(mastervars[i]) );
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j]) );
                }
@@ -210,7 +227,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
             assert(norigvars == 1);
             assert(origvals[0] == 1.0);
 
-//            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i], SCIPvarGetName(mastervars[i]) );
+            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i], SCIPvarGetName(mastervars[i]) );
             /* increase the corresponding value */
             SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
             mastervals[i] = 0.0;
@@ -242,14 +259,14 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
                {
                   increaseval = mastervals[i];
 
-//                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
                   /* increase the corresponding value */
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], origvals[j] * increaseval) );
                }
                else
                {
                   /* increase the corresponding value */
-//                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
+                  SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j] * increaseval, SCIPvarGetName(mastervars[i]) );
                   SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j] * increaseval) );
                }
             }
@@ -352,12 +369,13 @@ void GCGrelaxTransformOrigvalsToMastervals(
       if( blocknr < 0 )
       {
          assert(blocknr == -1 || blocknr == -2);
+         assert(SCIPvarIsOriginal(varmastervars[0]));
+         assert(SCIPvarGetTransVar(varmastervars[0]) != NULL);
+
          for( k = 0; k < nmastervars; k++ )
          {
-            assert(!SCIPvarIsTransformedOrigvar(mastervars[k]));
-            if( mastervars[k] == varmastervars[0] )
+            if( mastervars[k] == SCIPvarGetTransVar(varmastervars[0]) )
             {
-               assert(!SCIPvarIsTransformedOrigvar(varmastervars[0]));
                mastervals[k] += (varmastervals[0] * origvals[i]);
                break;
             }
@@ -386,6 +404,7 @@ void GCGrelaxTransformOrigvalsToMastervals(
 
          for( j = 0; j < ncurmastervars; j++ )
          {
+            assert(SCIPvarIsTransformed(curmastervars[j]));
             for( k = 0; k < nmastervars; k++ )
                if( mastervars[k] == curmastervars[j] )
                {

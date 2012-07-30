@@ -6,16 +6,34 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_connected.c
  * @ingroup DETECTORS
  * @brief  detector for classical and blockdiagonal problems
  * @author Martin Bergner
+ * @todo allow decompositions with only one pricing problem by just removing generalized covering and
+ *       partitioning constraints
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -141,7 +159,8 @@ static
 SCIP_RETCODE findConnectedComponents(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   SCIP_RESULT*          result              /**< result pointer to indicate success oder failuer */
+   SCIP_Bool             findextended,       /**< whether the classical structure should be detected */
+   SCIP_RESULT*          result              /**< result pointer to indicate success oder failure */
    )
 {
    SCIP_VAR** vars;
@@ -156,7 +175,6 @@ SCIP_RETCODE findConnectedComponents(
    int j;
    int k;
    int tempblock;
-   SCIP_Bool findextended;
 
    int* blockrepresentative;
    int nextblock;
@@ -192,7 +210,6 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[0] = 0;
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
-   findextended = detectordata->setppcinmaster;
 
    /* in a first preprocessing step, indicate which constraints should go in the master */
    if( findextended )
@@ -318,7 +335,7 @@ SCIP_RETCODE findConnectedComponents(
             vartoblock[curvarindex] = consblock;
             SCIPdebugPrintf("VARINDEX: %d (%d)\n", curvarindex, consblock);
 
-            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]))
+            if( (blockrepresentative[oldblock] != -1) && (blockrepresentative[oldblock] > blockrepresentative[consblock]) )
             {
                int oldrepr;
                oldrepr = blockrepresentative[oldblock];
@@ -343,7 +360,7 @@ SCIP_RETCODE findConnectedComponents(
       assert(consblock <= nextblock);
 
       /* store the constraint block */
-      if(consblock != -1)
+      if( consblock != -1 )
       {
          SCIPdebugMessage("cons %s in block %d\n", SCIPconsGetName(cons), consblock);
          SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*)(size_t)consblock) );
@@ -389,7 +406,7 @@ SCIP_RETCODE findConnectedComponents(
       if( detectordata->consismaster[i] )
          continue;
 
-      if(!SCIPhashmapExists(constoblock, cons))
+      if( !SCIPhashmapExists(constoblock, cons) )
          continue;
 
       consblock = (int)(size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
@@ -463,6 +480,7 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -493,9 +511,13 @@ SCIP_RETCODE copyToDecdecomp(
       nsubscipconss[i] = 0;
    }
 
+
+   DECdecompSetPresolved(decdecomp, SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED);
    DECdecompSetNBlocks(decdecomp, nblocks);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
-   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
+   assert(valid);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
+   assert(valid);
 
    for( i = 0; i < nconss; ++i )
    {
@@ -524,7 +546,7 @@ SCIP_RETCODE copyToDecdecomp(
       SCIP_VAR* var;
       var = SCIPvarGetProbvar(vars[i]);
 
-      if(var == NULL)
+      if( var == NULL )
          continue;
 
       varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, var); /*lint !e507*/
@@ -547,22 +569,27 @@ SCIP_RETCODE copyToDecdecomp(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+      assert(valid);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+      assert(valid);
    }
    else
    {
-      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
+      assert(valid);
    }
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
+      assert(valid);
    }
 
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
 
    for( i = nblocks-1; i >= 0; --i )
    {
@@ -639,22 +666,23 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    int runs;
    int i;
    int nconss;
-
+   SCIP_Bool detectextended;
    *result = SCIP_DIDNOTFIND;
    nconss = SCIPgetNConss(scip);
 
    runs = detectordata->setppcinmaster ? 2:1;
+   detectextended = FALSE;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &detectordata->consismaster, nconss) );
    *ndecdecomps = 0;
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectordata->setppcinmaster ? "extended":"blockdiagonal" );
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely block diagonal" );
 
       SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
 
-      SCIP_CALL( findConnectedComponents(scip, detectordata, result) );
+      SCIP_CALL( findConnectedComponents(scip, detectordata, detectextended, result) );
 
       SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
 
@@ -676,7 +704,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       }
       if( detectordata->setppcinmaster == TRUE && *result != SCIP_SUCCESS )
       {
-         detectordata->setppcinmaster = FALSE;
+         detectextended = TRUE;
       }
    }
 

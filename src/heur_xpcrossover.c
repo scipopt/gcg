@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_xpcrossover.c
@@ -14,10 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-/* toggle debug mode */
-//#define SCIP_DEBUG
-//#define PRINTPOINTS
 
 #include <assert.h>
 #include <string.h>
@@ -446,11 +459,11 @@ SCIP_RETCODE selectExtremePoints(
    }
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &mastervals);
    SCIPfreeBufferArray(scip, &identblock);
-   SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &blockvalue);
+   SCIPfreeBufferArray(scip, &blocknrs);
    SCIPfreeBufferArray(scip, &selvalue);
+   SCIPfreeBufferArray(scip, &mastervals);
 
    return SCIP_OKAY;
 }
@@ -591,8 +604,8 @@ SCIP_RETCODE selectExtremePointsRandomized(
             lastpt = idx;
          }
 
-         SCIPfreeBufferArray(scip, &blockpts);
          SCIPfreeBufferArray(scip, &ptvals);
+         SCIPfreeBufferArray(scip, &blockpts);
       }
 
       /* creates an object ready to be inserted into the hashtable */
@@ -744,7 +757,7 @@ SCIP_RETCODE initializeSubproblem(
       if( heurdata->copycuts )
       {
          /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE) );
+         SCIP_CALL( SCIPcopyCuts(scip, subscip, varmapfw, NULL, TRUE, NULL) );
       }
       SCIPdebugMessage("Copying the SCIP constraints was %s complete.\n", valid ? "" : "not ");
    }
@@ -1092,9 +1105,9 @@ static SCIP_RETCODE fixVariables(
    }
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &ptcounter);
-   SCIPfreeBufferArray(scip, &fixable);
    SCIPfreeBufferArray(scip, &fixvals);
+   SCIPfreeBufferArray(scip, &fixable);
+   SCIPfreeBufferArray(scip, &ptcounter);
 
    return SCIP_OKAY;
 }
@@ -1494,9 +1507,9 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
       }
 
       /* free memory */
-      SCIPfreeBufferArray(scip, &selection);
-      SCIPfreeBufferArray(scip, &subvars);
       SCIP_CALL( SCIPfree(&subscip) );
+      SCIPfreeBufferArray(scip, &subvars);
+      SCIPfreeBufferArray(scip, &selection);
 
       /* this run will be counted as a failure since no new solution tuple could be generated or the neighborhood of the
        * solution was not fruitful in the sense that it was too big
@@ -1575,8 +1588,8 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    SCIP_CALL( SCIPfree(&subscip) );
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &subvars);
    SCIPfreeBufferArray(scip, &selection);
+   SCIPfreeBufferArray(scip, &subvars);
 
    return SCIP_OKAY;
 }

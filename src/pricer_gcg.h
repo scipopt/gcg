@@ -6,10 +6,28 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricer_gcg.h
- * @brief  gcg variable pricer
+ * @ingroup PUBLICMETHODS
+ * @brief  GCG variable pricer
  * @author Gerald Gamrath
  * @author Martin Bergner
  * @ingroup PRICERS
@@ -33,7 +51,7 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 
 
 
-/** creates the gcg variable pricer and includes it in SCIP */
+/** creates the GCG variable pricer and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -97,6 +115,12 @@ void GCGpricerSetSolverdata(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_SOLVER*           solver,             /**< pointer to solver  */
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
+   );
+
+/** writes out a list of all pricing problem solvers */
+extern
+void GCGpricerPrintListOfSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 extern

@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    scip_misc.h
@@ -20,6 +37,7 @@
 #define GCG_SCIP_MISC_H_
 
 #include "scip/scip.h"
+#include "scip/cons_setppc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,20 +56,11 @@ SCIP_Bool SCIPisVarRelevant(
    SCIP_VAR*             var                 /**< variable to test */
    );
 
-
-/** returns the relevant variable, if possible */
-extern
-SCIP_VAR* SCIPgetRelevantVariable(
-   SCIP_VAR*             var                 /**< variable to test */
-   );
-
-
 /** returns the type of an arbitrary SCIP constraint */
 extern
 consType SCIPconsGetType(
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
-
 
 /** returns the rhs of an arbitrary SCIP constraint */
 extern
@@ -60,24 +69,22 @@ SCIP_Real SCIPgetRhsXXX(
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
-
-/** Returns the lhs of an arbitrary SCIP constraint */
+/** returns the lhs of an arbitrary SCIP constraint */
 extern
 SCIP_Real SCIPgetLhsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
-
-/** Returns the number of variables in an arbitrary SCIP constraint */
+/** returns the number of variables in an arbitrary SCIP constraint */
 extern
 int SCIPgetNVarsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    );
 
-
-/** Returns the variable array of an arbitrary SCIP constraint */
+/** returns the variable array of an arbitrary SCIP constraint */
+extern
 SCIP_RETCODE SCIPgetVarsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
@@ -85,23 +92,27 @@ SCIP_RETCODE SCIPgetVarsXXX(
    int                   nvars               /**< size of storage array */
    );
 
-
-/** Returns the dual solution value of an arbitrary SCIP constraint */
+/** returns the dual solution value of an arbitrary SCIP constraint */
+extern
 SCIP_Real SCIPgetDualsolXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get dual solution */
    );
 
-
-/**
- * Returns the value array of an arbitrary SCIP constraint
- * @todo SOS1 & SOS2 not implemented yet
- */
+/** returns the value array of an arbitrary SCIP constraint */
+extern
 SCIP_RETCODE SCIPgetValsXXX(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get values from */
    SCIP_Real*            vals,               /**< array where values are stored */
    int                   nvals               /**< size of storage array */
+   );
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool SCIPgetConsIsSetppc(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
    );
 
 #ifdef __cplusplus

@@ -557,6 +557,7 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_VAR **vars;
    int nvars;
    SCIP_Bool emptyblocks = FALSE;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -760,16 +761,23 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       /* copy the local data to the decomp structure */
       DECdecompSetNBlocks(decdecomp, nblocks);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
-      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
-      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
+      assert(valid);
+      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+      assert(valid);
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+      assert(valid);
       if( nlinkingconss > 0 )
       {
-         SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-         DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+         SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+         assert(valid);
+         DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+         assert(valid);
       }
-      DECdecompSetVartoblock(decdecomp, vartoblock);
-      DECdecompSetConstoblock(decdecomp, constoblock);
+      DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
+      assert(valid);
+      DECdecompSetConstoblock(decdecomp, constoblock, &valid);
+      assert(valid);
    }
    else {
       SCIPhashmapFree(&constoblock);

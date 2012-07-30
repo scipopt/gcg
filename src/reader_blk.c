@@ -6,11 +6,30 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_blk.c
- * @brief  BLK file reader
+ * @brief  BLK file reader for structure information
  * @author Gerald Gamrath
+ * @author Martin Bergner
+ * @author Christian Puchert
  *
  * This reader reads in a blk-file that defines the structur to be used for the decomposition.
  * The structure is defined variable-wise, i.e., the number of blocks and the variables belonging to each block are
@@ -19,6 +38,7 @@
  * forced into the master, even if they could be transferred to one block.
  *
  * The keywords are:
+ * - Presolved: to be followed by either 0 or 1 indicating that the decomposition is for the presolved or unpresolved problem
  * - NBlocks: to be followed by a line giving the number of blocks
  * - Block i with 1 <= i <= nblocks: to be followed by the names of the variables belonging to block i, one per line.
  * - Masterconss: to be followed by names of constraints, one per line, that should go into the master,
@@ -53,10 +73,10 @@
 #define BLK_MAX_LINELEN       65536
 #define BLK_MAX_PUSHEDTOKENS  2
 
-/** Section in BLK File */
+/** section in BLK File */
 enum BlkSection
 {
-   BLK_START, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END
+   BLK_START, BLK_PRESOLVED, BLK_NBLOCKS, BLK_BLOCK, BLK_MASTERCONSS, BLK_END
 };
 typedef enum BlkSection BLKSECTION;
 
@@ -79,6 +99,8 @@ struct BlkInput
    int npushedtokens;                        /**< size of token buffer */
    int linenumber;                           /**< current line number */
    int linepos;                              /**< current line position (column) */
+   SCIP_Bool presolved;                      /**< does the decomposition refer to the presolved problem? */
+   SCIP_Bool haspresolvesection;             /**< does the decomposition have a presolved section  */
    int nblocks;                              /**< number of blocks */
    int blocknr;                              /**< number of the currentblock between 0 and Nblocks-1*/
    BLKSECTION section;                       /**< current section */
@@ -89,8 +111,7 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
-   DEC_DECOMP*           decdecomp;          /**< decomposition data structure */
-   int*                  varstoblock;        /**< index=varid // value= -1 or blockID or -2 for multipleblocks */
+   int*                  varstoblock;        /**< index=varid; value= -1 or blockID or -2 for multipleblocks */
    int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
    int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
    int*                  nlinkingvarsblocks; /**< array with number of blocks assigned to each linking var */
@@ -453,6 +474,13 @@ SCIP_Bool isNewSection(
    if( iscolon )
       return FALSE;
 
+   if( strcasecmp(blkinput->token, "PRESOLVED") == 0 )
+   {
+      SCIPdebugMessage("(line %d) new section: PRESOLVED\n", blkinput->linenumber);
+      blkinput->section = BLK_PRESOLVED;
+      return TRUE;
+   }
+
    if( strcasecmp(blkinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", blkinput->linenumber);
@@ -524,6 +552,42 @@ SCIP_RETCODE readStart(
          return SCIP_OKAY;
    }
    while( !isNewSection(scip, blkinput) );
+
+   return SCIP_OKAY;
+}
+
+/** reads the presolved section */
+static
+SCIP_RETCODE readPresolved(
+   SCIP*                 scip,               /**< SCIP data structure */
+   BLKINPUT*             blkinput            /**< DEC reading data */
+   )
+{
+   int presolved;
+
+   assert(scip != NULL);
+   assert(blkinput != NULL);
+
+   while( getNextToken(blkinput) )
+   {
+      /* check if we reached a new section */
+      if( isNewSection(scip, blkinput) )
+         return SCIP_OKAY;
+
+      /* read number of blocks */
+      if( isInt(scip, blkinput, &presolved) )
+      {
+         blkinput->haspresolvesection = TRUE;
+         if( presolved == 1 )
+            blkinput->presolved = TRUE;
+         else if ( presolved == 0 )
+            blkinput->presolved = FALSE;
+         else
+            syntaxError(scip, blkinput, "presolved parameter must be 0 or 1");
+         SCIPdebugMessage("Decomposition is%s from presolved problem\n",
+            blkinput->presolved ? "" : " not");
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -681,10 +745,11 @@ static
 SCIP_RETCODE fillDecompStruct(
    SCIP*                 scip,               /**< SCIP data structure */
    BLKINPUT*             blkinput,           /**< blk reading data */
+   DEC_DECOMP*           decomp,             /**< DEC_DECOMP structure to fill */
    SCIP_READERDATA*      readerdata          /**< reader data*/
    )
 {
-   DEC_DECOMP* decomp;
+
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_VAR** allvars;
@@ -705,12 +770,11 @@ SCIP_RETCODE fillDecompStruct(
    int idx;
    int nconss;
    int nblocks;
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(blkinput != NULL);
    assert(readerdata != NULL);
-   assert(readerdata->decdecomp != NULL);
-   decomp = readerdata->decdecomp;
 
    allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
@@ -718,26 +782,30 @@ SCIP_RETCODE fillDecompStruct(
    nconss = SCIPgetNConss(scip);
    nblocks = blkinput->nblocks;
 
+   DECdecompSetPresolved(decomp, blkinput->presolved);
    DECdecompSetNBlocks(decomp, nblocks);
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
+   DECdecompSetDetector(decomp, NULL);
+
+   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
+   assert(valid);
 
    /* get memory for subscip variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
       nsubscipvars[i] = 0;
       nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
    }
 
    /* get memory for linking variables and constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, readerdata->nlinkingvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingvars, readerdata->nlinkingvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
    nlinkingvars = 0;
    nlinkingconss = 0;
 
@@ -750,7 +818,7 @@ SCIP_RETCODE fillDecompStruct(
       if( blocknr == NOVALUE )
       {
          SCIPdebugMessage("is unknown\n" );
-         /** @todo What should be done in this case? gg: copy directly into master */
+         /** @todo variable should be copied directly into master */
       }
       else if( blocknr == LINKINGVALUE )
       {
@@ -780,13 +848,15 @@ SCIP_RETCODE fillDecompStruct(
    }
 
    /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, &valid) );
+   assert(valid);
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nvars) );
 
    /* assign constraints to blocks or declare them linking */
    for( i = 0; i < nconss; i ++ )
@@ -888,23 +958,27 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-   DECdecompSetConstoblock(decomp, constoblock);
-   DECdecompSetVartoblock(decomp, vartoblock);
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
+   assert(valid);
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+   DECdecompSetConstoblock(decomp, constoblock, &valid);
+   assert(valid);
+   DECdecompSetVartoblock(decomp, vartoblock, &valid);
+   assert(valid);
 
-   SCIPfreeBufferArray(scip, &consvars);
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
+   SCIPfreeMemoryArray(scip, &consvars);
+   SCIPfreeMemoryArray(scip, &linkingconss);
+   SCIPfreeMemoryArray(scip, &linkingvars);
    for( i = nblocks - 1; i >= 0; --i )
    {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIPfreeMemoryArray(scip, &subscipconss[i]);
+      SCIPfreeMemoryArray(scip, &subscipvars[i]);
    }
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIPfreeMemoryArray(scip, &subscipconss);
+   SCIPfreeMemoryArray(scip, &subscipvars);
+   SCIPfreeMemoryArray(scip, &nsubscipconss);
+   SCIPfreeMemoryArray(scip, &nsubscipvars);
 
    return SCIP_OKAY;
 }
@@ -918,6 +992,7 @@ SCIP_RETCODE readBLKFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   DEC_DECOMP *decdecomp;
    int i;
    int nconss;
    int nblocksread;
@@ -930,6 +1005,9 @@ SCIP_RETCODE readBLKFile(
    assert(reader != NULL);
    assert(blkinput != NULL);
 
+   if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
+      SCIP_CALL( SCIPtransformProb(scip) );
+
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
@@ -940,15 +1018,15 @@ SCIP_RETCODE readBLKFile(
    nconss = SCIPgetNConss(scip);
 
    /* alloc: var -> block mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->varstoblock, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->varstoblock, nvars) );
    for( i = 0; i < nvars; i ++ )
    {
       readerdata->varstoblock[i] = NOVALUE;
    }
 
    /* alloc: linkingvar -> blocks mapping */
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->linkingvarsblocks, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nlinkingvarsblocks, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->linkingvarsblocks, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nlinkingvarsblocks, nvars) );
    BMSclearMemoryArray(readerdata->linkingvarsblocks, nvars);
    BMSclearMemoryArray(readerdata->nlinkingvarsblocks, nvars);
 
@@ -979,22 +1057,42 @@ SCIP_RETCODE readBLKFile(
          SCIP_CALL( readStart(scip, blkinput) );
          break;
 
+      case BLK_PRESOLVED:
+         SCIP_CALL( readPresolved(scip, blkinput) );
+         if( blkinput->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+         {
+            assert(blkinput->haspresolvesection);
+            /** @bug GCG should be able to presolve the problem first */
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the presolved problem, please presolve the problem first.\n");
+            goto TERMINATE;
+         }
+         break;
+
       case BLK_NBLOCKS:
          SCIP_CALL( readNBlocks(scip, blkinput) );
+         if( blkinput->haspresolvesection && !blkinput->presolved && SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED )
+         {
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_MINIMAL, NULL, "decomposition belongs to the unpresolved problem, please re-read the problem and read the decomposition without presolving.\n");
+            goto TERMINATE;
+            }
+         if( !blkinput->haspresolvesection )
+         {
+            SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. The behaviour is undefined. See the FAQ for further information.\n");
+         }
          break;
 
       case BLK_BLOCK:
          if( nblocksread == FALSE )
          {
             /* alloc n vars per block */
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockvars, blkinput->nblocks) );
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->nblockcons, blkinput->nblocks) );
-            SCIP_CALL( SCIPallocBufferArray(scip, &readerdata->blockcons, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockvars, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->nblockcons, blkinput->nblocks) );
+            SCIP_CALL( SCIPallocMemoryArray(scip, &readerdata->blockcons, blkinput->nblocks) );
             for( i = 0; i < blkinput->nblocks; ++i )
             {
                readerdata->nblockvars[i] = 0;
                readerdata->nblockcons[i] = 0;
-               SCIP_CALL( SCIPallocBufferArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
+               SCIP_CALL( SCIPallocMemoryArray(scip, &(readerdata->blockcons[i]), nconss) ); /*lint !e866*/
             }
             nblocksread = TRUE;
          }
@@ -1012,11 +1110,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
+
+   SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
+
    /* fill decomp */
-   SCIP_CALL( fillDecompStruct(scip, blkinput, readerdata) );
+   SCIP_CALL( fillDecompStruct(scip, blkinput, decdecomp, readerdata) );
 
    /* add decomp to cons_decomp */
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, readerdata->decdecomp) );
+   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1027,22 +1128,23 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-   if( nblocksread  )
+ TERMINATE:
+   if( nblocksread )
    {
       for( i = blkinput->nblocks - 1; i >= 0; --i )
       {
-         SCIPfreeBufferArray(scip, &(readerdata->blockcons[i]));
+         SCIPfreeMemoryArray(scip, &(readerdata->blockcons[i]));
       }
-      SCIPfreeBufferArray(scip, &readerdata->blockcons);
-      SCIPfreeBufferArray(scip, &readerdata->nblockcons);
-      SCIPfreeBufferArray(scip, &readerdata->nblockvars);
+      SCIPfreeMemoryArray(scip, &readerdata->blockcons);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockcons);
+      SCIPfreeMemoryArray(scip, &readerdata->nblockvars);
    }
 
    SCIPhashmapFree(&readerdata->constoblock);
 
-   SCIPfreeBufferArray(scip, &readerdata->nlinkingvarsblocks);
-   SCIPfreeBufferArray(scip, &readerdata->linkingvarsblocks);
-   SCIPfreeBufferArray(scip, &readerdata->varstoblock);
+   SCIPfreeMemoryArray(scip, &readerdata->nlinkingvarsblocks);
+   SCIPfreeMemoryArray(scip, &readerdata->linkingvarsblocks);
+   SCIPfreeMemoryArray(scip, &readerdata->varstoblock);
 
    /* close file */
    SCIPfclose(blkinput->file);
@@ -1064,9 +1166,6 @@ SCIP_DECL_READERFREE(readerFreeBlk)
    readerdata = SCIPreaderGetData(reader);
    assert(readerdata != NULL);
 
-   /* free decomp structure and readerdata */
-   if( DECdecompGetType(readerdata->decdecomp) == DEC_DECTYPE_UNKNOWN )
-      DECdecompFree(scip, &readerdata->decdecomp);
    SCIPfreeMemory(scip, &readerdata);
 
    return SCIP_OKAY;
@@ -1078,6 +1177,11 @@ static
 SCIP_DECL_READERREAD(readerReadBlk)
 {  /*lint --e{715} */
 
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
    SCIP_CALL( SCIPreadBlk(scip, filename, result) );
 
    return SCIP_OKAY;
@@ -1104,7 +1208,6 @@ SCIP_RETCODE SCIPincludeReaderBlk(
 
    /* create blk reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-   SCIP_CALL( DECdecompCreate(scip, &readerdata->decdecomp) );
 
    /* include blk reader */
    SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
@@ -1144,6 +1247,8 @@ SCIP_RETCODE SCIPreadBlk(
    blkinput.linenumber = 0;
    blkinput.linepos = 0;
    blkinput.section = BLK_START;
+   blkinput.presolved = FALSE;
+   blkinput.haspresolvesection = FALSE;
    blkinput.nblocks = -1;
    blkinput.blocknr = -2;
    blkinput.haserror = FALSE;

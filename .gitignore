@@ -8,9 +8,11 @@ src/githash.c
 *~
 #*
 IP
-instances
 lint.out
 .cproject
 .project
 gcg-metis*
 release
+lib/linkscreated.scip
+gcg-*.*.*
+lib/scip

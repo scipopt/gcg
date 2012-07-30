@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_greedycolsel.c
@@ -14,9 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-/* toggle debug mode */
-//define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -67,13 +81,13 @@ struct SCIP_HeurData
  */
 
 
-/** How would the number of violated rows change if mastervar were increased?  */
+/** how would the number of violated rows change if mastervar were increased?  */
 static
 int getViolationChange(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      SCIP_VAR*               mastervar
-      )
+   SCIP*                 scip,
+   SCIP_Real*            activities,
+   SCIP_VAR*             mastervar
+   )
 {
    SCIP_COL* col;
    SCIP_ROW** colrows;
@@ -127,14 +141,15 @@ int getViolationChange(
 /** get the index of the "best" master variable w.r.t. pseudo costs */
 static
 SCIP_RETCODE getBestMastervar(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      int*                    blocknr,
-      SCIP_Bool*              ignored,
-      SCIP_Bool               useobj,
-      int*                    index,
-      int*                    violchange
-      )
+   SCIP*                 scip,
+   SCIP_SOL*             mastersol,
+   SCIP_Real*            activities,
+   int*                  blocknr,
+   SCIP_Bool*            ignored,
+   SCIP_Bool             useobj,
+   int*                  index,
+   int*                  violchange
+   )
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
@@ -151,7 +166,7 @@ SCIP_RETCODE getBestMastervar(
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
-   assert( origprob != NULL );
+   assert(origprob != NULL);
 
    /* get variable data of the master problem */
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -160,20 +175,6 @@ SCIP_RETCODE getBestMastervar(
    *index = -1;
    *violchange = INT_MAX;
    curobj = SCIPinfinity(scip);
-
-//   j = nmastervars - 1;
-//   do
-//   {
-//      *index = j;
-//      *violchange = getViolationChange(scip, activities, mastervars[j]);
-//
-//      vardata = SCIPvarGetData(mastervars[j]);
-//      assert(vardata != NULL);
-//      assert(vardata->vartype == GCG_VARTYPE_MASTER);
-//
-//      j--;
-//   }
-//   while( blocknr[vardata->blocknr] >= GCGrelaxGetNIdenticalBlocks(origprob, vardata->blocknr) );
 
    for( i = nmastervars - 1; i >= 0; i-- )
    {
@@ -189,9 +190,13 @@ SCIP_RETCODE getBestMastervar(
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
-      /* ignore the master variable if the corresponding block is already full */
+      /* ignore the master variable if the corresponding block is already full
+       * or which are fixed
+       */
       if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block )
-            && !ignored[i])
+            && !ignored[i]
+            && SCIPvarGetStatus(mastervar) != SCIP_VARSTATUS_FIXED
+            && SCIPisFeasGE(scip, SCIPgetSolVal(scip, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
       {
          tmpviolchange = getViolationChange(scip, activities, mastervar);
          tmpobj = SCIPvarGetObj(mastervar);
@@ -211,10 +216,10 @@ SCIP_RETCODE getBestMastervar(
 /** update activities */
 static
 SCIP_RETCODE updateActivities(
-      SCIP*                   scip,
-      SCIP_Real*              activities,
-      SCIP_VAR*               mastervar
-      )
+   SCIP*                 scip,
+   SCIP_Real*            activities,
+   SCIP_VAR*             mastervar
+   )
 {
    SCIP_COL* col;
    SCIP_ROW** colrows;
@@ -265,10 +270,10 @@ SCIP_RETCODE updateActivities(
  * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
-      SCIP*             scip,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -316,11 +321,11 @@ SCIP_RETCODE searchZeroMastervar(
  *  or NULL is there is no such variable available */
 static
 SCIP_RETCODE getZeroMastervar(
-      SCIP*             scip,
-      SCIP_HEURDATA*    heurdata,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   SCIP_HEURDATA*        heurdata,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    /* if no zero solution is known for the block, look if a master variable has been added
     * and remember the variable for future use */
@@ -349,12 +354,12 @@ SCIP_DECL_HEURFREE(heurFreeGreedycolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -407,12 +412,12 @@ SCIP_DECL_HEUREXIT(heurExitGreedycolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free memory */
    SCIPfreeMemoryArrayNull(scip, &heurdata->zerovars);
@@ -463,17 +468,17 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    int k;
    int index;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
-   assert( result != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
+   assert(result != NULL);
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
-   assert( origprob != NULL );
+   assert(origprob != NULL);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -504,28 +509,24 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    nblocks = GCGrelaxGetNPricingprobs(origprob);
    assert(nblocks >= 0);
 
-   /* initialize the block numbers for the pricing problems */
-   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
-   for( i = 0; i < nblocks; i++ )
-   {
-      blocknr[i] = 0;
-   }
-   allblocksfull = FALSE;
-
-   /* initialize master variable information */
-   SCIP_CALL( SCIPallocBufferArray(scip, &ignored, nmastervars) );
-   for( i = 0; i < nmastervars; i++ )
-      ignored[i] = FALSE;
-
    /* get master LP rows data */
    SCIP_CALL( SCIPgetLPRowsData(scip, &lprows, &nlprows) );
-   assert( lprows != NULL );
-   assert( nlprows >= 0);
+   assert(lprows != NULL);
+   assert(nlprows >= 0);
+
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &ignored, nmastervars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
 
    /* get memory for working solutions and row activities */
    SCIP_CALL( SCIPcreateSol(scip, &mastersol, heur) );
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
+
+   /* initialize block and master variable information */
+   BMSclearMemoryArray(blocknr, nblocks);
+   BMSclearMemoryArray(ignored, nmastervars);
+   allblocksfull = FALSE;
 
    /* initialize activities with zero and get number of violated rows of zero master solution */
    nviolrows = 0;
@@ -552,7 +553,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
-      SCIP_CALL( getBestMastervar(scip, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(scip, mastersol, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
@@ -805,8 +806,8 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
    SCIP_CALL( SCIPfreeSol(scip, &mastersol) );
    SCIPfreeBufferArray(scip, &activities);
-   SCIPfreeBufferArray(scip, &blocknr);
    SCIPfreeBufferArray(scip, &ignored);
+   SCIPfreeBufferArray(scip, &blocknr);
 
    heurdata->lastncols = nmastervars;
 

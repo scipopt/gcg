@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   sepa_master.c
@@ -265,9 +282,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       sepadata->nmastercuts++;
 
 #ifdef SCIP_DEBUG
-      //SCIPdebugMessage("Cut %d:\n", i);
-      //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
-      //SCIPdebugMessage("\n\n");
+      SCIPdebugMessage("Cut %d:\n", i);
+      SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
+      SCIPdebugMessage("\n\n");
 #endif
 
       SCIPfreeBufferArray(scip, &rowvars);
@@ -318,7 +335,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
 }
 
 
-/* returns the array of original cuts saved in the separator data */
+/** returns the array of original cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -337,7 +354,7 @@ SCIP_ROW** GCGsepaGetOrigcuts(
    return sepadata->origcuts;
 }
 
-/* returns the number of original cuts saved in the separator data */
+/** returns the number of original cuts saved in the separator data */
 int GCGsepaGetNOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -356,7 +373,7 @@ int GCGsepaGetNOrigcuts(
    return sepadata->norigcuts;
 }
 
-/* returns the array of master cuts saved in the separator data */
+/** returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -375,7 +392,7 @@ SCIP_ROW** GCGsepaGetMastercuts(
    return sepadata->mastercuts;
 }
 
-/* returns the number of master cuts saved in the separator data */
+/** returns the number of master cuts saved in the separator data */
 int GCGsepaGetNMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    )

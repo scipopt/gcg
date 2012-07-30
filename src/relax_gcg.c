@@ -6,14 +6,37 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    relax_gcg.c
  * @ingroup RELAXATORS
- * @brief   gcg relaxator
+ * @brief   GCG relaxator
  * @author  Gerald Gamrath
  * @author  Martin Bergner
  * @author  Alexander Gross
+ *
+ * \bug
+ * - Reading in the wrong decomposition leads to a crash
+ * - The memory limit is not strictly enforced
+ * - Dealing with timelimits is a working hack only
+ * - CTRL-C handling is very flaky
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -45,8 +68,8 @@
 #define RELAX_PRIORITY         -1
 #define RELAX_FREQ             1
 
-#define DEFAULT_DISCRETIZATION FALSE
-#define DEFAULT_MERGEIDENTICALBLOCS TRUE
+#define DEFAULT_DISCRETIZATION TRUE
+#define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
 
 
@@ -95,7 +118,7 @@ struct SCIP_RelaxData
 
    /* parameter data */
    SCIP_Bool             discretization;     /**< TRUE: use discretization approach; FALSE: use convexification approach */
-   SCIP_Bool             mergeidenticalblocks; /**< should identical blocks be merged (only for discretization approach)? */
+   SCIP_Bool             aggregation;        /**< should identical blocks be aggregated (only for discretization approach)? */
    SCIP_Bool             masterissetpart;    /**< is the master a set partitioning problem? */
    SCIP_Bool             masterissetcover;   /**< is the master a set covering problem? */
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
@@ -118,7 +141,7 @@ struct SCIP_RelaxData
  */
 
 
-/* sets the number of the block, the given original variable belongs to */
+/** sets the number of the block, the given original variable belongs to */
 static
 SCIP_RETCODE setOriginalVarBlockNr(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -162,7 +185,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
    return SCIP_OKAY;
 }
 
-/* marks the constraint to be transferred to the master problem */
+/** marks the constraint to be transferred to the master problem */
 static
 SCIP_RETCODE markConsMaster(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -201,7 +224,7 @@ SCIP_RETCODE markConsMaster(
 }
 
 
-/** converts the structure to the gcg format by setting the appropriate blocks and master constraints */
+/** converts the structure to the GCG format by setting the appropriate blocks and master constraints */
 static
 SCIP_RETCODE convertStructToGCG(
    SCIP*                 scip,               /**< SCIP data structure          */
@@ -278,10 +301,7 @@ SCIP_RETCODE convertStructToGCG(
       {
          SCIP_VAR* relevantvar;
          assert(subscipvars[i][j] != NULL);
-         if( SCIPisVarRelevant(subscipvars[i][j]) )
-            relevantvar = SCIPgetRelevantVariable(subscipvars[i][j]);
-         else
-            relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
+         relevantvar = SCIPvarGetProbvar(subscipvars[i][j]);
 
          if( SCIPhashmapGetImage(transvar2origvar, subscipvars[i][j]) != NULL )
          {
@@ -312,7 +332,7 @@ SCIP_RETCODE convertStructToGCG(
          continue;
 
       SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
-      /* HACK; @todo find out constraint blocks */
+      /* HACK; @todo find out constraint blocks more intelligently */
       for( j = 0; j < nblocks; ++j )
       {
          found = FALSE;
@@ -333,7 +353,7 @@ SCIP_RETCODE convertStructToGCG(
                   {
                      SCIPdebugMessage("\t\t%s is in %d\n", SCIPvarGetName(SCIPvarGetProbvar(curvars[v])), j);
                      assert(SCIPvarGetData(linkingvars[i]) != NULL);
-                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPgetRelevantVariable(linkingvars[i]), j) );
+                     SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, SCIPvarGetProbvar(linkingvars[i]), j) );
                      found = TRUE;
                      break;
                   }
@@ -352,7 +372,7 @@ SCIP_RETCODE convertStructToGCG(
    return SCIP_OKAY;
 }
 
-/* ensures size of masterconss array */
+/** ensures size of masterconss array */
 static
 SCIP_RETCODE ensureSizeMasterConss(
    SCIP*                 scip,
@@ -376,7 +396,7 @@ SCIP_RETCODE ensureSizeMasterConss(
    return SCIP_OKAY;
 }
 
-/* ensures size of branchrules array: enlarges the array by 1 */
+/** ensures size of branchrules array: enlarges the array by 1 */
 static
 SCIP_RETCODE ensureSizeBranchrules(
    SCIP*                 scip,
@@ -454,6 +474,33 @@ SCIP_RETCODE checkSetppcStructure(
          relaxdata->masterissetpart = FALSE;
          break;
       }
+      else if( strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(masterconss[i])), "linear") == 0 )
+      {
+         SCIP_SETPPCTYPE type;
+
+         if( SCIPgetConsIsSetppc(scip, masterconss[i], &type) )
+         {
+            switch( type )
+            {
+            case SCIP_SETPPCTYPE_COVERING:
+               relaxdata->masterissetpart = FALSE;
+               break;
+            case SCIP_SETPPCTYPE_PARTITIONING:
+               relaxdata->masterissetcover = FALSE;
+               break;
+            case SCIP_SETPPCTYPE_PACKING:
+               relaxdata->masterissetcover = FALSE;
+               relaxdata->masterissetpart = FALSE;
+               break;
+            }
+         }
+         else
+         {
+            relaxdata->masterissetcover = FALSE;
+            relaxdata->masterissetpart = FALSE;
+         }
+         break;
+      }
       else
       {
          relaxdata->masterissetcover = FALSE;
@@ -477,9 +524,7 @@ SCIP_RETCODE checkSetppcStructure(
 }
 
 
-/** checks whether two arrays of SCIP_Real's are identical
- * @todo What about using SCIPisEq()
- */
+/** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -671,7 +716,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
 }
 
 /** checks whether there are identical pricing blocks
-  * @todo we should really use something more sophisticated such as graph isomorphisms or similar
+  * @todo we should really use something more sophisticated
   */
 static
 SCIP_RETCODE checkIdenticalBlocks(
@@ -704,11 +749,11 @@ SCIP_RETCODE checkIdenticalBlocks(
    relaxdata->nrelpricingprobs = relaxdata->npricingprobs;
    nrelevant = 0;
 
-   if( !relaxdata->discretization || !relaxdata->mergeidenticalblocks )
+   if( !relaxdata->discretization || !relaxdata->aggregation )
       return SCIP_OKAY;
 
    /* aggregate only if the master problem has a set partitioning or set covering structure */
-   if( !relaxdata->masterissetcover || !relaxdata->masterissetpart )
+   if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
       return SCIP_OKAY;
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
@@ -718,7 +763,10 @@ SCIP_RETCODE checkIdenticalBlocks(
          if( relaxdata->blockrepresentative[j] != j )
             continue;
 
-         SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(scip), 5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /** @todo +1 to deal with empty subproblems */
+         SCIP_CALL( SCIPhashmapCreate(&varmap,
+               SCIPblkmem(scip),
+               5 * SCIPgetNVars(relaxdata->pricingprobs[i])+1) ); /* +1 to deal with empty subproblems */
+
          SCIP_CALL( pricingprobsAreIdentical(scip, relaxdata, i, j, varmap, &identical) );
 
          if( identical )
@@ -759,8 +807,8 @@ SCIP_RETCODE checkIdenticalBlocks(
       }
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, %d %s relevant!\n", relaxdata->npricingprobs, nrelevant,
-      (nrelevant == 1 ? "is" : "are"));
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Matrix has %d blocks, using %d aggregated pricing problem%s!\n",
+      relaxdata->npricingprobs, nrelevant, (nrelevant == 1 ? "" : "s"));
 
    relaxdata->nrelpricingprobs = nrelevant;
 
@@ -799,6 +847,7 @@ SCIP_RETCODE setPricingProblemParameters(
 
    /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/dualfix/maxrounds", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "presolving/dualfix/maxrounds") );
 
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
@@ -861,7 +910,6 @@ SCIP_RETCODE createLinkingPricingVars(
    SCIP_VAR** pricingvars;
    int i;
 
-
    assert(origvar != NULL);
    assert(relaxdata != NULL);
 
@@ -880,12 +928,10 @@ SCIP_RETCODE createLinkingPricingVars(
       count = 0;
       for( i = 0; i < relaxdata->npricingprobs; i++ )
       {
-         if( pricingvars[i] != NULL )
-         {
-            count++;
-            //assert(pricingvars[i] == vars[v]);
-         }
          assert(linkconss[i] == NULL);
+
+         if( pricingvars[i] != NULL )
+            count++;
       }
       assert(nblocks == count);
    }
@@ -979,7 +1025,7 @@ SCIP_RETCODE createPricingVariables(
       {
          size_t tempblock;
          tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         if(tempblock == 0)
+         if( tempblock == 0 )
          {
             assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
             blocknr = -1;
@@ -1139,6 +1185,9 @@ SCIP_RETCODE createMasterProblem(
 
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
+
+   /* disable display output in the master problem */
+   SCIP_CALL( SCIPsetIntParam(masterscip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 
    /* set parameters */
    SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
@@ -1388,7 +1437,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( initRelaxProblemdata(scip, relaxdata) );
 
    /* get clocktype of the original SCIP instance in order to use the same clocktype in master and pricing problems */
-   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype));
+   SCIP_CALL( SCIPgetIntParam(scip, "timing/clocktype", &clocktype) );
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
@@ -1510,7 +1559,7 @@ SCIP_RETCODE combineSolutions(
       assert(probs[block] != NULL);
       sol = SCIPgetBestSol(probs[block]);
 
-      /* @todo gg solval should be 0 before, anyway */
+      /* @todo solval should be 0 before, anyway, check it with an assert */
       SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
    }
    return SCIP_OKAY;
@@ -1576,6 +1625,8 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    objvalue = 0.0;
 
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Block diagonal structure detected, solving blocks individually.\n");
+
    /* solve pricing problems one after the other */
    for( i = 0; i < relaxdata->npricingprobs; ++i )
    {
@@ -1586,7 +1637,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       if( relaxdata->pricingprobs[i] == NULL )
          continue;
 
-      SCIPinfoMessage(scip, NULL, "Solving pricing %i.\n", i);
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Solving block %i.\n", i+1);
       SCIP_CALL( SCIPsetIntParam(relaxdata->pricingprobs[i], "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
       /* give the pricing problem 2% more time then the original scip has left */
       if( SCIPgetStage(relaxdata->pricingprobs[i]) > SCIP_STAGE_PROBLEM )
@@ -1597,7 +1648,7 @@ SCIP_RETCODE solveDiagonalBlocks(
       {
          pricingtimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02;
       }
-      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit));
+      SCIP_CALL( SCIPsetRealParam(relaxdata->pricingprobs[i], "limits/time", pricingtimelimit) );
 
 #ifdef SCIP_DEBUG
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "block_%i.lp", i);
@@ -1644,8 +1695,7 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, &isfeasible) );
 
-   /* TODO: maybe add a constraint to the node to indicate that it has been decomposed */
-   SCIPinfoMessage(scip, NULL, "We need code for this situation here!\n");
+   /** @todo maybe add a constraint here to indicate that it has been decomposed */
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1701,7 +1751,6 @@ SCIP_RETCODE initRelaxator(
          relaxdata->masterconss, relaxdata->masterconss) );
 
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "GCG                : Performing Dantzig-Wolfe with %d blocks.\n", relaxdata->npricingprobs);
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -1843,7 +1892,6 @@ static
 SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 {
    SCIP_RELAXDATA* relaxdata;
-   int origverblevel;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1854,11 +1902,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
 
 
    initRelaxdata(relaxdata);
-
-   /* the output of the master problem gets the same verbosity level
-    * as the output of the original problem */
-   SCIP_CALL( SCIPgetIntParam(scip, "display/verblevel", &origverblevel) );
-   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", origverblevel) );
 
    return SCIP_OKAY;
 }
@@ -1993,7 +2036,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
 
 
       /* loop to solve the master problem, this is a workaround and does not fix any problem */
-      while( !SCIPisStopped(scip))
+      while( !SCIPisStopped(scip) )
       {
          SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
@@ -2052,10 +2095,10 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       else
       {
          SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
-         assert(SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
+         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
-         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE )
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
          {
             SCIP_Real tilim;
             SCIP_CALL( SCIPgetRealParam(masterprob, "limits/time", &tilim) );
@@ -2065,6 +2108,12 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                return SCIP_OKAY;
             }
             *lowerbound = SCIPinfinity(scip);
+         }
+         else
+         {
+            SCIPwarningMessage(scip, "Stage <%d> is not handled\n!", SCIPgetStage(masterprob));
+            *result = SCIP_DIDNOTRUN;
+            return SCIP_OKAY;
          }
       }
 
@@ -2105,14 +2154,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
  * relaxator specific interface methods
  */
 
-/** creates the gcg relaxator and includes it in SCIP */
+/** creates the GCG relaxator and includes it in SCIP */
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_RELAXDATA* relaxdata;
 
-   /* create gcg relaxator data */
+   /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
 
    relaxdata->decdecomp = NULL;
@@ -2138,16 +2187,13 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
 
-   /* include masterbranch constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrMasterbranch(relaxdata->masterprob) );
-
-   /* add gcg relaxator parameters */
+   /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used?",
          NULL, FALSE, DEFAULT_DISCRETIZATION, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mergeidenticalblocks",
-         "should identical blocks be merged (only for discretization approach)?",
-         &(relaxdata->mergeidenticalblocks), FALSE, DEFAULT_MERGEIDENTICALBLOCS, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
+         "should identical blocks be aggregated (only for discretization approach)?",
+         &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
@@ -3151,12 +3197,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    }
    SCIPclearExternBranchCands(scip);
 
-   /** @todo remove the TRUE of the if condition and use correct abort criteria */
-   /* nothing has to be done, if no LP was solved after the last update */
-   /*if( TRUE || relaxdata->lastmasterlpiters != SCIPgetNLPIterations(relaxdata->masterprob) )*/
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
-      //printf("nlpiterations = %lld, lastlpiterations = %lld\n", SCIPgetNLPIterations(relaxdata->masterprob), relaxdata->lastmasterlpiters);
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
       /* create new solution */
@@ -3233,13 +3275,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          SCIP_CALL( SCIPcheckSolOrig(scip, newsol, &stored, TRUE, TRUE) );
       }
-      /** @todo Martin does not see why the solution has to be accepted, numerics might bite us, so the transformation might fail.
-       *  Remedy could be: Round the values or propagate changes or call a heuristic to fix it.
+      /** @bug The solution doesn't have to be accepted, numerics might bite us, so the transformation might fail.
+       *  A remedy could be: Round the values or propagate changes or call a heuristic to fix it.
        */
       SCIP_CALL( SCIPfreeSol(scip, &newsol) );
-      /** @todo Martin will disable that here, because at the current stage, it does not have to be true!
-       *       assert(stored);
-       */
+
       if( stored )
          SCIPdebugMessage("updated current best primal feasible solution!\n");
    }

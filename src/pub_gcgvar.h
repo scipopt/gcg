@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pub_gcgvar.h
@@ -252,7 +269,6 @@ SCIP_Bool GCGisLinkingVarInBlock(
 /** informs an original variable, that a variable in the master problem was created,
  * that contains a part of the original variable.
  * Saves this information in the original variable's data
- * @todo this method needs a little love
  */
 extern
 SCIP_RETCODE GCGoriginalVarAddMasterVar(
@@ -265,7 +281,6 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
 /* informs an original variable, that a variable in the master problem was deleted,
  * that contains a part of the original variable.
  * Update the information in the original variable's data
- * @todo this method needs a little love
  */
 extern
 SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
@@ -354,7 +369,6 @@ SCIP_Longint GCGgetIteration(
    SCIP_VARDATA*         vardata             /**< created variable */
    );
 
-
 /** sets the iteration when the var was created */
 extern
 void GCGsetIteration(
@@ -363,27 +377,31 @@ void GCGsetIteration(
    SCIP_Longint          iteration           /**< iteration that this var was created */
    );
 
+/** store gap */
 void GCGsetGap(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata,
-   SCIP_Real             gap
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_Real             gap                 /**< present gap when variable is created */
    );
 
+/** return stored gap */
 SCIP_Real GCGgetGap(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata             /**< variable data structure */
    );
 
+/** store reduced cost */
 void GCGsetRedcost(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata,
-   SCIP_Real             redcost
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    );
 
+/** return stored reduced cost */
 SCIP_Real GCGgetRedcost(
-   SCIP*                 scip,
-   SCIP_VARDATA*         vardata);
-
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VARDATA*         vardata             /**< variable data structure */
+   );
 
 #ifdef __cplusplus
 }
