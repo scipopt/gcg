@@ -27,6 +27,7 @@
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
 #include "pub_gcgvar.h"
+#include "event_genericbranchvaradd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1795,13 +1796,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	   SCIP_CALL( SCIPallocBufferArray(scip, &C, Csize) );
 	   SCIP_CALL( SCIPallocBufferArray(scip, &sequencesizes, Csize) );
 	   
-	   parentcons = GCGconsMasterbranchGetParentcons(cons);
+	   parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
 	   assert(parentcons != NULL);
 	   branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 	   C[0] = branchdata->S;
 	   sequencesizes[0] = branchdata->Ssize;
 	   
-	   parentcons = GCGconsMasterbranchGetParentcons(cons);
+	   parentcons = GCGconsMasterbranchGetParentcons(parentcons);
 	   
 	   while( parentcons != NULL )
 	   {
@@ -1832,7 +1833,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 			   C[Csize-1] = branchdata->S;
 			   sequencesizes[Csize-1] = branchdata->Ssize;
 		   }
-		   parentcons = GCGconsMasterbranchGetParentcons(cons);
+		   parentcons = GCGconsMasterbranchGetParentcons(parentcons);
 	   }
 	   
 	   SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
@@ -1908,7 +1909,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 
    if( !feasible )
    {
-      SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
+      SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n"); 
       return SCIP_OKAY;
    }
 
@@ -1936,6 +1937,9 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
          branchFreeGeneric, branchInitGeneric, branchExitGeneric, branchInitsolGeneric, 
          branchExitsolGeneric, branchExeclpGeneric, branchExecextGeneric, branchExecpsGeneric,
          branchruledata) );
+   
+   /* include event handler for adding generated mastervars to the branching constraints */
+      SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(scip) );
 
    return SCIP_OKAY;
 }
