@@ -8,7 +8,6 @@ src/githash.c
 *~
 #*
 IP
-instances
 lint.out
 .cproject
 .project
