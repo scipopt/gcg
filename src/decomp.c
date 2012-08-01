@@ -112,6 +112,12 @@ SCIP_RETCODE DECdecompFree(
       }
       SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
    }
+
+   for( i = 0; i < decomp->nlinkingvars; ++i )
+   {
+      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
+   }
+
    if( decomp->stairlinkingvars != NULL )
       for( i = 0; i < decomp->nblocks-1; ++i )
       {
@@ -121,14 +127,6 @@ SCIP_RETCODE DECdecompFree(
          }
          SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars[i]);
       }
-
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->stairlinkingvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nstairlinkingvars);
 
    /* free hashmaps if they are not NULL */
    if( decomp->constoblock != NULL )
@@ -144,13 +142,14 @@ SCIP_RETCODE DECdecompFree(
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(decomp->linkingconss[i])) );
    }
+   SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
+   SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->stairlinkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nstairlinkingvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
-
-   for( i = 0; i < decomp->nlinkingvars; ++i )
-   {
-      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
-   }
-
    SCIPfreeMemory(scip, decdecomp);
 
    return SCIP_OKAY;

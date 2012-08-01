@@ -11,7 +11,7 @@
 /**@file   dec_cutpacking.c
  * @ingroup DETECTORS
  * @brief  cutpacking presolver
- * @author
+ * @author Friederike Menge
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
