@@ -603,7 +603,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
    countz = 0;
    count = 0;
 
-   for( i = 0; i < ncols; i++ )
+   for( i = 0; i < nrows; i++ )
    {
       colindex = indizes[i];
       /* is column if >0 it is column in basis, <0 is for row */
