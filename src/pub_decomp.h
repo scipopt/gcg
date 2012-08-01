@@ -180,7 +180,8 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
-   int*                  nstairlinkingvars   /**< number of linkingvars per block */
+   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
+   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
    );
 
 /** returns the stairlinkingvars array of the given decdecomp structure */

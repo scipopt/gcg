@@ -503,7 +503,8 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
    SCIP_VAR***           stairlinkingvars,   /**< Linkingvars array  */
-   int*                  nstairlinkingvars   /**< number of linkingvars per block */
+   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
+   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
    )
 {
    int b;
@@ -512,6 +513,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    assert(decdecomp != NULL);
    assert(stairlinkingvars != NULL);
    assert(nstairlinkingvars != NULL);
+   assert(valid != NULL);
    assert(decdecomp->nblocks > 0);
 
    assert(decdecomp->stairlinkingvars == NULL);
@@ -539,6 +541,8 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
          SCIP_CALL( SCIPcaptureVar(scip, decdecomp->stairlinkingvars[b][i]) );
       }
    }
+
+   *valid = TRUE; /**@todo A valid check needs to be implemented */
    return SCIP_OKAY;
 }
 
