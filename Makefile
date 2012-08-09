@@ -71,6 +71,8 @@ MAINOBJ		=	reader_blk.o \
 			heur_gcgveclendiving.o \
 			heur_gcgzirounding.o \
 			heur_greedycolsel.o \
+			heur_masterfracdiving.o \
+			heur_mastervecldiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
 			heur_xpcrossover.o \
