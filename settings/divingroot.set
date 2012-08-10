@@ -8,6 +8,14 @@ lp/solvefreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
+# frequency offset for calling primal heuristic <gcgcoefdiving>
+# [type: int, range: [0,2147483647], default: 1]
+heuristics/gcgcoefdiving/freqofs = 0
+
+# frequency offset for calling primal heuristic <gcgfracdiving>
+# [type: int, range: [0,2147483647], default: 3]
+heuristics/gcgfracdiving/freqofs = 0
+
 # frequency for calling primal heuristic <gcgguideddiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: -1]
 heuristics/gcgguideddiving/freq = 10
@@ -16,6 +24,10 @@ heuristics/gcgguideddiving/freq = 10
 # [type: int, range: [-1,2147483647], default: -1]
 heuristics/gcgintdiving/freq = 10
 
+# frequency offset for calling primal heuristic <gcgintdiving>
+# [type: int, range: [0,2147483647], default: 9]
+heuristics/gcgintdiving/freqofs = 0
+
 # frequency for calling primal heuristic <gcglinesdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: -1]
 heuristics/gcglinesdiving/freq = 10
@@ -23,4 +35,8 @@ heuristics/gcglinesdiving/freq = 10
 # frequency for calling primal heuristic <gcgveclendiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: -1]
 heuristics/gcgveclendiving/freq = 10
+
+# frequency offset for calling primal heuristic <gcgveclendiving>
+# [type: int, range: [0,2147483647], default: 4]
+heuristics/gcgveclendiving/freqofs = 0
 
