@@ -224,7 +224,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
-   assert(SCIPhasCurrentNodeLP(scip));
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -235,7 +234,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    SCIPdebugMessage("called Masterfracdiving heuristic\n");
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
+   if( !SCIPhasCurrentNodeLP(scip) || SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("not executing Masterfracdiving heuristic: master LP not solved to optimality\n");
       return SCIP_OKAY;
@@ -563,6 +562,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
             else
                SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror) );
 #endif
+
             if( lperror )
                break;
 

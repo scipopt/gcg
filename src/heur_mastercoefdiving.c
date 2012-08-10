@@ -46,7 +46,7 @@
 
 
 #define HEUR_NAME             "mastercoefdiving"
-#define HEUR_DESC             "LP diving heuristic that chooses fixings w.r.t. the matrix coefficients"
+#define HEUR_DESC             "master LP diving heuristic that chooses fixings w.r.t. the matrix coefficients"
 #define HEUR_DISPCHAR         'c'
 #define HEUR_PRIORITY         -1001000
 #define HEUR_FREQ             10
@@ -67,7 +67,6 @@
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
 #define DEFAULT_MAXPRICEQUOT       0.10 /**< maximal fraction of pricing rounds compared to node pricing rounds */
 #define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
-
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -467,7 +466,7 @@ SCIP_DECL_HEUREXEC(heurExecMastercoefdiving) /*lint --e{715}*/
    if( heurdata->maxpriceofs > -1 )
    {
       npricerounds = SCIPgetNPriceRounds(scip);
-      SCIPdebugMessage("mastervecldiving - pricing rounds at this node: %d\n", npricerounds);
+      SCIPdebugMessage("mastercoefdiving - pricing rounds at this node: %d\n", npricerounds);
       maxpricerounds = (int)((1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * heurdata->maxpricequot * npricerounds);
       maxpricerounds += heurdata->maxpriceofs;
    }
@@ -747,7 +746,6 @@ SCIP_DECL_HEUREXEC(heurExecMastercoefdiving) /*lint --e{715}*/
             else
                SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror) );
 #endif
-
 
             if( lperror )
                break;

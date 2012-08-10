@@ -41,7 +41,7 @@
 
 
 #define HEUR_NAME             "mastervecldiving"
-#define HEUR_DESC             "LP diving heuristic that rounds variables with long column vectors"
+#define HEUR_DESC             "master LP diving heuristic that rounds variables with long column vectors"
 #define HEUR_DISPCHAR         'v'
 #define HEUR_PRIORITY         -1003100
 #define HEUR_FREQ             10
@@ -208,7 +208,6 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
-   assert(SCIPhasCurrentNodeLP(scip));
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -219,7 +218,7 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
    SCIPdebugMessage("called Mastervecldiving heuristic\n");
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
+   if( !SCIPhasCurrentNodeLP(scip) || SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("not executing Mastervecldiving heuristic: master LP not solved to optimality\n");
       return SCIP_OKAY;
