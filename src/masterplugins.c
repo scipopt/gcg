@@ -127,6 +127,7 @@
 #include "heur_greedycolsel.h"
 #include "heur_mastercoefdiving.h"
 #include "heur_masterfracdiving.h"
+#include "heur_masterintdiving.h"
 #include "heur_mastervecldiving.h"
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
@@ -205,6 +206,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
    SCIP_CALL( SCIPincludeHeurMastercoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurMasterfracdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurMasterintdiving(scip) );
    SCIP_CALL( SCIPincludeHeurMastervecldiving(scip) );
    SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
    SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
