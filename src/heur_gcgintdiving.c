@@ -105,7 +105,6 @@ struct SCIP_HeurData
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
 #define heurCopyGcgintdiving NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
