@@ -110,7 +110,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    SCIP_CONS* parentcons;
    SCIP_Bool varinS;
    SCIP_VAR* mastervar;
-   GCG_BRANCHDATA* branchdata;
+   GCG_BRANCHDATA* branchdata; 
    int p;
 
    assert(eventhdlr != NULL);
@@ -144,7 +144,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 		   {
 			   if(branchdata->S[1] == 1 )
 			   {
-				   if(mastervar.generator[branchdata->S[p][0]] < branchdata->S[p][2])
+				   if(GCGmasterVarGetOrigvals(mastervar)[branchdata->S[p][0]] < branchdata->S[p][2])
 				   {
 					   varinS = FALSE;
 					   break;
@@ -152,7 +152,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 			   }
 			   else
 			   {
-				   if(mastervar.generator[branchdata->S[p][0]] >= branchdata->S[p][2])
+				   if(GCGmasterVarGetOrigvals(mastervar)[branchdata->S[p][0]] >= branchdata->S[p][2])
 				   {
 					   varinS = FALSE;
 					   break;
