@@ -158,6 +158,7 @@
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
+#include "heur_gcgintdiving.h"
 #include "heur_gcglinesdiving.h"
 #include "heur_gcgpscostdiving.h"
 #include "heur_gcgrens.h"
@@ -292,6 +293,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgintdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
