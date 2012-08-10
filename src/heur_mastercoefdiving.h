@@ -25,22 +25,21 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_mastervecldiving.h
+/**@file   heur_mastercoefdiving.h
  * @ingroup PRIMALHEURISTICS
- * @brief  master LP diving heuristic that rounds variables with long column vectors
+ * @brief  master LP diving heuristic that chooses fixings w.r.t. the matrix coefficients
  * @author Tobias Achterberg
  *
  * Diving heuristic: Iteratively fixes some fractional variable and resolves the LP-relaxation, thereby simulating a
- * depth-first-search in the tree. Vectorlength Diving chooses the variable with the smallest ratio of potential
- * objective change and number of affected constraints and fixes it. One-level backtracking is applied: If the LP gets
- * infeasible, the last fixings is undone, and the opposite fixing is tried. If this is infeasible, too, the procedure
- * aborts.
+ * depth-first-search in the tree. Coefficient Diving chooses the variable with the fewest locking number in any
+ * direction and rounds it into this direction. One-level backtracking is applied: If the LP gets infeasible, the last
+ * fixing is undone, and the opposite fixing is tried. If this is infeasible, too, the procedure aborts.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_MASTERVECLDIVING_H__
-#define __SCIP_HEUR_MASTERVECLDIVING_H__
+#ifndef __SCIP_HEUR_MASTERCOEFDIVING_H__
+#define __SCIP_HEUR_MASTERCOEFDIVING_H__
 
 
 #include "scip/scip.h"
@@ -49,9 +48,9 @@
 extern "C" {
 #endif
 
-/** creates the mastervecldiving heuristic and includes it in SCIP */
+/** creates the mastercoefdiving heuristic and includes it in SCIP */
 EXTERN
-SCIP_RETCODE SCIPincludeHeurMastervecldiving(
+SCIP_RETCODE SCIPincludeHeurMastercoefdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

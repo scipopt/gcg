@@ -25,28 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_masterfracdiving.c
- * @brief  master LP diving heuristic that chooses fixings w.r.t. the fractionalities
+/**@file   heur_mastercoefdiving.c
+ * @brief  master LP diving heuristic that chooses fixings w.r.t. the matrix coefficients
  * @author Tobias Achterberg
- * @author Christian Puchert
+ * @author Marc Pfetsch
+ *
+ * Indicator constraints are taken into account if present.
  */
-//#define SCIP_DEBUG
+
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterfracdiving.h"
+#include "heur_mastercoefdiving.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 
+#include "scip/cons_indicator.h"
 
-#define HEUR_NAME             "masterfracdiving"
-#define HEUR_DESC             "master LP diving heuristic that chooses fixings w.r.t. the fractionalities"
-#define HEUR_DISPCHAR         'f'
-#define HEUR_PRIORITY         -1003000
+
+#define HEUR_NAME             "mastercoefdiving"
+#define HEUR_DESC             "LP diving heuristic that chooses fixings w.r.t. the matrix coefficients"
+#define HEUR_DISPCHAR         'c'
+#define HEUR_PRIORITY         -1001000
 #define HEUR_FREQ             10
-//#define HEUR_FREQOFS          3
+//#define HEUR_FREQOFS          1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERLPPLUNGE
@@ -63,6 +67,7 @@
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
 #define DEFAULT_MAXPRICEQUOT       0.10 /**< maximal fraction of pricing rounds compared to node pricing rounds */
 #define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
+
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -94,6 +99,7 @@ struct SCIP_HeurData
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    int                   npricerounds;       /**< pricing rounds used in this heuristic */
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
+   SCIP_CONSHDLR*        indconshdlr;        /**< indicator constraint handler (or NULL) */
 };
 
 
@@ -102,16 +108,194 @@ struct SCIP_HeurData
  */
 
 
+/** get indicator candidate variables */
+static
+SCIP_RETCODE getIndCandVars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS**           indconss,           /**< indicator constraints */
+   int                   nindconss,          /**< number of indicator constraints */
+   SCIP_VAR**            indcands,           /**< indicator candidate variables */
+   SCIP_Real*            indcandssol,        /**< solution values of candidates */
+   SCIP_Real*            indcandfrac,        /**< fractionalities of candidates */
+   int*                  nindcands           /**< number of candidates */
+   )
+{
+   SCIP_VAR* binvar;
+   SCIP_Real val;
+   int c;
+
+   assert( scip != NULL );
+   assert( indconss != NULL );
+   assert( indcands != NULL );
+   assert( nindcands != NULL );
+   assert( indcandssol != NULL );
+   assert( indcandfrac != NULL );
+
+   *nindcands = 0;
+   for (c = 0; c < nindconss; ++c)
+   {
+      /* check whether constraint is violated */
+      if ( SCIPisViolatedIndicator(scip, indconss[c], NULL) )
+      {
+         binvar = SCIPgetBinaryVarIndicator(indconss[c]);
+         val = SCIPgetSolVal(scip, NULL, binvar);
+
+         /* fractional indicator variables are treated by lpcands */
+         if ( SCIPisFeasIntegral(scip, val) )
+         {
+            indcands[*nindcands] = binvar;
+            indcandssol[*nindcands] = val;
+            indcandfrac[*nindcands] = SCIPfrac(scip, val);
+            ++(*nindcands);
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** choose best candidate variable */
+static
+SCIP_RETCODE getBestCandidate(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            cands,              /**< candidate variables */
+   SCIP_Real*            candssol,           /**< solution values of candidates */
+   SCIP_Real*            candsfrac,          /**< fractional solution values of candidates */
+   int                   ncands,             /**< number of candidates */
+   int*                  bestcand,           /**< bestcandidate */
+   int*                  bestnviolrows,      /**< number of violated rows for best candidate */
+   SCIP_Real*            bestcandsol,        /**< solution of best candidate */
+   SCIP_Real*            bestcandfrac,       /**< fractionality of best candidate */
+   SCIP_Bool*            bestcandmayrounddown,/**< whether best candidate may be rounded down */
+   SCIP_Bool*            bestcandmayroundup, /**< whether best candidate may be rounded down */
+   SCIP_Bool*            bestcandroundup     /**< whether the best candidate should be rounded up */
+   )
+{
+   SCIP_Bool mayrounddown;
+   SCIP_Bool mayroundup;
+   SCIP_Bool roundup;
+   SCIP_Real frac;
+   SCIP_VAR* var;
+   int nlocksdown;
+   int nlocksup;
+   int nviolrows;
+   int c;
+
+   assert( cands != NULL );
+   assert( candsfrac != NULL );
+   assert( candssol != NULL );
+   assert( bestcand != NULL );
+   assert( bestnviolrows != NULL );
+   assert( bestcandfrac != NULL );
+   assert( bestcandsol != NULL );
+   assert( bestcandfrac != NULL );
+   assert( bestcandmayroundup != NULL );
+   assert( bestcandmayrounddown != NULL );
+   assert( bestcandroundup != NULL );
+
+   for( c = 0; c < ncands; ++c )
+   {
+      var = cands[c];
+      mayrounddown = SCIPvarMayRoundDown(var);
+      mayroundup = SCIPvarMayRoundUp(var);
+      frac = candsfrac[c];
+      if( mayrounddown || mayroundup )
+      {
+         /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
+         if( *bestcandmayrounddown || *bestcandmayroundup )
+         {
+            /* choose rounding direction:
+             * - if variable may be rounded in both directions, round corresponding to the fractionality
+             * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding
+             *   the current fractional solution
+             */
+            if( mayrounddown && mayroundup )
+               roundup = (frac > 0.5);
+            else
+               roundup = mayrounddown;
+
+            if( roundup )
+            {
+               frac = 1.0 - frac;
+               nviolrows = SCIPvarGetNLocksUp(var);
+            }
+            else
+               nviolrows = SCIPvarGetNLocksDown(var);
+
+            /* penalize too small fractions */
+            if( frac < 0.01 )
+               nviolrows *= 100;
+
+            /* prefer decisions on binary variables */
+            if( !SCIPvarIsBinary(var) )
+               nviolrows *= 100;
+
+            /* check, if candidate is new best candidate */
+            assert( (0.0 < frac && frac < 1.0) || SCIPvarIsBinary(var) );
+            if( nviolrows + frac < *bestnviolrows + *bestcandfrac )
+            {
+               *bestcand = c;
+               *bestnviolrows = nviolrows;
+               *bestcandsol = candssol[c];
+               *bestcandfrac = frac;
+               *bestcandmayrounddown = mayrounddown;
+               *bestcandmayroundup = mayroundup;
+               *bestcandroundup = roundup;
+            }
+         }
+      }
+      else
+      {
+         /* the candidate may not be rounded */
+         nlocksdown = SCIPvarGetNLocksDown(var);
+         nlocksup = SCIPvarGetNLocksUp(var);
+         roundup = (nlocksdown > nlocksup || (nlocksdown == nlocksup && frac > 0.5));
+         if( roundup )
+         {
+            nviolrows = nlocksup;
+            frac = 1.0 - frac;
+         }
+         else
+            nviolrows = nlocksdown;
+
+         /* penalize too small fractions */
+         if( frac < 0.01 )
+            nviolrows *= 100;
+
+         /* prefer decisions on binary variables */
+         if( !SCIPvarIsBinary(var) )
+            nviolrows *= 100;
+
+         /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
+         assert( (0.0 < frac && frac < 1.0) || SCIPvarIsBinary(var) );
+         if( *bestcandmayrounddown || *bestcandmayroundup || nviolrows + frac < *bestnviolrows + *bestcandfrac )
+         {
+            *bestcand = c;
+            *bestnviolrows = nviolrows;
+            *bestcandsol = candssol[c];
+            *bestcandfrac = frac;
+            *bestcandmayrounddown = FALSE;
+            *bestcandmayroundup = FALSE;
+            *bestcandroundup = roundup;
+         }
+         assert( *bestcandfrac < SCIP_INVALID );
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /*
  * Callback methods
  */
 
 /** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#define heurCopyMasterfracdiving NULL
+#define heurCopyMastercoefdiving NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_HEURFREE(heurFreeMasterfracdiving) /*lint --e{715}*/
+SCIP_DECL_HEURFREE(heurFreeMastercoefdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
@@ -131,7 +315,7 @@ SCIP_DECL_HEURFREE(heurFreeMasterfracdiving) /*lint --e{715}*/
 
 /** initialization method of primal heuristic (called after problem was transformed) */
 static
-SCIP_DECL_HEURINIT(heurInitMasterfracdiving) /*lint --e{715}*/
+SCIP_DECL_HEURINIT(heurInitMastercoefdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
@@ -149,13 +333,16 @@ SCIP_DECL_HEURINIT(heurInitMasterfracdiving) /*lint --e{715}*/
    heurdata->nlpiterations = 0;
    heurdata->nsuccess = 0;
 
+   /* get indicator constraint hanlder */
+   heurdata->indconshdlr = SCIPfindConshdlr(scip, "indicator");
+
    return SCIP_OKAY;
 }
 
 
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
 static
-SCIP_DECL_HEUREXIT(heurExitMasterfracdiving) /*lint --e{715}*/
+SCIP_DECL_HEUREXIT(heurExitMastercoefdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
@@ -175,31 +362,29 @@ SCIP_DECL_HEUREXIT(heurExitMasterfracdiving) /*lint --e{715}*/
 
 /** execution method of primal heuristic */
 static
-SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
+SCIP_DECL_HEUREXEC(heurExecMastercoefdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_HEURDATA* heurdata;
    SCIP_LPSOLSTAT lpsolstat;
-   SCIP_VAR* var;
+   SCIP_CONS** indconss;
+   SCIP_VAR** indcands;
    SCIP_VAR** lpcands;
+   SCIP_VAR* bestcandvar;
    SCIP_Real* lpcandssol;
    SCIP_Real* lpcandsfrac;
+   SCIP_Real* indcandssol;
+   SCIP_Real* indcandfrac;
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
    SCIP_Real objval;
    SCIP_Real oldobjval;
-   SCIP_Real obj;
-   SCIP_Real objgain;
-   SCIP_Real bestobjgain;
-   SCIP_Real frac;
-   SCIP_Real bestfrac;
+   SCIP_Real bestcandsol;
+   SCIP_Real bestcandfrac;   
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
    SCIP_Bool bestcandroundup;
-   SCIP_Bool mayrounddown;
-   SCIP_Bool mayroundup;
-   SCIP_Bool roundup;
    SCIP_Bool lperror;
    SCIP_Bool cutoff;
    SCIP_Bool backtracked;
@@ -211,20 +396,22 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    int maxpricerounds;
    int npricerounds;
    int totalpricerounds;
+   int nindconss;
    int nlpcands;
+   int nindcands;
    int startnlpcands;
    int depth;
    int maxdepth;
    int maxdivedepth;
    int divedepth;
-   int bestcand;
-   int c;
+   int bestnviolrows;
+   int bestindcand;
+   int bestlpcand;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
-   assert(SCIPhasCurrentNodeLP(scip));
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -232,12 +419,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
 
    *result = SCIP_DELAYED;
 
-   SCIPdebugMessage("called Masterfracdiving heuristic\n");
+   SCIPdebugMessage("called Mastercoefdiving heuristic\n");
 
    /* only call heuristic, if an optimal LP solution is at hand */
-   if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
+   if( !SCIPhasCurrentNodeLP(scip) || SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
-      SCIPdebugMessage("not executing Masterfracdiving heuristic: master LP not solved to optimality\n");
+      SCIPdebugMessage("not executing Mastercoefdiving heuristic: master LP not solved to optimality\n");
       return SCIP_OKAY;
    }
 
@@ -280,7 +467,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    if( heurdata->maxpriceofs > -1 )
    {
       npricerounds = SCIPgetNPriceRounds(scip);
-      SCIPdebugMessage("masterfracdiving - pricing rounds at this node: %d\n", npricerounds);
+      SCIPdebugMessage("mastervecldiving - pricing rounds at this node: %d\n", npricerounds);
       maxpricerounds = (int)((1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * heurdata->maxpricequot * npricerounds);
       maxpricerounds += heurdata->maxpriceofs;
    }
@@ -289,12 +476,42 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
 
    SCIPdebugMessage("Maximum number of LP iters and price rounds: %"SCIP_LONGINT_FORMAT", %d\n", maxnlpiterations, maxpricerounds);
 
+
    /* get fractional variables that should be integral */
    SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL) );
 
-   /* don't try to dive, if there are no fractional variables */
-   if( nlpcands == 0 )
+   /* get indicator variable candidates */
+   nindconss = 0;
+   indconss = NULL;
+   nindcands = 0;
+   indcands = NULL;
+   indcandssol = NULL;
+   indcandfrac = NULL;
+   if ( heurdata->indconshdlr != NULL )
+   {
+      indconss = SCIPconshdlrGetConss(heurdata->indconshdlr);
+      nindconss = SCIPconshdlrGetNConss(heurdata->indconshdlr);
+
+      if ( nindconss > 0 )
+      {
+         /* get storage for candidate variables */
+         SCIP_CALL( SCIPallocBufferArray(scip, &indcands, nindconss) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &indcandssol, nindconss) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &indcandfrac, nindconss) );
+
+         /* get indicator canditates */
+         SCIP_CALL( getIndCandVars(scip, indconss, nindconss, indcands, indcandssol, indcandfrac, &nindcands) );
+      }
+   }
+
+   /* don't try to dive, if there are no fractional variables and no indicator candidates */
+   if( nlpcands == 0 && nindcands == 0 )
+   {
+      SCIPfreeBufferArrayNull(scip, &indcandfrac);
+      SCIPfreeBufferArrayNull(scip, &indcandssol);
+      SCIPfreeBufferArrayNull(scip, &indcands);
       return SCIP_OKAY;
+   }
 
    /* calculate the objective search bound */
    if( SCIPgetNSolsFound(scip) == 0 )
@@ -332,7 +549,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    maxdivedepth = MIN(maxdivedepth, maxdepth);
    maxdivedepth *= 10;
 
-
    *result = SCIP_DIDNOTFIND;
 
    /* start diving */
@@ -341,12 +557,13 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    /* enables collection of variable statistics during probing */
    SCIPenableVarHistory(scip);
 
-   /* get LP objective value*/
+   /* get LP objective value */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
    objval = SCIPgetLPObjval(scip);
 
-   SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") executing fracdiving heuristic: depth=%d, %d fractionals, dualbound=%g, searchbound=%g\n",
-      SCIPgetNNodes(scip), SCIPgetDepth(scip), nlpcands, SCIPgetDualbound(scip), SCIPretransformObj(scip, searchbound));
+   SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") executing mastercoefdiving heuristic: depth=%d, %d fractionals, dualbound=%g, avgbound=%g, cutoffbound=%g, searchbound=%g\n",
+      SCIPgetNNodes(scip), SCIPgetDepth(scip), nlpcands, SCIPgetDualbound(scip), SCIPgetAvgDualbound(scip),
+      SCIPretransformObj(scip, SCIPgetCutoffbound(scip)), SCIPretransformObj(scip, searchbound));
 
    /* dive as long we are in the given objective, depth and iteration limits and fractional variables exist, but
     * - if possible, we dive at least with the depth 10
@@ -360,7 +577,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
    totalpricerounds = 0;
    bestcandmayrounddown = FALSE;
    bestcandmayroundup = FALSE;
-   startnlpcands = nlpcands;
+   startnlpcands = nlpcands + nindcands;
    while( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && nlpcands > 0
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
@@ -372,98 +589,40 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
 
       /* choose variable fixing:
        * - prefer variables that may not be rounded without destroying LP feasibility:
-       *   - of these variables, round least fractional variable in corresponding direction
+       *   - of these variables, round variable with least number of locks in corresponding direction
        * - if all remaining fractional variables may be rounded without destroying LP feasibility:
-       *   - round variable with least increasing objective value
+       *   - round variable with least number of locks in opposite of its feasible rounding direction
        */
-      bestcand = -1;
-      bestobjgain = SCIPinfinity(scip);
-      bestfrac = SCIP_INVALID;
+      bestlpcand = -1;
+      bestindcand = -1;
+      bestcandvar = NULL;
+      bestnviolrows = INT_MAX;
+      bestcandsol = SCIP_INVALID;
+      bestcandfrac = SCIP_INVALID;
       bestcandmayrounddown = TRUE;
       bestcandmayroundup = TRUE;
       bestcandroundup = FALSE;
-      for( c = 0; c < nlpcands; ++c )
+
+      /* get best lp candidate */
+      if ( nlpcands > 0 )
       {
-         var = lpcands[c];
-         mayrounddown = SCIPvarMayRoundDown(var);
-         mayroundup = SCIPvarMayRoundUp(var);
-         frac = lpcandsfrac[c];
-         obj = SCIPvarGetObj(var);
-         if( mayrounddown || mayroundup )
-         {
-            /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
-            if( bestcandmayrounddown || bestcandmayroundup )
-            {
-               /* choose rounding direction:
-                * - if variable may be rounded in both directions, round corresponding to the fractionality
-                * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding
-                *   the current fractional solution
-                */
-               if( mayrounddown && mayroundup )
-                  roundup = (frac > 0.5);
-               else
-                  roundup = mayrounddown;
-
-               if( roundup )
-               {
-                  frac = 1.0 - frac;
-                  objgain = frac*obj;
-               }
-               else
-                  objgain = -frac*obj;
-
-               /* penalize too small fractions */
-               if( frac < 0.01 )
-                  objgain *= 1000.0;
-
-               /* prefer decisions on binary variables */
-               if( !SCIPvarIsBinary(var) )
-                  objgain *= 1000.0;
-
-               /* check, if candidate is new best candidate */
-               if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && frac < bestfrac) )
-               {
-                  bestcand = c;
-                  bestobjgain = objgain;
-                  bestfrac = frac;
-                  bestcandmayrounddown = mayrounddown;
-                  bestcandmayroundup = mayroundup;
-                  bestcandroundup = roundup;
-               }
-            }
-         }
-         else
-         {
-            /* the candidate may not be rounded */
-            if( frac < 0.5 )
-               roundup = FALSE;
-            else
-            {
-               roundup = TRUE;
-               frac = 1.0 - frac;
-            }
-
-            /* penalize too small fractions */
-            if( frac < 0.01 )
-               frac += 10.0;
-
-            /* prefer decisions on binary variables */
-            if( !SCIPvarIsBinary(var) )
-               frac *= 1000.0;
-
-            /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
-            if( bestcandmayrounddown || bestcandmayroundup || frac < bestfrac )
-            {
-               bestcand = c;
-               bestfrac = frac;
-               bestcandmayrounddown = FALSE;
-               bestcandmayroundup = FALSE;
-               bestcandroundup = roundup;
-            }
-            assert(bestfrac < SCIP_INVALID);
-         }
+         SCIP_CALL( getBestCandidate(scip, lpcands, lpcandssol, lpcandsfrac, nlpcands, &bestlpcand, &bestnviolrows, &bestcandsol, &bestcandfrac,
+               &bestcandmayrounddown, &bestcandmayroundup, &bestcandroundup) );
+         bestcandvar = lpcands[bestlpcand];
+         assert( bestlpcand >= 0 );
       }
-      assert(bestcand != -1);
+
+      /* get best indicator candidate */
+      if ( nindconss > 0 )
+      {
+         assert( indcands != NULL );
+         assert( indcandssol != NULL );
+         assert( indcandfrac != NULL );
+         SCIP_CALL( getBestCandidate(scip, indcands, indcandssol, indcandfrac, nindcands, &bestindcand, &bestnviolrows, &bestcandsol, &bestcandfrac, 
+               &bestcandmayrounddown, &bestcandmayroundup, &bestcandroundup) );
+         if ( bestindcand >= 0 )
+            bestcandvar = indcands[bestindcand];
+      }
 
       /* if all candidates are roundable, try to round the solution */
       if( bestcandmayrounddown || bestcandmayroundup )
@@ -476,7 +635,14 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
 
          if( success )
          {
-            SCIPdebugMessage("fracdiving found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
+            SCIPdebugMessage("mastercoefdiving found roundable primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
+
+            /* try to correct indicator constraints */
+            if ( nindconss > 0 )
+            {
+               assert( heurdata->indconshdlr != NULL );
+               SCIP_CALL( SCIPmakeIndicatorsFeasible(scip, heurdata->indconshdlr, heurdata->sol, &success) );
+            }
 
             /* try to add solution to SCIP */
             SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
@@ -490,25 +656,23 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
          }
       }
 
-      var = lpcands[bestcand];
-
       backtracked = FALSE;
       do
       {
          /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
           * occured or variable was fixed by propagation while backtracking => Abort diving!
           */
-         if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
+         if( SCIPvarGetLbLocal(bestcandvar) >= SCIPvarGetUbLocal(bestcandvar) - 0.5 )
          {
             SCIPdebugMessage("Selected variable <%s> already fixed to [%g,%g] (solval: %.9f), diving aborted \n",
-               SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
+               SCIPvarGetName(bestcandvar), SCIPvarGetLbLocal(bestcandvar), SCIPvarGetUbLocal(bestcandvar), bestcandsol);
             cutoff = TRUE;
             break;
          }
-         if( SCIPisFeasLT(scip, lpcandssol[bestcand], SCIPvarGetLbLocal(var)) || SCIPisFeasGT(scip, lpcandssol[bestcand], SCIPvarGetUbLocal(var)) )
+         if( SCIPisFeasLT(scip, bestcandsol, SCIPvarGetLbLocal(bestcandvar)) || SCIPisFeasGT(scip, bestcandsol, SCIPvarGetUbLocal(bestcandvar)) )
          {
             SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
-               SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
+               SCIPvarGetName(bestcandvar), SCIPvarGetLbLocal(bestcandvar), SCIPvarGetUbLocal(bestcandvar), bestcandsol);
             assert(backtracked);
             break;
          }
@@ -516,23 +680,43 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
          /* apply rounding of best candidate */
          if( bestcandroundup == !backtracked )
          {
+	    SCIP_Real value = SCIPfeasCeil(scip, bestcandsol);
+            
+	    if ( SCIPisFeasIntegral(scip, bestcandsol) )
+	    {
+               /* only indicator variables can have integral solution value */
+	       assert( SCIPvarGetType(bestcandvar) == SCIP_VARTYPE_BINARY );
+	       value = 1.0;
+	    }
+
             /* round variable up */
             SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, round=%u/%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
                divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), bestcandmayrounddown, bestcandmayroundup,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
-            SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
+               SCIPvarGetName(bestcandvar), bestcandmayrounddown, bestcandmayroundup,
+               bestcandsol, SCIPvarGetLbLocal(bestcandvar), SCIPvarGetUbLocal(bestcandvar),
+               value, SCIPvarGetUbLocal(bestcandvar));
+
+            SCIP_CALL( SCIPchgVarLbProbing(scip, bestcandvar, value) );
          }
          else
          {
+	    SCIP_Real value = SCIPfeasFloor(scip, bestcandsol);
+
+	    if ( SCIPisFeasIntegral(scip, bestcandsol) )
+	    {
+               /* only indicator variables can have integral solution value */
+	       assert( SCIPvarGetType(bestcandvar) == SCIP_VARTYPE_BINARY );
+	       value = 0.0;
+	    }
+
             /* round variable down */
             SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, round=%u/%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
                divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), bestcandmayrounddown, bestcandmayroundup,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
-            SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
+               SCIPvarGetName(bestcandvar), bestcandmayrounddown, bestcandmayroundup,
+               bestcandsol, SCIPvarGetLbLocal(bestcandvar), SCIPvarGetUbLocal(bestcandvar),
+               SCIPvarGetLbLocal(bestcandvar), value);
+
+            SCIP_CALL( SCIPchgVarUbProbing(scip, bestcandvar, value) );
          }
 
          /* apply domain propagation */
@@ -563,6 +747,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
             else
                SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror) );
 #endif
+
+
             if( lperror )
                break;
 
@@ -600,18 +786,22 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
          {
             if( bestcandroundup )
             {
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, var, 1.0-bestfrac,
-                     objval - oldobjval, 1.0) );
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, bestcandvar, 1.0 - bestcandfrac, objval - oldobjval, 1.0) );
             }
             else
             {
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, var, 0.0-bestfrac,
-                     objval - oldobjval, 1.0) );
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, bestcandvar, 0.0 - bestcandfrac, objval - oldobjval, 1.0) );
             }
          }
 
          /* get new fractional variables */
          SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL) );
+
+         /* get indicator canditates */
+         if ( nindconss > 0 )
+         {
+            SCIP_CALL( getIndCandVars(scip, indconss, nindconss, indcands, indcandssol, indcandfrac, &nindcands) );
+         }
 
          /* update original LP solution */
          SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob, &origfeas) );
@@ -630,7 +820,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
 
       /* create solution from diving LP */
       SCIP_CALL( SCIPlinkLPSol(scip, heurdata->sol) );
-      SCIPdebugMessage("fracdiving found primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
+      SCIPdebugMessage("mastercoefdiving found primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
 
       /* try to add solution to SCIP */
       SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
@@ -643,13 +833,28 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
       }
    }
 
+   /* free storage */
+   if ( nindconss > 0 )
+   {
+      assert( indconss != NULL );
+      assert( indcands != NULL );
+      assert( indcandssol != NULL );
+      assert( indcandfrac != NULL );
+
+      SCIPfreeBufferArray(scip, &indcandfrac);
+      SCIPfreeBufferArray(scip, &indcandssol);
+      SCIPfreeBufferArray(scip, &indcands);
+   }
+
    /* end diving */
    SCIP_CALL( SCIPendProbing(scip) );
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
 
-   SCIPdebugMessage("fracdiving heuristic finished\n");
+   SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") finished mastercoefdiving heuristic: %d fractionals, dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", objval=%g/%g, lpsolstat=%d, cutoff=%u\n",
+      SCIPgetNNodes(scip), nlpcands, divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations,
+      SCIPretransformObj(scip, objval), SCIPretransformObj(scip, searchbound), lpsolstat, cutoff);
 
    return SCIP_OKAY;
 }
@@ -659,72 +864,72 @@ SCIP_DECL_HEUREXEC(heurExecMasterfracdiving) /*lint --e{715}*/
  * heuristic specific interface methods
  */
 
-/** creates the masterfracdiving heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurMasterfracdiving(
+/** creates the mastercoefdiving heuristic and includes it in SCIP */
+SCIP_RETCODE SCIPincludeHeurMastercoefdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
    SCIP_HEUR* heur;
 
-   /* create Masterfracdiving primal heuristic data */
+   /* create mastercoefdiving primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
    /* include primal heuristic */
    SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
-         HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecMasterfracdiving, heurdata) );
+         HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecMastercoefdiving, heurdata) );
 
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeMasterfracdiving) );
-   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitMasterfracdiving) );
-   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitMasterfracdiving) );
+   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeMastercoefdiving) );
+   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitMastercoefdiving) );
+   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitMastercoefdiving) );
 
-   /* masterfracdiving heuristic parameters */
+   /* mastercoefdiving heuristic parameters */
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/minreldepth",
+         "heuristics/mastercoefdiving/minreldepth",
          "minimal relative depth to start diving",
          &heurdata->minreldepth, TRUE, DEFAULT_MINRELDEPTH, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxreldepth",
+         "heuristics/mastercoefdiving/maxreldepth",
          "maximal relative depth to start diving",
          &heurdata->maxreldepth, TRUE, DEFAULT_MAXRELDEPTH, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxlpiterquot",
+         "heuristics/mastercoefdiving/maxlpiterquot",
          "maximal fraction of diving LP iterations compared to node LP iterations",
          &heurdata->maxlpiterquot, FALSE, DEFAULT_MAXLPITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterfracdiving/maxlpiterofs",
+         "heuristics/mastercoefdiving/maxlpiterofs",
          "additional number of allowed LP iterations",
          &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxpricequot",
+         "heuristics/mastercoefdiving/maxpricequot",
          "maximal fraction of pricing rounds compared to node pricing rounds",
          &heurdata->maxpricequot, FALSE, DEFAULT_MAXPRICEQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterfracdiving/maxpriceofs",
+         "heuristics/mastercoefdiving/maxpriceofs",
          "additional number of allowed pricing rounds (-1: no limit)",
          &heurdata->maxpriceofs, FALSE, DEFAULT_MAXPRICEOFS, -1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxdiveubquot",
+         "heuristics/mastercoefdiving/maxdiveubquot",
          "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
          &heurdata->maxdiveubquot, TRUE, DEFAULT_MAXDIVEUBQUOT, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxdiveavgquot",
+         "heuristics/mastercoefdiving/maxdiveavgquot",
          "maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)",
          &heurdata->maxdiveavgquot, TRUE, DEFAULT_MAXDIVEAVGQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxdiveubquotnosol",
+         "heuristics/mastercoefdiving/maxdiveubquotnosol",
          "maximal UBQUOT when no solution was found yet (0.0: no limit)",
          &heurdata->maxdiveubquotnosol, TRUE, DEFAULT_MAXDIVEUBQUOTNOSOL, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterfracdiving/maxdiveavgquotnosol",
+         "heuristics/mastercoefdiving/maxdiveavgquotnosol",
          "maximal AVGQUOT when no solution was found yet (0.0: no limit)",
          &heurdata->maxdiveavgquotnosol, TRUE, DEFAULT_MAXDIVEAVGQUOTNOSOL, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "heuristics/masterfracdiving/backtrack",
+         "heuristics/mastercoefdiving/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
 

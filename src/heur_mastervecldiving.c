@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_mastervecldiving.c
- * @brief  LP diving heuristic that rounds variables with long column vectors
+ * @brief  master LP diving heuristic that rounds variables with long column vectors
  * @author Tobias Achterberg
  */
 //#define SCIP_DEBUG
@@ -354,6 +354,7 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
       SCIP_Bool bestcandroundup;
       SCIP_Bool allroundable;
       int bestcand;
+      SCIP_Real bestfrac;
       int c;
 
       SCIP_CALL( SCIPnewProbingNode(scip) );
@@ -367,6 +368,7 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
       bestcand = -1;
       bestcandroundup = FALSE;
       bestscore = SCIP_REAL_MAX;
+      bestfrac = SCIP_INVALID;
       allroundable = TRUE;
       for( c = 0; c < nlpcands; ++c )
       {
@@ -402,6 +404,7 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
             bestcand = c;
             bestscore = score;
             bestcandroundup = roundup;
+            bestfrac = frac;
          }
 
          /*SCIPdebugMessage("  <%s>: sol=%g, obj=%g, objdelta=%g, colveclen=%d -> score=%g (bestscore=%g)\n",
@@ -461,8 +464,8 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
          if( bestcandroundup == !backtracked )
          {
             /* round variable up */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT": var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations,
+            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
                SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
                SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
             SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
@@ -470,8 +473,8 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
          else
          {
             /* round variable down */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT": var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations,
+            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
                SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
                SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
             SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
@@ -545,12 +548,12 @@ SCIP_DECL_HEUREXEC(heurExecMastervecldiving) /*lint --e{715}*/
          {
             if( bestcandroundup )
             {
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, lpcands[bestcand], 1.0-lpcandsfrac[bestcand],
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, var, 1.0-bestfrac,
                      objval - oldobjval, 1.0) );
             }
             else
             {
-               SCIP_CALL( SCIPupdateVarPseudocost(scip, lpcands[bestcand], 0.0-lpcandsfrac[bestcand],
+               SCIP_CALL( SCIPupdateVarPseudocost(scip, var, 0.0-bestfrac,
                      objval - oldobjval, 1.0) );
             }
          }

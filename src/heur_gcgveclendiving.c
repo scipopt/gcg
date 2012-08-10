@@ -206,7 +206,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
-   SCIP_Real bestfrac;
    SCIP_Real lpobj;
    SCIP_Real objval;
    SCIP_Real oldobjval;
@@ -372,6 +371,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgveclendiving) /*lint --e{715}*/
       SCIP_Bool bestcandroundup;
       SCIP_Bool allroundable;
       int bestcand;
+      SCIP_Real bestfrac;
       int c;
 
       SCIP_CALL( SCIPnewProbingNode(scip) );
