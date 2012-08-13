@@ -53,7 +53,6 @@
 #define HEUR_USESSUBSCIP      FALSE
 
 
-
 /*
  * Default parameter settings
  */
@@ -67,15 +66,14 @@
 #define DEFAULT_MAXPRICEQUOT       0.00 /**< maximal fraction of pricing rounds compared to node pricing rounds */
 #define DEFAULT_MAXPRICEOFS           0 /**< additional number of allowed pricing rounds (-1: no limit) */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
-                                              *   where diving is performed (0.0: no limit) */
+                                         *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
-                                              *   where diving is performed (0.0: no limit) */
+                                         *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
-
 
 
 /* locally defined heuristic data */
@@ -101,20 +99,14 @@ struct SCIP_HeurData
 };
 
 
-
-
 /*
  * local methods
  */
 
 
-
 /*
  * Callback methods
  */
-
-/** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#define heurCopyGcgcoefdiving NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
@@ -179,14 +171,6 @@ SCIP_DECL_HEUREXIT(heurExitGcgcoefdiving) /*lint --e{715}*/
 
    return SCIP_OKAY;
 }
-
-
-/** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
-#define heurInitsolGcgcoefdiving NULL
-
-
-/** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#define heurExitsolGcgcoefdiving NULL
 
 
 /** execution method of primal heuristic */
@@ -313,6 +297,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
 
    SCIPdebugMessage("Maximum number of LP iters and price rounds: %"SCIP_LONGINT_FORMAT", %d\n", maxnlpiterations, maxpricerounds);
 
+   /* get fractional variables that should be integral */
+   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+
+   /* don't try to dive, if there are no fractional variables */
+   if( nlpcands == 0 )
+      return SCIP_OKAY;
+
    /* calculate the objective search bound */
    if( SCIPgetNSolsFound(scip) == 0 )
    {
@@ -356,11 +347,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
    SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
 
-   /* get LP objective value, and fractional variables, that should be integral */
+   /* enables collection of variable statistics during probing */
+   SCIPenableVarHistory(scip);
+
+   /* get LP objective value */
    lpsolstat = SCIP_LPSOLSTAT_OPTIMAL;
    objval = SCIPgetRelaxSolObj(scip);
    lpobj = objval;
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
 
    SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") executing GCG coefdiving heuristic: depth=%d, %d fractionals, dualbound=%g, avgbound=%g, cutoffbound=%g, searchbound=%g\n",
       SCIPgetNNodes(scip), SCIPgetDepth(scip), nlpcands, SCIPgetDualbound(scip), SCIPgetAvgDualbound(scip),
@@ -527,14 +520,21 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed, numerical troubles may have occured or
-          * variable was fixed by propagation while backtracking => Abort diving!
+         /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
+          * occured or variable was fixed by propagation while backtracking => Abort diving!
           */
          if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
          {
             SCIPdebugMessage("Selected variable <%s> already fixed to [%g,%g] (solval: %.9f), diving aborted \n",
                SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
             cutoff = TRUE;
+            break;
+         }
+         if( SCIPisFeasLT(scip, lpcandssol[bestcand], SCIPvarGetLbLocal(var)) || SCIPisFeasGT(scip, lpcandssol[bestcand], SCIPvarGetUbLocal(var)) )
+         {
+            SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
+               SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
+            assert(backtracked);
             break;
          }
 
@@ -577,7 +577,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
          {
             /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
-             * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
+             * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;
@@ -677,9 +677,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
       /* try to add solution to SCIP */
 //      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
 #ifdef SCIP_DEBUG
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
-               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
+      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, TRUE, TRUE, TRUE, &success) );
 #endif
 
       /* check, if solution was feasible and good enough */
@@ -717,16 +717,22 @@ SCIP_RETCODE SCIPincludeHeurGcgcoefdiving(
    )
 {
    SCIP_HEURDATA* heurdata;
+   SCIP_HEUR* heur;
 
-   /* create heuristic data */
+   /* create gcgcoefdiving primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
-   /* include heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
-         HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
-         heurCopyGcgcoefdiving, heurFreeGcgcoefdiving, heurInitGcgcoefdiving, heurExitGcgcoefdiving,
-         heurInitsolGcgcoefdiving, heurExitsolGcgcoefdiving, heurExecGcgcoefdiving,
-         heurdata) );
+   /* include primal heuristic */
+   SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
+         HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+         HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecGcgcoefdiving, heurdata) );
+
+   assert(heur != NULL);
+
+   /* set non-NULL pointers to callback methods */
+   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgcoefdiving) );
+   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgcoefdiving) );
+   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitGcgcoefdiving) );
 
    /* coefdiving heuristic parameters */
    SCIP_CALL( SCIPaddRealParam(scip,
