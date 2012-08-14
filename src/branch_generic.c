@@ -585,7 +585,9 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 	SCIP_Real maxPriority;
 	SCIP_Bool found;
 	SCIP_VAR* origvar;
+	unsigned int seed;
 	
+	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -674,16 +676,18 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 		}
 	
 	//Partition
-	min=INT_MAX;
-//	do{
-	for(j=0; j<Jsize; ++j)
-	{
+	min = INT_MAX;
+	do{
+		/*
+		for(j=0; j<Jsize; ++j)
+		{
+			
 		SCIP_Real mediank;
 		SCIP_Real alphaMediank;
-		
+
 		k = 0;
 		alphaMediank = 0;
-		
+
 		while(k != J[j])
 			++k;
 		SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
@@ -695,21 +699,21 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 			}
 			mediank = GetMedian(scip, compvalues, Fsize, min);
 			SCIPfreeBufferArray(scip, &compvalues);
-			
+
 			if( SCIPisEQ(scip, mediank, min) )
 				{
 								J[j]=J[Jsize-1];
-								
+
 					--Jsize;
-					
+
 				}
 			else
 			{
-			
+
 			for(l=0; l<Fsize; ++l)
 				if(F[l]->generator[J[j]] < mediank)
 					alphaMediank += F[l]->generator[J[j]] * F[l]->mastervarValue;
-			
+
 		if( SCIPgetVarPseudocostVal(scip, GCGmasterVarGetOrigvars(F[0]->mastervar)[J[j]], SCIPfeasFloor(scip, alphaMediank +1)) > maxPriority 
 				|| SCIPgetVarPseudocostVal(scip, GCGmasterVarGetOrigvars(F[0]->mastervar)[J[j]], SCIPfeasCeil(scip, alphaMediank -1)) > maxPriority )
 		{
@@ -719,36 +723,41 @@ struct GCG_Record* Separate( SCIP* scip, GCG_Strip** F, int Fsize, int* IndexSet
 			}
 			assert(Jsize >= 0);
 	}
-	
-	/*
-	SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
-	for(l=0; l<Fsize; ++l)
-	{
-		compvalues[l] = F[l]->generator[i];
-		if( SCIPisLT(scip, compvalues[l], min) )
-			min = compvalues[l];
-	}
-	median = GetMedian(scip, compvalues, Fsize, min);
-	SCIPfreeBufferArray(scip, &compvalues);
-	
-	if( SCIPisEQ(scip, median, min) )
-	{
-		for(j=0; j<Jsize; ++j)
-			{
-				if( i == J[j])
-				{
-					J[j]=J[Jsize-1];
-					break;
-				}
-			}
-		--Jsize;
+			 */
+
+		//random priority
 		
-	}
-	*/
-//	assert(Jsize>=0);
-//	}while( SCIPisEQ(scip, median, min) );
-	
-	
+		i = SCIPgetRandomInt( 0, Jsize-1, &seed ); 
+		
+
+			SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
+			for(l=0; l<Fsize; ++l)
+			{
+				compvalues[l] = F[l]->generator[i];
+				if( SCIPisLT(scip, compvalues[l], min) )
+					min = compvalues[l];
+			}
+			median = GetMedian(scip, compvalues, Fsize, min); 
+			SCIPfreeBufferArray(scip, &compvalues);
+
+			if( SCIPisEQ(scip, median, min) )
+			{
+				for(j=0; j<Jsize; ++j)
+				{
+					if( i == J[j])
+					{
+						J[j]=J[Jsize-1];
+						break;
+					}
+				}
+				--Jsize;
+
+			}
+
+			assert(Jsize>=0);
+		}while( SCIPisEQ(scip, median, min) );
+
+
 	++Ssize;
 	SCIP_CALL( SCIPallocBufferArray(scip, &upperLowerS, Ssize) );
 						for(l=0; l < Ssize-1; ++l)
@@ -876,6 +885,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 	int Cupper;
 	int Clower;
 	int copyCsize;
+	unsigned int seed;
 	//int copySsize;
 	GCG_Strip** copyF;
 	ComponentBoundSequence** copyC;
@@ -885,6 +895,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 	SCIP_Real  muF;
 	SCIP_Bool found;
 	
+	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -968,6 +979,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 	
 	//Partition
 	min = INT_MAX;
+	/*
 	for(j=0; j<IndexSetSize; ++j)
 		{
 			SCIP_Real mediank;
@@ -1011,9 +1023,12 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 				}
 				assert(IndexSetSize >= 0);
 		}
+	*/
 	
-	/*
 	do{	
+		//random priority
+		
+		i = SCIPgetRandomInt( 0, IndexSetSize-1, &seed );
 	
 	SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
 	for(l=0; l<Fsize; ++l)
@@ -1041,7 +1056,7 @@ struct GCG_Record* Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, i
 	
 	assert(IndexSetSize>=0);
 	}while( SCIPisEQ(scip, median, min) );
-	*/
+	
 	
 	++Ssize;
 	SCIP_CALL( SCIPreallocBufferArray(scip, &S, Ssize) );
