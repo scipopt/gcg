@@ -1,16 +1,21 @@
 # this local Makefile includes the cluster targets
 
-#OPTHOST	   	 := $(shell uname -n | tr -cd '[:alpha:]')
 OPTHOST	   	 := $(shell uname -n | tr '[:upper:]' '[:lower:]' | tr -cd '[:alpha:]')
-
 
 -include make/local/make.$(OPTHOST)
 
 .PHONY: testcluster
 testcluster:
-		echo $(OPTHOST)
 		cd check; \
 		$(SHELL) ./check_cluster.sh $(TEST) $(MAINFILE) $(SETTINGS) \
+		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
+		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) \
+		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE);
+
+.PHONY: testdip
+testdip:
+		cd check; \
+		$(SHELL) ./check_dip.sh $(TEST) $(DIP) $(SETTINGS) \
 		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
 		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) \
 		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE);
@@ -23,15 +28,6 @@ testclustercpx:
 		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(QUEUE) $(PPN) \
 		$(CLIENTTMPDIR)  $(NOWAITCLUSTER);
 
-.PHONY: testclustercbc
-testclustercbc:
-		cd check; \
-		$(SHELL) ./check_cluster_cbc.sh $(TEST) $(CBC) $(SETTINGS) \
-		$(OSTYPE).$(ARCH).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
-		$(THREADS) $(FEASTOL) $(CONTINUE) $(QUEUE) $(PPN) \
-		$(CLIENTTMPDIR) $(NOWAITCLUSTER);
-
-SCIPEXAMPLES	=	Binpacking Coloring Eventhdlr MIPSolver TSP
 
 .PHONY: testexamples
 testexamples:
