@@ -19,12 +19,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "scip/event_genericbranchvaradd.h"
+#include "event_genericbranchvaradd.h"
 #include "branch_generic.h"
+//#include "branch_generic.c"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "pricer_gcg.h"
-#include "scip/cons_varbound.h"
+#include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "pub_gcgvar.h"
 
@@ -32,10 +33,28 @@
 #define EVENTHDLR_DESC         "event handler for adding a new generated mastervar into the right branching constraints by using Vanderbecks generic branching scheme"
 
 
+typedef int ComponentBoundSequence[3];
+
 /*
  * Data structures
  */
-
+struct GCG_BranchData
+{
+	ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
+	int*               sequencsizes;                 /**< number of bounds in S[k] */
+	int                Csize;
+	ComponentBoundSequence*   S;             /**< component bound sequence which induce the current branching constraint */
+	int                Ssize;
+	ComponentBoundSequence*   childS;       /**< component bound sequence which induce the child nodes, need for prune by dominance */
+	int                childSsize;
+	int                blocknr;             /**< number of block branching was performed */
+	int                childnr;
+	int                lhs;
+	int                nchildNodes;
+	int*               childlhs;
+	//SCIP_Real*         gerenicPseudocostsOnOrigvars;  /**< giving the branchingpriorities */
+	SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
+};
 /* TODO: fill in the necessary event handler data */
 
 /** event handler data */
@@ -134,7 +153,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 	   {
 		   branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
-		   if(branchdata->blocknr != GCGvarGetBlock(mastervar) )
+		   if( branchdata->blocknr != GCGvarGetBlock(mastervar) )
 		   {
 			   parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
 			   continue;
@@ -142,7 +161,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
 		   for( p=0; p<branchdata->Ssize; ++p)
 		   {
-			   if(branchdata->S[1] == 1 )
+			   if(branchdata->S[p][1] == 1 )
 			   {
 				   if(GCGmasterVarGetOrigvals(mastervar)[branchdata->S[p][0]] < branchdata->S[p][2])
 				   {
@@ -160,7 +179,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 			   }
 		   }
 		   if( varinS )
-			   SCIP_CALL( SCIPaddCoefLinear(masterscip, branchdata->cons, mastervar, 1.0) );
+			   SCIP_CALL( SCIPaddCoefLinear(masterscip, branchdata->mastercons, mastervar, 1.0) );
 
 		   parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
 	   }

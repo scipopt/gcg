@@ -44,6 +44,8 @@ MAINOBJ		=	reader_blk.o \
 			pricer_gcg.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
+                        branch_generic.o \
+                        event_genericbranchvaradd.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralOrig.o \

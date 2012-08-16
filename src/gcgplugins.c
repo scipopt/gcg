@@ -37,7 +37,7 @@
 #include "scip/cons_setppc.h"
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
-//#include "scip/dialog_default.h"
+#include "scip/dialog_default.h"
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -54,7 +54,7 @@
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
 #include "scip/heur_mutation.h"
-#include "scip/heur_nlpdiving.h"
+//#include "scip/heur_nlpdiving.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
@@ -124,6 +124,7 @@
 #include "relax_gcg.h"
 #include "branch_orig.h"
 #include "branch_ryanfoster.h"
+#include "branch_generic.h"
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
@@ -257,6 +258,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderRef(scip) );
    SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeDispGcg(scip) );
