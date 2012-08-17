@@ -33,6 +33,8 @@ SHELL		= 	bash
 READ		=	read -e
 LN_s		= 	ln -s
 GCGDIR		=	$(realpath .)
+TIME		=	3600
+DIP		=	dip
 
 VALGRIND        =       false
 DECMODE		=	readdec

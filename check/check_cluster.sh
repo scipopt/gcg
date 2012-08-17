@@ -28,19 +28,20 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #
 # @author Martin Bergner
+# @author Gerald Gamrath
 #
 # Call with "make testcluster"
 #
 # The queue is passed via $QUEUE (possibly defined in a local makefile in scip/make/local).
 #
 # For each run, we can specify the number of nodes reserved for a run via $PPN. If tests runs
-# with valid time measurements should be executed, this number should be chosen in such a way 
+# with valid time measurements should be executed, this number should be chosen in such a way
 # that a job is run on a single computer, i.e., in general, $PPN should equal the number of cores
 # of each computer. Of course, the value depends on the specific computer/queue.
 #
 # To get the result files call "./evalcheck_cluster.sh
 # results/check.$TSTNAME.$BINNAME.$SETNAME.eval in directory check/
-# This leads to result files 
+# This leads to result files
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.out
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.res
 #  - results/check.$TSTNAME.$BINNMAE.$SETNAME.err
@@ -56,20 +57,18 @@ THREADS=$8
 FEASTOL=$9
 DISPFREQ=${10}
 CONTINUE=${11}
-VERSION=${12}
-LPS=${13}
-QUEUETYPE=${14}
-QUEUE=${15}
-PPN=${16}
-CLIENTTMPDIR=${17}
-NOWAITCLUSTER=${18}
-EXCLUSIVE=${19}
+QUEUETYPE=${12}
+QUEUE=${13}
+PPN=${14}
+CLIENTTMPDIR=${15}
+NOWAITCLUSTER=${16}
+EXCLUSIVE=${17}
 MODE='solve'
 
 # check all variables defined
 if [ -z ${EXCLUSIVE} ]
 then
-    echo Skipping test since not all variables are defined.
+    echo Skipping test since EXCLUSIVE is not defined.
     exit 1;
 fi
 
@@ -124,9 +123,6 @@ else
 fi
 
 # we add 100% to the hard time limit and additional 600 seconds in case of small time limits
-# NOTE: the jobs should have a hard running time of more than 5 minutes; if not so, these
-#       jobs get automatically assigned in the "exrpess" queue; this queue has only 4 CPUs
-#       available 
 HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 600\` + $TIMELIMIT`
 
 # we add 10% to the hard memory limit and additional 100MB to the hard memory limit
@@ -143,7 +139,7 @@ ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 EVALFILE=$SCIPPATH/results/check.$QUEUE.$TSTNAME.$BINID.$SETNAME.eval
 echo > $EVALFILE
 
-# counter to define file names for a test set uniquely 
+# counter to define file names for a test set uniquely
 COUNT=1
 
 for i in `cat testset/$TSTNAME.test` DONE
@@ -153,7 +149,7 @@ do
       break
   fi
 
-  # check if problem instance exists 
+  # check if problem instance exists
   if test -f $SCIPPATH/$i
   then
 
@@ -184,11 +180,11 @@ do
 
       COUNT=`expr $COUNT + 1`
 
-      # in case we want to continue we check if the job was already performed 
+      # in case we want to continue we check if the job was already performed
       if test "$CONTINUE" != "false"
       then
 	  if test -e results/$FILENAME.out
-	  then 
+	  then
 	      echo skipping file $i due to existing output file $FILENAME.out
 	      continue
 	  fi
@@ -243,7 +239,7 @@ do
       # check queue type
       if test  "$QUEUETYPE" = "srun"
       then
-	  srun --job-name=SCIP$SHORTFILENAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
+	  srun --job-name=GCG$SHORTFILENAME --mem=$HARDMEMLIMIT -p $QUEUE --time=${HARDTIMELIMIT}${EXCLUSIVE} runcluster.sh &
       elif test  "$QUEUETYPE" = "bsub"
       then
 	  cp runcluster_aachen.sh runcluster_tmp.sh
@@ -278,7 +274,7 @@ do
 #	  qsub -l h_rt=$HARDTIMELIMIT -l h_vmem=$HARDMEMLIMIT -l threads=1 -l ostype=linux -q $QUEUE -N SCIP$SHORTFILENAME  runcluster_tmp.sh
       else
           # -V to copy all environment variables
-	  qsub -l walltime=$HARDTIMELIMIT -l mem=$HARDMEMLIMIT -l nodes=1:ppn=$PPN -N SCIP$SHORTFILENAME -V -q $QUEUE -o /dev/null -e /dev/null runcluster.sh 
+	  qsub -l walltime=$HARDTIMELIMIT -l mem=$HARDMEMLIMIT -l nodes=1:ppn=$PPN -N SCIP$SHORTFILENAME -V -q $QUEUE -o /dev/null -e /dev/null runcluster.sh
       fi
   else
       echo "input file "$SCIPPATH/$i" not found!"
