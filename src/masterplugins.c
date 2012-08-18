@@ -125,6 +125,7 @@
 
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
+#include "heur_masterdiving.h"
 #include "heur_mastercoefdiving.h"
 #include "heur_masterfracdiving.h"
 #include "heur_masterintdiving.h"
@@ -204,6 +205,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
+   SCIP_CALL( SCIPincludeHeurMasterdiving(scip) );
    SCIP_CALL( SCIPincludeHeurMastercoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurMasterfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurMasterintdiving(scip) );
