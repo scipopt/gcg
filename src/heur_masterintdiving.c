@@ -395,6 +395,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterintdiving) /*lint --e{715}*/
    lperror = FALSE;
    cutoff = FALSE;
    divedepth = 0;
+   npricerounds = 0;
+   totalpricerounds = 0;
    nextcand = 0;
    while( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL
       && (divedepth < 10
