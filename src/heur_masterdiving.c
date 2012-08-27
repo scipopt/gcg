@@ -70,7 +70,7 @@
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
-#define DEFAULT_VARSELRULE          'f' /**< which variable selection should be used? ('f'ractionality, 'c'oefficient,
+#define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('f'ractionality, 'c'oefficient,
                                          *   'p'seudocost, 'g'uided, 'd'ouble)
                                          */
 
