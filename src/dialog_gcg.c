@@ -283,6 +283,44 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the set loadmaster command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetLoadmaster)
+{  /*lint --e{715}*/
+   SCIP* masterprob;
+   char* filename;
+   SCIP_Bool endoffile;
+
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter filename: ", &filename, &endoffile) );
+   if( endoffile )
+   {
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
+   if( filename[0] != '\0' )
+   {
+      SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, filename, TRUE) );
+
+      if( SCIPfileExists(filename) )
+      {
+         SCIP_CALL( SCIPreadParams(masterprob, filename) );
+         SCIPdialogMessage(scip, NULL, "loaded master parameter file <%s>\n", filename);
+      }
+      else
+      {
+         SCIPdialogMessage(scip, NULL, "file <%s> not found\n", filename);
+         SCIPdialoghdlrClearBuffer(dialoghdlr);
+      }
+   }
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   return SCIP_OKAY;
+}
+
 /** dialog execution method for the detect command */
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect)
 {  /*lint --e{715}*/
@@ -532,6 +570,32 @@ SCIP_RETCODE SCIPincludeDialogGcg(
             SCIPdialogExecQuit, NULL, NULL,
             "quit", "leave GCG", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set */
+   if( !SCIPdialogHasEntry(root, "set") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+            NULL, SCIPdialogExecMenu, NULL, NULL,
+            "set", "load/save/change parameters", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
+   {
+      SCIPerrorMessage("set sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   /* set loadmaster */
+   if( !SCIPdialogHasEntry(submenu, "loadmaster") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL,
+            SCIPdialogExecSetLoadmaster, NULL, NULL,
+            "loadmaster", "load parameter settings for master problem from a file", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 

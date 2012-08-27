@@ -33,19 +33,20 @@
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
-BINID=$4
-TIMELIMIT=$5
-NODELIMIT=$6
-MEMLIMIT=$7
-THREADS=$8
-FEASTOL=$9
-DISPFREQ=${10}
-CONTINUE=${11}
-LOCK=${12}
-VERSION=${13}
-LPS=${14}
-VALGRIND=${15}
-MODE=${16}
+MSETNAME=$4
+BINID=$5
+TIMELIMIT=$6
+NODELIMIT=$7
+MEMLIMIT=$8
+THREADS=$9
+FEASTOL=${10}
+DISPFREQ=${11}
+CONTINUE=${12}
+LOCK=${13}
+VERSION=${14}
+LPS=${15}
+VALGRIND=${16}
+MODE=${17}
 
 SETDIR=../settings
 
@@ -70,6 +71,7 @@ TMPFILE=results/check.$TSTNAME.$BINID.$SETNAME.tmp
 SETFILE=results/check.$TSTNAME.$BINID.$SETNAME.set
 
 SETTINGS=$SETDIR/$SETNAME.set
+MSETTINGS=$SETDIR/$MSETNAME.set
 
 if test "$LOCK" = "true"
 then
@@ -174,6 +176,10 @@ do
             if test "$SETNAME" != "default"
             then
                 echo set load $SETTINGS            >>  $TMPFILE
+            fi
+            if test "$MSETNAME" != "default"
+            then
+                echo set loadmaster $MSETTINGS     >>  $TMPFILE
             fi
             if test "$FEASTOL" != "default"
             then
