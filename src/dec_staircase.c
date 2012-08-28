@@ -46,6 +46,7 @@ struct DEC_DetectorData
 
    SCIP_CLOCK* clock;
    int nblocks;
+   DEC_DECOMP* decomp;
 };
 
 
@@ -169,23 +170,6 @@ int getDistance(
 }
 
 
-/* returns whether the constraint belongs to GCG or not */
-static
-SCIP_Bool isConsGCGCons(
-   SCIP_CONS* cons   /**< constraint to check */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   assert(cons != NULL);
-   conshdlr = SCIPconsGetHdlr(cons);
-   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-
-   return FALSE;
-}
-
 /** perform BFS on the graph, storing distance information in the user supplied array */
 static
 SCIP_RETCODE doBFS(
@@ -305,6 +289,8 @@ SCIP_RETCODE findMaximalPath(
          }
       }
    }
+   SCIPdebugMessage("Path from %d to %d is longest %d.\n", *start, *end, max);
+   detectordata->nblocks = max+1;
 
    return SCIP_OKAY;
 }
@@ -346,29 +332,12 @@ SCIP_RETCODE constructCuts(
    {
       int dist;
       dist = getDistance(start, i, distance);
-      SCIPdebugPrintf("from %u to %u = %d\n", start, i, dist);
-      SCIPhashmapInsert(detectordata->constoblock, conss[i], (void**)(size_t) dist+1);
+      SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
+      SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (dist+1));
    }
 
    return SCIP_OKAY;
 }
-
-
-/** converts the cuts to a structure that GCG can understand */
-static
-SCIP_RETCODE convertCutsToDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   SCIP_VAR***           cuts                /**< which variables should be in the cuts */
-   )
-{
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-   assert(cuts != NULL);
-
-   return SCIP_OKAY;
-}
-
 
 
 /** looks for staircase components in the constraints in detectordata */
@@ -406,10 +375,7 @@ SCIP_RETCODE findStaircaseComponents(
    }
 
    SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
-
    SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
-
-   SCIP_CALL( convertCutsToDecomp(scip, detectordata, cuts) );
 
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
@@ -428,122 +394,12 @@ SCIP_RETCODE copyToDecdecomp(
    DEC_DECOMP*        decdecomp              /**< decdecomp data structure */
    )
 {
-   SCIP_CONS** conss;
-   int nconss;
-   SCIP_VAR** vars;
-   int nvars;
-   int i;
-
-   SCIP_CONS*** subscipconss;
-   int* nsubscipconss;
-   SCIP_CONS** linkingconss;
-   int nlinkingconss;
-   SCIP_VAR*** subscipvars;
-   int* nsubscipvars;
-   int nblocks;
-
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
    assert(decdecomp != NULL);
 
-   assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
-
-   nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
-   nvars = SCIPgetNVars(scip);
-   vars = SCIPgetVars(scip);
-   nlinkingconss = 0;
-   nblocks = detectordata->nblocks;
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) ) ;
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
-
-   for( i = 0; i < nblocks; ++i )
-   {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
-      nsubscipvars[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
-      nsubscipconss[i] = 0;
-   }
-
-   DECdecompSetNBlocks(decdecomp, nblocks);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
-   assert(valid);
-   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
-   assert(valid);
-
-   for( i = 0; i < nconss; ++i )
-   {
-      size_t consblock;
-      if( isConsGCGCons(conss[i]) )
-         continue;
-
-      consblock = (size_t) SCIPhashmapGetImage(detectordata->constoblock, conss[i]); /*lint !e507*/
-      assert(consblock > 0);
-      assert(nblocks >= 0);
-      assert(consblock <= (size_t)nblocks);
-
-      subscipconss[consblock-1][nsubscipconss[consblock-1]] = conss[i];
-      ++(nsubscipconss[consblock-1]);
-   }
-
-   for( i = 0; i < nvars; ++i )
-   {
-      size_t varblock;
-      SCIP_VAR* var;
-      var = SCIPvarGetProbvar(vars[i]);
-      if(var == NULL)
-         continue;
-      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, SCIPvarGetProbvar(vars[i])); /*lint !e507*/
-
-      assert(varblock > 0);
-      assert(nblocks >= 0);
-      assert(varblock <= (size_t) nblocks);
-
-      subscipvars[varblock-1][nsubscipvars[varblock-1]] = SCIPvarGetProbvar(vars[i]);
-      ++(nsubscipvars[varblock-1]);
-   }
-
-   if( nlinkingconss > 0 )
-   {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
-      assert(valid);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
-      assert(valid);
-
-   }
-   else
-   {
-      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
-      assert(valid);
-   }
-
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
-   assert(valid);
-
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
-
-
-   for( i = 0; i < detectordata->nblocks; ++i )
-   {
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-   }
-
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &linkingconss);
-
-   detectordata->vartoblock = NULL;
-   detectordata->constoblock = NULL;
+   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip)) );
 
    return SCIP_OKAY;
 }
@@ -569,7 +425,7 @@ DEC_DECL_INITDETECTOR(initStaircase)
 
    detectordata->nblocks = 0;
    SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
-
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    return SCIP_OKAY;
 }
 
