@@ -1061,6 +1061,14 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    }
 
    SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, &valid) );
+
+   for( b = 0; b < nblocks; ++b )
+   {
+      SCIPfreeMemoryArray(scip, &stairlinkingvars[b]);
+   }
+   SCIPfreeMemoryArray(scip, &stairlinkingvars);
+   SCIPfreeMemoryArray(scip, &nstairlinkingvars);
+
    assert(valid);
 
    return SCIP_OKAY;

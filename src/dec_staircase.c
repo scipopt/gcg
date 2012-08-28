@@ -146,7 +146,7 @@ SCIP_RETCODE createGraph(
    }
 
    SCIP_CALL( tcliqueFlush(*graph) );
-   tcliquePrintGraph(*graph);
+   SCIPdebug(tcliquePrintGraph(*graph));
    return SCIP_OKAY;
 }
 
@@ -377,6 +377,12 @@ SCIP_RETCODE findStaircaseComponents(
    SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
    SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
 
+   for( i = 0; i < nconss; ++i)
+   {
+      SCIPfreeMemoryArray(scip, &distance[i]);
+   }
+   SCIPfreeMemoryArray(scip, &distance);
+
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
    else
@@ -446,6 +452,7 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    if( detectordata->clock != NULL )
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
+   tcliqueFree(&detectordata->graph);
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
