@@ -149,7 +149,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   //SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
+   // SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
    SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
 
