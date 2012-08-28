@@ -908,17 +908,30 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    SCIP_VAR**            vars,               /**< variable array */
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss              /**< number of constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
    SCIP_HASHMAP* vartoblock;
    int i;
    int j;
+   int b;
 
    SCIP_VAR** curvars;
    int ncurvars;
    SCIP_Bool valid;
-
+   SCIP_HASHMAP* varindex;
+   SCIP_HASHMAP* consindex;
+   int* nsubscipconss;
+   int* nsubscipvars;
+   int* nstairlinkingvars;
+   SCIP_VAR*** stairlinkingvars;
+   SCIP_CONS*** subscipconss;
+   SCIP_Bool success;
+   int index;
+   int linkindex;
+   int cindex;
+   int cumindex;
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(constoblock != NULL);
@@ -933,7 +946,6 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
-      SCIP_Bool success;
 
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
@@ -955,20 +967,100 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
          }
          else
          {
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, curvars[j], (void*) (size_t) (consblock+1)) );
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, curvars[j], (void*) (size_t) (nblocks+1)) );
             DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, &valid);
          }
          DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
          assert(valid);
          DECdecompSetConstoblock(decdecomp, constoblock, &valid);
          assert(valid);
-
       }
 
       SCIPfreeBufferArray(scip, &curvars);
    }
 
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, &valid) );
+   assert(valid);
+
+   if(!staircase)
+      return SCIP_OKAY;
+
+   SCIP_CALL( SCIPhashmapCreate(&varindex, SCIPblkmem(scip), nvars) );
+   SCIP_CALL( SCIPhashmapCreate(&consindex, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &stairlinkingvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nstairlinkingvars, nblocks) );
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &stairlinkingvars[i], nvars) );
+      nstairlinkingvars[i] = 0;
+   }
+
+   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decdecomp);
+   nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
+
+   index = 0;
+   cindex = 0;
+   cumindex = 0;
+   /* try to deduce staircase map */
+   for( b = 0; b < nblocks; ++b )
+   {
+      cumindex += nsubscipvars[b];
+      SCIPdebugMessage("block %d (%d vars):\n", b, nsubscipvars[b]);
+      linkindex = 0;
+      for( i = 0; i < nsubscipconss[b]; ++i )
+      {
+         SCIP_CONS* cons;
+         cons = subscipconss[b][i];
+
+         SCIP_CALL( SCIPhashmapInsert(consindex, cons, (void*)(size_t)(cindex+1)) );
+         ++cindex;
+         SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
+         assert(success);
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+
+         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
+         assert(success);
+
+         for( j = 0; j < ncurvars; ++j )
+         {
+            /* if the variable is linking */
+            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, curvars[j]) == nblocks+1 )
+            {
+               /* if it has not been already assigned, it links to the next block */
+               if( !SCIPhashmapExists(varindex, curvars[j]) )
+               {
+                  SCIPdebugMessage("assigning link var <%s> to index <%d>\n", SCIPvarGetName(curvars[j]), cumindex+linkindex+1);
+                  SCIP_CALL( SCIPhashmapInsert(varindex, curvars[j], (void*)(size_t)(cumindex+linkindex+1)) );
+                  stairlinkingvars[b][nstairlinkingvars[b]] = curvars[j];
+                  ++(nstairlinkingvars[b]);
+                  linkindex++;
+               }
+            }
+            else
+            {
+               SCIP_CALL( SCIPhashmapInsert(varindex, curvars[j], (void*)(size_t)(index+1)) );
+               ++index;
+            }
+         }
+         SCIPfreeBufferArray(scip, &curvars);
+      }
+      index += linkindex;
+      cumindex += linkindex;
+   }
+   DECdecompSetVarindex(decdecomp, varindex);
+   DECdecompSetConsindex(decdecomp, consindex);
+   DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE, &valid);
+   assert(valid);
+
+   for( b = 0; b < nblocks; ++b )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &stairlinkingvars[b], nstairlinkingvars[b]) );
+   }
+
+   SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, &valid) );
    assert(valid);
 
    return SCIP_OKAY;

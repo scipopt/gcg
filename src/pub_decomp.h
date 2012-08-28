@@ -263,7 +263,8 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    SCIP_VAR**            vars,               /**< variable array */
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss              /**< number of constraints */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
 /** sets the detector for the given decdecomp structure */
