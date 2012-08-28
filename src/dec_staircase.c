@@ -24,12 +24,12 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 #include "pub_decomp.h"
-#include "dijkstra/dijkstra.h"
+#include "tclique/tclique.h"
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "staircase"    /**< name of detector */
 #define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
-#define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             0              /**< priority of the detector */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 
@@ -42,10 +42,7 @@ struct DEC_DetectorData
 {
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
-   DIJKSTRA_GRAPH graph;
-
-   int** varconss;
-   int* nvarconss;
+   TCLIQUE_GRAPH* graph;
 
    SCIP_CLOCK* clock;
    int nblocks;
@@ -57,6 +54,120 @@ struct DEC_DetectorData
  */
 
 /* put your local methods here, and declare them static */
+
+static SCIP_DECL_SORTPTRCOMP(cmp)
+{
+   if(elem1 == elem2)
+      return 0;
+   else if(elem1 < elem2)
+      return -1;
+   else {
+      assert(elem1 > elem2);
+      return 1;
+   }
+}
+
+/** creates the graph from the constraint matrix */
+static
+SCIP_RETCODE createGraph(
+   SCIP*                 scip,               /**< SCIP data structure */
+   TCLIQUE_GRAPH**       graph               /**< Graph data structure */
+   )
+{
+   int i;
+   int j;
+   int v;
+   int nconss;
+   SCIP_CONS** conss;
+
+   assert(scip != NULL);
+   assert(graph != NULL);
+
+   nconss = SCIPgetNConss(scip);
+   conss = SCIPgetConss(scip);
+
+   SCIP_CALL( tcliqueCreate(graph) );
+   assert(*graph != NULL);
+
+   for( i = 0; i < nconss; ++i )
+   {
+      SCIP_CALL( tcliqueAddNode(*graph, i, 0) );
+   }
+
+   /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
+      With additional memory, we can get it down to probably n*m + m*m*n  */
+   for( i = 0; i < nconss; ++i)
+   {
+      SCIP_VAR** curvars1;
+      int ncurvars1;
+
+      ncurvars1 = SCIPgetNVarsXXX(scip, conss[i]);
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+
+      SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars1, ncurvars1) );
+
+      SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
+      SCIPdebugMessage("conns[%d] = %s (%d vars)\n", i, SCIPconsGetName(conss[i]), ncurvars1);
+      for( j = i+1; j < nconss; ++j )
+      {
+         SCIP_VAR** curvars2;
+         int ncurvars2;
+
+         ncurvars2 = SCIPgetNVarsXXX(scip, conss[j]);
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[j], curvars2, ncurvars2) );
+
+         SCIPdebugMessage("\tconns[%d] = %s (%d vars)\n", j, SCIPconsGetName(conss[j]), ncurvars2);
+
+         SCIPsortPtr((void**)curvars1, &cmp, ncurvars1);
+         for( v = 0; v < ncurvars2; ++v )
+         {
+            int pos;
+
+            SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), curvars2[v]);
+            if( SCIPsortedvecFindPtr((void*)curvars1, &cmp, curvars2[v], ncurvars1, &pos) )
+            {
+               SCIPdebugPrintf(" found (%d: %p)\n", pos, curvars1[pos]);
+               assert(curvars1[pos] == curvars2[v]);
+               SCIP_CALL( tcliqueAddEdge(*graph, i, j) );
+               break;
+            }
+            else
+            {
+               SCIPdebugPrintf(" not found (%d: %p)\n", pos, curvars1[pos]);
+            }
+         }
+         SCIPfreeBufferArray(scip, &curvars2);
+      }
+
+      SCIPfreeBufferArray(scip, &curvars1);
+   }
+
+   SCIP_CALL( tcliqueFlush(*graph) );
+   tcliquePrintGraph(*graph);
+   return SCIP_OKAY;
+}
+
+
+/** returns the distance between vertex i and j based on the distance matrix */
+static
+int getDistance(
+   unsigned int          i,                  /**< vertex i */
+   unsigned int          j,                  /**< vertex j */
+   int**                 distance            /**< triangular distance matrix */
+   )
+{
+   assert(distance != NULL);
+
+   if( i >= j )
+      return distance[i][j];
+   else if (i < j)
+      return distance[j][i];
+   else
+      return 0;
+}
+
 
 /* returns whether the constraint belongs to GCG or not */
 static
@@ -80,33 +191,36 @@ static
 SCIP_RETCODE doBFS(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   unsigned int          startnode,          /**< starting node */
+   int                   startnode,          /**< starting node */
    int**                 distances           /**< triangular matrix to store the distance when starting from node i */
    )
 {
-   unsigned int *queue;
+   int *queue;
+   int nnodes;
    SCIP_Bool* marked;
    int squeue;
    int equeue;
-   unsigned int i;
-   unsigned int j;
+   int i;
+   int* node;
 
-   DIJKSTRA_GRAPH* graph;
+   TCLIQUE_GRAPH* graph;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
    assert(distances != NULL);
+   assert(detectordata->graph != NULL);
+   graph = detectordata->graph;
+   nnodes = tcliqueGetNNodes(graph);
 
-   graph = &detectordata->graph;
-   assert(i > 0 && i < graph->nodes);
+   assert(startnode < tcliqueGetNNodes(graph));
 
    squeue = 0;
    equeue = 0;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, graph->nodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, graph->nodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
 
-   for( i = 0; i < graph->nodes; ++i)
+   for( i = 0; i < nnodes; ++i)
    {
       marked[i] = FALSE;
    }
@@ -119,44 +233,32 @@ SCIP_RETCODE doBFS(
 
    while(equeue > squeue)
    {
-      unsigned int currentnode;
+      int currentnode;
+      int* lastneighbour;
 
       /* dequeue new node */
       currentnode = queue[squeue];
-      SCIPdebugMessage("Dequeueing %ud\n", currentnode);
+      SCIPdebugMessage("Dequeueing %u\n", currentnode);
 
-      assert(currentnode < graph->nodes);
+      assert(currentnode < nnodes);
       ++squeue;
 
+      lastneighbour = tcliqueGetLastAdjedge(graph, currentnode);
       /* go through all neighbours */
-      for( j = 0; j < graph->outcnt[currentnode]; ++j )
+      for( node = tcliqueGetFirstAdjedge(graph, currentnode); node <= lastneighbour; ++node )
       {
-         int eindex;
-         unsigned int targetnode;
-
-         eindex = graph->outbeg[currentnode+j];
-         targetnode = graph->head[eindex];
-
-         if( !marked[targetnode] )
+         if( !marked[*node] )
          {
             int curdistance;
 
-            /* little magic for triangular distance matrix */
-            if( startnode < currentnode )
-            {
-               curdistance = distances[startnode][currentnode];
-            }
-            else
-            {
-               curdistance = distances[currentnode][startnode];
-            }
+            curdistance = getDistance(startnode, currentnode, distances);
 
-            marked[targetnode] = TRUE;
-            queue[equeue] = targetnode;
-            if(targetnode > startnode)
-               distances[startnode][targetnode] = curdistance+1;
-            else if(startnode > targetnode)
-               distances[targetnode][startnode] = curdistance+1;
+            marked[*node] = TRUE;
+            queue[equeue] = *node;
+            if(*node < startnode)
+               distances[startnode][*node] = curdistance+1;
+            else if(*node > startnode)
+               distances[*node][startnode] = curdistance+1;
 
             ++equeue;
          }
@@ -165,20 +267,22 @@ SCIP_RETCODE doBFS(
 
    SCIPfreeMemoryArray(scip, &queue);
    SCIPfreeMemoryArray(scip, &marked);
+
    return SCIP_OKAY;
 }
 
 /** finds the maximal shortest path by inspecting the distance array and returns the path in start and end*/
+static
 SCIP_RETCODE findMaximalPath(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
    int**                 distance,           /**< distance matrix of the maximal s-t path starting from s to any node t*/
-   unsigned int*         start,              /**< start vertex */
-   unsigned int*         end                 /**< end vertex */
+   int*                  start,              /**< start vertex */
+   int*                  end                 /**< end vertex */
    )
 {
-   unsigned int i;
-   unsigned int j;
+   int i;
+   int j;
    int max;
 
    assert(scip != NULL);
@@ -187,9 +291,9 @@ SCIP_RETCODE findMaximalPath(
    assert(start != NULL);
    assert(end != NULL);
 
-   max = 0;
+   max = -1;
 
-   for(i = 0; i < detectordata->graph.nodes; ++i)
+   for(i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i)
    {
       for(j = 0; j < i; ++j)
       {
@@ -206,28 +310,52 @@ SCIP_RETCODE findMaximalPath(
 }
 
 /** This method will construct the cuts based on the longest shortest path and the distance matrix */
+static
 SCIP_RETCODE constructCuts(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
-   unsigned int          start,              /**< start vertex */
-   unsigned int          end,                /**< end vertex */
+   int                   start,              /**< start vertex */
+   int                   end,                /**< end vertex */
    int**                 distance,           /**< distance matrix giving the distance from any constraint to any constraint */
    SCIP_VAR****          cuts                /**< which variables should be in the cuts */
    )
 {
+
+   int nnodes;
+   SCIP_CONS** conss;
+   int i;
+
    assert(scip != NULL);
    assert(detectordata != NULL);
-   assert(detectordata->graph != NULL);
-   assert(start < detectordata->graph.nodes);
-   assert(end < detectordata->graph.nodes);
+   assert(start >= 0);
+   assert(end >= 0);
    assert(distance != NULL);
    assert(cuts != NULL);
+
+   assert(detectordata->graph != NULL);
+   nnodes = tcliqueGetNNodes(detectordata->graph);
+   conss = SCIPgetConss(scip);
+   assert(start < nnodes);
+   assert(end < nnodes);
+
+   /* The cuts will be generated on a trivial basis:
+    * The vertices  of distance i will be in block i
+    */
+
+   for(i = 0; i < nnodes; ++i)
+   {
+      int dist;
+      dist = getDistance(start, i, distance);
+      SCIPdebugPrintf("from %u to %u = %d\n", start, i, dist);
+      SCIPhashmapInsert(detectordata->constoblock, conss[i], (void**)(size_t) dist+1);
+   }
 
    return SCIP_OKAY;
 }
 
 
 /** converts the cuts to a structure that GCG can understand */
+static
 SCIP_RETCODE convertCutsToDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
@@ -252,11 +380,10 @@ SCIP_RETCODE findStaircaseComponents(
    )
 {
    int nconss;
-   int nvars;
    int** distance;
    int i;
-   unsigned int start;
-   unsigned int end;
+   int start;
+   int end;
    SCIP_VAR*** cuts;
 
    assert(scip != NULL);
@@ -264,13 +391,13 @@ SCIP_RETCODE findStaircaseComponents(
    assert(result != NULL);
 
    nconss = SCIPgetNConss(scip);
-   nvars = SCIPgetNVars(scip);
 
    /* allocate triangular distance matrix */
    SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
    for( i = 0; i < nconss; ++i)
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &distance[i], nconss-i) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &distance[i], i+1) );
+      BMSclearMemoryArray(distance[i], i+1);
    }
 
    for( i = 0; i < nconss; ++i)
@@ -321,7 +448,7 @@ SCIP_RETCODE copyToDecdecomp(
    assert(detectordata != NULL);
    assert(decdecomp != NULL);
 
-   assert(DECdecdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
+   assert(DECdecompGetType(decdecomp) == DEC_DECTYPE_UNKNOWN);
 
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
@@ -421,75 +548,12 @@ SCIP_RETCODE copyToDecdecomp(
    return SCIP_OKAY;
 }
 
-static
-SCIP_RETCODE initDijkstraGraph(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata
-   )
-{
-   int i;
-   int j;
-   int nconss;
-   int nvars;
-   int nedges;
-   SCIP_CONS** conss;
-
-   DIJKSTRA_GRAPH* g = &(detectordata->graph);
-   conss = SCIPgetConss(scip);
-   nconss = SCIPgetNConss(scip);
-   nvars = SCIPgetNVars(scip);
-   nedges = 0;
-   g->nodes = nconss;
-   g->arcs = 2*nconss*nvars; /**@todo make better */
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(g->outbeg), (int) g->nodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(g->outcnt), (int) g->nodes) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(g->head), (int) g->arcs) );
-
-   for( i = 0; i < nconss; ++i )
-   {
-      SCIP_VAR** curvars;
-      int ncurvars;
-      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
-      g->outcnt[i] = ncurvars;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
-      nedges += ncurvars;
-      for( j = 0; j < ncurvars; ++j )
-      {
-         int pindex = SCIPvarGetProbindex(SCIPvarGetProbvar(curvars[j]));
-         detectordata->varconss[pindex][detectordata->nvarconss[pindex]] = i;
-         ++(detectordata->nvarconss[pindex]);
-      }
-      SCIPfreeMemoryArray(scip, &curvars);
-   }
-
-   /* reallocate to necessary size */
-   for( i = 0; i < nvars; ++i )
-   {
-      if( detectordata->nvarconss[i] > 0)
-      {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->varconss[i], detectordata->nvarconss[i]) );
-      }
-      else
-      {
-         SCIPfreeMemoryArray(scip, &detectordata->varconss[i] );
-         assert(detectordata->nvarconss[i] == 0);
-      }
-
-   }
-   return SCIP_OKAY;
-}
-
 /** solving process initialization method of constraint handler (called when branch and bound process is about to begin) */
 static
 DEC_DECL_INITDETECTOR(initStaircase)
 {  /*lint --e{715}*/
 
    DEC_DETECTORDATA *detectordata;
-   int i;
-   int nvars;
-   int nconss;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -499,24 +563,11 @@ DEC_DECL_INITDETECTOR(initStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   nvars = SCIPgetNVars(scip);
-   nconss = SCIPgetNConss(scip);
-
    detectordata->clock = NULL;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nvarconss, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varconss, nvars) );
-
-   for( i = 0; i < nvars; ++i )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varconss[i], nconss) );
-      detectordata->nvarconss[i] = 0;
-   }
-
    detectordata->nblocks = 0;
-   SCIP_CALL( initDijkstraGraph(scip, detectordata) );
    SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
 
    return SCIP_OKAY;
@@ -527,8 +578,6 @@ static
 DEC_DECL_EXITDETECTOR(exitStaircase)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
-   int i;
-   int nvars;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -538,18 +587,8 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   nvars = SCIPgetNVars(scip);
-
    if( detectordata->clock != NULL )
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
-
-   for( i = 0; i < nvars; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &detectordata->varconss[i]);
-   }
-
-   SCIPfreeMemoryArray(scip, &detectordata->varconss);
-   SCIPfreeMemoryArray(scip, &detectordata->nvarconss);
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -564,6 +603,8 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
    SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
+
+   SCIP_CALL( createGraph(scip, &(detectordata->graph)) );
 
    SCIP_CALL( findStaircaseComponents(scip, detectordata, result) );
 
