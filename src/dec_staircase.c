@@ -28,6 +28,7 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "staircase"    /**< name of detector */
+#define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
 #define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
@@ -41,7 +42,7 @@ struct DEC_DetectorData
 {
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
-   Dijkstra_Graph graph;
+   DIJKSTRA_GRAPH graph;
 
    int** varconss;
    int* nvarconss;
@@ -77,10 +78,10 @@ SCIP_Bool isConsGCGCons(
 /** perform BFS on the graph, storing distance information in the user supplied array */
 static
 SCIP_RETCODE doBFS(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata,  /**< constraint handler data structure */
-   unsigned int      startnode,     /**< starting node */
-   int**             distances      /**< triangular matrix to store the distance when starting from node i */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   unsigned int          startnode,          /**< starting node */
+   int**                 distances           /**< triangular matrix to store the distance when starting from node i */
    )
 {
    unsigned int *queue;
@@ -90,7 +91,7 @@ SCIP_RETCODE doBFS(
    unsigned int i;
    unsigned int j;
 
-   Dijkstra_Graph* graph;
+   DIJKSTRA_GRAPH* graph;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -154,6 +155,8 @@ SCIP_RETCODE doBFS(
             queue[equeue] = targetnode;
             if(targetnode > startnode)
                distances[startnode][targetnode] = curdistance+1;
+            else if(startnode > targetnode)
+               distances[targetnode][startnode] = curdistance+1;
 
             ++equeue;
          }
@@ -165,12 +168,87 @@ SCIP_RETCODE doBFS(
    return SCIP_OKAY;
 }
 
+/** finds the maximal shortest path by inspecting the distance array and returns the path in start and end*/
+SCIP_RETCODE findMaximalPath(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   int**                 distance,           /**< distance matrix of the maximal s-t path starting from s to any node t*/
+   unsigned int*         start,              /**< start vertex */
+   unsigned int*         end                 /**< end vertex */
+   )
+{
+   unsigned int i;
+   unsigned int j;
+   int max;
+
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(distance != NULL);
+   assert(start != NULL);
+   assert(end != NULL);
+
+   max = 0;
+
+   for(i = 0; i < detectordata->graph.nodes; ++i)
+   {
+      for(j = 0; j < i; ++j)
+      {
+         if(distance[i][j] > max)
+         {
+            max = distance[i][j];
+            *start = i;
+            *end = j;
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** This method will construct the cuts based on the longest shortest path and the distance matrix */
+SCIP_RETCODE constructCuts(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   unsigned int          start,              /**< start vertex */
+   unsigned int          end,                /**< end vertex */
+   int**                 distance,           /**< distance matrix giving the distance from any constraint to any constraint */
+   SCIP_VAR****          cuts                /**< which variables should be in the cuts */
+   )
+{
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(detectordata->graph != NULL);
+   assert(start < detectordata->graph.nodes);
+   assert(end < detectordata->graph.nodes);
+   assert(distance != NULL);
+   assert(cuts != NULL);
+
+   return SCIP_OKAY;
+}
+
+
+/** converts the cuts to a structure that GCG can understand */
+SCIP_RETCODE convertCutsToDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   SCIP_VAR***           cuts                /**< which variables should be in the cuts */
+   )
+{
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   assert(cuts != NULL);
+
+   return SCIP_OKAY;
+}
+
+
+
 /** looks for staircase components in the constraints in detectordata */
 static
 SCIP_RETCODE findStaircaseComponents(
-   SCIP*             scip,          /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata,  /**< constraint handler data structure */
-   SCIP_RESULT*      result         /**< result pointer to indicate success oder failuer */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< constraint handler data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success oder failuer */
    )
 {
    int nconss;
@@ -200,9 +278,9 @@ SCIP_RETCODE findStaircaseComponents(
       SCIP_CALL( doBFS(scip, detectordata, i, distance) );
    }
 
-   SCIP_CALL( findMaximalPath(scip, detectordata, distance[i], &start, &end) );
+   SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
 
-   SCIP_CALL( constructCuts(scip, detectordata, start, end, &cuts) );
+   SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
 
    SCIP_CALL( convertCutsToDecomp(scip, detectordata, cuts) );
 
@@ -218,9 +296,9 @@ SCIP_RETCODE findStaircaseComponents(
 /* copy conshdldata data to decdecomp */
 static
 SCIP_RETCODE copyToDecdecomp(
-   SCIP*              scip,         /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata, /**< constraint handler data structure */
-   DECDECOMP*         decdecomp     /**< decdecomp data structure */
+   SCIP*              scip,                  /**< SCIP data structure */
+   DEC_DETECTORDATA*  detectordata,          /**< constraint handler data structure */
+   DEC_DECOMP*        decdecomp              /**< decdecomp data structure */
    )
 {
    SCIP_CONS** conss;
@@ -236,6 +314,8 @@ SCIP_RETCODE copyToDecdecomp(
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
    int nblocks;
+
+   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -264,9 +344,11 @@ SCIP_RETCODE copyToDecdecomp(
       nsubscipconss[i] = 0;
    }
 
-   DECdecdecompSetNBlocks(decdecomp, nblocks);
-   DECdecdecompSetConstoblock(decdecomp, detectordata->constoblock);
-   DECdecdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetNBlocks(decdecomp, nblocks);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
+   assert(valid);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
+   assert(valid);
 
    for( i = 0; i < nconss; ++i )
    {
@@ -302,16 +384,23 @@ SCIP_RETCODE copyToDecdecomp(
 
    if( nlinkingconss > 0 )
    {
-      SCIP_CALL( DECdecdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss) );
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_BORDERED);
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+      assert(valid);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
+      assert(valid);
+
    }
    else
    {
-      DECdecdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL);
+      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
+      assert(valid);
    }
 
-   SCIP_CALL( DECdecdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss) );
-   SCIP_CALL( DECdecdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
 
 
    for( i = 0; i < detectordata->nblocks; ++i )
@@ -345,7 +434,7 @@ SCIP_RETCODE initDijkstraGraph(
    int nedges;
    SCIP_CONS** conss;
 
-   Dijkstra_Graph* g = &(detectordata->graph);
+   DIJKSTRA_GRAPH* g = &(detectordata->graph);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
    nvars = SCIPgetNVars(scip);
@@ -485,7 +574,7 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
-      SCIP_CALL( DECdecdecompCreate(scip, &((*decdecomps)[0])) );
+      SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
       SCIP_CALL( copyToDecdecomp(scip, detectordata, (*decdecomps)[0]) );
       *ndecdecomps = 1;
    }
@@ -517,7 +606,7 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
 
    return SCIP_OKAY;
 }
