@@ -102,7 +102,7 @@ SCIP_RETCODE DECdecompFree(
       {
          SCIP_CALL( SCIPreleaseVar(scip, &(decomp->subscipvars[i][j])) );
       }
-      SCIPfreeMemoryArray(scip, &decomp->subscipvars[i]);
+      SCIPfreeMemoryArrayNull(scip, &(decomp->subscipvars[i]));
 
       for( j = 0; j < decomp->nsubscipconss[i]; ++j )
       {
@@ -260,20 +260,24 @@ SCIP_RETCODE DECdecompSetSubscipvars(
 
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      if( nsubscipvars[b] < 0 )
-         *valid = FALSE;
-
+      assert((subscipvars[b] == NULL) == (nsubscipvars[b] == 0));
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
-      if( nsubscipvars[b] > 0 )
+      if( nsubscipvars[b] < 0 )
+         *valid = FALSE;
+      else if( nsubscipvars[b] > 0 )
       {
          assert(subscipvars[b] != NULL);
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->subscipvars[b]), subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
 
-         SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipvars[b], subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
          for( i = 0; i < nsubscipvars[b]; ++i )
          {
             SCIP_CALL( SCIPcaptureVar(scip, decdecomp->subscipvars[b][i]) );
          }
+      }
+      else if( nsubscipvars[b] == 0 )
+      {
+         decdecomp->subscipvars[b] = NULL;
       }
    }
 
@@ -382,7 +386,7 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(linkingconss != NULL);
-   assert(nlinkingconss > 0);
+   assert(nlinkingconss >= 0);
 
    assert(decdecomp->linkingconss == NULL);
    assert(decdecomp->nlinkingconss == 0);
@@ -535,6 +539,46 @@ SCIP_HASHMAP*  DECdecompGetConstoblock(
    return decdecomp->constoblock;
 }
 
+/** sets the varindex hashmap of the given decdecomp structure */
+void  DECdecompSetVarindex(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(varindex != NULL);
+   decdecomp->varindex = varindex;
+}
+
+/** returns the varindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecompGetVarindex(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->varindex;
+}
+
+/** sets the consindex hashmap of the given decdecomp structure */
+void  DECdecompSetConsindex(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_HASHMAP*         consindex           /**< Consindex hashmap */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(consindex != NULL);
+   decdecomp->consindex = consindex;
+}
+
+/** returns the consindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP*  DECdecompGetConsindex(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->consindex;
+}
+
 /** completely initializes decdecomp from the values of the hashmaps */
 SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -579,6 +623,12 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    nlinkingconss = 0;
    nlinkingvars = 0;
+
+   DECdecompSetConstoblock(decdecomp, constoblock, valid);
+   assert(*valid);
+   DECdecompSetVartoblock(decdecomp, vartoblock, valid);
+   assert(*valid);
+
    for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
@@ -627,11 +677,11 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
       cons = conss[i];
       assert(cons != NULL);
-      if( !SCIPhashmapExists(decdecomp->constoblock, cons) )
+      if( !SCIPhashmapExists(constoblock, cons) )
          block = nblocks+1;
       else
       {
-         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons); /*lint !e507*/
+         block = (int)(size_t)SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -666,13 +716,12 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, valid);
       assert(*valid);
    }
+
+   DECdecompSetNBlocks(decdecomp, nblocks);
+
    SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, valid) );
    assert(*valid);
    SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, valid) );
-   assert(*valid);
-   DECdecompSetVartoblock(decdecomp, vartoblock, valid);
-   assert(*valid);
-   DECdecompSetConstoblock(decdecomp, constoblock, valid);
    assert(*valid);
 
    SCIPfreeBufferArray(scip, &linkingconss);

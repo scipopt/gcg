@@ -231,6 +231,31 @@ SCIP_RETCODE DECdecompTransform(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/** sets the varindex hashmap of the given decdecomp structure */
+void DECdecompSetVarindex(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
+   );
+
+/** returns the varindex hashmap of the given decdecomp structure */
+extern
+SCIP_HASHMAP* DECdecompGetVarindex(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   );
+
+/** sets the consindex hashmap of the given decdecomp structure */
+extern
+void DECdecompSetConsindex(
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_HASHMAP*         consindex           /**< Consindex hashmap */
+   );
+
+/** returns the consindex hashmap of the given decdecomp structure */
+extern
+SCIP_HASHMAP* DECdecompGetConsindex(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

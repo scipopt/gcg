@@ -296,7 +296,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nblocks; ++i )
    {
       SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]);
-      assert(subscipvars[i] != NULL);
+      assert((subscipvars[i] == NULL) == (nsubscipvars[i] == 0));
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
          SCIP_VAR* relevantvar;
