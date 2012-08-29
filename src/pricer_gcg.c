@@ -2760,7 +2760,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       int blocknr;
       assert(GCGvarIsOriginal(origvars[i]));
       blocknr = GCGvarGetBlock(origvars[i]);
-      assert(GCGoriginalVarGetPricingVar(origvars[i]) != NULL || blocknr < 0);
+      assert(blocknr < 0 || GCGoriginalVarGetPricingVar(origvars[i]) != NULL);
 
       if( blocknr >= 0 )
       {

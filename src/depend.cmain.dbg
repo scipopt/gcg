@@ -196,7 +196,7 @@ $(OBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip
  src/branch_relpsprob.h src/reader_ref.h src/reader_gp.h \
  src/cons_decomp.h src/type_detector.h src/dec_connected.h \
  src/dec_borderheur.h src/dec_arrowheur.h src/dec_stairheur.h \
- src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h \
+ src/dec_staircase.h src/heur_gcgcoefdiving.h src/heur_gcgfracdiving.h \
  src/heur_gcgguideddiving.h src/heur_gcglinesdiving.h \
  src/heur_gcgpscostdiving.h src/heur_gcgrens.h src/heur_gcgrins.h \
  src/heur_gcgrounding.h src/heur_gcgshifting.h \
@@ -2175,7 +2175,7 @@ $(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  src/type_decomp.h src/cons_decomp.h src/type_detector.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_setppc.h
+ lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/cons_linear.h
 $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2212,7 +2212,8 @@ $(OBJDIR)/dec_borderheur.o: src/dec_borderheur.c src/dec_borderheur.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
- src/struct_decomp.h src/pub_decomp.h src/scip_misc.h
+ src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h
 $(OBJDIR)/dec_stairheur.o: src/dec_stairheur.c src/dec_stairheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2250,7 +2251,7 @@ $(OBJDIR)/dec_stairheur.o: src/dec_stairheur.c src/dec_stairheur.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
- lib/scip/src/scip/struct_var.h
+ lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/struct_var.h
 $(OBJDIR)/dec_connected.o: src/dec_connected.c src/dec_connected.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2324,7 +2325,46 @@ $(OBJDIR)/dec_cutpacking.o: src/dec_cutpacking.c src/dec_cutpacking.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
- src/struct_decomp.h src/pub_decomp.h src/scip_misc.h
+ src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h
+$(OBJDIR)/dec_staircase.o: src/dec_staircase.c src/dec_staircase.h \
+ lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
+ lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
+ lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
+ lib/scip/src/scip/type_event.h lib/scip/src/scip/type_lp.h \
+ lib/scip/src/scip/type_nlp.h lib/scip/src/scip/type_var.h \
+ lib/scip/src/scip/type_prob.h lib/scip/src/scip/type_tree.h \
+ lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
+ lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
+ lib/scip/src/scip/type_dialog.h lib/scip/src/scip/type_disp.h \
+ lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_nodesel.h \
+ lib/scip/src/scip/type_presol.h lib/scip/src/scip/type_pricer.h \
+ lib/scip/src/scip/type_reader.h lib/scip/src/scip/type_relax.h \
+ lib/scip/src/scip/type_sepa.h lib/scip/src/scip/type_prop.h \
+ lib/scip/src/nlpi/type_nlpi.h lib/scip/src/nlpi/type_expr.h \
+ lib/scip/src/scip/pub_branch.h lib/scip/src/scip/pub_conflict.h \
+ lib/scip/src/scip/pub_cons.h lib/scip/src/scip/pub_cutpool.h \
+ lib/scip/src/scip/type_cutpool.h lib/scip/src/scip/pub_dialog.h \
+ lib/scip/src/scip/pub_disp.h lib/scip/src/scip/pub_event.h \
+ lib/scip/src/scip/pub_fileio.h lib/scip/src/scip/pub_heur.h \
+ lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
+ lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
+ lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
+ lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
+ lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
+ lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
+ lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
+ src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h src/pub_decomp.h \
+ lib/scip/src/tclique/tclique.h
 $(OBJDIR)/gcggithash.o: src/gcggithash.c src/gcggithash.h src/githash.c
 $(OBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \

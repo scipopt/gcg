@@ -634,7 +634,7 @@ SCIP_RETCODE readREFFile(
    assert(valid);
 
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid) );
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid, FALSE) );
 
    assert(valid);
 

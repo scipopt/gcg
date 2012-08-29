@@ -94,6 +94,7 @@ MAINOBJ		=	reader_blk.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_cutpacking.o \
+			dec_staircase.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \

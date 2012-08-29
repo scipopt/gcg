@@ -251,7 +251,21 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
    int                   nconss,             /**< number of constraints */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool*            valid,              /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
+   );
+
+/** completely fills out detector structure from only the constraint partition */
+SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_VAR**            vars,               /**< variable array */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< constraint array */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
 /** sets the detector for the given decdecomp structure */

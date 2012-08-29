@@ -24,10 +24,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
-
 #include "dec_stairheur.h"
 
 #include "cons_decomp.h"
@@ -57,11 +53,6 @@
 #define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
 
 #define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
-
-
-/*include the code for doubly linked lists */
-#include <stdio.h>
-#include <stdlib.h>
 
 /** TODO:
  * currently, all vars from the first column where a linking var appears until the end of the block are considered as linking vars, although there might be empty columns. This could be changed so that these empty columns are considered as subscipvars and not linking vars.
@@ -169,14 +160,16 @@ LIST* SCIPlistCreate(
 
 /** creates a list with integers running from 'from' to 'to'. */
 LIST* SCIPlistCreateInt(
-   SCIP* scip,
-int from,
-int to
-)
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   from,               /**< Start index */
+   int                   to                  /**< End index */
+   )
 {
    LIST* list;
    int* data;
    int i;
+   SCIP_Bool success;
+
    list = SCIPlistCreate(scip);
    for( i = from; i <= to; ++i )
    {
@@ -184,7 +177,9 @@ int to
          return NULL;
 
       *data=i;
-      SCIPlistPushBack(scip, list, (void*) data);
+      success = SCIPlistPushBack(scip, list, (void*) data);
+      if( !success )
+         return NULL;
    }
    return list;
 }
