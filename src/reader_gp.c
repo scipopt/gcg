@@ -158,6 +158,9 @@ SCIP_RETCODE writeData(
    SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
+   varindexmap = NULL;
+   consindexmap = NULL;
+
    if( decdecomp != NULL )
    {
       assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD
@@ -245,7 +248,8 @@ SCIP_RETCODE writeData(
          /* if there is a decomposition, output the indices derived from the decomposition above*/
          else
          {
-
+            assert(varindexmap != NULL);
+            assert(consindexmap != NULL);
             assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
