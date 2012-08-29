@@ -275,15 +275,15 @@ SCIP_RETCODE evaluateDecomposition(
       score->totalscore = 0.0;
       break;
    case DEC_DECTYPE_STAIRCASE:
-      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecompGetType(decdecomp)));
+      SCIPwarningMessage(scip, "Decomposition type is %s, cannot compute score\n", DECgetStrType(DECdecompGetType(decdecomp)));
       score->totalscore = 1.0;
       break;
    case DEC_DECTYPE_UNKNOWN:
-      SCIPerrorMessage("Decomposition type is %s, cannot compute score", DECgetStrType(DECdecompGetType(decdecomp)));
+      SCIPerrorMessage("Decomposition type is %s, cannot compute score\n", DECgetStrType(DECdecompGetType(decdecomp)));
       assert(FALSE);
       break;
    default:
-      SCIPerrorMessage("No rule for this decomposition type, cannot compute score");
+      SCIPerrorMessage("No rule for this decomposition type, cannot compute score\n");
       assert(FALSE);
       break;
    }
