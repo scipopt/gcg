@@ -1061,7 +1061,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
 
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
-      assert(consblock > 0 && consblock < nblocks+1);
+      assert(consblock > 0 && consblock < nblocks+2);
 
       SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
