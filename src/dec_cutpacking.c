@@ -21,7 +21,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "dec_cutpacking.h"
 

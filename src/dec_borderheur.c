@@ -576,8 +576,8 @@ static SCIP_RETCODE buildTransformedProblem(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) );
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipconss[i]), nconss) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipvars[i]), nvars) ); /*lint !e866*/
 
       nsubscipconss[i] = 0;
       nsubscipvars[i] = 0;
@@ -656,7 +656,7 @@ static SCIP_RETCODE buildTransformedProblem(
          }
          else
          {
-            varblock = (int)(size_t)SCIPhashmapGetImage(vartoblock, var);
+            varblock = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
             assert(varblock == detectordata->varpart[SCIPvarGetProbindex(var)] ||  detectordata->varpart[SCIPvarGetProbindex(var)] == -2);
          }
 
@@ -860,7 +860,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    }
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
-      DECdecompFree(scip,  &(*decdecomps)[i]);
+      SCIP_CALL( DECdecompFree(scip,  &(*decdecomps)[i]) );
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n", *ndecdecomps );
 

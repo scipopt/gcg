@@ -33,6 +33,17 @@
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 
+
+#define TCLIQUE_CALL(x) do                                                                                    \
+                       {                                                                                      \
+                          if((x) != TRUE )                                                      \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error in function call\n");                                    \
+                             return SCIP_ERROR;                                                               \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
+
 /*
  * Data structures
  */
@@ -46,7 +57,6 @@ struct DEC_DetectorData
 
    SCIP_CLOCK* clock;
    int nblocks;
-   DEC_DECOMP* decomp;
 };
 
 
@@ -87,12 +97,12 @@ SCIP_RETCODE createGraph(
    nconss = SCIPgetNConss(scip);
    conss = SCIPgetConss(scip);
 
-   SCIP_CALL( tcliqueCreate(graph) );
+   TCLIQUE_CALL( tcliqueCreate(graph) );
    assert(*graph != NULL);
 
    for( i = 0; i < nconss; ++i )
    {
-      SCIP_CALL( tcliqueAddNode(*graph, i, 0) );
+      TCLIQUE_CALL( tcliqueAddNode(*graph, i, 0) );
    }
 
    /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
@@ -121,17 +131,17 @@ SCIP_RETCODE createGraph(
 
          SCIPdebugMessage("\tconns[%d] = %s (%d vars)\n", j, SCIPconsGetName(conss[j]), ncurvars2);
 
-         SCIPsortPtr((void**)curvars1, &cmp, ncurvars1);
+         SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )
          {
             int pos;
 
             SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), curvars2[v]);
-            if( SCIPsortedvecFindPtr((void*)curvars1, &cmp, curvars2[v], ncurvars1, &pos) )
+            if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
                SCIPdebugPrintf(" found (%d: %p)\n", pos, curvars1[pos]);
                assert(curvars1[pos] == curvars2[v]);
-               SCIP_CALL( tcliqueAddEdge(*graph, i, j) );
+               TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
             }
             else
@@ -145,7 +155,7 @@ SCIP_RETCODE createGraph(
       SCIPfreeBufferArray(scip, &curvars1);
    }
 
-   SCIP_CALL( tcliqueFlush(*graph) );
+   TCLIQUE_CALL( tcliqueFlush(*graph) );
    SCIPdebug(tcliquePrintGraph(*graph));
    return SCIP_OKAY;
 }
@@ -154,8 +164,8 @@ SCIP_RETCODE createGraph(
 /** returns the distance between vertex i and j based on the distance matrix */
 static
 int getDistance(
-   unsigned int          i,                  /**< vertex i */
-   unsigned int          j,                  /**< vertex j */
+   int                   i,                  /**< vertex i */
+   int                   j,                  /**< vertex j */
    int**                 distance            /**< triangular distance matrix */
    )
 {
@@ -222,7 +232,7 @@ SCIP_RETCODE doBFS(
 
       /* dequeue new node */
       currentnode = queue[squeue];
-      SCIPdebugMessage("Dequeueing %u\n", currentnode);
+      SCIPdebugMessage("Dequeueing %d\n", currentnode);
 
       assert(currentnode < nnodes);
       ++squeue;
@@ -333,7 +343,7 @@ SCIP_RETCODE constructCuts(
       int dist;
       dist = getDistance(start, i, distance);
       SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
-      SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (dist+1));
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (dist+1)) );
    }
 
    return SCIP_OKAY;
@@ -365,8 +375,8 @@ SCIP_RETCODE findStaircaseComponents(
    SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
    for( i = 0; i < nconss; ++i)
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &distance[i], i+1) );
-      BMSclearMemoryArray(distance[i], i+1);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), i+1) ); /*lint !e866*/
+      BMSclearMemoryArray(distance[i], i+1); /*lint !e866*/
    }
 
    for( i = 0; i < nconss; ++i)

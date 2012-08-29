@@ -742,7 +742,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
       decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
 
       assert(stairlinkingvars[b] != NULL);
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->stairlinkingvars[b], stairlinkingvars[b], nstairlinkingvars[b]) );
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
    }
 
    for( b = 0; b < decdecomp->nblocks-1; ++b )
@@ -940,7 +940,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &stairlinkingvars[i], nvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(stairlinkingvars[i]), nvars) ); /*lint !e866*/
       nstairlinkingvars[i] = 0;
    }
 
@@ -975,7 +975,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          for( j = 0; j < ncurvars; ++j )
          {
             /* if the variable is linking */
-            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, curvars[j]) == nblocks+1 )
+            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, curvars[j]) == nblocks+1 ) /*lint !e507*/
             {
                /* if it has not been already assigned, it links to the next block */
                if( !SCIPhashmapExists(varindex, curvars[j]) )
@@ -1005,7 +1005,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( b = 0; b < nblocks; ++b )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &stairlinkingvars[b], nstairlinkingvars[b]) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(stairlinkingvars[b]), nstairlinkingvars[b]) ); /*lint !e866*/
    }
 
    SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, valid) );
