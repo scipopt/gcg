@@ -1831,7 +1831,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	int norigvars;
 	int allnorigvars;
 
-	blocknr = -1;
+	blocknr = -2;
 	Ssize = 0;
 	Csize = 0;
 	Fsize = 0;
@@ -1906,10 +1906,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 		assert(GCGvarIsMaster(mastervar));
 		norigvars = GCGmasterVarGetNOrigvars(mastervar);
 		blocknr = GCGvarGetBlock(mastervar);
-		if(blocknr >= 0)
+		if(blocknr >= -1)
 			break;
 	}
-	if( blocknr < 0 )
+	if( blocknr < -1 )
 		feasible = TRUE;
 
 	k = 0;
