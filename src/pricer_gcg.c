@@ -395,7 +395,7 @@ void GCGpricerCollectStatistic(
    GCGpricerGetFoundVarsHistogram(pricerdata, foundvars);
 
 }
-
+#endif
 
 /** frees all solvers */
 static
@@ -537,7 +537,6 @@ SCIP_RETCODE solversExitsol(
    return SCIP_OKAY;
 }
 
-#ifdef ENABLESTATISTICS
 /** returns the gegeneracy of the masterproblem */
 static
 SCIP_RETCODE computeCurrentDegeneracy(
@@ -604,7 +603,6 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    return SCIP_OKAY;
 }
-#endif
 
 /** solves a specific pricing problem */
 static
@@ -675,8 +673,10 @@ SCIP_RETCODE solvePricingProblem(
 
          if( *status == SCIP_STATUS_OPTIMAL || *status == SCIP_STATUS_UNBOUNDED )
          {
+#ifdef ENABLESTATISTICS
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                           SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
+#endif
             break;
          }
 
@@ -1732,9 +1732,8 @@ SCIP_RETCODE performPricing(
    int i;
    int j;
    int nfoundvars;
-#ifdef ENABLESTATISTICS
    double degeneracy;
-#endif
+
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool duringheurpricing;
@@ -1856,9 +1855,9 @@ SCIP_RETCODE performPricing(
       ++pricerdata->ndegeneracycalcs;
       }
 
-   SCIPinfoMessage(scip, NULL, "deg: %.2f (avg %.2f)\n", degeneracy, pricerdata->avgrootnodedegeneracy);
+      //   SCIPinfoMessage(scip, NULL, "deg: %.2f (avg %.2f)\n", degeneracy, pricerdata->avgrootnodedegeneracy);
    }
-#endif
+
    return SCIP_OKAY;
 }
 

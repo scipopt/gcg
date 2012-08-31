@@ -214,38 +214,16 @@ SCIP_RETCODE computeHyperedgeWeight(
 {
    int j;
    int ncurvars;
-   SCIP_Bool upgraded;
-   SCIP_CONS* upgdcons;
    const char* hdlrname;
 
-   upgraded = FALSE;
    *cost = detectordata->consWeight;
    hdlrname = SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
 
-   if( (strcmp("linear", hdlrname) == 0) )
-   {
-      SCIP_CALL( SCIPupgradeConsLinear(scip, cons, &upgdcons) );
-      if( upgdcons != NULL )
-         upgraded = TRUE;
-   }
-   else
-   {
-      upgdcons = cons;
-   }
-
-   if( upgdcons != NULL )
-   {
-     hdlrname =  SCIPconshdlrGetName(SCIPconsGetHdlr(upgdcons));
-   }
-   else
-   {
-     hdlrname =  SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
-   }
    ncurvars = SCIPgetNVarsXXX(scip, cons);
 
    if( (strcmp("setppc", hdlrname) == 0) )
    {
-      switch( SCIPgetTypeSetppc(scip, upgdcons) )
+      switch( SCIPgetTypeSetppc(scip, cons) )
       {
       case SCIP_SETPPCTYPE_COVERING:
          *cost = detectordata->consWeightSetppc;
@@ -321,10 +299,7 @@ SCIP_RETCODE computeHyperedgeWeight(
       }
 
    }
-   if( upgraded == TRUE )
-   {
-      SCIP_CALL( SCIPreleaseCons(scip, &upgdcons) );
-   }
+
    return SCIP_OKAY;
 }
 
