@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   gcgplugins.c
@@ -38,6 +55,7 @@
 #include "scip/cons_varbound.h"
 #include "scip/cons_xor.h"
 #include "scip/dialog_default.h"
+
 
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
@@ -135,6 +153,9 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
+#include "dec_borderheur.h"
+#include "dec_arrowheur.h"
+#include "dec_stairheur.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -151,6 +172,10 @@
 #include "heur_gcgzirounding.h"
 #include "heur_xpcrossover.h"
 #include "heur_xprins.h"
+
+/* Friedrike's detection stuff */
+#include "dec_cutpacking.h"
+
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -184,9 +209,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolDomcol(scip) );
    SCIP_CALL( SCIPincludePresolGateextraction(scip) );
    SCIP_CALL( SCIPincludePresolConvertinttobin(scip) );
-
-   //SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
-   //SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
@@ -261,12 +283,14 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
 
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
+   SCIP_CALL( SCIPincludeDetectionBorderheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionArrowheur(scip) );
+   SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
@@ -284,10 +308,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
-   //SCIP_CALL( SCIPincludeDispDefault(scip) );
-   //SCIP_CALL( SCIPincludeDialogDefault(scip) );
+   /* Friederike's */
+   SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
+
+
+   SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
-   //SCIP_CALL( SCIPdebugIncludeProp(scip) );
 
 
    return SCIP_OKAY;

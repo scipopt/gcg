@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   main.c
@@ -16,8 +33,8 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 90
-#define GCG_SUBVERSION 3
+#define GCG_VERSION 100
+#define GCG_SUBVERSION 1
 
 #include <string.h>
 
@@ -25,8 +42,13 @@
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
 #include "gcgplugins.h"
+#include "cons_decomp.h"
 #include "gcggithash.h"
 #include "relax_gcg.h"
+
+#if SCIP_VERSION < 300
+#error GCG can only be compiled with SCIP version 3.0.0 or higher
+#endif
 
 /** returns GCG major version */
 static
@@ -57,6 +79,7 @@ int GCGsubversion(void)
 }
 #endif
 
+/** prints out GCG version */
 static
 void GCGprintVersion(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -72,9 +95,11 @@ void GCGprintVersion(
 #endif
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (c) 2010-2012 Operations Research, RWTH Aachen University\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
 }
 
-
+/** read in parameter file */
 static
 SCIP_RETCODE readParams(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -92,6 +117,7 @@ SCIP_RETCODE readParams(
    return SCIP_OKAY;
 }
 
+/** runs GCG from the command line */
 static
 SCIP_RETCODE fromCommandLine(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -99,6 +125,7 @@ SCIP_RETCODE fromCommandLine(
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
+   SCIP_RESULT result;
    /********************
     * Problem Creation *
     ********************/
@@ -121,6 +148,16 @@ SCIP_RETCODE fromCommandLine(
    /* solve problem */
    SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
    SCIPinfoMessage(scip, NULL, "=============\n\n");
+
+   SCIP_CALL( SCIPpresolve(scip) );
+   SCIP_CALL( DECdetectStructure(scip, &result) );
+
+   if( decname == NULL && result != SCIP_SUCCESS )
+   {
+      SCIPinfoMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPsolve(scip) );
 
    SCIPinfoMessage(scip, NULL, "\nprimal solution:\n");
@@ -175,7 +212,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             logname = argv[i];
          else
          {
-            printf("missing log filename after parameter '-l'\n");
+            SCIPinfoMessage(scip, NULL, "missing log filename after parameter '-l'\n");
             paramerror = TRUE;
          }
       }
@@ -188,7 +225,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             settingsname = argv[i];
          else
          {
-            printf("missing settings filename after parameter '-s'\n");
+            SCIPinfoMessage(scip, NULL, "missing settings filename after parameter '-s'\n");
             paramerror = TRUE;
          }
       }
@@ -199,7 +236,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             mastersetname = argv[i];
          else
          {
-            printf("missing master settings filename after parameter '-m'\n");
+            SCIPinfoMessage(scip, NULL, "missing master settings filename after parameter '-m'\n");
             paramerror = TRUE;
          }
       }
@@ -210,7 +247,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             probname = argv[i];
          else
          {
-            printf("missing problem filename after parameter '-f'\n");
+            SCIPinfoMessage(scip, NULL, "missing problem filename after parameter '-f'\n");
             paramerror = TRUE;
          }
       }
@@ -221,7 +258,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             decname = argv[i];
          else
          {
-            printf("missing decomposition filename after parameter '-d'\n");
+            SCIPinfoMessage(scip, NULL, "missing decomposition filename after parameter '-d'\n");
             paramerror = TRUE;
          }
       }
@@ -235,7 +272,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
          }
          else
          {
-            printf("missing command line after parameter '-c'\n");
+            SCIPinfoMessage(scip, NULL, "missing command line after parameter '-c'\n");
             paramerror = TRUE;
          }
       }
@@ -249,7 +286,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             file = SCIPfopen(argv[i], "r");
             if( file == NULL )
             {
-               printf("cannot read command batch file <%s>\n", argv[i]);
+               SCIPinfoMessage(scip, NULL, "cannot read command batch file <%s>\n", argv[i]);
                SCIPprintSysError(argv[i]);
                paramerror = TRUE;
             }
@@ -271,24 +308,24 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
          }
          else
          {
-            printf("missing command batch filename after parameter '-b'\n");
+            SCIPinfoMessage(scip, NULL, "missing command batch filename after parameter '-b'\n");
             paramerror = TRUE;
          }
       }
       else
       {
-         printf("invalid parameter <%s>\n", argv[i]);
+         SCIPinfoMessage(scip, NULL, "invalid parameter <%s>\n", argv[i]);
          paramerror = TRUE;
       }
    }
    if( interactive && probname != NULL )
    {
-      printf("cannot mix batch mode '-c' and '-b' with file mode '-f'\n");
+      SCIPinfoMessage(scip, NULL, "cannot mix batch mode '-c' and '-b' with file mode '-f'\n");
       paramerror = TRUE;
    }
    if( probname == NULL && decname != NULL )
    {
-      printf("cannot read decomposition file without given problem\n");
+      SCIPinfoMessage(scip, NULL, "cannot read decomposition file without given problem\n");
       paramerror = TRUE;
    }
 
@@ -354,7 +391,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    }
    else
    {
-      printf("\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
+      SCIPinfoMessage(scip, NULL, "\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
          "  -l <logfile>        : copy output into log file\n"
          "  -q                  : suppress screen messages\n"
          "  -s <settings>       : load parameter settings (.set) file\n"
@@ -369,6 +406,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    return SCIP_OKAY;
 }
 
+/** runs the interactive shell */
 static
 SCIP_RETCODE SCIPrunGCGShell(
    int                   argc,               /**< number of shell parameters */

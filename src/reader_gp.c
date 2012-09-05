@@ -1,26 +1,38 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program and library             */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*    Copyright (C) 2002-2010 Konrad-Zuse-Zentrum                            */
-/*                            fuer Informationstechnik Berlin                */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/*  SCIP is distributed under the terms of the ZIB Academic License.         */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
 /*                                                                           */
-/*  You should have received a copy of the ZIB Academic License              */
-/*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   reader_gp.c
- * @brief  GP file reader
+ * @brief  GP file reader writing gnuplot files
  * @author Martin Bergner
+ * @todo change output file type based on parameter
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -36,18 +48,11 @@
 #define READERGP_GNUPLOT_BOXTEMPLATE(i, x1, y1, x2, y2) "set object %d rect from %.1f,%.1f to %.1f,%.1f fc rgb \"grey\"\n", (i), (x1), (y1), (x2), (y2)
 #define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset xtics\nunset ytics\nunset border\nunset key\nset style fill solid 1.0 noborder\nset size ratio -1\n", (outputname)
 #define READERGP_GNUPLOT_RANGES(xmax, ymax) "set xrange [0:%d]\nset yrange[%d:0]\n", (xmax), (ymax)
-//#define READERGP_GNUPLOT_HEADER(outputname) "set terminal pdf\nset output \"%s.pdf\"\nunset border\n", (outputname)
-
 #define READERGP_GNUPLOT_PLOTCMD "plot \"-\" using 1:2:3 with circles fc rgb \"black\"\n"
-/*
- * Data structures
- */
 
 /*
  * Local methods
  */
-
-/* put your local methods here, and declare them static */
 
 /** write file header with terminal etc. */
 static
@@ -59,7 +64,7 @@ SCIP_RETCODE writeFileHeader(
 {
 
    SCIPinfoMessage(scip, file, READERGP_GNUPLOT_HEADER(outname));
-   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(SCIPgetNVars(scip), SCIPgetNConss(scip)));
+   SCIPinfoMessage(scip, file, READERGP_GNUPLOT_RANGES(SCIPgetNVars(scip)+1, SCIPgetNConss(scip)+1));
    return SCIP_OKAY;
 }
 
@@ -68,7 +73,7 @@ static
 SCIP_RETCODE writeDecompositionHeader(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
 
@@ -106,14 +111,35 @@ SCIP_RETCODE writeDecompositionHeader(
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+3, startx+0.5, +0.5, endx+0.5, endy+0.5));
       SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+4, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
    }
+
+   if( decdecomp->type == DEC_DECTYPE_STAIRCASE )
+   {
+      startx = 0;
+      starty = 0;
+      endx = 0;
+      endy = 0;
+
+      for( i = 0; i < decdecomp->nblocks-1; ++i )
+      {
+         endx += decdecomp->nsubscipvars[i]+decdecomp->nstairlinkingvars[i];
+         endy += decdecomp->nsubscipconss[i];
+         SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+1, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
+         startx = endx-decdecomp->nstairlinkingvars[i];
+         starty = endy;
+      }
+      endx += decdecomp->nsubscipvars[i];
+      endy += decdecomp->nsubscipconss[i];
+      SCIPinfoMessage(scip, file, READERGP_GNUPLOT_BOXTEMPLATE(i+1, startx+0.5, starty+0.5, endx+0.5, endy+0.5));
+   }
+
    return SCIP_OKAY;
 }
 
 /** write the plot commands */
 static
 SCIP_RETCODE writePlotCommands(
-   SCIP*                scip,                /**< SCIP data structure */
-   FILE*                file                 /**< File pointer to write to */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< File pointer to write to */
    )
 {
    assert(scip != NULL);
@@ -128,7 +154,7 @@ static
 SCIP_RETCODE writeData(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp           /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
    SCIP_VAR** vars;
@@ -150,8 +176,6 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if( decdecomp != NULL )
    {
@@ -164,6 +188,9 @@ SCIP_RETCODE writeData(
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
+         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
          consindex = 1;
@@ -207,6 +234,9 @@ SCIP_RETCODE writeData(
       {
          varindexmap = decdecomp->varindex;
          consindexmap = decdecomp->consindex;
+
+         assert(varindexmap != NULL);
+         assert(consindexmap != NULL);
       }
    }
 
@@ -240,7 +270,6 @@ SCIP_RETCODE writeData(
          /* if there is a decomposition, output the indices derived from the decomposition above*/
          else
          {
-
             assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
@@ -253,6 +282,7 @@ SCIP_RETCODE writeData(
 
       SCIPfreeBufferArrayNull(scip, &vars);
    }
+
 
    if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )
    {
@@ -318,7 +348,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 SCIP_RETCODE SCIPwriteGp(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file,               /**< File pointer to write to */
-   DECDECOMP*            decdecomp,          /**< Decomposition pointer */
+   DEC_DECOMP*           decdecomp,          /**< Decomposition pointer */
    SCIP_Bool             writeDecomposition  /**< whether to write decomposed problem */
    )
 {
@@ -362,7 +392,7 @@ SCIP_RETCODE SCIPwriteGp(
 }
 
 
-/** includes the gp file reader in SCIP */
+/** includes the gp file reader into SCIP */
 SCIP_RETCODE SCIPincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )

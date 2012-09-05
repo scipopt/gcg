@@ -7,8 +7,25 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
+#* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       *
+#*                         Zuse Institute Berlin (ZIB)                       *
+#*                                                                           *
+#* This program is free software; you can redistribute it and/or             *
+#* modify it under the terms of the GNU Lesser General Public License        *
+#* as published by the Free Software Foundation; either version 3            *
+#* of the License, or (at your option) any later version.                    *
+#*                                                                           *
+#* This program is distributed in the hope that it will be useful,           *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+#* GNU Lesser General Public License for more details.                       *
+#*                                                                           *
+#* You should have received a copy of the GNU Lesser General Public License  *
+#* along with this program; if not, write to the Free Software               *
+#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
+#*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-#
+##
 #@file    cmpres.awk
 #@brief   SCIP Check Comparison Report Generator
 #@author  Tobias Achterberg
@@ -16,6 +33,7 @@
 #@author  Marc Pfetsch
 #@author  Timo Berthold
 #@author  Christian Puchert
+#@author  Martin Bergner
 #
 function abs(x)
 {
@@ -61,7 +79,7 @@ function printhline(nsolver,short, printsoltimes)
 {
    for( s = 0; s < nsolver; ++s )
    {
-      
+
       if( s == 0 )
          printf("--------------------+-+---------+--------+");
       else
@@ -167,7 +185,7 @@ function texsolvername(s, sname)
 
 BEGIN {
 
-   short = 0;  #for each non reference solver, only absolute time and number of nodes are printed 
+   short = 0;  #for each non reference solver, only absolute time and number of nodes are printed
    printsoltimes = 0; # for reference solver, absolute time to first and best solution are printed, for other solvers the corresponding ratios
                       #! please NOTE that this additional output is currently only available for SCIP .res-files created with the evalcheck.sh script and
                       #  the flag printsoltimes = 1 set in check.awk. If other solvers are involved, leave this flag set to 0.
@@ -253,7 +271,7 @@ BEGIN {
    statuses["gaplimit"];
    statuses["memlimit"];
    statuses["nodelimit"];
-   
+
    name[nsolver,nprobs[nsolver]] = $1;
    validline = 0;
    # check if this is a useable line
@@ -339,7 +357,7 @@ BEGIN {
       status[nsolver,nprobs[nsolver]] = $15;
       validline = 1;
    }
-   
+
    if( $21 in statuses ) # GCG
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
@@ -382,8 +400,8 @@ BEGIN {
 	 status[nsolver,nprobs[nsolver]] = "timeout";
       if( status[nsolver,nprobs[nsolver]] == "sollimit" || status[nsolver,nprobs[nsolver]] == "gaplimit" || status[nsolver,nprobs[nsolver]] == "solved" )
 	 status[nsolver,nprobs[nsolver]] = "ok";
-   
-      if( status[nsolver,nprobs[nsolver]] == "timeout" || status[nsolver,nprobs[nsolver]] == "nodelimit" ||  status[nsolver,nprobs[nsolver]] == "memlimit") 
+
+      if( status[nsolver,nprobs[nsolver]] == "timeout" || status[nsolver,nprobs[nsolver]] == "nodelimit" ||  status[nsolver,nprobs[nsolver]] == "memlimit")
 	 hitlimit[nsolver,nprobs[nsolver]] = 1;
       else
 	 hitlimit[nsolver,nprobs[nsolver]] = 0;
@@ -446,7 +464,7 @@ END {
          refnodeshiftedgeom[s,cat] = nodegeomshift;
          reftimetofirstshiftedgeom[s,cat] = timegeomshift;
          reftimetobestshiftedgeom[s,cat] = timegeomshift;
-         
+
          wins[s,cat] = 0;
          nsolved[s,cat] = 0;
          ntimeouts[s,cat] = 0;
@@ -477,7 +495,7 @@ END {
    # calculate the order in which the columns should be printed: CPLEX < SCIP, default < non-default
    # ignore the first column as this is the reference column
    printorder[0] = 0;
-   for( s = 1; s < nsolver; ++s ) 
+   for( s = 1; s < nsolver; ++s )
 #   for( s = 0; s < nsolver; ++s )
    {
       sname = solvername[s];
@@ -539,7 +557,7 @@ END {
                printf("%48s|", solvername[s]);
          }
          else
-         {            
+         {
             if( length(solvername[s]) <= 33 )
                printf("%33s |", solvername[s]);
             else
@@ -560,7 +578,7 @@ END {
       {
         if( s == 0 )
           printf(" ToFirst | ToLast |");
-        else 
+        else
           printf(" FirQ | LasQ |");
       }
    }
@@ -933,7 +951,7 @@ END {
             nprocessedprobs[s,0]++;
             nprocessedprobs[s,category[s]]++;
             pidx = probidx[p,s];
-            if( primalbound[s,pidx] < infinity ) 
+            if( primalbound[s,pidx] < infinity )
             {
                if ( notimeout )
                   feasibles[s,-1]++;
@@ -1032,7 +1050,7 @@ END {
                nodeshiftedgeom[s,cat] = nodeshiftedgeom[s,cat]^((nep-1)/nep) * (nodes[s,pidx]+nodegeomshift)^(1.0/nep);
                reftimetotal[s,cat] += reftime;
                reftimetofirsttotal[s,cat] += reftimetofirst;
-               reftimetobesttotal[s,cat] += reftimetobest; 
+               reftimetobesttotal[s,cat] += reftimetobest;
                refnodetotal[s,cat] += refnodes;
                reftimegeom[s,cat] = reftimegeom[s,cat]^((nep-1)/nep) * reftime^(1.0/nep);
                reftimetofirstgeom[s,cat] = reftimetofirstgeom[s,cat]^((nep-1)/nep) * reftimetofirst^(1.0/nep);
@@ -1255,7 +1273,7 @@ END {
    besttimeshiftedgeom -= timegeomshift;
    bestnodeshiftedgeom = max(bestnodeshiftedgeom, 1.0);
    besttimeshiftedgeom = max(besttimeshiftedgeom, 1.0);
-   
+
    printf("\n");
 
    #since the rows of the quotients are not printed, print the quotients of the geometric means
@@ -1291,7 +1309,7 @@ END {
       printf("\n");
    }
    printhline(nsolver,short, printsoltimes);
-   
+
    # tex comparison footer
    if( texcmpfile != "" )
    {
@@ -1318,7 +1336,7 @@ END {
          printf("& %8s & %8.1f", texint(nodetotal[s,0]/nevalprobs[s,0]), timetotal[s,0]/nevalprobs[s,0]) > texcmpfile;
       }
       printf("\\\\\n") > texcmpfile;
-      
+
       # add statistics for problems solved to optimality
       printf("\\midrule\n") > texcmpfile;
       printf("\\multicolumn{%d}{@{}l}{all optimal}\\\\\n", 1 + 2 * nsolver) > texcmpfile;
@@ -1351,15 +1369,15 @@ END {
    if( !short )
    {
       for( cat = 0; cat <= 3; cat++ )
-      {   
+      {
 #         if( nprocessedprobs[cat] == 0 )
 #            continue;
-      
+
          header = (cat == -1 ? "optimal" : (cat == 0 ? "all" : (cat == 1 ? "diff" : (cat == 2 ? "equal" : "timeout"))));
          printf("\n");
          printf("%-7s                                            proc eval fail time solv wins bett wors bobj wobj feas    gnodes   shnodes   gnodesQ  shnodesQ   gtime  shtime  gtimeQ shtimeQ   score\n",
             header);
-   
+
          for( o = 0; o < nsolver; ++o )
          {
             s = printorder[o];
@@ -1375,7 +1393,7 @@ END {
                printf("%-50s %4d %4d %4d %4d %4d %4d", solvername[s], nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
                       ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
                printf(" %4d %4d", better[s,cat], worse[s,cat]);
-               printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n", 
+               printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n",
                   betterobj[s,cat], worseobj[s,cat], feasibles[s,cat],
                   nodegeom[s,cat], nodeshiftedgeom[s,cat], nodegeom[s,cat]/refnodegeom[s,cat],
                   nodeshiftedgeom[s,cat]/refnodeshiftedgeom[s,cat],
@@ -1415,7 +1433,7 @@ END {
             printf("%-50s %4d %4d %4d %4d %4d %4d", solvername[s], nprocessedprobs[s,cat], nevalprobs[s,cat], nfails[s,cat],
                    ntimeouts[s,cat], nsolved[s,cat], wins[s,cat]);
             printf(" %4d %4d", better[s,cat], worse[s,cat]);
-            printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n", 
+            printf(" %4d %4d %4d %9d %9d %9.2f %9.2f %7.1f %7.1f %7.2f %7.2f %7.2f\n",
                    betterobj[s,cat], worseobj[s,cat], feasibles[s,cat],
                    nodegeom[s,cat], nodeshiftedgeom[s,cat], nodegeom[s,cat]/refnodegeom[s,cat],
                    nodeshiftedgeom[s,cat]/refnodeshiftedgeom[s,cat],
@@ -1630,11 +1648,11 @@ END {
          s = printorder[o];
          weight = (texsummaryweight == 0 ? nevalprobs[s,0] : texsummaryweight);
          if( texsummaryshifted )
-            printf("%% =mean=  %s %.4f %.4f %g\n", solvername[s], 
+            printf("%% =mean=  %s %.4f %.4f %g\n", solvername[s],
                timeshiftedgeom[s,0]/reftimeshiftedgeom[s,0], nodeshiftedgeom[s,0]/refnodeshiftedgeom[s,0],
                weight) >> texsummaryfile;
          else
-            printf("%% =mean=  %s %.4f %.4f %g\n", solvername[s], 
+            printf("%% =mean=  %s %.4f %.4f %g\n", solvername[s],
                timegeom[s,0]/reftimegeom[s,0], nodegeom[s,0]/refnodegeom[s,0], weight) >> texsummaryfile;
       }
    }

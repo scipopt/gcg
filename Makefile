@@ -7,7 +7,6 @@
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-# $Id$
 
 #@file    Makefile
 #@brief   Makefile for generic column generation code using SCIP as a callable library
@@ -19,17 +18,29 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	0.9.0.3
+VERSION         :=	1.0.0.1
 SCIPDIR         =       lib/scip
+#-----------------------------------------------------------------------------
+# necessary information
+#-----------------------------------------------------------------------------
 
+
+LIBDIR          =       lib
+DIRECTORIES     =       $(LIBDIR)
+MAKESOFTLINKS	=	true
+
+SHELL		= 	bash
+READ		=	read -e
+LN_s		= 	ln -s
+GCGDIR		=	$(realpath .)
+
+VALGRIND        =       false
+DECMODE		=	readdec
 
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
-include $(SCIPDIR)/make/make.project
-
-
-
+-include $(SCIPDIR)/make/make.project
 
 #-----------------------------------------------------------------------------
 # Main Program
@@ -38,7 +49,7 @@ include $(SCIPDIR)/make/make.project
 MAINNAME	=	gcg
 MAINOBJ		=	reader_blk.o \
 			reader_dec.o \
-	 		reader_ref.o \
+			reader_ref.o \
 			gcgplugins.o \
 			relax_gcg.o \
 			pricer_gcg.o \
@@ -48,7 +59,7 @@ MAINOBJ		=	reader_blk.o \
                         event_genericbranchvaradd.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
-			cons_integralOrig.o \
+			cons_integralorig.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \
@@ -80,7 +91,11 @@ MAINOBJ		=	reader_blk.o \
 			solver_knapsack.o \
 			cons_decomp.o \
 			decomp.o \
+			dec_arrowheur.o \
+			dec_borderheur.o \
+			dec_stairheur.o \
 			dec_connected.o \
+			dec_cutpacking.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
@@ -98,17 +113,23 @@ MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 
+SOFTLINKS	+=	$(LIBDIR)/scip
+LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
+
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
+
 
 ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK)
 endif
 
-
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+
+$(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
 .PHONY: lint
 lint:		$(MAINSRC)
@@ -131,12 +152,16 @@ endif
 
 .PHONY: scip
 scip:
-		@$(MAKE) -C $(SCIPDIR) libs $^
+		@$(MAKE) -C $(SCIPDIR) $^ libs
+
+.PHONY: scip_clean
+scip_clean:
+		@$(MAKE) -C $(SCIPDIR) $^ clean
 
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy
+		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
 
 $(MAINSHORTLINK):	$(MAINFILE)
 		@rm -f $@
@@ -156,21 +181,23 @@ $(BINDIR):
 githash::   # do not remove the double-colon
 
 .PHONY: test
-test:		
+test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK);
+		echo $(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE); \
+		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE);
 
 .PHONY: eval
-eval:	
+eval:
 		cd check; \
-		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK);
+		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
 
 .PHONY: clean
 clean:
 ifneq ($(OBJDIR),)
-		-rm -rf $(OBJDIR)/*
+		-(cd ./$(OBJDIR) && rm -f *.o)
+		-rmdir $(OBJDIR)
 endif
-		-rm -f $(MAINFILE)
+		-rm -f $(MAINFILE) $(MAINSHORTLINK)
 
 .PHONY: tags
 tags:
@@ -200,5 +227,51 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
+
+
+$(LINKSMARKERFILE): links
+#		@$(MAKE) links
+
+.PHONY: links
+links:		$(LIBDIR) $(SOFTLINKS)
+		@rm -f $(LINKSMARKERFILE)
+		@echo "this is only a marker" > $(LINKSMARKERFILE)
+
+$(DIRECTORIES):
+		@echo
+		@echo "- creating directory \"$@\""
+		@-mkdir -p $@
+
+.PHONY: $(SOFTLINKS)
+$(SOFTLINKS):
+ifeq ($(MAKESOFTLINKS), true)
+		@$(SHELL) -ec 'if test ! -e $@ ; \
+			then \
+				DIRNAME=`dirname $@` ; \
+				echo ; \
+		                echo "* GCG needs a softlink to SCIP" ; \
+		                echo "* Please insert the paths to scip below." ; \
+		                echo "* The link will be installed in the 'lib' directory." ; \
+		                echo "* For more information and if you experience problems see the INSTALL file." ; \
+		                echo ; \
+		                echo -e $(LPIINSTMSG) ; \
+				echo "> Enter soft-link target file or directory for \"$@\" (return if not needed): " ; \
+				echo -n "> " ; \
+				cd $$DIRNAME ; \
+				eval $(READ) TARGET ; \
+				cd $(GCGDIR) ; \
+				if test "$$TARGET" != "" ; \
+				then \
+					echo "-> creating softlink \"$@\" -> \"$$TARGET\"" ; \
+					pwd;\
+					rm -f $@ ; \
+					$(LN_s) $$TARGET $@ ; \
+				else \
+					echo "* skipped creation of softlink \"$@\". Call \"make links\" if needed later." ; \
+				fi ; \
+				echo ; \
+			fi'
+endif
+
 
 #---- EOF --------------------------------------------------------------------

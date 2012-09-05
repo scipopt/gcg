@@ -6,9 +6,27 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_origbranch.c
+ * @ingroup CONSHDLRS
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  */
@@ -114,10 +132,13 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    conshdlrData->nstack = 0;
 
-   /* create origbranch constraint corresponding to the root node */
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
-   conshdlrData->stack[0] = cons;
-   conshdlrData->nstack = 1;
+   /* create origbranch constraint corresponding to the root node only if there is some problem */
+   if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
+   {
+      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+      conshdlrData->stack[0] = cons;
+      conshdlrData->nstack = 1;
+   }
 
    /* check consistency */
    GCGconsOrigbranchCheckConsistency(scip);
@@ -160,8 +181,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    assert(consdata != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(*consdata != NULL);
-
-//   conshdlrData = SCIPconshdlrGetData(conshdlr);
 
    SCIPdebugMessage("Deleting branch orig constraint: <%s>.\n", SCIPconsGetName(cons));
 
@@ -234,7 +253,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
 
    assert(SCIPconsGetData(cons) != NULL);
 
-   if(SCIPconsGetData(cons)->node == NULL)
+   if( SCIPconsGetData(cons)->node == NULL )
       SCIPconsGetData(cons)->node = SCIPgetRootNode(scip);
 
    SCIPdebugMessage("Activating branch orig constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons),
@@ -654,11 +673,15 @@ void GCGconsOrigbranchCheckConsistency(
    )
 {
 #ifdef CHECKCONSISTENCY
+
    SCIP_CONSHDLR*     conshdlr;
+
+#ifndef NDEBUG
    SCIP_CONS** conss;
-   SCIP_CONSDATA* consdata;
    int nconss;
    int i;
+   SCIP_CONSDATA* consdata;
+#endif
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -667,7 +690,7 @@ void GCGconsOrigbranchCheckConsistency(
       SCIPerrorMessage("origbranch constraint handler not found\n");
       return;
    }
-
+#ifndef NDEBUG
    conss = SCIPconshdlrGetConss(conshdlr);
    nconss = SCIPconshdlrGetNConss(conshdlr);
 
@@ -687,6 +710,7 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata->mastercons == NULL ||
          GCGconsMasterbranchGetOrigcons(consdata->mastercons) == conss[i]);
    }
+#endif
 #endif
 }
 

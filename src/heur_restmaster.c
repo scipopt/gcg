@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_restmaster.c
@@ -14,9 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-/* toggle debug mode */
-//#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -58,17 +72,17 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
-   SCIP_Longint          maxnodes;          /**< maximum number of nodes to regard in the subproblem                 */
-   SCIP_Longint          minnodes;          /**< minimum number of nodes to regard in the subproblem                 */
-   SCIP_Longint          nodesofs;          /**< number of nodes added to the contingent of the total nodes          */
-   SCIP_Longint          usednodes;         /**< nodes already used by restricted master in earlier calls            */
-   SCIP_Real             minfixingrate;     /**< minimum percentage of integer variables that have to be fixed       */
-   SCIP_Real             minimprove;        /**< factor by which restricted master should at least improve the incumbent */
-   SCIP_Real             nodesquot;         /**< subproblem nodes in relation to nodes of the original problem       */
-   SCIP_Bool             uselprows;         /**< should subproblem be created out of the rows in the LP rows?        */
-   SCIP_Bool             copycuts;          /**< if uselprows == FALSE, should all active cuts from cutpool be copied
-                                             *   to constraints in subproblem?
-                                             */
+   SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem                 */
+   SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem                 */
+   SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes          */
+   SCIP_Longint          usednodes;          /**< nodes already used by restricted master in earlier calls            */
+   SCIP_Real             minfixingrate;      /**< minimum percentage of integer variables that have to be fixed       */
+   SCIP_Real             minimprove;         /**< factor by which restricted master should at least improve the incumbent */
+   SCIP_Real             nodesquot;          /**< subproblem nodes in relation to nodes of the original problem       */
+   SCIP_Bool             uselprows;          /**< should subproblem be created out of the rows in the LP rows?        */
+   SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
+                                              *   to constraints in subproblem?
+                                              */
 };
 
 
@@ -171,7 +185,7 @@ SCIP_RETCODE setupSubproblem(
          nnonz = SCIProwGetNNonz(rows[i]);
          cols = SCIProwGetCols(rows[i]);
 
-         assert( lhs <= rhs );
+         assert(lhs <= rhs);
 
          /* allocate memory array to be filled with the corresponding subproblem variables */
          SCIP_CALL( SCIPallocBufferArray(restmaster, &consvars, nnonz) );
@@ -214,16 +228,16 @@ SCIP_RETCODE createNewSol(
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
    SCIP_Bool  masterfeas;                    /* is the solution feasible for the master problem ? */
 
-   assert( origprob != NULL );
-   assert( scip != NULL );
-   assert( restmaster != NULL );
-   assert( restmastervars != NULL );
-   assert( restmastersol != NULL );
+   assert(origprob != NULL);
+   assert(scip != NULL);
+   assert(restmaster != NULL);
+   assert(restmastervars != NULL);
+   assert(restmastersol != NULL);
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(origprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert( nmastervars == SCIPgetNOrigVars(restmaster) );
+   assert(nmastervars == SCIPgetNOrigVars(restmaster));
 
    SCIP_CALL( SCIPallocBufferArray(scip, &restmastervals, nmastervars) );
 
@@ -231,7 +245,7 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPgetSolVals(restmaster, restmastersol, nmastervars, restmastervars, restmastervals) );
 
    /* create new solution for the master problem and translate it to the original problem;
-    * @todo: GCG does not recognize that the solution comes from this heuristic */
+    * @todo GCG does not recognize that the solution comes from this heuristic */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
@@ -277,12 +291,12 @@ SCIP_DECL_HEURFREE(heurFreeRestmaster)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -298,12 +312,12 @@ SCIP_DECL_HEURINIT(heurInitRestmaster)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* initialize data */
    heurdata->usednodes = 0;
@@ -447,12 +461,12 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo: check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, restmaster, varmapfw, NULL, "restmaster", TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {
          /** copies all active cuts from cutpool of sourcescip to linear constraints in targetscip */
-         SCIP_CALL( SCIPcopyCuts(scip, restmaster, varmapfw, NULL, TRUE) );
+         SCIP_CALL( SCIPcopyCuts(scip, restmaster, varmapfw, NULL, TRUE, NULL) );
       }
 
       SCIPdebugMessage("Copying the SCIP instance was %s complete.\n", valid ? "" : "not ");
@@ -521,11 +535,11 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    }
 
    /* if there is already a solution, add an objective cutoff */
-   /* @todo: origprob or scip? */
+   /* @todo origprob or scip? */
    if( SCIPgetNSols(origprob) > 0 )
    {
       SCIP_Real upperbound;
-      assert( !SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)) );
+      assert(!SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)));
 
       upperbound = SCIPgetUpperbound(origprob) - SCIPsumepsilon(origprob);
 

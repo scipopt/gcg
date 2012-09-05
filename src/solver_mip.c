@@ -6,11 +6,32 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   solver_mip.c
  * @brief  pricing solver solving the pricing problem as a sub-MIP, using SCIP
  * @author Gerald Gamrath
+ * @author Martin Bergner
+ *
+ * \bug
+ * there are some issues with unstable or infinite pricing problem solutions
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -39,24 +60,24 @@
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
-   SCIP*       origprob;      /**< original SCIP data structure */
-   SCIP_Real** solvals;       /**< two dimensional array of values in solutions */
-   SCIP_VAR*** solvars;       /**< two dimensional array of variables in solutions */
-   SCIP_Real*  tmpsolvals;    /**< temporary solution values */
-   int*        nsolvars;      /**< number of solution variables per solution */
-   SCIP_Bool*  solisray;      /**< array to indicate whether solutions are rays */
-   int         nsols;         /**< number of solutions */
-   int         maxvars;       /**< maximal number of variables in a solution */
+   SCIP*                 origprob;           /**< original SCIP data structure */
+   SCIP_Real**           solvals;            /**< two dimensional array of values in solutions */
+   SCIP_VAR***           solvars;            /**< two dimensional array of variables in solutions */
+   SCIP_Real*            tmpsolvals;         /**< temporary solution values */
+   int*                  nsolvars;           /**< number of solution variables per solution */
+   SCIP_Bool*            solisray;           /**< array to indicate whether solutions are rays */
+   int                   nsols;              /**< number of solutions */
+   int                   maxvars;            /**< maximal number of variables in a solution */
 
-   SCIP_Bool   checksols;     /**< should solutions be checked extensively */
+   SCIP_Bool             checksols;          /**< should solutions be checked extensively */
 };
 
 /* ensures size of solution arrays */
 static
 SCIP_RETCODE ensureSizeSolvars(
-   SCIP*           scip,       /**< SCIP data structure */
-   GCG_SOLVERDATA* solverdata, /**< solver data data structure */
-   int             nsols       /**< number of solutions */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_SOLVERDATA*       solverdata,         /**< solver data data structure */
+   int                   nsols               /**< number of solutions */
    )
 {
    int i;
@@ -88,11 +109,11 @@ SCIP_RETCODE ensureSizeSolvars(
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
 SCIP_RETCODE checkSolNew(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP*      pricingprob,    /**< pricing problem SCIP data structure */
-   SCIP_SOL** sols,           /**< array of solutions */
-   int        idx,            /**< index of the solution */
-   SCIP_Bool* isnew           /**< pointer to store whether the solution is new */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP_SOL**            sols,               /**< array of solutions */
+   int                   idx,                /**< index of the solution */
+   SCIP_Bool*            isnew               /**< pointer to store whether the solution is new */
    )
 {
    SCIP_VAR** probvars;
@@ -296,23 +317,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
        || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN);
 
-#ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
-   if( SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
-   {
-      int ind;
-      SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
-
-      if( solisinvalid )
-      {
-         SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
-         SCIP_CALL( SCIPfreeTransform(pricingprob) );
-         SCIP_CALL( adjustPricingObj(pricingprob, ind, up) );
-         SCIP_CALL( SCIPtransformProb(pricingprob) );
-         SCIP_CALL( SCIPsolve(pricingprob) );
-     }
-   }
-#endif
-
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
    {
       /* the pricing problem was declared to be (infeasible or) unbounded, but SCIP did not compute a primal ray;
@@ -465,7 +469,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    return SCIP_OKAY;
 }
 
-
+/** heuristic solving method of mip solver */
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 {  /*lint --e{715}*/
@@ -507,24 +511,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT);
-
-#ifdef EXPERIMENTALUNBOUNDED /* we will ignore this change as it caused some problems */
-   if(SCIPgetStatus(pricingprob) != SCIP_STATUS_UNBOUNDED
-      && SCIPgetStatus(pricingprob) != SCIP_STATUS_INFORUNBD )
-   {
-      int ind;
-      SCIP_CALL( checkSolsForInfinity(pricingprob, &solisinvalid, &ind) );
-
-      if( solisinvalid )
-      {
-         SCIP_Bool up = SCIPvarGetNLocksDown(SCIPgetVars(pricingprob)[ind]);
-         SCIP_CALL( SCIPfreeTransform(pricingprob) );
-         SCIP_CALL( adjustPricingObj(pricingprob, ind, up) );
-         SCIP_CALL( SCIPtransformProb(pricingprob) );
-         SCIP_CALL( SCIPsolve(pricingprob) );
-     }
-   }
-#endif
 
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
    {
@@ -595,6 +581,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
       *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIP_STATUS_UNKNOWN;
+      *lowerbound = SCIPgetDualbound(pricingprob);
    }
    else
    {
@@ -665,9 +652,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    return SCIP_OKAY;
 }
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the mip solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP* scip                 /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    GCG_SOLVERDATA* data;

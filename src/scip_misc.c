@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    scip_misc.c
@@ -14,7 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
 
 #include "scip_misc.h"
 #include "scip/scipdefplugins.h"
@@ -22,49 +38,16 @@
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 SCIP_Bool SCIPisVarRelevant(
-   SCIP_VAR* var              /**< variable to test */
+   SCIP_VAR*             var                 /**< variable to test */
    )
 {
    assert(var != NULL);
    return SCIPvarIsActive(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_AGGREGATED || SCIPvarGetStatus(var) == SCIP_VARSTATUS_MULTAGGR || SCIPvarGetStatus(var) == SCIP_VARSTATUS_NEGATED;
 }
 
-
-/** returns the relevant variable, if possible */
-SCIP_VAR* SCIPgetRelevantVariable(
-   SCIP_VAR* var              /**< variable to test */
-   )
-{
-   SCIP_VAR *newvar;
-   newvar = NULL;
-   assert(var != NULL);
-   if( !SCIPisVarRelevant(var) )
-   {
-      return NULL;
-   }
-
-   /*lint -e{788}*/
-   switch (SCIPvarGetStatus(var))
-   {
-   case SCIP_VARSTATUS_AGGREGATED:
-      newvar = SCIPvarGetAggrVar(var);
-      break;
-   case SCIP_VARSTATUS_NEGATED:
-      newvar = SCIPvarGetNegationVar(var);
-      break;
-   case SCIP_VARSTATUS_MULTAGGR:
-      SCIPABORT();
-      break;
-   default:
-      newvar = var;
-      break;
-   }
-   return newvar;
-}
-
 /** returns the type of an arbitrary SCIP constraint */
 consType SCIPconsGetType(
-   SCIP_CONS* cons            /**< constraint to get type for */
+   SCIP_CONS*            cons                /**< constraint to get type for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -116,8 +99,8 @@ consType SCIPconsGetType(
 
 /** returns the rhs of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetRhsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -170,10 +153,10 @@ SCIP_Real SCIPgetRhsXXX(
    return -SCIPinfinity(scip);
 }
 
-/** Returns the lhs of an arbitrary SCIP constraint */
+/** returns the lhs of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetLhsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get left hand side for */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -226,10 +209,10 @@ SCIP_Real SCIPgetLhsXXX(
    return SCIPinfinity(scip);
 }
 
-/** Returns the number of variables in an arbitrary SCIP constraint */
+/** returns the number of variables in an arbitrary SCIP constraint */
 int SCIPgetNVarsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get number of variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get number of variables */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -276,12 +259,12 @@ int SCIPgetNVarsXXX(
    }
 }
 
-/** Returns the variable array of an arbitrary SCIP constraint */
+/** returns the variable array of an arbitrary SCIP constraint */
 SCIP_RETCODE SCIPgetVarsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons,           /**< constraint to get variables from */
-   SCIP_VAR** vars,           /**< array where variables are stored */
-   int        nvars           /**< size of storage array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to get variables from */
+   SCIP_VAR**            vars,               /**< array where variables are stored */
+   int                   nvars               /**< size of storage array */
    )
 {
 
@@ -354,10 +337,10 @@ SCIP_RETCODE SCIPgetVarsXXX(
    return SCIP_OKAY;
 }
 
-/** Returns the dual solution value of an arbitrary SCIP constraint */
+/** returns the dual solution value of an arbitrary SCIP constraint */
 SCIP_Real SCIPgetDualsolXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons            /**< constraint to get dual solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons                /**< constraint to get dual solution */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -409,10 +392,10 @@ SCIP_Real SCIPgetDualsolXXX(
  * @todo SOS1 & SOS2 not implemented yet
  */
 SCIP_RETCODE SCIPgetValsXXX(
-   SCIP*      scip,           /**< SCIP data structure */
-   SCIP_CONS* cons,           /**< constraint to get values from */
-   SCIP_Real* vals,           /**< array where values are stored */
-   int        nvals           /**< size of storage array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to get values from */
+   SCIP_Real*            vals,               /**< array where values are stored */
+   int                   nvals               /**< size of storage array */
    )
 {
    SCIP_CONSHDLR* conshdlr;
@@ -491,4 +474,93 @@ SCIP_RETCODE SCIPgetValsXXX(
       SCIPdebugMessage("WARNING: UNKNOWN NOT IMPLEMENTED: %s\n", conshdlrname);
    }
    return SCIP_OKAY;
+}
+
+
+/** returns true if the constraint should be a master constraint and false otherwise */
+SCIP_Bool SCIPgetConsIsSetppc(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
+   )
+{
+   SCIP_VAR** vars;
+   SCIP_Real* vals;
+   int i;
+   SCIP_Real rhs;
+   SCIP_Real lhs;
+
+   int nvars;
+   SCIP_Bool relevant = TRUE;
+   assert(scip != NULL);
+   assert(cons != NULL);
+   assert(setppctype != NULL);
+
+   *setppctype = SCIP_SETPPCTYPE_PACKING;
+   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
+
+   if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+   {
+      SCIPdebugPrintf("setcov, part or logicor.\n");
+      return TRUE;
+   }
+   nvars = SCIPgetNVarsXXX(scip, cons);
+   vars = NULL;
+   vals = NULL;
+   if( nvars > 0 )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
+      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
+   }
+
+   /* check vars and vals for integrality */
+   for( i = 0; i < nvars && relevant; ++i )
+   {
+      assert(vars != NULL);
+      assert(vals != NULL);
+
+      if( !SCIPvarIsBinary(vars[i]) )
+      {
+         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
+         relevant = FALSE;
+      }
+      if( !SCIPisEQ(scip, vals[i], 1.0) )
+      {
+         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
+         relevant = FALSE;
+      }
+   }
+
+   if( relevant )
+   {
+      rhs = SCIPgetRhsXXX(scip, cons);
+      lhs = SCIPgetLhsXXX(scip, cons);
+      SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
+
+      if( SCIPisEQ(scip, lhs, 1.0) && SCIPisEQ(scip, rhs, 1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_PARTITIONING;
+      }
+      else if( SCIPisEQ(scip, lhs, 1.0) && SCIPisGE(scip, rhs, nvars*1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_COVERING;
+      }
+      else if( SCIPisLE(scip, lhs, 0.0) && SCIPisEQ(scip, rhs, 1.0) )
+      {
+         *setppctype = SCIP_SETPPCTYPE_PACKING;
+      }
+      else
+      {
+         relevant = FALSE;
+      }
+   }
+
+   /* free temporary data  */
+   SCIPfreeBufferArrayNull(scip, &vals);
+   SCIPfreeBufferArrayNull(scip, &vars);
+
+   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
+   return relevant;
 }

@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   pricer_gcg.c
@@ -13,6 +30,7 @@
  * @author Gerald Gamrath
  * @author Martin Bergner
  * @author Alexander Gross
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -67,7 +85,7 @@
    } else {\
       SCIPdebugMessage(__VA_ARGS__); \
    }\
-   }while(FALSE)
+   }while( FALSE )
 
 #define PRICER_STAT_ARRAYLEN_TIME 1024                /**< length of the array for Time histogram representation */
 #define PRICER_STAT_BUCKETSIZE_TIME 10                /**< size of the buckets for Time histogram representation */
@@ -137,8 +155,8 @@ struct SCIP_PricerData
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
 
 
-   /** Statistics */
-   int                   oldVars;            /**< Vars of last pricing iteration */
+   /** statistics */
+   int                   oldvars;            /**< Vars of last pricing iteration */
    int*                  farkascallsdist;    /**< Calls of each farkas pricing problem */
    int*                  farkasfoundvars;    /**< Found vars of each farkas pricing problem */
    double*               farkasnodetimedist; /**< Time spend in each farkas pricing problem */
@@ -255,7 +273,7 @@ static SCIP_Bool isRootNode(
 }
 
 
-/* ensures size of pricedvars array */
+/** ensures size of pricedvars array */
 static
 SCIP_RETCODE ensureSizePricedvars(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -281,7 +299,7 @@ SCIP_RETCODE ensureSizePricedvars(
 }
 
 
-/* ensures size of solvers array */
+/** ensures size of solvers array */
 static
 SCIP_RETCODE ensureSizeSolvers(
    SCIP*                 scip,               /**< SCIP data structure        */
@@ -303,8 +321,8 @@ SCIP_RETCODE ensureSizeSolvers(
 
    return SCIP_OKAY;
 }
-
-/* ensures size of nodes array */
+#ifdef ENABLESTATISTICS
+/** ensures size of nodes array */
 static
 SCIP_RETCODE ensureSizeAvgnodedegeneracy(
    SCIP*                 scip,               /**< SCIP data structure        */
@@ -315,17 +333,95 @@ SCIP_RETCODE ensureSizeAvgnodedegeneracy(
    assert(scip != NULL);
    assert(pricerdata != NULL);
 
-   if(pricerdata->maxnnodes > pricerdata->nnodes)
+   if( pricerdata->maxnnodes > pricerdata->nnodes )
       return SCIP_OKAY;
 
    memgrowsize = SCIPcalcMemGrowSize(scip, pricerdata->nnodes+1);
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->solvers), memgrowsize) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->nodedegeneracy), memgrowsize) );
 
    pricerdata->maxnnodes = memgrowsize;
 
    assert(pricerdata->maxnnodes > pricerdata->nnodes);
    return SCIP_OKAY;
 }
+#endif
+
+/** gets the NodeTimeDistribution in the form of a histogram */
+static
+void GCGpricerGetNodeTimeHistogram(
+   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+   SCIP_Real             time                /**< time the pricingproblem needed */
+   )
+{
+   int i;
+
+   /* 1000* because mapping milliseconds on the index i */
+   i = 1000*time/PRICER_STAT_BUCKETSIZE_TIME; /*lint !e524 */
+
+   if( i >= PRICER_STAT_ARRAYLEN_TIME )
+   {
+      i = PRICER_STAT_ARRAYLEN_TIME-1;
+   }
+   pricerdata->nodetimehist[i]++;
+
+}
+
+
+/** gets the FoundVarsDistribution in form of a histogram */
+static
+void GCGpricerGetFoundVarsHistogram(
+   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+   int                   foundvars           /**< foundVars in pricingproblem */
+   )
+{
+   int i;
+   i = foundvars/PRICER_STAT_BUCKETSIZE_VARS;
+
+   if( i >= PRICER_STAT_ARRAYLEN_VARS )
+   {
+      i = PRICER_STAT_ARRAYLEN_VARS-1;
+   }
+   pricerdata->foundvarshist[i]++;
+
+}
+
+
+/** gets the statistics of the pricingprobs like calls, foundvars and time */
+static
+void GCGpricerCollectStatistic(
+   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+   GCG_PRICETYPE         type,               /**< type of pricing: optimal or heuristic */
+   int                   probindex,          /**< index of the pricingproblem */
+   SCIP_Real             time                /**< time the pricingproblem needed */
+   )
+{
+   int foundvars;
+
+   foundvars = pricerdata->npricedvars - pricerdata->oldvars;
+
+   if( type == GCG_PRICETYPE_FARKAS )
+   {
+
+      pricerdata->farkascallsdist[probindex]++; /*Calls*/
+      pricerdata->farkasfoundvars[probindex] += foundvars;
+      pricerdata->farkasnodetimedist[probindex] += time;   /*Time*/
+
+   }
+   else if( type == GCG_PRICETYPE_REDCOST )
+   {
+
+      pricerdata->redcostcallsdist[probindex]++;
+      pricerdata->redcostfoundvars[probindex] += foundvars;
+      pricerdata->redcostnodetimedist[probindex] += time;
+
+   }
+   pricerdata->oldvars = pricerdata->npricedvars;
+
+   GCGpricerGetNodeTimeHistogram(pricerdata, time);
+   GCGpricerGetFoundVarsHistogram(pricerdata, foundvars);
+
+}
+
 
 /** frees all solvers */
 static
@@ -467,7 +563,7 @@ SCIP_RETCODE solversExitsol(
    return SCIP_OKAY;
 }
 
-
+#ifdef ENABLESTATISTICS
 /** returns the gegeneracy of the masterproblem */
 static
 SCIP_RETCODE computeCurrentDegeneracy(
@@ -476,6 +572,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
    )
 {
    int ncols;
+   int nrows;
    int i;
    int count;
    int countz;
@@ -490,11 +587,12 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    *degeneracy = 0.0;
    ncols = SCIPgetNLPCols(scip);
+   nrows = SCIPgetNLPRows(scip);
    cols = SCIPgetLPCols(scip);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &indizes, ncols) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &indizes, ncols+nrows) );
 
-   for( i = 0; i < ncols; i++ )
+   for( i = 0; i < ncols+nrows; i++ )
    {
       indizes[i] = 0;
    }
@@ -505,7 +603,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
    countz = 0;
    count = 0;
 
-   for( i = 0; i < ncols; i++ )
+   for( i = 0; i < nrows; i++ )
    {
       colindex = indizes[i];
       /* is column if >0 it is column in basis, <0 is for row */
@@ -515,7 +613,7 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
          currentVal = SCIPgetSolVal(scip, NULL, var);
 
-         if( SCIPisEQ(scip, currentVal, 0) )
+         if( SCIPisEQ(scip, currentVal, 0.0) )
             countz++;
 
          count++;
@@ -523,16 +621,16 @@ SCIP_RETCODE computeCurrentDegeneracy(
    }
 
    /* Degeneracy in % */
-   if(count > 0)
+   if( count > 0 )
       *degeneracy = ((double)countz / count)*100;
 
    assert(*degeneracy <= 100);
 
-   SCIPfreeBufferArray(scip, &indizes);
+   SCIPfreeMemoryArray(scip, &indizes);
 
    return SCIP_OKAY;
 }
-
+#endif
 
 /** solves a specific pricing problem */
 static
@@ -602,12 +700,12 @@ SCIP_RETCODE solvePricingProblem(
             (*calls)++;
 
          if( *status == SCIP_STATUS_OPTIMAL || *status == SCIP_STATUS_UNBOUNDED )
-
-            /** Hier? */
-            //GCGpricerGetStatistic(pricerdata,pricetype,prob,SCIPgetSolvingTime(scip));
-            GCGpricerGetStatistic(pricerdata,pricetype,prob,SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
-
+         {
+            GCGpricerCollectStatistic(pricerdata, pricetype, prob,
+                          SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
             break;
+         }
+
       }
    }
 
@@ -882,7 +980,7 @@ SCIP_RETCODE setPricingObjs(
          consvals = SCIProwGetVals(origcuts[i]);
 
          /* get the variables corresponding to the columns in the cut */
-         SCIP_CALL( SCIPallocBufferArray(scip, &consvars, nconsvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nconsvars) );
          for( j = 0; j < nconsvars; j++ )
             consvars[j] = SCIPcolGetVar(cols[j]);
 
@@ -903,7 +1001,7 @@ SCIP_RETCODE setPricingObjs(
                      GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
             }
          }
-         SCIPfreeBufferArray(scip, &consvars);
+         SCIPfreeMemoryArray(scip, &consvars);
       }
    }
 
@@ -1137,7 +1235,8 @@ SCIP_RETCODE createNewMasterVar(
 
    SCIP_Real objvalue;
    SCIP_Real redcost;
-
+   SCIP_Real gap;
+   SCIP_Real origgap;
    int i;
 
    assert(scip != NULL);
@@ -1153,9 +1252,6 @@ SCIP_RETCODE createNewMasterVar(
 
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
-
-//   printf("\n\nAUSGABE IN CREATE NEW MASTER VAR\n\n");
-
 
    if( addedvar != NULL )
       *addedvar = NULL;
@@ -1268,8 +1364,11 @@ SCIP_RETCODE createNewMasterVar(
    GCGsetCreationNode(origprob, vardata, nodenumber);
    GCGsetCreationTime(origprob, vardata, SCIPgetSolvingTime(scip));
    GCGsetIteration(origprob, vardata, SCIPgetNLPIterations(scip));
-   GCGsetGap(origprob, vardata, MIN(SCIPgetGap(origprob), SCIPgetGap(scip) ) );
-   GCGsetRedcost(origprob, vardata, redcost );
+
+   origgap = SCIPgetGap(origprob);
+   gap = SCIPgetGap(scip);
+   GCGsetGap(origprob, vardata, MIN(origgap, gap));
+   GCGsetRedcost(origprob, vardata, redcost);
 
 
    return SCIP_OKAY;
@@ -1285,8 +1384,8 @@ SCIP_RETCODE createNewMasterVar(
  */
 static
 SCIP_Bool canPricingBeAborted(
-   SCIP*             scip,          /**< SCIP data structure */
-   SCIP_PRICERDATA*  pricerdata     /**< pricerdata data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata          /**< pricerdata data structure */
    )
 {
    SCIP_Bool canabort;
@@ -1332,7 +1431,7 @@ void sortPricingProblemsByScore(
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       pricerdata->permu[i] = i;
-      switch(pricerdata->sorting)
+      switch( pricerdata->sorting )
       {
       case 1:
          pricerdata->score[i] = pricerdata->dualsolconv[i];
@@ -1361,6 +1460,8 @@ SCIP_Bool abortHeuristicPricing(
    )
 {
 
+   assert( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_REDCOST );
+
    if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       return !((nfoundvars < pricerdata->maxvarsroundredcost)
@@ -1369,19 +1470,12 @@ SCIP_Bool abortHeuristicPricing(
          && (nfoundvars == 0 ||
             solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull ));
    }
-   else if( pricetype == GCG_PRICETYPE_FARKAS )
+   else
    {
+      assert(pricetype == GCG_PRICETYPE_FARKAS);
       return !(nfoundvars < pricerdata->maxvarsroundfarkas
          && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull));
    }
-   else
-   {
-      assert(FALSE);
-   }
-#ifdef NDEBUG
-   return FALSE;
-#endif
-
 }
 
 static
@@ -1444,7 +1538,7 @@ SCIP_RETCODE performHeuristicPricing(
    /* solve the pricing MIPs heuristically and check whether solutions
     * corresponding to variables with negative reduced costs where found
     */
-   for( i = 0; i < pricerdata->npricingprobs; i++)
+   for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       if( abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
@@ -1473,7 +1567,6 @@ SCIP_RETCODE performHeuristicPricing(
       SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
             &nsolvars, &solisray, &nsols, &status) );
 
-      //printf("Pricingprob %d has found %d sols!\n", prob, nsols);
 
       nfoundvarsprob = 0;
 
@@ -1497,7 +1590,7 @@ SCIP_RETCODE performHeuristicPricing(
       }
    }
    for( j = 0; j < pricerdata->npricingprobs; j++ )
-      if( pricerdata->pricingprobs[j] != NULL && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
+      if( pricerdata->pricingprobs[j] != NULL && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM )
       {
          SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
          SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
@@ -1569,6 +1662,10 @@ SCIP_RETCODE performOptimalPricing(
    assert(pricerdata != NULL);
    assert(pricetype == GCG_PRICETYPE_FARKAS || result != NULL);
 
+   assert(nfoundvars != NULL);
+   assert(bestredcost != NULL);
+   assert(bestredcostvalid != NULL);
+
    SCIPdebugMessage("optimal pricing\n");
 
    origprob = pricerdata->origprob;
@@ -1590,8 +1687,8 @@ SCIP_RETCODE performOptimalPricing(
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
-      /* set objective limit, such that only solutions with negative reduced costs are accepted */
-      //SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      /* @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+      /* SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) ); */
 
       SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 
@@ -1609,7 +1706,7 @@ SCIP_RETCODE performOptimalPricing(
 
       pricerdata->solvedsubmipsoptimal++;
       solvedmips++;
-      if( !SCIPisInfinity(scip, pricinglowerbound) )
+      if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
       {
          assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
       }
@@ -1618,8 +1715,8 @@ SCIP_RETCODE performOptimalPricing(
 
       if( status != SCIP_STATUS_OPTIMAL )
       {
-         bestredcostvalid = FALSE;
-         if( result != NULL)
+         *bestredcostvalid = FALSE;
+         if( result != NULL )
             *result = SCIP_DIDNOTRUN;
       }
       nfoundvarsprob = 0;
@@ -1657,13 +1754,13 @@ SCIP_RETCODE performPricing(
    )
 {
    SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-   SCIP* origprob;
 
    int i;
    int j;
    int nfoundvars;
+#ifdef ENABLESTATISTICS
    double degeneracy;
-
+#endif
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool duringheurpricing;
@@ -1674,9 +1771,6 @@ SCIP_RETCODE performPricing(
    /* get pricer data */
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
-
-   origprob = pricerdata->origprob;
-   assert(origprob != NULL);
 
    assert(result != NULL || pricetype == GCG_PRICETYPE_FARKAS);
    assert(lowerbound != NULL || pricetype == GCG_PRICETYPE_FARKAS);
@@ -1749,6 +1843,11 @@ SCIP_RETCODE performPricing(
             SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
          }
 
+   if( nfoundvars == 0 && SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   {
+      SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   }
+
    if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid && duringheurpricing == FALSE )
    {
       assert(lowerbound != NULL);
@@ -1759,14 +1858,15 @@ SCIP_RETCODE performPricing(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
+#ifdef ENABLESTATISTICS
    SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
    if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
    {
       pricerdata->lastnode = SCIPgetCurrentNode(scip);
-      SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
-      ++(pricerdata->nnodes);
 
+      SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
+      assert(pricerdata->nnodes < pricerdata->maxnnodes);
 
       if( pricerdata->nnodes == 1 )
          pricerdata->avgnodedegeneracy = degeneracy;
@@ -1786,10 +1886,9 @@ SCIP_RETCODE performPricing(
       pricerdata->rootnodedegeneracy = degeneracy;
 
    pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
-
+   ++(pricerdata->nnodes);
    assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
-   // SCIPinfoMessage(scip, NULL, "Degeneracy at node %p %.2f (avg: %.2f)\n", pricerdata->lastnode, degeneracy, pricerdata->avgnodedegeneracy);
-
+#endif
    return SCIP_OKAY;
 }
 
@@ -1865,13 +1964,11 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_PRICERDATA* pricerdata;
    int i;
    SCIP* origprob;
-   SCIP_VAR** vars;
-   int nvars;
    int norigvars;
-   int v;
    SCIP_Bool discretization;
    SCIP_CONS** masterconss;
    int nmasterconss;
+   int origverblevel;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -1881,6 +1978,11 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
 
    origprob = pricerdata->origprob;
    assert(origprob != NULL);
+
+   /* at the beginning, the output of the master problem gets the same verbosity level
+    * as the output of the original problem */
+   SCIP_CALL( SCIPgetIntParam(origprob, "display/verblevel", &origverblevel) );
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
    pricerdata->currnodenr = -1;
 
@@ -1893,8 +1995,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nraysprob), pricerdata->npricingprobs) );
 
-
-
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkascallsdist), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkasfoundvars), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkasnodetimedist), pricerdata->npricingprobs) );
@@ -1903,19 +2003,13 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostfoundvars), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostnodetimedist), pricerdata->npricingprobs) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodetimehist), PRICER_STAT_ARRAYLEN_TIME) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->foundvarshist), PRICER_STAT_ARRAYLEN_VARS) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodetimehist), PRICER_STAT_ARRAYLEN_TIME) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->foundvarshist), PRICER_STAT_ARRAYLEN_VARS) ); /*lint !e506*/
 
+   BMSclearMemoryArray(pricerdata->nodetimehist, PRICER_STAT_ARRAYLEN_TIME);
+   BMSclearMemoryArray(pricerdata->foundvarshist, PRICER_STAT_ARRAYLEN_VARS);
 
-   for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
-   {
-      pricerdata->nodetimehist[i]=0;
-   }
-   for( i = 0; i < PRICER_STAT_ARRAYLEN_VARS; i++ )
-   {
-         pricerdata->foundvarshist[i]=0;
-   }
-   pricerdata->oldVars=0;
+   pricerdata->oldvars=0;
 
    pricerdata->npricingprobsnotnull = 0;
 
@@ -1974,67 +2068,6 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
       pricerdata->vartype = SCIP_VARTYPE_CONTINUOUS;
    }
 
-   /* for variables in the original problem that do not belong to any block,
-    * create the corresponding variable in the master problem
-    */
-   vars = SCIPgetVars(origprob);
-   nvars = SCIPgetNVars(origprob);
-   for( v = 0; v < nvars; v++ )
-   {
-      SCIP_Real* coefs;
-      int blocknr;
-      int ncoefs;
-      SCIP_VAR* var;
-
-      /* var = SCIPvarGetProbvar(vars[v]); */
-      var = vars[v];
-      blocknr = GCGvarGetBlock(var);
-      coefs = GCGoriginalVarGetCoefs(var);
-      ncoefs = GCGoriginalVarGetNCoefs(var);
-
-      assert(GCGvarIsOriginal(var));
-      if( blocknr < 0 )
-      {
-         SCIP_CONS** linkconss;
-         SCIP_VAR* newvar;
-
-         SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
-         SCIP_CALL( SCIPaddVar(scip, newvar) );
-
-         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
-
-         linkconss = GCGoriginalVarGetMasterconss(var);
-
-         /* add variable in the master to the master constraints it belongs to */
-         for( i = 0; i < ncoefs; i++ )
-         {
-            SCIP_CONS* linkcons;
-            assert(!SCIPisZero(scip, coefs[i]));
-            SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[i], &linkcons) );
-
-            SCIP_CALL( SCIPaddCoefLinear(scip, linkcons, newvar, coefs[i]) );
-         }
-
-         /* we copied a linking variable into the master, add it to the linkcons */
-         if( GCGvarIsLinking(var) )
-         {
-            SCIP_CONS** linkingconss;
-            linkingconss = GCGlinkingVarGetLinkingConss(var);
-
-            for( i = 0; i < pricerdata->npricingprobs; i++ )
-            {
-               if( linkingconss[i] != NULL )
-               {
-                  SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1.0) );
-               }
-            }
-         }
-
-         SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
-
-      }
-   }
-
    SCIP_CALL( SCIPhashmapCreate(&(pricerdata->mapcons2idx), SCIPblkmem(scip), 10 * nmasterconss +1) );
    for( i = 0; i < nmasterconss; i++ )
    {
@@ -2082,8 +2115,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));
    SCIPfreeMemoryArray(scip, &(pricerdata->nraysprob));
 
-
-
    SCIPfreeMemoryArray(scip, &(pricerdata->farkascallsdist));
    SCIPfreeMemoryArray(scip, &(pricerdata->farkasfoundvars));
    SCIPfreeMemoryArray(scip, &(pricerdata->farkasnodetimedist));
@@ -2095,6 +2126,9 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
    SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
    SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));
    SCIPfreeMemoryArray(scip, &(pricerdata->nodedegeneracy));
+   pricerdata->nodetimehist = NULL;
+   pricerdata->foundvarshist = NULL;
+   pricerdata->nodedegeneracy = NULL;
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
@@ -2104,15 +2138,6 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
       SCIP_CALL( SCIPreleaseVar(scip, &pricerdata->pricedvars[i]) );
    }
    SCIPfreeBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars);
-
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "calls = %d\n", pricerdata->calls);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs heur = %d\n", pricerdata->solvedsubmipsheur);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "solved sub-MIPs optimal = %d\n", pricerdata->solvedsubmipsoptimal);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "farkas calls = %d, redcost calls = %d\n", pricerdata->farkascalls, pricerdata->redcostcalls);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for farkas pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for redcost pricing (total): %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for transformation: %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "time for freeing sub-MIPs: %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkasclock)) );
@@ -2144,8 +2169,9 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
    if( pricerdata->redcostcalls == 0 )
    {
       if( pricerdata->farkascalls == 0 )
-         SCIPconsMasterbranchAddRootCons(scip);
-
+      {
+         SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+      }
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Starting reduced cost pricing...\n");
    }
    /* update number of reduced cost pricing rounds at the current node */
@@ -2184,6 +2210,9 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 {
    SCIP_RETCODE retcode;
    SCIP_PRICERDATA* pricerdata;
+   SCIP_SOL** origsols;
+   int norigsols;
+   int i;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -2192,9 +2221,27 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 
    assert(pricerdata != NULL);
 
-   if( pricerdata->redcostcalls == 0 &&  pricerdata->farkascalls == 0 )
-      SCIPconsMasterbranchAddRootCons(scip);
+   if( pricerdata->redcostcalls == 0 && pricerdata->farkascalls == 0 )
+   {
+      SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
+   }
 
+   /* get solutions from the original problem */
+   origsols = SCIPgetSols(pricerdata->origprob);
+   norigsols = SCIPgetNSols(pricerdata->origprob);
+   assert(norigsols >= 0);
+
+   /* Add already known solutions for the original problem to the master variable space
+    * @todo This is just a workaround!
+    */
+   if( pricerdata->farkascalls == 0 )
+   {
+      for( i = 0; i < norigsols; ++i )
+      {
+         assert(origsols[i] != NULL);
+         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+      }
+   }
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
    retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
@@ -2209,7 +2256,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
  * variable pricer specific interface methods
  */
 
-/** creates the gcg variable pricer and includes it in SCIP */
+/** creates the GCG variable pricer and includes it in SCIP */
 SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
@@ -2223,6 +2270,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    /* initialize solvers array */
    pricerdata->solvers = NULL;
    pricerdata->nsolvers = 0;
+   pricerdata->nodetimehist = NULL;
+   pricerdata->foundvarshist = NULL;
+   pricerdata->nodedegeneracy = NULL;
+
 
    /* include variable pricer */
    SCIP_CALL( SCIPincludePricer(scip, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY,
@@ -2515,6 +2566,39 @@ void GCGpricerSetSolverdata(
    solver->solverdata = solverdata;
 }
 
+/** writes out a list of all pricing problem solvers */
+void GCGpricerPrintListOfSolvers(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   int nsolvers;
+   int i;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
+
+   nsolvers = pricerdata->nsolvers;
+
+   SCIPdialogMessage(scip, NULL, " solver               priority description\n --------------       -------- -----------\n");
+
+   for( i = 0; i < nsolvers; ++i )
+   {
+      SCIPdialogMessage(scip, NULL,  " %-20s", pricerdata->solvers[i]->name);
+      SCIPdialogMessage(scip, NULL,  " %8d", pricerdata->solvers[i]->priority);
+      SCIPdialogMessage(scip, NULL,  " %s\n", pricerdata->solvers[i]->description);
+   }
+}
+
 /** prints pricer statistics */
 void GCGpricerPrintStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2524,7 +2608,9 @@ void GCGpricerPrintStatistics(
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
    int i;
-   float start,end;
+   double start;
+   double end;
+
    assert(scip != NULL);
 
    pricer = SCIPfindPricer(scip, PRICER_NAME);
@@ -2552,7 +2638,7 @@ void GCGpricerPrintStatistics(
          SCIPgetClockTime(scip, solver->optredcostclock));
    }
 
-   /** Print of Pricing Statistics */
+   /* print of Pricing Statistics */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas pricing Statistic:\nno.\t#Calls\t\t#Vars\t\ttime(s)\n");
 
@@ -2572,12 +2658,12 @@ void GCGpricerPrintStatistics(
 
    }
 
-   /** Print of Histogram Buckets !=0      */
+   /* print of Histogram Buckets !=0      */
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Histogram Time\n");
    for( i = 0; i < PRICER_STAT_ARRAYLEN_TIME; i++ )
    {
-      start = (i * PRICER_STAT_BUCKETSIZE_TIME)/1000.;
+      start = (1.0 * i * PRICER_STAT_BUCKETSIZE_TIME)/1000.0;
       end = start + PRICER_STAT_BUCKETSIZE_TIME/1000.0;
 
       if( pricerdata->nodetimehist[i] != 0 )
@@ -2594,6 +2680,17 @@ void GCGpricerPrintStatistics(
       if( pricerdata->foundvarshist[i] != 0 )
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "From\t%.0f\t-\t%.0f\tvars:\t\t%d \n", start, end, pricerdata->foundvarshist[i]);
    }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Summary:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Calls                            : %d\n", pricerdata->calls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Calls             : %d\n", pricerdata->farkascalls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Time              : %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Calls       : %d\n", pricerdata->redcostcalls);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Time        : %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Heuristic Pricing : %d\n", pricerdata->solvedsubmipsheur);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Optimal Pricing   : %d\n", pricerdata->solvedsubmipsoptimal);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for transformation          : %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for freeing subMIPs         : %f\n", SCIPgetClockTime(scip, pricerdata->freeclock));
 
 }
 
@@ -2655,7 +2752,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
 
    /* get solution values */
    SCIP_CALL( SCIPgetSolVals(scip, origsol, norigvars, origvars, origsolvals) );
-   SCIP_CALL( SCIPcreateSol(scip, &mastersol, NULL) );
+   SCIP_CALL( SCIPcreateSol(scip, &mastersol, SCIPgetSolHeur(origprob, origsol)) );
 
    /* store variables and solutions into arrays */
    for( i = 0; i < norigvars; i++ )
@@ -2713,7 +2810,8 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       {
          continue;
       }
-       SCIPfreeBufferArray(scip, &pricingvals[i]);
+
+      SCIPfreeBufferArray(scip, &pricingvals[i]);
       SCIPfreeBufferArray(scip, &pricingvars[i]);
    }
 
@@ -2725,71 +2823,93 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    return SCIP_OKAY;
 }
 
-/** gets the statistics of the pricingprobs like calls, foundvars and time */
-void GCGpricerGetStatistic(
-   SCIP_PRICERDATA* pricerdata,              /**< pricerdata data structure */
-   GCG_PRICETYPE type,                       /**< type of pricing: optimal or heuristic */
-   int probindex,                            /**< index of the pricingproblem */
-   SCIP_Real time                            /**< time the pricingproblem needed */
+
+/** create initial master variables */
+SCIP_RETCODE GCGpricerCreateInitialMastervars(
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   int foundVars=0;
-   foundVars=(pricerdata->npricedvars-pricerdata->oldVars);
-   if( type == GCG_PRICETYPE_FARKAS )
-   {
-
-      pricerdata->farkascallsdist[probindex]++; /*Calls*/
-      pricerdata->farkasfoundvars[probindex]+=foundVars;
-      pricerdata->farkasnodetimedist[probindex]+=time;   /*Time*/
-
-   }
-   else if( type == GCG_PRICETYPE_REDCOST )
-   {
-
-      pricerdata->redcostcallsdist[probindex]++;
-      pricerdata->redcostfoundvars[probindex]+=foundVars;
-      pricerdata->redcostnodetimedist[probindex]+=time;
-
-   }
-   pricerdata->oldVars=pricerdata->npricedvars;
-
-   GCGpricerGetNodeTimeHistogram(pricerdata,time);
-   GCGpricerGetFoundVarsHistogram(pricerdata,foundVars);
-
-}
-
-/** gets the NodeTimeDistribution in the form of a histogram */
-void GCGpricerGetNodeTimeHistogram(
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   SCIP_Real             time                /**< time the pricingproblem needed */
-   )
-{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
    int i;
+   SCIP* origprob;
+   SCIP_VAR** vars;
+   int nvars;
+   int npricingprobs;
+   int v;
 
-   /** 1000* because mapping milliseconds on the index i */
-   i=1000*time/PRICER_STAT_BUCKETSIZE_TIME;
+   assert(scip != NULL);
 
-   if(i>PRICER_STAT_ARRAYLEN_TIME)
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   origprob = pricerdata->origprob;
+   assert(origprob != NULL);
+
+   npricingprobs = GCGrelaxGetNPricingprobs(origprob);
+   assert(npricingprobs >= 0);
+
+   /* for variables in the original problem that do not belong to any block,
+    * create the corresponding variable in the master problem
+    */
+   vars = SCIPgetVars(origprob);
+   nvars = SCIPgetNVars(origprob);
+   for( v = 0; v < nvars; v++ )
    {
-      i=PRICER_STAT_ARRAYLEN_TIME;
+      SCIP_Real* coefs;
+      int blocknr;
+      int ncoefs;
+      SCIP_VAR* var;
+
+      /* var = SCIPvarGetProbvar(vars[v]); */
+      var = vars[v];
+      blocknr = GCGvarGetBlock(var);
+      coefs = GCGoriginalVarGetCoefs(var);
+      ncoefs = GCGoriginalVarGetNCoefs(var);
+
+      assert(GCGvarIsOriginal(var));
+      if( blocknr < 0 )
+      {
+         SCIP_CONS** linkconss;
+         SCIP_VAR* newvar;
+
+         SCIP_CALL( GCGcreateInitialMasterVar(scip, var, &newvar) );
+         SCIP_CALL( SCIPaddVar(scip, newvar) );
+
+         SCIP_CALL( GCGoriginalVarAddMasterVar(scip, var, newvar, 1.0) );
+
+         linkconss = GCGoriginalVarGetMasterconss(var);
+
+         /* add variable in the master to the master constraints it belongs to */
+         for( i = 0; i < ncoefs; i++ )
+         {
+            assert(!SCIPisZero(scip, coefs[i]));
+            /*            SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[i], &linkcons) );*/
+
+            SCIP_CALL( SCIPaddCoefLinear(scip, linkconss[i], newvar, coefs[i]) );
+         }
+
+         /* we copied a linking variable into the master, add it to the linkcons */
+         if( GCGvarIsLinking(var) )
+         {
+            SCIP_CONS** linkingconss;
+            linkingconss = GCGlinkingVarGetLinkingConss(var);
+
+            for( i = 0; i < npricingprobs; i++ )
+            {
+               if( linkingconss[i] != NULL )
+               {
+                  SCIP_CALL( SCIPaddCoefLinear(scip, linkingconss[i], newvar, 1.0) );
+               }
+            }
+         }
+
+         SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
+
+      }
    }
-   pricerdata->nodetimehist[i]++;
-
-}
-
-/** gets the FoundVarsDistribution in form of a histogram */
-void GCGpricerGetFoundVarsHistogram(
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   int                   foundvars           /**< foundVars in pricingproblem */
-   )
-{
-   int i;
-   i=foundvars/PRICER_STAT_BUCKETSIZE_VARS;
-
-   if(i>PRICER_STAT_ARRAYLEN_VARS)
-   {
-      i=PRICER_STAT_ARRAYLEN_VARS;
-   }
-   pricerdata->foundvarshist[i]++;
-
+   return SCIP_OKAY;
 }

@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   gcgvar.c
@@ -169,7 +186,6 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
-   //   assert(vardata->data.origvardata.pricingvar != NULL);
    assert(vardata->data.origvardata.linkingvardata == NULL);
    assert(!GCGvarIsLinking(var));
    if( vardata->data.origvardata.pricingvar != NULL )
@@ -249,7 +265,7 @@ SCIP_RETCODE GCGorigVarCreateData(
          vardata->data.origvardata.maxmastervars) );
 
    SCIPvarSetData(var, vardata);
-   if(SCIPvarIsOriginal(var))
+   if( SCIPvarIsOriginal(var) )
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
       if( SCIPvarGetTransVar(var) != NULL )
@@ -401,9 +417,10 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    assert(vardata->data.pricingvardata.origvars != NULL);
    assert(vardata->data.pricingvardata.origvars[0] != NULL);
    assert(vardata->blocknr >= 0); /* variable belongs to exactly one block */
-   if( vardata->data.pricingvardata.norigvars >= 2 )
+   if( vardata->data.pricingvardata.norigvars >= 1 )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.norigvars+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
+            vardata->data.pricingvardata.norigvars + 1) );
    }
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
@@ -422,9 +439,8 @@ int GCGoriginalVarGetNMastervars(
 
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
-
    assert(vardata->data.origvardata.nmastervars >= 0);
-   //   assert(vardata->data.origvardata.nmastervars == 1 || GCGvarGetBlock(var) >= 0);
+
    return vardata->data.origvardata.nmastervars;
 }
 
@@ -1228,7 +1244,7 @@ SCIP_Real GCGgetCreationTime(
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VARDATA*         vardata,            /**< variable data structure */
-   int                   iteration           /**< iteration at which the variable is created */
+   SCIP_Longint          iteration           /**< iteration at which the variable is created */
    )
 {
    assert(scip != NULL);
@@ -1239,7 +1255,7 @@ void GCGsetIteration(
 }
 
 /** return stored iteration */
-SCIP_Real GCGgetIteration(
+SCIP_Longint GCGgetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VARDATA*         vardata             /**< variable data structure */
    )

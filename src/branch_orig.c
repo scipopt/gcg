@@ -6,10 +6,27 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_orig.c
- * @brief  branching rule for original problem in gcg
+ * @brief  branching rule for original problem in GCG
  * @author Gerald Gamrath
  */
 
@@ -68,10 +85,10 @@ struct GCG_BranchData
 /** branches on a given variable */
 static
 SCIP_RETCODE branchVar(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /** pointer of the orig branching rule */
-   SCIP_VAR*             branchvar,          /** variable to branch on */
-   SCIP_Real             solval              /** value of the variable in the current solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_VAR*             branchvar,          /**< variable to branch on */
+   SCIP_Real             solval              /**< value of the variable in the current solution */
    )
 {
    /* data for b&b child creation */
@@ -191,9 +208,9 @@ SCIP_RETCODE branchVar(
 /** branching method for relaxation solutions */
 static
 SCIP_RETCODE branchExtern(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /** pointer of the orig branching rule */
-   SCIP_RESULT*          result              /** pointer to store the result of the branching call */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer of the orig branching rule */
+   SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
    int i;
@@ -231,9 +248,6 @@ SCIP_RETCODE branchExtern(
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/mostfrac", &mostfrac) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &usepseudocosts) );
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepsstrong", &usepsstrong) );
-
-   /* get current sol */
-//   currentsol = GCGrelaxGetCurrentOrigSol(scip);
 
    /* get the branching candidates */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, &branchcandsscore, &nbranchcands,
@@ -374,7 +388,6 @@ SCIP_RETCODE branchExtern(
    if( branchvar == NULL )
    {
       SCIPdebugMessage("Original branching rule could not find a variable to branch on!\n");
-//      printf("Original branching rule could not find a variable to branch on!\n");
       return SCIP_OKAY;
    }
 

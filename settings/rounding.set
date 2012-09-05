@@ -19,4 +19,3 @@ heuristics/gcgshifting/freq = 10
 # frequency for calling primal heuristic <gcgzirounding> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: -1]
 heuristics/gcgzirounding/freq = 1
-

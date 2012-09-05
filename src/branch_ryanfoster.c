@@ -6,10 +6,27 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   branch_ryanfoster.c
- * @brief  branching rule for original problem in gcg implementing the Ryan and Foster branching scheme
+ * @brief  branching rule for original problem in GCG implementing the Ryan and Foster branching scheme
  * @author Gerald Gamrath
  */
 
@@ -71,7 +88,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
    assert(GCGvarIsOriginal(branchdata->var1));
-   /** @todo it is not clear to Martin if linking variables interfere with ryan foster branching */
+   /** @todo it is not clear if linking variables interfere with ryan foster branching */
    assert(GCGvarGetBlock(branchdata->var1) == branchdata->blocknr);
 
    assert(GCGvarIsOriginal(branchdata->var2));
@@ -193,13 +210,11 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
          {
             if( origvars[j] == branchdata->var1 )
             {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
                val1 = origvals[j];
                continue;
             }
             if( origvars[j] == branchdata->var2 )
             {
-               assert(SCIPisEQ(scip, origvals[j], 1.0));
                val2 = origvals[j];
             }
          }
@@ -422,7 +437,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(scip) || !GCGrelaxIsMasterSetPartitioning(scip) )
+   if( !GCGrelaxIsMasterSetCovering(scip) && !GCGrelaxIsMasterSetPartitioning(scip) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
@@ -472,7 +487,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
          ovar1 = origvars1[o1];
-         assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]));
+         /* if we deal with a trivial variable, skip it */
+         if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
+            continue;
 
          /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
@@ -487,7 +504,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
-               assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]));
+               /* if we deal with a trivial variable, skip it */
+               if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+                  continue;
+
                if( origvars2[j] == ovar1 )
                {
                   contained = TRUE;
@@ -502,7 +522,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             /* mvar2 also contains ovar1, now look for ovar2 contained in mvar1, but not in mvar2 */
             for( o2 = 0; o2 < norigvars1; o2++ )
             {
-               assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]));
+               /* if we deal with a trivial variable, skip it */
+               if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]) )
+                  continue;
 
                ovar2 = origvars1[o2];
                if( ovar2 == ovar1 )
@@ -512,7 +534,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
-                  assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]));
+                  /* if we deal with a trivial variable, skip it */
+                  if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+                     continue;
 
                   if( origvars2[j] == ovar2 )
                   {
@@ -539,7 +563,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
             {
                for( o2 = 0; o2 < norigvars2; o2++ )
                {
-                  assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]));
+                  /* if we deal with a trivial variable, skip it */
+                  if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]) )
+                     continue;
 
                   ovar2 = origvars2[o2];
 
@@ -549,7 +575,9 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
                   contained = FALSE;
                   for( j = 0; j < norigvars1; j++ )
                   {
-                     assert(!SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]));
+                     /* if we deal with a trivial variable, skip it */
+                     if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]) )
+                        continue;
                      if( origvars1[j] == ovar2 )
                      {
                         contained = TRUE;
@@ -646,7 +674,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
             branchdata = GCGconsOrigbranchGetBranchdata(origbranchconss[c]);
 
-            if( (branchdata->var1 == ovar1 && branchdata->var2 == ovar2)
+            if( (branchdata->var1 == ovar1 && branchdata->var2 == ovar2 )
                || (branchdata->var1 == ovar2 && branchdata->var2 == ovar1) )
             {
                break;
@@ -702,7 +730,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
  * branching specific interface methods
  */
 
-/** creates the most infeasible LP braching rule and includes it in SCIP */
+/** creates the Ryan-Foster LP braching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
    SCIP*                 scip                /**< SCIP data structure */
    )

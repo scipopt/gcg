@@ -6,11 +6,28 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   type_solver.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for pricing problem solvers in gcg project
+ * @brief  type definitions for pricing problem solvers in GCG project
  * @author Gerald Gamrath
  */
 
@@ -114,7 +131,8 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call:
- *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite solution value
+ *                      - SCIP_STATUS_OPTIMAL if the problem was solved heuristically with a finite solution value
+ *                                            (not necessarily to optimality)
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */

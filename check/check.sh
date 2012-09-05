@@ -7,7 +7,29 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
+#* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       *
+#*                         Zuse Institute Berlin (ZIB)                       *
+#*                                                                           *
+#* This program is free software; you can redistribute it and/or             *
+#* modify it under the terms of the GNU Lesser General Public License        *
+#* as published by the Free Software Foundation; either version 3            *
+#* of the License, or (at your option) any later version.                    *
+#*                                                                           *
+#* This program is distributed in the hope that it will be useful,           *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+#* GNU Lesser General Public License for more details.                       *
+#*                                                                           *
+#* You should have received a copy of the GNU Lesser General Public License  *
+#* along with this program; if not, write to the Free Software               *
+#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
+#*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#
+# @author Martin Bergner
+# @author Gerald Gamrath
+# @author Christian Puchert
+
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
@@ -23,6 +45,7 @@ LOCK=${12}
 VERSION=${13}
 LPS=${14}
 VALGRIND=${15}
+MODE=${16}
 
 SETDIR=../settings
 
@@ -133,13 +156,12 @@ do
 
     if test "$LASTPROB" = ""
     then
-#	blkfile=`echo $i | sed 's/lp/blk/g'`
         DIR=`dirname $i`
         NAME=`basename $i .gz`
         NAME=`basename $NAME .mps`
         NAME=`basename $NAME .lp`
-        BLKFILE=$DIR/$NAME.blk.gz
-        DECFILE=$DIR/$NAME.dec.gz
+        BLKFILE=$DIR/$NAME.blk
+        DECFILE=$DIR/$NAME.dec
         LASTPROB=""
         if test -f $i
         then
@@ -171,13 +193,7 @@ do
             fi
             echo set save $SETFILE                 >> $TMPFILE
             echo read $i                           >> $TMPFILE
-#            echo write genproblem cipreadparsetest.cip >> $TMPFILE
-#            echo read cipreadparsetest.cip         >> $TMPFILE
-#	    echo read $blkfile                     >> $TMPFILE
-            if test -f $DECFILE
-            then
-                echo read $DECFILE         >> $TMPFILE
-            fi
+
 	    if test $MODE = "detect"
             then
 		echo write prob images\/$base.gp  >> $TMPFILE
@@ -190,8 +206,43 @@ do
 		echo detect                        >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    else
+	    if test $MODE = "readdec"
+	    then
+		if test -f $DECFILE
+		then
+		    presol=`grep -A1 PRESOLVE $DECFILE`
+		    # if we find a presolving file
+		    if test $? = 0
+		    then
+                        # look if its in there
+			if grep -xq 1 - <<EOF
+$presol
+EOF
+			then
+			    echo presolve          >> $TMPFILE
+			fi
+		    fi
+                    echo read $DECFILE             >> $TMPFILE
+		elif test -f $BLKFILE
+		then
+		    presol=`grep -A1 PRESOLVE $BLKFILE`
+		    # if we find a presolving file
+		    if test $? = 0
+		    then
+                        # look if its in there
+			if grep -xq 1 - <<EOF
+$presol
+EOF
+			then
+			    echo presolve          >> $TMPFILE
+			fi
+		    fi
+                    echo read $BLKFILE             >> $TMPFILE
+		fi
+            fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
+#		echo display additionalstatistics  >> $TMPFILE
 #            echo display solution                  >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	    fi

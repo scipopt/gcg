@@ -1,156 +1,179 @@
-v010:
-- read lpb-file only
-- constraints are given the block, they belong to
-- create constraints in original and master simultaniously
-- working scip represents the master problem, original and pricer-MIPs as
-  sub-SCIPs
+GCG Version 1.0
+===============
 
-v020:
-- read lpb and blk file
-- lpb equialent to lp files; blk defines, which variable belongs to which
-  block
-- working scip represents the master problem, original and pricer-MIPs as
-  sub-SCIPs
-- presolve original problem, create constraints and vars in master and
-  pricing problems after that and use the presolving information
-- solve root-node of original program
-- tried to separate by calling SCIPseparateSol() on the original program
-  (problem here: SCIPisStopped() returns TRUE, has to be changed
-  somehow...)
+features
+- include variable deletion code
+- add a block diagonal detector (cons_connected)
+- add a new default constraint based decomposition format with reader (dec)
+- added new heuristics gcgrins and xprins
+- decompositions from multiple detectors are compared in cons_decomp.h
+- added block diagonal detection code, GCG solves these more intelligently
+- added detection of standard problems to block detection code
+- add additional statistics
+- structure information can now contain presolving information
+- GCG works with SCIP version 3.0
 
-v030:
-- working scip represents the original problem
-- the master problem is represented by a relaxator, which replaces the
-  lp-solving
-- separation is done by a separator included in the master scip, which
-  calls the SCIPseparateSol() method in the original scip
-- branching is done simultaneously in the master and in the original scip
-- variables in the master are still extreme points (and rays, but
-  functionality currently not implemented) of conv(X) -> convexification
-  approach
-- many identical pricing problems -> fat too much effort for pricing,
-  especially farkas pricing!
+plugins
+- reworked decdecomp structure handling
+- merge recent SCIP heuristic changes to their GCG counterparts
 
-v040:
-- read in problem is standard format (e.g., .lp-file, .mps-file) and
-  corresponding blk-file
-- in blk-file, we can indicate constraints that are forced to be in the
-  master problem;
-  all other constraints are added to a block, if they only contain
-  variables of this block
-- added possibility to use discretization approach, variables in the
-  master then represent integer points in X, integrality in the master is
-  demanded
-- identification of identical blocks -> break symmetrie in the master
-- 2 constraint handler assure that nodes in the master scip are linked to
-  nodes in the original scip and vice versa
-- branching rules are implemented as branching rules in the master that
-  have to define the additional callbacks specified in "type_branchgcg.h"
-- 2 branching rules implemented so far:
-  * branching on original variables (not possible if variable belongs to a
-    block that has similar blocks in the problem), using pseudocost values
-    to choose the variable to branch on
-  * ryan-foster type of branching for identical blocks with set partitioning
-    structure
-- own display plugin showing the number of LP iterations, of constraints,
-  variables and cuts in the master
+bug fixes
+- try to deal with the time limit of the master by looping until the
+  original instance hits the time limit
+- try to avoid infeasible problems if the timelimit is hit during farkas
+  pricing
+- fix bugs related to copying master solutions to the original problem
+- fix bugs where solutions are not correctly freed
+- fix bug: heuristics that use SCIPcopy really create a working copy
+- fix propagation bugs
+- fix issues with empty problems and problems solved in the root node
+- rewrite relaxcolsel heuristic
+- moved probing methods to relax_gcg.c and fixed heuristics to use them
+- fix a vardata creation bug
+- copy cuts in LNS heuristics correctly
+- fixed bugs related to presolving
+- fixed bugs related to linking variables
+- fixed bugs in Ryan-Foster branching
+- fix some memory issues
 
-v050:
-- fixed problems with tranfering bounds from the original program to the
+code cleanup
+- updated the documentation
+- cleaned up code (whitespace and code style changes)
+- removed all vardata accesses from all files
+- removed a lot of old code
+- remove dead code and give the code some love
+- refactored some parts to remove large methods
+- cleaned up detector interface
+- make sure code is clean with all our compilers and code checking tools
+
+performance
+- adjusted default parameters
+- improve memory handling by switching to buffer memory in appropriate cases
+  and away from buffer in others
+
+interface
+- make githash look nicer
+- nicer decomposition output
+
+Makefile and scripts
+- add lint directory for static code analysis
+- add SCIP target to makefile
+- fix scripts for RWTH Aachens high performing cluster
+- add possibility to create SCIP link automatically
+- add small testset to enable small functionality tests
+- add some modes to test script in order to create and collect
+  decompositions
+- fix clean rule to a safer version
+
+GCG Version 0.9
+===============
+
+features
+- included new heuristics
+- included new reader for the ref file format
+- added support for linking variables
+- added generalized reliability branching using probing
+- added constraint handler to enforce integral original variables
+- allow for unbounded pricing problems
+- branch also on pseudosolutions
+- support probing for heuristics
+- GCG works with SCIP version 2.0
+
+bug fixes
+- fixed multiple bugs related to timing issues
+- fixed bugs related to working with the presolved problem
+
+interface
+- allow master to be accessed from the command line interface
+- Change branding in interactive SHELL, display version and githash
+- added more extensive test framework
+- added gnuplot visualization reader
+- added much more extensive documentation
+
+
+GCG Version 0.81
+================
+
+features
+- polished source code
+
+bug fixes
+- some
+
+
+GCG Version 0.8
+===============
+
+bugfixes
+- fixed some bugs for solving MIPs when branching on variables that were
+  directly transferred to the master problem
+
+
+GCG Version 0.7
+===============
+
+bugfixes
+- some bugfixes
+
+
+GCG Version 0.6
+===============
+
+feastures
+- implemented dialog handler for GCG
+- added concept of pricing solvers
+- statistics about pricing are displayed at the end of solving
+
+bugfixes
+- quite a few
+
+
+GCG Version 0.5
+===============
+
+bugfixes
+- fixed problems with transfering bounds from the original program to the
   master program: when propagating a node, the bounds of all variables in
   the pricing problem and variables copied to the master are adjusted, for
   all master variables created by the pricer, it is checked whether they
   fulfill the current bounds
 - fixed bug when disabling discretization approach
 
-v060:
-- implemented dialog handler for GCG
-- added more test data
-- added pricing solvers
-- added solveheur callback
-- displayed statistics
-- fixed bugs
 
-v070:
-- fixed some more bugs
+GCG Version 0.4
+===============
 
-v080:
-- fixed some bugs for solving MIPs when branching on variables that were
-  directly transferred to the master problem
+design
+- working SCIP represents the original problem
+- read in problem is standard format (e.g., .lp-file, .mps-file) and
+  corresponding blk-file
+- the master problem is represented by a relaxator, which replaces the LP-solving
+- separation is done by a separator included in the master SCIP, which calls the
+  SCIPseparateSol() method in the original SCIP
+- branching is done simultaneously in the master and in the original SCIP
+- variables in the master are extreme points of conv(X) (and extreme rays, but
+  functionality currently not implemented) -> convexification approach
+- many identical pricing problems -> fat too much effort for pricing,
+  especially farkas pricing!
+- 2 constraint handler assure that nodes in the master SCIP are linked to
+  nodes in the original SCIP and vice versa
+- branching rules are implemented as branching rules in the master that
+  have to define the additional callbacks specified in "type_branchgcg.h"
 
-v081:
-- added interface to define pricing problems
-- bug fixes
-- polished source code
+features
+- in blk-file constraints can be forced to be copied to the master problem;
+  all other constraints are added to a block, if they only contain variables
+  of this block
+- added possibility to use discretization approach, variables in the
+  master then represent integer points in X, integrality in the master is
+  demanded
+- identification of identical blocks -> break symmetrie in the master
+- 2 branching rules implemented so far:
+  * branching on original variables (not possible if variable belongs to a
+    block that has similar blocks in the problem), using pseudocost values
+    to choose the variable to branch on
+  * ryan-foster type of branching for identical blocks with set partitioning
+    structure
+- added GCGs own display plugin showing the number of LP iterations, of
+  constraints, variables and cuts in the master
 
-v090:
-- included detection
-  * arrowhead detection using hmetis
-  * bordered detection using hmetis
-- included new heuristics
-- included new reader for the ref file format
-- fixed multiple bugs related to timing issues
-- fixed bugs related to working with the presolved problem
-- added more extensive test framework
-- added gnuplot visualization reader
-- branch also on pseudosolutions
-- added much more extensive documentation
-- adjusted to latest SCIP git version
-- added support for linking variables
-- added generalized reliability branching using probing
-- added constraint handler to enforce integral original variables
-- allow master to be accessed from the command line interface
-- support probing for heuristics
-- allow for unbounded pricing problems
-- Change branding in interactive SHELL, display version and githash
-
-v0901:
-- removed all #if 0
-- try to avoid infeasible problems if the timelimit is hit during farkas
-  pricing
-- removed interface.{c,h}, it is not needed anymore
-- cleaned up code (whitespace and code style changes)
-- fixed a bug in borderheur related to empty hyperedges
-- try to deal with the time limit of the master by looping until the
-  original instance hits the time limit
-- removed all vardata accesses from the core code
-
-v0902:
-- make githash look nicer
-- add lint directory for static code analysis
-- fix bugs related to copying master solutions to the original problem
-- fix bugs where solutions are not correctly freed
-- fix a lot of lint warnings and errors
-- add scip target to makefile
-- include variable deletion code
-- removed vardata accesses from all files
-- add a block diagonal detector (cons_connected)
-- add a new default constraint based decomposition format with reader (dec)
-- updated the documentation
-- reworked decdecomp structure handling
-- removed a lot of old code
-- added new heuristic gcgrins and xprins
-- fix bug #28: heuristics that use SCIPcopy really create a working copy
-- adjusted default parameters
-- fix propagation bugs
-- merge recent SCIP heuristic changes to their GCG counterparts
-- moved probing methods to relax_gcg.c and fixed heuristics to use them
-- fix issues with empty problems and problems solved in the root node
-- rewrite relaxcolsel heuristic
-- fix scripts for RWTH Aachens high performing cluster
-- remove dead code give the code some love
-- improve memory handling by switching to buffer memory in appropriate cases
-
-v0903:
-- fix a vardata creation bug
-- copy cuts in LNS heuristics correctly
-- nicer decomposition output
-- decompositions from multiple detectors are compared in cons_decomp.h
-- added block diagonal detection code, GCG solves these more intelligently
-- added detection of standard problems to block detection code
-- refactored source
-- fixed bugs related to presolving
-- fixed bugs related to linking variables
-- cleaned up detector interface
-- fixed bugs in Ryan-Foster branching
-- fixed documentation

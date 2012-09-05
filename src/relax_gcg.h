@@ -6,11 +6,31 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   relax_gcg.h
- * @brief  gcg relaxator
- * @author Gerald Gamrath
+/**@file    relax_gcg.h
+ * @ingroup PUBLICMETHODS
+ * @brief   GCG relaxator
+ * @author  Gerald Gamrath
+ * @author  Christian Puchert
+ * @author  Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -22,7 +42,7 @@
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 
-/** creates the gcg relaxator and includes it in SCIP */
+/** creates the GCG relaxator and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
@@ -33,11 +53,11 @@ extern
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
-   GCG_DECL_BRANCHACTIVEMASTER    ((*branchactivemaster)),    /**<  activation method for branchrule */
-   GCG_DECL_BRANCHDEACTIVEMASTER  ((*branchdeactivemaster)),  /**<  deactivation method for branchrule */
-   GCG_DECL_BRANCHPROPMASTER      ((*branchpropmaster)),      /**<  propagation method for branchrule */
-   GCG_DECL_BRANCHMASTERSOLVED    ((*branchmastersolved)),    /**<  master solved method for branchrule */
-   GCG_DECL_BRANCHDATADELETE      ((*branchdatadelete))       /**<  branchdata deletion method for branchrule */
+   GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
+   GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)),/**<  deactivation method for branchrule */
+   GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
+   GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
+   GCG_DECL_BRANCHDATADELETE((*branchdatadelete))/**<  branchdata deletion method for branchrule */
    );
 
 /** perform activation method of the given branchrule for the given branchdata */
@@ -257,7 +277,6 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data */
 extern
@@ -270,28 +289,30 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 /** transforms given values of the given original variables into values of the given master variables */
 extern
 void GCGrelaxTransformOrigvalsToMastervals(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_VAR**            origvars,           /** array with (subset of the) original variables */
-   SCIP_Real*            origvals,           /** array with values for the given original variables */
-   int                   norigvars,          /** number of given original variables */
-   SCIP_VAR**            mastervars,         /** array of (all present) master variables */
-   SCIP_Real*            mastervals,         /** array to store the values of the master variables */
-   int                   nmastervars         /** number of master variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
+   SCIP_Real*            origvals,           /**< array with values for the given original variables */
+   int                   norigvars,          /**< number of given original variables */
+   SCIP_VAR**            mastervars,         /**< array of (all present) master variables */
+   SCIP_Real*            mastervals,         /**< array to store the values of the master variables */
+   int                   nmastervars         /**< number of master variables */
    );
 
 /** transforms given solution of the master problem into solution of the original problem */
 extern
 SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_SOL*             mastersol,          /** solution of the master problem */
-   SCIP_SOL**            origsol             /** pointer to store the new created original problem's solution */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_SOL*             mastersol,          /**< solution of the master problem */
+   SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
    );
 
 /** prints the given variable: name, type (original, master or pricing) block number,
  * and the list of all variables related to the given variable */
 extern
 void GCGrelaxPrintVar(
-   SCIP_VAR*             var                 /**< variable that shpuld be printed */
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File to write information to, or NULL for stdout */
+   SCIP_VAR*             var                 /**< variable that should be printed */
    );
 
 /** returns the stored primal solution of the original problem  */
@@ -309,29 +330,27 @@ void GCGrelaxSetOrigPrimalSol(
 
 /** sets the structure information */
 void GCGsetStructDecdecomp(
-   SCIP*       scip,       /**< SCIP data structure */
-   DECDECOMP*  decdecomp   /**< decomposition data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
-
 
 /** gets the structure information */
 extern
-DECDECOMP* GCGgetStructDecdecomp(
-   SCIP*       scip        /**< SCIP data structure */
+DEC_DECOMP* GCGgetStructDecdecomp(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** gets the total memory used after problem creation stage for all pricingproblems */
 extern
 SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*                 scip              /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the degeneracy of the masterproblem */
 extern
 double GCGgetDegeneracy(
-   SCIP*                 masterproblem     /**< SCIP masterproblem */
+   SCIP*                 masterproblem       /**< SCIP masterproblem */
    );
-
 
 /** prints out the degeneracy of the problem */
 extern
@@ -339,4 +358,11 @@ void GCGprintDegeneracy(
    SCIP*                 scip,               /**< SCIP data structure */
    double                degeneracy          /**< degeneracy to print*/
    );
+
+/** returns whether the relaxator has been initialized */
+extern
+SCIP_Bool GCGrelaxIsInitialized(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #endif

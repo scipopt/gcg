@@ -1,0 +1,53 @@
+The instances
+ N1C1W4_M.BPP.lp
+ N1C2W2_O.BPP.lp
+ N1C3W1_A.BPP.lp
+ are from the first bison set accessible under http://www.wiwi.uni-jena.de/entscheidung/binpp/
+
+The instances
+ TEST0055.lp
+ TEST0059.lp
+ where introduced in
+ Waescher, G., Gau, T., Heuristics for the Integer One-dimensional Cutting Stock Problem: a computational study,
+ OR Spektrum 18 (1996), 131-144
+
+The instances
+ p1250-2.lp
+ p2050-1.txt.lp
+ p1650-2.txt.lp
+ are from the website
+ http://optlab.dti.unimi.it/benchmark.php
+ taken from the papers
+ Ceselli A. "Two exact algorithms for the capacitated p-median problem", 4OR 1(4): 319-340 (2003)
+ Ceselli A., Righini G., "A branch and price algorithm for the capacitated p-median problem",
+ Networks 45(3): 125-142 (2005)
+
+The instances
+ TEST0055.lp
+ TEST0059.lp
+ are introduced in the paper
+ Y. Cui*, X. Zhao, Y. Yang, and P. Yu, A heuristic for the one-dimensional cutting stock problem with
+ pattern reduction, 2008
+
+The nowswot.mps instance is from the MIPLIB2003 available under http://miplib.zib.de
+
+The testset files
+ gap4_2.txt.lp
+ gap8_4.txt.lp
+
+ are from the or-library releases under the following license:
+
+ Copyright (c) (2010) (J E Beasley}
+
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files (the "Software"), to deal in the Software
+ without restriction, including without limitation the rights to use, copy, modify, merge, publish,
+ distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
+ is furnished to do so, subject to the following conditions: The above copyright notice and this permission
+ notice shall be included in all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+ LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+ EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ THE USE OR OTHER DEALINGS IN THE SOFTWARE.

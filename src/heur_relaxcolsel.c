@@ -6,6 +6,23 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_relaxcolsel.c
@@ -14,9 +31,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-/* toggle debug mode */
-//#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -49,11 +63,11 @@
 struct SCIP_HeurData
 {
    /* parameters */
-   int                  mincolumns;           /**< minimum number of columns to regard in the master problem */
+   int                   mincolumns;         /**< minimum number of columns to regard in the master problem */
 
    /* data */
-   SCIP_VAR**           zerovars;             /**< array of master variables corresponding to zero solutions */
-   int                  lastncols;            /**< number of columns in the last call of the heuristic       */
+   SCIP_VAR**            zerovars;           /**< array of master variables corresponding to zero solutions */
+   int                   lastncols;          /**< number of columns in the last call of the heuristic       */
 };
 
 
@@ -70,16 +84,15 @@ struct SCIP_HeurData
  */
 static
 SCIP_RETCODE initializeStartsol(
-      SCIP*                   scip,
-      SCIP_SOL*               mastersol,
-      SCIP_SOL*               origsol,
-      SCIP_Real*              activities,
-      int*                    blocknr,
-      int*                    mastercands,
-      SCIP_Real*              candfracs,
-      int*                    nmastercands,
-      SCIP_Bool*              success
-      )
+   SCIP*                 scip,
+   SCIP_SOL*             mastersol,
+   SCIP_SOL*             origsol,
+   int*                  blocknr,
+   int*                  mastercands,
+   SCIP_Real*            candfracs,
+   int*                  nmastercands,
+   SCIP_Bool*            success
+   )
 {
    SCIP* origprob;
    SCIP_VAR** mastervars;
@@ -152,7 +165,7 @@ SCIP_RETCODE initializeStartsol(
                block, SCIPvarGetName(mastervar), (int) roundval);
 
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
 
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; ++j )
@@ -216,16 +229,16 @@ SCIP_RETCODE initializeStartsol(
          if( (vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
                && !SCIPisFeasFracIntegral(scip, frac) )
          {
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, roundval) );
             mastercands[*nmastercands] = i;
             candfracs[*nmastercands] = frac;
             ++(*nmastercands);
          }
          else
          {
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, solval) );
-            SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, solval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, solval) );
+            SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, solval) );
          }
       }
 
@@ -235,7 +248,7 @@ SCIP_RETCODE initializeStartsol(
          if( !SCIPisFeasZero(scip, roundval) )
          {
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPincSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
 
             SCIPdebugMessage("  -> (block %d) select master variable %s (%d times)\n",
                   block, SCIPvarGetName(mastervar), (int) roundval);
@@ -282,8 +295,8 @@ SCIP_RETCODE initializeStartsol(
 
                      linkingmastervar = GCGoriginalVarGetMastervars(origvar)[0];
                      assert(linkingmastervar != NULL);
-                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, origval) );
-                     SCIP_CALL( SCIPincSolVal(scip, mastersol, linkingmastervar, origval) );
+                     SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, origval) );
+                     SCIP_CALL( SCIPsetSolVal(scip, mastersol, linkingmastervar, origval) );
                   }
                   /* otherwise, exclude the current master variable, if the point has a different value for it */
                   else
@@ -302,7 +315,9 @@ SCIP_RETCODE initializeStartsol(
                {
                   SCIP_VAR* pricingvar;
                   SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
                   int norigpricingvars;
+#endif
 
                   assert(GCGvarGetBlock(origvar) == block);
 
@@ -312,14 +327,20 @@ SCIP_RETCODE initializeStartsol(
                   assert(GCGvarIsPricing(pricingvar));
 
                   /* get original variables represented by origvar */
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                   origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+#ifndef NDEBUG
+                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+#endif
 
                   /* increase the corresponding value */
                   for( k = 0; k < (int) roundval; ++k )
                   {
-                     assert(blocknr[block] + k < norigpricingvars);
-                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block] + k], origval) );
+                     int blockidx;
+                     blockidx = blocknr[block] + k;
+#ifndef NDEBUG
+                     assert(blockidx < norigpricingvars);
+#endif
+                     SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blockidx], origval) );
                   }
                }
             }
@@ -347,10 +368,10 @@ SCIP_RETCODE initializeStartsol(
  * @todo it would be more efficient to "mark" master variables as being trivial */
 static
 SCIP_RETCODE searchZeroMastervar(
-      SCIP*             scip,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -398,16 +419,16 @@ SCIP_RETCODE searchZeroMastervar(
  *  or NULL is there is no such variable available */
 static
 SCIP_RETCODE getZeroMastervar(
-      SCIP*             scip,
-      SCIP_HEURDATA*    heurdata,
-      int               block,
-      SCIP_VAR**        zeromastervar
-      )
+   SCIP*                 scip,
+   SCIP_HEURDATA*        heurdata,
+   int                   block,
+   SCIP_VAR**            zeromastervar
+   )
 {
    /* if no zero solution is known for the block, look if a master variable has been added
     * and remember the variable for future use */
    if( heurdata->zerovars[block] == NULL )
-      searchZeroMastervar(scip, block, zeromastervar);
+      SCIP_CALL( searchZeroMastervar(scip, block, zeromastervar) );
    else
       *zeromastervar = heurdata->zerovars[block];
 
@@ -430,12 +451,12 @@ SCIP_DECL_HEURFREE(heurFreeRelaxcolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -488,12 +509,12 @@ SCIP_DECL_HEUREXIT(heurExitRelaxcolsel)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free memory */
    SCIPfreeMemoryArrayNull(scip, &heurdata->zerovars);
@@ -519,7 +540,6 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIP_SOL* mastersol;                      /* working master solution             */
    SCIP_SOL* origsol;                        /* working original solution           */
    SCIP_VAR** mastervars;
-   SCIP_Real* activities;                    /* for each master LP row, activity of current master solution          */
    SCIP_Real* candfracs;                     /* fractionalities of candidate variables                               */
    int* blocknr;                             /* for each pricing problem, block we are currently working in          */
    int* mastercands;                         /* master variables which are considered first for rounding up          */
@@ -527,7 +547,6 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIP_Bool masterfeas;
    SCIP_Bool success;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
-   int nlprows;
    int nmastervars;
    int nmastercands;
    int nblocks;
@@ -536,9 +555,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    int j;
    int k;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
-   assert( result != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
+   assert(result != NULL);
 
    /* get original problem */
    origprob = GCGpricerGetOrigprob(scip);
@@ -546,7 +565,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    *result = SCIP_DELAYED;
 
@@ -563,7 +582,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
    /* calculate minimum number of new columns necessary for calling the heuristic;
     * this number is influenced by how successful the heuristic was in the past */
-   minnewcols = heurdata->mincolumns * (int) 1.0 * ((1.0 + SCIPheurGetNCalls(heur)) / (1.0 + SCIPheurGetNBestSolsFound(heur)));
+   minnewcols = heurdata->mincolumns * (int) (1.0 * ((1.0 + SCIPheurGetNCalls(heur)) / (1.0 + SCIPheurGetNBestSolsFound(heur))));
 
    /* if there are not enough new columns since last call, abort heuristic */
    if( nmastervars - heurdata->lastncols < minnewcols )
@@ -577,37 +596,33 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    nblocks = GCGrelaxGetNPricingprobs(origprob);
    assert(nblocks >= 0);
 
-   /* get master LP rows data */
-   nlprows = SCIPgetNLPRows(scip);
-   assert(nlprows >= 0);
-
    /* allocate memory and create working solutions */
    SCIP_CALL( SCIPcreateSol(scip, &mastersol, heur) );
    SCIP_CALL( SCIPcreateSol(origprob, &origsol, heur) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &activities, nlprows) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknr, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &mastercands, nmastervars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &candfracs, nmastervars) );
 
-   /* initialize the block numbers for the pricing problems */
-   for( i = 0; i < nblocks; i++ )
-   {
-      blocknr[i] = 0;
-   }
+   /* initialize the block information */
+   BMSclearMemoryArray(blocknr, nblocks);
+   BMSclearMemoryArray(candfracs, nmastervars);
    allblocksfull = FALSE;
 
    /* initialize empty candidate list */
    for( i = 0; i < nmastervars; ++i )
-   {
       mastercands[i] = -1;
-      candfracs[i] = 0.0;
-   }
 
    /* initialize working original solution as transformation of rounded down master LP solution
     * and get the candidate master variables for rounding up */
    SCIPdebugMessage("initializing starting solution...\n");
-   SCIP_CALL( initializeStartsol(scip, mastersol, origsol, activities, blocknr,
+   SCIP_CALL( initializeStartsol(scip, mastersol, origsol, blocknr,
          mastercands, candfracs, &nmastercands, &success) );
+
+   if( !success )
+   {
+      SCIPdebugMessage(" -> not successful.\n");
+      goto TERMINATE;
+   }
 
    masterfeas = FALSE;
    success = FALSE;
@@ -689,7 +704,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       if( block == -1 )
       {
          SCIP_VAR* origvar;
+#ifndef NDEBUG
          int origblock;
+#endif
 
          /* get original variable and the block it belongs to;
           * the variable should not be a linking variable
@@ -698,8 +715,10 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
          origvar = origvars[0];
          assert(GCGvarIsOriginal(origvar));
          assert(origvals[0] == 1.0);
+#ifndef NDEBUG
          origblock = GCGvarGetBlock(origvar);
          assert(origblock == -1);
+#endif
 
          /* set solution value to rounded up value */
          SCIP_CALL( SCIPincSolVal(origprob, origsol, origvar, 1.0) );
@@ -766,7 +785,9 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             {
                SCIP_VAR* pricingvar;
                SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
                int norigpricingvars;
+#endif
 
                /* if the variable is zero, nothing happens */
                if( SCIPisZero(scip, origval) )
@@ -776,8 +797,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                assert(pricingvar != NULL);
                assert(GCGvarIsPricing(pricingvar));
 
-               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+               norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+               assert(blocknr[block] < norigpricingvars);
+#endif
 
                /* increase the corresponding value */
                SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], origval) );
@@ -827,14 +852,20 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                {
                   SCIP_VAR* pricingvar;
                   SCIP_VAR** origpricingvars;
+#ifndef NDEBUG
                   int norigpricingvars;
+#endif
 
                   pricingvar = GCGoriginalVarGetPricingVar(origvar);
                   assert(pricingvar != NULL);
                   assert(GCGvarIsPricing(pricingvar));
 
-                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
                   origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+#ifndef NDEBUG
+                  norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+                  assert(blocknr[block] < norigpricingvars);
+#endif
 
                   /* decrease the corresponding value */
                   SCIP_CALL( SCIPincSolVal(origprob, origsol, origpricingvars[blocknr[block]], -origval) );
@@ -844,7 +875,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
          }
 
          blocknr[block]++;
-     }
+      }
 
       /* try to add the solution to (original) solution pool */
       SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
@@ -866,7 +897,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
             /* fill the block with the zero solution */
             zeromastervar = NULL;
-            getZeroMastervar(scip, heurdata, i, &zeromastervar);
+            SCIP_CALL( getZeroMastervar(scip, heurdata, i, &zeromastervar) );
             if( zeromastervar != NULL )
             {
                SCIPdebugMessage("  -> (block %d) selected zero master variable %s (%d times)\n",
@@ -879,7 +910,8 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
          }
 
          /** @todo >= should not happen, replace it by == ? */
-         allblocksfull &= blocknr[i] >= nidentblocks;
+         if( !(blocknr[i] >= nidentblocks) )
+            allblocksfull = FALSE;
       }
 
       /* if we found a solution for the original instance,
@@ -898,20 +930,6 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       }
    }
 
-//   /* then, consider all master variables for increasing */
-//   while( !allblocksfull && !success )
-//   {
-//      SCIP_CALL( getBestMastervar(scip, activities, blocknr, &mastervar, &violchange) );
-//      if( mastervar == NULL )
-//         break;
-//      SCIP_CALL( updateOrigsol(origprob, heur, origsol, mastervar, violchange, &nviolrows, activities, blocknr, &allblocksfull, &success) );
-//   }
-
-//#ifdef SCIP_DEBUG
-//   SCIPdebugMessage("  -> generated solution:\n");
-//   SCIPprintSol(origprob, origsol, NULL, FALSE);
-//#endif
-
    if( success )
    {
       *result = SCIP_FOUNDSOL;
@@ -922,12 +940,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       SCIPdebugMessage("  -> no feasible solution found.\n");
    }
 
+TERMINATE:
    SCIP_CALL( SCIPfreeSol(origprob, &origsol) );
    SCIP_CALL( SCIPfreeSol(scip, &mastersol) );
-   SCIPfreeBufferArray(scip, &activities);
-   SCIPfreeBufferArray(scip, &blocknr);
-   SCIPfreeBufferArray(scip, &mastercands);
    SCIPfreeBufferArray(scip, &candfracs);
+   SCIPfreeBufferArray(scip, &mastercands);
+   SCIPfreeBufferArray(scip, &blocknr);
 
    heurdata->lastncols = nmastervars;
 
