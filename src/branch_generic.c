@@ -609,8 +609,14 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 	for(k=0; k<IndexSetSize; ++k)
 	{
 		ComponentBoundSequence* copyS;
+		SCIP_Real mu_F;
+		SCIP_Bool even;
+		
+		even = TRUE;
+		mu_F = 0;
 		i = IndexSet[k]; 
 		alpha[k] = 0;
+		
 		for(j=0; j<Fsize; ++j)
 			alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
 		if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
@@ -638,6 +644,31 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 					min = compvalues[l];
 			}
 			median = GetMedian(scip, compvalues, Fsize, min);
+			j = 0;
+			do
+			{
+				mu_F = 0;
+				if(even)
+				{
+					median += j;
+					even = FALSE;
+				}
+				else 
+				{
+					median -= j;
+					even = TRUE;
+				}
+				
+				for(l=0; l<Fsize; ++l)
+				{
+					if( F[l]->generator[i] >= median )
+					mu_F += F[l]->mastervarValue;
+				}
+				++j;
+				
+			}while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
+			
+			
 			copyS[Ssize-1][2] = median;
 
 			SCIPfreeBufferArray(scip, &compvalues);
@@ -909,6 +940,8 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	SCIP_Real* compvalues;
 	SCIP_Real  muF;
 	SCIP_Bool found;
+	SCIP_Real mu_F;
+	
 
 	seed = 0;
 	i = 0;
@@ -974,6 +1007,22 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 
 		copyS[Ssize-1][0] = i;
 		copyS[Ssize-1][1] = 1;
+
+		j = 0;
+		do
+		{
+			mu_F = 0;
+			ivalue += j;
+
+			for(l=0; l<Fsize; ++l)
+			{
+				if( F[l]->generator[i] >= ivalue )
+					mu_F += F[l]->mastervarValue;
+			}
+			++j;
+
+		}while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
+
 		copyS[Ssize-1][2] = ivalue;
 
 
@@ -1511,7 +1560,7 @@ SCIP_RETCODE createChildNodesGeneric(
 					int norigvars;
 					int  npresentmastervars;
 					//if(i!=0)
-					  SCIPdebugMessage("i = %d\n", i);
+			//		  SCIPdebugMessage("i = %d\n", i);
 
 
 					if(GCGvarGetBlock(mastervars2[i]) == blocknr)
