@@ -609,8 +609,14 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 	for(k=0; k<IndexSetSize; ++k)
 	{
 		ComponentBoundSequence* copyS;
+		SCIP_Real mu_F;
+		SCIP_Bool even;
+		
+		even = TRUE;
+		mu_F = 0;
 		i = IndexSet[k]; 
 		alpha[k] = 0;
+		
 		for(j=0; j<Fsize; ++j)
 			alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
 		if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
@@ -638,6 +644,31 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 					min = compvalues[l];
 			}
 			median = GetMedian(scip, compvalues, Fsize, min);
+			j = 0;
+			do
+			{
+				mu_F = 0;
+				if(even)
+				{
+					median += j;
+					even = FALSE;
+				}
+				else 
+				{
+					median -= j;
+					even = TRUE;
+				}
+				
+				for(l=0; l<Fsize; ++l)
+				{
+					if( F[l]->generator[i] >= median )
+					mu_F += F[l]->mastervarValue;
+				}
+				++j;
+				
+			}while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
+			
+			
 			copyS[Ssize-1][2] = median;
 
 			SCIPfreeBufferArray(scip, &compvalues);
@@ -909,6 +940,8 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	SCIP_Real* compvalues;
 	SCIP_Real  muF;
 	SCIP_Bool found;
+	SCIP_Real mu_F;
+	
 
 	seed = 0;
 	i = 0;
@@ -974,6 +1007,22 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 
 		copyS[Ssize-1][0] = i;
 		copyS[Ssize-1][1] = 1;
+
+		j = 0;
+		do
+		{
+			mu_F = 0;
+			ivalue += j;
+
+			for(l=0; l<Fsize; ++l)
+			{
+				if( F[l]->generator[i] >= ivalue )
+					mu_F += F[l]->mastervarValue;
+			}
+			++j;
+
+		}while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
+
 		copyS[Ssize-1][2] = ivalue;
 
 
@@ -1271,7 +1320,7 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
 	SCIPdebugMessage("Prune by dominance\n");
 	//	childnr = 0;
 	cons = GCGconsMasterbranchGetParentcons(masterbranch);
-	
+
 	if( cons == NULL)
 	{
 		SCIPdebugMessage("cons == NULL\n");
@@ -1341,19 +1390,25 @@ SCIP_RETCODE createChildNodesGeneric(
 	//	int norigvars;
 	//	int v;
 	int i;
+	int j;
 	int p;
 	int k;
 	int pL;
 	int L;
 	int lhs;
 	int nmastervars;
+	int nmastervars2;
+	int ncopymastervars;
 	int nbranchcands;
 	int newnmastervars;
 	int newFsize;
+	int allnorigvars;
 	SCIP_Real mu;  // mu(S)
 	SCIP_VAR** mastervars;
+	SCIP_VAR** mastervars2;
 	SCIP_VAR** branchcands;
 	SCIP_VAR** copymastervars;
+	SCIP_VAR** allorigvars;
 	//	SCIP_VAR* mvar;
 	//	SCIP_VARDATA* vardata;
 	//	SCIP_Bool nodeRedundant;
@@ -1377,20 +1432,26 @@ SCIP_RETCODE createChildNodesGeneric(
 			SCIP_CALL( SCIPallocMemory(scip, &parentdata) );
 		}
 		parentdata->nchildNodes = 0;
-		
+
 	}
 	else
 		parentdata = NULL;
 
+	SCIP_CALL( SCIPgetVarsData(scip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
 
 	// get variable data of the master problem
 	masterscip = GCGrelaxGetMasterprob(scip);
 	SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+	nmastervars2 = nmastervars;
 	assert(nmastervars >= 0); 
 	SCIP_CALL( SCIPallocBufferArray(scip, &copymastervars, nmastervars) );
+	SCIP_CALL( SCIPallocBufferArray(scip, &mastervars2, nmastervars) );
 
 	for(i=0; i<nmastervars; ++i)
+	{
+		mastervars2[i] = mastervars[i];
 		copymastervars[i] = mastervars[i];
+	}
 
 	assert(scip != NULL);
 	assert(branchrule != NULL);
@@ -1485,30 +1546,111 @@ SCIP_RETCODE createChildNodesGeneric(
 		}
 		else
 		{
-			newFsize = Fsize;
-			for( i=0; i<newFsize; ++i)
+			//calculate mu
+			for(k=0;k<=p;++k)
 			{
-				struct GCG_Strip* swap;
-				SCIPdebugMessage("i = %d\n", i);
-				if(S[p][1] == 1 )
+				ncopymastervars = nmastervars2;
+				for( i=0; i<ncopymastervars; ++i)
 				{
-					if(F[i]->generator[S[p][0]] >= S[p][2] )
-						mu += F[i]->mastervarValue; 
-				}
-				else  //nested erasing
-				{
-					if(newFsize > 0)
+					SCIP_VAR* swap;
+					SCIP_Real generator_i;
+					SCIP_Bool present;
+					SCIP_VAR** presentmastervars;
+					SCIP_VAR** origvars;
+					int norigvars;
+					int  npresentmastervars;
+					//if(i!=0)
+			//		  SCIPdebugMessage("i = %d\n", i);
+
+
+					if(GCGvarGetBlock(mastervars2[i]) == blocknr)
 					{
-						swap = F[i];
-						F[i] = F[newFsize-1];
-						F[newFsize-1] = swap;
-						--newFsize;
-						--i;
+
+						present = FALSE;
+						npresentmastervars = GCGoriginalVarGetNMastervars(allorigvars[S[k][0]]);
+						presentmastervars = GCGoriginalVarGetMastervars(allorigvars[S[k][0]]);
+						norigvars = GCGmasterVarGetNOrigvars(mastervars2[i]);  
+						origvars = GCGmasterVarGetOrigvars(mastervars2[i]);
+
+						for(j=0; j<npresentmastervars; ++j)
+						{
+							if(mastervars2[i] == presentmastervars[j])
+							{
+								present = TRUE;
+							}
+						}
+						if(present)
+						{
+							for(j=0; j<norigvars; ++j)
+							{
+								if(allorigvars[S[k][0]] == origvars[j]) 
+								{
+									generator_i = GCGmasterVarGetOrigvals(mastervars2[i])[j]; // ??? bei discr gleich dem generator ???
+									break;
+								}
+							}
+						}
+						else
+							generator_i = 0;
+						
+						SCIPdebugMessage("generator_i = %d\n", generator_i);
+						SCIPdebugMessage("S[k][0] = %d\n", S[k][0]);
+						SCIPdebugMessage("S[k][2] = %d\n", S[k][2]);
+
+						if(S[k][1] == 1 )
+						{
+							//if(GCGmasterVarGetOrigvals(mastervars2[i])[S[p][0]] >= S[p][2] )
+							if(generator_i >= S[k][2] )
+							{
+								if( k == p )
+									mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
+							}
+							else
+							{
+								if(ncopymastervars > 0)
+								{
+									swap = mastervars2[i];
+									mastervars2[i] = mastervars2[ncopymastervars-1];
+									mastervars2[ncopymastervars-1] = swap;
+									--ncopymastervars;
+									--i;
+								}
+							}
+						}
+						else  //nested erasing
+						{
+							if(generator_i < S[k][2] )
+							{
+								if( k == p )
+									mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
+							}
+							else
+							{
+								if(ncopymastervars > 0)
+								{
+									swap = mastervars2[i];
+									mastervars2[i] = mastervars2[ncopymastervars-1];
+									mastervars2[ncopymastervars-1] = swap;
+									--ncopymastervars;
+									--i;
+								}
+							}
+						}
+					}
+					else
+					{
+						if(ncopymastervars > 0)
+						{
+							swap = mastervars2[i];
+							mastervars2[i] = mastervars2[ncopymastervars-1];
+							mastervars2[ncopymastervars-1] = swap;
+							--ncopymastervars;
+							--i;
+						}
 					}
 				}
+				nmastervars2 = ncopymastervars;
 			}
-			Fsize = newFsize;
-
 			if( p == Ssize-1)
 				L = SCIPceil(scip, mu);
 			else
@@ -1559,8 +1701,6 @@ SCIP_RETCODE createChildNodesGeneric(
 			SCIP_CALL( SCIPcreateConsLinear(masterscip, &mastercons, childname, 0, NULL, NULL,
 					lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
 
-			//Node redundant?
-
 
 			//add variables to constraint
 
@@ -1568,11 +1708,17 @@ SCIP_RETCODE createChildNodesGeneric(
 			newnmastervars = nmastervars;
 			for( i=0; i<newnmastervars; ++i)
 			{
+				SCIP_VAR** presentmastervars;
+				SCIP_VAR** origvars;
+				int npresentmastervars;
+				int norigvars;
+				SCIP_Real generator_i;
+				SCIP_Bool present;
 				if( GCGvarGetBlock(copymastervars[i]) == blocknr )
 				{
 					if(p==Ssize)
 					{
-						assert( (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] >= S[p][2] && S[p][1]==1) || (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] < S[p][2] && S[p][1]!=1) );
+						//assert( (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] >= S[p][2] && S[p][1]==1) || (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] < S[p][2] && S[p][1]!=1) );
 						SCIP_CALL( SCIPaddCoefLinear(scip, mastercons, copymastervars[i], 1.0) );
 						//small down array
 						copymastervars[i] = copymastervars[newnmastervars-1];
@@ -1581,10 +1727,40 @@ SCIP_RETCODE createChildNodesGeneric(
 					}
 					else
 					{
+
+						present = FALSE;
+						npresentmastervars = GCGoriginalVarGetNMastervars(allorigvars[S[p][0]]);
+						presentmastervars = GCGoriginalVarGetMastervars(allorigvars[S[p][0]]);
+						norigvars = GCGmasterVarGetNOrigvars(copymastervars[i]);  
+						origvars = GCGmasterVarGetOrigvars(copymastervars[i]);
+
+						for(j=0; j<npresentmastervars; ++j)
+						{
+							if(copymastervars[i] == presentmastervars[j])
+							{
+								present = TRUE;
+							}
+						}
+						if(present)
+						{
+							for(j=0; j<norigvars; ++j)
+							{
+								if(allorigvars[S[p][0]] == origvars[j]) 
+								{
+									generator_i = GCGmasterVarGetOrigvals(copymastervars[i])[j]; // ??? bei discr gleich dem generator ???
+									break;
+								}
+							}
+						}
+						else
+							generator_i = 0;
+
+
 						if( S[p][1] == 1 )
 						{
 							// if( mastervar[i] >= S[p][2] ) current mastervars stays in array
-							if( GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] < S[p][2] )
+							//if( GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] < S[p][2] )
+							if( generator_i < S[p][2] )
 							{
 								//add var to constraint
 								SCIP_CALL( SCIPaddCoefLinear(masterscip, mastercons, copymastervars[i], 1.0) );
@@ -1598,7 +1774,7 @@ SCIP_RETCODE createChildNodesGeneric(
 						else
 						{
 							// if( mastervar[i] < S[p][2] ) current mastervars stays in array
-							if( GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] >= S[p][2] )
+							if( generator_i >= S[p][2] )
 							{
 								//add var to constraint
 								SCIP_CALL( SCIPaddCoefLinear(masterscip, mastercons, copymastervars[i], 1.0) );
@@ -1628,7 +1804,7 @@ SCIP_RETCODE createChildNodesGeneric(
 		}
 	}
 
-
+	SCIPfreeBufferArray(scip, &mastervars2);
 	SCIPfreeBufferArray(scip, &copymastervars);
 
 	return SCIP_OKAY; 
@@ -1643,10 +1819,13 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 	SCIP* masterscip;
 	SCIP_VAR** mastervars;
 	SCIP_VAR** copymastervars;
+	SCIP_VAR** allorigvars;
+	int allnorigvars;
 	int nmastervars;
 	int nnewmastervars;
 	int i;
 	int p;
+	int j;
 	char name[SCIP_MAXSTRLEN];
 
 	i = 0;
@@ -1660,6 +1839,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 	masterscip = GCGrelaxGetMasterprob(scip);
 	assert(masterscip != NULL);
 	SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+	SCIP_CALL( SCIPgetVarsData(scip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
 
 	SCIP_CALL( SCIPallocBufferArray(scip, &copymastervars, nmastervars) );
 
@@ -1686,11 +1866,44 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 			nnewmastervars = nmastervars;
 			for(i=0; i<nnewmastervars; ++i)
 			{
+				SCIP_VAR** presentmastervars;
+				SCIP_VAR** origvars;
+				int npresentmastervars;
+				int norigvars;
+				SCIP_Real generator_i;
+				SCIP_Bool present;
 				if( GCGvarGetBlock(copymastervars[i]) == branchdata->blocknr )
 				{
+					present = FALSE;
+					npresentmastervars = GCGoriginalVarGetNMastervars(allorigvars[branchdata->S[p][0]]);
+					presentmastervars = GCGoriginalVarGetMastervars(allorigvars[branchdata->S[p][0]]);
+					norigvars = GCGmasterVarGetNOrigvars(copymastervars[i]);  
+					origvars = GCGmasterVarGetOrigvars(copymastervars[i]);
+
+					for(j=0; j<npresentmastervars; ++j)
+					{
+						if(copymastervars[i] == presentmastervars[j])
+						{
+							present = TRUE;
+						}
+					}
+					if(present)
+					{
+						for(j=0; j<norigvars; ++j)
+						{
+							if(allorigvars[branchdata->S[p][0]] == origvars[j]) 
+							{
+								generator_i = GCGmasterVarGetOrigvals(copymastervars[i])[j]; // ??? bei discr gleich dem generator ???
+								break;
+							}
+						}
+					}
+					else
+						generator_i = 0;
+
 					if( branchdata->S[p][1] == 1)
 					{
-						if(GCGmasterVarGetOrigvals(copymastervars[i])[branchdata->S[p][0]] >= branchdata->S[p][2])
+						if(generator_i >= branchdata->S[p][2])
 						{
 							if( p == branchdata->Ssize-1 )
 								//add var to constraint
@@ -1706,7 +1919,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 					}
 					else
 					{
-						if(GCGmasterVarGetOrigvals(copymastervars[i])[branchdata->S[p][0]] < branchdata->S[p][2])
+						if(generator_i < branchdata->S[p][2])
 						{
 							if( p == branchdata->Ssize-1 )
 								//add var to constraint
@@ -1831,7 +2044,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	int norigvars;
 	int allnorigvars;
 
-	blocknr = -1;
+	blocknr = -2;
 	Ssize = 0;
 	Csize = 0;
 	Fsize = 0;
@@ -1906,10 +2119,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 		assert(GCGvarIsMaster(mastervar));
 		norigvars = GCGmasterVarGetNOrigvars(mastervar);
 		blocknr = GCGvarGetBlock(mastervar);
-		if(blocknr >= 0)
+		if(blocknr >= -1)
 			break;
 	}
-	if( blocknr < 0 )
+	if( blocknr < -1 )
 		feasible = TRUE;
 
 	k = 0;
@@ -2194,7 +2407,7 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
 
 	/* include event handler for adding generated mastervars to the branching constraints */
 	SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(scip) );
-	
+
 	//SCIPincludeConshdlrMasterbranch(GCGrelaxGetMasterprob(scip));
 
 	return SCIP_OKAY;
