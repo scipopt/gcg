@@ -56,7 +56,6 @@
 #include "scip/cons_xor.h"
 #include "scip/dialog_default.h"
 
-
 #if USEHEURS
 #include "scip/heur_actconsdiving.h"
 #include "scip/heur_clique.h"
