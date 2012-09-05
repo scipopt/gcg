@@ -2012,6 +2012,9 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+   
+   if(BRANCHRULE_NAME == 1)
+   	   return consdata->childvanderbeck[0];
 
    return consdata->child1cons;
 }
@@ -2026,6 +2029,9 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+   
+   if(BRANCHRULE_NAME == 1)
+	   return consdata->childvanderbeck[1];
 
    return consdata->child2cons;
 }
@@ -2102,7 +2108,9 @@ void GCGconsMasterbranchCheckConsistency(
       assert((consdata->parentcons == NULL) == ((consdata->node == NULL) || (SCIPnodeGetDepth(consdata->node) == 0)));
 
       assert(consdata->origcons == NULL || consdata->created);
-      assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
+      
+      if(BRANCHRULE_NAME != 1)
+    	  assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
          || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
          || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
       assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);
