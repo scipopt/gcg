@@ -69,7 +69,7 @@ struct SCIP_EventhdlrData
 
 /** method for calculating the generator of mastervar*/
 static
-SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real* generator, int* generatorsize, SCIP_Bool* compisinteger, int blocknr, SCIP_VAR** mastervars, int nmastervars, SCIP_VAR* mastervar)
+SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize, SCIP_Bool** compisinteger, int blocknr, SCIP_VAR** mastervars, int nmastervars, SCIP_VAR* mastervar)
 {
 	int i;
 	int j;
@@ -97,14 +97,17 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real* generator, int* generatorsize,
 		if(*generatorsize==0 && norigvars>0)
 		{
 			*generatorsize = norigvars;
-			SCIP_CALL( SCIPallocBufferArray(scip, &generator, *generatorsize) );
-			SCIP_CALL( SCIPallocBufferArray(scip, &compisinteger, *generatorsize) );
+			SCIP_CALL( SCIPallocBufferArray(scip, generator, *generatorsize) );
+			SCIP_CALL( SCIPallocBufferArray(scip, compisinteger, *generatorsize) );
 			SCIP_CALL( SCIPallocBufferArray(scip, &origvarsunion, *generatorsize) );
 			for(j=0; j<*generatorsize; ++j)
 			{
 				origvarsunion[j] = origvars[j];
-				generator[j] = 0;
-				compisinteger[j] = TRUE;
+				(*generator)[j] = 0;
+				(*compisinteger)[j] = TRUE;
+				if(SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT)
+					(*compisinteger)[j] = FALSE;
+				//SCIPdebugMessage("compisinteger[j] = %d \n", (*compisinteger)[j]);
 			}
 		}
 		else
@@ -124,12 +127,15 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real* generator, int* generatorsize,
 					if(k == norigvars-1)
 					{
 						++(*generatorsize);
-						SCIP_CALL( SCIPreallocBufferArray(scip, &generator, *generatorsize) );
-						SCIP_CALL( SCIPreallocBufferArray(scip, &compisinteger, *generatorsize) );
+						SCIP_CALL( SCIPreallocBufferArray(scip, generator, *generatorsize) );
+						SCIP_CALL( SCIPreallocBufferArray(scip, compisinteger, *generatorsize) );
 						SCIP_CALL( SCIPreallocBufferArray(scip, &origvarsunion, *generatorsize) );
 						origvarsunion[*generatorsize-1] = origvars[j];
-						generator[*generatorsize-1] = 0;
-						compisinteger[*generatorsize-1] = TRUE;
+						(*generator)[*generatorsize-1] = 0;
+						(*compisinteger)[(*generatorsize)-1] = TRUE;
+						if(SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT)
+							(*compisinteger)[(*generatorsize)-1] = FALSE;
+						//SCIPdebugMessage("compisinteger[size-1] = %d \n", (*compisinteger)[(*generatorsize)-1]);
 					}
 				}
 			}
@@ -147,9 +153,10 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real* generator, int* generatorsize,
 			if(origvarsunion[j]==origvars[i])
 			{
 				if(SCIPvarGetType(origvars[i]) == SCIP_VARTYPE_CONTINUOUS)
-					compisinteger[i] = FALSE;				 
+					(*compisinteger)[j] = FALSE;				 
 				if(!SCIPisZero(scip, origvals[i]))
-					generator[j] = origvals[i];
+					(*generator)[j] = origvals[i];
+				//SCIPdebugMessage("set compisinteger[j] = %d \n", (*compisinteger)[j]);
 				break;
 			}
 		}
@@ -301,7 +308,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				else
 					generator_i = 0;
 				*/
-				getGenerators(scip, generator, &generatorsize, compisinteger, branchdata->blocknr, mastervars, nmastervars, mastervar);
+				getGenerators(scip, &generator, &generatorsize, &compisinteger, branchdata->blocknr, mastervars, nmastervars, mastervar);
 				generator_i = generator[branchdata->S[p][0]];
 				
 				
