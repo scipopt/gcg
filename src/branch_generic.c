@@ -299,7 +299,7 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 // lexicographical sort using scipsort
 // !!! changes the array
 static
-SCIP_RETCODE LexicographicSort( struct GCG_Strip** array, int arraysize)
+SCIP_RETCODE LexicographicSort( struct GCG_Strip*** array, int arraysize)
 {
 
 	SCIPdebugMessage("Lexicographic sorting\n");
@@ -622,7 +622,7 @@ SCIP_RETCODE ILOQSort( SCIP* scip, GCG_BranchData** array, int arraysize, Compon
 
 // induced lexicographical sort
 static
-SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
+SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
 {
 	int i;
 	//int n;
@@ -644,14 +644,14 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip** array, int
 	 */
 
 	for( i=0; i<arraysize; ++i ){
-		array[i]->C = C;
-		array[i]->Csize = NBoundsequences; 
-		array[i]->sequencesizes = sequencesizes;
+		(*array)[i]->C = C;
+		(*array)[i]->Csize = NBoundsequences; 
+		(*array)[i]->sequencesizes = sequencesizes;
 		//array[i]->strip->IndexSet = IS;
 		//array[i]->strip->Indexsetsize = n;
 	}
 
-	SCIPsortPtr((void**) array, ptrilocomp, arraysize);
+	SCIPsortPtr( array, ptrilocomp, arraysize);
 
 	//	SCIPfreeBufferArray(scip, &IS);
 
@@ -2502,13 +2502,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 
 		if(C != NULL){
 			SCIPdebugMessage("C != NULL\n");
-			SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
+			SCIP_CALL( InducedLexicographicSort(scip, &F, Fsize, C, Csize, sequencesizes) );
 			SCIP_CALL( CallSeparate(scip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes) );
 		}
 		else
 		{
 			SCIPdebugMessage("C == NULL\n");
-			SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
+			SCIP_CALL( InducedLexicographicSort( scip, &F, Fsize, NULL, 0, NULL ) );
 			SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 		}
 		SCIPfreeBufferArray(scip, &sequencesizes);
@@ -2517,7 +2517,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	else
 	{
 		SCIPdebugMessage("masterbanchcons == NULL\n");
-		SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
+		SCIP_CALL( InducedLexicographicSort( scip, &F, Fsize, NULL, 0, NULL ) );
 		SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 	}
 	assert(S!=NULL);
