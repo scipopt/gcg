@@ -96,7 +96,6 @@
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 
-#include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
@@ -107,6 +106,7 @@
 #include "scip/presol_convertinttobin.h"
 
 #if USEPROP
+#include "scip/prop_dualfix.h"
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
@@ -200,7 +200,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderMps(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
-   SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
@@ -212,6 +211,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
 #if USEPROP
+   SCIP_CALL( SCIPincludePropDualfix(scip) );
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
    SCIP_CALL( SCIPincludePropGenvbounds(scip) );

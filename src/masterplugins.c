@@ -82,13 +82,13 @@
 #include "scip/heur_zirounding.h"
 #endif
 
-#include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
+#include "scip/prop_dualfix.h"
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
@@ -149,14 +149,13 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeReaderLp(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
-   SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
 #if USEPROP
+   SCIP_CALL( SCIPincludePropDualfix(scip) );
    SCIP_CALL( SCIPincludePropProbing(scip) );
-   /* TODO: I added the include of the following propagators, was there a reason to not add them? (Gerald) */
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
    SCIP_CALL( SCIPincludePropRedcost(scip) );

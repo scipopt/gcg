@@ -175,7 +175,7 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%d %d %d\n", nvars+nconss+dummynodes, nnonzeroes, edgeweights ? 1 :0);
+   SCIPinfoMessage(scip_, file, "%d %d %d\n", nvars+nconss, nnonzeroes+dummynodes, edgeweights ? 1 :0);
 
    for( int i = 0; i < nvars+nconss; ++i )
    {

@@ -921,8 +921,10 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
 
    /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
-   SCIP_CALL( SCIPsetIntParam(scip, "presolving/dualfix/maxrounds", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "presolving/dualfix/maxrounds") );
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
+   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
 
    /* disable solution storage ! */
    SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
@@ -1439,10 +1441,12 @@ SCIP_RETCODE createPricingprobConss(
    {
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
-         SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(subscipconss[b][c]), b);
-         if( !SCIPconsIsActive( subscipconss[b][c]) )
+         SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(subscipconss[b][c]), b);
+         if( !SCIPconsIsActive(subscipconss[b][c]) )
+         {
+            SCIPdebugMessage("skipping, cons <%s> inactive\n", SCIPconsGetName(subscipconss[b][c]));
             continue;
-
+         }
          SCIP_CALL( SCIPgetTransformedCons(scip, subscipconss[b][c], &subscipconss[b][c]) );
          assert(subscipconss[b][c] != NULL);
 

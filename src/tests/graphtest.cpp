@@ -55,8 +55,9 @@ void GraphTest::TearDown() {
 
 SCIP_RETCODE GraphTest::createVar(const char * str) {
    SCIP_VAR* var;
+   char* endptr;
    SCIP_Bool success;
-   SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &success) );
+   SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &endptr, &success) );
    assert(success);
    SCIP_CALL( SCIPaddVar(scip, var) );
    SCIP_CALL( SCIPreleaseVar(scip, &var) );

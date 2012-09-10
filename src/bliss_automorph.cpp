@@ -678,7 +678,7 @@ SCIP_RETCODE setuparrays(
       SCIP *scip = scips[s];
       conss = SCIPgetConss(scip);
       vars = SCIPgetVars(scip);
-      SCIPdebugMessage("Handling SCIP %i (%dx%d)\n", s, nconss, nvars);
+      SCIPdebugMessage("Handling SCIP %i (%d x %d)\n", s, nconss, nvars);
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )
       {
