@@ -3404,3 +3404,30 @@ SCIP_Bool GCGrelaxIsInitialized(
 
    return relaxdata->relaxisinitialized;
 }
+
+/** returns the average degeneracy */
+SCIP_Real GCGgetDegeneracy(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_Real degeneracy;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   degeneracy = 0.0;
+   if( relaxdata->masterprob != NULL)
+   {
+      degeneracy = GCGpricerGetDegeneracy(relaxdata->masterprob);
+      if( SCIPisInfinity(relaxdata->masterprob, degeneracy) )
+         degeneracy = SCIPinfinity(scip);
+   }
+   return degeneracy;
+}

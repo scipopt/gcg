@@ -138,7 +138,14 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    );
 
 /** create initial master variables */
+extern
 SCIP_RETCODE GCGpricerCreateInitialMastervars(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** get root node degeneracy */
+extern
+SCIP_Real GCGpricerGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

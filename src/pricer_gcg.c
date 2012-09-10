@@ -595,9 +595,9 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    /* Degeneracy in % */
    if( count > 0 )
-      *degeneracy = ((double)countz / count)*100;
+      *degeneracy = ((double)countz / count);
 
-   assert(*degeneracy <= 100);
+   assert(*degeneracy <= 1.0 && *degeneracy >= 0);
 
    SCIPfreeMemoryArray(scip, &indizes);
 
@@ -1851,11 +1851,11 @@ SCIP_RETCODE performPricing(
           * <=> E_n = E_{n-1} - E_{n-1}/n + x_n/n
           * <=> E -= E/n - x_n/n
           */
-      pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs+1) - degeneracy/(pricerdata->ndegeneracycalcs+1);
-      ++pricerdata->ndegeneracycalcs;
+         pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs+1) - degeneracy/(pricerdata->ndegeneracycalcs+1);
+         ++pricerdata->ndegeneracycalcs;
       }
 
-      //   SCIPinfoMessage(scip, NULL, "deg: %.2f (avg %.2f)\n", degeneracy, pricerdata->avgrootnodedegeneracy);
+      pricerdata->rootnodedegeneracy = degeneracy;
    }
 
    return SCIP_OKAY;
@@ -2876,4 +2876,28 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
       }
    }
    return SCIP_OKAY;
+}
+
+/** get root node degeneracy */
+SCIP_Real GCGpricerGetDegeneracy(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   {
+      return pricerdata->avgrootnodedegeneracy;
+   }
+   else
+      return SCIPinfinity(scip);
 }

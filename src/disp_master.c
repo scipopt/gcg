@@ -298,6 +298,14 @@
 #define DISP_POSI_CUTOFFBOUND   10100
 #define DISP_STRI_CUTOFFBOUND   TRUE
 
+#define DISP_NAME_DEGENERACY    "degeneracy"
+#define DISP_DESC_DEGENERACY    "current average degeneracy"
+#define DISP_HEAD_DEGENERACY    "deg"
+#define DISP_WIDT_DEGENERACY    8
+#define DISP_PRIO_DEGENERACY    40000
+#define DISP_POSI_DEGENERACY    18000
+#define DISP_STRI_DEGENERACY    TRUE
+
 #define DISP_NAME_GAP           "gap"
 #define DISP_DESC_GAP           "current relative primal-dual gap"
 #define DISP_HEAD_GAP           "gap"
@@ -848,6 +856,26 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
 
 /** output method of display column to output file stream 'file' */
 static
+SCIP_DECL_DISPOUTPUT(SCIPdispOutputDegeneracy)
+{  /*lint --e{715}*/
+   SCIP_Real degeneracy;
+
+   assert(disp != NULL);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DEGENERACY) == 0);
+   assert(scip != NULL);
+
+   degeneracy = GCGpricerGetDegeneracy(scip);
+   if( SCIPisInfinity(scip, degeneracy) )
+         SCIPinfoMessage(scip, file, "   --   ");
+   else
+      SCIPinfoMessage(scip, file, "%7.2f%%", 100.0*degeneracy);
+
+   return SCIP_OKAY;
+}
+
+
+/** output method of display column to output file stream 'file' */
+static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNsols)
 {  /*lint --e{715}*/
    SCIPinfoMessage(scip, file, "%5"SCIP_LONGINT_FORMAT, SCIPgetNSolsFound(GCGpricerGetOrigprob(scip)));
@@ -968,6 +996,9 @@ SCIP_RETCODE SCIPincludeDispMaster(
    SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MCUTS, DISP_DESC_MCUTS, DISP_HEAD_MCUTS,
          SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMcuts, NULL,
          DISP_WIDT_MCUTS, DISP_PRIO_MCUTS, DISP_POSI_MCUTS, DISP_STRI_MCUTS) );
+   SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DEGENERACY, DISP_DESC_DEGENERACY, DISP_HEAD_DEGENERACY,
+         SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDegeneracy, NULL,
+         DISP_WIDT_DEGENERACY, DISP_PRIO_DEGENERACY, DISP_POSI_DEGENERACY, DISP_STRI_DEGENERACY) );
 
    return SCIP_OKAY;
 }
