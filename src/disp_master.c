@@ -78,9 +78,17 @@
 #define DISP_DESC_LPITERATIONS  "number of simplex iterations"
 #define DISP_HEAD_LPITERATIONS  "LP iter"
 #define DISP_WIDT_LPITERATIONS  7
-#define DISP_PRIO_LPITERATIONS  30000
+#define DISP_PRIO_LPITERATIONS  1000
 #define DISP_POSI_LPITERATIONS  1000
 #define DISP_STRI_LPITERATIONS  TRUE
+
+#define DISP_NAME_SLPITERATIONS "sumlpiterations"
+#define DISP_DESC_SLPITERATIONS "number of simplex iterations in master and pricing problems"
+#define DISP_HEAD_SLPITERATIONS "SLP iter"
+#define DISP_WIDT_SLPITERATIONS 8
+#define DISP_PRIO_SLPITERATIONS 30000
+#define DISP_POSI_SLPITERATIONS 1050
+#define DISP_STRI_SLPITERATIONS TRUE
 
 #define DISP_NAME_MLPITERATIONS  "mlpiterations"
 #define DISP_DESC_MLPITERATIONS  "number of simplex iterations in the master"
@@ -336,6 +344,19 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    assert(scip != NULL);
 
    SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(scip), DISP_WIDT_MLPITERATIONS);
+
+   return SCIP_OKAY;
+}
+
+/** output method of display column to output file stream 'file' */
+static
+SCIP_DECL_DISPOUTPUT(SCIPdispOutputSlpiterations)
+{  /*lint --e{715}*/
+   assert(disp != NULL);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SLPITERATIONS) == 0);
+   assert(scip != NULL);
+
+   SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(scip) + GCGpricerGetPricingSimplexIters(scip), DISP_WIDT_SLPITERATIONS);
 
    return SCIP_OKAY;
 }
@@ -981,6 +1002,9 @@ SCIP_RETCODE SCIPincludeDispMaster(
          DISP_WIDT_NSOLS, DISP_PRIO_NSOLS, DISP_POSI_NSOLS, DISP_STRI_NSOLS) );
 
 
+   SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SLPITERATIONS, DISP_DESC_SLPITERATIONS, DISP_HEAD_SLPITERATIONS,
+         SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSlpiterations, NULL,
+         DISP_WIDT_SLPITERATIONS, DISP_PRIO_SLPITERATIONS, DISP_POSI_SLPITERATIONS, DISP_STRI_SLPITERATIONS) );
    SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MLPITERATIONS, DISP_DESC_MLPITERATIONS, DISP_HEAD_MLPITERATIONS,
          SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMlpiterations, NULL,
          DISP_WIDT_MLPITERATIONS, DISP_PRIO_MLPITERATIONS, DISP_POSI_MLPITERATIONS, DISP_STRI_MLPITERATIONS) );

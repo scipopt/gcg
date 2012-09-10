@@ -127,6 +127,7 @@ struct SCIP_PricerData
    int                   calls;              /**< number of total pricing calls */
    int                   farkascalls;        /**< number of farkas pricing calls */
    int                   redcostcalls;       /**< number of reduced cost pricing calls */
+   int                   pricingiters;       /**< sum of all pricing simplex iterations */
 
    /* solver data */
    GCG_SOLVER**          solvers;            /**< pricing solvers array */
@@ -666,8 +667,6 @@ SCIP_RETCODE solvePricingProblem(
 
          SCIP_CALL( SCIPstopClock(scip, clock) );
 
-         if( pricetype == GCG_PRICETYPE_FARKAS && *status != SCIP_STATUS_UNKNOWN )
-
          if( *status != SCIP_STATUS_UNKNOWN )
             (*calls)++;
 
@@ -677,6 +676,7 @@ SCIP_RETCODE solvePricingProblem(
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                           SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
+            pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
             break;
          }
 
@@ -2025,6 +2025,7 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    pricerdata->calls = 0;
    pricerdata->redcostcalls = 0;
    pricerdata->farkascalls = 0;
+   pricerdata->pricingiters = 0;
 
    /* set variable type for master variables */
    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
@@ -2894,10 +2895,55 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
 
-   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   if(SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
    {
       return pricerdata->avgrootnodedegeneracy;
    }
    else
       return SCIPinfinity(scip);
+}
+
+/* get number of iterations in pricing problems */
+SCIP_Longint GCGpricerGetPricingSimplexIters(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   return pricerdata->pricingiters;
+}
+
+/** print simplex iteration statistics */
+extern
+SCIP_RETCODE GCGpricerPrintSimplexIters(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file */
+   )
+{
+   SCIP_PRICER* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(scip != NULL);
+
+   pricer = SCIPfindPricer(scip, PRICER_NAME);
+   assert(pricer != NULL);
+
+   pricerdata = SCIPpricerGetData(pricer);
+   assert(pricerdata != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Simplex iterations :       iter\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", SCIPgetNLPIterations(scip));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Pricing LP       : %10lld\n", pricerdata->pricingiters);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", SCIPgetNLPIterations(pricerdata->origprob));
+
+   return SCIP_OKAY;
 }
