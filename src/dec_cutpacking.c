@@ -11,7 +11,7 @@
 /**@file   dec_cutpacking.c
  * @ingroup DETECTORS
  * @brief  cutpacking presolver
- * @author
+ * @author Friederike Menge
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -21,7 +21,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "dec_cutpacking.h"
 
@@ -1245,10 +1244,8 @@ SCIP_RETCODE GetConsindex(
       SCIP_CALL( GetVartoblock(scip, detectordata,decdecomp) );
       SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss2, nsubscipconss2, &valid) );
       assert(valid);
-      SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
-      // SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, &valid) );
-      // assert(valid);
-
+      SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, &valid) );
+      assert(valid);
       SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
       assert(valid);
       DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
@@ -1945,7 +1942,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
    SCIPdebugMessage("buildGraphstructure successful \n");
 
-   SCIP_CALL_ABORT( DECdecompCreate(scip, &(*decdecomps)[0]) );
+   SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[0]) );
 
 
    /* get the partitions for the new variables from metis */

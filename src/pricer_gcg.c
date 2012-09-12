@@ -169,11 +169,8 @@ struct SCIP_PricerData
    int*                  foundvarshist;      /**< Histogram of foundvars distribution */
 
    double                rootnodedegeneracy; /**< degeneracy of the root node */
-   double*               nodedegeneracy;     /**< degeneracy of the remaining nodes */
-   double                avgnodedegeneracy;  /**< average degeneray of all nodes */
-   int                   nnodes;             /**< number of nodes handled so far */
-   int                   maxnnodes;          /**< maximal number of nodes to handle */
-   SCIP_NODE*            lastnode;           /**< last handled node */
+   double                avgrootnodedegeneracy; /**< average degeneray of all nodes */
+   int                   ndegeneracycalcs;   /**< number of observations */
 };
 
 
@@ -321,31 +318,8 @@ SCIP_RETCODE ensureSizeSolvers(
 
    return SCIP_OKAY;
 }
+
 #ifdef ENABLESTATISTICS
-/** ensures size of nodes array */
-static
-SCIP_RETCODE ensureSizeAvgnodedegeneracy(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
-{
-   int memgrowsize;
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
-
-   if( pricerdata->maxnnodes > pricerdata->nnodes )
-      return SCIP_OKAY;
-
-   memgrowsize = SCIPcalcMemGrowSize(scip, pricerdata->nnodes+1);
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->nodedegeneracy), memgrowsize) );
-
-   pricerdata->maxnnodes = memgrowsize;
-
-   assert(pricerdata->maxnnodes > pricerdata->nnodes);
-   return SCIP_OKAY;
-}
-#endif
-
 /** gets the NodeTimeDistribution in the form of a histogram */
 static
 void GCGpricerGetNodeTimeHistogram(
@@ -421,7 +395,7 @@ void GCGpricerCollectStatistic(
    GCGpricerGetFoundVarsHistogram(pricerdata, foundvars);
 
 }
-
+#endif
 
 /** frees all solvers */
 static
@@ -563,7 +537,6 @@ SCIP_RETCODE solversExitsol(
    return SCIP_OKAY;
 }
 
-#ifdef ENABLESTATISTICS
 /** returns the gegeneracy of the masterproblem */
 static
 SCIP_RETCODE computeCurrentDegeneracy(
@@ -630,7 +603,6 @@ SCIP_RETCODE computeCurrentDegeneracy(
 
    return SCIP_OKAY;
 }
-#endif
 
 /** solves a specific pricing problem */
 static
@@ -701,8 +673,10 @@ SCIP_RETCODE solvePricingProblem(
 
          if( *status == SCIP_STATUS_OPTIMAL || *status == SCIP_STATUS_UNBOUNDED )
          {
+#ifdef ENABLESTATISTICS
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                           SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
+#endif
             break;
          }
 
@@ -1858,37 +1832,33 @@ SCIP_RETCODE performPricing(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
-#ifdef ENABLESTATISTICS
-   SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
-
-   if( pricerdata->lastnode != SCIPgetCurrentNode(scip) )
+   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricerdata->redcostcalls > 0 )
    {
-      pricerdata->lastnode = SCIPgetCurrentNode(scip);
+      SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
-      SCIP_CALL( ensureSizeAvgnodedegeneracy(scip, pricerdata) );
-      assert(pricerdata->nnodes < pricerdata->maxnnodes);
+      pricerdata->rootnodedegeneracy = degeneracy;
 
-      if( pricerdata->nnodes == 1 )
-         pricerdata->avgnodedegeneracy = degeneracy;
-      else if( pricerdata->nnodes > 2 )
+      if( pricerdata->ndegeneracycalcs == 0 )
+      {
+         pricerdata->avgrootnodedegeneracy = degeneracy;
+         ++pricerdata->ndegeneracycalcs;
+      }
+      else if( pricerdata->ndegeneracycalcs > 0 )
       {
          /* Complicated calculation for numerical stability:
           *     E[\sum_{i=1}^n x_i] = (E[\sum_{i=1}^{n-1} x_i]*(n-1) + x_n)/n
           *     E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]*(n-1)/n + x_n/n
           * <=> E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]-E[\sum_{i=1}^{n-1} x_i]/n + x_n/n
           * <=> E_n = E_{n-1} - E_{n-1}/n + x_n/n
-          * <=> E -= E/n - x_n(n
+          * <=> E -= E/n - x_n/n
           */
-         pricerdata->avgnodedegeneracy -= pricerdata->avgnodedegeneracy/(pricerdata->nnodes-2) - pricerdata->nodedegeneracy[pricerdata->nnodes-1]/(pricerdata->nnodes-1);
+      pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs+1) - degeneracy/(pricerdata->ndegeneracycalcs+1);
+      ++pricerdata->ndegeneracycalcs;
       }
-   }
-   if( pricerdata->lastnode == SCIPgetRootNode(scip) )
-      pricerdata->rootnodedegeneracy = degeneracy;
 
-   pricerdata->nodedegeneracy[pricerdata->nnodes] = degeneracy;
-   ++(pricerdata->nnodes);
-   assert(pricerdata->lastnode == SCIPgetCurrentNode(scip));
-#endif
+      //   SCIPinfoMessage(scip, NULL, "deg: %.2f (avg %.2f)\n", degeneracy, pricerdata->avgrootnodedegeneracy);
+   }
+
    return SCIP_OKAY;
 }
 
@@ -2080,11 +2050,8 @@ SCIP_DECL_PRICERINITSOL(pricerInitsolGcg)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars) );
 
    pricerdata->rootnodedegeneracy = 0.0;
-   pricerdata->avgnodedegeneracy = 0.0;
-   pricerdata->nnodes = 0;
-   pricerdata->maxnnodes = 10;
-   pricerdata->lastnode = NULL;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodedegeneracy), pricerdata->maxnnodes) );
+   pricerdata->avgrootnodedegeneracy = 0.0;
+   pricerdata->ndegeneracycalcs = 0;
 
    SCIP_CALL( solversInitsol(scip, pricerdata) );
 
@@ -2125,10 +2092,9 @@ SCIP_DECL_PRICEREXITSOL(pricerExitsolGcg)
 
    SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
    SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));
-   SCIPfreeMemoryArray(scip, &(pricerdata->nodedegeneracy));
+
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
-   pricerdata->nodedegeneracy = NULL;
 
    for( i = 0; i < pricerdata->npricedvars; i++ )
    {
@@ -2272,7 +2238,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->nsolvers = 0;
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
-   pricerdata->nodedegeneracy = NULL;
 
 
    /* include variable pricer */
@@ -2760,7 +2725,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       int blocknr;
       assert(GCGvarIsOriginal(origvars[i]));
       blocknr = GCGvarGetBlock(origvars[i]);
-      assert(GCGoriginalVarGetPricingVar(origvars[i]) != NULL || blocknr < 0);
+      assert(blocknr < 0 || GCGoriginalVarGetPricingVar(origvars[i]) != NULL);
 
       if( blocknr >= 0 )
       {

@@ -55,8 +55,8 @@ MAINOBJ		=	reader_blk.o \
 			pricer_gcg.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
-                        branch_generic.o \
-                        event_genericbranchvaradd.o \
+			branch_generic.o \
+			event_genericbranchvaradd.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralorig.o \
@@ -96,6 +96,8 @@ MAINOBJ		=	reader_blk.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_cutpacking.o \
+			dec_staircase.o \
+			dec_random.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \

@@ -1,3 +1,19 @@
+
+GCG next
+===============
+features
+- add staircase structure information
+- add staircase structure detection
+- the set partitioning detector can create decompositions with one block
+
+bug fixes
+- decompositions are now correctly classified
+
+code cleanup
+- use DECfilloutDecdecompFromHashmaps where appropriate to remove redundant
+  code
+
+
 GCG Version 1.0
 ===============
 
