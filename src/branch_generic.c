@@ -299,12 +299,12 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 // lexicographical sort using scipsort
 // !!! changes the array
 static
-SCIP_RETCODE LexicographicSort( struct GCG_Strip*** array, int arraysize)
+SCIP_RETCODE LexicographicSort( struct GCG_Strip** array, int arraysize)
 {
 
 	SCIPdebugMessage("Lexicographic sorting\n");
 
-	SCIPsortPtr(  array, ptrcomp, arraysize );
+	SCIPsortPtr((void**)array, ptrcomp, arraysize );
 
 	//change array
 
@@ -622,7 +622,7 @@ SCIP_RETCODE ILOQSort( SCIP* scip, GCG_BranchData** array, int arraysize, Compon
 
 // induced lexicographical sort
 static
-SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
+SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
 {
 	int i;
 	//int n;
@@ -644,14 +644,14 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, in
 	 */
 
 	for( i=0; i<arraysize; ++i ){
-		(*array)[i]->C = C;
-		(*array)[i]->Csize = NBoundsequences; 
-		(*array)[i]->sequencesizes = sequencesizes;
+		array[i]->C = C;
+		array[i]->Csize = NBoundsequences;
+		array[i]->sequencesizes = sequencesizes;
 		//array[i]->strip->IndexSet = IS;
 		//array[i]->strip->Indexsetsize = n;
 	}
 
-	SCIPsortPtr( array, ptrilocomp, arraysize);
+	SCIPsortPtr((void**)array, ptrilocomp, arraysize);
 
 	//	SCIPfreeBufferArray(scip, &IS);
 
@@ -684,9 +684,9 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 	SCIP_Real maxPriority;
 	SCIP_Bool found;
 	//	SCIP_VAR* origvar;
-	unsigned int seed;
+//	unsigned int seed;
 
-	seed = 0;
+//	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -935,8 +935,8 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 		
 		if(median != 0)
 		{
-			SCIPdebugMessage("median = %d\n", median);
-			SCIPdebugMessage("min = %d\n", min);
+			SCIPdebugMessage("median = %g\n", median);
+			SCIPdebugMessage("min = %g\n", min);
 		}
 
 		if( SCIPisEQ(scip, median, min) )
@@ -1094,27 +1094,27 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	//	int isense;
 	int ivalue;
 	int median;
-	int min;
+//	int min;
 	int Fupper;
 	int Flower;
 	int Cupper;
 	int Clower;
 	//	int copyCsize;
 	//	int maxPriority;
-	unsigned int seed;
+//	unsigned int seed;
 	//int copySsize;
 	struct GCG_Strip** copyF;
 	//ComponentBoundSequence** copyC;
 	ComponentBoundSequence* copyS;
 	//ComponentBoundSequence* lowerS;
 	SCIP_Real alpha_i;
-	SCIP_Real* compvalues;
+//	SCIP_Real* compvalues;
 	SCIP_Real  muF;
 	SCIP_Bool found;
 	SCIP_Real mu_F;
 	
 
-	seed = 0;
+//	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -1127,7 +1127,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	//	copyCsize = 0;
 	muF = 0;
 	//copySsize = 0;
-	min = INT_MAX;
+//	min = INT_MAX;
 	//	maxPriority = INT_MIN;
 	found = FALSE;
 
@@ -1217,7 +1217,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 
 
 	//Partition
-	min = INT_MAX;
+//	min = INT_MAX;
 	/*
 	for(j=0; j<IndexSetSize; ++j)
 		{
@@ -1562,7 +1562,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	//	int norigvars;
 	//	int v;
 	int i;
-	int j;
+//	int j;
 	int p;
 	int k;
 	int pL;
@@ -1573,7 +1573,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	int ncopymastervars;
 	int nbranchcands;
 	int newnmastervars;
-	int newFsize;
+//	int newFsize;
 	int allnorigvars;
 	int nvarsforcons_p;  // just for debugging
 	SCIP_Real mu;  // mu(S)
@@ -1904,7 +1904,7 @@ SCIP_RETCODE createChildNodesGeneric(
 					if(p==Ssize)
 					{
 						//assert( (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] >= S[p][2] && S[p][1]==1) || (GCGmasterVarGetOrigvals(copymastervars[i])[S[p][0]] < S[p][2] && S[p][1]!=1) );
-						SCIP_CALL( SCIPaddCoefLinear(scip, mastercons, copymastervars[i], 1.0) );
+						SCIP_CALL( SCIPaddCoefLinear(masterscip, mastercons, copymastervars[i], 1.0) );
 						//small down array
 						copymastervars[i] = copymastervars[newnmastervars-1];
 						--newnmastervars;
@@ -2019,7 +2019,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 	int nnewmastervars;
 	int i;
 	int p;
-	int j;
+//	int j;
 	char name[SCIP_MAXSTRLEN];
 
 	i = 0;
@@ -2243,18 +2243,18 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	int blocknr;
 	int i;
 	int c;
-	int j;
+//	int j;
 	int k;
-	int norigvars;
+//	int norigvars;
 	int allnorigvars;
 
 	blocknr = -2;
 	Ssize = 0;
 	Csize = 0;
 	Fsize = 0;
-	norigvars = 0;
+//	norigvars = 0;
 	i = 0;
-	j = 0;
+//	j = 0;
 	c = 0;
 	feasible = TRUE;
 	SinC = TRUE;
@@ -2322,7 +2322,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	{
 		mastervar = branchcands[i];
 		assert(GCGvarIsMaster(mastervar));
-		norigvars = GCGmasterVarGetNOrigvars(mastervar);
+//		norigvars = GCGmasterVarGetNOrigvars(mastervar);
 		blocknr = GCGvarGetBlock(mastervar);
 		if(blocknr >= -1)
 			break;
@@ -2347,7 +2347,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	SCIPdebugMessage("calculate F\n");
 	for( i=0; i<nbranchcands; ++i )
 	{
-		SCIP_VAR** origvars;
+//		SCIP_VAR** origvars;
 		mastervar = branchcands[i];
 		assert(GCGvarIsMaster(mastervar));
 
@@ -2355,7 +2355,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 		if(blocknr == GCGvarGetBlock(mastervar))
 		{
 			//	assert(norigvars == GCGmasterVarGetNOrigvars(mastervar));    wrong assertion?
-			norigvars = GCGmasterVarGetNOrigvars(mastervar);  
+//			norigvars = GCGmasterVarGetNOrigvars(mastervar);
 			mastervarValue = SCIPgetSolVal(masterscip, NULL, mastervar);
 			if( SCIPisGT(scip, mastervarValue - SCIPfloor(scip, mastervarValue), 0) )
 			{
@@ -2502,13 +2502,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 
 		if(C != NULL){
 			SCIPdebugMessage("C != NULL\n");
-			SCIP_CALL( InducedLexicographicSort(scip, &F, Fsize, C, Csize, sequencesizes) );
+			SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
 			SCIP_CALL( CallSeparate(scip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes) );
 		}
 		else
 		{
 			SCIPdebugMessage("C == NULL\n");
-			SCIP_CALL( InducedLexicographicSort( scip, &F, Fsize, NULL, 0, NULL ) );
+			SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
 			SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 		}
 		SCIPfreeBufferArray(scip, &sequencesizes);
@@ -2517,7 +2517,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	else
 	{
 		SCIPdebugMessage("masterbanchcons == NULL\n");
-		SCIP_CALL( InducedLexicographicSort( scip, &F, Fsize, NULL, 0, NULL ) );
+		SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
 		SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 	}
 	assert(S!=NULL);

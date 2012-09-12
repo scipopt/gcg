@@ -1415,6 +1415,7 @@ void sortPricingProblemsByScore(
          break;
       default:
          pricerdata->score[i] = 0.0;
+         break;
       }
    }
 
@@ -1732,9 +1733,7 @@ SCIP_RETCODE performPricing(
    int i;
    int j;
    int nfoundvars;
-#ifdef ENABLESTATISTICS
    double degeneracy;
-#endif
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
    SCIP_Bool duringheurpricing;

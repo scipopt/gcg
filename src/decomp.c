@@ -1088,7 +1088,6 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
 
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, &valid, staircase) );
    assert(valid);
->
 
    return SCIP_OKAY;
 }

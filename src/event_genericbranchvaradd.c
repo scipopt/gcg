@@ -235,7 +235,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 	SCIP_VAR** mastervars;
 	GCG_BRANCHDATA* branchdata;
 	int p;
-	int j;
+//	int j;
 	int allnorigvars;
 	int nmastervars;
 

@@ -1679,9 +1679,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
-   int i;
+//   int i;
    
-   i = 0;
+//   i = 0;
 
    assert(scip != NULL);
    assert(node != NULL || parentcons == NULL);

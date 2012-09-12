@@ -70,7 +70,7 @@
 #include "scip/heur_linesearchdiving.h"
 #include "scip/heur_localbranching.h"
 #include "scip/heur_mutation.h"
-//#include "scip/heur_nlpdiving.h"
+#include "scip/heur_nlpdiving.h"
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
