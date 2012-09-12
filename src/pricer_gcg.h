@@ -138,8 +138,28 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    );
 
 /** create initial master variables */
+extern
 SCIP_RETCODE GCGpricerCreateInitialMastervars(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** get root node degeneracy */
+extern
+SCIP_Real GCGpricerGetDegeneracy(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** get number of iterations in pricing problems */
+extern
+SCIP_Longint GCGpricerGetPricingSimplexIters(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** print simplex iteration statistics */
+extern
+SCIP_RETCODE GCGpricerPrintSimplexIters(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file */
    );
 
 #endif

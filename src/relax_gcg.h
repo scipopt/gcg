@@ -346,12 +346,6 @@ SCIP_Real GCGgetPricingprobsMemUsed(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns the degeneracy of the masterproblem */
-extern
-double GCGgetDegeneracy(
-   SCIP*                 masterproblem       /**< SCIP masterproblem */
-   );
-
 /** prints out the degeneracy of the problem */
 extern
 void GCGprintDegeneracy(
@@ -362,6 +356,12 @@ void GCGprintDegeneracy(
 /** returns whether the relaxator has been initialized */
 extern
 SCIP_Bool GCGrelaxIsInitialized(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the average degeneracy */
+extern
+SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

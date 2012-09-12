@@ -134,6 +134,9 @@ struct SCIP_RelaxData
    /* structure information */
    DEC_DECOMP*           decdecomp;          /**< structure information */
    SCIP_Bool             relaxisinitialized; /**< indicates whether the relaxator is initialized */
+
+   /* statistical information */
+   SCIP_Longint          simplexiters;       /**< cumulative simplex iterations */
 };
 
 /*
@@ -296,7 +299,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nblocks; ++i )
    {
       SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]);
-      assert(subscipvars[i] != NULL);
+      assert((subscipvars[i] == NULL) == (nsubscipvars[i] == 0));
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
          SCIP_VAR* relevantvar;
@@ -1830,6 +1833,7 @@ void initRelaxdata(
    relaxdata->pricingprobsmemused = 0.0;
 
    relaxdata->relaxisinitialized = FALSE;
+   relaxdata->simplexiters = 0;
 }
 
 /*
@@ -1899,7 +1903,6 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
-
 
    initRelaxdata(relaxdata);
 
@@ -3403,4 +3406,31 @@ SCIP_Bool GCGrelaxIsInitialized(
    assert(relaxdata != NULL);
 
    return relaxdata->relaxisinitialized;
+}
+
+/** returns the average degeneracy */
+SCIP_Real GCGgetDegeneracy(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+
+   SCIP_Real degeneracy;
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+   degeneracy = 0.0;
+   if( relaxdata->masterprob != NULL)
+   {
+      degeneracy = GCGpricerGetDegeneracy(relaxdata->masterprob);
+      if( SCIPisInfinity(relaxdata->masterprob, degeneracy) )
+         degeneracy = SCIPinfinity(scip);
+   }
+   return degeneracy;
 }

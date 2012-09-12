@@ -175,7 +175,7 @@ SCIP_RETCODE findConnectedComponents(
    int j;
    int k;
    int tempblock;
-
+   SCIP_Bool masterisempty;
    int* blockrepresentative;
    int nextblock;
    int *vartoblock;
@@ -211,12 +211,18 @@ SCIP_RETCODE findConnectedComponents(
    blockrepresentative[1] = 1;
    assert(nconss >= 1);
 
+   masterisempty = findextended;
+
    /* in a first preprocessing step, indicate which constraints should go in the master */
    if( findextended )
    {
       for( i = 0; i < nconss; ++i )
       {
          detectordata->consismaster[i] = isConsMaster(scip, conss[i]);
+
+         /* mark if there is one constraint in the master */
+         masterisempty = masterisempty && !detectordata->consismaster[i];
+
          /* we look for an extended structure if there is a constraint not in the master! */
          findextended = findextended || !detectordata->consismaster[i];
       }
@@ -450,6 +456,8 @@ SCIP_RETCODE findConnectedComponents(
 
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
+   else if( detectordata->nblocks == 1 && findextended && !masterisempty )
+      *result = SCIP_SUCCESS;
    else
       *result = SCIP_DIDNOTFIND;
 
@@ -469,17 +477,6 @@ SCIP_RETCODE copyToDecdecomp(
    int nconss;
    SCIP_VAR** vars;
    int nvars;
-   int i;
-
-   SCIP_CONS*** subscipconss;
-   int* nsubscipconss;
-   SCIP_CONS** linkingconss;
-   int nlinkingconss;
-   SCIP_VAR** linkingvars;
-   int nlinkingvars;
-   SCIP_VAR*** subscipvars;
-   int* nsubscipvars;
-   int nblocks;
    SCIP_Bool valid;
 
    assert(scip != NULL);
@@ -492,116 +489,10 @@ SCIP_RETCODE copyToDecdecomp(
    conss = SCIPgetConss(scip);
    nvars = SCIPgetNVars(scip);
    vars = SCIPgetVars(scip);
-   nlinkingconss = 0;
-   nlinkingvars = 0;
-   nblocks = detectordata->nblocks;
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) ) ;
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
-
-   for( i = 0; i < nblocks; ++i )
-   {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
-      nsubscipvars[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
-      nsubscipconss[i] = 0;
-   }
 
 
-   DECdecompSetPresolved(decdecomp, SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVED);
-   DECdecompSetNBlocks(decdecomp, nblocks);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, detectordata->vartoblock, detectordata->constoblock, detectordata->nblocks, vars, nvars, conss, nconss, &valid, FALSE) );
    assert(valid);
-   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
-   assert(valid);
-
-   for( i = 0; i < nconss; ++i )
-   {
-      size_t consblock;
-      if( isConsGCGCons(conss[i]) )
-         continue;
-      if( detectordata->consismaster[i] )
-      {
-         linkingconss[nlinkingconss] = conss[i];
-         ++(nlinkingconss);
-         continue;
-      }
-
-      consblock = (size_t) SCIPhashmapGetImage(detectordata->constoblock, conss[i]); /*lint !e507*/
-      assert(consblock > 0);
-      assert(nblocks >= 0);
-      assert(consblock <= (size_t)nblocks);
-
-      subscipconss[consblock-1][nsubscipconss[consblock-1]] = conss[i];
-      ++(nsubscipconss[consblock-1]);
-   }
-
-   for( i = 0; i < nvars; ++i )
-   {
-      size_t varblock;
-      SCIP_VAR* var;
-      var = SCIPvarGetProbvar(vars[i]);
-
-      if( var == NULL )
-         continue;
-
-      varblock = (size_t) SCIPhashmapGetImage(detectordata->vartoblock, var); /*lint !e507*/
-
-      if( varblock == 0 )
-      {
-         assert(!SCIPhashmapExists(detectordata->vartoblock, var));
-         linkingvars[nlinkingvars] = var;
-         ++nlinkingvars;
-         continue;
-      }
-
-      assert(varblock > 0);
-      assert(nblocks >= 0);
-      assert(varblock <= (size_t) nblocks);
-
-      subscipvars[varblock-1][nsubscipvars[varblock-1]] = SCIPvarGetProbvar(vars[i]);
-      ++(nsubscipvars[varblock-1]);
-   }
-
-   if( nlinkingconss > 0 )
-   {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
-      assert(valid);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
-      assert(valid);
-   }
-   else
-   {
-      DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, &valid);
-      assert(valid);
-   }
-
-   if( nlinkingvars > 0 )
-   {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
-      assert(valid);
-   }
-
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
-
-   for( i = nblocks-1; i >= 0; --i )
-   {
-      SCIPfreeBufferArray(scip, &subscipconss[i]);
-      SCIPfreeBufferArray(scip, &subscipvars[i]);
-   }
-   SCIPfreeBufferArray(scip, &linkingvars);
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
-   SCIPfreeBufferArray(scip, &subscipvars);
 
    detectordata->vartoblock = NULL;
    detectordata->constoblock = NULL;
