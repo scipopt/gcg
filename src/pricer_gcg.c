@@ -1452,8 +1452,8 @@ SCIP_Bool abortHeuristicPricing(
    }
 }
 
-static
 /** set subproblem timelimit */
+static
 SCIP_RETCODE subproblemSetTimelimit(
    SCIP*                 scip,               /**< SCIP data structure*/
    SCIP*                 pricingscip,        /**< SCIP of the pricingproblem */
@@ -1475,6 +1475,29 @@ SCIP_RETCODE subproblemSetTimelimit(
          SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
       }
    }
+   return SCIP_OKAY;
+}
+
+/** free pricing problems */
+static
+SCIP_RETCODE freePricingProblems(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata          /**< pricerdata data structure */
+   )
+{
+   int j;
+   assert(pricerdata != NULL);
+   assert(pricerdata->pricingprobs != NULL);
+
+   for( j = 0; j < pricerdata->npricingprobs; j++ )
+      if( pricerdata->pricingprobs[j] != NULL
+         && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
+         {
+            SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
+            SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
+            SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
+         }
+
    return SCIP_OKAY;
 }
 
@@ -1522,9 +1545,6 @@ SCIP_RETCODE performHeuristicPricing(
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
-      /* set objective limit, such that only solutions with negative reduced costs are accepted */
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
-
       SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 
       if( timelimit - SCIPgetSolvingTime(scip) <= 0 )
@@ -1535,12 +1555,14 @@ SCIP_RETCODE performHeuristicPricing(
          return SCIP_OKAY;
       }
 
+      /* set objective limit, such that only solutions with negative reduced costs are accepted */
+      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+
       pricerdata->solvedsubmipsheur++;
       solvedmips++;
 
       SCIP_CALL( solvePricingProblemHeur(scip, pricerdata, prob, pricetype, &pricinglowerbound, &solvars, &solvals,
             &nsolvars, &solisray, &nsols, &status) );
-
 
       nfoundvarsprob = 0;
 
@@ -1563,15 +1585,11 @@ SCIP_RETCODE performHeuristicPricing(
          }
       }
    }
-   for( j = 0; j < pricerdata->npricingprobs; j++ )
-      if( pricerdata->pricingprobs[j] != NULL && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM )
-      {
-         SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
-         SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
-         SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
-      }
-   return SCIP_OKAY;
 
+   /* free the pricingproblems if they exist and need to be freed */
+   SCIP_CALL( freePricingProblems(scip, pricerdata) );
+
+   return SCIP_OKAY;
 }
 
 static
@@ -1714,6 +1732,9 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
+   /* free the pricingproblems if they exist and need to be freed */
+   SCIP_CALL( freePricingProblems(scip, pricerdata) );
+
    return SCIP_OKAY;
 }
 
@@ -1807,16 +1828,7 @@ SCIP_RETCODE performPricing(
       if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
          bestredcostvalid = FALSE;
 
-   for( j = 0; j < pricerdata->npricingprobs; j++ )
-      if( pricerdata->pricingprobs[j] != NULL
-         && SCIPgetStage(pricerdata->pricingprobs[j]) > SCIP_STAGE_PROBLEM)
-         {
-            SCIP_CALL( SCIPstartClock(scip, pricerdata->freeclock) );
-            SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[j]) );
-            SCIP_CALL( SCIPstopClock(scip, pricerdata->freeclock) );
-         }
-
-   if( nfoundvars == 0 && SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   if( nfoundvars == 0 && isRootNode(scip) )
    {
       SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
    }
@@ -1831,7 +1843,7 @@ SCIP_RETCODE performPricing(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
-   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricerdata->redcostcalls > 0 )
+   if( isRootNode(scip) && pricerdata->redcostcalls > 0 )
    {
       SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
