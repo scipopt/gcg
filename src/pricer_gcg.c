@@ -1758,6 +1758,13 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
+   /** @todo perhaps solve remaining pricing problems, if only few left? */
+   /** @todo solve all pricing problems all k iterations? */
+   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
+   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
+      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
+         *bestredcostvalid = FALSE;
+
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems(scip, pricerdata) );
 
@@ -1774,10 +1781,7 @@ SCIP_RETCODE performPricing(
    SCIP_Real*            lowerbound          /**< lowerbound pointer */
    )
 {
-   SCIP_PRICERDATA* pricerdata;            /* the data of the pricer */
-
-   int i;
-   int j;
+   SCIP_PRICERDATA* pricerdata;
    int nfoundvars;
 #ifdef ENABLESTATISTICS
    double degeneracy;
@@ -1834,7 +1838,6 @@ SCIP_RETCODE performPricing(
    bestredcost = 0.0;
    bestredcostvalid = FALSE;
 
-   i = 0; /* to make lint happy */
    if( pricerdata->useheurpricing )
    {
       SCIP_CALL( performHeuristicPricing(scip, pricerdata, pricetype, &nfoundvars, result) );
@@ -1847,13 +1850,6 @@ SCIP_RETCODE performPricing(
    {
       SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
-
-   /** @todo perhaps solve remaining pricing problems, if only few left? */
-   /** @todo solve all pricing problems all k iterations? */
-   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
-   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
-      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
-         bestredcostvalid = FALSE;
 
    if( nfoundvars == 0 && isRootNode(scip) )
    {
