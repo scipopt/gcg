@@ -127,7 +127,7 @@ struct SCIP_PricerData
    int                   calls;              /**< number of total pricing calls */
    int                   farkascalls;        /**< number of farkas pricing calls */
    int                   redcostcalls;       /**< number of reduced cost pricing calls */
-   int                   pricingiters;       /**< sum of all pricing simplex iterations */
+   SCIP_Longint          pricingiters;       /**< sum of all pricing simplex iterations */
 
    /* solver data */
    GCG_SOLVER**          solvers;            /**< pricing solvers array */
@@ -651,8 +651,8 @@ SCIP_RETCODE getSolverPointers(
       break;
    default:
       return SCIP_ERROR;
-      break;
    }
+
    return SCIP_OKAY;
 }
 
@@ -1485,96 +1485,6 @@ SCIP_RETCODE freePricingProblems(
    return SCIP_OKAY;
 }
 
-/** performs heuristic pricing */
-static
-SCIP_RETCODE performHeuristicPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of the pricing */
-   int*                  nfoundvars,         /**< pointer to store the number of found vars */
-   SCIP_RESULT*          result              /**< result pointer */
-   )
-{
-   int i;
-   int j;
-   int prob;
-   int solvedmips;
-   int successfulmips;
-   int nfoundvarsprob;
-   SCIP_Real pricinglowerbound;
-
-   SCIP_VAR*** solvars;
-   SCIP_Real** solvals;
-   int* nsolvars;
-   int nsols;
-   SCIP_Bool* solisray;
-   SCIP_STATUS status;
-   SCIP_Real timelimit;
-
-   SCIPdebugMessage("heuristical pricing\n");
-   solvedmips = 0;
-   successfulmips = 0;
-
-
-   /* solve the pricing MIPs heuristically and check whether solutions
-    * corresponding to variables with negative reduced costs where found
-    */
-   for( i = 0; i < pricerdata->npricingprobs; i++ )
-   {
-      if( abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
-         break;
-
-      prob = pricerdata->permu[i];
-
-      if( pricerdata->pricingprobs[prob] == NULL )
-         continue;
-
-      SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
-
-      if( timelimit - SCIPgetSolvingTime(scip) <= 0 )
-      {
-         if( result != NULL )
-            *result = SCIP_DIDNOTRUN;
-
-         return SCIP_OKAY;
-      }
-
-      /* set objective limit, such that only solutions with negative reduced costs are accepted */
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
-
-      pricerdata->solvedsubmipsheur++;
-      solvedmips++;
-
-      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, FALSE, &pricinglowerbound, &solvars, &solvals,
-            &nsolvars, &solisray, &nsols, &status) );
-
-      nfoundvarsprob = 0;
-
-      for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
-              (pricetype == GCG_PRICETYPE_REDCOST || *nfoundvars < pricerdata->maxvarsroundfarkas)
-              && (pricetype == GCG_PRICETYPE_FARKAS || *nfoundvars < pricerdata->maxvarsroundredcost); j++ )
-      {
-         SCIP_Bool added;
-         /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-         SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], solisray[j], prob,
-               FALSE, &added, NULL) );
-
-         if( added )
-         {
-            ++(*nfoundvars);
-            nfoundvarsprob++;
-
-            if( nfoundvarsprob == 1 )
-               successfulmips++;
-         }
-      }
-   }
-
-   /* free the pricingproblems if they exist and need to be freed */
-   SCIP_CALL( freePricingProblems(scip, pricerdata) );
-
-   return SCIP_OKAY;
-}
 
 static
 /** returns TRUE if optimal pricing can be aborted, FALSE otherwise*/
@@ -1608,6 +1518,7 @@ SCIP_RETCODE performOptimalPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
    GCG_PRICETYPE         pricetype,          /**< type of pricing */
+   SCIP_Bool             optimal,            /**< heuristic or optimal pricing */
    SCIP_RESULT*          result,             /**< result pointer */
    int*                  nfoundvars,         /**< pointer to store number of found variables */
    SCIP_Real*            bestredcost,        /**< pointer to store reduced cost */
@@ -1642,7 +1553,7 @@ SCIP_RETCODE performOptimalPricing(
    assert(bestredcost != NULL);
    assert(bestredcostvalid != NULL);
 
-   SCIPdebugMessage("optimal pricing\n");
+   SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
 
    origprob = pricerdata->origprob;
    root = isRootNode(scip);
@@ -1650,12 +1561,14 @@ SCIP_RETCODE performOptimalPricing(
    successfulmips = 0;
 
    *bestredcost = 0.0;
-   *bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL ? TRUE : FALSE );
+   *bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
 
-      if( abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
+      if( optimal && abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
+         break;
+      else if(!optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
 
       prob = pricerdata->permu[i];
@@ -1663,8 +1576,11 @@ SCIP_RETCODE performOptimalPricing(
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
-      /* @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
-      /* SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) ); */
+      /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+      if( !optimal )
+      {
+         SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+      }
 
       SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
 
@@ -1677,23 +1593,31 @@ SCIP_RETCODE performOptimalPricing(
          return SCIP_OKAY;
       }
 
-      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, TRUE, &pricinglowerbound, &solvars, &solvals,
+      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, &solvars, &solvals,
             &nsolvars, &solisray, &nsols, &status) );
 
-      pricerdata->solvedsubmipsoptimal++;
+      if( optimal )
+         pricerdata->solvedsubmipsoptimal++;
+      else
+         pricerdata->solvedsubmipsheur++;
+
       solvedmips++;
-      if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
-      {
-         assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
-      }
 
-      (*bestredcost) += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
 
-      if( status != SCIP_STATUS_OPTIMAL )
-      {
-         *bestredcostvalid = FALSE;
-         if( result != NULL )
-            *result = SCIP_DIDNOTRUN;
+      if( optimal ) {
+         if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
+         {
+            assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
+         }
+
+         (*bestredcost) += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
+
+         if( status != SCIP_STATUS_OPTIMAL )
+         {
+            *bestredcostvalid = FALSE;
+            if( result != NULL )
+               *result = SCIP_DIDNOTRUN;
+         }
       }
       nfoundvarsprob = 0;
 
@@ -1797,7 +1721,7 @@ SCIP_RETCODE performPricing(
 
    if( pricerdata->useheurpricing )
    {
-      SCIP_CALL( performHeuristicPricing(scip, pricerdata, pricetype, &nfoundvars, result) );
+      SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    /* if no variables were found so far, solve the pricing MIPs to optimality and check whether
@@ -1805,7 +1729,7 @@ SCIP_RETCODE performPricing(
     */
    if( nfoundvars == 0 )
    {
-      SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    if( nfoundvars == 0 && isRootNode(scip) )
