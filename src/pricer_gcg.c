@@ -1753,25 +1753,15 @@ SCIP_RETCODE performPricing(
 
       pricerdata->rootnodedegeneracy = degeneracy;
 
-      if( pricerdata->ndegeneracycalcs == 0 )
-      {
-         pricerdata->avgrootnodedegeneracy = degeneracy;
-         ++pricerdata->ndegeneracycalcs;
-      }
-      else if( pricerdata->ndegeneracycalcs > 0 )
-      {
-         /* Complicated calculation for numerical stability:
-          *     E[\sum_{i=1}^n x_i] = (E[\sum_{i=1}^{n-1} x_i]*(n-1) + x_n)/n
-          *     E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]*(n-1)/n + x_n/n
-          * <=> E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]-E[\sum_{i=1}^{n-1} x_i]/n + x_n/n
-          * <=> E_n = E_{n-1} - E_{n-1}/n + x_n/n
-          * <=> E -= E/n - x_n/n
-          */
-         pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs+1) - degeneracy/(pricerdata->ndegeneracycalcs+1);
-         ++pricerdata->ndegeneracycalcs;
-      }
-
-      pricerdata->rootnodedegeneracy = degeneracy;
+      /* Complicated calculation for numerical stability:
+       *     E[\sum_{i=1}^n x_i] = (E[\sum_{i=1}^{n-1} x_i]*(n-1) + x_n)/n
+       *     E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]*(n-1)/n + x_n/n
+       * <=> E[\sum_{i=1}^n x_i] = E[\sum_{i=1}^{n-1} x_i]-E[\sum_{i=1}^{n-1} x_i]/n + x_n/n
+       * <=> E_n = E_{n-1} - E_{n-1}/n + x_n/n
+       * <=> E -= E/n - x_n/n
+       */
+      ++pricerdata->ndegeneracycalcs;
+      pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs) - degeneracy/(pricerdata->ndegeneracycalcs);
    }
 
    return SCIP_OKAY;
