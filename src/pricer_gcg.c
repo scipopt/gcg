@@ -1669,7 +1669,6 @@ SCIP_RETCODE performPricing(
 
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
-   SCIP_Bool duringheurpricing;
 
    assert(scip != NULL);
    assert(pricer != NULL);
@@ -1683,8 +1682,6 @@ SCIP_RETCODE performPricing(
 
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip);
-
-   duringheurpricing = pricerdata->useheurpricing;
 
    GCGpricerPrintInfo(scip, pricerdata, "nvars = %d, current LP objval = %g, time = %f, node = %lld\n",
          SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
@@ -1737,7 +1734,7 @@ SCIP_RETCODE performPricing(
       SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
    }
 
-   if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid && duringheurpricing == FALSE )
+   if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
       GCGpricerPrintInfo(scip, pricerdata, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
