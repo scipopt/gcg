@@ -127,6 +127,13 @@ ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK)
 endif
 
+ifeq ($(OPENMP),true)
+CFLAGS+="-fopenmp"
+LDFLAGS+="-fopenmp"
+
+endif
+
+
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 

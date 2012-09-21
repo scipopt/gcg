@@ -1568,10 +1568,11 @@ SCIP_RETCODE performOptimalPricing(
    SCIP_CALL( SCIPallocMemoryArray(scip, &sols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &solisray, pricerdata->npricingprobs) );
 
-   for( i = 0; i < pricerdata->npricingprobs; ++i )
+   #pragma omp parallel for
+   for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );
+      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
+      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );
       for( j = 0; j < maxsols; ++j )
       {
          solisray[i][j] = FALSE;
@@ -1579,38 +1580,37 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
+#pragma omp parallel for default(none) private(prob, status,timelimit,pricinglowerbound,result) shared(scip, origprob, optimal,pricerdata,solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
+      result = SCIP_STATUS_UNKNOWN;
+      prob = pricerdata->permu[i];
+
+#pragma omp critical
+      {
+#ifndef _OPENMP
+      if( pricerdata->pricingprobs[prob] == NULL )
+         continue;
 
       if( optimal && abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
       else if(!optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
-
-      prob = pricerdata->permu[i];
-
-      if( pricerdata->pricingprobs[prob] == NULL )
-         continue;
-
+#endif
       /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
       if( !optimal )
       {
-         SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+         SCIP_CALL_ABORT( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
       }
 
-      SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
+      SCIP_CALL_ABORT( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
+      }
 
-      if( timelimit - SCIPgetSolvingTime(scip) <= 0 )
+
+      SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
+
+#pragma omp critical
       {
-         if( result != NULL )
-            *result = SCIP_DIDNOTRUN;
-
-         *bestredcostvalid = FALSE;
-         return SCIP_OKAY;
-      }
-
-      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
-
       if( optimal )
          pricerdata->solvedsubmipsoptimal++;
       else
@@ -1634,14 +1634,17 @@ SCIP_RETCODE performOptimalPricing(
                *result = SCIP_DIDNOTRUN;
          }
       }
+      }
    }
-
+#pragma omp barrier
+#ifndef _OPENMP
    /** @todo perhaps solve remaining pricing problems, if only few left? */
    /** @todo solve all pricing problems all k iterations? */
    /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
    for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; ++j )
       if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
          *bestredcostvalid = FALSE;
+#endif
 
    for( i = 0; i < pricerdata->npricingprobs && bestredcostvalid; ++i )
    {

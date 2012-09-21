@@ -346,7 +346,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    assert(solverdata != NULL);
 
    *lowerbound = -SCIPinfinity(scip);
-
+   SCIPdebugMessage("solving pricing %d=%p\n", probnr, pricingprob);
    SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
