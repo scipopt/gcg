@@ -69,10 +69,9 @@
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
-#define DEFAULT_BACKTRACK          TRUE /**< use one level of backtracking if infeasibility is encountered? */
-#define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('f'ractionality, 'c'oefficient,
-                                         *   'p'seudocost, 'g'uided, 'd'ouble)
-                                         */
+#define DEFAULT_BACKTRACK          FALSE /**< use one level of backtracking if infeasibility is encountered? */
+#define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
+                                         *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
 
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
 
@@ -94,9 +93,8 @@ struct SCIP_HeurData
    SCIP_Real             maxdiveubquotnosol; /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Real             maxdiveavgquotnosol;/**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Bool             backtrack;          /**< use one level of backtracking if infeasibility is encountered? */
-   char                  varselrule;         /**< which variable selection should be used? ('f'ractionality, 'c'oefficient,
-                                                 *   'p'seudocost, 'g'uided, 'd'ouble)
-                                                 */
+   char                  varselrule;         /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
+                                              *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
    char                  currentrule;        /**< variable selection rule that is to be used at the next call */
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    int                   npricerounds;       /**< pricing rounds used in this heuristic */
@@ -124,8 +122,7 @@ SCIP_RETCODE chooseCoefVar(
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
-   SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
-   SCIP_Bool*            bestcandroundup     /**< pointer to store whether best candidate should be rounded up */
+   SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
 {
    SCIP_Bool bestcandmayrounddown;
@@ -142,7 +139,6 @@ SCIP_RETCODE chooseCoefVar(
    assert(lpcandssol != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
-   assert(bestcandroundup != NULL);
 
    bestcandmayrounddown = TRUE;
    bestcandmayroundup = TRUE;
@@ -154,13 +150,10 @@ SCIP_RETCODE chooseCoefVar(
    {
       SCIP_VAR* var;
 
-      int nlocksdown;
-      int nlocksup;
       int nviolrows;
 
       SCIP_Bool mayrounddown;
       SCIP_Bool mayroundup;
-      SCIP_Bool roundup;
       SCIP_Real frac;
 
       var = lpcands[c];
@@ -173,23 +166,8 @@ SCIP_RETCODE chooseCoefVar(
          /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
          if( bestcandmayrounddown || bestcandmayroundup )
          {
-            /* choose rounding direction:
-             * - if variable may be rounded in both directions, round corresponding to the fractionality
-             * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding
-             *   the current fractional solution
-             */
-            if( mayrounddown && mayroundup )
-               roundup = (frac > 0.5);
-            else
-               roundup = mayrounddown;
-
-            if( roundup )
-            {
-               frac = 1.0 - frac;
-               nviolrows = SCIPvarGetNLocksUp(var);
-            }
-            else
-               nviolrows = SCIPvarGetNLocksDown(var);
+            frac = 1.0 - frac;
+            nviolrows = SCIPvarGetNLocksUp(var);
 
             /* penalize too small fractions */
             if( frac < 0.01 )
@@ -208,23 +186,14 @@ SCIP_RETCODE chooseCoefVar(
                bestcandfrac = frac;
                bestcandmayrounddown = mayrounddown;
                bestcandmayroundup = mayroundup;
-               *bestcandroundup = roundup;
             }
          }
       }
       else
       {
          /* the candidate may not be rounded */
-         nlocksdown = SCIPvarGetNLocksDown(var);
-         nlocksup = SCIPvarGetNLocksUp(var);
-         roundup = (nlocksdown > nlocksup || (nlocksdown == nlocksup && frac > 0.5));
-         if( roundup )
-         {
-            nviolrows = nlocksup;
-            frac = 1.0 - frac;
-         }
-         else
-            nviolrows = nlocksdown;
+         frac = 1.0 - frac;
+         nviolrows = SCIPvarGetNLocksUp(var);
 
          /* penalize too small fractions */
          if( frac < 0.01 )
@@ -243,7 +212,6 @@ SCIP_RETCODE chooseCoefVar(
             bestcandfrac = frac;
             bestcandmayrounddown = FALSE;
             bestcandmayroundup = FALSE;
-            *bestcandroundup = roundup;
          }
          assert(bestcandfrac < SCIP_INVALID);
       }
@@ -270,8 +238,7 @@ SCIP_RETCODE chooseFracVar(
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
-   SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
-   SCIP_Bool*            bestcandroundup     /**< pointer to store whether best candidate should be rounded up */
+   SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
 {
    SCIP_Real bestobjgain;
@@ -288,7 +255,6 @@ SCIP_RETCODE chooseFracVar(
    assert(lpcandsfrac != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
-   assert(bestcandroundup != NULL);
 
    bestcandmayrounddown = TRUE;
    bestcandmayroundup = TRUE;
@@ -300,7 +266,6 @@ SCIP_RETCODE chooseFracVar(
       SCIP_VAR* var;
       SCIP_Bool mayrounddown;
       SCIP_Bool mayroundup;
-      SCIP_Bool roundup;
       SCIP_Real frac;
       SCIP_Real obj;
       SCIP_Real objgain;
@@ -317,14 +282,133 @@ SCIP_RETCODE chooseFracVar(
          /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
          if( bestcandmayrounddown || bestcandmayroundup )
          {
+            objgain = (1.0-frac)*obj;
+
+            /* penalize too small fractions */
+            if( ABS(1.0 - frac) < 0.01 )
+               objgain *= 1000.0;
+
+            /* prefer decisions on binary variables */
+            if( !SCIPvarIsBinary(var) )
+               objgain *= 1000.0;
+
+            /* check, if candidate is new best candidate */
+            if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && frac > bestfrac) )
+            {
+               *bestcand = c;
+               bestobjgain = objgain;
+               bestfrac = frac;
+               bestcandmayrounddown = mayrounddown;
+               bestcandmayroundup = mayroundup;
+            }
+         }
+      }
+      else
+      {
+         /* penalize too small fractions */
+         if( ABS(1.0-frac) < 0.01 )
+            frac += 10.0;
+
+         /* prefer decisions on binary variables */
+         if( !SCIPvarIsBinary(var) )
+            frac *= 1000.0;
+
+         /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
+         if( bestcandmayrounddown || bestcandmayroundup || frac > bestfrac )
+         {
+            *bestcand = c;
+            bestfrac = frac;
+            bestcandmayrounddown = FALSE;
+            bestcandmayroundup = FALSE;
+         }
+         assert(bestfrac < SCIP_INVALID);
+      }
+   }
+
+   *bestcandmayround = bestcandmayroundup || bestcandmayrounddown;
+
+   return SCIP_OKAY;
+}
+
+/** finds best candidate variable w.r.t. the incumbent solution:
+ * - prefer variables that may not be rounded without destroying LP feasibility:
+ *   - of these variables, round a variable to its value in direction of incumbent solution, and choose the
+ *     variable that is closest to its rounded value
+ * - if all remaining fractional variables may be rounded without destroying LP feasibility:
+ *   - round variable in direction that destroys LP feasibility (other direction is checked by SCIProundSol())
+ *   - round variable with least increasing objective value
+ * - binary variables are preferred
+ */
+static
+SCIP_RETCODE chooseGuidedVar(
+   SCIP*                 scip,               /**< original SCIP data structure */
+   SCIP_HEURDATA*        heurdata,           /**< heuristic data structure */
+   SCIP_VAR**            lpcands,            /**< array of LP fractional variables */
+   SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
+   SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
+   int                   nlpcands,           /**< number of LP fractional variables */
+   SCIP_SOL*             bestsol,            /**< incumbent solution */
+   int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
+   SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
+   SCIP_Bool*            bestcandroundup     /**< pointer to store whether best candidate should be rounded up */
+   )
+{
+   SCIP_Real bestobjgain;
+   SCIP_Real bestfrac;
+   SCIP_Bool bestcandmayrounddown;
+   SCIP_Bool bestcandmayroundup;
+   int c;
+
+   /* check preconditions */
+   assert(scip != NULL);
+   assert(heurdata != NULL);
+   assert(lpcands != NULL);
+   assert(lpcandsfrac != NULL);
+   assert(lpcandssol != NULL);
+   assert(bestcand != NULL);
+   assert(bestcandmayround != NULL);
+   assert(bestcandroundup != NULL);
+
+   bestcandmayrounddown = TRUE;
+   bestcandmayroundup = TRUE;
+   bestobjgain = SCIPinfinity(scip);
+   bestfrac = SCIP_INVALID;
+
+   for( c = 0; c < nlpcands; ++c )
+   {
+      SCIP_VAR* var;
+      SCIP_Real bestsolval;
+      SCIP_Real solval;
+      SCIP_Real obj;
+      SCIP_Real frac;
+      SCIP_Real objgain;
+
+      SCIP_Bool mayrounddown;
+      SCIP_Bool mayroundup;
+      SCIP_Bool roundup;
+
+      var = lpcands[c];
+      mayrounddown = SCIPvarMayRoundDown(var);
+      mayroundup = SCIPvarMayRoundUp(var);
+      solval = lpcandssol[c];
+      frac = lpcandsfrac[c];
+      obj = SCIPvarGetObj(var);
+      bestsolval = SCIPgetSolVal(scip, bestsol, var);
+
+      /* select default rounding direction */
+      roundup = (solval < bestsolval);
+
+      if( mayrounddown || mayroundup )
+      {
+         /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
+         if( bestcandmayrounddown || bestcandmayroundup )
+         {
             /* choose rounding direction:
-             * - if variable may be rounded in both directions, round corresponding to the fractionality
+             * - if variable may be rounded in both directions, round corresponding to its value in incumbent solution
              * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding
-             *   the current fractional solution
+             *   the current fractional solution with SCIProundSol()
              */
-            if( mayrounddown && mayroundup )
-               roundup = (frac > 0.5);
-            else
+            if( !mayrounddown || !mayroundup )
                roundup = mayrounddown;
 
             if( roundup )
@@ -358,13 +442,8 @@ SCIP_RETCODE chooseFracVar(
       else
       {
          /* the candidate may not be rounded */
-         if( frac < 0.5 )
-            roundup = FALSE;
-         else
-         {
-            roundup = TRUE;
+         if( roundup )
             frac = 1.0 - frac;
-         }
 
          /* penalize too small fractions */
          if( frac < 0.01 )
@@ -383,7 +462,220 @@ SCIP_RETCODE chooseFracVar(
             bestcandmayroundup = FALSE;
             *bestcandroundup = roundup;
          }
-         assert(bestfrac < SCIP_INVALID);
+      }
+   }
+
+   *bestcandmayround = bestcandmayroundup || bestcandmayrounddown;
+
+   return SCIP_OKAY;
+}
+
+/** finds best candidate variable w.r.t. the root LP solution:
+ * - in the projected space of fractional variables, extend the line segment connecting the root solution and
+ *   the current LP solution up to the point, where one of the fractional variables becomes integral
+ * - round this variable to the integral value
+ */
+static
+SCIP_RETCODE chooseLinesearchVar(
+   SCIP*                 scip,               /**< original SCIP data structure */
+   SCIP_HEURDATA*        heurdata,           /**< heuristic data structure */
+   SCIP_VAR**            lpcands,            /**< array of LP fractional variables */
+   SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
+   SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
+   int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
+   SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
+   )
+{
+   SCIP_Real bestdistquot;
+   int c;
+
+   /* check preconditions */
+   assert(scip != NULL);
+   assert(heurdata != NULL);
+   assert(lpcands != NULL);
+   assert(lpcandssol != NULL);
+   assert(lpcandsfrac != NULL);
+   assert(bestcand != NULL);
+   assert(bestcandmayround != NULL);
+
+   *bestcandmayround = TRUE;
+   bestdistquot = SCIPinfinity(scip);
+
+   /* get best candidate */
+   for( c = 0; c < nlpcands; ++c )
+   {
+      SCIP_VAR* var;
+      SCIP_Real solval;
+      SCIP_Real rootsolval;
+      SCIP_Real distquot;
+
+      var = lpcands[c];
+      solval = lpcandssol[c];
+      rootsolval = SCIPvarGetRootSol(var);
+
+      if( SCIPisGT(scip, solval, rootsolval) )
+      {
+         distquot = (SCIPfeasCeil(scip, solval) - solval) / (solval - rootsolval);
+
+         /* avoid roundable candidates */
+         if( SCIPvarMayRoundUp(var) )
+            distquot *= 1000.0;
+      }
+      else
+         distquot = SCIPinfinity(scip);
+
+      /* check whether the variable is roundable */
+      *bestcandmayround = *bestcandmayround && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
+
+      /* check, if candidate is new best candidate */
+      if( distquot < bestdistquot )
+      {
+         *bestcand = c;
+         bestdistquot = distquot;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calculates the pseudocost score for a given variable w.r.t. a given solution value */
+static
+void calcPscostQuot(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< problem variable */
+   SCIP_Real             primsol,            /**< primal solution of variable */
+   SCIP_Real             frac,               /**< fractionality of variable */
+   SCIP_Real*            pscostquot          /**< pointer to store pseudo cost quotient */
+   )
+{
+   SCIP_Real pscostdown;
+   SCIP_Real pscostup;
+
+   assert(pscostquot != NULL);
+   assert(SCIPisEQ(scip, frac, primsol - SCIPfeasFloor(scip, primsol)));
+
+   /* bound fractions to not prefer variables that are nearly integral */
+   frac = MAX(frac, 0.1);
+   frac = MIN(frac, 0.9);
+
+   /* get pseudo cost quotient */
+   pscostdown = SCIPgetVarPseudocostVal(scip, var, 0.0-frac);
+   pscostup = SCIPgetVarPseudocostVal(scip, var, 1.0-frac);
+   assert(pscostdown >= 0.0 && pscostup >= 0.0);
+
+   /* calculate pseudo cost quotient */
+   *pscostquot = sqrt(frac) * (1.0+pscostdown) / (1.0+pscostup);
+
+   /* reward or punish variables:
+    *  - a variable which has moved downwards from its root LP value should not be rounded up,
+    *    hence its score is decreased; the same is done for variables which are near to their
+    *    rounded down values
+    *  - on the other hand, increase the scores of variables that have moved upwards from
+    *    their root LP value or which are near to their rounded up values
+    */
+   if( primsol < SCIPvarGetRootSol(var) - 0.4 )
+      (*pscostquot) /= 100.0;
+   else if( primsol > SCIPvarGetRootSol(var) + 0.4 )
+      (*pscostquot) *= 100.0;
+   else if( frac < 0.3 )
+      (*pscostquot) /= 100.0;
+   else if( frac > 0.7 )
+      (*pscostquot) *= 100.0;
+
+   /* prefer decisions on binary variables */
+   if( SCIPvarIsBinary(var) )
+      (*pscostquot) *= 1000.0;
+}
+
+/** finds best candidate variable w.r.t. pseudo costs:
+ * - prefer variables that may not be rounded without destroying LP feasibility:
+ *   - of these variables, round variable with largest rel. difference of pseudo cost values in corresponding
+ *     direction
+ * - if all remaining fractional variables may be rounded without destroying LP feasibility:
+ *   - round variable in the objective value direction
+ * - binary variables are preferred
+ */
+static
+SCIP_RETCODE choosePscostVar(
+   SCIP*                 scip,               /**< original SCIP data structure */
+   SCIP_HEURDATA*        heurdata,           /**< heuristic data structure */
+   SCIP_VAR**            lpcands,            /**< array of LP fractional variables */
+   SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
+   SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
+   int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
+   SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
+   )
+{
+   SCIP_Bool bestcandmayrounddown;
+   SCIP_Bool bestcandmayroundup;
+   SCIP_Real bestpscostquot;
+   int c;
+
+   /* check preconditions */
+   assert(scip != NULL);
+   assert(heurdata != NULL);
+   assert(lpcands != NULL);
+   assert(lpcandsfrac != NULL);
+   assert(lpcandssol != NULL);
+   assert(bestcand != NULL);
+   assert(bestcandmayround != NULL);
+
+   bestcandmayrounddown = TRUE;
+   bestcandmayroundup = TRUE;
+   bestpscostquot = -1.0;
+
+   for( c = 0; c < nlpcands; ++c )
+   {
+      SCIP_VAR* var;
+      SCIP_Real primsol;
+
+      SCIP_Bool mayrounddown;
+      SCIP_Bool mayroundup;
+      SCIP_Real frac;
+      SCIP_Real pscostquot;
+
+      var = lpcands[c];
+      mayrounddown = SCIPvarMayRoundDown(var);
+      mayroundup = SCIPvarMayRoundUp(var);
+      primsol = lpcandssol[c];
+      frac = lpcandsfrac[c];
+      pscostquot = SCIP_INVALID;
+
+      if( mayrounddown || mayroundup )
+      {
+         /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
+         if( bestcandmayrounddown || bestcandmayroundup )
+         {
+            /* calculate pseudo cost */
+            calcPscostQuot(scip, var, primsol, frac, &pscostquot);
+            assert(!SCIPisInfinity(scip,ABS(pscostquot)));
+
+            /* check, if candidate is new best candidate */
+            if( pscostquot > bestpscostquot )
+            {
+               *bestcand = c;
+               bestpscostquot = pscostquot;
+               bestcandmayrounddown = mayrounddown;
+               bestcandmayroundup = mayroundup;
+            }
+         }
+      }
+      else
+      {
+         /* the candidate may not be rounded: calculate pseudo cost */
+         calcPscostQuot(scip, var, primsol, frac, &pscostquot);
+         assert(!SCIPisInfinity(scip, ABS(pscostquot)));
+
+         /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
+         if( bestcandmayrounddown || bestcandmayroundup || pscostquot > bestpscostquot )
+         {
+            *bestcand = c;
+            bestpscostquot = pscostquot;
+            bestcandmayrounddown = FALSE;
+            bestcandmayroundup = FALSE;
+         }
       }
    }
 
@@ -406,8 +698,7 @@ SCIP_RETCODE chooseVeclenVar(
    SCIP_Real*            lpcandsfrac,        /**< array of NLP fractional variables fractionalities */
    int                   nlpcands,           /**< number of NLP fractional variables */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
-   SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
-   SCIP_Bool*            bestcandroundup     /**< pointer to store whether best candidate should be rounded up */
+   SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
 {
    SCIP_Real bestscore;
@@ -421,7 +712,6 @@ SCIP_RETCODE chooseVeclenVar(
    assert(lpcandssol != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
-   assert(bestcandroundup != NULL);
 
    *bestcandmayround = TRUE;
    bestscore = SCIP_REAL_MAX;
@@ -437,15 +727,11 @@ SCIP_RETCODE chooseVeclenVar(
       SCIP_Real score;
       int colveclen;
 
-      SCIP_Bool roundup;
-
       var = lpcands[c];
 
       frac = lpcandsfrac[c];
       obj = SCIPvarGetObj(var);
-      roundup = (obj >= 0.0);
-      objdelta = (roundup ? (1.0-frac)*obj : -frac * obj);
-      assert(objdelta >= 0.0);
+      objdelta = (1.0 - frac) * obj;
 
       colveclen = (SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN ? SCIPcolGetNNonz(SCIPvarGetCol(var)) : 0);
 
@@ -454,6 +740,10 @@ SCIP_RETCODE chooseVeclenVar(
 
       /* smaller score is better */
       score = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
+
+      /* penalize negative scores (i.e. improvements in the objective) */
+      if( score <= 0.0 )
+         score *= 100.0;
 
       /* prefer decisions on binary variables */
       if( SCIPvarGetType(var) != SCIP_VARTYPE_BINARY )
@@ -464,7 +754,6 @@ SCIP_RETCODE chooseVeclenVar(
       {
          *bestcand = c;
          bestscore = score;
-         *bestcandroundup = roundup;
       }
    }
 
@@ -480,6 +769,7 @@ SCIP_RETCODE chooseVariable(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   SCIP_SOL*             bestsol,            /**< incumbent solution */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
    SCIP_Bool*            bestcandroundup     /**< pointer to store whether best candidate should be rounded up */
@@ -489,21 +779,34 @@ SCIP_RETCODE chooseVariable(
    {
    case 'c':
       SCIP_CALL( chooseCoefVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround, bestcandroundup) );
+            bestcand, bestcandmayround) );
       break;
    case 'f':
       SCIP_CALL( chooseFracVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround, bestcandroundup) );
+            bestcand, bestcandmayround) );
+      break;
+   case 'g':
+      SCIP_CALL( chooseGuidedVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
+            bestsol, bestcand, bestcandmayround, bestcandroundup) );
+      break;
+   case 'l':
+      SCIP_CALL( chooseLinesearchVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
+            bestcand, bestcandmayround) );
+      break;
+   case 'p':
+      SCIP_CALL( choosePscostVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
+            bestcand, bestcandmayround) );
       break;
    case 'v':
       SCIP_CALL( chooseVeclenVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround, bestcandroundup) );
+            bestcand, bestcandmayround) );
       break;
    default:
       SCIPerrorMessage("invalid variable selection rule\n");
       return SCIP_INVALIDDATA;
    }
 
+   *bestcandroundup = TRUE;
    return SCIP_OKAY;
 }
 
@@ -520,6 +823,10 @@ char getNextRule(
       case 'c':
          return 'f';
       case 'f':
+         return 'l';
+      case 'l':
+         return 'p';
+      case 'p':
          return 'v';
       case 'v':
          return 'c';
@@ -611,6 +918,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP* origprob;
    SCIP_HEURDATA* heurdata;
    SCIP_LPSOLSTAT lpsolstat;
+   SCIP_SOL* bestsol;
    SCIP_VAR* var;
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -675,6 +983,23 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
+
+   /* store a copy of the best solution, if guided diving should be used */
+   bestsol = NULL;
+   if( heurdata->currentrule == 'g' )
+   {
+      /* do not perform guided diving if no feasible solutions exist or if the best solution lives
+       * in the original variable space (we then cannot use it since it might violate the global
+       * bounds of the current problem)
+       */
+      if( SCIPgetNSols(scip) == 0 || SCIPsolIsOriginal(SCIPgetBestSol(scip)) )
+         if( heurdata->varselrule == '*' )
+            heurdata->currentrule = getNextRule(scip, heurdata);
+         else
+            return SCIP_OKAY;
+      else
+         SCIP_CALL( SCIPcreateSolCopy(scip, &bestsol, SCIPgetBestSol(scip)) );
+   }
 
    /* only try to dive, if we are in the correct part of the tree, given by minreldepth and maxreldepth */
    depth = SCIPgetDepth(scip);
@@ -795,8 +1120,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       bestcandmayround = TRUE;
       bestcandroundup = FALSE;
 
-      SCIP_CALL( chooseVariable(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands, &bestcand,
-            &bestcandmayround, &bestcandroundup) );
+      /* choose a variable to dive on */
+      SCIP_CALL( chooseVariable(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands, bestsol,
+            &bestcand, &bestcandmayround, &bestcandroundup) );
 
       assert(bestcand >= 0);
       var = lpcands[bestcand];
@@ -882,10 +1208,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             SCIP_RETCODE retstat;
             nlpiterations = SCIPgetNLPIterations(scip);
             npricerounds = SCIPgetNPriceRounds(scip);
-            if( maxpricerounds == 0 )
-               retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
-            else
-               retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror);
+            retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
             if( retstat != SCIP_OKAY )
             {
                SCIPwarningMessage(scip, "Error while solving LP in Masterdiving heuristic; LP solve terminated with code <%d>\n",retstat);
@@ -893,10 +1216,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #else
             nlpiterations = SCIPgetNLPIterations(scip);
             npricerounds = SCIPgetNPriceRounds(scip);
-            if( maxpricerounds == 0 )
-               SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
-            else
-               SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror) );
+            SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
 #endif
 
             if( lperror )
@@ -907,7 +1227,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             heurdata->npricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
             totalpricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
 
-            /* get LP solution status, objective value, and fractional variables, that should be integral */
+            /* get LP solution status */
             lpsolstat = SCIPgetLPSolstat(scip);
             cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
          }
@@ -984,6 +1304,15 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
+
+   /* free copied best solution */
+   if( heurdata->currentrule == 'g' )
+   {
+      assert(bestsol != NULL);
+      SCIP_CALL( SCIPfreeSol(scip, &bestsol) );
+   }
+   else
+      assert(bestsol == NULL);
 
    heurdata->currentrule = getNextRule(scip, heurdata);
 
@@ -1067,8 +1396,8 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
    SCIP_CALL( SCIPaddCharParam(scip,
          "heuristics/"HEUR_NAME"/varselrule",
-         "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'v'eclen; '*': alternate between rules)",
-         &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, "cfv*", NULL, NULL) );
+         "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules)",
+         &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, "cflpv*", NULL, NULL) );
 
    return SCIP_OKAY;
 }
