@@ -185,7 +185,7 @@ BEGIN {
             shiftedsolquotgeom[i] = quotgeomshift;
          }
 
-         time[i] = $(NF-2);
+         time[i] = $(NF-1);
          calls[i] = $(NF-1);
          found[i] = $NF;
       }
