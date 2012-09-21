@@ -71,6 +71,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayDecomposition);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster);
 
+/** dialog execution method for the set loadmaster command */
+extern
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster);
+
 /** dialog execution method for the detect command */
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);

@@ -284,7 +284,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 }
 
 /** dialog execution method for the set loadmaster command */
-SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetLoadmaster)
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
 {  /*lint --e{715}*/
    SCIP* masterprob;
    char* filename;
@@ -593,7 +593,7 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL,
-            SCIPdialogExecSetLoadmaster, NULL, NULL,
+            GCGdialogExecSetLoadmaster, NULL, NULL,
             "loadmaster", "load parameter settings for master problem from a file", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
