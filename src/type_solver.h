@@ -104,17 +104,16 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - pricingprob     : the pricing problem that should be solved
  *  - probnr          : number of the pricing problem
  *  - lowerbound      : pointer to store lower bound of pricing problem
- *  - solvars         : pointer to store array with variables for each solution
- *  - solvals         : pointer to store array with values of the variables in the solutions
- *  - nsolvars        : pointer to store array with number of variables in the solutions
- *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
+ *  - sols            : array to store returned solutions
+ *  - maxsols         : indicates the maximum size of the sols array
+ *  - solisray        : array to store whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite optimum
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 /** solving method for pricing solver using heuristic pricing only
  *
@@ -125,10 +124,9 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - pricingprob     : the pricing problem that should be solved
  *  - probnr          : number of the pricing problem
  *  - lowerbound      : pointer to store lower bound of pricing problem
- *  - solvars         : pointer to store array with variables for each solution
- *  - solvals         : pointer to store array with values of the variables in the solutions
- *  - nsolvars        : pointer to store array with number of variables in the solutions
- *  - solisray        : pointer to store array with bools reporting whether the solution is a point or a ray
+ *  - sols            : array to store returned solutions
+ *  - maxsols         : indicates the maximum size of the sols array
+ *  - solisray        : array to store whether the solution is a point or a ray
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved heuristically with a finite solution value
@@ -136,7 +134,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_VAR**** solvars, SCIP_Real*** solvals, int** nsolvars, SCIP_Bool** solisray, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 
 #ifdef __cplusplus

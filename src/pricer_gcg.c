@@ -667,10 +667,9 @@ SCIP_RETCODE solvePricingProblem(
    GCG_PRICETYPE         pricetype,          /**< type of pricing: optimal or heuristic */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
-   SCIP_VAR****          solvars,            /**< solution variables for found solutions */
-   SCIP_Real***          solvals,            /**< values for solution variables for each solution */
-   int**                 nsolvars,           /**< number of non-zero variables for each solution */
-   SCIP_Bool**           solisray,           /**< array to indicate whether solution is a ray */
+   SCIP_SOL**            sols,               /**< pointer to store solutions */
+   SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
+   int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
    int*                  nsols,              /**< number of solutions */
    SCIP_STATUS*          status              /**< solution status of the pricing problem */
    )
@@ -717,7 +716,7 @@ SCIP_RETCODE solvePricingProblem(
       SCIP_CALL( SCIPstartClock(scip, clock) );
 
       SCIP_CALL( solversolve(scip, solver, pricerdata->pricingprobs[prob], prob, lowerbound,
-               solvars, solvals, nsolvars, solisray, nsols, status) );
+            sols, solisray, maxsols, nsols, status) );
 
       SCIP_CALL( SCIPstopClock(scip, clock) );
 
@@ -1537,11 +1536,10 @@ SCIP_RETCODE performOptimalPricing(
 
    SCIP_Real pricinglowerbound;
 
-   SCIP_VAR*** solvars;
-   SCIP_Real** solvals;
-   int* nsolvars;
-   int nsols;
-   SCIP_Bool* solisray;
+   SCIP_SOL*** sols;
+   int* nsols;
+   SCIP_Bool** solisray;
+   int maxsols;
    SCIP_STATUS status;
    SCIP_Bool root;
 
@@ -1562,6 +1560,23 @@ SCIP_RETCODE performOptimalPricing(
 
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
+
+   maxsols = MAX(MAX(pricerdata->maxvarsroundfarkas, pricerdata->maxvarsroundredcost), pricerdata->maxvarsroundredcostroot);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nsols, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &sols, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &solisray, pricerdata->npricingprobs) );
+
+   for( i = 0; i < pricerdata->npricingprobs; ++i )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );
+      for( j = 0; j < maxsols; ++j )
+      {
+         solisray[i][j] = FALSE;
+         sols[i][j] = NULL;
+      }
+   }
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -1593,8 +1608,7 @@ SCIP_RETCODE performOptimalPricing(
          return SCIP_OKAY;
       }
 
-      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, &solvars, &solvals,
-            &nsolvars, &solisray, &nsols, &status) );
+      SCIP_CALL( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
 
       if( optimal )
          pricerdata->solvedsubmipsoptimal++;
@@ -1619,16 +1633,45 @@ SCIP_RETCODE performOptimalPricing(
                *result = SCIP_DIDNOTRUN;
          }
       }
+   }
+
+   /** @todo perhaps solve remaining pricing problems, if only few left? */
+   /** @todo solve all pricing problems all k iterations? */
+   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
+   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; ++j )
+      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
+         *bestredcostvalid = FALSE;
+
+   for( i = 0; i < pricerdata->npricingprobs && bestredcostvalid; ++i )
+   {
+      prob = pricerdata->permu[i];
+      if( pricerdata->pricingprobs[prob] == NULL )
+         continue;
+
       nfoundvarsprob = 0;
 
-      for( j = 0; j < nsols && nfoundvarsprob <= pricerdata->maxsolsprob &&
+      for( j = 0; j < nsols[prob] && nfoundvarsprob <= pricerdata->maxsolsprob &&
               (pricetype == GCG_PRICETYPE_REDCOST || *nfoundvars < pricerdata->maxvarsroundfarkas)
-              && (pricetype == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricerdata->maxvarsroundredcost || root ) && (*nfoundvars < pricerdata->maxvarsroundredcostroot || !root))); j++ )
+              && (pricetype == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricerdata->maxvarsroundredcost || root ) && (*nfoundvars < pricerdata->maxvarsroundredcostroot || !root))); ++j )
       {
+         SCIP_VAR** solvars;
+         SCIP_Real* solvals;
+         int nsolvars;
+
+         solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
+         nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
+         SCIP_CALL( SCIPallocMemoryArray(scip, &solvals, nsolvars) );
+         SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, sols[prob][j]);
+         SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
+
          /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-         SCIP_CALL( createNewMasterVar(scip, solvars[j], solvals[j], nsolvars[j], solisray[j], prob,
+         SCIP_CALL( createNewMasterVar(scip, solvars, solvals, nsolvars, solisray[prob][j], prob,
                FALSE, &added, NULL) );
 
+         if( solisray[prob][j] )
+         {
+            SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
+         }
          if( added )
          {
             ++(*nfoundvars);
@@ -1637,18 +1680,20 @@ SCIP_RETCODE performOptimalPricing(
             if( nfoundvarsprob == 1 )
                successfulmips++;
          }
+         SCIPfreeMemoryArray(scip, &solvals);
       }
    }
-
-   /** @todo perhaps solve remaining pricing problems, if only few left? */
-   /** @todo solve all pricing problems all k iterations? */
-   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
-   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
-      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
-         *bestredcostvalid = FALSE;
-
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems(scip, pricerdata) );
+
+   for( i = 0; i < pricerdata->npricingprobs; ++i )
+   {
+      SCIPfreeMemoryArray(scip, &(sols[i]));
+      SCIPfreeMemoryArray(scip, &(solisray[i]));
+   }
+   SCIPfreeMemoryArray(scip, &solisray);
+   SCIPfreeMemoryArray(scip, &sols);
+   SCIPfreeMemoryArray(scip, &nsols);
 
    return SCIP_OKAY;
 }
