@@ -99,9 +99,8 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *
  *
  *  input:
- *  - scip            : SCIP main data structure of the master problem
- *  - solver          : the solver itself
  *  - pricingprob     : the pricing problem that should be solved
+ *  - solver          : the solver itself
  *  - probnr          : number of the pricing problem
  *  - lowerbound      : pointer to store lower bound of pricing problem
  *  - sols            : array to store returned solutions
@@ -113,15 +112,14 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 /** solving method for pricing solver using heuristic pricing only
  *
  *
  *  input:
- *  - scip            : SCIP main data structure of the master problem
- *  - solver          : the solver itself
  *  - pricingprob     : the pricing problem that should be solved
+ *  - solver          : the solver itself
  *  - probnr          : number of the pricing problem
  *  - lowerbound      : pointer to store lower bound of pricing problem
  *  - sols            : array to store returned solutions
@@ -134,7 +132,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* scip, GCG_SOLVER* solver, SCIP* pricingprob, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver,  int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 
 #ifdef __cplusplus

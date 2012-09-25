@@ -712,16 +712,19 @@ SCIP_RETCODE solvePricingProblem(
       {
          continue;
       }
+      #pragma omp critical
+      SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
-      SCIP_CALL( SCIPstartClock(scip, clock) );
+      SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, lowerbound, sols, solisray, maxsols, nsols, status) );
 
-      SCIP_CALL( solversolve(scip, solver, pricerdata->pricingprobs[prob], prob, lowerbound,
-            sols, solisray, maxsols, nsols, status) );
-
-      SCIP_CALL( SCIPstopClock(scip, clock) );
+      #pragma omp critical
+      SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
 
       if( *status != SCIP_STATUS_UNKNOWN )
+      {
+         #pragma omp atomic
          (*calls)++;
+      }
 
       if( *status == SCIP_STATUS_OPTIMAL || *status == SCIP_STATUS_UNBOUNDED )
       {
@@ -732,7 +735,10 @@ SCIP_RETCODE solvePricingProblem(
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
             if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING)
+            {
+               #pragma omp atomic
                pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
+            }
          }
          break;
       }
@@ -1445,6 +1451,10 @@ SCIP_RETCODE subproblemSetTimelimit(
    SCIP_Real*            timelimit           /**< pointer to store timelimit */
    )
 {
+   assert(scip != NULL);
+   assert(pricingscip != NULL);
+   assert(prob >= 0);
+   assert(timelimit != NULL);
    /* set time limit */
    SCIP_CALL( SCIPgetRealParam(scip, "limits/time", timelimit) );
    if( !SCIPisInfinity(scip, *timelimit) )
@@ -1459,6 +1469,31 @@ SCIP_RETCODE subproblemSetTimelimit(
          SCIPdebugMessage("Tilim for pricing %d is < 0\n", prob);
       }
    }
+   return SCIP_OKAY;
+}
+/** set subproblem memory limit */
+static
+SCIP_RETCODE subproblemSetMemorylimit(
+   SCIP*                 origscip,           /**< SCIP data structure of original problem*/
+   SCIP*                 pricingscip,        /**< SCIP of the pricingproblem */
+   int                   prob,               /**< number of the pricing problem */
+   SCIP_Real*            memlimit            /**< pointer to store memory limit */
+   )
+{
+   assert(origscip != NULL);
+   assert(pricingscip != NULL);
+   assert(prob >= 0);
+   assert(memlimit != NULL);
+
+   SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", memlimit) );
+   if( !SCIPisInfinity(origscip, *memlimit) )
+   {
+      *memlimit -= SCIPgetMemUsed(origscip)/1048576.0 + GCGgetPricingprobsMemUsed(origscip) - SCIPgetMemUsed(pricingscip)/1048576.0;
+      if( *memlimit < 0 )
+         *memlimit = 0.0;
+      SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", *memlimit) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -1527,11 +1562,10 @@ SCIP_RETCODE performOptimalPricing(
 {
    int i;
    int j;
-   int prob;
+
    int solvedmips;
    int successfulmips;
    int nfoundvarsprob;
-   SCIP_Real timelimit;
    SCIP* origprob;
    SCIP_Bool added;
 
@@ -1541,7 +1575,6 @@ SCIP_RETCODE performOptimalPricing(
    int* nsols;
    SCIP_Bool** solisray;
    int maxsols;
-   SCIP_STATUS status;
    SCIP_Bool root;
 
    assert(scip != NULL);
@@ -1568,11 +1601,14 @@ SCIP_RETCODE performOptimalPricing(
    SCIP_CALL( SCIPallocMemoryArray(scip, &sols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &solisray, pricerdata->npricingprobs) );
 
-   #pragma omp parallel for
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
-      SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );}
+
+   #pragma omp parallel for default(shared)
+   for( i = 0; i < pricerdata->npricingprobs; i++ )
+   {
       for( j = 0; j < maxsols; ++j )
       {
          solisray[i][j] = FALSE;
@@ -1580,9 +1616,13 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
-#pragma omp parallel for default(none) private(prob, status,timelimit,pricinglowerbound,result) shared(scip, origprob, optimal,pricerdata,solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
+#pragma omp parallel for default(none) firstprivate(pricinglowerbound,result) shared(scip, origprob, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
+      int prob;
+      SCIP_Real timelimit;
+      SCIP_Real memlimit;
+      SCIP_STATUS status;
       result = SCIP_STATUS_UNKNOWN;
       prob = pricerdata->permu[i];
 
@@ -1604,21 +1644,33 @@ SCIP_RETCODE performOptimalPricing(
       }
 
       SCIP_CALL_ABORT( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
+      SCIP_CALL_ABORT( subproblemSetMemorylimit(scip, pricerdata->pricingprobs[prob], prob, &memlimit) );
       }
-
-
-      SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
 
 #pragma omp critical
       {
-      if( optimal )
-         pricerdata->solvedsubmipsoptimal++;
-      else
-         pricerdata->solvedsubmipsheur++;
+      SCIPdebugMessage("solving pricing %d\n", prob);
+      }
 
+      SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
+
+
+      if( optimal )
+      {
+         #pragma omp atomic
+         pricerdata->solvedsubmipsoptimal++;
+      }
+      else
+      {
+         #pragma omp atomic
+         pricerdata->solvedsubmipsheur++;
+      }
+
+      #pragma omp atomic
       solvedmips++;
 
 
+      #pragma omp critical
       if( optimal ) {
          if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
          {
@@ -1634,9 +1686,14 @@ SCIP_RETCODE performOptimalPricing(
                *result = SCIP_DIDNOTRUN;
          }
       }
-      }
    }
-#pragma omp barrier
+
+// #pragma omp barrier
+// #ifdef _OPENMP
+//    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
+
+// #endif
+
 #ifndef _OPENMP
    /** @todo perhaps solve remaining pricing problems, if only few left? */
    /** @todo solve all pricing problems all k iterations? */
@@ -1646,8 +1703,9 @@ SCIP_RETCODE performOptimalPricing(
          *bestredcostvalid = FALSE;
 #endif
 
-   for( i = 0; i < pricerdata->npricingprobs && bestredcostvalid; ++i )
+   for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
+      int prob;
       prob = pricerdata->permu[i];
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
@@ -1687,17 +1745,20 @@ SCIP_RETCODE performOptimalPricing(
          SCIPfreeMemoryArray(scip, &solvals);
       }
    }
-   /* free the pricingproblems if they exist and need to be freed */
-   SCIP_CALL( freePricingProblems(scip, pricerdata) );
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
+      SCIPdebugMessage("Freeing information for pricing %d.\n", i);
       SCIPfreeMemoryArray(scip, &(sols[i]));
       SCIPfreeMemoryArray(scip, &(solisray[i]));
    }
+
    SCIPfreeMemoryArray(scip, &solisray);
    SCIPfreeMemoryArray(scip, &sols);
    SCIPfreeMemoryArray(scip, &nsols);
+
+   /* free the pricingproblems if they exist and need to be freed */
+   SCIP_CALL( freePricingProblems(scip, pricerdata) );
 
    return SCIP_OKAY;
 }
@@ -2427,58 +2488,22 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 }
 
 /** returns the solverdata of a solver */
-GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+GCG_SOLVERDATA* GCGsolverGetSolverdata(
    GCG_SOLVER*           solver              /**< pointer so solver */
    )
 {
-#ifndef NDEBUG
-   SCIP_PRICER* pricer;
-   SCIP_PRICERDATA* pricerdata;
-#endif
-
-   assert(scip != NULL);
    assert(solver != NULL);
-
-#ifndef NDEBUG
-   pricer = SCIPfindPricer(scip, PRICER_NAME);
-   assert(pricer != NULL);
-
-   pricerdata = SCIPpricerGetData(pricer);
-   assert(pricerdata != NULL);
-
-   assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
-   assert(pricerdata->nsolvers > 0);
-#endif
 
    return solver->solverdata;
 }
 
 /** sets solver data of specific solver */
-void GCGpricerSetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+void GCGsolverSetSolverdata(
    GCG_SOLVER*           solver,             /**< pointer to solver  */
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    )
 {
-#ifndef NDEBUG
-   SCIP_PRICER* pricer;
-   SCIP_PRICERDATA* pricerdata;
-#endif
-
-   assert(scip != NULL);
    assert(solver != NULL);
-
-#ifndef NDEBUG
-   pricer = SCIPfindPricer(scip, PRICER_NAME);
-   assert(pricer != NULL);
-
-   pricerdata = SCIPpricerGetData(pricer);
-   assert(pricerdata != NULL);
-
-   assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
-   assert(pricerdata->nsolvers > 0);
-#endif
 
    solver->solverdata = solverdata;
 }

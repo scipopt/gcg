@@ -68,7 +68,6 @@ struct GCG_SolverData
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
 SCIP_RETCODE checkSolNew(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP_SOL**            sols,               /**< array of solutions */
    int                   idx,                /**< index of the solution */
@@ -82,20 +81,17 @@ SCIP_RETCODE checkSolNew(
    int s;
    int i;
 
-   assert(scip != NULL);
    assert(pricingprob != NULL);
    assert(sols != NULL);
    assert(sols[idx] != NULL);
    assert(isnew != NULL);
-
-   assert(GCGpricerGetOrigprob(scip) != NULL);
 
    probvars = SCIPgetVars(pricingprob);
    nprobvars = SCIPgetNVars(pricingprob);
 
    *isnew = TRUE;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &newvals, nprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &newvals, nprobvars) );
 
    SCIP_CALL( SCIPgetSolVals(pricingprob, sols[idx], nprobvars, probvars, newvals) );
 
@@ -103,30 +99,27 @@ SCIP_RETCODE checkSolNew(
    {
       assert(sols[s] != NULL);
       /** @todo ensure that the solutions are sorted  */
-      /*assert(SCIPisLE(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx]))
-       *|| ABS(SCIPgetSolOrigObj(pricingprob, sols[s])) > 1e+15 * SCIPepsilon(pricingprob));*/
-      if( !SCIPisEQ(scip, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
+      if( !SCIPisEQ(pricingprob, SCIPgetSolOrigObj(pricingprob, sols[s]), SCIPgetSolOrigObj(pricingprob, sols[idx])) )
          continue;
 
       if( SCIPsolGetOrigin(sols[s]) != SCIP_SOLORIGIN_ORIGINAL && SCIPsolGetOrigin(sols[idx]) != SCIP_SOLORIGIN_ORIGINAL )
          continue;
 
       for( i = 0; i < nprobvars; i++ )
-         if( !SCIPisEQ(scip, SCIPgetSolVal(pricingprob, sols[s], probvars[i]), newvals[i]) )
+         if( !SCIPisEQ(pricingprob, SCIPgetSolVal(pricingprob, sols[s], probvars[i]), newvals[i]) )
             break;
 
       if( i == nprobvars )
          *isnew = FALSE;
    }
 
-   SCIPfreeBufferArray(scip, &newvals);
+   SCIPfreeBufferArray(pricingprob, &newvals);
 
    return SCIP_OKAY;
 }
 
 static
 SCIP_RETCODE solveProblem(
-   SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
@@ -146,17 +139,6 @@ SCIP_RETCODE solveProblem(
 
    int s;
    int i;
-
-   SCIP_Real memlimit;
-
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memlimit) );
-   if( !SCIPisInfinity(scip, memlimit) )
-   {
-      memlimit -= SCIPgetMemUsed(scip)/1048576.0 + GCGgetPricingprobsMemUsed(solverdata->origprob) - SCIPgetMemUsed(pricingprob)/1048576.0;
-      if( memlimit < 0 )
-         memlimit = 0.0;
-      SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/memory", memlimit) );
-   }
 
    /* solve the pricing submip */
    SCIP_CALL( SCIPsolve(pricingprob) );
@@ -217,11 +199,11 @@ SCIP_RETCODE solveProblem(
       /* store the primal ray values */
       for( i = 0; i < nprobvars; i++ )
       {
-         if( SCIPisZero(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])) )
+         if( SCIPisZero(pricingprob, SCIPgetPrimalRayVal(pricingprob, probvars[i])) )
             continue;
 
-         assert(!SCIPisInfinity(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])));
-         assert(!SCIPisInfinity(scip, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
+         assert(!SCIPisInfinity(pricingprob, SCIPgetPrimalRayVal(pricingprob, probvars[i])));
+         assert(!SCIPisInfinity(pricingprob, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
 
          solvars[nsolvars] = probvars[i];
          solvals[nsolvars] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
@@ -275,14 +257,14 @@ SCIP_RETCODE solveProblem(
 
          if( !feasible )
          {
-            SCIPwarningMessage(scip, "solution of pricing problem %d not feasible:\n", probnr);
+            SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
          }
 
          /* check whether the solution is equal to one of the previous solutions */
          if( solverdata->checksols )
          {
-            SCIP_CALL( checkSolNew(scip, pricingprob, probsols, s, &newsol) );
+            SCIP_CALL( checkSolNew(pricingprob, probsols, s, &newsol) );
 
             if( !newsol )
                continue;
@@ -316,12 +298,12 @@ GCG_DECL_SOLVERFREE(solverFreeMip)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
    SCIPfreeMemory(scip, &solverdata);
 
-   GCGpricerSetSolverdata(scip, solver, NULL);
+   GCGsolverSetSolverdata(solver, NULL);
 
    return SCIP_OKAY;
 }
@@ -342,12 +324,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
 #endif
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
-   *lowerbound = -SCIPinfinity(scip);
+   *lowerbound = -SCIPinfinity(pricingprob);
    SCIPdebugMessage("solving pricing %d=%p\n", probnr, pricingprob);
-   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
+   SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
@@ -367,17 +349,17 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
-   *lowerbound = -SCIPinfinity(scip);
+   *lowerbound = -SCIPinfinity(pricingprob);
 
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/stallnodes", 100LL) );
    SCIP_CALL( SCIPsetLongintParam(pricingprob, "limits/nodes", 1000LL) );
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.2) );
    /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
-   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
+   SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );

@@ -104,15 +104,13 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
 /** returns the solverdata of a solver */
 extern
-GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+GCG_SOLVERDATA* GCGsolverGetSolverdata(
    GCG_SOLVER*           solver              /**< pointer so solver */
    );
 
 /** sets solver data of specific solver */
 extern
-void GCGpricerSetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+void GCGsolverSetSolverdata(
    GCG_SOLVER*           solver,             /**< pointer to solver  */
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
