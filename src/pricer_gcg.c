@@ -712,17 +712,21 @@ SCIP_RETCODE solvePricingProblem(
       {
          continue;
       }
-      #pragma omp critical
-      SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+#pragma omp critical (clock)
+      {
+         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+      }
 
       SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, lowerbound, sols, solisray, maxsols, nsols, status) );
 
-      #pragma omp critical
-      SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+#pragma omp critical (clock)
+      {
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+      }
 
       if( *status != SCIP_STATUS_UNKNOWN )
       {
-         #pragma omp atomic
+#pragma omp atomic
          (*calls)++;
       }
 
@@ -1606,7 +1610,7 @@ SCIP_RETCODE performOptimalPricing(
       SCIP_CALL( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );}
 
-   #pragma omp parallel for default(shared)
+#pragma omp parallel for private(j)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       for( j = 0; j < maxsols; ++j )
@@ -1615,84 +1619,86 @@ SCIP_RETCODE performOptimalPricing(
          sols[i][j] = NULL;
       }
    }
-
-#pragma omp parallel for default(none) firstprivate(pricinglowerbound,result) shared(scip, origprob, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
+#pragma omp barrier
+#pragma omp parallel for ordered default(none) firstprivate(pricinglowerbound) shared(scip, origprob, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;
       SCIP_Real timelimit;
       SCIP_Real memlimit;
       SCIP_STATUS status;
-      result = SCIP_STATUS_UNKNOWN;
+      int nidentical;
+      status = SCIP_STATUS_UNKNOWN;
       prob = pricerdata->permu[i];
-
-#pragma omp critical
+      nidentical =  GCGrelaxGetNIdenticalBlocks(origprob, prob);
+#pragma omp critical (limits)
       {
 #ifndef _OPENMP
-      if( pricerdata->pricingprobs[prob] == NULL )
-         continue;
+         if( pricerdata->pricingprobs[prob] == NULL )
+            continue;
 
-      if( optimal && abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
-         break;
-      else if(!optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
-         break;
+         if( optimal && abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
+            break;
+         else if(!optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
+            break;
 #endif
-      /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
-      if( !optimal )
-      {
-         SCIP_CALL_ABORT( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
-      }
+         /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+         if( !optimal )
+         {
+            SCIP_CALL_ABORT( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+         }
 
-      SCIP_CALL_ABORT( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
-      SCIP_CALL_ABORT( subproblemSetMemorylimit(scip, pricerdata->pricingprobs[prob], prob, &memlimit) );
+         SCIP_CALL_ABORT( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
+         SCIP_CALL_ABORT( subproblemSetMemorylimit(scip, pricerdata->pricingprobs[prob], prob, &memlimit) );
       }
 
 #pragma omp critical
       {
-      SCIPdebugMessage("solving pricing %d\n", prob);
+         SCIPdebugMessage("solving pricing %d\n", prob);
       }
 
+#pragma omp ordered
+      {
       SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
-
+   }
 
       if( optimal )
       {
-         #pragma omp atomic
+#pragma omp atomic
          pricerdata->solvedsubmipsoptimal++;
       }
       else
       {
-         #pragma omp atomic
+#pragma omp atomic
          pricerdata->solvedsubmipsheur++;
       }
 
-      #pragma omp atomic
       solvedmips++;
 
-
-      #pragma omp critical
       if( optimal ) {
          if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
          {
             assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
          }
 
-         (*bestredcost) += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
-
-         if( status != SCIP_STATUS_OPTIMAL )
+#pragma omp critical (collect)
          {
-            *bestredcostvalid = FALSE;
-            if( result != NULL )
-               *result = SCIP_DIDNOTRUN;
+            (*bestredcost) += nidentical * (pricinglowerbound - pricerdata->dualsolconv[prob]);
+
+            if( status != SCIP_STATUS_OPTIMAL )
+            {
+               *bestredcostvalid = FALSE;
+            }
          }
       }
    }
 
-// #pragma omp barrier
-// #ifdef _OPENMP
-//    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
+   if( result != NULL && *bestredcostvalid == FALSE )
+      *result = SCIP_DIDNOTRUN;
 
-// #endif
+#ifdef _OPENMP
+   SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
+#endif
 
 #ifndef _OPENMP
    /** @todo perhaps solve remaining pricing problems, if only few left? */
