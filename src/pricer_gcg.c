@@ -676,7 +676,8 @@ SCIP_RETCODE solvePricingProblem(
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                           SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
-            pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
+            if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING )
+               pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
             break;
          }
 
