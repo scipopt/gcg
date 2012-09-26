@@ -83,6 +83,7 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 	j = 0;
 	k = 0;
 	*generatorsize = 0;
+	origvarsunion = NULL;
 	assert(mastervars != NULL);
 	
 	SCIPdebugMessage("get generator\n");
@@ -97,9 +98,9 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 		if(*generatorsize==0 && norigvars>0)
 		{
 			*generatorsize = norigvars;
-			SCIP_CALL( SCIPallocBufferArray(scip, generator, *generatorsize) );
-			SCIP_CALL( SCIPallocBufferArray(scip, compisinteger, *generatorsize) );
-			SCIP_CALL( SCIPallocBufferArray(scip, &origvarsunion, *generatorsize) );
+			SCIP_CALL( SCIPallocMemoryArray(scip, generator, *generatorsize) );
+			SCIP_CALL( SCIPallocMemoryArray(scip, compisinteger, *generatorsize) );
+			SCIP_CALL( SCIPallocMemoryArray(scip, &origvarsunion, *generatorsize) );
 			for(j=0; j<*generatorsize; ++j)
 			{
 				origvarsunion[j] = origvars[j];
@@ -127,9 +128,9 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 					if(k == norigvars-1)
 					{
 						++(*generatorsize);
-						SCIP_CALL( SCIPreallocBufferArray(scip, generator, *generatorsize) );
-						SCIP_CALL( SCIPreallocBufferArray(scip, compisinteger, *generatorsize) );
-						SCIP_CALL( SCIPreallocBufferArray(scip, &origvarsunion, *generatorsize) );
+						SCIP_CALL( SCIPreallocMemoryArray(scip, generator, *generatorsize) );
+						SCIP_CALL( SCIPreallocMemoryArray(scip, compisinteger, *generatorsize) );
+						SCIP_CALL( SCIPreallocMemoryArray(scip, &origvarsunion, *generatorsize) );
 						origvarsunion[*generatorsize-1] = origvars[j];
 						(*generator)[*generatorsize-1] = 0;
 						(*compisinteger)[(*generatorsize)-1] = TRUE;
@@ -163,7 +164,7 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 	}
 	SCIPdebugMessage("generatorsize = %d \n", *generatorsize);
 	
-	SCIPfreeBufferArray(scip, &origvarsunion);
+	SCIPfreeMemoryArray(scip, &origvarsunion);
 	
 	return SCIP_OKAY;
 }
@@ -279,6 +280,8 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				//int norigvars;
 				SCIP_Real generator_i;
 				//SCIP_Bool present;
+				
+				generator = NULL;
 
 				/*
 				present = FALSE;
@@ -315,7 +318,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				if(branchdata->S[p][1] == 1 )
 				{
 					//if(GCGmasterVarGetOrigvals(mastervar)[branchdata->S[p][0]] < branchdata->S[p][2])
-						if( generator_i < branchdata->S[p][2])
+						if( SCIPisLT(scip, generator_i, branchdata->S[p][2]) ) //generator_i < branchdata->S[p][2])
 						{
 							varinS = FALSE;
 							break;
@@ -323,7 +326,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				}
 				else
 				{
-					if(generator_i >= branchdata->S[p][2])
+					if(SCIPisGE(scip, generator_i, branchdata->S[p][2]) ) //generator_i >= branchdata->S[p][2])
 					{
 						varinS = FALSE;
 						break;
