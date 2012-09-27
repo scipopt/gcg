@@ -31,11 +31,13 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
 
 #include "branch_master.h"
+#include "branch_generic.h"
 #include "cons_origbranch.h"
 #include "cons_masterbranch.h"
 
@@ -59,6 +61,9 @@
 #define BRANCHRULE_PRIORITY      1000000
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
+
+
+#define BRANCHRULE_VANDERBECK        1
 
 /** includes all plugins in the master copy.
  *
@@ -127,27 +132,71 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 {  /*lint --e{715}*/
    SCIP_NODE* child1;
    SCIP_NODE* child2;
+   //SCIP_NODE** childvanderbeck;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   GCG_BRANCHDATA* branchdata;
+   //SCIP_CONS** consvanderbeck;
+   int nchildnodes;
+   int i;
 
+   i = 0;
+   nchildnodes = 2;
+   
    assert(scip != NULL);
    assert(result != NULL);
 
    SCIPdebugMessage("Execlp method of master branching\n");
+   if(BRANCHRULE_VANDERBECK == 1)
+   {
+	   //return SCIP_OKAY;
+	   nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
+	   SCIPdebugMessage("creating %d nodes\n", nchildnodes);
+	   //SCIP_CALL( SCIPallocMemoryArray(scip, &childvanderbeck, nchildnodes) );
+	   //SCIP_CALL( SCIPallocMemoryArray(scip, &consvanderbeck, nchildnodes) );
+	   for( i=0; i<nchildnodes; ++i)
+	   {
+		   SCIP_NODE* child;
+		   SCIP_CONS* cons;
 
-   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
-   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+		   SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+		 //  childvanderbeck[i] = child;
+	   //}
+	   //for( i=0; i<nchildnodes; ++i )
+	   //{
+	      //SCIP_CONS* cons;
+		   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
+		 //  consvanderbeck[i] = cons;
+	   //}
+	   //for( i=0; i<nchildnodes; ++i)
+	   //{
+		   SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
+	   //}
+	  // for( i=0; i<nchildnodes; ++i)
+	  // {
+		   SCIP_CALL( SCIPreleaseCons(scip, &cons ) );
+	   }
+	  // SCIP_CALL( SCIPfreeMemoryArray(scip, &childvanderbeck, nchildnodes) );
+	  // SCIP_CALL( SCIPfreeMemoryArray(scip, &consvanderbeck, nchildnodes) );
+   }
+   else
+   {
 
-   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+	   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
+	   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+	   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+	   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+	   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+
+	   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+	   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+
+	   /* release constraints */
+	   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+	   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+   }
 
    *result = SCIP_BRANCHED;
 
@@ -171,25 +220,53 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   int nchildnodes;
+   int i;
+   
+   i = 0;
+   nchildnodes = 2;
 
    assert(scip != NULL);
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of master branching\n");
+   
+   if(BRANCHRULE_VANDERBECK == 1)
+   {
+	  // return SCIP_OKAY;
+	   nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
+	   for( i=0; i<nchildnodes; ++i)
+	   {
+		   SCIP_NODE* child;
+		   SCIP_CONS* cons;
 
-   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
-   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+		   SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+		   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
 
-   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+		   SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
 
-   /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+		   /* release constraints */
+		   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+	   }
+   }
+   else
+   {
+
+	   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
+	   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+	   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+	   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+	   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+
+	   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+	   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+
+	   /* release constraints */
+	   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+	   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+   }
 
    *result = SCIP_BRANCHED;
 

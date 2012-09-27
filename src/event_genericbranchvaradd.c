@@ -54,6 +54,7 @@ struct GCG_BranchData
 	int*               childlhs;
 	//SCIP_Real*         gerenicPseudocostsOnOrigvars;  /**< giving the branchingpriorities */
 	SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
+	GCG_BRANCHDATA**   childbranchdatas;
 };
 /* TODO: fill in the necessary event handler data */
 

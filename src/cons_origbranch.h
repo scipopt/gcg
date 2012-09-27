@@ -74,6 +74,13 @@ void GCGconsOrigbranchGetStack(
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
+/** set the branching data for a given origbranch constraint */
+extern
+void GCGconsOrigbranchSetBranchdata(
+   SCIP_CONS*            cons,                /**< origbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata
+   );
+
 /** returns the branching data for a given origbranch constraint */
 extern
 GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(

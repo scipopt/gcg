@@ -91,7 +91,26 @@ struct SCIP_ConshdlrData
    int                   maxstacksize;       /**< maximum size of the stack */
 };
 
+typedef int ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1 means >=, sense=0 means <
 
+struct GCG_BranchData
+{
+	ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
+	int*               sequencsizes;                 /**< number of bounds in S[k] */
+	int                Csize;
+	ComponentBoundSequence*   S;             /**< component bound sequence which induce the current branching constraint */
+	int                Ssize;
+	ComponentBoundSequence*   childS;       /**< component bound sequence which induce the child nodes, need for prune by dominance */
+	int                childSsize;
+	int                blocknr;             /**< number of block branching was performed */
+	int                childnr;
+	int                lhs;
+	int                nchildNodes;
+	int*               childlhs;
+	//SCIP_Real*         gerenicPseudocostsOnOrigvars;  /**< giving the branchingpriorities */
+	SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
+	GCG_BRANCHDATA**   childbranchdatas;
+};
 
 /*
  * Callback methods of constraint handler
@@ -126,6 +145,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
+   GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -133,6 +153,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
+   branchdata = NULL;
 
    /* prepare stack */
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
@@ -141,7 +162,11 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    /* create origbranch constraint corresponding to the root node only if there is some problem */
    if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
    {
-      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+      //alloc cons/branchdata for vanderbeck branching scheme
+      if(BRANCHRULE_VANDERBECK == 1)
+         SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
+
+      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, branchdata) );
       conshdlrData->stack[0] = cons;
       conshdlrData->nstack = 1;
    }
@@ -158,6 +183,7 @@ static
 SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
+   GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -167,6 +193,13 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
    assert(conshdlrData != NULL);
    assert(conshdlrData->nstack == 1);
    SCIPdebugMessage("exiting branch orig constraint handler\n");
+
+   if(BRANCHRULE_VANDERBECK == 1)
+   {
+      //check for root
+	   branchdata = GCGconsOrigbranchGetBranchdata(conshdlrData->stack[0]);
+      SCIPfreeMemory(scip, &branchdata );
+   }
 
    /* free stack */
    SCIPfreeMemoryArray(scip, &conshdlrData->stack);
@@ -605,6 +638,28 @@ void GCGconsOrigbranchGetStack(
    *stack = conshdlrData->stack;
    *nstackelements = conshdlrData->nstack;
 
+}
+
+/** returns the branching data for a given origbranch constraint */
+void GCGconsOrigbranchSetBranchdata(
+   SCIP_CONS*            cons,                /**< origbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+   
+   consdata->branchdata = branchdata;
+   
+   assert(GCGconsOrigbranchGetBranchdata(cons) != NULL);
+   
+   if( GCGconsOrigbranchGetMastercons(cons) != NULL )
+	   printf("root-orig has mastercons\n");
+    /*  GCGconsOrigbranchGetMastercons(cons)
+    */
+   
 }
 
 /** returns the branching data for a given origbranch constraint */
