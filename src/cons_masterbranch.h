@@ -92,6 +92,14 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
+/** returns the masterbranch constraint of the vanderbeckchild of the node at which the
+    given masterbranch constraint is sticking */
+extern
+SCIP_CONS* GCGconsMasterbranchGetChildvanderbeckcons(
+   SCIP_CONS*            cons,                /**< constraint pointer */
+   int                   childnr
+   );
+
 /** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
 extern

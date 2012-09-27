@@ -214,7 +214,6 @@ SCIP_RETCODE computeHyperedgeWeight(
 {
    int j;
    int ncurvars;
-
    const char* hdlrname;
 
    *cost = detectordata->consWeight;
