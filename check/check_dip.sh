@@ -83,7 +83,13 @@ TEXFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.tex
 TMPFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.tmp
 SETFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.parm
 
-SETTINGS=settings/$SETNAME.dipset
+# set the path to the settings file
+if test $SETNAME != "default"
+then
+    SETTINGS=../settings/$SETNAME.parm
+else
+    SETTINGS=../settings/dip.parm
+fi
 
 if test "$CONTINUE" = "true"
 then
@@ -148,7 +154,7 @@ do
 
 	    echo $i
 
-	    cp dip.parm $TMPFILE
+	    cp $SETTINGS $TMPFILE
 
 	    # change the time limit in the param file
 	    sed -i "s,\$TIMELIMIT,$TIMELIMIT," $TMPFILE
