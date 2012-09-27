@@ -26,6 +26,8 @@
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #
+# @author Gerald Gamrath
+#
 # This is what you have to do to get DIP running:
 # 1) download dip, e.g. "svn checkout https://projects.coin-or.org/svn/Dip/trunk dip"
 # 2) cd dip
@@ -62,6 +64,8 @@ FEASTOL=$9
 CONTINUE=${10}
 
 echo "timelimit: ${TIMELIMIT}"
+
+echo "binname: ${BINNAME}"
 
 if test ! -e results
 then
@@ -144,39 +148,25 @@ do
 
 	    echo $i
 
-            #if test $SETNAME != "default"
-            #then
-                #cp $SETTINGS $TMPFILE
-            #else
-                echo ""                              > $TMPFILE
-            #fi
-            if test $FEASTOL != "default"
-            then
-                echo primalTolerance $FEASTOL       >> $TMPFILE
-                echo integerTolerance $FEASTOL      >> $TMPFILE
-            fi
-#workaround: since DIP only looks at cpu-time, we multiply the timelimit with the number of threads
-            #TIMELIMIT=`expr $TIMELIMIT \* $THREADS`
-            echo seconds $TIMELIMIT                 >> $TMPFILE
-#$MEMLIMIT not supported
-            echo threads $THREADS                   >> $TMPFILE
-            echo ratioGap 0.0                       >> $TMPFILE
-            echo maxNodes $NODELIMIT                >> $TMPFILE
-            echo import $i                          >> $TMPFILE
-            echo ratioGap                           >> $TMPFILE
-            echo allowableGap                       >> $TMPFILE
-            echo seconds                            >> $TMPFILE
-            echo stat                               >> $TMPFILE
-            echo solve                              >> $TMPFILE
-            echo quit                               >> $TMPFILE
+	    cp dip.parm $TMPFILE
+
+	    # change the time limit in the param file
+	    sed -i "s,\$TIMELIMIT,$TIMELIMIT," $TMPFILE
+
+	    # change the instance in the param file
+	    sed -i "s,\$INSTANCE,$i," $TMPFILE
+
+	    # change the block file in the param file
+	    sed -i "s,\$BLOCK,$i.block," $TMPFILE
+
             cp $TMPFILE $SETFILE
             echo -----------------------------
             date
             date >>$ERRFILE
             echo -----------------------------
             date +"@03 %s"
-	    echo bash -c "ulimit -t $HARDTIMELIMIT; ulimit -v $HARDMEMLIMIT; ulimit -f 1000000; $DIPBIN --param dip.parm --MILPBlock:Instance $i --MILPBlock:BlockFile $i.block"
-            bash -c "ulimit -t $HARDTIMELIMIT; ulimit -v $HARDMEMLIMIT; ulimit -f 1000000; $DIPBIN --param dip.parm --MILPBlock:Instance $i --MILPBlock:BlockFile $i.block" 2>>$ERRFILE
+	    echo bash -c "ulimit -t $HARDTIMELIMIT; ulimit -v $HARDMEMLIMIT; ulimit -f 1000000; $DIPBIN --param $SETFILE"
+            bash -c "ulimit -t $HARDTIMELIMIT; ulimit -v $HARDMEMLIMIT; ulimit -f 1000000; $DIPBIN --param $SETFILE" 2>>$ERRFILE
             date +"@04 %s"
             echo -----------------------------
             date
@@ -201,4 +191,4 @@ rm -f $TMPFILE
 date >>$OUTFILE
 date >>$ERRFILE
 
-#./evalcheck_dip.sh $OUTFILE
+./evalcheck_dip.sh $OUTFILE

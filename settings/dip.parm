@@ -13,12 +13,15 @@ doRelaxCut    = 0
 #{0,1}: use DECOMP to build compact formulation then call direct IP solver
 doDirect      = 0
 
+timeLimit     = 3600
+
 #############################################################################
 Settings for all decomp algorithms.
   section=DECOMP
 #############################################################################
 [DECOMP]
 LogLevel      = 1
+LimitTime     = $TIMELIMIT
 
 #############################################################################
 Settings for decomp algorithm cutting plane method.
@@ -53,7 +56,7 @@ DataDir        = .
 BlockFileFormat = List
 
 # Name of block file (assumed to be in DataDir).
-BlockFile       = xyz.block
+BlockFile       = $BLOCK
 
 # Name of MPS file for instance (assumed to be in DataDir).
-Instance        = xyz.mps.gz
+Instance        = $INSTANCE

@@ -4,19 +4,29 @@ OPTHOST	   	 := $(shell uname -n | tr '[:upper:]' '[:lower:]' | tr -cd '[:alpha:
 
 -include make/local/make.$(OPTHOST)
 
+PERMUTE		=	0
+
+.PHONY: testdip
+testdip:
+		cd check; \
+		$(SHELL) ./check_dip.sh $(TEST) $(DIP) $(SETTINGS) \
+		$(OSTYPE).$(ARCH).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
+		$(THREADS) $(FEASTOL) $(CONTINUE);
+
 .PHONY: testcluster
 testcluster:
 		cd check; \
 		$(SHELL) ./check_cluster.sh $(TEST) $(MAINFILE) $(SETTINGS) \
 		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
 		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) \
-		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE);
+		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE) \
+		$(PERMUTE) $(MODE);
 
-.PHONY: testdip
-testdip:
+.PHONY: testclusterdip
+testclusterdip:
 		cd check; \
-		$(SHELL) ./check_dip.sh $(TEST) $(DIP) $(SETTINGS) \
-		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
+		$(SHELL) ./check_cluster_dip.sh $(TEST) $(DIP) $(SETTINGS) \
+		$(OSTYPE).$(ARCH).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
 		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) \
 		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE);
 

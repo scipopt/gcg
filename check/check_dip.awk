@@ -139,15 +139,19 @@ BEGIN {
 # solution
 #
 /^Status=/ {
-   status = $1;
-   status = status * 1;
+   status = $2;
 
    if ( status == 0 ) {
       opti = 1;
       timeout  = 0;
       aborted = 0;
    }
-   else if ( $1 == 5) {
+   else if( status == 1 ) {
+      opti = 0;
+      timeout  = 1;
+      aborted = 0;
+   }
+   else if ( status == 5) {
       opti = 1;
       timeout  = 0;
       aborted = 0;
