@@ -239,7 +239,7 @@ do
         # the cluster queue has an upper bound of 2000 jobs; if this limit is
         # reached the submitted jobs are dumped; to avoid that we check the total
         # load of the cluster and wait until it is save (total load not more than
-        # 1900 jobs) to submit the next job.
+        # 1600 jobs) to submit the next job.
 	if test "$NOWAITCLUSTER" != "1"
 	then
 	    if test  "$QUEUETYPE" != "qsub"
