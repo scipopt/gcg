@@ -86,7 +86,7 @@ struct GCG_Record
 	int                recordsize;
 	int*               sequencesizes;
 };
-
+typedef struct GCG_Record GCG_RECORD;
 
 /*
  * Callback methods
@@ -117,7 +117,7 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 	SCIP_Real* origvals;
 	int norigvars;
 	int nvarsinblock;
-	
+
 	i = 0;
 	j = 0;
 	k = 0;
@@ -125,14 +125,14 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 	nvarsinblock = 0;
 	origvarsunion = NULL;
 	assert(mastervars != NULL);
-	
+
 	//SCIPdebugMessage("get generator\n");
-	
+
 	for(i=0; i<nmastervars; ++i)
 	{
 		origvars = GCGmasterVarGetOrigvars(mastervars[i]);
 		norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
-		
+
 		if(blocknr != GCGvarGetBlock(mastervars[i]))
 			continue;
 		else
@@ -158,9 +158,9 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 			for(j=0; j<norigvars; ++j)
 			{
 				int oldgeneratorsize;
-				
+
 				oldgeneratorsize = *generatorsize;
-				
+
 				for(k=0; k<oldgeneratorsize; ++k)
 				{
 					if(origvarsunion[k] == origvars[j])
@@ -184,11 +184,11 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 			}
 		}
 	}
-	
+
 	origvars = GCGmasterVarGetOrigvars(mastervar);
 	norigvars = GCGmasterVarGetNOrigvars(mastervar);
 	origvals = GCGmasterVarGetOrigvals(mastervar);
-	
+
 	for(i=0; i<norigvars; ++i)
 	{
 		for(j=0; j<*generatorsize; ++j)
@@ -206,9 +206,9 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 	}
 	//SCIPdebugMessage("generatorsize = %d \n", *generatorsize);
 	//SCIPdebugMessage("in block %d are %d mastervars \n", blocknr, nvarsinblock);
-	
+
 	SCIPfreeMemoryArray(scip, &origvarsunion);
-	
+
 	return SCIP_OKAY;
 }
 
@@ -698,9 +698,9 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 	SCIP_Real maxPriority;
 	SCIP_Bool found;
 	//	SCIP_VAR* origvar;
-//	unsigned int seed;
+	//	unsigned int seed;
 
-//	seed = 0;
+	//	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -732,15 +732,15 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 		ComponentBoundSequence* copyS;
 		SCIP_Real mu_F;
 		SCIP_Bool even;
-		
+
 		even = TRUE;
 		mu_F = 0;
 		i = IndexSet[k]; 
 		alpha[k] = 0;
-		
+
 		if(!F[0]->compisinteger[i])
 			continue;
-		
+
 		for(j=0; j<Fsize; ++j)
 			alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
 		if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
@@ -750,7 +750,7 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 			found = TRUE;
 
 			SCIPdebugMessage("found a fractional alpha\n");
-			
+
 			//add to record
 			++Ssize;
 			SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize) );
@@ -788,20 +788,20 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 					median = median-j;
 					even = TRUE;
 				}
-				
+
 				for(l=0; l<Fsize; ++l)
 				{
 					if( SCIPisGE(scip, F[l]->generator[i], median) ) //F[l]->generator[i] >= median )
-					mu_F += F[l]->mastervarValue;
+						mu_F += F[l]->mastervarValue;
 				}
 				++j;
-				
+
 			}while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
-			
+
 			SCIPdebugMessage("mu_F = %g \n", mu_F);
 			SCIPdebugMessage("newmedian = %g \n", median);
 			SCIPdebugMessage("last component = %d \n", i);
-			
+
 			copyS[Ssize-1][2] = median;
 
 			SCIPfreeMemoryArray(scip, &compvalues);
@@ -843,17 +843,17 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 			++j;
 		}
 	}
-	
+
 	//compute priority  (max-min)
 	SCIP_CALL( SCIPallocMemoryArray(scip, &priority, Jsize) );
 	for(j=0; j<Jsize; ++j)
 	{
 		int maxcomp;
 		int mincomp;
-		
+
 		maxcomp = INT_MIN;
 		mincomp = INT_MAX;
-		
+
 		for(l=0; l<Fsize; ++l)
 		{
 			if(F[l]->generator[J[j]] > maxcomp)
@@ -917,13 +917,13 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 		 */
 
 		//random priority
-		
-//		do
-//		{
-//		i = SCIPgetRandomInt( 0, Jsize-1, &seed ); 
-//		}
-//		while (F[0]->compisinteger[i]);
-		
+
+		//		do
+		//		{
+		//		i = SCIPgetRandomInt( 0, Jsize-1, &seed ); 
+		//		}
+		//		while (F[0]->compisinteger[i]);
+
 		//max-min priority
 		for(j=0; j<Jsize; ++j)
 		{
@@ -933,10 +933,10 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 				i = J[j];
 			}
 		}
-	//	if(maxPriority != 0)
-	//	{
-	//		SCIPdebugMessage("maxPriority = %d\n", maxPriority);
-	//	}
+		//	if(maxPriority != 0)
+		//	{
+		//		SCIPdebugMessage("maxPriority = %d\n", maxPriority);
+		//	}
 		SCIP_CALL( SCIPallocMemoryArray(scip, &compvalues, Fsize) );
 		for(l=0; l<Fsize; ++l)
 		{
@@ -946,7 +946,7 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 		}
 		median = GetMedian(scip, compvalues, Fsize, min); 
 		SCIPfreeMemoryArray(scip, &compvalues);
-		
+
 		if(median != 0)
 		{
 			SCIPdebugMessage("median = %g\n", median);
@@ -956,7 +956,7 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 		if( SCIPisEQ(scip, median, min) )
 		{
 			//here with max-min priority
-		//	assert(maxPriority == 0);
+			//	assert(maxPriority == 0);
 			for(j=0; j<Jsize; ++j)
 			{
 				if( i == J[j])
@@ -1017,7 +1017,7 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
 	//record = 
 	Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize, record );
 
-	
+
 	SCIPfreeMemoryArray(scip, &copyF);
 	SCIPfreeMemoryArray(scip, &upperLowerS);
 	SCIPfreeMemoryArray(scip, &priority);
@@ -1046,13 +1046,15 @@ SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record* record, ComponentBoundSequen
 
 	SCIPdebugMessage("Chose S \n");
 
+	assert(record->recordsize > 0);
+
 	for( i=0; i< record->recordsize; ++i )
 	{
 		assert(record->sequencesizes != NULL );
 		assert(record->sequencesizes[i] > 0);
-		if(maxPriority <= 1) // getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) ) later by pseudocosts e.g.
+		if(maxPriority <= 1 || maxPriority == INT_MIN) // getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) ) later by pseudocosts e.g.
 		{
-			if( maxPriority < 1) // getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) ) now priority is random
+			if( maxPriority < 1 || maxPriority == INT_MIN) // getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ) ) now priority is random
 			{
 				maxPriority = 1; // getPriority( record->record[i][record->sequencesizes[i] -1 ][0] ); only choose here first smallest S
 				minSizeOfMaxPriority = record->sequencesizes[i];
@@ -1085,7 +1087,7 @@ SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record* record, ComponentBoundSequen
 		SCIPfreeMemoryArray(scip, &(record->record[i]) );
 	}
 	SCIPfreeMemoryArray(scip, &(record->record) );
-	
+
 	SCIPdebugMessage("with size %d \n", *Ssize);
 
 	assert(*S!=NULL);
@@ -1108,27 +1110,27 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	//	int isense;
 	int ivalue;
 	int median;
-//	int min;
+	//	int min;
 	int Fupper;
 	int Flower;
 	int Cupper;
 	int Clower;
 	//	int copyCsize;
 	//	int maxPriority;
-//	unsigned int seed;
+	//	unsigned int seed;
 	//int copySsize;
 	struct GCG_Strip** copyF;
 	//ComponentBoundSequence** copyC;
 	ComponentBoundSequence* copyS;
 	//ComponentBoundSequence* lowerS;
 	SCIP_Real alpha_i;
-//	SCIP_Real* compvalues;
+	//	SCIP_Real* compvalues;
 	SCIP_Real  muF;
 	SCIP_Bool found;
 	SCIP_Real mu_F;
-	
 
-//	seed = 0;
+
+	//	seed = 0;
 	i = 0;
 	j = 0;
 	k = 0;
@@ -1141,7 +1143,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	//	copyCsize = 0;
 	muF = 0;
 	//copySsize = 0;
-//	min = INT_MAX;
+	//	min = INT_MAX;
 	//	maxPriority = INT_MIN;
 	found = FALSE;
 
@@ -1152,7 +1154,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 		return Separate( scip, F, Fsize, IndexSet, IndexSetSize, S, Ssize, record );
 
 	SCIPdebugMessage("explore further\n");
-	
+
 	assert( C!=NULL );
 	assert( Csize>0 );
 	assert( F != NULL ); 
@@ -1164,7 +1166,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 	{
 		SCIPdebugMessage("sequencesizes = %d\n", sequencesizes[k]);
 		++k;
-		assert( k<Csize );
+		assert( k < Csize );
 	}
 	i = C[k][p-1][0];
 	//	isense = C[k][p-1][1];
@@ -1235,7 +1237,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 
 
 	//Partition
-//	min = INT_MAX;
+	//	min = INT_MAX;
 	/*
 	for(j=0; j<IndexSetSize; ++j)
 		{
@@ -1281,7 +1283,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 				assert(IndexSetSize >= 0);
 		}
 	 */
-/*
+	/*
 	do{	
 		//random priority
 
@@ -1313,7 +1315,7 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
 
 		assert(IndexSetSize >= 0);
 	}while( SCIPisEQ(scip, median, min) );
-*/
+	 */
 
 	++Ssize;
 	SCIP_CALL( SCIPreallocMemoryArray(scip, &S, Ssize) );
@@ -1426,22 +1428,24 @@ SCIP_RETCODE CallSeparate( SCIP* scip, struct GCG_Strip** F, int Fsize, Componen
 	//int n;
 	int* IndexSet;
 	int IndexSetSize;
-	struct GCG_Record* record;
+	GCG_RECORD* record;
 
 	assert(Fsize > 0);
 	assert(F!=NULL);
 
 	SCIPdebugMessage("Calling Separate\n");
 
-	record = (struct GCG_Record*) malloc(sizeof(struct GCG_Record));
+
+	//record = (struct GCG_Record*) malloc(sizeof(struct GCG_Record));
+	SCIP_CALL( SCIPallocBuffer(scip, &record) );
 	record->recordsize = 0;
 
 	//calculate IndexSet
 	IndexSetSize = F[0]->generatorsize;
+	assert(IndexSetSize > 0);
 	SCIP_CALL( SCIPallocMemoryArray(scip, &IndexSet, IndexSetSize) );
 	for( i=0; i<IndexSetSize; ++i )
-		//if( !continousVar(i))
-		IndexSet[i]=i;
+		IndexSet[i] = i;
 
 	//rootnode?
 	if( Csize<=0 )
@@ -1454,7 +1458,7 @@ SCIP_RETCODE CallSeparate( SCIP* scip, struct GCG_Strip** F, int Fsize, Componen
 
 	ChoseS( scip, record, S, Ssize );
 	assert(*S!=NULL);
-	
+
 #ifdef SCIP_DEBUG
 	for( i=0; i<*Ssize; ++i)
 	{
@@ -1464,6 +1468,7 @@ SCIP_RETCODE CallSeparate( SCIP* scip, struct GCG_Strip** F, int Fsize, Componen
 	}
 #endif
 	SCIPfreeMemoryArray(scip, &IndexSet);
+	SCIPfreeBuffer(scip, &record);
 
 	return SCIP_OKAY;	
 }
@@ -1592,7 +1597,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	//	int norigvars;
 	//	int v;
 	int i;
-//	int j;
+	//	int j;
 	int p;
 	int k;
 	int pL;
@@ -1602,10 +1607,10 @@ SCIP_RETCODE createChildNodesGeneric(
 	int nmastervars2;
 	int ncopymastervars;
 	int nbranchcands;
-	int newnmastervars;
-//	int newFsize;
+	//int newnmastervars;
+	//	int newFsize;
 	int allnorigvars;
-	int nvarsforcons_p;  // just for debugging
+	//	int nvarsforcons_p;  // just for debugging
 	SCIP_Real mu;  // mu(S)
 	SCIP_VAR** mastervars;
 	SCIP_VAR** mastervars2;
@@ -1626,7 +1631,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	L = 0;
 	pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);// GCGrelaxGetNPricingprobs(scip); //GCGpricerGetOrigprob(scip));;  // Npricingprobs??? ändert sich bei vanderbeckpricing??
 	mu = 0;
-	nvarsforcons_p = 0;
+	//nvarsforcons_p = 0;
 	*nmasternodes = 0;
 	//	nodeRedundant = FALSE;
 	if( parentcons != NULL)
@@ -1637,7 +1642,11 @@ SCIP_RETCODE createChildNodesGeneric(
 			SCIP_CALL( SCIPallocMemory(scip, &parentdata) );
 		}
 		parentdata->nchildNodes = 0;
-
+		if(parentdata->S == NULL || parentdata->Ssize == 0)
+		{
+			parentdata->S = S;
+			parentdata->Ssize = Ssize;
+		}
 	}
 	else
 		parentdata = NULL;
@@ -1659,7 +1668,7 @@ SCIP_RETCODE createChildNodesGeneric(
 	}
 
 	assert(scip != NULL);
-//	assert(branchrule != NULL);
+	//	assert(branchrule != NULL);
 	assert(Ssize > 0);
 	assert(S != NULL);
 	assert(F != NULL);
@@ -1674,16 +1683,16 @@ SCIP_RETCODE createChildNodesGeneric(
 
 	for( p=0; p<Ssize+1; ++p )
 	{
-		SCIP_NODE* child;
+		//SCIP_NODE* child;
 		SCIP_NODE* origchild;
-		SCIP_CONS* branchcons;
+		//SCIP_CONS* branchcons;
 		SCIP_CONS* origcons;
-		SCIP_CONS* mastercons;
+		//		SCIP_CONS* mastercons;
 		GCG_BRANCHDATA* branchchilddata;
 		char childname[SCIP_MAXSTRLEN];
 
 		mu = 0;
-		nvarsforcons_p = 0;
+		//		nvarsforcons_p = 0;
 
 		/* allocate branchdata for same child and store information */
 		SCIP_CALL( SCIPallocMemory(scip, &branchchilddata) );
@@ -1769,7 +1778,7 @@ SCIP_RETCODE createChildNodesGeneric(
 					//int norigvars;
 					//int  npresentmastervars;
 					//if(i!=0)
-			//		  SCIPdebugMessage("i = %d\n", i);
+					//		  SCIPdebugMessage("i = %d\n", i);
 
 
 					if(GCGvarGetBlock(mastervars2[i]) == blocknr)
@@ -1801,14 +1810,14 @@ SCIP_RETCODE createChildNodesGeneric(
 						}
 						else
 							generator_i = 0;
-						*/
+						 */
 						getGenerators(scip, &generator, &generatorsize, &compisinteger, blocknr, mastervars, nmastervars, mastervars2[i]);
 						generator_i = generator[S[k][0]];
-						
-//						SCIPdebugMessage("generator_i = %g \n", generator_i);
-//						SCIPdebugMessage("S[k][0] = %d\n", S[k][0]);
-//						SCIPdebugMessage("S[k][2] = %d\n", S[k][2]);
-//						SCIPdebugMessage("mastvervalue = %g\n", SCIPgetSolVal(masterscip, NULL, mastervars2[i]));
+
+						//						SCIPdebugMessage("generator_i = %g \n", generator_i);
+						//						SCIPdebugMessage("S[k][0] = %d\n", S[k][0]);
+						//						SCIPdebugMessage("S[k][2] = %d\n", S[k][2]);
+						//						SCIPdebugMessage("mastvervalue = %g\n", SCIPgetSolVal(masterscip, NULL, mastervars2[i]));
 
 
 						if(S[k][1] == 1 )
@@ -1899,35 +1908,35 @@ SCIP_RETCODE createChildNodesGeneric(
 				parentdata->childlhs[p] = lhs;
 				parentdata->childbranchdatas[parentdata->nchildNodes-1] = branchchilddata;
 			}
-if(createorignodes)
-{
-			// define name for constraint 
-			(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", p, lhs);
-			SCIP_CALL( SCIPcreateChild(scip, &origchild, 0.0, SCIPgetLocalTransEstimate(scip)) );
-	//		SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+			if(createorignodes)
+			{
+				// define name for constraint 
+				(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", p, lhs);
+				SCIP_CALL( SCIPcreateChild(scip, &origchild, 0.0, SCIPgetLocalTransEstimate(scip)) );
+				//		SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
 
-			//create cons
-			SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, childname, origchild,
-					GCGconsOrigbranchGetActiveCons(scip), branchrule, branchchilddata) );
-			SCIP_CALL( SCIPaddConsNode(scip, origchild, origcons, NULL) );
-			SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
-	//		SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &branchcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) ); //, branchrule, branchchilddata) );
+				//create cons
+				SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, childname, origchild,
+						GCGconsOrigbranchGetActiveCons(scip), branchrule, branchchilddata) );
+				SCIP_CALL( SCIPaddConsNode(scip, origchild, origcons, NULL) );
+				SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
+				//		SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &branchcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) ); //, branchrule, branchchilddata) );
 
-}
+			}
 			//addNode
-	//		SCIP_CALL( SCIPaddConsNode(masterscip, child, branchcons, NULL) );
+			//		SCIP_CALL( SCIPaddConsNode(masterscip, child, branchcons, NULL) );
 
 			//release constraint 
-	//		SCIP_CALL( SCIPreleaseCons(masterscip, &branchcons) ); 
+			//		SCIP_CALL( SCIPreleaseCons(masterscip, &branchcons) ); 
 
 			// create constraint for child
-	//		SCIP_CALL( SCIPcreateConsLinear(masterscip, &mastercons, childname, 0, NULL, NULL,
-	//				lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+			//		SCIP_CALL( SCIPcreateConsLinear(masterscip, &mastercons, childname, 0, NULL, NULL,
+			//				lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
 
 
 			//add variables to constraint
 
-/*
+			/*
 			newnmastervars = nmastervars;
 			for( i=0; i<newnmastervars; ++i)
 			{
@@ -2002,12 +2011,12 @@ if(createorignodes)
 
 
 			SCIPdebugMessage("added %d mastervars to branching constraint \n", nvarsforcons_p);
-			
+
 			//add cons locally to the problem and release it
 			SCIP_CALL( SCIPaddConsNode(masterscip, child, mastercons, NULL) );
 			SCIP_CALL( SCIPreleaseCons(masterscip, &mastercons) );
-		*/	
-			
+			 */	
+
 		}
 	}
 
@@ -2019,9 +2028,9 @@ if(createorignodes)
 
 /** returns the number of successor nodes needed for branch_master while using the generic branching scheme */
 int GCGbranchGenericGetNChildnodes(
-   SCIP*            masterscip,
-   SCIP_Bool        createorignodes
-   )
+		SCIP*            masterscip,
+		SCIP_Bool        createorignodes
+)
 {
 	int nmasternodes;
 	//	SCIP* origprob;
@@ -2050,18 +2059,18 @@ int GCGbranchGenericGetNChildnodes(
 	int blocknr;
 	int i;
 	int c;
-//	int j;
+	//	int j;
 	int k;
-//	int norigvars;
+	//	int norigvars;
 	int allnorigvars;
 
 	blocknr = -2;
 	Ssize = 0;
 	Csize = 0;
 	Fsize = 0;
-//	norigvars = 0;
+	//	norigvars = 0;
 	i = 0;
-//	j = 0;
+	//	j = 0;
 	c = 0;
 	feasible = TRUE;
 	SinC = TRUE;
@@ -2069,14 +2078,14 @@ int GCGbranchGenericGetNChildnodes(
 	F = NULL;
 	nmasternodes = 0;
 
-//	assert(branchrule != NULL);
-//	assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-	assert(scip != NULL);
-//	assert(result != NULL);
+	//	assert(branchrule != NULL);
+	//	assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+	assert(masterscip != NULL);
+	//	assert(result != NULL);
 
 	SCIPdebugMessage("Get number of childnodes for Vanderbecks generic branching\n");
 
-//	*result = SCIP_DIDNOTRUN;
+	//	*result = SCIP_DIDNOTRUN;
 
 	/* get original problem */
 	//	origprob = GCGpricerGetOrigprob(scip);
@@ -2086,18 +2095,19 @@ int GCGbranchGenericGetNChildnodes(
 	/* the current original solution is not integral, now we have to branch;
 	 * first, get the block on which we should branch
 	 */
-if(createorignodes)
-{
- scip = masterscip;
+	if(createorignodes)
+	{
+		scip = masterscip;
 
- masterscip = GCGrelaxGetMasterprob(scip);
-}
-else
-{
-	SCIPdebugMessage("get masterprob\n");
-	scip = GCGpricerGetOrigprob(masterscip);
-	SCIPdebugMessage("get branchcands\n");
-}
+		masterscip = GCGrelaxGetMasterprob(scip);
+	}
+	else
+	{
+		SCIPdebugMessage("get masterprob\n");
+		scip = GCGpricerGetOrigprob(masterscip);
+		SCIPdebugMessage("get branchcands\n");
+	}
+	assert(scip != NULL);
 	SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
 	// SCIP_CALL( SCIPgetSolVals(masterscip, NULL, nbranchcands, branchcands, branchcandsvals) );
 
@@ -2110,7 +2120,7 @@ else
 	{
 		mastervar = branchcands[i];
 		assert(GCGvarIsMaster(mastervar));
-//		norigvars = GCGmasterVarGetNOrigvars(mastervar);
+		//		norigvars = GCGmasterVarGetNOrigvars(mastervar);
 		blocknr = GCGvarGetBlock(mastervar);
 		if(blocknr >= -1)
 			break;
@@ -2119,16 +2129,16 @@ else
 	{
 		feasible = TRUE;
 		SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
-		
+
 		return -1;
 	}
 	else
 		feasible = FALSE;
-//	for(i=0; i< nmastervars; ++i)
-//	{
-//		if(blocknr == GCGvarGetBlock(mastervars[i]))
-//			assert(norigvars == GCGmasterVarGetNOrigvars(mastervars[i]));
-//	}
+	//	for(i=0; i< nmastervars; ++i)
+	//	{
+	//		if(blocknr == GCGvarGetBlock(mastervars[i]))
+	//			assert(norigvars == GCGmasterVarGetNOrigvars(mastervars[i]));
+	//	}
 
 	k = 0;
 	masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
@@ -2137,7 +2147,7 @@ else
 	SCIPdebugMessage("calculate F\n");
 	for( i=0; i<nbranchcands; ++i )
 	{
-//		SCIP_VAR** origvars;
+		//		SCIP_VAR** origvars;
 		mastervar = branchcands[i];
 		assert(GCGvarIsMaster(mastervar));
 
@@ -2145,7 +2155,7 @@ else
 		if(blocknr == GCGvarGetBlock(mastervar))
 		{
 			//	assert(norigvars == GCGmasterVarGetNOrigvars(mastervar));    wrong assertion?
-//			norigvars = GCGmasterVarGetNOrigvars(mastervar);
+			//			norigvars = GCGmasterVarGetNOrigvars(mastervar);
 			mastervarValue = SCIPgetSolVal(masterscip, NULL, mastervar);
 			if( SCIPisGT(scip, mastervarValue - SCIPfloor(scip, mastervarValue), 0) )
 			{
@@ -2164,7 +2174,7 @@ else
 				strip->blocknr = blocknr;
 				strip->mastervar = mastervar;
 				strip->mastervarValue = mastervarValue;
-								
+
 				getGenerators(scip, &(strip->generator), &(strip->generatorsize), &(strip->compisinteger), blocknr, mastervars, nmastervars, mastervar);
 				F[k] = strip;
 				++k;
@@ -2182,7 +2192,7 @@ else
 		SCIP_CALL( SCIPallocMemoryArray(scip, &C, Csize) );
 		SCIP_CALL( SCIPallocMemoryArray(scip, &sequencesizes, Csize) );
 
-//		assert(GCGconsMasterbranchGetBranchdata(masterbranchcons) == NULL);
+		//		assert(GCGconsMasterbranchGetBranchdata(masterbranchcons) == NULL);
 		parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
 		//assert(
 		if( parentcons != NULL)
@@ -2240,6 +2250,7 @@ else
 
 		if(C != NULL){
 			SCIPdebugMessage("C != NULL\n");
+			SCIPdebugMessage("Csize = %d\n", Csize);
 			SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
 			SCIP_CALL( CallSeparate(scip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes) );
 		}
@@ -2297,7 +2308,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 	int nnewmastervars;
 	int i;
 	int p;
-//	int j;
+	//	int j;
 	char name[SCIP_MAXSTRLEN];
 
 	i = 0;
@@ -2376,9 +2387,9 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 					}
 					else
 						generator_i = 0;
-					*/
+					 */
 					getGenerators(scip, &generator, &generatorsize, &compisinteger, branchdata->blocknr, mastervars, nmastervars, copymastervars[i]);
-					
+
 					generator_i = generator[branchdata->S[p][0]];
 
 					if( branchdata->S[p][1] == 1)
@@ -2497,47 +2508,48 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	//	SCIP* origprob;
 	SCIP* masterscip;
 	SCIP_Bool feasible;
-	SCIP_Bool SinC;
+	//SCIP_Bool SinC;
 	SCIP_Bool discretization;
-	SCIP_VAR** branchcands;
-	SCIP_VAR** allorigvars;
-	SCIP_VAR** mastervars;
-	int nmastervars;
+	//SCIP_VAR** branchcands;
+	//SCIP_VAR** allorigvars;
+	//SCIP_VAR** mastervars;
+	//int nmastervars;
 	//SCIP_VAR* referencemastervar;
 	//SCIP_Real* branchcandsvals;
 	SCIP_CONS* masterbranchcons;
-	SCIP_CONS* parentcons;
-	int nbranchcands;
+	//SCIP_CONS* parentcons;
+	//	int nbranchcands;
 	GCG_BRANCHDATA* branchdata;
-	SCIP_VAR* mastervar;
-	SCIP_Real mastervarValue;
-	ComponentBoundSequence* S;
-	ComponentBoundSequence** C;
-	struct GCG_Strip** F;
-	int Ssize;
-	int Csize;
-	int Fsize;
-	int* sequencesizes;
-	int blocknr;
+	//SCIP_VAR* mastervar;
+	//SCIP_Real mastervarValue;
+	//ComponentBoundSequence* S;
+	//ComponentBoundSequence** C;
+	//struct GCG_Strip** F;
+	//int Ssize;
+	//int Csize;
+	//int Fsize;
+	//int* sequencesizes;
+	//int blocknr;
 	int i;
-	int c;
-//	int j;
-	int k;
-//	int norigvars;
-	int allnorigvars;
+	//	int c;
+	//	int j;
+	//	int k;
+	//	int norigvars;
+	//	int allnorigvars;
 
-	blocknr = -2;
-	Ssize = 0;
-	Csize = 0;
-	Fsize = 0;
-//	norigvars = 0;
+	//blocknr = -2;
+	//Ssize = 0;
+	//Csize = 0;
+	//Fsize = 0;
+	//	norigvars = 0;
 	i = 0;
-//	j = 0;
-	c = 0;
+	//	j = 0;
+	//	c = 0;
 	feasible = TRUE;
-	SinC = TRUE;
-	S = NULL;
-	F = NULL;
+	branchdata = NULL;
+	//SinC = TRUE;
+	//S = NULL;
+	//F = NULL;
 
 	assert(branchrule != NULL);
 	assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -2586,7 +2598,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	/* the current original solution is not integral, now we have to branch;
 	 * first, get the block on which we should branch
 	 */
-/*	printf("get masterprob cerr\n");
+	/*	printf("get masterprob cerr\n");
 	SCIPdebugMessage("get masterprob\n");
 	masterscip = GCGrelaxGetMasterprob(scip);
 	SCIPdebugMessage("get branchcands\n");
@@ -2611,7 +2623,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	{
 		feasible = TRUE;
 		SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
-		
+
 		return SCIP_OKAY;
 	}
 //	for(i=0; i< nmastervars; ++i)
@@ -2654,7 +2666,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 				strip->blocknr = blocknr;
 				strip->mastervar = mastervar;
 				strip->mastervarValue = mastervarValue;
-								
+
 				getGenerators(scip, &(strip->generator), &(strip->generatorsize), &(strip->compisinteger), blocknr, mastervars, nmastervars, mastervar);
 				F[k] = strip;
 				++k;
@@ -2769,11 +2781,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 		SCIPfreeBuffer(scip, &strip);
 	}
 	SCIPfreeMemoryArray(scip, &F);
-*/
+	 */
 	masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
 	if(masterbranchcons!=NULL)
 		branchdata = GCGconsMasterbranchGetBranchdata(masterbranchcons);
-	
+
 	if(branchdata!=NULL)
 	{
 		for(i=0; i<branchdata->nchildNodes; ++i)
@@ -2795,11 +2807,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 	}
 	else
 	{
-	   SCIPdebugMessage("Branchdata is NULL!\n");
+		SCIPdebugMessage("Branchdata is NULL!\n");
 
-	   GCGbranchGenericGetNChildnodes(scip, TRUE);
+		GCGbranchGenericGetNChildnodes(scip, TRUE);
 	}
-	
+
 	*result = SCIP_BRANCHED;
 
 	return SCIP_OKAY;
@@ -2811,66 +2823,66 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 {  /*lint --e{715}*/
 	//	int c;
 	SCIP* masterscip;
-		SCIP_Bool feasible;
-		SCIP_Bool SinC;
-		SCIP_Bool discretization;
-		SCIP_VAR** branchcands;
-		SCIP_VAR** allorigvars;
-		SCIP_VAR** mastervars;
-		int nmastervars;
-		//SCIP_VAR* referencemastervar;
-		//SCIP_Real* branchcandsvals;
-		SCIP_CONS* masterbranchcons;
-		SCIP_CONS* parentcons;
-		int nbranchcands;
-		GCG_BRANCHDATA* branchdata;
-		SCIP_VAR* mastervar;
-		SCIP_Real mastervarValue;
-		ComponentBoundSequence* S;
-		ComponentBoundSequence** C;
-		struct GCG_Strip** F;
-		int Ssize;
-		int Csize;
-		int Fsize;
-		int* sequencesizes;
-		int blocknr;
-		int i;
-		int c;
+	//SCIP_Bool feasible;
+	//SCIP_Bool SinC;
+	//SCIP_Bool discretization;
+	//SCIP_VAR** branchcands;
+	//SCIP_VAR** allorigvars;
+	//SCIP_VAR** mastervars;
+	//int nmastervars;
+	//SCIP_VAR* referencemastervar;
+	//SCIP_Real* branchcandsvals;
+	SCIP_CONS* masterbranchcons;
+	//SCIP_CONS* parentcons;
+	//int nbranchcands;
+	GCG_BRANCHDATA* branchdata;
+	//SCIP_VAR* mastervar;
+	//SCIP_Real mastervarValue;
+	//ComponentBoundSequence* S;
+	//ComponentBoundSequence** C;
+	//struct GCG_Strip** F;
+	//int Ssize;
+	//int Csize;
+	//int Fsize;
+	//int* sequencesizes;
+	//int blocknr;
+	int i;
+	//int c;
 	//	int j;
-		int k;
+	//int k;
 	//	int norigvars;
-		int allnorigvars;
+	//		int allnorigvars;
 
-		blocknr = -2;
-		Ssize = 0;
-		Csize = 0;
-		Fsize = 0;
+	//blocknr = -2;
+	//Ssize = 0;
+	//Csize = 0;
+	//Fsize = 0;
 	//	norigvars = 0;
-		i = 0;
+	i = 0;
 	//	j = 0;
-		c = 0;
-		feasible = TRUE;
-		SinC = TRUE;
-		S = NULL;
-		F = NULL;
+	//c = 0;
+	//feasible = TRUE;
+	//SinC = TRUE;
+	//S = NULL;
+	//F = NULL;
 
-		assert(branchrule != NULL);
-		assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-		assert(scip != NULL);
-		assert(result != NULL);
+	assert(branchrule != NULL);
+	assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+	assert(scip != NULL);
+	assert(result != NULL);
 
-		SCIPdebugMessage("Execrel method of Vanderbecks generic branching\n");
-		
-		return SCIP_OKAY;
+	SCIPdebugMessage("Execrel method of Vanderbecks generic branching\n");
 
-		*result = SCIP_DIDNOTRUN;
+	return SCIP_OKAY;
 
-		/* get original problem */
-		//	origprob = GCGpricerGetOrigprob(scip);
-		//	assert( origprob != NULL );
+	*result = SCIP_DIDNOTRUN;
+
+	/* get original problem */
+	//	origprob = GCGpricerGetOrigprob(scip);
+	//	assert( origprob != NULL );
 
 
-		masterscip = GCGrelaxGetMasterprob(scip);
+	masterscip = GCGrelaxGetMasterprob(scip);
 
 	assert(branchrule != NULL);
 	assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -2887,28 +2899,28 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 	}
 
 	masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-		if(masterbranchcons!=NULL)
-			branchdata = GCGconsMasterbranchGetBranchdata(masterbranchcons);
-		
-		if(branchdata!=NULL)
-		{
-			for(i=0; i<branchdata->nchildNodes; ++i)
-			{
-				SCIP_CONS* origcons;
-				SCIP_NODE* origchild;
-				char childname[SCIP_MAXSTRLEN];
-				// define name for constraint 
-				(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", i, branchdata->lhs);
-				SCIP_CALL( SCIPcreateChild(scip, &origchild, 0.0, SCIPgetLocalTransEstimate(scip)) );
-				//		SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+	if(masterbranchcons!=NULL)
+		branchdata = GCGconsMasterbranchGetBranchdata(masterbranchcons);
 
-				//create cons
-				SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, childname, origchild,
-						GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdata->childbranchdatas[i]) );
-				SCIP_CALL( SCIPaddConsNode(scip, origchild, origcons, NULL) );
-				SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
-			}
+	if(branchdata!=NULL)
+	{
+		for(i=0; i<branchdata->nchildNodes; ++i)
+		{
+			SCIP_CONS* origcons;
+			SCIP_NODE* origchild;
+			char childname[SCIP_MAXSTRLEN];
+			// define name for constraint 
+			(void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %d)", i, branchdata->lhs);
+			SCIP_CALL( SCIPcreateChild(scip, &origchild, 0.0, SCIPgetLocalTransEstimate(scip)) );
+			//		SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+
+			//create cons
+			SCIP_CALL( GCGcreateConsOrigbranch(scip, &origcons, childname, origchild,
+					GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdata->childbranchdatas[i]) );
+			SCIP_CALL( SCIPaddConsNode(scip, origchild, origcons, NULL) );
+			SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
 		}
+	}
 
 	*result = SCIP_BRANCHED;
 
