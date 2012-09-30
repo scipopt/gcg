@@ -719,8 +719,22 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
    return consdata->parentcons;
 }
 
+/** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
+    given origbranch constraint is sticking */
+int GCGconsOrigbranchGetNChildvanderbeckcons(
+   SCIP_CONS*            cons                /**< constraint pointer */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+   
+   return consdata->nchildvanderbeck;
+}
+
 /** returns the origbranch constraint of the vanderbeckchild of the node at which the
-    given masterbranch constraint is sticking */
+    given origbranch constraint is sticking */
 SCIP_CONS* GCGconsOrigbranchGetChildvanderbeckcons(
    SCIP_CONS*            cons,                /**< constraint pointer */
    int                   childnr
@@ -731,6 +745,7 @@ SCIP_CONS* GCGconsOrigbranchGetChildvanderbeckcons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    assert(consdata->childvanderbeck != NULL);
+   assert(consdata->nchildvanderbeck >= childnr);
 
    return consdata->childvanderbeck[childnr-1];
 }

@@ -107,6 +107,13 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
                                               *   the father node is requested */
    );
 
+/** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
+    given origbranch constraint is sticking */
+extern
+int GCGconsOrigbranchGetNChildvanderbeckcons(
+   SCIP_CONS*            cons                /**< constraint pointer */
+   );
+
 /** returns the origbranch constraint of the vanderbeckchild of the node at which the
     given masterbranch constraint is sticking */
 extern

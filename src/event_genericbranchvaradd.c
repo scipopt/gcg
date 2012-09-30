@@ -263,6 +263,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 		while( parentcons != NULL )
 		{
 			branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+			assert(branchdata != NULL);
 
 			if( branchdata->blocknr != GCGvarGetBlock(mastervar) )
 			{

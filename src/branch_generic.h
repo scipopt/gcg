@@ -22,6 +22,12 @@
 
 #include "scip/scip.h"
 
+/** returns the number of successor nodes needed for branch_master while using the generic branching scheme */
+extern
+int GCGbranchGenericGetNChildnodes(
+   SCIP*            scip,
+   SCIP_Bool        createorignodes
+   );
 
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 extern

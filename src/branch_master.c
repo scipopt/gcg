@@ -135,7 +135,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
    //SCIP_NODE** childvanderbeck;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
-   GCG_BRANCHDATA* branchdata;
+//   GCG_BRANCHDATA* branchdata;
    //SCIP_CONS** consvanderbeck;
    int nchildnodes;
    int i;
