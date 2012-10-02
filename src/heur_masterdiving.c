@@ -69,7 +69,9 @@
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEUBQUOTNOSOL  0.1 /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOTNOSOL 0.0 /**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
-#define DEFAULT_BACKTRACK          FALSE /**< use one level of backtracking if infeasibility is encountered? */
+#define DEFAULT_BACKTRACK          TRUE /**< use backtracking (discrepancy search) if infeasibility is encountered? */
+#define DEFAULT_MAXDISCREPANCY        2 /**< maximal discrepancy in limited discrepancy search */
+#define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
 #define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
                                          *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
 
@@ -93,6 +95,8 @@ struct SCIP_HeurData
    SCIP_Real             maxdiveubquotnosol; /**< maximal UBQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Real             maxdiveavgquotnosol;/**< maximal AVGQUOT when no solution was found yet (0.0: no limit) */
    SCIP_Bool             backtrack;          /**< use one level of backtracking if infeasibility is encountered? */
+   int                   maxdiscrepancy;     /**< maximal discrepancy in limited discrepancy search */
+   int                   maxdiscdepth;       /**< maximal depth until which a limited discrepancy search is performed */
    char                  varselrule;         /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
                                               *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
    char                  currentrule;        /**< variable selection rule that is to be used at the next call */
@@ -121,6 +125,7 @@ SCIP_RETCODE chooseCoefVar(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
@@ -156,10 +161,19 @@ SCIP_RETCODE chooseCoefVar(
       SCIP_Bool mayroundup;
       SCIP_Real frac;
 
+      int i;
+
       var = lpcands[c];
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       frac = lpcandsfrac[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       if( mayrounddown || mayroundup )
       {
@@ -237,6 +251,7 @@ SCIP_RETCODE chooseFracVar(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
@@ -270,12 +285,21 @@ SCIP_RETCODE chooseFracVar(
       SCIP_Real obj;
       SCIP_Real objgain;
 
+      int i;
+
       var = lpcands[c];
 
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       frac = lpcandsfrac[c];
       obj = SCIPvarGetObj(var);
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       if( mayrounddown || mayroundup )
       {
@@ -347,6 +371,7 @@ SCIP_RETCODE chooseGuidedVar(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    SCIP_SOL*             bestsol,            /**< incumbent solution */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
@@ -387,6 +412,8 @@ SCIP_RETCODE chooseGuidedVar(
       SCIP_Bool mayroundup;
       SCIP_Bool roundup;
 
+      int i;
+
       var = lpcands[c];
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
@@ -394,6 +421,13 @@ SCIP_RETCODE chooseGuidedVar(
       frac = lpcandsfrac[c];
       obj = SCIPvarGetObj(var);
       bestsolval = SCIPgetSolVal(scip, bestsol, var);
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       /* select default rounding direction */
       roundup = (solval < bestsolval);
@@ -483,6 +517,7 @@ SCIP_RETCODE chooseLinesearchVar(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
@@ -510,9 +545,18 @@ SCIP_RETCODE chooseLinesearchVar(
       SCIP_Real rootsolval;
       SCIP_Real distquot;
 
+      int i;
+
       var = lpcands[c];
       solval = lpcandssol[c];
       rootsolval = SCIPvarGetRootSol(var);
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       if( SCIPisGT(scip, solval, rootsolval) )
       {
@@ -604,6 +648,7 @@ SCIP_RETCODE choosePscostVar(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
@@ -636,12 +681,21 @@ SCIP_RETCODE choosePscostVar(
       SCIP_Real frac;
       SCIP_Real pscostquot;
 
+      int i;
+
       var = lpcands[c];
       mayrounddown = SCIPvarMayRoundDown(var);
       mayroundup = SCIPvarMayRoundUp(var);
       primsol = lpcandssol[c];
       frac = lpcandsfrac[c];
       pscostquot = SCIP_INVALID;
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       if( mayrounddown || mayroundup )
       {
@@ -697,6 +751,7 @@ SCIP_RETCODE chooseVeclenVar(
    SCIP_Real*            lpcandssol,         /**< array of NLP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of NLP fractional variables fractionalities */
    int                   nlpcands,           /**< number of NLP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround    /**< pointer to store whether best candidate is trivially roundable */
    )
@@ -727,7 +782,16 @@ SCIP_RETCODE chooseVeclenVar(
       SCIP_Real score;
       int colveclen;
 
+      int i;
+
       var = lpcands[c];
+
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+         if( tabulist[i] == SCIPvarGetProbindex(var) )
+            break;
+      if( i < heurdata->maxdiscrepancy )
+         continue;
 
       frac = lpcandsfrac[c];
       obj = SCIPvarGetObj(var);
@@ -769,6 +833,7 @@ SCIP_RETCODE chooseVariable(
    SCIP_Real*            lpcandssol,         /**< array of LP fractional variables solution values */
    SCIP_Real*            lpcandsfrac,        /**< array of LP fractional variables fractionalities */
    int                   nlpcands,           /**< number of LP fractional variables */
+   int*                  tabulist,           /**< array of variables that must not be chosen */
    SCIP_SOL*             bestsol,            /**< incumbent solution */
    int*                  bestcand,           /**< pointer to store the index of the best candidate variable */
    SCIP_Bool*            bestcandmayround,   /**< pointer to store whether best candidate is trivially roundable */
@@ -779,27 +844,27 @@ SCIP_RETCODE chooseVariable(
    {
    case 'c':
       SCIP_CALL( chooseCoefVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround) );
+            tabulist, bestcand, bestcandmayround) );
       break;
    case 'f':
       SCIP_CALL( chooseFracVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround) );
+            tabulist, bestcand, bestcandmayround) );
       break;
    case 'g':
       SCIP_CALL( chooseGuidedVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestsol, bestcand, bestcandmayround, bestcandroundup) );
+            tabulist, bestsol, bestcand, bestcandmayround, bestcandroundup) );
       break;
    case 'l':
       SCIP_CALL( chooseLinesearchVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround) );
+            tabulist, bestcand, bestcandmayround) );
       break;
    case 'p':
       SCIP_CALL( choosePscostVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround) );
+            tabulist, bestcand, bestcandmayround) );
       break;
    case 'v':
       SCIP_CALL( chooseVeclenVar(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands,
-            bestcand, bestcandmayround) );
+            tabulist, bestcand, bestcandmayround) );
       break;
    default:
       SCIPerrorMessage("invalid variable selection rule\n");
@@ -923,6 +988,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
    SCIP_Real* lpcandsfrac;
+   int* discrepancies;
+   int* selectedvars;
+   int* tabulist;
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
@@ -950,6 +1018,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    int divedepth;
    int bestcand;
 
+   int i;
+
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
@@ -960,8 +1030,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    assert(origprob != NULL);
 
    *result = SCIP_DELAYED;
-
-   SCIPdebugMessage("called Masterdiving heuristic\n");
 
    /* only call heuristic, if an optimal LP solution is at hand */
    if( !SCIPhasCurrentNodeLP(scip) || SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
@@ -983,23 +1051,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
-
-   /* store a copy of the best solution, if guided diving should be used */
-   bestsol = NULL;
-   if( heurdata->currentrule == 'g' )
-   {
-      /* do not perform guided diving if no feasible solutions exist or if the best solution lives
-       * in the original variable space (we then cannot use it since it might violate the global
-       * bounds of the current problem)
-       */
-      if( SCIPgetNSols(scip) == 0 || SCIPsolIsOriginal(SCIPgetBestSol(scip)) )
-         if( heurdata->varselrule == '*' )
-            heurdata->currentrule = getNextRule(scip, heurdata);
-         else
-            return SCIP_OKAY;
-      else
-         SCIP_CALL( SCIPcreateSolCopy(scip, &bestsol, SCIPgetBestSol(scip)) );
-   }
 
    /* only try to dive, if we are in the correct part of the tree, given by minreldepth and maxreldepth */
    depth = SCIPgetDepth(scip);
@@ -1026,14 +1077,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    if( heurdata->maxpriceofs > -1 )
    {
       npricerounds = SCIPgetNPriceRounds(scip);
-      SCIPdebugMessage("masterdiving - pricing rounds at this node: %d\n", npricerounds);
       maxpricerounds = (int)((1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * heurdata->maxpricequot * npricerounds);
       maxpricerounds += heurdata->maxpriceofs;
    }
    else
       maxpricerounds = -1;
-
-   SCIPdebugMessage("Maximum number of LP iters and price rounds: %"SCIP_LONGINT_FORMAT", %d\n", maxnlpiterations, maxpricerounds);
 
    /* get fractional variables that should be integral */
    SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL) );
@@ -1041,6 +1089,23 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* don't try to dive, if there are no fractional variables */
    if( nlpcands == 0 )
       return SCIP_OKAY;
+
+   /* store a copy of the best solution, if guided diving should be used */
+   bestsol = NULL;
+   if( heurdata->currentrule == 'g' )
+   {
+      /* do not perform guided diving if no feasible solutions exist or if the best solution lives
+       * in the original variable space (we then cannot use it since it might violate the global
+       * bounds of the current problem)
+       */
+      if( SCIPgetNSols(scip) == 0 || SCIPsolIsOriginal(SCIPgetBestSol(scip)) )
+         if( heurdata->varselrule == '*' )
+            heurdata->currentrule = getNextRule(scip, heurdata);
+         else
+            return SCIP_OKAY;
+      else
+         SCIP_CALL( SCIPcreateSolCopy(scip, &bestsol, SCIPgetBestSol(scip)) );
+   }
 
    /* calculate the objective search bound */
    if( SCIPgetNSolsFound(scip) == 0 )
@@ -1078,6 +1143,17 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    maxdivedepth = MIN(maxdivedepth, maxdepth);
    maxdivedepth *= 10;
 
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, &discrepancies, heurdata->maxdiscdepth) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &tabulist, heurdata->maxdiscrepancy) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &selectedvars, heurdata->maxdiscdepth) );
+
+   /* initialize arrays */
+   for( i = 0; i < heurdata->maxdiscdepth; ++i )
+      discrepancies[i] = 0;
+   for( i = 0; i < heurdata->maxdiscrepancy; ++i )
+      tabulist[i] = -1;
+
 
    *result = SCIP_DIDNOTFIND;
 
@@ -1110,6 +1186,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
+      && (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] <= heurdata->maxdiscrepancy)
       && !SCIPisStopped(scip) )
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
@@ -1121,12 +1198,23 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       bestcandroundup = FALSE;
 
       /* choose a variable to dive on */
-      SCIP_CALL( chooseVariable(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands, bestsol,
-            &bestcand, &bestcandmayround, &bestcandroundup) );
+      SCIP_CALL( chooseVariable(scip, heurdata, lpcands, lpcandssol, lpcandsfrac, nlpcands, tabulist,
+         bestsol, &bestcand, &bestcandmayround, &bestcandroundup) );
+
+      /* if no variable could be chosen, abort diving */
+      if( bestcand == -1 )
+      {
+         SCIPdebugMessage("No variable for diving could be selected, diving aborted\n");
+         break;
+      }
 
       assert(bestcand >= 0);
       var = lpcands[bestcand];
       bestfrac = lpcandsfrac[bestcand];
+
+      /* memorize selected variables up to the maximal depth for discrepancy search */
+      if( divedepth-1 < heurdata->maxdiscdepth )
+         selectedvars[divedepth-1] = SCIPvarGetProbindex(var);
 
       /* if all candidates are roundable, try to round the solution */
       if( bestcandmayround )
@@ -1153,52 +1241,38 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          }
       }
 
+      /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
+       * occured or variable was fixed by propagation while backtracking => Abort diving!
+       */
+      if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
+      {
+         SCIPdebugMessage("Selected variable <%s> already fixed to [%g,%g] (solval: %.9f), diving aborted \n",
+            SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
+         cutoff = TRUE;
+         break;
+      }
+      if( SCIPisFeasLT(scip, lpcandssol[bestcand], SCIPvarGetLbLocal(var)) || SCIPisFeasGT(scip, lpcandssol[bestcand], SCIPvarGetUbLocal(var)) )
+      {
+         SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
+            SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
+         assert(backtracked);
+         break;
+      }
+
+      /* round variable up */
+      SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, round=%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+         divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
+         SCIPvarGetName(var), bestcandmayround,
+         lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+         SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
+      SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
+
       backtracked = FALSE;
       do
       {
-         /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
-          * occured or variable was fixed by propagation while backtracking => Abort diving!
-          */
-         if( SCIPvarGetLbLocal(var) >= SCIPvarGetUbLocal(var) - 0.5 )
-         {
-            SCIPdebugMessage("Selected variable <%s> already fixed to [%g,%g] (solval: %.9f), diving aborted \n",
-               SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
-            cutoff = TRUE;
-            break;
-         }
-         if( SCIPisFeasLT(scip, lpcandssol[bestcand], SCIPvarGetLbLocal(var)) || SCIPisFeasGT(scip, lpcandssol[bestcand], SCIPvarGetUbLocal(var)) )
-         {
-            SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
-               SCIPvarGetName(var), SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var), lpcandssol[bestcand]);
-            assert(backtracked);
-            break;
-         }
-
-         /* apply rounding of best candidate */
-         if( bestcandroundup == !backtracked )
-         {
-            /* round variable up */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, round=%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), bestcandmayround,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
-            SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
-         }
-         else
-         {
-            /* round variable down */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, round=%u, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), bestcandmayround,
-               lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
-            SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
-         }
-
          /* apply domain propagation */
          SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
-         if( !cutoff )
+         if( !cutoff || backtracked )
          {
             /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
@@ -1208,7 +1282,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             SCIP_RETCODE retstat;
             nlpiterations = SCIPgetNLPIterations(scip);
             npricerounds = SCIPgetNPriceRounds(scip);
-            retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
+            if( maxpricerounds == 0 )
+               retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
+            else
+               retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror);
             if( retstat != SCIP_OKAY )
             {
                SCIPwarningMessage(scip, "Error while solving LP in Masterdiving heuristic; LP solve terminated with code <%d>\n",retstat);
@@ -1216,7 +1293,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #else
             nlpiterations = SCIPgetNLPIterations(scip);
             npricerounds = SCIPgetNPriceRounds(scip);
-            SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
+            if( maxpricerounds == 0 )
+               SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
+            else
+               SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds, &lperror) );
 #endif
 
             if( lperror )
@@ -1236,8 +1316,27 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          if( cutoff && !backtracked && heurdata->backtrack )
          {
             SCIPdebugMessage("  *** cutoff detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
-            SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
-            SCIP_CALL( SCIPnewProbingNode(scip) );
+            SCIPdebugMessage("  *** lpsolstat=%d\n", lpsolstat);
+
+            /* go back until the search can differ from the previous search tree */
+            do
+            {
+               SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+               --divedepth;
+            }
+            while( divedepth > 0
+               && (divedepth >= heurdata->maxdiscdepth
+                  || discrepancies[divedepth] >= heurdata->maxdiscrepancy) );
+
+            assert(divedepth < heurdata->maxdiscdepth);
+
+            /* add variable selected previously at this depth to the tabu list */
+            tabulist[discrepancies[divedepth]] = selectedvars[divedepth];
+
+            ++discrepancies[divedepth];
+            for( i = divedepth + 1; i < heurdata->maxdiscdepth; ++i )
+               discrepancies[i] = discrepancies[divedepth];
+
             backtracked = TRUE;
          }
          else
@@ -1304,6 +1403,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
+
+   /* free memory */
+   SCIPfreeBufferArray(scip, &selectedvars);
+   SCIPfreeBufferArray(scip, &tabulist);
+   SCIPfreeBufferArray(scip, &discrepancies);
 
    /* free copied best solution */
    if( heurdata->currentrule == 'g' )
@@ -1394,6 +1498,14 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
          "heuristics/masterdiving/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip,
+         "heuristics/masterdiving/maxdiscrepancy",
+         "maximal discrepancy in limited discrepancy search",
+         &heurdata->maxdiscrepancy, FALSE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip,
+         "heuristics/masterdiving/maxdiscdepth",
+         "maximal depth until which a limited discrepancy search is performed",
+         &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddCharParam(scip,
          "heuristics/"HEUR_NAME"/varselrule",
          "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules)",
