@@ -164,8 +164,15 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    {
       //alloc cons/branchdata for vanderbeck branching scheme
       if(BRANCHRULE_VANDERBECK == 1)
+      {
          SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
-
+         branchdata->mastercons = NULL;
+         branchdata->Ssize = 0;
+         branchdata->S = NULL;
+         branchdata->C = NULL;
+         branchdata->childlhs = NULL;
+         branchdata->sequencsizes = NULL;
+      }
       SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, branchdata) );
       conshdlrData->stack[0] = cons;
       conshdlrData->nstack = 1;
