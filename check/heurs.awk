@@ -48,7 +48,7 @@ function ceil(x) {
 BEGIN {
    timegeomshift = 10.0;
    solsgeomshift = 10.0;
-   quotgeomshift = 10.0;
+   quotgeomshift = 1.0;
 
    onlyinsolufile = 0;  # should only instances be reported that are included in the .solu file?
    onlyintestfile = 0;  # should only instances be reported that are included in the .test file?  TEMPORARY HACK!
@@ -185,7 +185,7 @@ BEGIN {
             shiftedsolquotgeom[i] = quotgeomshift;
          }
 
-         time[i] = $(NF-1);
+         time[i] = $(NF-3);
          calls[i] = $(NF-1);
          found[i] = $NF;
       }
@@ -338,11 +338,11 @@ BEGIN {
             allcalls += calls[i];
             allfound += found[i];
 
-            printf("%7.1f/%4d/%4d %4.1f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
+            printf("%7.2f/%4d/%4d %4.2f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
          }
 
          if( nheurs > 1 )
-            printf("%9.1f/%5d/%5d ", alltime, allcalls, allfound);
+            printf("%9.2f/%5d/%5d ", alltime, allcalls, allfound);
 
          if( firstheur == "relaxation" && firstmasterheur != "" )
             firstheur = sprintf("m:%s", firstmasterheur);
@@ -383,7 +383,7 @@ END {
    printf("Total (%4d)       ", nprobs);
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
+      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
 
       alltime += stime[i];
       allcalls += scalls[i];
@@ -399,14 +399,14 @@ END {
    printf("Geom. Mean         ");
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", timegeom[i], callsgeom[i], foundgeom[i], timequotgeom[i], solquotgeom[i]);
+      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", timegeom[i], callsgeom[i], foundgeom[i], timequotgeom[i], solquotgeom[i]);
    }
    printf("                   \n");
 
    printf("Shifted Mean       ");
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.1f/%4d/%4d %4.1f/%4.1f ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i], shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
+      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i], shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
    }
    printf("                   \n");
    printf("\n");
