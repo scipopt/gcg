@@ -145,6 +145,17 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
    consdata->origcons = origcons;
    consdata->branchrule = GCGconsOrigbranchGetBranchrule(origcons);
    consdata->branchdata = GCGconsOrigbranchGetBranchdata(origcons);
+   
+   if(GCGconsOrigbranchGetNChildvanderbeckcons(origcons) == 0) 
+   {
+	   consdata->nchildvanderbeck = 0;
+	   consdata->childvanderbeck = NULL;
+   }
+   else
+   {
+	   
+   }
+   
    GCGconsOrigbranchSetMastercons(origcons, cons);
 
    SCIP_ALLOC( BMSduplicateBlockMemoryArray(SCIPblkmem(scip), &consdata->name, SCIPconsGetName(consdata->origcons),
@@ -715,8 +726,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* the node should not have children anymore */
    assert((*consdata)->child1cons == NULL);
    assert((*consdata)->child2cons == NULL);
+   /*
    for(i=0; i<(*consdata)->nchildvanderbeck; ++i)
 	   assert((*consdata)->childvanderbeck[i] == NULL);
+	*/
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
     * corresponding origbranch constraint */
@@ -1854,6 +1867,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
     		  SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childvanderbeck), parentdata->nchildvanderbeck) );
     	  else if( !SCIPinProbing(scip) )
     		  SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childvanderbeck), parentdata->nchildvanderbeck) );
+    	  
     	  /* store the last child in case we are in probing and have to overwrite it */
     	  if( SCIPinProbing(scip) && parentdata->nchildvanderbeck > 1 )
     	  {

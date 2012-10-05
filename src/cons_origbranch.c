@@ -91,25 +91,25 @@ struct SCIP_ConshdlrData
    int                   maxstacksize;       /**< maximum size of the stack */
 };
 
-typedef int ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1 means >=, sense=0 means <
+typedef SCIP_Real ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1 means >=, sense=0 means <
 
 struct GCG_BranchData
 {
 	ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
-	int*               sequencsizes;                 /**< number of bounds in S[k] */
+	int*               sequencesizes;                 /**< number of bounds in S[k] */
 	int                Csize;
-	ComponentBoundSequence*   S;             /**< component bound sequence which induce the current branching constraint */
+	ComponentBoundSequence*   S;             /**< component bound sequence which induce the child branching constraints */
 	int                Ssize;
-	ComponentBoundSequence*   childS;       /**< component bound sequence which induce the child nodes, need for prune by dominance */
-	int                childSsize;
 	int                blocknr;             /**< number of block branching was performed */
 	int                childnr;
-	int                lhs;
+	SCIP_Real          lhs;
 	int                nchildNodes;
-	int*               childlhs;
-	//SCIP_Real*         gerenicPseudocostsOnOrigvars;  /**< giving the branchingpriorities */
+	SCIP_Real*         childlhs;
 	SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
 	GCG_BRANCHDATA**   childbranchdatas;
+	ComponentBoundSequence*   consS;             /**< component bound sequence which induce the current branching constraint */
+    int                consSsize;
+    int                consblocknr;
 };
 
 /*
@@ -166,13 +166,12 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
       if(BRANCHRULE_VANDERBECK == 1)
       {
          SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
+         branchdata->consS = NULL;
+         branchdata->consSsize = 0;
          branchdata->mastercons = NULL;
-         branchdata->Ssize = 0;
-         branchdata->S = NULL;
-         branchdata->C = NULL;
-         branchdata->childlhs = NULL;
-         branchdata->sequencsizes = NULL;
+         branchdata->consblocknr = -2;
       }
+
       SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, branchdata) );
       conshdlrData->stack[0] = cons;
       conshdlrData->nstack = 1;

@@ -182,7 +182,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
    }
    else
    {
-
 	   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
 	   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
 	   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -233,7 +232,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
    
    if(BRANCHRULE_VANDERBECK == 1)
    {
-	  // return SCIP_OKAY;
+	   return SCIP_OKAY;
 	   nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
 	   for( i=0; i<nchildnodes; ++i)
 	   {
