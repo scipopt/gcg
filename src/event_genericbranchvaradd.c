@@ -236,7 +236,6 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 	SCIP_VAR** mastervars;
 	GCG_BRANCHDATA* branchdata;
 	int p;
-//	int j;
 	int allnorigvars;
 	int nmastervars;
 
@@ -245,8 +244,6 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 	assert(event != NULL);
 	assert(scip != NULL);
 	assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_VARADDED);
-
-	//SCIPdebugMessage("exec method of eventhdlr Generic\n");
 
 	varinS = TRUE;
 	p = 0;
@@ -260,9 +257,8 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
 	if(masterbranchcons != NULL && GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL)
 	{
-		while( parentcons != NULL && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consS >0 && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL)
+		while( parentcons != NULL && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consSsize >0 && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL)
 		{
-			//parentcons = masterbranchcons;
 			branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 			assert(branchdata != NULL);
 
@@ -277,51 +273,17 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				SCIP_Real* generator;
 				SCIP_Bool* compisinteger;
 				int generatorsize;
-				//SCIP_VAR** presentmastervars;
-				//SCIP_VAR** origvars;
-				//int npresentmastervars;
-				//int norigvars;
 				SCIP_Real generator_i;
-				//SCIP_Bool present;
 				
 				generator = NULL;
 
-				/*
-				present = FALSE;
-				npresentmastervars = GCGoriginalVarGetNMastervars(allorigvars[branchdata->S[p][0]]);
-				presentmastervars = GCGoriginalVarGetMastervars(allorigvars[branchdata->S[p][0]]);
-				norigvars = GCGmasterVarGetNOrigvars(mastervar);  
-				origvars = GCGmasterVarGetOrigvars(mastervar);
-
-				for(j=0; j<npresentmastervars; ++j)
-				{
-					if(mastervar == presentmastervars[j])
-					{
-						present = TRUE;
-					}
-				}
-				if(present)
-				{
-					for(j=0; j<norigvars; ++j)
-					{
-						if(allorigvars[branchdata->S[p][0]] == origvars[j]) 
-						{
-							generator_i = GCGmasterVarGetOrigvals(mastervar)[j]; // ??? bei discr gleich dem generator ???
-									break;
-						}
-					}
-				}
-				else
-					generator_i = 0;
-				*/
 				getGenerators(scip, &generator, &generatorsize, &compisinteger, branchdata->consblocknr, mastervars, nmastervars, mastervar);
 				generator_i = generator[(int) SCIPceil(scip, branchdata->consS[p][0]-0.5)];
 				
 				
 				if(branchdata->consS[p][1] == 1 )
 				{
-					//if(GCGmasterVarGetOrigvals(mastervar)[branchdata->S[p][0]] < branchdata->S[p][2])
-						if( SCIPisLT(scip, generator_i, branchdata->consS[p][2]) ) //generator_i < branchdata->S[p][2])
+						if( SCIPisLT(scip, generator_i, branchdata->consS[p][2]) ) 
 						{
 							varinS = FALSE;
 							break;
@@ -329,7 +291,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 				}
 				else
 				{
-					if(SCIPisGE(scip, generator_i, branchdata->consS[p][2]) ) //generator_i >= branchdata->S[p][2])
+					if(SCIPisGE(scip, generator_i, branchdata->consS[p][2]) ) 
 					{
 						varinS = FALSE;
 						break;
@@ -344,12 +306,10 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
 			parentcons = GCGconsMasterbranchGetParentcons(parentcons);
 		}
-
 	}
 	else
 	{
-		//SCIPdebugMessage("no masterbranchcons\n");
-		//SCIPinfoMessage(scip, NULL, "no masterbranchcons or mastervar found in SCIP <%s>\n", SCIPgetProbName(scip) );
+		//empty
 	}
 
 	return SCIP_OKAY;
