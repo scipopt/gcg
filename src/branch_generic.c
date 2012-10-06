@@ -1408,10 +1408,14 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
 	}
 
 	if((*branchdata)->mastercons != NULL)
+	{
 	   SCIPdebugMessage("branchDataDeleteGeneric: child blocknr %d, %s\n", (*branchdata)->consblocknr,
 			SCIPconsGetName((*branchdata)->mastercons) );
+	}
 	else
+	{
 	   SCIPdebugMessage("branchDataDeleteGeneric: child blocknr %d, empty mastercons\n", (*branchdata)->consblocknr);
+	}
 
 	/* release constraint that enforces the branching decision */
 	if( (*branchdata)->mastercons != NULL )
