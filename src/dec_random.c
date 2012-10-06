@@ -225,12 +225,16 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
       SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
       *ndecdecomps = 1;
 
+      detectordata->constoblock = NULL;
       *result = SCIP_SUCCESS;
    }
    else
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      SCIPhashmapFree(&detectordata->constoblock);
+      if( detectordata->constoblock != NULL )
+      {
+         SCIPhashmapFree(&detectordata->constoblock);
+      }
    }
 
    return SCIP_OKAY;

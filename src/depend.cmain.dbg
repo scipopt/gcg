@@ -1954,7 +1954,8 @@ $(OBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h src/relax_gcg.h \
- src/type_branchgcg.h src/type_decomp.h
+ src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
+ src/type_solver.h
 $(OBJDIR)/disp_master.o: src/disp_master.c src/disp_master.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2840,4 +2841,5 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
- src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h
+ src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/pricer_gcg.h \
+ src/type_solver.h
