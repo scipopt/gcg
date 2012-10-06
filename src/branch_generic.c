@@ -1402,7 +1402,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
 
 	if(*branchdata == NULL)
 	{
-	   SCIPdebugMessage("branchDataDeleteGeneric: cannot delte empty branchdata\n");
+	   SCIPdebugMessage("branchDataDeleteGeneric: cannot delete empty branchdata\n");
 
 	   return SCIP_OKAY;
 	}

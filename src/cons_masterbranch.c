@@ -14,6 +14,7 @@
  * @author Martin Bergner
  *
  */
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
