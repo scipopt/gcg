@@ -14,7 +14,7 @@
  * @author Martin Bergner
  *
  */
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -2063,11 +2063,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    
-<<<<<<< HEAD
-   if(BRANCHRULE_NAME == 1)
-=======
    if(BRANCHRULE_VANDERBECK == 1)
->>>>>>> ab47181035a7ef9f6e168d2b5114ac46e38f030d
    	   return consdata->childvanderbeck[0];
 
    return consdata->child1cons;
@@ -2084,11 +2080,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    
-<<<<<<< HEAD
-   if(BRANCHRULE_NAME == 1)
-=======
    if(BRANCHRULE_VANDERBECK == 1)
->>>>>>> ab47181035a7ef9f6e168d2b5114ac46e38f030d
 	   return consdata->childvanderbeck[1];
 
    return consdata->child2cons;
@@ -2167,11 +2159,7 @@ void GCGconsMasterbranchCheckConsistency(
 
       assert(consdata->origcons == NULL || consdata->created);
       
-<<<<<<< HEAD
-      if(BRANCHRULE_NAME != 1)
-=======
       if(BRANCHRULE_VANDERBECK != 1)
->>>>>>> ab47181035a7ef9f6e168d2b5114ac46e38f030d
     	  assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
          || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
          || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));

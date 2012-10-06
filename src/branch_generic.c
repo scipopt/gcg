@@ -476,7 +476,7 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
 
 // induced lexicographical sort
 static
-SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
+SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip** array, int arraysize, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes )
 {
 	int i;
 	
@@ -486,35 +486,6 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, in
 		return LexicographicSort( array, arraysize );
 	assert( C!= NULL );
 
-<<<<<<< HEAD
-	//ILOQSort( scip, array, arraysize, C, sequencesize, 0, arraysize-1 );
-
-	//set data in the strips for the ptrcomp
-	//n=array[0]->generatorsize;
-	/*
-	SCIP_CALL( SCIPallocMemoryArray(scip, &IS, n) );
-	for( i=0; i<n; ++i )
-		IS[i]=i;
-	 */
-
-	for( i=0; i<arraysize; ++i ){
-<<<<<<< HEAD
-		(*array)[i]->C = C;
-		(*array)[i]->Csize = NBoundsequences; 
-		(*array)[i]->sequencesizes = sequencesizes;
-=======
-		array[i]->C = C;
-		array[i]->Csize = NBoundsequences;
-		array[i]->sequencesizes = sequencesizes;
->>>>>>> ab47181035a7ef9f6e168d2b5114ac46e38f030d
-		//array[i]->strip->IndexSet = IS;
-		//array[i]->strip->Indexsetsize = n;
-	}
-
-<<<<<<< HEAD
-	SCIPsortPtr( array, ptrilocomp, arraysize);
-=======
-=======
 	assert(arraysize > 0);
 	
 	if(arraysize <= 1)
@@ -527,18 +498,8 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip*** array, in
 		array[i]->sequencesizes = sequencesizes;
 		array[i]->C = C;
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-	SCIPdebugMessage("start sorting\n");
->>>>>>> 8b02942... clean up
-=======
-	//SCIPdebugMessage("start sorting\n");
->>>>>>> dfa55e8... empty mastercons in root branchdata
-=======
 	
->>>>>>> ce4d0f7... cleaning up
 	SCIPsortPtr((void**)array, ptrilocomp, arraysize);
->>>>>>> ab47181035a7ef9f6e168d2b5114ac46e38f030d
 
 	return SCIP_OKAY;
 }
