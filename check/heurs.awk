@@ -245,26 +245,32 @@ BEGIN {
             {
                for( i = 1; i <= nmheurs; ++i )
                {
-                  tablehead01 = tablehead01"+---------------------------";
+                  tablehead01 = tablehead01"+-----------------";
+                  if( printquots )
+                     tablehead01 = tablehead01"----------";
                }
                tablehead02 = tablehead02"|";
-               for( i = 1; i <= floor((28 * nmheurs - 15) / 2); ++i )
+               colwidth = printquots ? 28 : 18;
+               for( i = 1; i <= floor((colwidth * nmheurs - 15) / 2); ++i )
                   tablehead02 = tablehead02" ";
                tablehead02 = tablehead02"Master problem";
-               for( i = 1; i <= ceil((28 * nmheurs - 15) / 2); ++i )
+               for( i = 1; i <= ceil((colwidth * nmheurs - 15) / 2); ++i )
                   tablehead02 = tablehead02" ";
             }
             if( noheurs >= 1 )
             {
                for( i = 1; i <= noheurs; ++i )
                {
-                  tablehead01 = tablehead01"+---------------------------";
+                  tablehead01 = tablehead01"+-----------------";
+                  if( printquots )
+                     tablehead01 = tablehead01"----------";
                }
                tablehead02 = tablehead02"|";
-               for( i = 1; i <= floor((28 * noheurs - 17) / 2); ++i )
+               colwidth = printquots ? 28 : 18;
+               for( i = 1; i <= floor((colwidth * noheurs - 17) / 2); ++i )
                   tablehead02 = tablehead02" ";
                tablehead02 = tablehead02"Original problem";
-               for( i = 1; i <= ceil((28 * noheurs - 17) / 2); ++i )
+               for( i = 1; i <= ceil((colwidth * noheurs - 17) / 2); ++i )
                   tablehead02 = tablehead02" ";
             }
             tablehead01 = tablehead01"+\n";
@@ -281,9 +287,18 @@ BEGIN {
 
          for( i = 1; i <= nheurs && !onlysummary; ++i )
          {
-            tablehead1 = tablehead1"---------------------------+";
-            tablehead2 = sprintf("%s%-17s          |", tablehead2, heurs[i]);
-            tablehead3 = tablehead3"---------------------------+";
+            tablehead1 = tablehead1"-----------------";
+            tablehead2 = sprintf("%s%-17s", tablehead2, heurs[i]);
+            tablehead3 = tablehead3"-----------------";
+            if( printquots )
+            {
+               tablehead1 = tablehead1"----------";
+               tablehead2 = tablehead2"          ";
+               tablehead3 = tablehead3"----------";
+            }
+            tablehead1 = tablehead1"+";
+            tablehead2 = tablehead2"|";
+            tablehead3 = tablehead3"+";
          }
          if( nheurs > 1 || onlysummary )
          {
@@ -339,7 +354,11 @@ BEGIN {
             allfound += found[i];
 
             if( !onlysummary )
-               printf("%7.2f/%4d/%4d %4.2f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
+            {
+               printf("%7.2f/%4d/%4d ", time[i], calls[i], found[i]);
+               if( printquots )
+                  printf("%4.2f/%4.1f ", timequot, solquot);
+            }
          }
 
          if( nheurs > 1 || onlysummary )
@@ -376,7 +395,12 @@ END {
 
    printf("------------------+");
    for( i = 1; i <= nheurs && !onlysummary; ++i )
-      printf("---------------------------+");
+   {
+      printf("-----------------");
+      if( printquots )
+         printf("----------");
+      printf("+");
+   }
    if( nheurs > 1 || onlysummary )
       printf("---------------------+");
    printf("-------------------+-------------------\n");
@@ -385,7 +409,11 @@ END {
    for( i = 1; i <= nheurs; ++i )
    {
       if( !onlysummary )
-         printf("%7.2f/%4d/%4d %4.2f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
+      {
+         printf("%7.2f/%4d/%4d ", stime[i], scalls[i], sfound[i]);
+         if( printquots )
+            printf("%4.2f/%4.1f ", stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
+      }
 
       alltime += stime[i];
       allcalls += scalls[i];
@@ -401,14 +429,18 @@ END {
    printf("Geom. Mean         ");
    for( i = 1; i <= nheurs && !onlysummary; ++i )
    {
-      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", timegeom[i], callsgeom[i], foundgeom[i], timequotgeom[i], solquotgeom[i]);
+      printf("%7.2f/%4d/%4d ", timegeom[i], callsgeom[i], foundgeom[i]);
+      if( printquots )
+         printf("%4.2f/%4.1f ", timequotgeom[i], solquotgeom[i]);
    }
    printf("                   \n");
 
    printf("Shifted Mean       ");
    for( i = 1; i <= nheurs && !onlysummary; ++i )
    {
-      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i], shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
+      printf("%7.2f/%4d/%4d ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i]);
+      if( printquots )
+         printf("%4.2f/%4.1f ", shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
    }
    printf("                   \n");
    printf("\n");
