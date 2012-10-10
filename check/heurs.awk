@@ -237,7 +237,7 @@ BEGIN {
 
       if( headerprinted == 0 )
       {
-         if( nheurs >= 1 )
+         if( nheurs >= 1 && !onlysummary )
          {
             tablehead01 = "                  ";
             tablehead02 = "                  ";
@@ -279,13 +279,13 @@ BEGIN {
          tablehead2 = "Name              |";
          tablehead3 = "------------------+";
 
-         for( i = 1; i <= nheurs; ++i )
+         for( i = 1; i <= nheurs && !onlysummary; ++i )
          {
             tablehead1 = tablehead1"---------------------------+";
             tablehead2 = sprintf("%s%-17s          |", tablehead2, heurs[i]);
             tablehead3 = tablehead3"---------------------------+";
          }
-         if( nheurs > 1 )
+         if( nheurs > 1 || onlysummary )
          {
             tablehead1 = tablehead1"---------------------+";
             tablehead2 = tablehead2"All heuristics       |";
@@ -338,10 +338,11 @@ BEGIN {
             allcalls += calls[i];
             allfound += found[i];
 
-            printf("%7.2f/%4d/%4d %4.2f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
+            if( !onlysummary )
+               printf("%7.2f/%4d/%4d %4.2f/%4.1f ", time[i], calls[i], found[i], timequot, solquot);
          }
 
-         if( nheurs > 1 )
+         if( nheurs > 1 || onlysummary )
             printf("%9.2f/%5d/%5d ", alltime, allcalls, allfound);
 
          if( firstheur == "relaxation" && firstmasterheur != "" )
@@ -374,16 +375,17 @@ END {
    allfound = 0;
 
    printf("------------------+");
-   for( i = 1; i <= nheurs; ++i )
+   for( i = 1; i <= nheurs && !onlysummary; ++i )
       printf("---------------------------+");
-   if( nheurs > 1)
+   if( nheurs > 1 || onlysummary )
       printf("---------------------+");
    printf("-------------------+-------------------\n");
 
    printf("Total (%4d)       ", nprobs);
    for( i = 1; i <= nheurs; ++i )
    {
-      printf("%7.2f/%4d/%4d %4.2f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
+      if( !onlysummary )
+         printf("%7.2f/%4d/%4d %4.2f/%4.1f ", stime[i], scalls[i], sfound[i], stime[i]/max(stottime,1.0), sfound[i]/max(scalls[i],1.0));
 
       alltime += stime[i];
       allcalls += scalls[i];
@@ -391,20 +393,20 @@ END {
 
    }
 
-   if( nheurs > 1 )
+   if( nheurs > 1 || onlysummary )
       printf("%9.1f/%5d/%5d\n", alltime, allcalls, allfound);
    else
       printf("\n");
 
    printf("Geom. Mean         ");
-   for( i = 1; i <= nheurs; ++i )
+   for( i = 1; i <= nheurs && !onlysummary; ++i )
    {
       printf("%7.2f/%4d/%4d %4.2f/%4.1f ", timegeom[i], callsgeom[i], foundgeom[i], timequotgeom[i], solquotgeom[i]);
    }
    printf("                   \n");
 
    printf("Shifted Mean       ");
-   for( i = 1; i <= nheurs; ++i )
+   for( i = 1; i <= nheurs && !onlysummary; ++i )
    {
       printf("%7.2f/%4d/%4d %4.2f/%4.1f ", shiftedtimegeom[i], shiftedcallsgeom[i], shiftedfoundgeom[i], shiftedtimequotgeom[i], shiftedsolquotgeom[i]);
    }
