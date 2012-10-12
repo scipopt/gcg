@@ -1,4 +1,4 @@
-# SCIP version 2.1.2
+# SCIP version 3.0.1
 
 # frequency for solving LP at the nodes (-1: never; 0: only root LP)
 # [type: int, range: [-1,2147483647], default: 1]
@@ -35,6 +35,10 @@ heuristics/intshifting/freq = -1
 # frequency for calling primal heuristic <linesearchdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 10]
 heuristics/linesearchdiving/freq = -1
+
+# frequency for calling primal heuristic <nlpdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/nlpdiving/freq = -1
 
 # frequency for calling primal heuristic <objpscostdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 20]
@@ -96,9 +100,13 @@ heuristics/zirounding/freq = -1
 # [type: int, range: [-1,2147483647], default: 1]
 heuristics/simplerounding/freq = -1
 
-# frequency for calling primal heuristic <xpcrossover> (-1: never, 0: only at depth freqofs)
-# [type: int, range: [-1,2147483647], default: 0]
-heuristics/xpcrossover/freq = -1
+# flag to indicate whether detector <borderheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/borderheur/enabled = FALSE
+
+# flag to indicate whether detector <arrowheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/arrowheur/enabled = FALSE
 
 # frequency for calling primal heuristic <gcgcoefdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 10]
@@ -120,10 +128,23 @@ heuristics/gcgrens/freq = -1
 # [type: int, range: [-1,2147483647], default: 20]
 heuristics/gcgrins/freq = -1
 
+# frequency for calling primal heuristic <gcgrounding> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 1]
+heuristics/gcgrounding/freq = -1
+
+# frequency for calling primal heuristic <gcgshifting> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgshifting/freq = -1
+
 # frequency for calling primal heuristic <gcgsimplerounding> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 1]
 heuristics/gcgsimplerounding/freq = -1
 
+# frequency for calling primal heuristic <xpcrossover> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 0]
+heuristics/xpcrossover/freq = -1
+
 # frequency for calling primal heuristic <xprins> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 0]
 heuristics/xprins/freq = -1
+
