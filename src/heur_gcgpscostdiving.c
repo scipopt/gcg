@@ -651,8 +651,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgpscostdiving) /*lint --e{715}*/
          }
 
          /* apply domain propagation */
-//         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
-         SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
+         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
          if( !cutoff )
          {
             /* resolve the diving LP */

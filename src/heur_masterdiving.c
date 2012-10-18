@@ -1261,10 +1261,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       farkaspricing = FALSE;
       do
       {
-         SCIP_Longint ndomreds;
          /* apply domain propagation */
-         SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, &ndomreds) );
-         SCIPdebugMessage("   -> propagation found %"SCIP_LONGINT_FORMAT" domain reductions\n", ndomreds);
+         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, &NULL) );
+
          if( !cutoff || backtracked || farkaspricing )
          {
             /* resolve the diving LP */

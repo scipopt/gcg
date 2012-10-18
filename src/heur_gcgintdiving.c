@@ -28,6 +28,7 @@
 /**@file   heur_gcgintdiving.c
  * @brief  LP diving heuristic that fixes variables with integral LP value
  * @author Tobias Achterberg
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
