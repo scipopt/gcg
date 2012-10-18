@@ -50,12 +50,6 @@
 struct GCG_SolverData
 {
    SCIP*                 origprob;           /**< original problem */
-   SCIP_Real**           solvals;            /**< two dimensional array of solution values */
-   SCIP_VAR***           solvars;            /**< two dimensional array of solution variables */
-   int*                  nsolvars;           /**< array of number of variables per solution */
-   SCIP_Bool*            solisray;           /**< array indicating whether a solution represents a ray */
-   int                   nsols;              /**< number of solutions */
-   int                   maxvars;            /**< maximal number of variables in a solution */
 };
 
 
@@ -86,61 +80,12 @@ GCG_DECL_SOLVERFREE(solverFreeKnapsack)
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolKnapsack)
 {
-   GCG_SOLVERDATA* solverdata;
-   int i;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   solverdata->maxvars = -1;
-   for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
-   {
-      if( SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i)) > solverdata->maxvars )
-         solverdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
-   }
-
-   solverdata->nsols = 2;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solisray), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals), solverdata->nsols) );
-
-   for( i = 0; i < solverdata->nsols; i++ )
-   {
-      solverdata->nsolvars[i] = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) ); /*lint !e866*/
-   }
-
    return SCIP_OKAY;
 }
 
 static
 GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
 {
-   GCG_SOLVERDATA* solverdata;
-   int i;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   for( i = 0; i < solverdata->nsols; i++ )
-   {
-      SCIPfreeMemoryArray(scip, &(solverdata->solvars[i]));
-      SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
-   }
-
-   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
-
    return SCIP_OKAY;
 }
 
@@ -156,7 +101,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    SCIP_VAR** consvars;
    int nconsvars;
    SCIP_Real* consvals;
-
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   int nsolvars;
    SCIP_VAR** pricingprobvars;
    int npricingprobvars;
    int nconss;
@@ -172,7 +119,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    int                   nnonsolitems;
    SCIP_Real             solval;
    SCIP_Bool success;
-
    int i;
    int k;
 
@@ -186,6 +132,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
+
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
@@ -286,16 +235,16 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    assert(success);
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
-   solverdata->nsolvars[0] = 0;
-   solverdata->solisray[0] = FALSE;
+   nsolvars = 0;
+   solisray[0] = FALSE;
 
    for( i = 0; i < nsolitems; i++ )
    {
       if( !SCIPisNegative(scip, consvals[solitems[i]]) )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[solitems[i]];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[solitems[i]];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
 
@@ -303,9 +252,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    {
       if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[nonsolitems[i]];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[nonsolitems[i]];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
 
@@ -313,22 +262,23 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    {
       if( SCIPvarGetLbLocal(pricingprobvars[i]) > 0.5 )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[i];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[i];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
+
+   SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
+   SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
 
    SCIPfreeBufferArray(scip, &nonsolitems);
    SCIPfreeBufferArray(scip, &solitems);
    SCIPfreeBufferArray(scip, &profits);
    SCIPfreeBufferArray(scip, &weights);
    SCIPfreeBufferArray(scip, &items);
+   SCIPfreeMemoryArray(pricingprob, &solvars);
+   SCIPfreeMemoryArray(pricingprob, &solvals);
 
-   *solvars = solverdata->solvars;
-   *solvals = solverdata->solvals;
-   *nsolvars = solverdata->nsolvars;
-   *solisray = solverdata->solisray;
    *nsols = 1;
 
    *lowerbound = solval;
@@ -349,7 +299,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    SCIP_VAR** consvars;
    int nconsvars;
    SCIP_Real* consvals;
-
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   int nsolvars;
    SCIP_VAR** pricingprobvars;
    int npricingprobvars;
    int nconss;
@@ -476,16 +428,16 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
    SCIPdebugMessage("knapsack solved, solval = %g\n", solval);
 
-   solverdata->nsolvars[0] = 0;
-   solverdata->solisray[0] = FALSE;
+   nsolvars = 0;
+   solisray[0] = FALSE;
 
    for( i = 0; i < nsolitems; i++ )
    {
       if( !SCIPisNegative(scip, consvals[solitems[i]]) )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[solitems[i]];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[solitems[i]];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
 
@@ -493,9 +445,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[nonsolitems[i]];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[nonsolitems[i]];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
 
@@ -503,22 +455,23 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    {
       if( SCIPvarGetLbLocal(pricingprobvars[i]) > 0.5 )
       {
-         solverdata->solvars[0][solverdata->nsolvars[0]] = pricingprobvars[i];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = 1;
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = pricingprobvars[i];
+         solvals[nsolvars] = 1;
+         nsolvars++;
       }
    }
+
+   SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
+   SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
 
    SCIPfreeBufferArray(scip, &nonsolitems);
    SCIPfreeBufferArray(scip, &solitems);
    SCIPfreeBufferArray(scip, &profits);
    SCIPfreeBufferArray(scip, &weights);
    SCIPfreeBufferArray(scip, &items);
+   SCIPfreeMemoryArray(pricingprob, &solvars);
+   SCIPfreeMemoryArray(pricingprob, &solvals);
 
-   *solvars = solverdata->solvars;
-   *solvals = solverdata->solvals;
-   *nsolvars = solverdata->nsolvars;
-   *solisray = solverdata->solisray;
    *nsols = 1;
 
    *lowerbound = -SCIPinfinity(scip);
@@ -537,11 +490,6 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory( scip, &data) );
-   data->nsols = 0;
-   data->nsolvars = NULL;
-   data->solisray = NULL;
-   data->solvars = NULL;
-   data->solvals = NULL;
    data->origprob = GCGpricerGetOrigprob(scip);
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, solverSolveKnapsack,

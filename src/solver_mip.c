@@ -61,50 +61,9 @@
 struct GCG_SolverData
 {
    SCIP*                 origprob;           /**< original SCIP data structure */
-   SCIP_Real**           solvals;            /**< two dimensional array of values in solutions */
-   SCIP_VAR***           solvars;            /**< two dimensional array of variables in solutions */
-   SCIP_Real*            tmpsolvals;         /**< temporary solution values */
-   int*                  nsolvars;           /**< number of solution variables per solution */
-   SCIP_Bool*            solisray;           /**< array to indicate whether solutions are rays */
-   int                   nsols;              /**< number of solutions */
-   int                   maxvars;            /**< maximal number of variables in a solution */
 
    SCIP_Bool             checksols;          /**< should solutions be checked extensively */
 };
-
-/* ensures size of solution arrays */
-static
-SCIP_RETCODE ensureSizeSolvars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_SOLVERDATA*       solverdata,         /**< solver data data structure */
-   int                   nsols               /**< number of solutions */
-   )
-{
-   int i;
-
-   assert(scip != NULL);
-   assert(solverdata != NULL);
-
-   /* realloc solution array, if it is not big enough */
-   if( solverdata->nsols < nsols )
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->nsolvars), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solisray), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvars), nsols) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(solverdata->solvals), nsols) );
-
-      /* prepare the array for storing the variables and solution values */
-      for( i = solverdata->nsols; i < nsols; i++ )
-      {
-         solverdata->nsolvars[i] = 0;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) ); /*lint !e866*/
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) ); /*lint !e866*/
-      }
-      solverdata->nsols = nsols;
-   }
-
-   return SCIP_OKAY;
-}
 
 /** checks whether the given solution is equal to one of the former solutions in the sols array */
 static
@@ -165,134 +124,30 @@ SCIP_RETCODE checkSolNew(
    return SCIP_OKAY;
 }
 
-
-
-/*
- * Callback methods for pricing problem solver
- */
-
-/** destructor of pricing solver to free user data (called when SCIP is exiting) */
 static
-GCG_DECL_SOLVERFREE(solverFreeMip)
+SCIP_RETCODE solveProblem(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   int                   probnr,             /**< problem number */
+   GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
+   SCIP_SOL**            sols,               /**< array of solutions */
+   SCIP_Bool*            solisray,           /**< array indicating whether solution is a ray */
+   int                   maxsols,            /**< size of preallocated array */
+   int*                  nsols,              /**< pointer to store number of solutions */
+   SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
+   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
+   )
 {
-   GCG_SOLVERDATA* solverdata;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   SCIPfreeMemory(scip, &solverdata);
-
-   GCGpricerSetSolverdata(scip, solver, NULL);
-
-   return SCIP_OKAY;
-}
-
-/** solving process initialization method of pricing solver (called when branch and bound process is about to begin) */
-static
-GCG_DECL_SOLVERINITSOL(solverInitsolMip)
-{
-   GCG_SOLVERDATA* solverdata;
-   int i;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   /* get the maximum number of variables contained in a pricing problem */
-   solverdata->maxvars = -1;
-   for( i = 0; i < GCGrelaxGetNPricingprobs(solverdata->origprob); i++ )
-   {
-      if( SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i)) > solverdata->maxvars )
-         solverdata->maxvars = SCIPgetNVars(GCGrelaxGetPricingprob(solverdata->origprob, i));
-   }
-
-   /* allocate memory for storing 10 solutions (will be reallocated later, if needed) */
-   solverdata->nsols = 10;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nsolvars), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solisray), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars), solverdata->nsols) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals), solverdata->nsols) );
-
-   /* prepare the array for storing the variables and solution values */
-   for( i = 0; i < solverdata->nsols; i++ )
-   {
-      solverdata->nsolvars[i] = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvars[i]), solverdata->maxvars) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->solvals[i]), solverdata->maxvars) ); /*lint !e866*/
-   }
-
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->tmpsolvals), solverdata->maxvars) );
-
-   return SCIP_OKAY;
-}
-
-/** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
-static
-GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
-{
-   GCG_SOLVERDATA* solverdata;
-   int i;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   /* free arrays for storing the variables and solution values */
-   for( i = 0; i < solverdata->nsols; i++ )
-   {
-      SCIPfreeMemoryArray(scip, &(solverdata->solvars[i]));
-      SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
-   }
-
-   SCIPfreeMemoryArray(scip, &(solverdata->tmpsolvals));
-
-   /* free arrays for storing the solutions */
-   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
-
-   return SCIP_OKAY;
-}
-
-#define solverInitMip NULL
-#define solverExitMip NULL
-
-
-/** solving method for pricing solver which solves the pricing problem to optimality */
-static
-GCG_DECL_SOLVERSOLVE(solverSolveMip)
-{  /*lint --e{715}*/
-   GCG_SOLVERDATA* solverdata;
    SCIP_SOL** probsols;
    int nprobsols;
-
    SCIP_VAR** probvars;
    int nprobvars;
-
    SCIP_Bool newsol;
 
    int s;
    int i;
 
    SCIP_Real memlimit;
-
-#ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
-   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
-#endif
-
-   solverdata = GCGpricerGetSolverdata(scip, solver);
-   assert(solverdata != NULL);
-
-   *lowerbound = -SCIPinfinity(scip);
 
    SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memlimit) );
    if( !SCIPisInfinity(scip, memlimit) )
@@ -308,13 +163,14 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
-       || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN);
 
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
@@ -345,13 +201,19 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
     */
    if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
    {
+      SCIP_VAR** solvars;
+      SCIP_Real* solvals;
+      int nsolvars;
+
       assert(SCIPhasPrimalRay(pricingprob));
 
       probvars  = SCIPgetOrigVars(pricingprob);
       nprobvars = SCIPgetNOrigVars(pricingprob);
 
-      solverdata->nsolvars[0] = 0;
+      nsolvars = 0;
 
+      SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, nprobvars) );
+      SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, nprobvars) );
       /* store the primal ray values */
       for( i = 0; i < nprobvars; i++ )
       {
@@ -361,29 +223,27 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
          assert(!SCIPisInfinity(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])));
          assert(!SCIPisInfinity(scip, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
 
-         solverdata->solvars[0][solverdata->nsolvars[0]] = probvars[i];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
-         solverdata->nsolvars[0]++;
+         solvars[nsolvars] = probvars[i];
+         solvals[nsolvars] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
+         nsolvars++;
 
          SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]), SCIPvarGetObj(probvars[i]));
       }
-      solverdata->solisray[0] = TRUE;
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
+      solisray[0] = TRUE;
+
+      SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
+      SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
       *nsols = 1;
       *result = SCIP_STATUS_UNBOUNDED;
+
+      SCIPfreeMemoryArray(pricingprob, &solvars);
+      SCIPfreeMemoryArray(pricingprob, &solvals);
 
       SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
    }
    /* the solving process was interrupted, so we have no solutions and set the status pointer accordingly */
    else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN )
    {
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
       *nsols = 0;
       *result = SCIPgetStatus(pricingprob);
    }
@@ -399,9 +259,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 
       *nsols = 0;
 
-      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
-
-      for( s = 0; s < nprobsols; s++ )
+      for( s = 0; s < nprobsols && s < maxsols; s++ )
       {
          SCIP_Bool feasible;
 
@@ -418,7 +276,6 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
          }
 
-
          /* check whether the solution is equal to one of the previous solutions */
          if( solverdata->checksols )
          {
@@ -428,38 +285,66 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
                continue;
          }
 
-         solverdata->nsolvars[*nsols] = 0;
-         solverdata->solisray[*nsols] = FALSE;
-
-         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
-
-         /* store the solution values */
-         for( i = 0; i < nprobvars; i++ )
-         {
-            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
-               continue;
-
-            assert(!SCIPisInfinity(scip, solverdata->tmpsolvals[i]));
-            assert(!SCIPisInfinity(scip, -solverdata->tmpsolvals[i]));
-
-            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
-            solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
-            solverdata->nsolvars[*nsols]++;
-         }
-
+         solisray[*nsols] = FALSE;
+         sols[*nsols] = probsols[s];
          *nsols = *nsols + 1;
       }
 
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
-
-      *lowerbound = SCIPgetDualbound(pricingprob);
+      if( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL )
+         *lowerbound = SCIPgetDualbound(pricingprob);
 
       *result = SCIP_STATUS_OPTIMAL;
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
+   return SCIP_OKAY;
+}
+
+
+/*
+ * Callback methods for pricing problem solver
+ */
+
+/** destructor of pricing solver to free user data (called when SCIP is exiting) */
+static
+GCG_DECL_SOLVERFREE(solverFreeMip)
+{
+   GCG_SOLVERDATA* solverdata;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
+
+   SCIPfreeMemory(scip, &solverdata);
+
+   GCGpricerSetSolverdata(scip, solver, NULL);
+
+   return SCIP_OKAY;
+}
+
+#define solverInitsolMip NULL
+#define solverExitsolMip NULL
+#define solverInitMip NULL
+#define solverExitMip NULL
+
+/** solving method for pricing solver which solves the pricing problem to optimality */
+static
+GCG_DECL_SOLVERSOLVE(solverSolveMip)
+{  /*lint --e{715}*/
+   GCG_SOLVERDATA* solverdata;
+
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+#endif
+
+   solverdata = GCGpricerGetSolverdata(scip, solver);
+   assert(solverdata != NULL);
+
+   *lowerbound = -SCIPinfinity(scip);
+
+   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
@@ -474,16 +359,6 @@ static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 {  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
-   SCIP_SOL** probsols;
-   int nprobsols;
-
-   SCIP_VAR** probvars;
-   int nprobvars;
-
-   SCIP_Bool newsol;
-
-   int s;
-   int i;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -499,145 +374,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( SCIPsetRealParam(pricingprob, "limits/gap", 0.2) );
    /*SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/bestsol", 5) );*/ /* TODO: do we want a solution limit? */
 
-   /* solve the pricing submip */
-   SCIP_CALL( SCIPsolve(pricingprob) );
-
-   /* all SCIP statuses handled so far */
-   assert( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT);
-
-   if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
-   {
-      /* the pricing problem was declared to be (infeasible or) unbounded, but SCIP did not compute a primal ray;
-       * this occurs when presolving detected (infeasibility or) unboundedness; since we need a primal ray to create
-       * the corresponding variable, we disable presolving and resolve the problem to get the primal ray out of the LP
-       */
-      if( !SCIPhasPrimalRay(pricingprob) )
-      {
-         SCIP_CALL( SCIPfreeTransform(pricingprob) );
-
-         SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrounds", 0) );
-         SCIP_CALL( SCIPtransformProb(pricingprob) );
-
-         /* solve the pricing submip */
-         SCIP_CALL( SCIPsolve(pricingprob) );
-      }
-      assert(SCIPhasPrimalRay(pricingprob)
-         || SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT
-         || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT );
-   }
-
-   SCIPdebugMessage("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
-
-   /* the pricing problem was declared to be (infeasible or) unbounded and we should have a primal ray at hand,
-    * so copy the primal ray into the solution structure and mark it to be a primal ray
-    */
-   if( SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD )
-   {
-      assert(SCIPhasPrimalRay(pricingprob));
-
-      probvars  = SCIPgetOrigVars(pricingprob);
-      nprobvars = SCIPgetNOrigVars(pricingprob);
-
-      solverdata->nsolvars[0] = 0;
-
-      /* store the primal ray values */
-      for( i = 0; i < nprobvars; i++ )
-      {
-         if( SCIPisZero(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])) )
-            continue;
-
-         assert(!SCIPisInfinity(scip, SCIPgetPrimalRayVal(pricingprob, probvars[i])));
-         assert(!SCIPisInfinity(scip, -SCIPgetPrimalRayVal(pricingprob, probvars[i])));
-
-         solverdata->solvars[0][solverdata->nsolvars[0]] = probvars[i];
-         solverdata->solvals[0][solverdata->nsolvars[0]] = SCIPgetPrimalRayVal(pricingprob, probvars[i]);
-         solverdata->nsolvars[0]++;
-
-         SCIPdebugMessage("%s: %g\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]));
-      }
-      solverdata->solisray[0] = TRUE;
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
-      *nsols = 1;
-      *result = SCIP_STATUS_UNBOUNDED;
-
-      SCIPdebugMessage("pricingproblem has an unbounded ray!\n");
-   }
-   else if( SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT || SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT )
-   {
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
-      *nsols = 0;
-      *result = SCIP_STATUS_UNKNOWN;
-      *lowerbound = SCIPgetDualbound(pricingprob);
-   }
-   else
-   {
-      /* get variables of the pricing problem */
-      probvars = SCIPgetOrigVars(pricingprob);
-      nprobvars = SCIPgetNOrigVars(pricingprob);
-
-      nprobsols = SCIPgetNSols(pricingprob);
-      probsols = SCIPgetSols(pricingprob);
-
-      *nsols = 0;
-
-      SCIP_CALL( ensureSizeSolvars(scip, solverdata, nprobsols) );
-
-      for( s = 0; s < nprobsols; s++ )
-      {
-         SCIP_Bool feasible;
-         SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, TRUE) );
-         assert(feasible);
-
-         /* check whether the solution is equal to one of the previous solutions */
-         if( solverdata->checksols )
-         {
-            SCIP_CALL( checkSolNew(scip, pricingprob, probsols, s, &newsol) );
-
-            if( !newsol )
-               continue;
-         }
-
-         solverdata->nsolvars[*nsols] = 0;
-         solverdata->solisray[*nsols] = FALSE;
-
-         SCIP_CALL( SCIPgetSolVals(pricingprob, probsols[s], nprobvars, probvars, solverdata->tmpsolvals) );
-
-         /* store the solution values */
-         for( i = 0; i < nprobvars; i++ )
-         {
-            if( SCIPisZero(scip, solverdata->tmpsolvals[i]) )
-               continue;
-
-            solverdata->solvars[*nsols][solverdata->nsolvars[*nsols]] = probvars[i];
-            solverdata->solvals[*nsols][solverdata->nsolvars[*nsols]] = solverdata->tmpsolvals[i];
-            solverdata->nsolvars[*nsols]++;
-         }
-
-         *nsols = *nsols + 1;
-      }
-
-      *solvars = solverdata->solvars;
-      *solvals = solverdata->solvals;
-      *nsolvars = solverdata->nsolvars;
-      *solisray = solverdata->solisray;
-
-      *lowerbound = SCIPgetDualbound(pricingprob);
-      *result = SCIP_STATUS_OPTIMAL;
-   }
+   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
@@ -660,11 +397,6 @@ SCIP_RETCODE GCGincludeSolverMip(
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory( scip, &data) );
-   data->nsols = 0;
-   data->nsolvars = NULL;
-   data->solvars = NULL;
-   data->solvals = NULL;
-   data->solisray = NULL;
    data->origprob = GCGpricerGetOrigprob(scip);
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
