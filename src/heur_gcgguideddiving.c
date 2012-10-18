@@ -60,10 +60,8 @@
 #define DEFAULT_MAXRELDEPTH         1.0 /**< maximal relative depth to start diving */
 #define DEFAULT_MAXLPITERQUOT      0.05 /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
-//#define DEFAULT_MAXPRICEQUOT       0.05 /**< maximal fraction of pricing rounds compared to node pricing rounds */
-//#define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
-#define DEFAULT_MAXPRICEQUOT       0.00 /**< maximal fraction of pricing rounds compared to node pricing rounds */
-#define DEFAULT_MAXPRICEOFS          0  /**< additional number of allowed pricing rounds (-1: no limit) */
+#define DEFAULT_MAXPRICEROUNDS        0 /**< maximal number of allowed pricing rounds (-1: no limit) */
+#define DEFAULT_USEFARKASONLY      TRUE /**< perform pricing only if infeasibility is encountered */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                          *   where diving is performed (0.0: no limit) */
 #define DEFAULT_MAXDIVEAVGQUOT      0.0 /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -81,8 +79,8 @@ struct SCIP_HeurData
    SCIP_Real             maxreldepth;        /**< maximal relative depth to start diving */
    SCIP_Real             maxlpiterquot;      /**< maximal fraction of diving LP iterations compared to node LP iterations */
    int                   maxlpiterofs;       /**< additional number of allowed LP iterations */
-   SCIP_Real             maxpricequot;       /**< maximal fraction of pricing rounds compared to node pricing rounds */
-   int                   maxpriceofs;        /**< additional number of allowed pricing rounds (-1: no limit) */
+   int                   maxpricerounds;     /**< maximal number of allowed pricing rounds (-1: no limit) */
+   SCIP_Bool             usefarkasonly;      /**< perform pricing only if infeasibility is encountered */
    SCIP_Real             maxdiveubquot;      /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
                                               *   where diving is performed (0.0: no limit) */
    SCIP_Real             maxdiveavgquot;     /**< maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound)
@@ -206,11 +204,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
    SCIP_Bool cutoff;
    SCIP_Bool feasible;
    SCIP_Bool backtracked;
+   SCIP_Bool farkaspricing;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;
    SCIP_Longint maxnlpiterations;
-   int maxpricerounds;
    int npricerounds;
    int totalpricerounds;
    int nlpcands;
@@ -284,17 +282,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
 
    /* allow at least a certain number of LP iterations in this dive */
    maxnlpiterations = MAX(maxnlpiterations, heurdata->nlpiterations + MINLPITER);
-
-   /** @todo limit number of pricing rounds, play with parameters */
-   if( heurdata->maxpriceofs > -1 )
-   {
-      npricerounds = SCIPgetNPriceRounds(masterprob);
-      SCIPdebugMessage("GCG guideddiving - pricing rounds at this node: %d\n", npricerounds);
-      maxpricerounds = (int)((1.0 + 10.0*(nsolsfound+1.0)/(ncalls+1.0)) * heurdata->maxpricequot * npricerounds);
-      maxpricerounds += heurdata->maxpriceofs;
-   }
-   else
-      maxpricerounds = -1;
 
    /* get fractional variables that should be integral */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
@@ -503,6 +490,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
       var = lpcands[bestcand];
 
       backtracked = FALSE;
+      farkaspricing = FALSE;
       do
       {
          /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
@@ -526,38 +514,41 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
          probingnode = SCIPgetCurrentNode(scip);
 
          /* apply rounding of best candidate */
-         if( bestcandroundup == !backtracked )
+         if( !farkaspricing )
          {
-            /* round variable up */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
+            if( bestcandroundup == !backtracked )
+            {
+               /* round variable up */
+               SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+                  divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
+                  SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+                  SCIPfeasCeil(scip, lpcandssol[bestcand]), SCIPvarGetUbLocal(var));
 
-            SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
+               SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
                   GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-            SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-            SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
-            SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
-         }
-         else
-         {
-            /* round variable down */
-            SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
-               divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
-               SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
-               SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
+               SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
+               SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
+               SCIP_CALL( SCIPchgVarLbProbing(scip, var, SCIPfeasCeil(scip, lpcandssol[bestcand])) );
+            }
+            else
+            {
+               /* round variable down */
+               SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+                  divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
+                  SCIPvarGetName(var), lpcandssol[bestcand], SCIPvarGetLbLocal(var), SCIPvarGetUbLocal(var),
+                  SCIPvarGetLbLocal(var), SCIPfeasFloor(scip, lpcandssol[bestcand]));
 
-            SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
+               SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
                   GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
-            SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
-            SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
-            SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
+               SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
+               SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
+               SCIP_CALL( SCIPchgVarUbProbing(scip, var, SCIPfeasFloor(scip, lpcandssol[bestcand])) );
+            }
          }
 
          /* apply domain propagation */
          SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
-         if( !cutoff )
+         if( !cutoff || farkaspricing )
          {
            /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
@@ -565,12 +556,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
              */
 #ifdef NDEBUG
             SCIP_RETCODE retstat;
-            if( maxpricerounds == 0 )
-               retstat = GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+            if( (!heurdata->usefarkasonly || farkaspricing)
+               && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
+            {
+               retstat = GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
+                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+            }
             else
             {
-               retstat = GCGrelaxPerformProbingWithPricing(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds,
-                     &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
+               retstat = GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible);
                npricerounds = 0;
             }
             if( retstat != SCIP_OKAY )
@@ -578,12 +572,15 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
                SCIPwarningMessage(scip, "Error while solving LP in GCG guideddiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
-            if( maxpricerounds == 0 )
-               SCIP_CALL( GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+            if( (!heurdata->usefarkasonly || farkaspricing)
+               && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
+            {
+               SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
+                  &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+            }
             else
             {
-               SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, maxpricerounds == -1 ? -1 : maxpricerounds - totalpricerounds,
-                     &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
+               SCIP_CALL( GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff, &feasible) );
                npricerounds = 0;
             }
 #endif
@@ -607,8 +604,20 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
             assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob) + 1);
          }
 
+         /* if infeasibility is encountered, perform Farkas pricing
+          * in order to reach feasibility again */
+         if( lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE && heurdata->usefarkasonly
+            && !farkaspricing && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds)
+            && !backtracked )
+         {
+            SCIPdebugMessage("  *** infeasibility detected at level %d - perform Farkas pricing\n", SCIPgetProbingDepth(scip));
+            farkaspricing = TRUE;
+         }
+         else
+            farkaspricing = FALSE;
+
          /* perform backtracking if a cutoff was detected */
-         if( cutoff && !backtracked && heurdata->backtrack )
+         if( cutoff && !backtracked && heurdata->backtrack && !farkaspricing )
          {
             SCIPdebugMessage("  *** cutoff detected at level %d - backtracking\n", SCIPgetProbingDepth(scip));
             SCIP_CALL( SCIPbacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
@@ -619,7 +628,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
          else
             backtracked = FALSE;
       }
-      while( backtracked );
+      while( backtracked || farkaspricing );
 
       if( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL )
       {
@@ -685,7 +694,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgguideddiving) /*lint --e{715}*/
       heurdata->nsuccess++;
 
    SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") finished GCG guideddiving heuristic: %d fractionals, dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d, objval=%g/%g, lpsolstat=%d, cutoff=%u\n",
-      SCIPgetNNodes(scip), nlpcands, divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, maxpricerounds,
+      SCIPgetNNodes(scip), nlpcands, divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
       SCIPretransformObj(scip, objval), SCIPretransformObj(scip, searchbound), lpsolstat, cutoff);
 
    return SCIP_OKAY;
@@ -738,14 +747,14 @@ SCIP_RETCODE SCIPincludeHeurGcgguideddiving(
          "heuristics/gcgguideddiving/maxlpiterofs",
          "additional number of allowed LP iterations",
          &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/gcgguideddiving/maxpricequot",
-         "maximal fraction of pricing rounds compared to node pricing rounds",
-         &heurdata->maxpricequot, FALSE, DEFAULT_MAXPRICEQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/gcgguideddiving/maxpriceofs",
-         "additional number of allowed pricing rounds (-1: no limit)",
-         &heurdata->maxpriceofs, FALSE, DEFAULT_MAXPRICEOFS, -1, INT_MAX, NULL, NULL) );
+         "heuristics/gcgguideddiving/maxpricerounds",
+         "maximal number of allowed pricing rounds (-1: no limit)",
+         &heurdata->maxpricerounds, FALSE, DEFAULT_MAXPRICEROUNDS, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip,
+         "heuristics/gcgguideddiving/usefarkasonly",
+         "perform pricing only if infeasibility is encountered",
+         &heurdata->usefarkasonly, FALSE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
          "heuristics/gcgguideddiving/maxdiveubquot",
          "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
