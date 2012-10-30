@@ -1358,19 +1358,22 @@ SCIP_Bool canPricingBeAborted(
    )
 {
    SCIP_Bool canabort;
+
    assert(scip != NULL);
    assert(pricerdata != NULL);
+
    canabort = FALSE;
+
    if( pricerdata->abortpricingint && SCIPisObjIntegral(scip )
       && SCIPisEQ(scip, SCIPceil(scip, SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip))), SCIPceil(scip, SCIPgetLPObjval(scip))) /* && SCIPgetNNodes(scip) > 1 ??????*/)
    {
-      GCGpricerPrintInfo(scip, pricerdata,
-            "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
+      GCGpricerPrintInfo(scip, pricerdata, "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
             SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
 
       canabort = TRUE;
    }
-   if( pricerdata->abortpricinggap > 0 )
+
+   if( !canabort && pricerdata->abortpricinggap > 0 )
    {
       SCIP_Real gap;
       gap = (SCIPgetLPObjval(scip) - SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)))/SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip));
@@ -1378,9 +1381,9 @@ SCIP_Bool canPricingBeAborted(
 
       if( gap < pricerdata->abortpricinggap )
       {
-         GCGpricerPrintInfo(scip, pricerdata,
-               "pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n",
+         GCGpricerPrintInfo(scip, pricerdata, "pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n",
                SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip), gap);
+
          canabort = TRUE;
       }
    }
