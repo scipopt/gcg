@@ -50,6 +50,10 @@
 #include "pub_gcgvar.h"
 #include "cons_masterbranch.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #define PRICER_NAME            "gcg"
 #define PRICER_DESC            "pricer for gcg"
 #define PRICER_PRIORITY        5000000
@@ -614,7 +618,7 @@ SCIP_RETCODE getSolverPointers(
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
    int**                 calls,              /**< calls belonging to this setting */
-   GCG_DECL_SOLVERSOLVE((**solversolve))      /**< solving function belonging to this setting */
+   GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
    )
 {
    assert(scip != NULL);
@@ -736,6 +740,7 @@ SCIP_RETCODE solvePricingProblem(
          {
 
 #ifdef ENABLESTATISTICS
+            #pragma omp critical (collectstats)
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
@@ -1492,6 +1497,7 @@ SCIP_RETCODE subproblemSetMemorylimit(
    assert(pricingscip != NULL);
    assert(prob >= 0);
    assert(memlimit != NULL);
+   assert(SCIPfindRelax(origscip, "gcg") != NULL);
 
    SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", memlimit) );
    if( !SCIPisInfinity(origscip, *memlimit) )
@@ -1636,6 +1642,9 @@ SCIP_RETCODE performOptimalPricing(
       prob = pricerdata->permu[i];
       nidentical =  GCGrelaxGetNIdenticalBlocks(origprob, prob);
 
+      if( pricerdata->pricingprobs[prob] == NULL )
+         goto done;
+
       #pragma omp critical (limits)
       {
 #ifndef _OPENMP
@@ -1654,7 +1663,7 @@ SCIP_RETCODE performOptimalPricing(
          }
 
          SCIP_CALL_ABORT( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob], prob, &timelimit) );
-         SCIP_CALL_ABORT( subproblemSetMemorylimit(scip, pricerdata->pricingprobs[prob], prob, &memlimit) );
+         SCIP_CALL_ABORT( subproblemSetMemorylimit(origprob, pricerdata->pricingprobs[prob], prob, &memlimit) );
       }
 
       #pragma omp critical
@@ -1696,6 +1705,8 @@ SCIP_RETCODE performOptimalPricing(
             }
          }
       }
+   done:
+      ;
    }
 
    if( result != NULL && *bestredcostvalid == FALSE )
