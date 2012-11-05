@@ -495,8 +495,10 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    else
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      SCIPhashmapFree(&detectordata->constoblock);
-      SCIPhashmapFree(&detectordata->vartoblock);
+      if(detectordata->constoblock != NULL)
+         SCIPhashmapFree(&detectordata->constoblock);
+      if(detectordata->vartoblock != NULL)
+         SCIPhashmapFree(&detectordata->vartoblock);
    }
 
    return SCIP_OKAY;
@@ -519,7 +521,8 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-
+   detectordata->vartoblock = NULL;
+   detectordata->constoblock = NULL;
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
 
    return SCIP_OKAY;
