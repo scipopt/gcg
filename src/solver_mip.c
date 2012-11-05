@@ -405,9 +405,11 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
       {
          SCIP_Bool feasible;
 
-         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) )
+         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) ||  SCIPisLT(pricingprob, SCIPinfinity(pricingprob), -SCIPgetSolOrigObj(pricingprob, probsols[s])))
          {
            SCIPdebugMessage("unbounded solution\n");
+           SCIPdebug(SCIPprintSol(pricingprob, probsols[s], NULL, FALSE));
+           assert(SCIPgetStatus(pricingprob) != SCIP_STATUS_OPTIMAL);
          }
 
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );
