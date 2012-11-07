@@ -75,6 +75,7 @@
 #define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
                                          *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
 
+#define ALLOWEDRULES              "cflpv" /**< possible variable selection rules */
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
 
 
@@ -877,30 +878,38 @@ SCIP_RETCODE chooseVariable(
 
 /** gets to the variable selection rule for the next call of this heuristic */
 static
-char getNextRule(
+SCIP_RETCODE getNextRule(
       SCIP*                 scip,               /**< original SCIP data structure */
       SCIP_HEURDATA*        heurdata            /**< heuristic data structure */
       )
 {
    if( heurdata->varselrule == '*' )
-      switch ( heurdata->currentrule )
-      {
-      case 'c':
-         return 'f';
-      case 'f':
-         return 'l';
-      case 'l':
-         return 'p';
-      case 'p':
-         return 'v';
-      case 'v':
-         return 'c';
-      default:
-         SCIPerrorMessage("invalid variable selection rule\n");
-         return SCIP_INVALIDDATA;
-      }
+   {
+      const char* rules = ALLOWEDRULES;
+      int nrules = strlen(rules);
+      int i;
+
+      assert(nrules > 0);
+
+      for( i = 0; i < nrules; ++i )
+         if( rules[i] == heurdata->currentrule )
+            break;
+
+      assert(i < nrules);
+
+      if( i == nrules-1 )
+         heurdata->currentrule = rules[0];
+      else
+         heurdata->currentrule = rules[i+1];
+   }
+#ifndef NDEBUG
    else
-      return heurdata->varselrule;
+   {
+      assert(heurdata->currentrule == heurdata->varselrule);
+   }
+#endif
+
+   return SCIP_OKAY;
 }
 
 
@@ -933,6 +942,9 @@ static
 SCIP_DECL_HEURINIT(heurInitMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
+   const char* rules;
+   int nrules;
+   int i;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
@@ -944,11 +956,22 @@ SCIP_DECL_HEURINIT(heurInitMasterdiving) /*lint --e{715}*/
    /* create working solution */
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
 
+   /* get possible variable selection rules */
+   rules = ALLOWEDRULES;
+   nrules = strlen(rules);
+
+   if ( nrules == 0 )
+   {
+      SCIPerrorMessage("no valid variable selection rule found!\n");
+      return SCIP_INVALIDDATA;
+   }
+
    /* initialize data */
    if( heurdata->varselrule == '*' )
-      heurdata->currentrule = 'f';           /* start with fractionality diving */
+      heurdata->currentrule = rules[0];
    else
       heurdata->currentrule = heurdata->varselrule;
+
    heurdata->nlpiterations = 0;
    heurdata->nsuccess = 0;
 
@@ -1090,7 +1113,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
        */
       if( SCIPgetNSols(scip) == 0 || SCIPsolIsOriginal(SCIPgetBestSol(scip)) )
          if( heurdata->varselrule == '*' )
-            heurdata->currentrule = getNextRule(scip, heurdata);
+         {
+            SCIP_CALL( getNextRule(scip, heurdata) );
+         }
          else
             return SCIP_OKAY;
       else
@@ -1424,7 +1449,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    else
       assert(bestsol == NULL);
 
-   heurdata->currentrule = getNextRule(scip, heurdata);
+   SCIP_CALL( getNextRule(scip, heurdata) );
 
    SCIPdebugMessage("masterdiving heuristic finished\n");
 
@@ -1515,7 +1540,7 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    SCIP_CALL( SCIPaddCharParam(scip,
          "heuristics/"HEUR_NAME"/varselrule",
          "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules)",
-         &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, "cflpv*", NULL, NULL) );
+         &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, ALLOWEDRULES"*", NULL, NULL) );
 
    return SCIP_OKAY;
 }
