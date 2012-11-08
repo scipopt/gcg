@@ -265,8 +265,29 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
  * Local methods
  */
 
+/** returns whether the scip is the original scip instance */
+static
+SCIP_Bool GCGisOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return SCIPfindRelax(scip, "gcg") != NULL;
+}
+
+/** returns whether the scip is the master problem scip */
+static
+SCIP_Bool GCGisMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return SCIPfindPricer(scip, "gcg") != NULL;
+}
+
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
-static SCIP_Bool isRootNode(
+static
+SCIP_Bool isRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -274,6 +295,31 @@ static SCIP_Bool isRootNode(
    return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
 }
 
+
+/** return TRUE or FALSE whether the master LP is solved to optimality */
+static
+SCIP_Bool isMasterLPOptimal(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   return SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL;
+}
+
+
+/** return TRUE or FALSE whether pricing problem has been solved to optimality */
+static
+SCIP_Bool isPricingOptimal(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip) && !GCGisOriginal(scip));
+
+   return SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL;
+}
 
 /** ensures size of pricedvars array */
 static
@@ -1560,7 +1606,7 @@ SCIP_RETCODE subproblemSetMemorylimit(
    assert(origscip != NULL);
    assert(pricingscip != NULL);
 
-   assert(SCIPfindRelax(origscip, "gcg") != NULL);
+   assert(GCGisOriginal(origscip));
 
    SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", &memlimit) );
 
@@ -1625,6 +1671,18 @@ SCIP_RETCODE freePricingProblems(
    return SCIP_OKAY;
 }
 
+
+/** compute reduced cost of pricing problem */
+static
+SCIP_Real computeRedcost(
+   SCIP_Real             pricinglowerbound,  /**< */
+   SCIP_Real             dualsolconv,        /**< dual value of convex */
+   int                   nidentical          /**< number of identical pricing problems */
+   )
+{
+
+   return nidentical * (pricinglowerbound - dualsolconv);
+}
 
 static
 /** performs optimal pricing */
@@ -1720,41 +1778,26 @@ SCIP_RETCODE performOptimalPricing(
          SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
       }
 
-      if( optimal ) {
-         if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
-         {
-            assert( !SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]) );
-         }
+      if( optimal )
+      {
+         if( !SCIPisInfinity(scip, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal(scip) )
+            assert(!SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
-         #pragma omp critical (collect)
-         {
-            (*bestredcost) += nidentical * (pricinglowerbound - pricerdata->dualsolconv[prob]);
-
-            if( status != SCIP_STATUS_OPTIMAL )
-            {
-               *bestredcostvalid = FALSE;
-            }
-         }
+         #pragma omp atomic
+         *bestredcost += computeRedcost(pricinglowerbound, pricerdata->dualsolconv[prob], nidentical);
       }
 
+      solvedmips++;
    done:
       ;
-
-      solvedmips++;
    }
 
 #ifdef _OPENMP
    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
 #endif
 
-#ifndef _OPENMP
    /** @todo perhaps solve remaining pricing problems, if only few left? */
    /** @todo solve all pricing problems all k iterations? */
-   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
-   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; ++j )
-      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
-         *bestredcostvalid = FALSE;
-#endif
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
@@ -1762,6 +1805,9 @@ SCIP_RETCODE performOptimalPricing(
       prob = pricerdata->permu[i];
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
+
+      if( !isPricingOptimal(pricerdata->pricingprobs[prob]) )
+         *bestredcostvalid = FALSE;
 
       nfoundvarsprob = 0;
 
