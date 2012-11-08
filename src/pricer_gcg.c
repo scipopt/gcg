@@ -723,6 +723,17 @@ SCIP_RETCODE solvePricingProblem(
 
       SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, lowerbound, sols, solisray, maxsols, nsols, status) );
 
+      if(optimal)
+      {
+         #pragma omp atomic
+         pricerdata->solvedsubmipsoptimal++;
+      }
+      else
+      {
+         #pragma omp atomic
+         pricerdata->solvedsubmipsheur++;
+      }
+
       #pragma omp critical (clock)
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
@@ -1634,7 +1645,6 @@ SCIP_RETCODE performOptimalPricing(
    int solvedmips;
    int successfulmips;
    int nfoundvarsprob;
-   SCIP* origprob;
    SCIP_Bool added;
 
    SCIP_Real pricinglowerbound;
@@ -1643,7 +1653,6 @@ SCIP_RETCODE performOptimalPricing(
    int* nsols;
    SCIP_Bool** solisray;
    int maxsols;
-   SCIP_Bool root;
 
    assert(scip != NULL);
    assert(pricerdata != NULL);
@@ -1655,8 +1664,6 @@ SCIP_RETCODE performOptimalPricing(
 
    SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
 
-   origprob = pricerdata->origprob;
-   root = isRootNode(scip);
    solvedmips = 0;
    successfulmips = 0;
 
@@ -1672,7 +1679,8 @@ SCIP_RETCODE performOptimalPricing(
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(solisray[i]), maxsols) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );}
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(sols[i]), maxsols) );
+   }
 
    #pragma omp parallel for private(j)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -1684,7 +1692,7 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
-   #pragma omp parallel for ordered default(none) firstprivate(pricinglowerbound) shared(scip, origprob, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
+   #pragma omp parallel for ordered default(none) firstprivate(pricinglowerbound) shared(scip, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;
@@ -1692,18 +1700,14 @@ SCIP_RETCODE performOptimalPricing(
       int nidentical;
       status = SCIP_STATUS_UNKNOWN;
       prob = pricerdata->permu[i];
-      nidentical =  GCGrelaxGetNIdenticalBlocks(origprob, prob);
+      nidentical =  GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob);
 
       if( pricerdata->pricingprobs[prob] == NULL )
          goto done;
 
-
 #ifndef _OPENMP
-         if( pricerdata->pricingprobs[prob] == NULL )
-            continue;
-
-         if( abortPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
-            break;
+      if( abortPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
+         break;
 #endif
 
       #pragma omp critical (limits)
@@ -1715,19 +1719,6 @@ SCIP_RETCODE performOptimalPricing(
       {
          SCIP_CALL_ABORT( solvePricingProblem(scip, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status) );
       }
-
-      if( optimal )
-      {
-         #pragma omp atomic
-         pricerdata->solvedsubmipsoptimal++;
-      }
-      else
-      {
-         #pragma omp atomic
-         pricerdata->solvedsubmipsheur++;
-      }
-
-      solvedmips++;
 
       if( optimal ) {
          if( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && !SCIPisInfinity(scip, pricinglowerbound) && SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_OPTIMAL )
@@ -1745,12 +1736,12 @@ SCIP_RETCODE performOptimalPricing(
             }
          }
       }
+
    done:
       ;
-   }
 
-   if( result != NULL && *bestredcostvalid == FALSE )
-      *result = SCIP_DIDNOTRUN;
+      solvedmips++;
+   }
 
 #ifdef _OPENMP
    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
@@ -1776,7 +1767,7 @@ SCIP_RETCODE performOptimalPricing(
 
       for( j = 0; j < nsols[prob] && nfoundvarsprob <= pricerdata->maxsolsprob &&
               (pricetype == GCG_PRICETYPE_REDCOST || *nfoundvars < pricerdata->maxvarsroundfarkas)
-              && (pricetype == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricerdata->maxvarsroundredcost || root ) && (*nfoundvars < pricerdata->maxvarsroundredcostroot || !root))); ++j )
+              && (pricetype == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricerdata->maxvarsroundredcost || isRootNode(scip) ) && (*nfoundvars < pricerdata->maxvarsroundredcostroot || !isRootNode(scip)))); ++j )
       {
          SCIP_VAR** solvars;
          SCIP_Real* solvals;
@@ -1821,6 +1812,9 @@ SCIP_RETCODE performOptimalPricing(
 
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems(scip, pricerdata) );
+
+   if( result != NULL && *bestredcostvalid == FALSE )
+      *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
 }
