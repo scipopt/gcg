@@ -316,7 +316,7 @@ SCIP_Bool isPricingOptimal(
    )
 {
    assert(scip != NULL);
-   assert(GCGisMaster(scip) && !GCGisOriginal(scip));
+   assert(!GCGisMaster(scip) && !GCGisOriginal(scip));
 
    return SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL;
 }
@@ -1807,8 +1807,11 @@ SCIP_RETCODE performOptimalPricing(
          continue;
 
       if( !isPricingOptimal(pricerdata->pricingprobs[prob]) )
+      {
+         SCIPdebugMessage("Pricing prob %d was not solved to optimality, reduced cost invalid\n", prob);
          *bestredcostvalid = FALSE;
 
+      }
       nfoundvarsprob = 0;
 
       for( j = 0; j < nsols[prob] && nfoundvarsprob <= pricerdata->maxsolsprob &&
@@ -1926,7 +1929,7 @@ SCIP_RETCODE performPricing(
    sortPricingProblemsByScore(pricerdata);
 
    bestredcost = 0.0;
-   bestredcostvalid = FALSE;
+   bestredcostvalid = TRUE;
 
    if( pricerdata->useheurpricing )
    {
