@@ -1259,13 +1259,8 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_Real objcoeff;
    SCIP_VAR* newvar;
 
-   SCIP_VARDATA* vardata;
-   long long int nodenumber;
-
    SCIP_Real objvalue;
    SCIP_Real redcost;
-   SCIP_Real gap;
-   SCIP_Real origgap;
    int i;
 
    assert(scip != NULL);
@@ -1390,21 +1385,11 @@ SCIP_RETCODE createNewMasterVar(
    }
 
    /** @todo: REFAC this should be moved to a method */
-   nodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origprob));
-   vardata = SCIPvarGetData(newvar);
-   GCGsetCreationNode(origprob, vardata, nodenumber);
-   GCGsetCreationTime(origprob, vardata, SCIPgetSolvingTime(scip));
-   GCGsetIteration(origprob, vardata, SCIPgetNLPIterations(scip));
-
-   origgap = SCIPgetGap(origprob);
-   gap = SCIPgetGap(scip);
-   GCGsetGap(origprob, vardata, MIN(origgap, gap));
-   GCGsetRedcost(origprob, vardata, redcost);
+   GCGupdateVarStatistics(scip, origprob, newvar, redcost);
 
 
    return SCIP_OKAY;
 }
-
 
 /**
  * check whether pricing can be aborted:
