@@ -1671,7 +1671,7 @@ SCIP_Real computeRedcost(
 
 static
 /** performs optimal pricing */
-SCIP_RETCODE performOptimalPricing(
+SCIP_RETCODE performPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
    GCG_PRICETYPE         pricetype,          /**< type of pricing */
@@ -1855,7 +1855,7 @@ SCIP_RETCODE performOptimalPricing(
 
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
 static
-SCIP_RETCODE performPricing(
+SCIP_RETCODE priceNewVariables(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PRICER*          pricer,             /**< the pricer */
    GCG_PRICETYPE         pricetype,          /**< type of the pricing */
@@ -1918,7 +1918,7 @@ SCIP_RETCODE performPricing(
 
    if( pricerdata->useheurpricing )
    {
-      SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricerdata, pricetype, FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    /* if no variables were found so far, solve the pricing MIPs to optimality and check whether
@@ -1926,7 +1926,7 @@ SCIP_RETCODE performPricing(
     */
    if( nfoundvars == 0 )
    {
-      SCIP_CALL( performOptimalPricing(scip, pricerdata, pricetype, TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricerdata, pricetype, TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    if( nfoundvars == 0 && isRootNode(scip) )
@@ -2267,7 +2267,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    /* perform pricing */
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
-   retcode = performPricing(scip, pricer, GCG_PRICETYPE_REDCOST, result, lowerbound);
+   retcode = priceNewVariables(scip, pricer, GCG_PRICETYPE_REDCOST, result, lowerbound);
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
 
    return retcode;
@@ -2313,7 +2313,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    }
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
-   retcode = performPricing(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
+   retcode = priceNewVariables(scip, pricer, GCG_PRICETYPE_FARKAS, NULL, NULL);
    SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
 
    return retcode;
