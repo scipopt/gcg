@@ -1553,7 +1553,7 @@ SCIP_Bool abortPricing(
 
 /** set subproblem timelimit */
 static
-SCIP_RETCODE subproblemSetTimelimit(
+SCIP_RETCODE setPricingProblemTimelimit(
    SCIP*                 scip,               /**< SCIP data structure*/
    SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    )
@@ -1582,7 +1582,7 @@ SCIP_RETCODE subproblemSetTimelimit(
 
 /** set subproblem memory limit */
 static
-SCIP_RETCODE subproblemSetMemorylimit(
+SCIP_RETCODE setPricingProblemMemorylimit(
    SCIP*                 origscip,           /**< SCIP data structure of original problem*/
    SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    )
@@ -1626,8 +1626,8 @@ SCIP_RETCODE setPricingProblemLimits(
       SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
    }
 
-   SCIP_CALL( subproblemSetTimelimit(scip, pricerdata->pricingprobs[prob]) );
-   SCIP_CALL( subproblemSetMemorylimit(pricerdata->origprob, pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemTimelimit(scip, pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->origprob, pricerdata->pricingprobs[prob]) );
 
    return SCIP_OKAY;
 }
