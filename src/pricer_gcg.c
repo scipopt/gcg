@@ -1657,18 +1657,6 @@ SCIP_RETCODE freePricingProblems(
 }
 
 
-/** compute reduced cost of pricing problem */
-static
-SCIP_Real computeRedcost(
-   SCIP_Real             pricinglowerbound,  /**< */
-   SCIP_Real             dualsolconv,        /**< dual value of convex */
-   int                   nidentical          /**< number of identical pricing problems */
-   )
-{
-
-   return nidentical * (pricinglowerbound - dualsolconv);
-}
-
 static
 /** performs optimal pricing */
 SCIP_RETCODE performPricing(
@@ -1769,7 +1757,7 @@ SCIP_RETCODE performPricing(
             assert(!SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
-         *bestredcost += computeRedcost(pricinglowerbound, pricerdata->dualsolconv[prob], nidentical);
+         *bestredcost += nidentical * (pricinglowerbound - dualsolconv);
       }
 
       solvedmips++;
@@ -2237,6 +2225,7 @@ SCIP_DECL_PRICERREDCOST(pricerRedcostGcg)
 
    if( pricerdata->redcostcalls == 0 )
    {
+      /** @todo This is just a workaround around SCIP stages! */
       if( pricerdata->farkascalls == 0 )
       {
          SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
@@ -2290,6 +2279,7 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
 
    assert(pricerdata != NULL);
 
+   /** @todo This is just a workaround around SCIP stages! */
    if( pricerdata->redcostcalls == 0 && pricerdata->farkascalls == 0 )
    {
       SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
@@ -2300,9 +2290,8 @@ SCIP_DECL_PRICERFARKAS(pricerFarkasGcg)
    norigsols = SCIPgetNSols(pricerdata->origprob);
    assert(norigsols >= 0);
 
-   /* Add already known solutions for the original problem to the master variable space
-    * @todo This is just a workaround!
-    */
+   /* Add already known solutions for the original problem to the master variable space */
+   /** @todo This is just a workaround around SCIP stages! */
    if( pricerdata->farkascalls == 0 )
    {
       for( i = 0; i < norigsols; ++i )
