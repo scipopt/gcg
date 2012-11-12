@@ -40,6 +40,9 @@
 
 #include "scip/scip.h"
 #include "type_solver.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum GCG_Pricetype
 {
@@ -159,5 +162,20 @@ SCIP_RETCODE GCGpricerPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
+
+/** returns whether the scip is the original problem scip */
+extern
+SCIP_Bool GCGisOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns whether the scip is the master problem scip */
+SCIP_Bool GCGisMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -265,26 +265,6 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
  * Local methods
  */
 
-/** returns whether the scip is the original scip instance */
-static
-SCIP_Bool GCGisOriginal(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   assert(scip != NULL);
-   return SCIPfindRelax(scip, "gcg") != NULL;
-}
-
-/** returns whether the scip is the master problem scip */
-static
-SCIP_Bool GCGisMaster(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   assert(scip != NULL);
-   return SCIPfindPricer(scip, "gcg") != NULL;
-}
-
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 static
 SCIP_Bool isRootNode(
@@ -1757,7 +1737,7 @@ SCIP_RETCODE performPricing(
             assert(!SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
-         *bestredcost += nidentical * (pricinglowerbound - dualsolconv);
+         *bestredcost += nidentical * (pricinglowerbound - pricerdata->dualsolconv[prob]);
       }
 
       solvedmips++;

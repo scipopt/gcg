@@ -38,11 +38,18 @@
 
 #include "scip/scip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** includes default SCIP plugins into SCIP */
 extern
 SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
