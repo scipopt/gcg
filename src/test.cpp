@@ -26,7 +26,7 @@ class GcgTest : public ::testing::Test {
    }
 
    virtual void TearDown() {
-      SCIPfreeSolve(scip, FALSE);
+      SCIPfreeTransform(scip);
    }
 
 

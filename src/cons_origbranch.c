@@ -159,7 +159,6 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
-   assert(conshdlrData->nstack == 1);
    SCIPdebugMessage("exiting branch orig constraint handler\n");
 
    /* free stack */
