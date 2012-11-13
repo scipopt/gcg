@@ -1703,7 +1703,7 @@ SCIP_RETCODE performPricing(
       }
    }
 
-   #pragma omp parallel for ordered default(none) firstprivate(pricinglowerbound) shared(scip, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
+   #pragma omp parallel for ordered  firstprivate(pricinglowerbound) shared(scip, optimal, pricerdata, solisray,sols,nsols,maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;

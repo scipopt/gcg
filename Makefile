@@ -110,7 +110,7 @@ MAINOBJ		=	${LIBOBJ} \
 
 TESTOBJ		=	test.o
 
-MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
+MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
 
 MAIN		=	$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
@@ -142,7 +142,7 @@ GCGLIBOBJ	=	${LIBOBJ}
 GCGLIB		=	$(GCGLIBNAME).$(BASE)
 GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
-GCGLIBSRC	=	$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))
+GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
 GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
 GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)

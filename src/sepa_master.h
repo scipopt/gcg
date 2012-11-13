@@ -38,6 +38,9 @@
 
 
 #include "scip/scip.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 /** creates the master separator and includes it in SCIP */
@@ -69,5 +72,8 @@ extern
 int GCGsepaGetNMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
+#ifdef __cplusplus
+}
+#endif
 
 #endif

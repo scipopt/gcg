@@ -36,6 +36,9 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** returns the masterbranch constraint of the current node */
 extern
@@ -133,5 +136,8 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
