@@ -126,7 +126,6 @@ TESTFILE	=	$(BINDIR)/$(TEST)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
 
-
 SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
@@ -164,8 +163,6 @@ LDFLAGS+="-fopenmp"
 CXXFLAGS+="-fopenmp"
 endif
 
-CXXFLAGS+=-I$(LIBDIR)/gtest/include
-LDFLAGS+=-L$(LIBDIR)/gtest/lib/ -L$(LIBDIR) -lgtest
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
@@ -243,7 +240,7 @@ $(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(GCGLIBFILE) $(LPILIBFILE) $(NL
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX)  \
 		$(OFLAGS) $(LPSLDFLAGS) \
-		$(LDFLAGS) $(LINKCXX_o)$@
+		$(LDFLAGS)  -L$(LIBDIR)/gtest/lib/ -L$(LIBDIR) -lgtest $(LINKCXX_o)$@
 
 
 .PHONY: eval
