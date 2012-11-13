@@ -1231,7 +1231,6 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_VAR**            addedvar            /**< pointer to store the created variable */
    )
 {
-   SCIP* origprob;
    SCIP_PRICER* pricer;
    SCIP_PRICERDATA* pricerdata;
    char varname[SCIP_MAXSTRLEN];
@@ -1253,9 +1252,6 @@ SCIP_RETCODE createNewMasterVar(
 
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
-
-   origprob = pricerdata->origprob;
-   assert(origprob != NULL);
 
    if( addedvar != NULL )
       *addedvar = NULL;
@@ -1310,8 +1306,6 @@ SCIP_RETCODE createNewMasterVar(
 
    }
 
-
-
    if( SCIPisInfinity(scip, objcoeff) )
    {
       SCIPwarningMessage(scip, "variable with infinite objective value found in pricing, change objective to SCIPinfinity()/2\n");
@@ -1355,7 +1349,7 @@ SCIP_RETCODE createNewMasterVar(
    /* add variable to convexity constraint */
    if( !solisray )
    {
-      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, prob), newvar, 1.0) );
    }
 
    if( addedvar != NULL )
@@ -1365,7 +1359,7 @@ SCIP_RETCODE createNewMasterVar(
    }
 
    /** @todo: REFAC this should be moved to a method */
-   GCGupdateVarStatistics(scip, origprob, newvar, redcost);
+   GCGupdateVarStatistics(scip, pricerdata->origprob, newvar, redcost);
 
 
    return SCIP_OKAY;
@@ -1638,7 +1632,7 @@ SCIP_RETCODE freePricingProblems(
 
 
 static
-/** performs optimal pricing */
+/** performs optimal or farkas pricing */
 SCIP_RETCODE performPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
@@ -1680,6 +1674,7 @@ SCIP_RETCODE performPricing(
 
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
+   pricinglowerbound = SCIPinfinity(scip);
 
    maxsols = MAX(MAX(pricerdata->maxvarsroundfarkas, pricerdata->maxvarsroundredcost), pricerdata->maxvarsroundredcostroot);
 
@@ -1708,10 +1703,8 @@ SCIP_RETCODE performPricing(
    {
       int prob;
       SCIP_STATUS status;
-      int nidentical;
       status = SCIP_STATUS_UNKNOWN;
       prob = pricerdata->permu[i];
-      nidentical =  GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob);
 
       if( pricerdata->pricingprobs[prob] == NULL )
          goto done;
@@ -1737,7 +1730,7 @@ SCIP_RETCODE performPricing(
             assert(!SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
-         *bestredcost += nidentical * (pricinglowerbound - pricerdata->dualsolconv[prob]);
+         *bestredcost += GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
       }
 
       solvedmips++;
