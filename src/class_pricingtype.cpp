@@ -213,6 +213,17 @@ SCIP_Bool FarkasPricing::canOptimalPricingBeAborted(
    return !(nfoundvars < maxvarsround && (nfoundvars == 0 || solvedmips < mipsrel * npricingprobsnotnull));
 }
 
+SCIP_Bool FarkasPricing::canHeuristicPricingBeAborted(
+      int                  nfoundvars,         /**< number of variables found so far */
+      int                  solvedmips,         /**< number of MIPS solved so far */
+      int                  successfulmips,     /**< number of sucessful mips solved so far */
+      SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+      int                  npricingprobsnotnull
+      )
+{
+   return canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, successfulmipsrel, npricingprobsnotnull);
+}
+
 SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
       int                  nfoundvars,         /**< number of variables found so far */
       int                  solvedmips,         /**< number of MIPS solved so far */
@@ -241,15 +252,4 @@ SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(
             && successfulmips < successfulmipsrel * npricingprobsnotnull
             && (nfoundvars == 0 ||
                solvedmips < mipsrel * npricingprobsnotnull ));
-}
-
-SCIP_Bool FarkasPricing::canHeuristicPricingBeAborted(
-      int                  nfoundvars,         /**< number of variables found so far */
-      int                  solvedmips,         /**< number of MIPS solved so far */
-      int                  successfulmips,     /**< number of sucessful mips solved so far */
-      SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
-      int                  npricingprobsnotnull
-      )
-{
-   return !(nfoundvars < maxvarsround && (nfoundvars == 0 || solvedmips < mipsrel * npricingprobsnotnull));
 }
