@@ -51,6 +51,8 @@
 #include "pub_gcgvar.h"
 #include "cons_masterbranch.h"
 #include "objscip/objscip.h"
+#include "objpricer_gcg.h"
+#include "class_pricingtype.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -218,7 +220,7 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_VARDELETED);
@@ -803,7 +805,7 @@ SCIP_RETCODE solvePricingProblem(
  */
 SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    SCIP*                 scip,               /**< SCIP data structure            */
-   GCG_PRICETYPE         pricetype           /**< Farkas or Reduced cost pricing */
+   PricingType*          pricetype           /**< Farkas or Reduced cost pricing */
    )
 {
    SCIP* origprob;
@@ -848,27 +850,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
       for( j = 0; j < nprobvars; j++ )
       {
-         if( pricetype == GCG_PRICETYPE_FARKAS )
-         {
-            SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0.0) );
-         }
-         else
-         {
-            SCIP_VAR* origvar;
-            origvar = GCGpricingVarGetOrigvars(probvars[j])[0];
-
-            assert(GCGvarGetBlock(probvars[j]) == i);
-
-            if( GCGvarIsLinking(origvar) )
-            {
-               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], 0.0) );
-            }
-            else
-            {
-               assert( GCGvarGetBlock(origvar) == i);
-               SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], SCIPvarGetObj(origvar)) );
-            }
-         }
+         assert(GCGvarGetBlock(probvars[j]) == i);
+         assert( GCGvarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
+         SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
       }
    }
 
@@ -901,15 +885,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          assert(pricingvars[i] == probvars[j]);
          assert(linkconss[i] != NULL);
 
-         /* redcost pricing */
-         if( pricetype == GCG_PRICETYPE_REDCOST )
-            dualsol = SCIPgetDualsolLinear(scip, linkconss[i]);
-         /* farkas pricing */
-         else
-         {
-            assert(pricetype == GCG_PRICETYPE_FARKAS);
-            dualsol = SCIPgetDualfarkasLinear(scip, linkconss[i]);
-         }
+         dualsol = pricetype->consGetDual(scip, linkconss[i]);
 
          /* add dual solution value to the pricing variable:
           * lambda variables get coef -1 in linking constraints --> add dualsol
@@ -921,15 +897,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmasterconss; i++ )
    {
-      /* redcost pricing */
-      if( pricetype == GCG_PRICETYPE_REDCOST )
-         dualsol = SCIPgetDualsolLinear(scip, masterconss[i]);
-      /* farkas pricing */
-      else
-      {
-         assert(pricetype == GCG_PRICETYPE_FARKAS);
-         dualsol = SCIPgetDualfarkasLinear(scip, masterconss[i]);
-      }
+
+      dualsol = pricetype->consGetDual(scip, masterconss[i]);
+
       if( !SCIPisZero(scip, dualsol) )
       {
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
@@ -967,15 +937,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )
    {
-      /* farkas pricing */
-      if( pricetype == GCG_PRICETYPE_REDCOST )
-         dualsol = SCIProwGetDualsol(mastercuts[i]);
-      /* redcost pricing */
-      else
-      {
-         assert(pricetype == GCG_PRICETYPE_FARKAS);
-         dualsol = SCIProwGetDualfarkas(mastercuts[i]);
-      }
+      dualsol = pricetype->rowGetDual(mastercuts[i]);
+
       if( !SCIPisZero(scip, dualsol) )
       {
          /* get columns and vals of the cut */
@@ -1019,13 +982,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          pricerdata->dualsolconv[i] = -1.0 * SCIPinfinity(scip);
          continue;
       }
-      if( pricetype == GCG_PRICETYPE_REDCOST )
-         pricerdata->dualsolconv[i] = SCIPgetDualsolLinear(scip, GCGrelaxGetConvCons(origprob, i));
-      else
-      {
-         assert(pricetype == GCG_PRICETYPE_FARKAS);
-         pricerdata->dualsolconv[i] = SCIPgetDualfarkasLinear(scip, GCGrelaxGetConvCons(origprob, i));
-      }
+
+      pricerdata->dualsolconv[i] = pricetype->consGetDual(scip, GCGrelaxGetConvCons(origprob, i));
    }
 
    return SCIP_OKAY;
@@ -1345,9 +1303,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       *addedvar = newvar;
    }
 
-   /** @todo: REFAC this should be moved to a method */
    GCGupdateVarStatistics(scip, pricerdata->origprob, newvar, redcost);
-
 
    return SCIP_OKAY;
 }
@@ -1421,6 +1377,7 @@ void sortPricingProblemsByScore(
          break;
       default:
          pricerdata->score[i] = 0.0;
+         break;
       }
    }
 
@@ -1801,7 +1758,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
 SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of the pricing */
+   PricingType*          pricetype,          /**< type of the pricing */
    SCIP_RESULT*          result,             /**< result pointer */
    SCIP_Real*            lowerbound          /**< lowerbound pointer */
    )
@@ -1814,8 +1771,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    assert(scip != NULL);
 
-   assert(result != NULL || pricetype == GCG_PRICETYPE_FARKAS);
-   assert(lowerbound != NULL || pricetype == GCG_PRICETYPE_FARKAS);
+   assert(result != NULL || pricetype->getType() == GCG_PRICETYPE_FARKAS);
+   assert(lowerbound != NULL || pricetype->getType() == GCG_PRICETYPE_FARKAS);
 
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip);
@@ -1823,7 +1780,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    GCGpricerPrintInfo(scip, pricerdata, "nvars = %d, current LP objval = %g, time = %f, node = %lld\n",
          SCIPgetNVars(scip), SCIPgetLPObjval(scip), SCIPgetSolvingTime(scip), SCIPgetNNodes(scip));
 
-   if( pricetype == GCG_PRICETYPE_REDCOST )
+   if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
       assert(result != NULL);
 
@@ -1834,13 +1791,10 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
          return SCIP_OKAY;
       }
 
-      pricerdata->redcostcalls++;
       *result = SCIP_SUCCESS;
    }
-   else if( pricetype == GCG_PRICETYPE_FARKAS )
-   {
-      pricerdata->farkascalls++;
-   }
+
+   pricetype->incCalls();
 
    pricerdata->calls++;
    nfoundvars = 0;
@@ -1855,7 +1809,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    if( pricerdata->useheurpricing )
    {
-      SCIP_CALL( performPricing(scip, pricetype, FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricetype->getType(), FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    /* if no variables were found so far, solve the pricing MIPs to optimality and check whether
@@ -1863,7 +1817,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     */
    if( nfoundvars == 0 )
    {
-      SCIP_CALL( performPricing(scip, pricetype, TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricetype->getType(), TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    if( nfoundvars == 0 && isRootNode(scip) )
@@ -1871,7 +1825,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
    }
 
-   if( pricetype == GCG_PRICETYPE_REDCOST && bestredcostvalid )
+   if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
       GCGpricerPrintInfo(scip, pricerdata, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip) + bestredcost, bestredcost);
@@ -1879,7 +1833,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       *lowerbound = SCIPgetLPObjval(scip) + bestredcost;
    }
 
-   SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
+   SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
    if( isRootNode(scip) && pricerdata->redcostcalls > 0 )
    {
@@ -2182,7 +2136,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 
    /* perform pricing */
    SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
-   retcode = priceNewVariables(scip, GCG_PRICETYPE_REDCOST, result, lowerbound);
+   retcode = priceNewVariables(scip, reducedcostpricing, result, lowerbound);
    SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
 
    return retcode;
@@ -2223,7 +2177,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    }
 
    SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
-   retcode = priceNewVariables(scip, GCG_PRICETYPE_FARKAS, NULL, NULL);
+   retcode = priceNewVariables(scip, farkaspricing, NULL, NULL);
    SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
 
    return retcode;
@@ -2342,7 +2296,7 @@ SCIP* GCGpricerGetOrigprob(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    return pricerdata->origprob;
@@ -2361,7 +2315,7 @@ SCIP_VAR** GCGpricerGetPricedvars(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    return pricerdata->pricedvars;
@@ -2380,7 +2334,7 @@ int GCGpricerGetNPricedvars(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    return pricerdata->npricedvars;
@@ -2404,7 +2358,7 @@ SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    SCIP_CALL( SCIPhashmapInsert(pricerdata->mapcons2idx, cons, (void*)(size_t)pos) );
@@ -2441,7 +2395,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
 
@@ -2522,7 +2476,7 @@ void GCGpricerPrintListOfSolvers(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
@@ -2556,7 +2510,7 @@ void GCGpricerPrintStatistics(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    /**@todo add constraint statistics: how many constraints (instead of cuts) have been added? */
@@ -2664,7 +2618,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    origprob = GCGpricerGetOrigprob(scip);
@@ -2783,7 +2737,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    origprob = pricerdata->origprob;
@@ -2867,7 +2821,7 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    if(SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
@@ -2891,7 +2845,7 @@ SCIP_Longint GCGpricerGetPricingSimplexIters(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    return pricerdata->pricingiters;
@@ -2912,7 +2866,7 @@ SCIP_RETCODE GCGpricerPrintSimplexIters(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->get_data();
+   pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Simplex iterations :       iter\n");

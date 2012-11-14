@@ -1,4 +1,3 @@
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program                         */
@@ -36,6 +35,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "objscip/objscip.h"
+#include "class_pricingtype.h"
 
 #ifndef __SCIP_OBJPRICER_GCG__
 #define __SCIP_OBJPRICER_GCG__
@@ -55,67 +55,46 @@ public:
       SCIP_Bool          delay,               /**< should the pricer be delayed until no other pricers or already existing*/
       SCIP_PRICERDATA*   pricerdata
       );
+
    /** destructor */
    virtual ~ObjPricerGcg() {};
-   /** destructor of variable pricer to free user data (called when SCIP is exiting)
-    *
-    *  @see SCIP_DECL_PRICERFREE(x) in @ref type_pricer.h
-    */
+
+   /** destructor of variable pricer to free user data (called when SCIP is exiting) */
    virtual SCIP_DECL_PRICERFREE(scip_free);
 
-   /** initialization method of variable pricer (called after problem was transformed)
-    *
-    *  @see SCIP_DECL_PRICERINIT(x) in @ref type_pricer.h
-    */
+   /** initialization method of variable pricer (called after problem was transformed) */
    virtual SCIP_DECL_PRICERINIT(scip_init);
 
-   /** deinitialization method of variable pricer (called before transformed problem is freed)
-    *
-    *  @see SCIP_DECL_PRICEREXIT(x) in @ref type_pricer.h
-    */
+   /** deinitialization method of variable pricer (called before transformed problem is freed) */
    virtual SCIP_DECL_PRICEREXIT(scip_exit);
 
-   /** solving process initialization method of variable pricer (called when branch and bound process is about to begin)
-    *
-    *  @see SCIP_DECL_PRICERINITSOL(x) in @ref type_pricer.h
-    */
+   /** solving process initialization method of variable pricer (called when branch and bound process is about to begin) */
    virtual SCIP_DECL_PRICERINITSOL(scip_initsol);
 
-   /** solving process deinitialization method of variable pricer (called before branch and bound process data is freed)
-    *
-    *  @see SCIP_DECL_PRICEREXITSOL(x) in @ref type_pricer.h
-    */
+   /** solving process deinitialization method of variable pricer (called before branch and bound process data is freed) */
    virtual SCIP_DECL_PRICEREXITSOL(scip_exitsol);
 
-   /** reduced cost pricing method of variable pricer for feasible LPs
-    *
-    *  @see SCIP_DECL_PRICERREDCOST(x) in @ref type_pricer.h
-    */
+   /** reduced cost pricing method of variable pricer for feasible LPs */
    virtual SCIP_DECL_PRICERREDCOST(scip_redcost);
 
-   /** farkas pricing method of variable pricer for infeasible LPs
-    *
-    *  @see SCIP_DECL_PRICERFARKAS(x) in @ref type_pricer.h
-    */
+   /** farkas pricing method of variable pricer for infeasible LPs */
    virtual SCIP_DECL_PRICERFARKAS(scip_farkas);
 
-   inline SCIP_PRICERDATA* get_data()
+   inline SCIP_PRICERDATA* getPricerdata()
    {
       return pricerdata;
    };
 
-/** computes the pricing problem objectives
- *  @todo this method could use more parameters as it is private
- */
+/** computes the pricing problem objectives */
 SCIP_RETCODE setPricingObjs(
    SCIP*                 scip,               /**< SCIP data structure            */
-   GCG_PRICETYPE         pricetype           /**< Farkas or Reduced cost pricing */
+   PricingType*         pricetype           /**< Farkas or Reduced cost pricing */
    );
 
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
 SCIP_RETCODE priceNewVariables(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of the pricing */
+   PricingType*          pricetype,          /**< type of the pricing */
    SCIP_RESULT*          result,             /**< result pointer */
    SCIP_Real*            lowerbound          /**< lowerbound pointer */
    );
@@ -151,6 +130,9 @@ SCIP_RETCODE freePricingProblems(
 
 private:
    SCIP_PRICERDATA *pricerdata;
+   ReducedCostPricing *reducedcostpricing;
+   FarkasPricing *farkaspricing;
+   //PricingMode *pricingmode;
 };
 
 #endif

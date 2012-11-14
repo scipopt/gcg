@@ -103,6 +103,7 @@ LIBOBJ		=	reader_blk.o \
 			scip_misc.o \
 			misc.o \
 			gcgvar.o \
+			class_pricingtype.o \
 			stat.o
 
 MAINOBJ		=	${LIBOBJ} \
