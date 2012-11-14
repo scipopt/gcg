@@ -41,17 +41,67 @@ class PricingType
 {
 protected:
    SCIP_CLOCK* clock;
+
    int calls;
-   int maxvarsround;
+      int maxvarsround;
+      int maxvarsroundroot;
+      int maxsuccessfulmips;
+      int maxrounds;
+    double mipsrel;
+    double mipsrelroot;
     GCG_PRICETYPE type;
+    SCIP *scip_;
 public:
-    PricingType();
-    virtual ~PricingType() {};
-    virtual double consGetDual(SCIP *scip, SCIP_CONS *cons) = 0;
-    virtual double rowGetDual(SCIP_ROW* row) = 0;
-    virtual double varGetObj(SCIP_VAR *var) = 0;
-    virtual SCIP_RETCODE startClock(SCIP *scip);
-    virtual SCIP_RETCODE stopClock(SCIP *scip);
+    PricingType(SCIP *p_scip);
+    virtual ~PricingType();
+    virtual double consGetDual(SCIP *scip, SCIP_CONS *cons) =0;
+    virtual double rowGetDual(SCIP_ROW *row) =0;
+    virtual double varGetObj(SCIP_VAR *var) =0;
+    virtual SCIP_RETCODE addParameters() =0;
+    virtual SCIP_Bool canOptimalPricingBeAborted(
+          int                  nfoundvars,         /**< number of variables found so far */
+          int                  solvedmips,         /**< number of MIPS solved so far */
+          int                  successfulmips,     /**< number of sucessful mips solved so far */
+          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+          int                  npricingprobsnotnull
+      ) = 0;
+
+    virtual SCIP_Bool canHeuristicPricingBeAborted(
+          int                  nfoundvars,         /**< number of variables found so far */
+          int                  solvedmips,         /**< number of MIPS solved so far */
+          int                  successfulmips,     /**< number of sucessful mips solved so far */
+          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+          int                  npricingprobsnotnull
+      ) = 0;
+    virtual SCIP_RETCODE startClock();
+    virtual SCIP_RETCODE stopClock();
+    virtual double getClockTime();
+
+    int getMaxrounds() const
+    {
+        return maxrounds;
+    }
+
+    int getMaxsuccessfulmips() const
+    {
+        return maxsuccessfulmips;
+    }
+
+    int getMaxvarsroundroot() const
+    {
+        return maxvarsroundroot;
+    }
+
+    double getMipsrel() const
+    {
+        return mipsrel;
+    }
+
+    double getMipsrelroot() const
+    {
+        return mipsrelroot;
+    }
+
     GCG_PRICETYPE getType() const
     {
         return type;
@@ -67,11 +117,6 @@ public:
         return maxvarsround;
     }
 
-    void setMaxvarsround(int maxvarsround)
-    {
-        this->maxvarsround = maxvarsround;
-    }
-
     inline virtual void incCalls()
     {
         calls++;
@@ -82,23 +127,57 @@ public:
 class ReducedCostPricing : public PricingType
 {
 public:
-    ReducedCostPricing();
+    ReducedCostPricing(
+          SCIP* p_scip
+          );
     virtual ~ReducedCostPricing() {};
-    virtual double consGetDual(SCIP* scip, SCIP_CONS* cons);
-    virtual double rowGetDual(SCIP_ROW* row);
-    virtual double varGetObj(SCIP_VAR *var);
+    virtual SCIP_RETCODE addParameters();
+    virtual SCIP_Real consGetDual(SCIP* scip, SCIP_CONS* cons);
+    virtual SCIP_Real rowGetDual(SCIP_ROW* row);
+    virtual SCIP_Real varGetObj(SCIP_VAR *var);
+    virtual SCIP_Bool canOptimalPricingBeAborted(
+          int                  nfoundvars,         /**< number of variables found so far */
+          int                  solvedmips,         /**< number of MIPS solved so far */
+          int                  successfulmips,     /**< number of sucessful mips solved so far */
+          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+          int                  npricingprobsnotnull
+      );
+
+    virtual SCIP_Bool canHeuristicPricingBeAborted(
+        int                  nfoundvars,         /**< number of variables found so far */
+        int                  solvedmips,         /**< number of MIPS solved so far */
+        int                  successfulmips,     /**< number of sucessful mips solved so far */
+        SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+        int                  npricingprobsnotnull
+    );
 
 };
 
 class FarkasPricing : public PricingType
 {
 public:
-    FarkasPricing();
+    FarkasPricing(
+          SCIP* p_scip
+          );
     virtual ~FarkasPricing() {};
-    virtual double consGetDual(SCIP *scip, SCIP_CONS *cons);
-    virtual double rowGetDual(SCIP_ROW* row);
-    virtual double varGetObj(SCIP_VAR *var);
-
+    virtual SCIP_RETCODE addParameters();
+    virtual SCIP_Real consGetDual(SCIP *scip, SCIP_CONS *cons);
+    virtual SCIP_Real rowGetDual(SCIP_ROW* row);
+    virtual SCIP_Real varGetObj(SCIP_VAR *var);
+    virtual SCIP_Bool canOptimalPricingBeAborted(
+          int                  nfoundvars,         /**< number of variables found so far */
+          int                  solvedmips,         /**< number of MIPS solved so far */
+          int                  successfulmips,     /**< number of sucessful mips solved so far */
+          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+          int                  npricingprobsnotnull
+      );
+    virtual SCIP_Bool canHeuristicPricingBeAborted(
+        int                  nfoundvars,         /**< number of variables found so far */
+        int                  solvedmips,         /**< number of MIPS solved so far */
+        int                  successfulmips,     /**< number of sucessful mips solved so far */
+        SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
+        int                  npricingprobsnotnull
+    );
 };
 
 #endif /* CLASS_PRICINGTYPE_H_ */

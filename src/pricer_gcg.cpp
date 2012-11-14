@@ -65,19 +65,11 @@ using namespace scip;
 #define PRICER_PRIORITY        5000000
 #define PRICER_DELAY           TRUE     /* only call pricer if all problem variables have non-negative reduced costs */
 
-#define DEFAULT_MAXVARSROUNDFARKAS       10         /**< maximal number of variables per farkas pricing round */
-#define DEFAULT_MAXVARSROUNDREDCOSTROOT  100        /**< maximal number of variables per reduced cost pricing round at root node */
-#define DEFAULT_MAXVARSROUNDREDCOST      100        /**< maximal number of variables per reduced cost pricing round */
-#define DEFAULT_MAXSUCCESSFULMIPSREDCOST INT_MAX    /**< maximal number of successful MIP solves */
-#define DEFAULT_MAXROUNDSREDCOST         INT_MAX    /**< maximal number of reduced cost pricing rounds */
 #define DEFAULT_MAXSOLSPROB              INT_MAX    /**< maximal number of solution per pricing problem*/
 #define DEFAULT_USEHEURPRICING           FALSE      /**< should heuristic pricing be used */
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
 #define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
-#define DEFAULT_MIPSRELREDCOSTROOT       1.0        /**< factor of reduced cost pricing MIPs to be solved at root node */
-#define DEFAULT_MIPSRELREDCOST           1.0        /**< factor of reduced cost pricing MIPs to be solver*/
-#define DEFAULT_MIPSRELFARKAS            1.0        /**< factor of farkas pricing MIPs to be solved */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
 #define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
                                                      *    0 :   order of pricing problems
@@ -128,15 +120,11 @@ struct SCIP_PricerData
    int                   maxpricedvars;      /**< maximal number of priced variables */
 
    /** variables used for statistics */
-   SCIP_CLOCK*           redcostclock;       /**< time for reduced cost pricing */
-   SCIP_CLOCK*           farkasclock;        /**< time for farkas pricing */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
    SCIP_CLOCK*           transformclock;     /**< time for transforming pricing problems */
    int                   solvedsubmipsoptimal; /**< number of optimal pricing runs */
    int                   solvedsubmipsheur;  /**< number of heuristical pricing runs*/
    int                   calls;              /**< number of total pricing calls */
-   int                   farkascalls;        /**< number of farkas pricing calls */
-   int                   redcostcalls;       /**< number of reduced cost pricing calls */
    SCIP_Longint          pricingiters;       /**< sum of all pricing simplex iterations */
 
    /* solver data */
@@ -148,11 +136,6 @@ struct SCIP_PricerData
 
    /** parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
-   int                   maxvarsroundfarkas; /**< maximal number of variables per farkas round */
-   int                   maxvarsroundredcost; /**< maximal number of variables per reduced cost round */
-   int                   maxvarsroundredcostroot;  /**< maximal number of variables per round in the root node */
-   int                   maxsuccessfulmipsredcost; /**< maximal number of sucessful pricing runs for redcost pricing */
-   int                   maxroundsredcost;   /**< maximal number of reduced cost rounds */
    int                   maxsolsprob;        /**< maximal number of solutions per pricing problem */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
    int                   sorting;            /**< how should pricing problems be sorted */
@@ -160,9 +143,6 @@ struct SCIP_PricerData
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions */
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed*/
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
-   SCIP_Real             mipsrelredcost;     /**< Factor of successful reduced cost MIPs solved until pricing aborted */
-   SCIP_Real             mipsrelredcostroot; /**< Factor of successful reduced cost MIPs solved until pricing aborted at root node */
-   SCIP_Real             mipsrelfarkas;      /**< Factor of successful farkas MIPs solved until pricing aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
 
 
@@ -270,16 +250,6 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
 /*
  * Local methods
  */
-
-/** returns TRUE or FALSE, depending whether we are in the root node or not */
-static
-SCIP_Bool isRootNode(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   assert(scip != NULL);
-   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
-}
 
 
 /** return TRUE or FALSE whether the master LP is solved to optimality */
@@ -646,7 +616,7 @@ static
 SCIP_RETCODE getSolverPointers(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_SOLVER*           solver,             /**< pricing solver */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing: optimal or heuristic */
+   PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
    int**                 calls,              /**< calls belonging to this setting */
@@ -660,7 +630,7 @@ SCIP_RETCODE getSolverPointers(
    switch(optimal)
    {
    case TRUE:
-      if( pricetype == GCG_PRICETYPE_FARKAS )
+      if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
       {
          *clock = solver->optfarkasclock;
          *calls = &(solver->optfarkascalls);
@@ -673,7 +643,7 @@ SCIP_RETCODE getSolverPointers(
       *solversolve = solver->solversolve;
       break;
    case FALSE:
-      if( pricetype == GCG_PRICETYPE_FARKAS )
+      if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
       {
          *clock = solver->heurfarkasclock;
          *calls = &(solver->heurfarkascalls);
@@ -700,7 +670,7 @@ SCIP_RETCODE solvePricingProblem(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
    int                   prob,               /**< index of pricing problem */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing: optimal or heuristic */
+   PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
    SCIP_SOL**            sols,               /**< pointer to store solutions */
@@ -1385,87 +1355,20 @@ void sortPricingProblemsByScore(
       SCIPsortDownRealInt(pricerdata->score, pricerdata->permu, pricerdata->npricingprobs);
 }
 
-static
-/** returns TRUE if optimal pricing can be aborted, FALSE otherwise*/
-SCIP_Bool abortOptimalPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing*/
-   int                   nfoundvars,         /**< number of variables found so far */
-   int                   solvedmips,         /**< number of MIPS solved so far */
-   int                   successfulmips      /**< number of sucessful mips solved so far */
-   )
-{
-   SCIP_Bool root;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
-
-   root = isRootNode(scip);
-
-   if( pricetype == GCG_PRICETYPE_FARKAS )
-      return !(nfoundvars < pricerdata->maxvarsroundfarkas
-         && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull));
-   else if( pricetype == GCG_PRICETYPE_REDCOST )
-      return !(((((nfoundvars < pricerdata->maxvarsroundredcostroot) || !root ) && ((nfoundvars < pricerdata->maxvarsroundredcost) || root)))
-            && successfulmips < pricerdata->maxsuccessfulmipsredcost
-            && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
-            && (nfoundvars == 0 || ( (root || solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull)
-                  && (!root || solvedmips < pricerdata->mipsrelredcostroot * pricerdata->npricingprobsnotnull))));
-   return FALSE;
-
-}
-
-/** indicates whether heuristic pricing can be aborted */
-static
-SCIP_Bool abortHeuristicPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing */
-   int                   nfoundvars,         /**< number of found variables */
-   int                   solvedmips,         /**< number of solved mips */
-   int                   successfulmips      /**< number of successfully solved mips so far */
-   )
-{
-
-   assert( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_REDCOST );
-
-   if( pricetype == GCG_PRICETYPE_REDCOST )
-   {
-      return !((nfoundvars < pricerdata->maxvarsroundredcost)
-         && successfulmips < pricerdata->maxsuccessfulmipsredcost
-         && successfulmips < pricerdata->successfulmipsrel * pricerdata->npricingprobsnotnull
-         && (nfoundvars == 0 ||
-            solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull ));
-   }
-   else
-   {
-      assert(pricetype == GCG_PRICETYPE_FARKAS);
-      return !(nfoundvars < pricerdata->maxvarsroundfarkas
-         && (nfoundvars == 0 || solvedmips < pricerdata->mipsrelfarkas * pricerdata->npricingprobsnotnull));
-   }
-}
 
 /** returns whether pricing can be aborted */
-static
-SCIP_Bool abortPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing*/
+SCIP_Bool ObjPricerGcg::abortPricing(
+   PricingType*          pricetype,          /**< type of pricing*/
    int                   nfoundvars,         /**< number of variables found so far */
    int                   solvedmips,         /**< number of MIPS solved so far */
    int                   successfulmips,     /**< number of sucessful mips solved so far */
    SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-
 )
 {
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
-
    if( optimal )
-      return abortOptimalPricing(scip, pricerdata, pricetype, nfoundvars, solvedmips, successfulmips);
+      return pricetype->canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, pricerdata->successfulmipsrel, pricerdata->npricingprobsnotnull);
    else
-      return abortHeuristicPricing(scip, pricerdata, pricetype, nfoundvars, solvedmips, successfulmips);
+      return pricetype->canHeuristicPricingBeAborted(nfoundvars, solvedmips, successfulmips, pricerdata->successfulmipsrel, pricerdata->npricingprobsnotnull);
 }
 
 
@@ -1576,7 +1479,7 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems(
 /** performs optimal or farkas pricing */
 SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_PRICETYPE         pricetype,          /**< type of pricing */
+   PricingType*          pricetype,          /**< type of pricing */
    SCIP_Bool             optimal,            /**< heuristic or optimal pricing */
    SCIP_RESULT*          result,             /**< result pointer */
    int*                  nfoundvars,         /**< pointer to store number of found variables */
@@ -1602,7 +1505,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    assert(scip != NULL);
    pricerdata = this->pricerdata;
    assert(pricerdata != NULL);
-   assert(pricetype == GCG_PRICETYPE_FARKAS || result != NULL);
+   assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
 
    assert(nfoundvars != NULL);
    assert(bestredcost != NULL);
@@ -1617,7 +1520,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    *bestredcostvalid = ( SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = SCIPinfinity(scip);
 
-   maxsols = MAX(MAX(pricerdata->maxvarsroundfarkas, pricerdata->maxvarsroundredcost), pricerdata->maxvarsroundredcostroot);
+   maxsols = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),reducedcostpricing->getMaxvarsroundroot());
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &nsols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &sols, pricerdata->npricingprobs) );
@@ -1651,7 +1554,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          goto done;
 
 #ifndef _OPENMP
-      if( abortPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
+      if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
          break;
 #endif
 
@@ -1702,8 +1605,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       nfoundvarsprob = 0;
 
       for( j = 0; j < nsols[prob] && nfoundvarsprob <= pricerdata->maxsolsprob &&
-              (pricetype == GCG_PRICETYPE_REDCOST || *nfoundvars < pricerdata->maxvarsroundfarkas)
-              && (pricetype == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricerdata->maxvarsroundredcost || isRootNode(scip) ) && (*nfoundvars < pricerdata->maxvarsroundredcostroot || !isRootNode(scip)))); ++j )
+              (pricetype->getType() == GCG_PRICETYPE_REDCOST || *nfoundvars < pricetype->getMaxvarsround()) &&
+              (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip) ) &&
+              (*nfoundvars <reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip)))); ++j )
       {
          SCIP_VAR** solvars;
          SCIP_Real* solvals;
@@ -1809,7 +1713,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    if( pricerdata->useheurpricing )
    {
-      SCIP_CALL( performPricing(scip, pricetype->getType(), FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricetype, FALSE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    /* if no variables were found so far, solve the pricing MIPs to optimality and check whether
@@ -1817,7 +1721,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     */
    if( nfoundvars == 0 )
    {
-      SCIP_CALL( performPricing(scip, pricetype->getType(), TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
+      SCIP_CALL( performPricing(scip, pricetype, TRUE, result, &nfoundvars, &bestredcost, &bestredcostvalid) );
    }
 
    if( nfoundvars == 0 && isRootNode(scip) )
@@ -1835,7 +1739,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
-   if( isRootNode(scip) && pricerdata->redcostcalls > 0 )
+   if( isRootNode(scip) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
    {
       SCIP_CALL( computeCurrentDegeneracy(scip, &degeneracy) );
 
@@ -1886,6 +1790,9 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
       SCIPfreeMemory(scip, &pricerdata);
    }
 
+   delete reducedcostpricing;
+   delete farkaspricing;
+
    SCIPpricerSetData(pricer, NULL);
    return SCIP_OKAY;
 }
@@ -1896,6 +1803,12 @@ SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
 {
    assert(scip != NULL);
    SCIP_CALL( solversInit(scip, pricerdata) );
+
+   reducedcostpricing = new ReducedCostPricing(scip);
+   farkaspricing = new FarkasPricing(scip);
+
+   SCIP_CALL( reducedcostpricing->addParameters() );
+   SCIP_CALL( farkaspricing->addParameters() );
 
    return SCIP_OKAY;
 }
@@ -1995,16 +1908,12 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    norigvars = SCIPgetNOrigVars(origprob);
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvals), norigvars) );
 
-   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->redcostclock)) );
-   SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->farkasclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPcreateCPUClock(scip, &(pricerdata->transformclock)) );
 
    pricerdata->solvedsubmipsoptimal = 0;
    pricerdata->solvedsubmipsheur = 0;
    pricerdata->calls = 0;
-   pricerdata->redcostcalls = 0;
-   pricerdata->farkascalls = 0;
    pricerdata->pricingiters = 0;
 
    /* set variable type for master variables */
@@ -2081,8 +1990,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    }
    SCIPfreeBlockMemoryArray(scip, &pricerdata->pricedvars, pricerdata->maxpricedvars);
 
-   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->redcostclock)) );
-   SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->farkasclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );
 
@@ -2103,10 +2010,10 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 
    *result = SCIP_DIDNOTRUN;
 
-   if( pricerdata->redcostcalls == 0 )
+   if( reducedcostpricing->getCalls() == 0 )
    {
       /** @todo This is just a workaround around SCIP stages! */
-      if( pricerdata->farkascalls == 0 )
+      if( farkaspricing->getCalls() == 0 )
       {
          SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
       }
@@ -2126,7 +2033,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    /* if the number of reduced cost pricing rounds at the current node exceeds the limit (and we are not at the root), stop pricing;
     * we always stop pricing, if the maximum number of reduced cost rounds is set to 0
     */
-   if( pricerdata->maxroundsredcost == 0 || (pricerdata->nroundsredcost >= pricerdata->maxroundsredcost && pricerdata->currnodenr != 1) )
+   if( reducedcostpricing->getMaxrounds() == 0 || (pricerdata->nroundsredcost >= reducedcostpricing->getMaxrounds() && pricerdata->currnodenr != 1) )
    {
       SCIPdebugMessage("pricing aborted at node %lld\n", pricerdata->currnodenr);
       return SCIP_OKAY;
@@ -2135,9 +2042,9 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    *result = SCIP_SUCCESS;
 
    /* perform pricing */
-   SCIP_CALL( SCIPstartClock(scip, pricerdata->redcostclock) );
+   SCIP_CALL( reducedcostpricing->startClock() );
    retcode = priceNewVariables(scip, reducedcostpricing, result, lowerbound);
-   SCIP_CALL( SCIPstopClock(scip, pricerdata->redcostclock) );
+   SCIP_CALL( reducedcostpricing->startClock() );
 
    return retcode;
 }
@@ -2155,7 +2062,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(pricerdata != NULL);
 
    /** @todo This is just a workaround around SCIP stages! */
-   if( pricerdata->redcostcalls == 0 && pricerdata->farkascalls == 0 )
+   if(reducedcostpricing->getCalls() == 0  && farkaspricing->getCalls() == 0 )
    {
       SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
    }
@@ -2167,7 +2074,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
 
    /* Add already known solutions for the original problem to the master variable space */
    /** @todo This is just a workaround around SCIP stages! */
-   if( pricerdata->farkascalls == 0 )
+   if( farkaspricing->getCalls() == 0 )
    {
       for( i = 0; i < norigsols; ++i )
       {
@@ -2176,9 +2083,9 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       }
    }
 
-   SCIP_CALL( SCIPstartClock(scip, pricerdata->farkasclock) );
+   SCIP_CALL( farkaspricing->startClock() );
    retcode = priceNewVariables(scip, farkaspricing, NULL, NULL);
-   SCIP_CALL( SCIPstopClock(scip, pricerdata->farkasclock) );
+   SCIP_CALL( farkaspricing->stopClock() );
 
    return retcode;
 }
@@ -2218,28 +2125,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
 
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsuccessfulmipsredcost",
-         "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
-         &pricerdata->maxsuccessfulmipsredcost, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcost",
-         "maximal number of variables created in one redcost pricing round",
-         &pricerdata->maxvarsroundredcost, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 0, INT_MAX,
-         NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundredcostroot",
-         "maximal number of variables created in one redcost pricing round at the root node",
-         &pricerdata->maxvarsroundredcostroot, FALSE, DEFAULT_MAXVARSROUNDREDCOSTROOT, 0, INT_MAX,
-         NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxvarsroundfarkas",
-         "maximal number of variables created in one farkas pricing round",
-         &pricerdata->maxvarsroundfarkas, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxroundsredcost",
-         "maximal number of pricing rounds per node after the root node",
-         &pricerdata->maxroundsredcost, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, NULL) );
-
    SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsolsprob",
          "maximal number of variables added for each block in a pricinground",
          &pricerdata->maxsolsprob, FALSE, DEFAULT_MAXSOLSPROB, 0, INT_MAX, NULL, NULL) );
@@ -2259,18 +2144,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/successfulsubmipsrel",
          "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
          &pricerdata->successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelredcostroot",
-         "part of the submips that are solved before redcost pricing round is aborted at the root node, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &pricerdata->mipsrelredcostroot, FALSE, DEFAULT_MIPSRELREDCOSTROOT, 0.0, 1.0, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelredcost",
-         "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &pricerdata->mipsrelredcost, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/mipsrelfarkas",
-         "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
-         &pricerdata->mipsrelfarkas, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/dispinfos",
          "should additional informations concerning the pricing process be displayed?",
@@ -2577,10 +2450,10 @@ void GCGpricerPrintStatistics(
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing Summary:\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Calls                            : %d\n", pricerdata->calls);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Calls             : %d\n", pricerdata->farkascalls);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Time              : %f\n", SCIPgetClockTime(scip, pricerdata->farkasclock));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Calls       : %d\n", pricerdata->redcostcalls);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Time        : %f\n", SCIPgetClockTime(scip, pricerdata->redcostclock));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Calls             : %d\n", pricer->getFarkasPricing()->getCalls());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Farkas Pricing Time              : %f\n", pricer->getFarkasPricing()->getClockTime());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Calls       : %d\n", pricer->getReducedCostPricing()->getCalls());
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Reduced Cost Pricing Time        : %f\n", pricer->getReducedCostPricing()->getClockTime());
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Heuristic Pricing : %d\n", pricerdata->solvedsubmipsheur);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Solved subMIPs Optimal Pricing   : %d\n", pricerdata->solvedsubmipsoptimal);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Time for transformation          : %f\n", SCIPgetClockTime(scip, pricerdata->transformclock));

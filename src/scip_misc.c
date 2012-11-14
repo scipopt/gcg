@@ -564,3 +564,13 @@ SCIP_Bool SCIPgetConsIsSetppc(
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
 }
+
+/** returns TRUE or FALSE, depending whether we are in the root node or not */
+extern
+SCIP_Bool isRootNode(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
+}

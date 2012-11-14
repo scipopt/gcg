@@ -115,6 +115,12 @@ SCIP_Bool SCIPgetConsIsSetppc(
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
    );
 
+/** returns TRUE or FALSE, depending whether we are in the root node or not */
+extern
+SCIP_Bool isRootNode(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif
