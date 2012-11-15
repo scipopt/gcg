@@ -109,7 +109,7 @@ LIBOBJ		=	reader_blk.o \
 MAINOBJ		=	${LIBOBJ} \
 			main.o
 
-TESTOBJ		=	test.o
+TESTOBJ		=	tests/test.o
 
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
@@ -126,6 +126,11 @@ TEST		=	$(TESTNAME).$(BASE).$(LPS)$(EXEEXTENSION)
 TESTFILE	=	$(BINDIR)/$(TEST)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
+
+CFLAGS          +=       -Ilib/gtest/
+CXXFLAGS        +=       -Ilib/gtest/
+LDFLAGS         +=       -Llib/ -lgtest
+TESTOBJDIR      =       $(OBJDIR)/test
 
 SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
@@ -283,14 +288,6 @@ $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(M
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
-$(OBJDIR)/%.o:	$(SRCDIR)/%.c
-		@echo "-> compiling $@"
-		$(CC) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CFLAGS) -c $< $(CC_o)$@
-
-$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
-		@echo "-> compiling $@"
-		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
-
 $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
@@ -298,6 +295,15 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
 $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
+
+
+$(OBJDIR)/%.o:	$(SRCDIR)/%.c
+		@echo "-> compiling $@"
+		$(CC) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CFLAGS) -c $< $(CC_o)$@
+
+$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
+		@echo "-> compiling $@"
+		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
 $(GCGLIBFILE):	$(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)  $(GCGLIBOBJFILES)
 		@echo "-> generating library $@"

@@ -1631,12 +1631,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             ++(*nfoundvars);
             nfoundvarsprob++;
-
-            if( nfoundvarsprob == 1 )
-               successfulmips++;
          }
          SCIPfreeMemoryArray(scip, &solvals);
       }
+
+      if( nfoundvarsprob > 0 )
+         successfulmips++;
+
    }
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
