@@ -46,6 +46,10 @@ class ObjPricerGcg : public scip::ObjPricer
 public:
    /*lint --e{1540}*/
 
+   SCIP*                 origprob;           /**< the original program */
+   SCIP_PRICERDATA *pricerdata;
+
+
    /** default constructor */
    ObjPricerGcg(
          SCIP* scip, /**< SCIP data structure */
@@ -132,9 +136,6 @@ public:
    }
 
 private:
-   SCIP*                 origprob;           /**< the original program */
-
-   SCIP_PRICERDATA *pricerdata;
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
    //PricingMode *pricingmode;

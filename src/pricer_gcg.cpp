@@ -1459,6 +1459,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    solvedmips = 0;
    successfulmips = 0;
    retcode = SCIP_OKAY;
+   *nfoundvars = 0;
 
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
@@ -1486,11 +1487,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
    }
 
-   #pragma omp parallel for ordered  firstprivate(pricinglowerbound) shared(optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid) reduction(+:solvedmips)
+   #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;
       SCIP_STATUS status;
+      SCIP_RETCODE private_retcode;
+
+      int nvarsfound = *nfoundvars;
       status = SCIP_STATUS_UNKNOWN;
       prob = pricerdata->permu[i];
 
@@ -1502,15 +1506,25 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       #pragma omp ordered
       {
-         retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status);
+         private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status);
+
+         #pragma omp critical (retcode)
+         retcode = private_retcode;
 
          #pragma omp atomic
          nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+
+         if(nvarsfound < *nfoundvars)
+         {
+            #pragma omp atomic
+            successfulmips += 1;
+         }
+
       }
 
       if( optimal )
       {
-         if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
+        if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
             assert(!SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
