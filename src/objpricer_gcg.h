@@ -137,6 +137,22 @@ private:
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
    //PricingMode *pricingmode;
+
+   SCIP_Real  computeRedCost(
+      SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+      SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+      int                   nsolvars,           /**< number of variables in array solvars */
+      SCIP_Bool             solisray,           /**< is the solution a ray? */
+      int                   prob               /**< number of the pricing problem the solution belongs to */
+      );
+
+   int countPricedVariables(
+      SCIP* scip,
+      int& prob,
+      SCIP_SOL** sols,
+      int nsols,
+      SCIP_Bool* solisray
+      );
 };
 
 #endif
