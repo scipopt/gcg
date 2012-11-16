@@ -47,8 +47,9 @@ extern "C" {
 
 enum GCG_Pricetype
 {
-   GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
-   GCG_PRICETYPE_FARKAS = 1,                /**< farkas pricing */
+   GCG_PRICETYPE_UNKNOWN = -1,               /**< unknown pricing type */
+   GCG_PRICETYPE_INIT = 0,                   /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                 /**< farkas pricing */
    GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
 };
 typedef enum GCG_Pricetype GCG_PRICETYPE;

@@ -55,6 +55,7 @@ PricingType::PricingType(
       SCIP* scip
       )
 {
+   type  = GCG_PRICETYPE_UNKNOWN;
    scip_ = scip;
    calls = INT_MAX;
    maxvarsround = INT_MAX;

@@ -1728,8 +1728,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
 SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 {
-   assert(scip != NULL);
-
+   assert(scip == scip_);
    SCIP_CALL( solversFree() );
 
    SCIPfreeMemoryArray(scip, &pricerdata->solvers);
@@ -1751,7 +1750,7 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 /** initialization method of variable pricer (called after problem was transformed) */
 SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
 {
-   assert(scip != NULL);
+   assert(scip == scip_);
    SCIP_CALL( solversInit() );
 
    reducedcostpricing = new ReducedCostPricing(scip);
@@ -1767,7 +1766,7 @@ SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
 /** deinitialization method of variable pricer (called before transformed problem is freed) */
 SCIP_DECL_PRICEREXIT(ObjPricerGcg::scip_exit)
 {
-   assert(scip != NULL);
+   assert(scip == scip_);
    SCIP_CALL( solversExit() );
 
    return SCIP_OKAY;
@@ -1784,7 +1783,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
 
-   assert(scip != NULL);
+   assert(scip == scip_);
    assert(pricer != NULL);
 
    /* at the beginning, the output of the master problem gets the same verbosity level
@@ -1899,7 +1898,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 {
    int i;
 
-   assert(scip != NULL);
+   assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
 
@@ -2003,7 +2002,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    int norigsols;
    int i;
 
-   assert(scip != NULL);
+   assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
 
