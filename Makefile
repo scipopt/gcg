@@ -126,11 +126,12 @@ TEST		=	$(TESTNAME).$(BASE).$(LPS)$(EXEEXTENSION)
 TESTFILE	=	$(BINDIR)/$(TEST)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
+TESTOBJDIR      =       $(OBJDIR)/tests
 
 CFLAGS          +=       -Ilib/gtest/
 CXXFLAGS        +=       -Ilib/gtest/
 LDFLAGS         +=       -Llib/ -lgtest
-TESTOBJDIR      =       $(OBJDIR)/test
+
 
 SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
@@ -160,7 +161,7 @@ GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 
 ifeq ($(VERBOSE),false)
-.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${LIBOBJFILES}
+.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${LIBOBJFILES} ${TESTFILE} ${TESTMAIN}
 endif
 
 ifeq ($(OPENMP),true)
@@ -257,6 +258,10 @@ eval:
 .PHONY: clean
 clean:
 ifneq ($(OBJDIR),)
+		-(cd ./$(LIBOBJDIR) && rm -f *.o)
+		-rmdir $(LIBOBJDIR)
+		-(cd ./$(TESTOBJDIR) && rm -f *.o)
+		-rmdir $(TESTOBJDIR)
 		-(cd ./$(OBJDIR) && rm -f *.o)
 		-rmdir $(OBJDIR)
 endif
@@ -315,6 +320,9 @@ endif
 
 $(LIBOBJDIR):	$(OBJDIR)
 		@-mkdir -p $(LIBOBJDIR)
+
+$(TESTOBJDIR):	$(OBJDIR)
+		@-mkdir -p $(TESTOBJDIR)
 
 $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		@rm -f $@
