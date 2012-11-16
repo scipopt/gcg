@@ -80,11 +80,11 @@ public:
 
    ;
    /** computes the pricing problem objectives */
-   SCIP_RETCODE setPricingObjs(SCIP *scip, /**< SCIP data structure            */
+   SCIP_RETCODE setPricingObjs(
          PricingType *pricetype);
 
    /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
-   SCIP_RETCODE priceNewVariables(SCIP *scip, /**< SCIP data structure */
+   SCIP_RETCODE priceNewVariables(
          PricingType *pricetype, /**< type of the pricing */
          SCIP_RESULT *result, /**< result pointer */
          double *lowerbound);
@@ -101,26 +101,13 @@ public:
          SCIP_VAR **addedvar);
 
    /** performs optimal or farkas pricing */
-   SCIP_RETCODE performPricing(SCIP *scip, /**< SCIP data structure */
+   SCIP_RETCODE performPricing(
          PricingType *pricetype, /**< type of pricing */
          unsigned int optimal, /**< heuristic or optimal pricing */
          SCIP_RESULT *result, /**< result pointer */
          int * nfoundvars, /**< pointer to store number of found variables */
          double* bestredcost, /**< pointer to store reduced cost */
          unsigned int* bestredcostvalid);
-
-    /** free pricing problems */
-    SCIP_RETCODE freePricingProblems(SCIP *scip);
-
-
-    /** returns whether pricing can be aborted */
-    SCIP_Bool abortPricing(
-       PricingType*          pricetype,          /**< type of pricing*/
-       int                   nfoundvars,         /**< number of variables found so far */
-       int                   solvedmips,         /**< number of MIPS solved so far */
-       int                   successfulmips,     /**< number of sucessful mips solved so far */
-       SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-    );
 
     FarkasPricing *getFarkasPricing() const
     {
@@ -140,6 +127,18 @@ private:
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
    //PricingMode *pricingmode;
+
+   /** free pricing problems */
+   SCIP_RETCODE freePricingProblems();
+
+   /** returns whether pricing can be aborted */
+   SCIP_Bool abortPricing(
+      PricingType*          pricetype,          /**< type of pricing*/
+      int                   nfoundvars,         /**< number of variables found so far */
+      int                   solvedmips,         /**< number of MIPS solved so far */
+      int                   successfulmips,     /**< number of sucessful mips solved so far */
+      SCIP_Bool             optimal             /**< optimal or heuristic pricing */
+   );
 
    SCIP_Real  computeRedCost(
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -196,6 +195,11 @@ private:
 
    /** sorts pricing problems according to their score */
    void sortPricingProblemsByScore();
+
+   /** returns the gegeneracy of the masterproblem */
+   SCIP_RETCODE computeCurrentDegeneracy(
+      double*               degeneracy          /**< pointer to store degeneracy */
+      );
 };
 
 #endif
