@@ -1512,14 +1512,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          retcode = private_retcode;
 
          #pragma omp atomic
-         nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+         *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
 
          if(nvarsfound < *nfoundvars)
          {
             #pragma omp atomic
             successfulmips += 1;
          }
-
       }
 
       if( optimal )
