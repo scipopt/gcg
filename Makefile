@@ -233,7 +233,7 @@ test:
 		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE);
 
 .PHONY: tests
-tests: 		$(TESTFILE) $(TESTSHORTLINK)
+tests: 		libs $(TESTFILE) $(TESTSHORTLINK)
 
 $(TESTSHORTLINK):	$(TESTFILE)
 		@rm -f $@

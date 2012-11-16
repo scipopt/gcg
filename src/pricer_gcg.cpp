@@ -53,6 +53,8 @@
 #include "objscip/objscip.h"
 #include "objpricer_gcg.h"
 #include "class_pricingtype.h"
+#include "scip/scip.h"
+
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -662,6 +664,89 @@ SCIP_RETCODE getSolverPointers(
    return SCIP_OKAY;
 }
 
+
+/** set subproblem timelimit */
+static
+SCIP_RETCODE setPricingProblemTimelimit(
+   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
+   )
+{
+   SCIP_Real timelimit;
+
+   assert(scip != NULL);
+   assert(pricingscip != NULL);
+
+   /* set time limit */
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+   if( !SCIPisInfinity(scip, timelimit) )
+   {
+      if( timelimit - SCIPgetSolvingTime(scip) > 0 )
+      {
+         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit - SCIPgetSolvingTime(scip)) );
+         SCIPdebugMessage("Time limit for prob <%s> is %f\n", SCIPgetProbName(pricingscip), timelimit- SCIPgetSolvingTime(scip));
+      }
+      else
+      {
+         SCIPdebugMessage("Time limit for prob <%s> is < 0\n", SCIPgetProbName(pricingscip));
+      }
+   }
+   return SCIP_OKAY;
+}
+
+/** set subproblem memory limit */
+static
+SCIP_RETCODE setPricingProblemMemorylimit(
+   SCIP*                 origscip,           /**< SCIP data structure of original problem*/
+   SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
+   )
+{
+   SCIP_Real memlimit;
+   assert(origscip != NULL);
+   assert(pricingscip != NULL);
+
+   assert(GCGisOriginal(origscip));
+
+   SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", &memlimit) );
+
+   if( !SCIPisInfinity(origscip, memlimit) )
+   {
+      memlimit -= SCIPgetMemUsed(origscip)/1048576.0 + GCGgetPricingprobsMemUsed(origscip) - SCIPgetMemUsed(pricingscip)/1048576.0;
+      if( memlimit < 0 )
+         memlimit = 0.0;
+      SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
+   }
+
+   return SCIP_OKAY;
+}
+
+
+/** set all pricing problem limits */
+static
+SCIP_RETCODE setPricingProblemLimits(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+   int                   prob,               /**< index of the pricing problem */
+   SCIP_Bool             optimal            /**< heuristic or optimal pricing */
+   )
+{
+
+   assert(scip != NULL);
+   assert(pricerdata != NULL);
+   assert(prob >= 0 && prob < pricerdata->npricingprobs);
+
+   /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
+   if( !optimal )
+   {
+      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+   }
+
+   SCIP_CALL( setPricingProblemTimelimit(scip, pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->origprob, pricerdata->pricingprobs[prob]) );
+
+   return SCIP_OKAY;
+}
+
 /** solves a specific pricing problem
  * @todo simplify
  */
@@ -680,8 +765,8 @@ SCIP_RETCODE solvePricingProblem(
    SCIP_STATUS*          status              /**< solution status of the pricing problem */
    )
 {
+   SCIP_RETCODE retcode;
    int i;
-   SCIP_Real timelimit;
 
    assert(scip != NULL);
    assert(pricerdata != NULL);
@@ -699,13 +784,11 @@ SCIP_RETCODE solvePricingProblem(
       GCG_SOLVER* solver;
       GCG_DECL_SOLVERSOLVE((*solversolve));
 
-      /* get time limit */
-      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) && timelimit - SCIPgetSolvingTime(scip) < 0 )
+      #pragma omp critical (limits)
       {
-         *nsols = 0;
-         *status = SCIP_STATUS_TIMELIMIT;
+         retcode = setPricingProblemLimits(scip, pricerdata, prob, optimal);
       }
+      SCIP_CALL( retcode );
 
       solver = pricerdata->solvers[i];
       assert(solver != NULL);
@@ -1372,88 +1455,6 @@ SCIP_Bool ObjPricerGcg::abortPricing(
 }
 
 
-/** set subproblem timelimit */
-static
-SCIP_RETCODE setPricingProblemTimelimit(
-   SCIP*                 scip,               /**< SCIP data structure*/
-   SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   )
-{
-   SCIP_Real timelimit;
-
-   assert(scip != NULL);
-   assert(pricingscip != NULL);
-
-   /* set time limit */
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip, timelimit) )
-   {
-      if( timelimit - SCIPgetSolvingTime(scip) > 0 )
-      {
-         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit - SCIPgetSolvingTime(scip)) );
-         SCIPdebugMessage("Time limit for prob <%s> is %f\n", SCIPgetProbName(pricingscip), timelimit- SCIPgetSolvingTime(scip));
-      }
-      else
-      {
-         SCIPdebugMessage("Time limit for prob <%s> is < 0\n", SCIPgetProbName(pricingscip));
-      }
-   }
-   return SCIP_OKAY;
-}
-
-/** set subproblem memory limit */
-static
-SCIP_RETCODE setPricingProblemMemorylimit(
-   SCIP*                 origscip,           /**< SCIP data structure of original problem*/
-   SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   )
-{
-   SCIP_Real memlimit;
-   assert(origscip != NULL);
-   assert(pricingscip != NULL);
-
-   assert(GCGisOriginal(origscip));
-
-   SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", &memlimit) );
-
-   if( !SCIPisInfinity(origscip, memlimit) )
-   {
-      memlimit -= SCIPgetMemUsed(origscip)/1048576.0 + GCGgetPricingprobsMemUsed(origscip) - SCIPgetMemUsed(pricingscip)/1048576.0;
-      if( memlimit < 0 )
-         memlimit = 0.0;
-      SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
-   }
-
-   return SCIP_OKAY;
-}
-
-/** set all pricing problem limits */
-static
-SCIP_RETCODE setPricingProblemLimits(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
-   int                   prob,               /**< index of the pricing problem */
-   SCIP_Bool             optimal            /**< heuristic or optimal pricing */
-   )
-{
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
-   assert(prob >= 0 && prob < pricerdata->npricingprobs);
-
-   /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
-   if( !optimal )
-   {
-      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
-   }
-
-   SCIP_CALL( setPricingProblemTimelimit(scip, pricerdata->pricingprobs[prob]) );
-   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->origprob, pricerdata->pricingprobs[prob]) );
-
-   return SCIP_OKAY;
-}
-
-
 /** free pricing problems */
 SCIP_RETCODE ObjPricerGcg::freePricingProblems(
    SCIP*                 scip                /**< SCIP data structure */
@@ -1557,11 +1558,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
          break;
 #endif
-
-      #pragma omp critical (limits)
-      {
-         SCIP_CALL_ABORT( setPricingProblemLimits(scip, pricerdata, prob, optimal) );
-      }
 
       #pragma omp ordered
       {
@@ -1775,6 +1771,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
  {
 
     this->pricerdata = p_pricerdata;
+    farkaspricing = NULL;
+    reducedcostpricing = NULL;
  }
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
 SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
