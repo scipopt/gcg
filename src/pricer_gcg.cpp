@@ -1614,9 +1614,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );
 
-   if( result != NULL && *bestredcostvalid == FALSE )
-      *result = SCIP_DIDNOTRUN;
-
    return SCIP_OKAY;
 }
 
