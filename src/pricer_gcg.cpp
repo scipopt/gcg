@@ -107,7 +107,6 @@ struct SCIP_PricerData
    int                   npricingprobs;      /**< number of pricing problems */
    SCIP**                pricingprobs;       /**< pointers to the pricing problems */
    SCIP_Real*            dualsolconv;        /**< array of dual solutions for the convexity constraints */
-   SCIP*                 origprob;           /**< the original program */
    SCIP_Real*            solvals;            /**< solution values of variables in the pricing problems */
    int*                  npointsprob;        /**< number of variables representing points created by the pricing probs */
    int*                  nraysprob;          /**< number of variables representing rays created by the pricing probs */
@@ -391,16 +390,9 @@ void GCGpricerCollectStatistic(
 #endif
 
 /** frees all solvers */
-static
-SCIP_RETCODE solversFree(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::solversFree()
 {
    int i;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -409,15 +401,15 @@ SCIP_RETCODE solversFree(
    {
       if( pricerdata->solvers[i]->solverfree != NULL )
       {
-         SCIP_CALL( pricerdata->solvers[i]->solverfree(scip, pricerdata->solvers[i]) );
+         SCIP_CALL( pricerdata->solvers[i]->solverfree(scip_, pricerdata->solvers[i]) );
 
          BMSfreeMemoryArray(&pricerdata->solvers[i]->name);
          BMSfreeMemoryArray(&pricerdata->solvers[i]->description);
 
-         SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->solvers[i]->optfarkasclock)) );
-         SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->solvers[i]->optredcostclock)) );
-         SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->solvers[i]->heurfarkasclock)) );
-         SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->solvers[i]->heurredcostclock)) );
+         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optfarkasclock)) );
+         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optredcostclock)) );
+         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurfarkasclock)) );
+         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurredcostclock)) );
 
          SCIPfreeMemory(scip, &(pricerdata->solvers[i]));
       }
@@ -427,16 +419,9 @@ SCIP_RETCODE solversFree(
 }
 
 /** calls the init method on all solvers */
-static
-SCIP_RETCODE solversInit(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::solversInit()
 {
    int i;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -445,7 +430,7 @@ SCIP_RETCODE solversInit(
    {
       if( pricerdata->solvers[i]->solverinit != NULL )
       {
-         SCIP_CALL( pricerdata->solvers[i]->solverinit(scip, pricerdata->solvers[i]) );
+         SCIP_CALL( pricerdata->solvers[i]->solverinit(scip_, pricerdata->solvers[i]) );
       }
    }
 
@@ -453,16 +438,9 @@ SCIP_RETCODE solversInit(
 }
 
 /** calls the exit method on all solvers */
-static
-SCIP_RETCODE solversExit(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::solversExit()
 {
    int i;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -471,7 +449,7 @@ SCIP_RETCODE solversExit(
    {
       if( pricerdata->solvers[i]->solverexit != NULL )
       {
-         SCIP_CALL( pricerdata->solvers[i]->solverexit(scip, pricerdata->solvers[i]) );
+         SCIP_CALL( pricerdata->solvers[i]->solverexit(scip_, pricerdata->solvers[i]) );
       }
    }
 
@@ -479,16 +457,9 @@ SCIP_RETCODE solversExit(
 }
 
 /** calls the initsol method on all solvers */
-static
-SCIP_RETCODE solversInitsol(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::solversInitsol()
 {
    int i;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -497,7 +468,7 @@ SCIP_RETCODE solversInitsol(
    {
       if( pricerdata->solvers[i]->solverinitsol != NULL )
       {
-         SCIP_CALL( pricerdata->solvers[i]->solverinitsol(scip, pricerdata->solvers[i]) );
+         SCIP_CALL( pricerdata->solvers[i]->solverinitsol(scip_, pricerdata->solvers[i]) );
       }
    }
 
@@ -505,16 +476,9 @@ SCIP_RETCODE solversInitsol(
 }
 
 /** calls the exitsol method of all solvers */
-static
-SCIP_RETCODE solversExitsol(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::solversExitsol()
 {
    int i;
-
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -523,7 +487,7 @@ SCIP_RETCODE solversExitsol(
    {
       if( pricerdata->solvers[i]->solverexitsol != NULL )
       {
-         SCIP_CALL( pricerdata->solvers[i]->solverexitsol(scip, pricerdata->solvers[i]) );
+         SCIP_CALL( pricerdata->solvers[i]->solverexitsol(scip_, pricerdata->solvers[i]) );
       }
    }
 
@@ -595,9 +559,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
 }
 
 /** initializes the pointers to the appropriate structures */
-static
-SCIP_RETCODE getSolverPointers(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE ObjPricerGcg::getSolverPointers(
    GCG_SOLVER*           solver,             /**< pricing solver */
    PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
@@ -606,7 +568,6 @@ SCIP_RETCODE getSolverPointers(
    GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
    )
 {
-   assert(scip != NULL);
    assert(solver != NULL);
    assert(clock != NULL);
    assert(calls != NULL);
@@ -647,25 +608,22 @@ SCIP_RETCODE getSolverPointers(
 
 
 /** set subproblem timelimit */
-static
-SCIP_RETCODE setPricingProblemTimelimit(
-   SCIP*                 scip,               /**< SCIP data structure*/
+SCIP_RETCODE ObjPricerGcg::setPricingProblemTimelimit(
    SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    )
 {
    SCIP_Real timelimit;
 
-   assert(scip != NULL);
    assert(pricingscip != NULL);
 
    /* set time limit */
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip, timelimit) )
+   SCIP_CALL( SCIPgetRealParam(scip_, "limits/time", &timelimit) );
+   if( !SCIPisInfinity(scip_, timelimit) )
    {
-      if( timelimit - SCIPgetSolvingTime(scip) > 0 )
+      if( timelimit - SCIPgetSolvingTime(scip_) > 0 )
       {
-         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit - SCIPgetSolvingTime(scip)) );
-         SCIPdebugMessage("Time limit for prob <%s> is %f\n", SCIPgetProbName(pricingscip), timelimit- SCIPgetSolvingTime(scip));
+         SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/time", timelimit - SCIPgetSolvingTime(scip_)) );
+         SCIPdebugMessage("Time limit for prob <%s> is %f\n", SCIPgetProbName(pricingscip), timelimit- SCIPgetSolvingTime(scip_));
       }
       else
       {
@@ -676,23 +634,21 @@ SCIP_RETCODE setPricingProblemTimelimit(
 }
 
 /** set subproblem memory limit */
-static
-SCIP_RETCODE setPricingProblemMemorylimit(
-   SCIP*                 origscip,           /**< SCIP data structure of original problem*/
+SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
    SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
    )
 {
    SCIP_Real memlimit;
-   assert(origscip != NULL);
+
    assert(pricingscip != NULL);
 
-   assert(GCGisOriginal(origscip));
+   assert(GCGisOriginal(origprob));
 
-   SCIP_CALL( SCIPgetRealParam(origscip, "limits/memory", &memlimit) );
+   SCIP_CALL( SCIPgetRealParam(origprob, "limits/memory", &memlimit) );
 
-   if( !SCIPisInfinity(origscip, memlimit) )
+   if( !SCIPisInfinity(origprob, memlimit) )
    {
-      memlimit -= SCIPgetMemUsed(origscip)/1048576.0 + GCGgetPricingprobsMemUsed(origscip) - SCIPgetMemUsed(pricingscip)/1048576.0;
+      memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(origprob) - SCIPgetMemUsed(pricingscip)/1048576.0;
       if( memlimit < 0 )
          memlimit = 0.0;
       SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
@@ -703,16 +659,11 @@ SCIP_RETCODE setPricingProblemMemorylimit(
 
 
 /** set all pricing problem limits */
-static
-SCIP_RETCODE setPricingProblemLimits(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    int                   prob,               /**< index of the pricing problem */
    SCIP_Bool             optimal            /**< heuristic or optimal pricing */
    )
 {
-
-   assert(scip != NULL);
    assert(pricerdata != NULL);
    assert(prob >= 0 && prob < pricerdata->npricingprobs);
 
@@ -722,8 +673,8 @@ SCIP_RETCODE setPricingProblemLimits(
       SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
    }
 
-   SCIP_CALL( setPricingProblemTimelimit(scip, pricerdata->pricingprobs[prob]) );
-   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->origprob, pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemTimelimit(pricerdata->pricingprobs[prob]) );
+   SCIP_CALL( setPricingProblemMemorylimit(pricerdata->pricingprobs[prob]) );
 
    return SCIP_OKAY;
 }
@@ -731,10 +682,7 @@ SCIP_RETCODE setPricingProblemLimits(
 /** solves a specific pricing problem
  * @todo simplify
  */
-static
-SCIP_RETCODE solvePricingProblem(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricerdata data structure */
+SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
    int                   prob,               /**< index of pricing problem */
    PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
@@ -749,8 +697,6 @@ SCIP_RETCODE solvePricingProblem(
    SCIP_RETCODE retcode;
    int i;
 
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
    assert(pricerdata->pricingprobs[prob] != NULL);
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
@@ -767,14 +713,14 @@ SCIP_RETCODE solvePricingProblem(
 
       #pragma omp critical (limits)
       {
-         retcode = setPricingProblemLimits(scip, pricerdata, prob, optimal);
+         retcode = setPricingProblemLimits(prob, optimal);
       }
       SCIP_CALL( retcode );
 
       solver = pricerdata->solvers[i];
       assert(solver != NULL);
 
-      SCIP_CALL( getSolverPointers(scip, solver, pricetype, optimal, &clock, &calls, &solversolve) );
+      SCIP_CALL( getSolverPointers(solver, pricetype, optimal, &clock, &calls, &solversolve) );
       assert(solversolve == solver->solversolve || solversolve == solver->solversolveheur);
 
       /* continue if the appropriate solver is not available */
@@ -784,7 +730,7 @@ SCIP_RETCODE solvePricingProblem(
       }
       #pragma omp critical (clock)
       {
-         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+         SCIP_CALL_ABORT( SCIPstartClock(scip_, clock) );
       }
 
       SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, lowerbound, sols, solisray, maxsols, nsols, status) );
@@ -802,7 +748,7 @@ SCIP_RETCODE solvePricingProblem(
 
       #pragma omp critical (clock)
       {
-         SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+         SCIP_CALL_ABORT( SCIPstopClock(scip_, clock) );
       }
 
       if( *status != SCIP_STATUS_UNKNOWN )
@@ -818,7 +764,7 @@ SCIP_RETCODE solvePricingProblem(
 
 #ifdef ENABLESTATISTICS
             #pragma omp critical (collectstats)
-            GCGpricerCollectStatistic(pricerdata, pricetype, prob,
+            GCGpricerCollectStatistic(pricerdata, pricetype->getType(), prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
             if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING)
@@ -841,7 +787,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    PricingType*          pricetype           /**< Farkas or Reduced cost pricing */
    )
 {
-   SCIP* origprob;
    SCIP_CONS** origconss;
    SCIP_CONS** masterconss;
    int nmasterconss;
@@ -860,9 +805,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    int i;
    int j;
-
-   origprob = pricerdata->origprob;
-   assert(origprob != NULL);
 
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
@@ -1038,8 +980,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
    SCIP_Real* mastercoefs;
    SCIP_CONS* linkcons;
 
-   nmasterconss = GCGrelaxGetNMasterConss(pricerdata->origprob);
-   masterconss = GCGrelaxGetMasterConss(pricerdata->origprob);
+   nmasterconss = GCGrelaxGetNMasterConss(origprob);
+   masterconss = GCGrelaxGetMasterConss(origprob);
 
    SCIP_CALL( SCIPallocBufferArray(scip_, &mastercoefs, nmasterconss) );
    BMSclearMemoryArray(mastercoefs, nmasterconss);
@@ -1334,7 +1276,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    /* add variable to convexity constraint */
    if( !solisray )
    {
-      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(pricerdata->origprob, prob), newvar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
    }
 
    if( addedvar != NULL )
@@ -1343,7 +1285,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       *addedvar = newvar;
    }
 
-   GCGupdateVarStatistics(scip, pricerdata->origprob, newvar, redcost);
+   GCGupdateVarStatistics(scip, origprob, newvar, redcost);
 
    return SCIP_OKAY;
 }
@@ -1452,7 +1394,6 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
 }
 
 int ObjPricerGcg::countPricedVariables(
-   SCIP* scip,
    int& prob,
    SCIP_SOL** sols,
    int nsols,
@@ -1467,17 +1408,17 @@ int ObjPricerGcg::countPricedVariables(
    nfoundvars = 0;
    solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
    nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &solvals, nsolvars));
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip_, &solvals, nsolvars));
    for( int j = 0; j < nsols; ++j )
    {
       SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, sols[j]);
       SCIP_CALL_ABORT( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[j], nsolvars, solvars, solvals) );
-      if ( SCIPisNegative(scip, computeRedCost(solvars, solvals, nsolvars, solisray[j], prob)) )
+      if ( SCIPisNegative(scip_, computeRedCost(solvars, solvals, nsolvars, solisray[j], prob)) )
       {
          nfoundvars += 1;
       }
    }
-   SCIPfreeMemoryArray(scip, &solvals);
+   SCIPfreeMemoryArray(scip_, &solvals);
    return nfoundvars;
 }
 
@@ -1561,10 +1502,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       #pragma omp ordered
       {
-         retcode = solvePricingProblem(scip_, pricerdata, prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status);
+         retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status);
 
          #pragma omp atomic
-         nfoundvars += countPricedVariables(scip_, prob, sols[prob], nsols[prob], solisray[prob] );
+         nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
       }
 
       if( optimal )
@@ -1573,7 +1514,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             assert(!SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
-         *bestredcost += GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
+         *bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
       }
 
       #pragma omp atomic
@@ -1769,6 +1710,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
  ObjPricerGcg::ObjPricerGcg(
     SCIP*              scip,               /**< SCIP data structure */
+    SCIP*              origscip,           /**< SCIP data structure of original problem */
     const char*        name,               /**< name of variable pricer */
     const char*        desc,               /**< description of variable pricer */
     int                priority,           /**< priority of the variable pricer */
@@ -1777,7 +1719,9 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     ) : ObjPricer(scip, name, desc, priority, delay)
  {
 
-    this->pricerdata = p_pricerdata;
+    assert(origscip!= NULL);
+    pricerdata = p_pricerdata;
+    origprob = origscip;
     farkaspricing = NULL;
     reducedcostpricing = NULL;
  }
@@ -1786,7 +1730,7 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 {
    assert(scip != NULL);
 
-   SCIP_CALL( solversFree(scip, pricerdata) );
+   SCIP_CALL( solversFree() );
 
    SCIPfreeMemoryArray(scip, &pricerdata->solvers);
 
@@ -1808,7 +1752,7 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
 {
    assert(scip != NULL);
-   SCIP_CALL( solversInit(scip, pricerdata) );
+   SCIP_CALL( solversInit() );
 
    reducedcostpricing = new ReducedCostPricing(scip);
    farkaspricing = new FarkasPricing(scip);
@@ -1824,7 +1768,7 @@ SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
 SCIP_DECL_PRICEREXIT(ObjPricerGcg::scip_exit)
 {
    assert(scip != NULL);
-   SCIP_CALL( solversExit(scip, pricerdata) );
+   SCIP_CALL( solversExit() );
 
    return SCIP_OKAY;
 }
@@ -1834,7 +1778,6 @@ SCIP_DECL_PRICEREXIT(ObjPricerGcg::scip_exit)
 SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 {
    int i;
-   SCIP* origprob;
    int norigvars;
    SCIP_Bool discretization;
    SCIP_CONS** masterconss;
@@ -1843,9 +1786,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    assert(scip != NULL);
    assert(pricer != NULL);
-
-   origprob = pricerdata->origprob;
-   assert(origprob != NULL);
 
    /* at the beginning, the output of the master problem gets the same verbosity level
     * as the output of the original problem */
@@ -1948,7 +1888,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->avgrootnodedegeneracy = 0.0;
    pricerdata->ndegeneracycalcs = 0;
 
-   SCIP_CALL( solversInitsol(scip, pricerdata) );
+   SCIP_CALL( solversInitsol() );
 
    return SCIP_OKAY;
 }
@@ -1999,7 +1939,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );
 
-   SCIP_CALL( solversExitsol(scip, pricerdata) );
+   SCIP_CALL( solversExitsol() );
 
    return SCIP_OKAY;
 }
@@ -2010,7 +1950,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 {
    SCIP_RETCODE retcode;
 
-   assert(scip != NULL);
+   assert(scip == scip_);
    assert(pricer != NULL);
    assert(pricerdata != NULL);
 
@@ -2074,8 +2014,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    }
 
    /* get solutions from the original problem */
-   origsols = SCIPgetSols(pricerdata->origprob);
-   norigsols = SCIPgetNSols(pricerdata->origprob);
+   origsols = SCIPgetSols(origprob);
+   norigsols = SCIPgetNSols(origprob);
    assert(norigsols >= 0);
 
    /* Add already known solutions for the original problem to the master variable space */
@@ -2111,7 +2051,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_PRICERDATA* pricerdata;
 
    SCIP_CALL( SCIPallocMemory(scip, &pricerdata) );
-   pricerdata->origprob = origprob;
 
    /* initialize solvers array */
    pricerdata->solvers = NULL;
@@ -2119,9 +2058,8 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
 
-
    /* include variable pricer */
-   SCIP_CALL( SCIPincludeObjPricer(scip, new ObjPricerGcg(scip, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY, pricerdata ), TRUE) );
+   SCIP_CALL( SCIPincludeObjPricer(scip, new ObjPricerGcg(scip, origprob, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY, pricerdata ), TRUE) );
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
@@ -2131,31 +2069,31 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
 
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/maxsolsprob",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxsolsprob",
          "maximal number of variables added for each block in a pricinground",
          &pricerdata->maxsolsprob, FALSE, DEFAULT_MAXSOLSPROB, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/useheurpricing",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/useheurpricing",
          "should pricing be performed heuristically before solving the MIPs to optimality?",
          &pricerdata->useheurpricing, TRUE, DEFAULT_USEHEURPRICING, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/abortpricingint",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/abortpricingint",
          "should pricing be aborted due to integral objective function?",
          &pricerdata->abortpricingint, TRUE, DEFAULT_ABORTPRICINGINT, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/abortpricinggap",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/abortpricinggap",
          "should pricing be aborted due to small gap between dual bound and RMP objective?",
          &pricerdata->abortpricinggap, TRUE, DEFAULT_ABORTPRICINGGAP, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(pricerdata->origprob, "pricing/masterpricer/successfulsubmipsrel",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricing/masterpricer/successfulsubmipsrel",
          "part of the submips that are solved and lead to new variables before pricing round is aborted? (1.0 = solve all pricing MIPs)",
          &pricerdata->successfulmipsrel, FALSE, DEFAULT_SUCCESSFULMIPSREL, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(pricerdata->origprob, "pricing/masterpricer/dispinfos",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/dispinfos",
          "should additional informations concerning the pricing process be displayed?",
          &pricerdata->dispinfos, FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(pricerdata->origprob, "pricing/masterpricer/sorting",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
          "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
          &pricerdata->sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
 
@@ -2168,17 +2106,13 @@ SCIP* GCGpricerGetOrigprob(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP_PRICERDATA* pricerdata;
 
    assert(scip != NULL);
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   pricerdata = pricer->getPricerdata();
-   assert(pricerdata != NULL);
-
-   return pricerdata->origprob;
+   return pricer->getOrigprob();
 }
 
 /** returns the array of variables that were priced in during the solving process */
@@ -2566,7 +2500,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       SCIP_CALL( pricer->createNewMasterVar(scip, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, TRUE, &added, &newvar) );
       assert(added);
 
-      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGrelaxGetNIdenticalBlocks(pricerdata->origprob, prob)) );
+      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGrelaxGetNIdenticalBlocks(origprob, prob)) );
    }
 
 #ifdef SCIP_DEBUG
@@ -2619,7 +2553,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   origprob = pricerdata->origprob;
+   origprob = pricer->getOrigprob();
    assert(origprob != NULL);
 
    npricingprobs = GCGrelaxGetNPricingprobs(origprob);
@@ -2751,7 +2685,7 @@ SCIP_RETCODE GCGpricerPrintSimplexIters(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Simplex iterations :       iter\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", SCIPgetNLPIterations(scip));
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Pricing LP       : %10lld\n", pricerdata->pricingiters);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", SCIPgetNLPIterations(pricerdata->origprob));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", SCIPgetNLPIterations(pricer->getOrigprob()));
 
    return SCIP_OKAY;
 }

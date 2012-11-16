@@ -49,6 +49,7 @@ public:
    /** default constructor */
    ObjPricerGcg(
          SCIP* scip, /**< SCIP data structure */
+         SCIP*              origscip,           /**< SCIP data structure of original problem */
          const char* name, /**< name of variable pricer */
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
@@ -85,20 +86,23 @@ public:
 
    /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
    SCIP_RETCODE priceNewVariables(
-         PricingType *pricetype, /**< type of the pricing */
-         SCIP_RESULT *result, /**< result pointer */
-         double *lowerbound);
+         PricingType*   pricetype,          /**< type of the pricing */
+         SCIP_RESULT*   result,             /**< result pointer */
+         double*        lowerbound          /**< lower bound of pricingproblems */
+      );
 
    /** creates a new master variable corresponding to the given solution and problem */
-   SCIP_RETCODE createNewMasterVar(SCIP *scip, /**< SCIP data structure */
-         SCIP_VAR **solvars, /**< array of variables with non-zero value in the solution of the pricing problem */
-         double *solvals, /**< array of values in the solution of the pricing problem for variables in array solvars*/
-         int nsolvars, /**< number of variables in array solvars */
-         unsigned int solisray, /**< is the solution a ray? */
-         int prob, /**< number of the pricing problem the solution belongs to */
-         unsigned int force, /**< should the given variable be added also if it has non-negative reduced cost? */
-         unsigned int *added, /**< pointer to store whether the variable was successfully added */
-         SCIP_VAR **addedvar);
+   SCIP_RETCODE createNewMasterVar(
+         SCIP*          scip,               /**< SCIP data structure */
+         SCIP_VAR**     solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+         double*        solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+         int            nsolvars,           /**< number of variables in array solvars */
+         unsigned int   solisray,           /**< is the solution a ray? */
+         int            prob,               /**< number of the pricing problem the solution belongs to */
+         unsigned int   force,              /**< should the given variable be added also if it has non-negative reduced cost? */
+         unsigned int*  added,              /**< pointer to store whether the variable was successfully added */
+         SCIP_VAR**     addedvar
+      );
 
    /** performs optimal or farkas pricing */
    SCIP_RETCODE performPricing(
@@ -122,7 +126,14 @@ public:
     /** ensures size of solvers array */
     SCIP_RETCODE ensureSizeSolvers();
 
+   SCIP* getOrigprob() const
+   {
+      return origprob;
+   }
+
 private:
+   SCIP*                 origprob;           /**< the original program */
+
    SCIP_PRICERDATA *pricerdata;
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;
@@ -149,7 +160,6 @@ private:
       );
 
    int countPricedVariables(
-      SCIP* scip,
       int& prob,
       SCIP_SOL** sols,
       int nsols,
@@ -200,6 +210,62 @@ private:
    SCIP_RETCODE computeCurrentDegeneracy(
       double*               degeneracy          /**< pointer to store degeneracy */
       );
+
+   /** initializes the pointers to the appropriate structures */
+   SCIP_RETCODE getSolverPointers(
+      GCG_SOLVER*           solver,             /**< pricing solver */
+      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
+      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
+      SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
+      int**                 calls,              /**< calls belonging to this setting */
+      GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
+      );
+
+   /** set subproblem timelimit */
+   SCIP_RETCODE setPricingProblemTimelimit(
+      SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
+      );
+
+   /** set subproblem memory limit */
+   SCIP_RETCODE setPricingProblemMemorylimit(
+      SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
+      );
+
+   /** set all pricing problem limits */
+   SCIP_RETCODE setPricingProblemLimits(
+      int                   prob,               /**< index of the pricing problem */
+      SCIP_Bool             optimal            /**< heuristic or optimal pricing */
+      );
+
+   /** solves a specific pricing problem
+    * @todo simplify
+    */
+   SCIP_RETCODE solvePricingProblem(
+      int                   prob,               /**< index of pricing problem */
+      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
+      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
+      SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
+      SCIP_SOL**            sols,               /**< pointer to store solutions */
+      SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
+      int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
+      int*                  nsols,              /**< number of solutions */
+      SCIP_STATUS*          status              /**< solution status of the pricing problem */
+      );
+
+   /** frees all solvers */
+   SCIP_RETCODE solversFree();
+
+   /** calls the init method on all solvers */
+   SCIP_RETCODE solversInit();
+
+   /** calls the exit method on all solvers */
+   SCIP_RETCODE solversExit();
+
+   /** calls the initsol method on all solvers */
+   SCIP_RETCODE solversInitsol();
+
+   /** calls the exitsol method of all solvers */
+   SCIP_RETCODE solversExitsol();
 };
 
 #endif
