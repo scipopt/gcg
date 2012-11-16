@@ -132,6 +132,9 @@ public:
         return reducedcostpricing;
     }
 
+    /** ensures size of solvers array */
+    SCIP_RETCODE ensureSizeSolvers();
+
 private:
    SCIP_PRICERDATA *pricerdata;
    ReducedCostPricing *reducedcostpricing;
@@ -153,6 +156,46 @@ private:
       int nsols,
       SCIP_Bool* solisray
       );
+
+   /** return TRUE or FALSE whether the master LP is solved to optimality */
+   SCIP_Bool isMasterLPOptimal();
+
+
+   /** return TRUE or FALSE whether pricing problem has been solved to optimality */
+   SCIP_Bool  isPricingOptimal(
+      SCIP*                 scip                /**< SCIP data structure */
+      );
+
+   /** ensures size of pricedvars array */
+   SCIP_RETCODE ensureSizePricedvars(
+      int                   size                /**< needed size */
+      );
+
+   /** adds new variable to the end of the priced variables array */
+   SCIP_RETCODE addVariableToPricedvars(
+      SCIP_VAR*             newvar              /**< variable to add */
+      );
+
+   /** add master variable to all constraints */
+   SCIP_RETCODE addVariableToMasterconstraints(
+      SCIP_VAR*             newvar,             /**< The new variable to add */
+      int                   prob,               /**< number of the pricing problem the solution belongs to */
+      SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+      SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+      int                   nsolvars            /**< number of variables in array solvars */
+      );
+
+   /**
+    * check whether pricing can be aborted:
+    * if objective value is always integral and the current node's current
+    * lowerbound rounded up equals the current lp objective value rounded
+    * up we don't need to continue pricing since the best possible feasible
+    * solution must have at least this value
+    */
+   SCIP_Bool canPricingBeAborted();
+
+   /** sorts pricing problems according to their score */
+   void sortPricingProblemsByScore();
 };
 
 #endif

@@ -255,21 +255,16 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
 
 
 /** return TRUE or FALSE whether the master LP is solved to optimality */
-static
-SCIP_Bool isMasterLPOptimal(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
+SCIP_Bool ObjPricerGcg::isMasterLPOptimal()
 {
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   assert(GCGisMaster(scip_));
 
-   return SCIPgetLPSolstat(scip) == SCIP_LPSOLSTAT_OPTIMAL;
+   return SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL;
 }
 
 
 /** return TRUE or FALSE whether pricing problem has been solved to optimality */
-static
-SCIP_Bool isPricingOptimal(
+SCIP_Bool  ObjPricerGcg::isPricingOptimal(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -280,15 +275,10 @@ SCIP_Bool isPricingOptimal(
 }
 
 /** ensures size of pricedvars array */
-static
-SCIP_RETCODE ensureSizePricedvars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< Pricerdata data structure */
+SCIP_RETCODE ObjPricerGcg::ensureSizePricedvars(
    int                   size                /**< needed size */
    )
 {
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
    assert(pricerdata->pricedvars != NULL);
 
    if( pricerdata->maxpricedvars < size )
@@ -296,8 +286,8 @@ SCIP_RETCODE ensureSizePricedvars(
       int oldsize;
 
       oldsize = pricerdata->maxpricedvars;
-      pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip, size);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(pricerdata->pricedvars), oldsize, pricerdata->maxpricedvars) );
+      pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip_, size);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->pricedvars), oldsize, pricerdata->maxpricedvars) );
    }
    assert(pricerdata->maxpricedvars >= size);
 
@@ -306,23 +296,17 @@ SCIP_RETCODE ensureSizePricedvars(
 
 
 /** ensures size of solvers array */
-static
-SCIP_RETCODE ensureSizeSolvers(
-   SCIP*                 scip,               /**< SCIP data structure        */
-   SCIP_PRICERDATA*      pricerdata          /**< Pricerdata data structure  */
-   )
+SCIP_RETCODE ObjPricerGcg::ensureSizeSolvers()
 {
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
 
    if( pricerdata->nsolvers == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->solvers), 1) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(scip_, &(pricerdata->solvers), 1) ); /*lint !e506*/
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->solvers), pricerdata->nsolvers+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), pricerdata->nsolvers+1) );
    }
 
    return SCIP_OKAY;
@@ -1043,10 +1027,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 }
 
 /** add master variable to all constraints */
-static
-SCIP_RETCODE addVariableToMasterconstraints(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< Pricerdata data structure */
+SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
    SCIP_VAR*             newvar,             /**< The new variable to add */
    int                   prob,               /**< number of the pricing problem the solution belongs to */
    SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -1066,13 +1047,13 @@ SCIP_RETCODE addVariableToMasterconstraints(
    nmasterconss = GCGrelaxGetNMasterConss(pricerdata->origprob);
    masterconss = GCGrelaxGetMasterConss(pricerdata->origprob);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastercoefs, nmasterconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip_, &mastercoefs, nmasterconss) );
    BMSclearMemoryArray(mastercoefs, nmasterconss);
 
    /* compute coef of the variable in the master constraints */
    for( i = 0; i < nsolvars; i++ )
    {
-      if( !SCIPisZero(scip, solvals[i]) )
+      if( !SCIPisZero(scip_, solvals[i]) )
       {
          SCIP_CONS** linkconss;
          SCIP_VAR** origvars;
@@ -1085,7 +1066,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
 
          coefs = GCGoriginalVarGetCoefs(origvars[0]);
          ncoefs = GCGoriginalVarGetNCoefs(origvars[0]);
-         assert(!SCIPisInfinity(scip, solvals[i]));
+         assert(!SCIPisInfinity(scip_, solvals[i]));
 
          /* original variable is a linking variable, just add it to the linkcons */
          if( GCGvarIsLinking(origvars[0]) )
@@ -1098,7 +1079,7 @@ SCIP_RETCODE addVariableToMasterconstraints(
 
             assert(pricingvars[prob] == solvars[i]);
             assert(linkconss[prob] != NULL);
-            SCIP_CALL( SCIPaddCoefLinear(scip, linkconss[prob], newvar, -solvals[i]) );
+            SCIP_CALL( SCIPaddCoefLinear(scip_, linkconss[prob], newvar, -solvals[i]) );
             continue;
          }
 
@@ -1106,8 +1087,8 @@ SCIP_RETCODE addVariableToMasterconstraints(
          for( c = 0; c < ncoefs; c++ )
          {
             linkconss = GCGoriginalVarGetMasterconss(origvars[0]);
-            assert(!SCIPisZero(scip, coefs[c]));
-            SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[c], &linkcons) );
+            assert(!SCIPisZero(scip_, coefs[c]));
+            SCIP_CALL( SCIPgetTransformedCons(scip_, linkconss[c], &linkcons) );
 
             idx = (int)(size_t)SCIPhashmapGetImage(pricerdata->mapcons2idx, linkcons); /*lint !e507*/
             assert(0 <= idx && idx < nmasterconss);
@@ -1121,14 +1102,14 @@ SCIP_RETCODE addVariableToMasterconstraints(
    /* add the variable to the master constraints */
    for( i = 0; i < nmasterconss; i++ )
    {
-      if( !SCIPisZero(scip, mastercoefs[i]) )
+      if( !SCIPisZero(scip_, mastercoefs[i]) )
       {
-         assert(!SCIPisInfinity(scip, mastercoefs[i]) && !SCIPisInfinity(scip, -mastercoefs[i]));
-         SCIP_CALL( SCIPaddCoefLinear(scip, masterconss[i], newvar, mastercoefs[i]) );
+         assert(!SCIPisInfinity(scip_, mastercoefs[i]) && !SCIPisInfinity(scip_, -mastercoefs[i]));
+         SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], newvar, mastercoefs[i]) );
       }
    }
 
-   SCIPfreeBufferArray(scip, &mastercoefs);
+   SCIPfreeBufferArray(scip_, &mastercoefs);
    return SCIP_OKAY;
 }
 
@@ -1209,14 +1190,11 @@ SCIP_RETCODE addVariableToMastercuts(
 }
 
 /** adds new variable to the end of the priced variables array */
-static
-SCIP_RETCODE addVariableToPricedvars(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata,         /**< pricer data structure */
+SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
    SCIP_VAR*             newvar              /**< variable to add */
    )
 {
-   SCIP_CALL( ensureSizePricedvars(scip, pricerdata, pricerdata->npricedvars + 1) );
+   SCIP_CALL( ensureSizePricedvars(pricerdata->npricedvars + 1) );
    pricerdata->pricedvars[pricerdata->npricedvars] = newvar;
    pricerdata->npricedvars++;
 
@@ -1355,8 +1333,8 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       SCIP_CALL( SCIPaddVar(scip, newvar) );
    }
 
-   SCIP_CALL( addVariableToPricedvars(scip, pricerdata, newvar) );
-   SCIP_CALL( addVariableToMasterconstraints(scip, pricerdata, newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToPricedvars(newvar) );
+   SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
@@ -1383,24 +1361,17 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
  * up we don't need to continue pricing since the best possible feasible
  * solution must have at least this value
  */
-static
-SCIP_Bool canPricingBeAborted(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_PRICERDATA*      pricerdata          /**< pricerdata data structure */
-   )
+SCIP_Bool  ObjPricerGcg::canPricingBeAborted()
 {
    SCIP_Bool canabort;
 
-   assert(scip != NULL);
-   assert(pricerdata != NULL);
-
    canabort = FALSE;
 
-   if( pricerdata->abortpricingint && SCIPisObjIntegral(scip )
-      && SCIPisEQ(scip, SCIPceil(scip, SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip))), SCIPceil(scip, SCIPgetLPObjval(scip))) /* && SCIPgetNNodes(scip) > 1 ??????*/)
+   if( pricerdata->abortpricingint && SCIPisObjIntegral(scip_)
+      && SCIPisEQ(scip_, SCIPceil(scip_, SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_))), SCIPceil(scip_, SCIPgetLPObjval(scip_))) /* && SCIPgetNNodes(scip) > 1 ??????*/)
    {
-      GCGpricerPrintInfo(scip, pricerdata, "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
-            SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip));
+      GCGpricerPrintInfo(scip_, pricerdata, "pricing aborted due to integral objective: node LB = %g, LP obj = %g\n",
+            SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_)), SCIPgetLPObjval(scip_));
 
       canabort = TRUE;
    }
@@ -1408,13 +1379,13 @@ SCIP_Bool canPricingBeAborted(
    if( !canabort && pricerdata->abortpricinggap > 0 )
    {
       SCIP_Real gap;
-      gap = (SCIPgetLPObjval(scip) - SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)))/SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip));
+      gap = (SCIPgetLPObjval(scip_) - SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_)))/SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_));
       gap = ABS(gap);
 
       if( gap < pricerdata->abortpricinggap )
       {
-         GCGpricerPrintInfo(scip, pricerdata, "pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n",
-               SCIPgetNodeLowerbound(scip, SCIPgetCurrentNode(scip)), SCIPgetLPObjval(scip), gap);
+         GCGpricerPrintInfo(scip_, pricerdata, "pricing aborted due to small gap: node LB = %g, LP obj = %g, gap = %g\n",
+               SCIPgetNodeLowerbound(scip_, SCIPgetCurrentNode(scip_)), SCIPgetLPObjval(scip_), gap);
 
          canabort = TRUE;
       }
@@ -1424,10 +1395,7 @@ SCIP_Bool canPricingBeAborted(
 }
 
 /** sorts pricing problems according to their score */
-static
-void sortPricingProblemsByScore(
-   SCIP_PRICERDATA*      pricerdata          /**< pricerdata data structure */
-)
+void ObjPricerGcg::sortPricingProblemsByScore()
 {
    int i;
    assert(pricerdata != NULL);
@@ -1611,7 +1579,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       if( optimal )
       {
-         if( !SCIPisInfinity(scip, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal(scip) )
+         if( !SCIPisInfinity(scip, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
             assert(!SCIPisSumPositive(scip, pricinglowerbound - pricerdata->dualsolconv[prob]));
 
          #pragma omp atomic
@@ -1738,7 +1706,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       assert(result != NULL);
 
       /* terminate early, if applicable */
-      if( canPricingBeAborted(scip, pricerdata) )
+      if( canPricingBeAborted() )
       {
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
@@ -1755,7 +1723,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    /* set objectives of the variables in the pricing sub-MIPs */
    SCIP_CALL( setPricingObjs(scip, pricetype) );
 
-   sortPricingProblemsByScore(pricerdata);
+   sortPricingProblemsByScore();
 
    bestredcost = 0.0;
    bestredcostvalid = TRUE;
@@ -2323,7 +2291,7 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    assert(pricerdata != NULL);
 
 
-   SCIP_CALL( ensureSizeSolvers(scip, pricerdata) );
+   SCIP_CALL( pricer->ensureSizeSolvers() );
 
    /* solvers array is sorted decreasingly wrt. the priority, find right position and shift solvers with smaller priority */
    pos = pricerdata->nsolvers;
