@@ -1739,8 +1739,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     assert(origscip!= NULL);
     pricerdata = p_pricerdata;
     origprob = origscip;
-    farkaspricing = NULL;
-    reducedcostpricing = NULL;
  }
 
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
@@ -1771,11 +1769,8 @@ SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
    assert(scip == scip_);
    SCIP_CALL( solversInit() );
 
-   reducedcostpricing = new ReducedCostPricing(scip);
-   farkaspricing = new FarkasPricing(scip);
-
-   SCIP_CALL( reducedcostpricing->addParameters() );
-   SCIP_CALL( farkaspricing->addParameters() );
+   SCIP_CALL( reducedcostpricing->resetCalls() );
+   SCIP_CALL( farkaspricing->resetCalls() );
 
    return SCIP_OKAY;
 }
@@ -2053,7 +2048,11 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    return retcode;
 }
 
-#define pricerCopyGcg NULL
+void ObjPricerGcg::createPricingTypes()
+{
+   farkaspricing = new FarkasPricing(scip_);
+   reducedcostpricing = new ReducedCostPricing(scip_);
+}
 
 /*
  * variable pricer specific interface methods
@@ -2065,6 +2064,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
    )
 {
+   ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
 
    SCIP_CALL( SCIPallocMemory(scip, &pricerdata) );
@@ -2075,8 +2075,11 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
 
+   pricer = new ObjPricerGcg(scip, origprob, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY, pricerdata);
    /* include variable pricer */
-   SCIP_CALL( SCIPincludeObjPricer(scip, new ObjPricerGcg(scip, origprob, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY, pricerdata ), TRUE) );
+   SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
+
+   pricer->createPricingTypes();
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,

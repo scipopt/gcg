@@ -72,6 +72,7 @@ PricingType::PricingType(
 
 PricingType::~PricingType()
 {
+   scip_ = NULL;
    SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
 }
 
@@ -96,6 +97,8 @@ FarkasPricing::FarkasPricing(
       SCIP* scip
    ) : PricingType(scip)
 {
+   addParameters();
+
    type = GCG_PRICETYPE_FARKAS;
 }
 
@@ -124,6 +127,9 @@ SCIP_Real FarkasPricing::varGetObj(
 
 SCIP_RETCODE FarkasPricing::addParameters()
 {
+   if( isInstanciated() )
+      return SCIP_OKAY;
+
    SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
          &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
@@ -131,6 +137,8 @@ SCIP_RETCODE FarkasPricing::addParameters()
    SCIP_CALL( SCIPaddRealParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/mipsrelfarkas",
          "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
          &mipsrel, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, NULL) );
+
+   instanciate();
 
    return SCIP_OKAY;
 }
@@ -153,6 +161,7 @@ ReducedCostPricing::ReducedCostPricing(
       SCIP* p_scip
    ) : PricingType(p_scip)
 {
+   addParameters();
    type = GCG_PRICETYPE_REDCOST;
 }
 
@@ -173,6 +182,9 @@ SCIP_Real ReducedCostPricing::varGetObj(
 
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
+   if( isInstanciated() )
+      return SCIP_OKAY;
+
    SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxsuccessfulmipsredcost",
          "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
          &maxsuccessfulmips, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, NULL) );
@@ -199,6 +211,8 @@ SCIP_RETCODE ReducedCostPricing::addParameters()
    SCIP_CALL( SCIPaddRealParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcost",
          "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
          &mipsrel, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, NULL) );
+
+   instanciate();
 
    return SCIP_OKAY;
 }
@@ -233,6 +247,7 @@ SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
       int                  npricingprobsnotnull
   )
 {
+
    return !((((nfoundvars < maxvarsroundroot) || !isRootNode(scip_) ) && ((nfoundvars < maxvarsround) || isRootNode(scip_)))
                && successfulmips < maxsuccessfulmips
                && successfulmips < successfulmipsrel * npricingprobsnotnull

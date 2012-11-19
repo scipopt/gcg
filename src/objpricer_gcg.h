@@ -135,10 +135,11 @@ public:
       return origprob;
    }
 
+   void createPricingTypes();
+
 private:
-   ReducedCostPricing *reducedcostpricing;
-   FarkasPricing *farkaspricing;
-   //PricingMode *pricingmode;
+   static ReducedCostPricing *reducedcostpricing;
+   static FarkasPricing *farkaspricing;
 
    /** free pricing problems */
    SCIP_RETCODE freePricingProblems();
@@ -270,4 +271,6 @@ private:
 };
 
 int ObjPricerGcg::threads;
+ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
+FarkasPricing* ObjPricerGcg::farkaspricing;
 #endif

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   class_pricingtype.cpp
+/**@file   class_pricingtype.h
  * @brief  GCG variable pricer
  * @author Martin Bergner
  */
@@ -34,8 +34,11 @@
 
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
+#include "class_instanciated.h"
+
 #ifndef GCG_CLASS_PRICINGTYPE_H_
 #define GCG_CLASS_PRICINGTYPE_H_
+
 
 class PricingType
 {
@@ -43,36 +46,37 @@ protected:
    SCIP_CLOCK* clock;
 
    int calls;
-      int maxvarsround;
-      int maxvarsroundroot;
-      int maxsuccessfulmips;
-      int maxrounds;
-    double mipsrel;
-    double mipsrelroot;
-    GCG_PRICETYPE type;
-    SCIP *scip_;
-public:
-    PricingType(SCIP *p_scip);
-    virtual ~PricingType();
-    virtual double consGetDual(SCIP *scip, SCIP_CONS *cons) =0;
-    virtual double rowGetDual(SCIP_ROW *row) =0;
-    virtual double varGetObj(SCIP_VAR *var) =0;
-    virtual SCIP_RETCODE addParameters() =0;
-    virtual SCIP_Bool canOptimalPricingBeAborted(
-          int                  nfoundvars,         /**< number of variables found so far */
-          int                  solvedmips,         /**< number of MIPS solved so far */
-          int                  successfulmips,     /**< number of sucessful mips solved so far */
-          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
-          int                  npricingprobsnotnull
-      ) = 0;
+   int maxvarsround;
+   int maxvarsroundroot;
+   int maxsuccessfulmips;
+   int maxrounds;
+   double mipsrel;
+   double mipsrelroot;
+   GCG_PRICETYPE type;
+   SCIP *scip_;
 
-    virtual SCIP_Bool canHeuristicPricingBeAborted(
-          int                  nfoundvars,         /**< number of variables found so far */
-          int                  solvedmips,         /**< number of MIPS solved so far */
-          int                  successfulmips,     /**< number of sucessful mips solved so far */
-          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
-          int                  npricingprobsnotnull
-      ) = 0;
+public:
+   PricingType(SCIP *p_scip);
+   virtual ~PricingType();
+   virtual double consGetDual(SCIP *scip, SCIP_CONS *cons) =0;
+   virtual double rowGetDual(SCIP_ROW *row) =0;
+   virtual double varGetObj(SCIP_VAR *var) =0;
+   virtual SCIP_RETCODE addParameters() =0;
+   virtual SCIP_Bool canOptimalPricingBeAborted(
+      int               nfoundvars,         /**< number of variables found so far */
+      int               solvedmips,         /**< number of MIPS solved so far */
+      int               successfulmips,     /**< number of sucessful mips solved so far */
+      SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
+      int               npricingprobsnotnull
+   ) = 0;
+
+   virtual SCIP_Bool canHeuristicPricingBeAborted(
+      int               nfoundvars,         /**< number of variables found so far */
+      int               solvedmips,         /**< number of MIPS solved so far */
+      int               successfulmips,     /**< number of sucessful mips solved so far */
+      SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
+      int               npricingprobsnotnull
+   ) = 0;
     virtual SCIP_RETCODE startClock();
     virtual SCIP_RETCODE stopClock();
     virtual double getClockTime();
@@ -122,9 +126,15 @@ public:
         calls++;
     }
 
+    SCIP_RETCODE resetCalls() {
+       calls = 0;
+       SCIP_CALL( SCIPresetClock(scip_, clock) );
+       return SCIP_OKAY;
+    };
+
 };
 
-class ReducedCostPricing : public PricingType
+class ReducedCostPricing : public PricingType, public Instanciated<ReducedCostPricing>
 {
 public:
    ReducedCostPricing(
@@ -153,7 +163,7 @@ public:
 
 };
 
-class FarkasPricing : public PricingType
+class FarkasPricing : public PricingType, public Instanciated<FarkasPricing>
 {
 public:
    FarkasPricing(
