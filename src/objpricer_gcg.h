@@ -48,7 +48,7 @@ public:
 
    SCIP*                 origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;
-
+   static int threads;
 
    /** default constructor */
    ObjPricerGcg(
@@ -269,4 +269,5 @@ private:
    SCIP_RETCODE solversExitsol();
 };
 
+int ObjPricerGcg::threads;
 #endif

@@ -78,6 +78,7 @@ using namespace scip;
                                                      *    1 :   according to dual solution of convexity constraint
                                                      *    2 :   according to reliability from previous round)
                                                      */
+#define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
@@ -1477,9 +1478,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       SCIP_CALL( SCIPallocMemoryArray(scip_, &(sols[i]), maxsols) );
    }
 
+#ifdef _OPENMP
+      if( threads > 0 )
+         omp_set_num_threads(threads);
+#endif
+
    #pragma omp parallel for private(j)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
+
       for( j = 0; j < maxsols; ++j )
       {
          solisray[i][j] = FALSE;
@@ -1735,6 +1742,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     farkaspricing = NULL;
     reducedcostpricing = NULL;
  }
+
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
 SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 {
@@ -2105,6 +2113,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/sorting",
          "which sorting method should be used to sort the pricing problems (0 = order of pricing problems, 1 = according to dual solution of convexity constraint, 2 = according to reliability from previous round)",
          &pricerdata->sorting, FALSE, DEFAULT_SORTING, 0, 5, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/threads",
+         "how many threads should be used to concurrently solve the pricing problem (0 to guess threads by OpenMP)",
+         &ObjPricerGcg::threads, FALSE, DEFAULT_THREADS, 0, 4096, NULL, NULL) );
 
    return SCIP_OKAY;
 }
