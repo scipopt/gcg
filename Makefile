@@ -265,7 +265,7 @@ ifneq ($(OBJDIR),)
 		-(cd ./$(OBJDIR) && rm -f *.o)
 		-rmdir $(OBJDIR)
 endif
-		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE)
+		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE) $(TESTFILE) $(TESTSHORTLINK)
 
 .PHONY: tags
 tags:
