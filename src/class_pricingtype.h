@@ -34,7 +34,6 @@
 
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
-#include "class_instanciated.h"
 
 #ifndef GCG_CLASS_PRICINGTYPE_H_
 #define GCG_CLASS_PRICINGTYPE_H_
@@ -134,7 +133,7 @@ public:
 
 };
 
-class ReducedCostPricing : public PricingType, public Instanciated<ReducedCostPricing>
+class ReducedCostPricing : public PricingType
 {
 public:
    ReducedCostPricing(
@@ -163,7 +162,7 @@ public:
 
 };
 
-class FarkasPricing : public PricingType, public Instanciated<FarkasPricing>
+class FarkasPricing : public PricingType
 {
 public:
    FarkasPricing(
