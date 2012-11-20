@@ -2691,7 +2691,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       }
       else
       {
-         assert(GCGoriginalVarGetNMastervars(origvars[i]) == 1);
+         assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGvarIsLinking(origvars[i])));
          assert(GCGoriginalVarGetMastervars(origvars[i])[0] != NULL);
          SCIP_CALL( SCIPsetSolVal(scip, mastersol, GCGoriginalVarGetMastervars(origvars[i])[0], origsolvals[i]) );
       }
