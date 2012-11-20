@@ -2615,8 +2615,9 @@ $(LIBOBJDIR)/gcgvar.o: src/gcgvar.c src/pub_gcgvar.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h src/struct_vardata.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/cons_linear.h
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
+ src/type_solver.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/cons_linear.h
 $(LIBOBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
  lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \

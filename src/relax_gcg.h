@@ -368,6 +368,7 @@ extern
 SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
 #ifdef __cplusplus
 }
 #endif
