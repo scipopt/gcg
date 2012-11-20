@@ -1566,40 +1566,48 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          SCIPdebugMessage("Pricing prob %d was not solved to optimality, reduced cost invalid\n", prob);
          *bestredcostvalid = FALSE;
       }
+
       if( SCIPgetStage(pricerdata->pricingprobs[prob]) <= SCIP_STAGE_PROBLEM )
          continue;
 
       nfoundvarsprob = 0;
 
-      for( j = 0; j < nsols[prob] && nfoundvarsprob <= pricerdata->maxsolsprob &&
-              (pricetype->getType() == GCG_PRICETYPE_REDCOST || *nfoundvars < pricetype->getMaxvarsround()) &&
-              (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
-              (*nfoundvars <reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_)))); ++j )
+      for( j = 0; j < nsols[prob]; ++j )
       {
          SCIP_VAR** solvars;
          SCIP_Real* solvals;
          int nsolvars;
 
-         solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
-         nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &solvals, nsolvars) );
-         SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, sols[prob][j]);
-         SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
+         /** add variable only if we cannot abort */
+         if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
+             (pricetype->getType() == GCG_PRICETYPE_REDCOST || *nfoundvars < pricetype->getMaxvarsround()) &&
+             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
+             (*nfoundvars <reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
+         {
+            solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
+            nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
+            SCIP_CALL( SCIPallocMemoryArray(scip, &solvals, nsolvars) );
+            SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, sols[prob][j]);
+            SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
 
-         /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-         SCIP_CALL( createNewMasterVar(scip_, solvars, solvals, nsolvars, solisray[prob][j], prob,
-               FALSE, &added, NULL) );
+            /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
+            SCIP_CALL( createNewMasterVar(scip_, solvars, solvals, nsolvars, solisray[prob][j], prob,
+                  FALSE, &added, NULL) );
+
+            if( added )
+            {
+               ++(*nfoundvars);
+               nfoundvarsprob++;
+            }
+            SCIPfreeMemoryArray(scip, &solvals);
+         }
+
 
          if( solisray[prob][j] )
          {
             SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
          }
-         if( added )
-         {
-            ++(*nfoundvars);
-            nfoundvarsprob++;
-         }
-         SCIPfreeMemoryArray(scip, &solvals);
+
       }
 
       if( nfoundvarsprob > 0 )

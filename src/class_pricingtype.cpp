@@ -72,8 +72,8 @@ PricingType::PricingType(
 
 PricingType::~PricingType()
 {
-   scip_ = NULL;
    SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   scip_ = NULL;
 }
 
 SCIP_RETCODE PricingType::startClock()
