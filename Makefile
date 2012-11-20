@@ -36,7 +36,7 @@ GCGDIR		=	$(realpath .)
 
 VALGRIND        =       false
 DECMODE		=	readdec
-
+GTEST		=	true
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -106,10 +106,10 @@ LIBOBJ		=	reader_blk.o \
 			class_pricingtype.o \
 			stat.o
 
-MAINOBJ		=	${LIBOBJ} \
-			main.o
+MAINOBJ		=	main.o
 
 TESTOBJ		=	tests/test.o
+TESTSRCDIR  =   $(SRCDIR)/tests
 
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
@@ -119,19 +119,15 @@ MAINFILE	=	$(BINDIR)/$(MAIN)
 MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
-TESTSRC		=	$(addprefix $(SRCDIR)/,$(LIBOBJ:.o=.c)) $(addprefix $(SRCDIR)/,$(LIBOBJ:.o=.cpp))
-TESTDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
+TESTSRC		=	$(filter $(wildcard $(TESTSRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.c))) $(filter $(wildcard $(TESTSRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.cpp)))
+TESTDEP		=	$(SRCDIR)/depend.tests.$(OPT)
 
 TEST		=	$(TESTNAME).$(BASE).$(LPS)$(EXEEXTENSION)
 TESTFILE	=	$(BINDIR)/$(TEST)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
-TESTOBJDIR      =       $(OBJDIR)/tests
-
-CFLAGS          +=       -Ilib/gtest/
-CXXFLAGS        +=       -Ilib/gtest/
-LDFLAGS         +=       -Llib/ -lgtest
-
+TESTOBJDIR      =	$(OBJDIR)/tests
+TESTLDFLAGS		+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest
 
 SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
@@ -153,7 +149,8 @@ GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
 GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
 GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
-
+ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
 
 #-----------------------------------------------------------------------------
 # Rules
@@ -161,13 +158,17 @@ GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 
 ifeq ($(VERBOSE),false)
-.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${LIBOBJFILES} ${TESTFILE} ${TESTMAIN}
+.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
 endif
 
 ifeq ($(OPENMP),true)
-CFLAGS+="-fopenmp"
-LDFLAGS+="-fopenmp"
-CXXFLAGS+="-fopenmp"
+CFLAGS+=-fopenmp
+LDFLAGS+=-fopenmp
+CXXFLAGS+=-fopenmp
+endif
+
+ifeq ($(GTEST),true)
+FLAGS+=-I$(LIBDIR)/gtest/
 endif
 
 .PHONY: all
@@ -179,7 +180,7 @@ $(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 libs:		$(GCGLIBFILE) $(GCGLIBSHORTLINK)
 
 .PHONY: lint
-lint:		$(MAINSRC)
+lint:		$(ALLSRC)
 		-rm -f lint.out
 ifeq ($(FILES),)
 		$(SHELL) -ec 'for i in $^; \
@@ -234,21 +235,20 @@ test:
 		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE);
 
 .PHONY: tests
-tests: 		$(TESTOBJDIR) libs $(TESTFILE) $(TESTSHORTLINK)
+tests: 		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
 
 $(TESTSHORTLINK):	$(TESTFILE)
 		@rm -f $@
 		cd $(dir $@) && ln -s $(notdir $(TESTFILE)) $(notdir $@)
 
-$(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(GCGLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(TESTOBJFILES)
+$(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE) $(TESTOBJFILES)
 		@echo "-> linking $@"
-		$(LINKCXX) $(TESTOBJFILES)  $(LINKCXX_l)$(GCGLIBSHORTNAME)$(LINKLIBSUFFIX) \
+		$(LINKCXX) $(TESTOBJFILES) $(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
-                $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX)  \
-		$(OFLAGS) $(LPSLDFLAGS) \
-		$(LDFLAGS)  -L$(LIBDIR)/gtest/lib/ -L$(LIBDIR) -lgtest $(LINKCXX_o)$@
-
+		$(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) $(TESTLDFLAGS) \
+		$(OFLAGS) $(LPSLDFLAGS) $(LDFLAGS) \
+		$(LINKCXX_o)$@
 
 .PHONY: eval
 eval:
@@ -265,28 +265,38 @@ ifneq ($(OBJDIR),)
 		-(cd ./$(OBJDIR) && rm -f *.o)
 		-rmdir $(OBJDIR)
 endif
-		-rm -f $(MAINFILE) $(MAINSHORTLINK)
+		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE)
 
 .PHONY: tags
 tags:
 		cd src/; rm -f TAGS; etags *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h;
 
 .PHONY: depend
-depend:		$(SCIPDIR) gcgdepend
+depend:		$(SCIPDIR) gcglibdepend testdepend
 		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(MAINSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z\_]*\).c|$$\(OBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(MAINDEP)'
 -include	$(MAINDEP)
 
-.PHONY: gcgdepend
-gcgdepend:
+.PHONY: gcglibdepend
+gcglibdepend:
 		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(GCGLIBSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(LIBOBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(GCGLIBDEP)'
+-include	$(GCGLIBDEP)
 
-$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES)
+.PHONY: testdepend
+testdepend:
+		$(SHELL) -ec '$(DCC) $(FLAGS) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
+		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
+		>$(TESTDEP)'
+-include	$(TESTDEP)
+
+$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
+		$(LINKCXX_l)$(GCGLIB) \
+		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) \
