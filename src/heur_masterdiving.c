@@ -1051,12 +1051,22 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
 
+   /* get the masterdiving event handler and its data */
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   /* get possible variable selection rules */
+   rules = ALLOWEDRULES;
+   nrules = strlen(rules);
+
    *result = SCIP_DELAYED;
 
    /* only call heuristic, if an optimal LP solution is at hand */
    if( !SCIPhasCurrentNodeLP(scip) || SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
-      SCIPdebugMessage("not executing Masterdiving heuristic: master LP not solved to optimality\n");
+//      SCIPdebugMessage("not executing Masterdiving heuristic: master LP not solved to optimality\n");
       return SCIP_OKAY;
    }
 
@@ -1402,7 +1412,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob, &origfeas) );
          if( origfeas )
          {
-            SCIPdebugMessage("   -> found feasible original solution\n");
+            SCIPdebugMessage("   -> LP solution is feasible in the original problem\n");
          }
       }
       SCIPdebugMessage("   -> lpsolstat=%d, objval=%g/%g, nfrac=%d\n", lpsolstat, objval, searchbound, nlpcands);
