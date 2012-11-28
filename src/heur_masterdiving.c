@@ -1296,7 +1296,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       do
       {
          /* apply domain propagation */
-         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, &NULL) );
+         SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
 
          if( !cutoff || backtracked || farkaspricing )
          {
