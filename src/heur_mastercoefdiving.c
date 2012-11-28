@@ -49,7 +49,7 @@
 #define HEUR_DESC             "master LP diving heuristic that chooses fixings w.r.t. the matrix coefficients"
 #define HEUR_DISPCHAR         'c'
 #define HEUR_PRIORITY         -1001000
-#define HEUR_FREQ             10
+#define HEUR_FREQ             -1
 //#define HEUR_FREQOFS          1
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
