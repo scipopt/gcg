@@ -74,9 +74,13 @@
 #define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
 #define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
                                          *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
+#define DEFAULT_PRINTSTATISTICS FALSE       /**< shall additional statistics about this heuristic be printed? */
 
 #define ALLOWEDRULES              "cflpv" /**< possible variable selection rules */
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
+
+#define EVENTHDLR_NAME         "masterdiving"
+#define EVENTHDLR_DESC         "event handler for masterdiving solution statistics"
 
 
 /* locally defined heuristic data */
@@ -104,6 +108,26 @@ struct SCIP_HeurData
    SCIP_Longint          nlpiterations;      /**< LP iterations used in this heuristic */
    int                   npricerounds;       /**< pricing rounds used in this heuristic */
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
+
+   SCIP_Bool             printstatistics;    /**< shall additional statistics about this heuristic be printed?      */
+   SCIP_Longint*         ncalls;             /**< number of calls per diving strategy                               */
+   SCIP_Longint*         nsols;              /**< number of solutions                                               */
+   SCIP_Longint*         nimpsols;           /**< number of improving solutions                                     */
+   SCIP_Longint*         ndivesols;          /**< number of integral diving LP solutions                            */
+   SCIP_Longint*         nimpdivesols;       /**< number of improving integral diving LP solutions                  */
+   SCIP_Longint*         nroundsols;         /**< number of integral solutions that have been obtained by rounding  */
+   SCIP_Longint*         nimproundsols;      /**< number of improving integral solutions obtained by rounding       */
+   SCIP_Longint*         ndives;             /**< number of dives                                                   */
+   SCIP_Longint*         nrulelpiters;       /**< number of diving LP iterations (per diving rule)                  */
+   SCIP_Longint*         nrulepricerds;      /**< number of pricing rounds (per diving rule)                        */
+   SCIP_Real*            bestprimalbds;      /**< objective value of best solution found by this heuristic          */
+   SCIP_Bool*            bestsolrounded;     /**< was the best solution obtained by rounding?                       */
+};
+
+/** event handler data */
+struct SCIP_EventhdlrData
+{
+   SCIP_Bool             heurisrunning;      /**< is the masterdiving heuristic currently running? */
 };
 
 
@@ -921,11 +945,21 @@ SCIP_RETCODE getNextRule(
 static
 SCIP_DECL_HEURFREE(heurFreeMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_EVENTHDLR* eventhdlr;
    SCIP_HEURDATA* heurdata;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
+
+   /* free event handler data */
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+   SCIPfreeMemory(scip, &eventhdlrdata);
+   SCIPeventhdlrSetData(eventhdlr, NULL);
 
    /* free heuristic data */
    heurdata = SCIPheurGetData(heur);
@@ -998,11 +1032,126 @@ SCIP_DECL_HEUREXIT(heurExitMasterdiving) /*lint --e{715}*/
 }
 
 
+/** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
+static
+SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+   const char* rules;
+   int nrules;
+
+   assert(heur != NULL);
+   assert(scip != NULL);
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* get possible variable selection rules */
+   rules = ALLOWEDRULES;
+   nrules = strlen(rules);
+
+   /* initialize statistical data */
+   if( heurdata->printstatistics )
+   {
+      int i;
+
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ncalls, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nsols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpsols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndivesols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpdivesols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nroundsols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimproundsols, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndives, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulelpiters, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulepricerds, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestprimalbds, nrules) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestsolrounded, nrules) );
+
+      for( i = 0; i < nrules; ++i )
+      {
+         heurdata->ncalls[i] = 0;
+         heurdata->nsols[i] = 0;
+         heurdata->nimpsols[i] = 0;
+         heurdata->ndivesols[i] = 0;
+         heurdata->nimpdivesols[i] = 0;
+         heurdata->nroundsols[i] = 0;
+         heurdata->nimproundsols[i] = 0;
+         heurdata->ndives[i] = 0;
+         heurdata->nrulelpiters[i] = 0;
+         heurdata->nrulepricerds[i] = 0;
+         heurdata->bestprimalbds[i] = SCIPinfinity(scip);
+         heurdata->bestsolrounded[i] = FALSE;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
+/** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
+static
+SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+   const char* rules;
+   int nrules;
+
+   assert(heur != NULL);
+   assert(scip != NULL);
+
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* get possible variable selection rules */
+   rules = ALLOWEDRULES;
+   nrules = strlen(rules);
+
+   /* print detailed statistics */
+   if( heurdata->printstatistics )
+   {
+      int i;
+
+      SCIPinfoMessage(scip, NULL, "Master Diving Heuristics   :      Calls       Sols  Improving   DiveSols  Improving  RoundSols  Improving      Dives   LP iters  Price rds    BestPrimal Rounded?\n");
+      for( i = 0; i < nrules; ++i )
+      {
+         SCIPinfoMessage(scip, NULL, "%c                          : %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT,
+            rules[i], heurdata->ncalls[i], heurdata->nsols[i], heurdata->nimpsols[i], heurdata->ndivesols[i], heurdata->nimpdivesols[i], heurdata->nroundsols[i], heurdata->nimproundsols[i], heurdata->ndives[i], heurdata->nrulelpiters[i], heurdata->nrulepricerds[i]);
+         if( SCIPisInfinity(scip, heurdata->bestprimalbds[i]) )
+            SCIPinfoMessage(scip, NULL, "      infinity");
+         else
+            SCIPinfoMessage(scip, NULL, " %13.6e", heurdata->bestprimalbds[i]);
+         SCIPinfoMessage(scip, NULL, heurdata->bestsolrounded[i] ? "      yes\n" : "       no\n");
+      }
+      SCIPinfoMessage(scip, NULL, "\n");
+
+      SCIPfreeMemoryArray(scip, &heurdata->bestsolrounded);
+      SCIPfreeMemoryArray(scip, &heurdata->bestprimalbds);
+      SCIPfreeMemoryArray(scip, &heurdata->nrulepricerds);
+      SCIPfreeMemoryArray(scip, &heurdata->nrulelpiters);
+      SCIPfreeMemoryArray(scip, &heurdata->ndives);
+      SCIPfreeMemoryArray(scip, &heurdata->nimproundsols);
+      SCIPfreeMemoryArray(scip, &heurdata->nroundsols);
+      SCIPfreeMemoryArray(scip, &heurdata->nimpdivesols);
+      SCIPfreeMemoryArray(scip, &heurdata->ndivesols);
+      SCIPfreeMemoryArray(scip, &heurdata->nimpsols);
+      SCIPfreeMemoryArray(scip, &heurdata->nsols);
+      SCIPfreeMemoryArray(scip, &heurdata->ncalls);
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /** execution method of primal heuristic */
 static
 SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP* origprob;
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_HEURDATA* heurdata;
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_SOL* bestsol;
@@ -1013,6 +1162,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    int* discrepancies;
    int* selectedvars;
    int* tabulist;
+   const char* rules;
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
@@ -1039,6 +1189,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    int maxdivedepth;
    int divedepth;
    int bestcand;
+   int nrules;
+   int ruleindex;
 
    int i;
 
@@ -1178,8 +1330,17 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    for( i = 0; i < heurdata->maxdiscrepancy; ++i )
       tabulist[i] = -1;
 
+   /* get the index of the current variable selection rule in the ALLOWEDRULES string */
+   for( ruleindex = 0; ruleindex < nrules; ++ruleindex )
+      if( rules[ruleindex] == heurdata->currentrule )
+         break;
+   assert(ruleindex < nrules);
+
 
    *result = SCIP_DIDNOTFIND;
+
+   eventhdlrdata->heurisrunning = TRUE;
+   ++heurdata->ncalls[ruleindex];
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
@@ -1215,6 +1376,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
+      ++heurdata->ndives[ruleindex];
 
       bestcand = -1;
       bestfrac = SCIP_INVALID;
@@ -1336,6 +1498,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             heurdata->npricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
             totalpricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
 
+            /* update statistics */
+            heurdata->nrulelpiters[ruleindex] += SCIPgetNLPIterations(scip) - nlpiterations;
+            heurdata->nrulepricerds[ruleindex] += SCIPgetNPriceRounds(scip) - npricerounds;
+
             /* get LP solution status */
             lpsolstat = SCIPgetLPSolstat(scip);
             cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
@@ -1441,6 +1607,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* end diving */
    SCIP_CALL( SCIPendProbing(scip) );
 
+   eventhdlrdata->heurisrunning = FALSE;
+
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
 
@@ -1466,6 +1634,118 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 }
 
 
+/** initialization method of event handler (called after problem was transformed) */
+static
+SCIP_DECL_EVENTINIT(eventInitMasterdiving)
+{  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(eventhdlr != NULL);
+
+   /* get event handler data */
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   eventhdlrdata->heurisrunning = FALSE;
+
+   /* notify GCG that this event should catch the SOLFOUND event */
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+static
+SCIP_DECL_EVENTEXIT(eventExitMasterdiving)
+{  /*lint --e{715}*/
+   assert(eventhdlr != NULL);
+
+   /* notify GCG that this event should drop the SOLFOUND event */
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
+
+   return SCIP_OKAY;
+}
+
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
+{  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_HEUR* heur;
+   SCIP_HEURDATA* heurdata;
+   SCIP_SOL* sol;
+   SCIP_HEUR* solheur;
+   const char* rules;
+   int nrules;
+   int ruleindex;
+
+   assert(eventhdlr != NULL);
+
+   /* get event handler data */
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   /* get masterdiving primal heuristic */
+   heur = SCIPfindHeur(scip, HEUR_NAME);
+   assert(heur != NULL);
+
+   /* get heuristic's data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   /* get possible variable selection rules */
+   rules = ALLOWEDRULES;
+   nrules = strlen(rules);
+
+   /* get new primal solution */
+   sol = SCIPeventGetSol(event);
+   assert(sol != NULL);
+
+   /* get heuristic that found the solution */
+   solheur = SCIPgetSolHeur(scip, sol);
+
+   /* get the index of the current variable selection rule in the ALLOWEDRULES string */
+   for( ruleindex = 0; ruleindex < nrules; ++ruleindex )
+      if( rules[ruleindex] == heurdata->currentrule )
+         break;
+   assert(ruleindex < nrules);
+
+   /* if the heuristic is currently running, update its solution statistics */
+   if( eventhdlrdata->heurisrunning )
+   {
+      ++heurdata->nsols[ruleindex];
+      if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+         ++heurdata->nimpsols[ruleindex];
+
+      if( solheur != NULL && strcmp(SCIPheurGetName(solheur), "simplerounding") == 0 )
+      {
+         ++heurdata->nroundsols[ruleindex];
+         if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+            ++heurdata->nimproundsols[ruleindex];
+         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbds[ruleindex] )
+         {
+            heurdata->bestprimalbds[ruleindex] = SCIPgetSolTransObj(scip, sol);
+            heurdata->bestsolrounded[ruleindex] = TRUE;
+         }
+      }
+      else if( solheur == heur )
+      {
+         ++heurdata->ndivesols[ruleindex];
+         if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+            ++heurdata->nimpdivesols[ruleindex];
+         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbds[ruleindex] )
+         {
+            heurdata->bestprimalbds[ruleindex] = SCIPgetSolTransObj(scip, sol);
+            heurdata->bestsolrounded[ruleindex] = FALSE;
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /*
  * heuristic specific interface methods
  */
@@ -1475,8 +1755,12 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_EVENTHDLR* eventhdlr;
    SCIP_HEURDATA* heurdata;
    SCIP_HEUR* heur;
+
+   eventhdlr = NULL;
 
    /* create Masterdiving primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
@@ -1492,6 +1776,20 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeMasterdiving) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitMasterdiving) );
    SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitMasterdiving) );
+   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolMasterdiving) );
+   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolMasterdiving) );
+
+   /* create masterdiving eventhandler data */
+   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
+
+   /* include event handler */
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+         eventExecMasterdiving, eventhdlrdata) );
+   assert(eventhdlr != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitMasterdiving) );
+   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitMasterdiving) );
 
    /* masterdiving heuristic parameters */
    SCIP_CALL( SCIPaddRealParam(scip,
@@ -1550,6 +1848,9 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
          "heuristics/"HEUR_NAME"/varselrule",
          "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules)",
          &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, ALLOWEDRULES"*", NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/printstatistics",
+         "shall additional statistics about this heuristic be printed?",
+         &heurdata->printstatistics, TRUE, DEFAULT_PRINTSTATISTICS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
