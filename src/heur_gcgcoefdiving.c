@@ -758,11 +758,11 @@ SCIP_RETCODE SCIPincludeHeurGcgcoefdiving(
          "additional number of allowed LP iterations",
          &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/gcgfracdiving/maxpricerounds",
+         "heuristics/gcgcoefdiving/maxpricerounds",
          "maximal number of allowed pricing rounds (-1: no limit)",
          &heurdata->maxpricerounds, FALSE, DEFAULT_MAXPRICEROUNDS, -1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "heuristics/gcgfracdiving/usefarkasonly",
+         "heuristics/gcgcoefdiving/usefarkasonly",
          "perform pricing only if infeasibility is encountered",
          &heurdata->usefarkasonly, FALSE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
