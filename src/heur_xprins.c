@@ -1371,7 +1371,7 @@ SCIP_RETCODE SCIPincludeHeurXprins(
 {
    SCIP_HEURDATA* heurdata;
 
-   /* create extreme point based fixing primal heuristic data */
+   /* create Extreme Point RINS primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
 
    /* include primal heuristic */
@@ -1381,7 +1381,7 @@ SCIP_RETCODE SCIPincludeHeurXprins(
          heurInitsolXprins, heurExitsolXprins, heurExecXprins,
          heurdata) );
 
-   /* add extreme point based fixing primal heuristic parameters */
+   /* add Extreme Point RINS primal heuristic parameters */
 
    SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/equalityrate",
 	 "minimum percentage of coincidence of relaxation and extreme pts",
