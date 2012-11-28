@@ -944,7 +944,6 @@ SCIP_DECL_HEURINIT(heurInitMasterdiving) /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
    const char* rules;
    int nrules;
-   int i;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
