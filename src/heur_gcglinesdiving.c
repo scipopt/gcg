@@ -39,6 +39,7 @@
 #include "heur_gcglinesdiving.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
+#include "event_origdiving.h"
 
 
 #define HEUR_NAME             "gcglinesdiving"
@@ -374,6 +375,8 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
 
+   SCIP_CALL( GCGeventOrigdivingCalled(masterprob, heur) );
+
    /* enables collection of variable statistics during probing */
    SCIPenableVarHistory(scip);
 
@@ -404,6 +407,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
+      SCIP_CALL( GCGeventOrigdivingDiveround(masterprob, heur) );
 
       /* choose variable fixing:
        * - in the projected space of fractional variables, extend the line segment connecting the root solution and
@@ -598,6 +602,9 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
             heurdata->nlpiterations += nlpiterations;
             heurdata->npricerounds += npricerounds;
             totalpricerounds += npricerounds;
+
+            /* update statistics */
+            SCIP_CALL( GCGeventOrigdivingUpdateLPstats(masterprob, heur, nlpiterations, npricerounds) );
 
             /* get LP solution status, objective value, and fractional variables, that should be integral */
             lpsolstat = SCIPgetLPSolstat(masterprob);

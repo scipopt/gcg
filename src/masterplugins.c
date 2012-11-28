@@ -123,6 +123,7 @@
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 #include "event_solvingstats.h"
+#include "event_origdiving.h"
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
 #include "heur_masterdiving.h"
@@ -238,6 +239,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
    SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );
 
    return SCIP_OKAY;
 }

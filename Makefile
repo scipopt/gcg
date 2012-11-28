@@ -94,6 +94,7 @@ MAINOBJ		=	reader_blk.o \
 			disp_master.o \
 			dialog_gcg.o \
 			dialog_master.o \
+			event_origdiving.o \
 			event_solvingstats.o \
 			solver_mip.o \
 			solver_knapsack.o \
