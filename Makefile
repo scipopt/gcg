@@ -269,7 +269,7 @@ endif
 
 .PHONY: tags
 tags:
-		cd src/; rm -f TAGS; etags *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h;
+		cd src/; rm -f TAGS; etags *.cpp *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h ../$(SCIPDIR)/src/objscip/*.cpp ../$(SCIPDIR)/src/objscip/*.h;
 
 .PHONY: depend
 depend:		$(SCIPDIR) gcglibdepend testdepend

@@ -882,6 +882,7 @@ SCIP_RETCODE createPricingVar(
    assert(origvar != NULL);
 
    pricingprobnr = GCGvarGetBlock(origvar);
+   assert(pricingprobnr >= 0);
 
    SCIP_CALL( GCGoriginalVarCreatePricingVar(relaxdata->pricingprobs[pricingprobnr], origvar, &var) );
    assert(var != NULL);
