@@ -291,6 +291,12 @@ void DECdecompPrintDecomp(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+extern
+SCIP_RETCODE DECdecompCheckConsistency(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif
