@@ -256,6 +256,12 @@ SCIP_HASHMAP* DECdecompGetConsindex(
    DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
    );
 
+extern
+SCIP_RETCODE DECdecompCheckConsistency(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

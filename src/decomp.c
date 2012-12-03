@@ -40,6 +40,7 @@
 #include "pub_decomp.h"
 #include "scip/scip.h"
 #include "struct_decomp.h"
+#include "scip_misc.h"
 
 #include <assert.h>
 
@@ -867,5 +868,67 @@ SCIP_RETCODE DECdecompTransform(
    decdecomp->constoblock = newconstoblock;
    SCIPhashmapFree(&decdecomp->vartoblock);
    decdecomp->vartoblock = newvartoblock;
+   return SCIP_OKAY;
+}
+
+/** Checks the consistency of the data structure
+ *
+ *  In particular, it checks whether the redundant information in the structure agree and
+ *  whether the variables in the structure are both existant in the arrays and in the problem
+ */
+SCIP_RETCODE DECdecompCheckConsistency(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   // SCIP_Bool* varishandled;
+   // SCIP_Bool* consishandled;
+
+   int c;
+   int b;
+   int v;
+
+   //SCIP_CALL( SCIPallocMemoryArray(scip, &varishandled, SCIPgetNVars(scip)) );
+   //SCIP_CALL( SCIPallocMemoryArray(scip, &consishandled, SCIPgetNConss(scip)) );
+   //
+   //BMSclearMemoryArray(varishandled, SCIPgetNVars(scip));
+   //BMSclearMemoryArray(consishandled, SCIPgetNConss(scip));
+   /* Check whether subscipcons are correct */
+   for( b = 0; b < DECdecompGetNBlocks(decdecomp); ++b )
+   {
+      for( c = 0; c < DECdecompGetNSubscipconss(decdecomp)[b]; ++c )
+      {
+         SCIP_VAR** curvars;
+         int ncurvars;
+         SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
+         SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);
+         assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
+         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b);
+         ncurvars = SCIPgetNVarsXXX(scip, cons);
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
+
+         for( v = 0; v < ncurvars; ++v )
+         {
+            SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
+            SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1);
+            assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
+            assert(SCIPvarIsActive(var));
+            assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1 == b);
+         }
+         SCIPfreeMemoryArray(scip, &curvars);
+      }
+
+      for( v = 0; v < DECdecompGetNSubscipvars(decdecomp)[b]; ++v )
+      {
+         SCIP_VAR* var = DECdecompGetSubscipvars(decdecomp)[b][v];
+         SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1);
+         assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
+         assert(SCIPvarIsActive(var));
+         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1 == b);
+      }
+   }
+   /* check linking constraint and variables */
+
    return SCIP_OKAY;
 }
