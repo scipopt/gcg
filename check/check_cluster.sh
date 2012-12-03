@@ -346,7 +346,7 @@ do
 		then
 		    if test -f $DECFILE
 		    then
-			BLKFILE = $DECFILE
+			BLKFILE=$DECFILE
 		    fi
 		    if test -f $BLKFILE
 		    then
