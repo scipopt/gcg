@@ -269,7 +269,9 @@ SCIP_RETCODE GCGorigVarCreateData(
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
       if( SCIPvarGetTransVar(var) != NULL )
-         SCIPvarSetData(SCIPvarGetTransVar(var), vardata);
+      {
+         SCIPvarSetData(SCIPvarGetProbvar(SCIPvarGetTransVar(var)), vardata);
+      }
    }
    else
    {

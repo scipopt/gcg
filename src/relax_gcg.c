@@ -290,7 +290,7 @@ SCIP_RETCODE convertStructToGCG(
       SCIP_VAR* transvar;
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, SCIPvarGetProbvar(transvar), origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
