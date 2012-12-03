@@ -293,7 +293,7 @@ SCIP_RETCODE convertStructToGCG(
       SCIP_VAR* transvar;
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, SCIPvarGetProbvar(transvar), origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
@@ -857,6 +857,8 @@ SCIP_RETCODE setPricingProblemParameters(
 #if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
 #endif
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 1) );
+   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
 
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
