@@ -55,7 +55,7 @@
 #define DEC_PRIORITY             -10           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
-#define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to number of constraints */
+#define DEFAULT_MAXBLOCKS        1000        /**< the maximal number of blocks, -1 defaults to number of constraints */
 #define DEFAULT_SEED             -1          /**< random seed for the random number generator, -1 is the current time */
 
 /*
