@@ -1031,18 +1031,15 @@ SCIP_RETCODE createPricingVariables(
       blocknr = GCGvarGetBlock(probvar);
       if( blocknr == -1 )
       {
-         size_t tempblock;
-         tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         if( tempblock == 0 )
+         int tempblock;
+         tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
+         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
-            assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
             blocknr = -1;
          }
          else
          {
-            assert(tempblock < INT_MAX);
-            assert(tempblock > 0);
-            blocknr = (int) (tempblock -1); /*lint !e806*/
+            blocknr = tempblock; /*lint !e806*/
          }
       }
 
