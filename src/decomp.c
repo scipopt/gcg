@@ -1360,5 +1360,27 @@ SCIP_RETCODE DECdecompCheckConsistency(
       assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), DECdecompGetLinkingconss(decdecomp)[c])) -1 ==  DECdecompGetNBlocks(decdecomp));
    }
 
+   switch(DECdecompGetType(decdecomp))
+   {
+   case DEC_DECTYPE_UNKNOWN:
+         assert(FALSE);
+      break;
+   case DEC_DECTYPE_ARROWHEAD:
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0);
+      break;
+   case DEC_DECTYPE_BORDERED:
+      assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) > 0);
+      break;
+   case DEC_DECTYPE_DIAGONAL:
+      assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) == 0);
+      break;
+   case DEC_DECTYPE_STAIRCASE:
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0 && DECdecompGetNLinkingconss(decdecomp) == 0);
+      break;
+   default:
+         assert(FALSE);
+         break;
+   }
+
    return SCIP_OKAY;
 }
