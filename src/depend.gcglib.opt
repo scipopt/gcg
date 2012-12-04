@@ -2720,7 +2720,8 @@ $(LIBOBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/pub_decom
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h src/struct_decomp.h
+ lib/scip/src/scip/struct_event.h src/struct_decomp.h src/scip_misc.h \
+ lib/scip/src/scip/cons_setppc.h
 $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
