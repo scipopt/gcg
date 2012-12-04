@@ -912,8 +912,11 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    assert(valid != NULL);
 
    DECdecompSetNBlocks(decdecomp, nblocks);
+   *valid = TRUE;
 
+   DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, valid);
    SCIP_CALL( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking));
+
 
    if( haslinking )
    {
@@ -932,7 +935,10 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    }
 
    if(!staircase)
+   {
+      SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
       return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPhashmapCreate(&varindex, SCIPblkmem(scip), nvars) );
    SCIP_CALL( SCIPhashmapCreate(&consindex, SCIPblkmem(scip), nconss) );
@@ -982,7 +988,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
             if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) == nblocks+1 ) /*lint !e507*/
             {
                /* if it has not been already assigned, it links to the next block */
-               if( !SCIPhashmapExists(varindex, curvars[j]) )
+               if( !SCIPhashmapExists(varindex, probvar) )
                {
                   SCIPdebugMessage("assigning link var <%s> to index <%d>\n", SCIPvarGetName(probvar), cumindex+linkindex+1);
                   SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(cumindex+linkindex+1)) );
