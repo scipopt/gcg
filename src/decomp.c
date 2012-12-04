@@ -182,7 +182,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    DECdecompSetConstoblock(decdecomp, constoblock, &valid);
    assert(valid);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
 
@@ -190,7 +190,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
       nsubscipconss[i] = 0;
    }
 
@@ -238,12 +238,12 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
    assert(valid);
 
-   SCIPfreeBufferArray(scip, &linkingconss);
+   SCIPfreeMemoryArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &nsubscipconss);
 
    for( i = 0; i < nblocks; ++i )
    {
-     SCIPfreeBufferArray(scip, &subscipconss[i]);
+     SCIPfreeMemoryArray(scip, &subscipconss[i]);
    }
 
    SCIPfreeBufferArray(scip, &subscipconss);
