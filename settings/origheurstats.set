@@ -1,0 +1,38 @@
+# SCIP version 3.0.1
+
+# frequency for solving LP at the nodes (-1: never; 0: only root LP)
+# [type: int, range: [-1,2147483647], default: 1]
+lp/solvefreq = -1
+
+# maximal number of restarts (-1: unlimited)
+# [type: int, range: [-1,2147483647], default: -1]
+presolving/maxrestarts = 0
+
+# shall additional statistics about original diving heuristics be printed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/origdiving/printstatistics = TRUE
+
+# flag to indicate whether detector <borderheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/borderheur/enabled = FALSE
+
+# flag to indicate whether detector <arrowheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/arrowheur/enabled = FALSE
+
+# shall additional statistics about this heuristic be printed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/gcgrens/printstatistics = TRUE
+
+# shall additional statistics about this heuristic be printed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/gcgrins/printstatistics = TRUE
+
+# shall additional statistics about this heuristic be printed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xpcrossover/printstatistics = TRUE
+
+# shall additional statistics about this heuristic be printed?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/xprins/printstatistics = TRUE
+
