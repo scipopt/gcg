@@ -270,6 +270,7 @@ SCIP_RETCODE createNewSol(
    SCIP_Bool*            success             /**< used to store whether new solution was found or not */
    )
 {
+   SCIP_HEURDATA* heurdata;
    SCIP_VAR** vars;                          /* the original problem's variables                */
    int        nvars;                         /* the original problem's number of variables      */
    SCIP_Real* subsolvals;                    /* solution values of the subproblem               */
@@ -279,6 +280,10 @@ SCIP_RETCODE createNewSol(
    assert(subscip != NULL);
    assert(subvars != NULL);
    assert(subsol != NULL);
+
+   /* get heuristic's data */
+   heurdata = SCIPheurGetData(heur);
+   assert( heurdata != NULL );
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
@@ -298,7 +303,15 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPsetSolVals(scip, newsol, nvars, vars, subsolvals) );
 
    /* try to add new solution to scip and free it immediately */
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+
+   if( *success )
+   {
+      if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
+         heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
+   }
+
+   SCIPfreeSol(scip, &newsol);
 
    SCIPfreeBufferArray(scip, &subsolvals);
 
@@ -546,13 +559,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
          SCIP_CALL( createNewSol(scip, subscip, subvars, heur, subsols[i], &success) );
       }
       if( success )
-      {
          *result = SCIP_FOUNDSOL;
-
-         assert(i > 0 && i <= nsubsols);
-         if( SCIPgetSolTransObj(subscip, subsols[i-1]) < heurdata->bestprimalbd )
-            heurdata->bestprimalbd = SCIPgetSolTransObj(subscip, subsols[i-1]);
-      }
    }
 
  TERMINATE:

@@ -1000,6 +1000,7 @@ SCIP_RETCODE createNewSol(
    SCIP_Bool*            success             /**< used to store whether new solution was found or not */
    )
 {
+   SCIP_HEURDATA* heurdata;
    SCIP_VAR** vars;                          /* the original problem's variables                */
    int        nvars;
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
@@ -1009,6 +1010,10 @@ SCIP_RETCODE createNewSol(
    assert(subscip != NULL);
    assert(subvars != NULL);
    assert(subsol != NULL);
+
+   /* get heuristic's data */
+   heurdata = SCIPheurGetData(heur);
+   assert( heurdata != NULL );
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
@@ -1025,12 +1030,16 @@ SCIP_RETCODE createNewSol(
    *solindex = SCIPsolGetIndex(newsol);
 
    /* try to add new solution to scip and free it immediately */
-   SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
 
    if( *success )
    {
       SCIPdebugMessage("Extreme Point RINS: new solution added.\n");
+      if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
+         heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
    }
+
+   SCIPfreeSol(scip, &newsol);
 
    SCIPfreeBufferArray(scip, &subsolvals);
 
@@ -1408,13 +1417,7 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
       }
 
       if( success )
-      {
          *result = SCIP_FOUNDSOL;
-
-         assert(i > 0 && i <= nsubsols);
-         if( SCIPgetSolTransObj(subscip, subsols[i-1]) < heurdata->bestprimalbd )
-            heurdata->bestprimalbd = SCIPgetSolTransObj(subscip, subsols[i-1]);
-      }
       else
          updateFailureStatistic(scip, heurdata);
    }
