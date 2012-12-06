@@ -200,8 +200,6 @@ SCIP_RETCODE markConsMaster(
    assert(cons != NULL);
    assert(relaxdata != NULL);
 
-   printf("mark cons <%s> as a master constraint\n", SCIPconsGetName(cons));
-
    /* allocate array, if not yet done */
    if( relaxdata->markedmasterconss == NULL )
    {
