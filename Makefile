@@ -33,9 +33,11 @@ SHELL		= 	bash
 READ		=	read -e
 LN_s		= 	ln -s
 GCGDIR		=	$(realpath .)
+TIME		=	3600
+DIP		=	dip
 
 VALGRIND        =       false
-DECMODE		=	readdec
+MODE		=	readdec
 GTEST		=	true
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
@@ -231,8 +233,7 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		echo $(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE); \
-		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(DECMODE);
+		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
 
 .PHONY: tests
 tests: 		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)

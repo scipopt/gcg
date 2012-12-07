@@ -25,6 +25,8 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#
+# @author Gerald Gamrath
 
 # check if tmp-path exists
 if test ! -d $CLIENTTMPDIR
@@ -46,7 +48,7 @@ date                                >> $OUTFILE
 date                                >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date +"@03 %s"                      >> $OUTFILE
-$SOLVERPATH/../$BINNAME < $TMPFILE   >> $OUTFILE 2>>$ERRFILE
+$SOLVERPATH/$BINNAME --param $TMPFILE  >> $OUTFILE 2>>$ERRFILE
 date +"@04 %s"                      >> $OUTFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE
