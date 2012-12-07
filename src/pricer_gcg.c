@@ -1470,7 +1470,7 @@ SCIP_Bool abortHeuristicPricing(
          && (nfoundvars == 0 ||
             solvedmips < pricerdata->mipsrelredcost * pricerdata->npricingprobsnotnull ));
    }
-   else 
+   else
    {
       assert(pricetype == GCG_PRICETYPE_FARKAS);
       return !(nfoundvars < pricerdata->maxvarsroundfarkas
