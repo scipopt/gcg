@@ -175,6 +175,25 @@ int DECdecompGetNLinkingvars(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/** copies the input stairlinkingvars array to the given decdecomp structure */
+SCIP_RETCODE DECdecompSetStairlinkingvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
+   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
+   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
+   );
+
+/** returns the stairlinkingvars array of the given decdecomp structure */
+SCIP_VAR*** DECdecompGetStairlinkingvars(
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
+
+/** returns the nstairlinkingvars array of the given decdecomp structure */
+int* DECdecompGetNStairlinkingvars(
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
+
 /** sets the vartoblock hashmap of the given decdecomp structure */
 void DECdecompSetVartoblock(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
@@ -199,6 +218,27 @@ SCIP_HASHMAP* DECdecompGetConstoblock(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/** sets the varindex hashmap of the given decdecomp structure */
+void DECdecompSetVarindex(
+   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
+   );
+
+/** returns the varindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP* DECdecompGetVarindex(
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
+
+/** sets the consindex hashmap of the given decdecomp structure */
+void DECdecompSetConsindex(
+   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   SCIP_HASHMAP*         consindex           /**< Consindexk hashmap */
+   );
+
+/** returns the consindex hashmap of the given decdecomp structure */
+SCIP_HASHMAP* DECdecompGetConsindex(
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
 
 /** completely initializes decdecomp from the values of the hashmaps */
 SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
@@ -211,7 +251,21 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
    int                   nconss,             /**< number of constraints */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool*            valid,              /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
+   );
+
+/** completely fills out detector structure from only the constraint partition */
+SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_VAR**            vars,               /**< variable array */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< constraint array */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
 /** sets the detector for the given decdecomp structure */
@@ -231,29 +285,10 @@ SCIP_RETCODE DECdecompTransform(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
-/** sets the varindex hashmap of the given decdecomp structure */
-void DECdecompSetVarindex(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
-   );
-
-/** returns the varindex hashmap of the given decdecomp structure */
-extern
-SCIP_HASHMAP* DECdecompGetVarindex(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
-   );
-
-/** sets the consindex hashmap of the given decdecomp structure */
-extern
-void DECdecompSetConsindex(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_HASHMAP*         consindex           /**< Consindex hashmap */
-   );
-
-/** returns the consindex hashmap of the given decdecomp structure */
-extern
-SCIP_HASHMAP* DECdecompGetConsindex(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** prints detailed information on the contents of decdecomp on the command line */
+void DECdecompPrintDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
 extern

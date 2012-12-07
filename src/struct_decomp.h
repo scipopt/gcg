@@ -56,6 +56,8 @@ struct DecDecomp
    int                   nlinkingconss;      /**< number of linking constraints */
    SCIP_VAR**            linkingvars;        /**< array of variables linking the blocks */
    int                   nlinkingvars;       /**< number of linking variables */
+   SCIP_VAR***           stairlinkingvars;   /**< array of variables staircaslinking the blocks */
+   int*                  nstairlinkingvars;  /**< number of staircaslinking variables */
    SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to their blocks (from 1 to nblocks) */
    SCIP_HASHMAP*         varindex;           /**< hashmap mapping variables to indices for a visual ordering */

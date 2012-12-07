@@ -491,7 +491,7 @@ SCIP_RETCODE copyToDecdecomp(
    vars = SCIPgetVars(scip);
 
 
-   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, detectordata->vartoblock, detectordata->constoblock, detectordata->nblocks, vars, nvars, conss, nconss, &valid) );
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, detectordata->vartoblock, detectordata->constoblock, detectordata->nblocks, vars, nvars, conss, nconss, &valid, FALSE) );
    assert(valid);
 
    detectordata->vartoblock = NULL;

@@ -44,7 +44,214 @@
 
 #include <assert.h>
 
-/** converts the DEC_DECTYPE enum to a string */
+static
+SCIP_RETCODE fillOutVarsFromVartoblock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_VAR**            vars,               /**< variable array */
+   int                   nvars,              /**< number of variables */
+   SCIP_Bool*            haslinking          /**< returns whether there are linking variables */
+   )
+{
+
+   SCIP_VAR*** subscipvars;
+   int* nsubscipvars;
+
+   SCIP_VAR** linkingvars;
+   int nlinkingvars;
+   int i;
+   SCIP_Bool valid;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(vartoblock != NULL);
+   assert(nblocks > 0);
+   assert(vars != NULL);
+   assert(nvars > 0);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
+
+   nlinkingvars = 0;
+
+   *haslinking = FALSE;
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
+      nsubscipvars[i] = 0;
+   }
+
+   /* handle variables */
+   for( i = 0; i < nvars; ++i )
+   {
+      int block;
+      SCIP_VAR* var;
+
+      var = vars[i];
+      assert(var != NULL);
+      if( !SCIPhashmapExists(vartoblock, var) )
+         block = nblocks+1;
+      else
+      {
+         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
+      }
+
+      assert(block > 0 && block <= nblocks+1);
+
+      /* if variable belongs to a block */
+      if( block <= nblocks )
+      {
+         SCIPdebugMessage("var %s in block %d.\n", SCIPvarGetName(var), block-1);
+         subscipvars[block-1][nsubscipvars[block-1]] = var;
+         ++(nsubscipvars[block-1]);
+      }
+      else /* variable is linking */
+      {
+         SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
+         assert(block == nblocks+1);
+         linkingvars[nlinkingvars] = var;
+         ++nlinkingvars;
+      }
+   }
+
+   if( nlinkingvars > 0 )
+   {
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
+      assert(valid);
+      *haslinking = TRUE;
+   }
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipvars[i] == 0 )
+      {
+         SCIPfreeBufferArray(scip, &subscipvars[i]);
+         subscipvars[i] = NULL;
+      }
+   }
+
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+   assert(valid);
+   DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
+   assert(valid);
+   SCIPfreeBufferArray(scip, &nsubscipvars);
+
+   for( i = 0; i < nblocks; ++i )
+   {
+     SCIPfreeBufferArrayNull(scip, &subscipvars[i]);
+   }
+
+   SCIPfreeBufferArray(scip, &subscipvars);
+   SCIPfreeBufferArray(scip, &linkingvars);
+
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE fillOutConsFromConstoblock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_CONS**           conss,              /**< constraint array */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool*            haslinking          /**< returns whether there are linking constraints */
+   )
+{
+
+   SCIP_CONS*** subscipconss;
+   int* nsubscipconss;
+
+   SCIP_CONS** linkingconss;
+   int nlinkingconss;
+   int i;
+   SCIP_Bool valid;
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(constoblock != NULL);
+   assert(nblocks > 0);
+   assert(conss != NULL);
+   assert(nconss > 0);
+
+
+   DECdecompSetConstoblock(decdecomp, constoblock, &valid);
+   assert(valid);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
+
+   *haslinking = FALSE;
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
+      nsubscipconss[i] = 0;
+   }
+
+   nlinkingconss = 0;
+
+   /* handle constraints */
+   for( i = 0; i < nconss; ++i )
+   {
+      int block;
+      SCIP_CONS* cons;
+
+      cons = conss[i];
+      assert(cons != NULL);
+      if( !SCIPhashmapExists(decdecomp->constoblock, cons) )
+         block = nblocks+1;
+      else
+      {
+         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons); /*lint !e507*/
+      }
+
+      assert(block > 0 && block <= nblocks+1);
+
+      /* if constraint belongs to a block */
+      if( block <= nblocks )
+      {
+         SCIPdebugMessage("cons %s in block %d.\n", SCIPconsGetName(cons), block-1);
+         subscipconss[block-1][nsubscipconss[block-1]] = cons;
+         ++(nsubscipconss[block-1]);
+      }
+      else /* constraint is linking */
+      {
+         SCIPdebugMessage("cons %s is linking.\n", SCIPconsGetName(cons));
+         assert(block == nblocks+1);
+         linkingconss[nlinkingconss] = cons;
+         ++nlinkingconss;
+      }
+   }
+
+   if( nlinkingconss > 0 )
+   {
+      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, &valid) );
+      assert(valid);
+      *haslinking = TRUE;
+   }
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+   assert(valid);
+
+   SCIPfreeMemoryArray(scip, &linkingconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
+
+   for( i = 0; i < nblocks; ++i )
+   {
+     SCIPfreeMemoryArray(scip, &subscipconss[i]);
+   }
+
+   SCIPfreeBufferArray(scip, &subscipconss);
+
+   return SCIP_OKAY;
+}
+
+
 const char *DECgetStrType(
    DEC_DECTYPE type
    )
@@ -74,6 +281,8 @@ SCIP_RETCODE DECdecompCreate(
    (*decomp)->nlinkingconss = 0;
    (*decomp)->linkingvars = NULL;
    (*decomp)->nlinkingvars = 0;
+   (*decomp)->stairlinkingvars = NULL;
+   (*decomp)->nstairlinkingvars = NULL;
    (*decomp)->nblocks = 0;
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
@@ -111,10 +320,21 @@ SCIP_RETCODE DECdecompFree(
       }
       SCIPfreeMemoryArray(scip, &decomp->subscipconss[i]);
    }
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
-   SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
-   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
+
+   for( i = 0; i < decomp->nlinkingvars; ++i )
+   {
+      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
+   }
+
+   if( decomp->stairlinkingvars != NULL )
+      for( i = 0; i < decomp->nblocks-1; ++i )
+      {
+         for( j = 0; j < decomp->nstairlinkingvars[i]; ++j )
+         {
+            SCIP_CALL( SCIPreleaseVar(scip, &(decomp->stairlinkingvars[i][j])) );
+         }
+         SCIPfreeMemoryArray(scip, &decomp->stairlinkingvars[i]);
+      }
 
    /* free hashmaps if they are not NULL */
    if( decomp->constoblock != NULL )
@@ -130,14 +350,14 @@ SCIP_RETCODE DECdecompFree(
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(decomp->linkingconss[i])) );
    }
-   SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
-
-   for( i = 0; i < decomp->nlinkingvars; ++i )
-   {
-      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[i])) );
-   }
+   SCIPfreeMemoryArrayNull(scip, &decomp->subscipvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->subscipconss);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nsubscipconss);
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
-
+   SCIPfreeMemoryArrayNull(scip, &decomp->stairlinkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->nstairlinkingvars);
+   SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
    SCIPfreeMemory(scip, decdecomp);
 
    return SCIP_OKAY;
@@ -490,6 +710,73 @@ int  DECdecompGetNLinkingvars(
    return decdecomp->nlinkingvars;
 }
 
+/** copies the input stairlinkingvars array to the given decdecomp structure */
+SCIP_RETCODE DECdecompSetStairlinkingvars(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+   SCIP_VAR***           stairlinkingvars,   /**< Linkingvars array  */
+   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
+   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
+   )
+{
+   int b;
+   int i;
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(stairlinkingvars != NULL);
+   assert(nstairlinkingvars != NULL);
+   assert(valid != NULL);
+   assert(decdecomp->nblocks > 0);
+
+   assert(decdecomp->stairlinkingvars == NULL);
+   assert(decdecomp->nstairlinkingvars == NULL);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->stairlinkingvars, decdecomp->nblocks-1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nstairlinkingvars, decdecomp->nblocks-1) );
+
+   assert(decdecomp->stairlinkingvars != NULL);
+   assert(decdecomp->nstairlinkingvars != NULL);
+
+   for( b = 0; b < decdecomp->nblocks-1; ++b )
+   {
+      assert(nstairlinkingvars[b] > 0);
+      decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
+
+      assert(stairlinkingvars[b] != NULL);
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
+   }
+
+   for( b = 0; b < decdecomp->nblocks-1; ++b )
+   {
+      for( i = 0; i < nstairlinkingvars[b]; ++i )
+      {
+         SCIP_CALL( SCIPcaptureVar(scip, decdecomp->stairlinkingvars[b][i]) );
+      }
+   }
+
+   *valid = TRUE; /**@todo A valid check needs to be implemented */
+   return SCIP_OKAY;
+}
+
+/** returns the stairlinkingvars array of the given decdecomp structure */
+SCIP_VAR***  DECdecompGetStairlinkingvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   return decdecomp->stairlinkingvars;
+}
+
+/** returns the nstairlinkingvars array of the given decdecomp structure */
+int*  DECdecompGetNStairlinkingvars(
+   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   )
+{
+   assert(decdecomp != NULL);
+   assert(decdecomp->nstairlinkingvars != NULL );
+   return decdecomp->nstairlinkingvars;
+}
+
 /** sets the vartoblock hashmap of the given decdecomp structure */
 void  DECdecompSetVartoblock(
    DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
@@ -591,19 +878,28 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
    int                   nconss,             /**< number of constraints */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool*            valid,              /**< pointer to indicate whether the structure is valid */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
-   SCIP_CONS** linkingconss;
-   int nlinkingconss;
-   SCIP_CONS*** subscipconss;
+   SCIP_HASHMAP* varindex;
+   SCIP_HASHMAP* consindex;
    int* nsubscipconss;
-   SCIP_VAR** linkingvars;
-   int nlinkingvars;
-   SCIP_VAR*** subscipvars;
    int* nsubscipvars;
+   int* nstairlinkingvars;
+   SCIP_VAR*** stairlinkingvars;
+   SCIP_CONS*** subscipconss;
+   SCIP_Bool success;
+   int index;
+   int linkindex;
+   int cindex;
+   int cumindex;
+   SCIP_Bool haslinking;
    int i;
-
+   int b;
+   SCIP_VAR** curvars;
+   int ncurvars;
+   int j;
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(vartoblock != NULL);
@@ -615,129 +911,201 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    assert(nconss > 0);
    assert(valid != NULL);
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
+   DECdecompSetNBlocks(decdecomp, nblocks);
+   *valid = TRUE;
 
-   nlinkingconss = 0;
-   nlinkingvars = 0;
+   DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, valid);
+   SCIP_CALL( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking));
 
-   DECdecompSetConstoblock(decdecomp, constoblock, valid);
-   assert(*valid);
-   DECdecompSetVartoblock(decdecomp, vartoblock, valid);
-   assert(*valid);
 
-   for( i = 0; i < nblocks; ++i )
+   if( haslinking )
    {
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
-      nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars[i], nvars) ); /*lint !e866*/
-      nsubscipvars[i] = 0;
-   }
-   /* handle variables */
-   for( i = 0; i < nvars; ++i )
-   {
-      int block;
-      SCIP_VAR* var;
-
-      var = vars[i];
-      assert(var != NULL);
-      if( !SCIPhashmapExists(vartoblock, var) )
-         block = nblocks+1;
-      else
-      {
-         block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
-      }
-
-      assert(block > 0 && block <= nblocks+1);
-
-      /* if variable belongs to a block */
-      if( block <= nblocks )
-      {
-         SCIPdebugMessage("var %s in block %d.\n", SCIPvarGetName(var), block-1);
-         subscipvars[block-1][nsubscipvars[block-1]] = var;
-         ++(nsubscipvars[block-1]);
-      }
-      else /* variable is linking */
-      {
-         SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
-         assert(block == nblocks+1);
-         linkingvars[nlinkingvars] = var;
-         ++nlinkingvars;
-      }
-   }
-
-   /* handle constraints */
-   for( i = 0; i < nconss; ++i )
-   {
-      int block;
-      SCIP_CONS* cons;
-
-      cons = conss[i];
-      assert(cons != NULL);
-      if( !SCIPhashmapExists(constoblock, cons) )
-         block = nblocks+1;
-      else
-      {
-         block = (int)(size_t)SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
-      }
-
-      assert(block > 0 && block <= nblocks+1);
-
-      /* if constraint belongs to a block */
-      if( block <= nblocks )
-      {
-         SCIPdebugMessage("cons %s in block %d.\n", SCIPconsGetName(cons), block-1);
-         subscipconss[block-1][nsubscipconss[block-1]] = cons;
-         ++(nsubscipconss[block-1]);
-      }
-      else /* constraint is linking */
-      {
-         SCIPdebugMessage("cons %s is linking.\n", SCIPconsGetName(cons));
-         assert(block == nblocks+1);
-         linkingconss[nlinkingconss] = cons;
-         ++nlinkingconss;
-      }
-   }
-
-   if( nlinkingconss > 0 )
-   {
-      SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss, valid) );
-      assert(*valid);
+      SCIPdebugMessage("Decomposition has linking constraints and is bordered.\n");
       DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, valid);
       assert(*valid);
    }
-   if( nlinkingvars > 0 )
+
+   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decdecomp, vartoblock, nblocks, vars, nvars, &haslinking));
+
+   if( haslinking )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, valid) );
-      assert(*valid);
+      SCIPdebugMessage("Decomposition has linking variables and is arrowhead.\n");
       DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, valid);
       assert(*valid);
    }
 
-   DECdecompSetNBlocks(decdecomp, nblocks);
+   if(!staircase)
+   {
+      SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+      return SCIP_OKAY;
+   }
 
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, valid) );
-   assert(*valid);
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, valid) );
-   assert(*valid);
-
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &nsubscipvars);
+   SCIP_CALL( SCIPhashmapCreate(&varindex, SCIPblkmem(scip), nvars) );
+   SCIP_CALL( SCIPhashmapCreate(&consindex, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &stairlinkingvars, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &nstairlinkingvars, nblocks) );
 
    for( i = 0; i < nblocks; ++i )
    {
-     SCIPfreeBufferArray(scip, &subscipconss[i]);
-     SCIPfreeBufferArray(scip, &subscipvars[i]);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(stairlinkingvars[i]), nvars) ); /*lint !e866*/
+      nstairlinkingvars[i] = 0;
    }
 
-   SCIPfreeBufferArray(scip, &subscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
+   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
+   subscipconss = DECdecompGetSubscipconss(decdecomp);
+   nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
+
+   index = 0;
+   cindex = 0;
+   cumindex = 0;
+
+   /* try to deduce staircase map */
+   for( b = 0; b < nblocks; ++b )
+   {
+      cumindex += nsubscipvars[b];
+      SCIPdebugMessage("block %d (%d vars):\n", b, nsubscipvars[b]);
+      linkindex = 0;
+      for( i = 0; i < nsubscipconss[b]; ++i )
+      {
+         SCIP_CONS* cons;
+         cons = subscipconss[b][i];
+
+         SCIP_CALL( SCIPhashmapInsert(consindex, cons, (void*)(size_t)(cindex+1)) );
+         ++cindex;
+         SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
+         assert(success);
+
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+
+         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
+         assert(success);
+
+         for( j = 0; j < ncurvars; ++j )
+         {
+            SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
+
+            /* if the variable is linking */
+            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) == nblocks+1 ) /*lint !e507*/
+            {
+               /* if it has not been already assigned, it links to the next block */
+               if( !SCIPhashmapExists(varindex, probvar) )
+               {
+                  SCIPdebugMessage("assigning link var <%s> to index <%d>\n", SCIPvarGetName(probvar), cumindex+linkindex+1);
+                  SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(cumindex+linkindex+1)) );
+                  stairlinkingvars[b][nstairlinkingvars[b]] = probvar;
+                  ++(nstairlinkingvars[b]);
+                  linkindex++;
+               }
+            }
+            else
+            {
+               assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);
+               SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(index+1)) );
+               ++index;
+            }
+         }
+         SCIPfreeBufferArray(scip, &curvars);
+      }
+      index += linkindex;
+      cumindex += linkindex;
+   }
+   DECdecompSetVarindex(decdecomp, varindex);
+   DECdecompSetConsindex(decdecomp, consindex);
+   DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE, valid);
+   assert(*valid);
+
+   for( b = 0; b < nblocks; ++b )
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(stairlinkingvars[b]), nstairlinkingvars[b]) ); /*lint !e866*/
+   }
+
+   SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, valid) );
+   assert(*valid);
+
+   for( b = 0; b < nblocks; ++b )
+   {
+      SCIPfreeMemoryArray(scip, &stairlinkingvars[b]);
+   }
+   SCIPfreeMemoryArray(scip, &stairlinkingvars);
+   SCIPfreeMemoryArray(scip, &nstairlinkingvars);
+
+   SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+
+   return SCIP_OKAY;
+}
+
+/** completely fills out detector structure from only the constraint partition */
+SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   int                   nblocks,            /**< number of blocks */
+   SCIP_VAR**            vars,               /**< variable array */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< constraint array */
+   int                   nconss,             /**< number of constraints */
+   SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
+   )
+{
+   SCIP_HASHMAP* vartoblock;
+   int i;
+   int j;
+
+   SCIP_VAR** curvars;
+   int ncurvars;
+   SCIP_Bool valid;
+   SCIP_Bool success;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+   assert(constoblock != NULL);
+   assert(nblocks > 0);
+   assert(vars != NULL);
+   assert(nvars > 0);
+   assert(conss != NULL);
+
+   assert(nconss > 0);
+
+   SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
+   for( i = 0; i < nconss; ++i )
+   {
+      int consblock;
+
+      consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
+
+      assert(consblock > 0 && consblock < nblocks+2);
+
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
+      assert(success);
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
+      assert(success);
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
+         assert( SCIPvarIsActive(probvar) );
+         if( !SCIPhashmapExists(vartoblock, probvar) )
+         {
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
+         }
+         DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
+         assert(valid);
+         DECdecompSetConstoblock(decdecomp, constoblock, &valid);
+         assert(valid);
+      }
+
+      SCIPfreeBufferArray(scip, &curvars);
+   }
+
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, &valid, staircase) );
+   assert(valid);
 
    return SCIP_OKAY;
 }
@@ -871,6 +1239,51 @@ SCIP_RETCODE DECdecompTransform(
    return SCIP_OKAY;
 }
 
+/** prints out detailed information on the contents of decdecomp*/
+void DECdecompPrintDecomp(
+   SCIP*      scip,           /**< SCIP data structure */
+   DEC_DECOMP* decdecomp       /**< decdecomp instance */
+   )
+{
+   int i;
+   int j;
+   SCIP_VAR* var;
+   SCIP_CONS* cons;
+   SCIPinfoMessage(scip, NULL, "================DEC_DECOMP===============\n");
+   SCIPinfoMessage(scip, NULL, "# blocks: %i\n", decdecomp->nblocks);
+   for( i = 0; i < decdecomp->nblocks; ++i )
+   {
+      SCIPinfoMessage(scip, NULL, "Block #%i (#vars: %i, #conss: %i):\n", i+1, decdecomp->nsubscipvars[i], decdecomp->nsubscipconss[i]);
+      SCIPinfoMessage(scip, NULL, "Variables (block, index):\n");
+      for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
+      {
+         var = decdecomp->subscipvars[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->vartoblock, (void*) var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+      }
+      SCIPinfoMessage(scip, NULL, "Constraints:\n");
+      for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
+      {
+         cons = decdecomp->subscipconss[i][j];
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->constoblock, (void*) cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+      }
+      SCIPinfoMessage(scip, NULL, "========================================\n");
+   }
+   SCIPinfoMessage(scip, NULL, "Linking variables #%i (varindex) :\n", decdecomp->nlinkingvars);
+   for( j = 0; j < decdecomp->nlinkingvars; ++j )
+   {
+      var = decdecomp->linkingvars[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+   SCIPinfoMessage(scip, NULL, "Linking constraints #%i (consindex) :\n", decdecomp->nlinkingconss);
+   for( j = 0; j < decdecomp->nlinkingconss; ++j )
+   {
+      cons = decdecomp->linkingconss[j];
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+   }
+   SCIPinfoMessage(scip, NULL, "========================================\n");
+}
+
 /** Checks the consistency of the data structure
  *
  *  In particular, it checks whether the redundant information in the structure agree and
@@ -893,6 +1306,16 @@ SCIP_RETCODE DECdecompCheckConsistency(
    //
    //BMSclearMemoryArray(varishandled, SCIPgetNVars(scip));
    //BMSclearMemoryArray(consishandled, SCIPgetNConss(scip));
+   for( v = 0; v < SCIPgetNVars(scip); ++v )
+   {
+      assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), SCIPgetVars(scip)[v]));
+   }
+
+   for( c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      assert(SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), SCIPgetConss(scip)[c]));
+   }
+
    /* Check whether subscipcons are correct */
    for( b = 0; b < DECdecompGetNBlocks(decdecomp); ++b )
    {
@@ -910,25 +1333,60 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
          for( v = 0; v < ncurvars; ++v )
          {
+            int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
-            SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1);
+            varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;
+            SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
-            assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1 == b);
+            assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
          }
          SCIPfreeMemoryArray(scip, &curvars);
       }
 
       for( v = 0; v < DECdecompGetNSubscipvars(decdecomp)[b]; ++v )
       {
+         int varblock;
          SCIP_VAR* var = DECdecompGetSubscipvars(decdecomp)[b][v];
-         SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1);
+         varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;
+         SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
          assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
          assert(SCIPvarIsActive(var));
-         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1 == b);
+         assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
       }
    }
+
    /* check linking constraint and variables */
+   for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
+   {
+      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp));
+   }
+   for (c = 0; c < DECdecompGetNLinkingconss(decdecomp); ++c)
+   {
+      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), DECdecompGetLinkingconss(decdecomp)[c])) -1 ==  DECdecompGetNBlocks(decdecomp));
+   }
+
+   switch(DECdecompGetType(decdecomp))
+   {
+   case DEC_DECTYPE_UNKNOWN:
+         assert(FALSE);
+      break;
+   case DEC_DECTYPE_ARROWHEAD:
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0);
+      break;
+   case DEC_DECTYPE_BORDERED:
+      assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) > 0);
+      break;
+   case DEC_DECTYPE_DIAGONAL:
+      assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) == 0);
+      break;
+   case DEC_DECTYPE_STAIRCASE:
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0 && DECdecompGetNLinkingconss(decdecomp) == 0);
+      break;
+   default:
+         assert(FALSE);
+         break;
+   }
 
    return SCIP_OKAY;
 }
