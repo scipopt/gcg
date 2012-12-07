@@ -91,8 +91,8 @@ struct RefInput
    int*                  blocksizes;         /**< array of block sizes */
    int                   totalconss;         /**< total number of constraints */
    int                   totalreadconss;     /**< total number of read constraints */
-   SCIP_CONS**           markedmasterconss;  /**< array of constraints to be in the master */
-   int                   nmarkedmasterconss; /**< number of constraints to be in the master */
+   SCIP_CONS**           masterconss;        /**< array of constraints to be in the master */
+   int                   nmasterconss;       /**< number of constraints to be in the master */
    REFSECTION            section;            /**< current section */
    SCIP_Bool             haserror;           /**< flag to indicate an error occurence */
    SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to blocks (1..nblocks) */
@@ -626,15 +626,11 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   DECdecompSetDetector(decomp, NULL);
-   DECdecompSetPresolved(decomp, FALSE);
-   DECdecompSetVartoblock(decomp, refinput->vartoblock, &valid);
-   assert(valid);
-   DECdecompSetConstoblock(decomp, refinput->constoblock, &valid);
-   assert(valid);
-
    SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
          refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid, FALSE) );
+
+   DECdecompSetPresolved(decomp, FALSE);
+   DECdecompSetDetector(decomp, NULL);
 
    assert(valid);
 
@@ -809,7 +805,7 @@ SCIP_RETCODE SCIPreadRef(
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.pushedtokens[i], REF_MAX_LINELEN) ); /*lint !e506 !e866*/
    }
-   SCIP_CALL( SCIPallocBufferArray(scip, &refinput.markedmasterconss, 1) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &refinput.masterconss, 1) );
 
    refinput.npushedtokens = 0;
    refinput.linenumber = 0;
@@ -819,7 +815,7 @@ SCIP_RETCODE SCIPreadRef(
    refinput.totalconss = 0;
    refinput.totalreadconss = 0;
    refinput.nassignedvars = 0;
-   refinput.nmarkedmasterconss = 0;
+   refinput.nmasterconss = 0;
    refinput.haserror = FALSE;
 
    SCIP_CALL( SCIPhashmapCreate(&refinput.vartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
@@ -854,7 +850,7 @@ SCIP_RETCODE SCIPreadRef(
    {
       SCIPfreeMemoryArray(scip, &refinput.pushedtokens[i]);
    }
-   SCIPfreeBufferArray(scip, &refinput.markedmasterconss);
+   SCIPfreeBufferArray(scip, &refinput.masterconss);
    SCIPfreeBufferArray(scip, &refinput.blocksizes);
 
    /* evaluate the result */
