@@ -166,9 +166,9 @@ do
         if test -f $i
         then
             echo @01 $i ===========
-	    NAME=`basename $i`
-	    base=${NAME%%.*}
-	    echo $base
+		NAME=`basename $i`
+		base=${NAME%%.*}
+		echo $base
             echo @01 $i ===========                >> $ERRFILE
             echo > $TMPFILE
             if test "$SETNAME" != "default"
@@ -206,33 +206,44 @@ do
 		echo detect                        >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    else
-		if test $MODE = "readdec"
+	    if test $MODE = "readdec"
+	    then
+		if test -f $DECFILE
 		then
-		    if test -f $DECFILE
-		    then
-			BLKFILE = $DECFILE
-		    fi
-		    if test -f $BLKFILE
-		    then
-			presol=`grep -A1 PRESOLVE $BLKFILE`
+		    presol=`grep -A1 PRESOLVE $DECFILE`
 		    # if we find a presolving file
-			if test $? = 0
-			then
+		    if test $? = 0
+		    then
                         # look if its in there
-			    if grep -xq 1 - <<EOF
+			if grep -xq 1 - <<EOF
 $presol
 EOF
-			    then
-				echo presolve          >> $TMPFILE
-			    fi
+			then
+			    echo presolve          >> $TMPFILE
 			fi
-			echo read $BLKFILE             >> $TMPFILE
 		    fi
+                    echo read $DECFILE             >> $TMPFILE
+		elif test -f $BLKFILE
+		then
+		    presol=`grep -A1 PRESOLVE $BLKFILE`
+		    # if we find a presolving file
+		    if test $? = 0
+		    then
+                        # look if its in there
+			if grep -xq 1 - <<EOF
+$presol
+EOF
+			then
+			    echo presolve          >> $TMPFILE
+			fi
+		    fi
+                    echo read $BLKFILE             >> $TMPFILE
 		fi
+            fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
 #		echo display additionalstatistics  >> $TMPFILE
-#               echo display solution                  >> $TMPFILE
+#            echo display solution                  >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	    fi
             echo quit                              >> $TMPFILE

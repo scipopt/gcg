@@ -1094,6 +1094,10 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
          {
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
+         else if( consblock <= nblocks )
+         {
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
+         }
 
          DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
          assert(valid);
