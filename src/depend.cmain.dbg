@@ -2174,7 +2174,8 @@ $(OBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/pub_decomp.h
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
  lib/scip/src/scip/type_history.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h src/struct_decomp.h
+ lib/scip/src/nlpi/type_exprinterpret.h src/struct_decomp.h \
+ src/scip_misc.h lib/scip/src/scip/cons_setppc.h
 $(OBJDIR)/dec_arrowheur.o: src/dec_arrowheur.c src/dec_arrowheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

@@ -1485,7 +1485,6 @@ SCIP_RETCODE freePricingProblems(
    return SCIP_OKAY;
 }
 
-
 static
 /** returns TRUE if optimal pricing can be aborted, FALSE otherwise*/
 SCIP_Bool abortOptimalPricing(
@@ -1695,6 +1694,16 @@ SCIP_RETCODE performOptimalPricing(
    SCIPfreeMemoryArray(scip, &solisray);
    SCIPfreeMemoryArray(scip, &sols);
    SCIPfreeMemoryArray(scip, &nsols);
+
+   /** @todo perhaps solve remaining pricing problems, if only few left? */
+   /** @todo solve all pricing problems all k iterations? */
+   /* this makes sure that if a pricing problem has not been solved, the langrangian bound cannot be calculated */
+   for( j = i; j < pricerdata->npricingprobs && bestredcostvalid; j++ )
+      if( pricerdata->pricingprobs[pricerdata->permu[j]] != NULL )
+         *bestredcostvalid = FALSE;
+
+   /* free the pricingproblems if they exist and need to be freed */
+   SCIP_CALL( freePricingProblems(scip, pricerdata) );
 
    return SCIP_OKAY;
 }

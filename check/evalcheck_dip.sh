@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
 #*                  This file is part of the program                         *
@@ -25,40 +25,55 @@
 #* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#
+# @author Martin Bergner
+# @author Christian Puchert
+# @author Gerald Gamrath
 
-# check if tmp-path exists
-if test ! -d $CLIENTTMPDIR
-then
-    echo Skipping test since the path for the tmp-dir does not exist.
-    exit
-fi
+export LANG=C
 
-OUTFILE=$CLIENTTMPDIR/$BASENAME.out
-ERRFILE=$CLIENTTMPDIR/$BASENAME.err
-TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
+AWKARGS=""
+FILES=""
+for i in $@
+do
+    if test ! -e $i
+    then
+	AWKARGS="$AWKARGS $i"
+    else
+	FILES="$FILES $i"
+    fi
+done
 
-uname -a                            > $OUTFILE
-uname -a                            > $ERRFILE
-echo @01 $FILENAME ===========      >> $OUTFILE
-echo @01 $FILENAME ===========      >> $ERRFILE
-echo -----------------------------  >> $OUTFILE
-date                                >> $OUTFILE
-date                                >> $ERRFILE
-echo -----------------------------  >> $OUTFILE
-date +"@03 %s"                      >> $OUTFILE
-$SOLVERPATH/../$BINNAME < $TMPFILE   >> $OUTFILE 2>>$ERRFILE
-date +"@04 %s"                      >> $OUTFILE
-echo -----------------------------  >> $OUTFILE
-date                                >> $OUTFILE
-echo -----------------------------  >> $OUTFILE
-date                                >> $ERRFILE
-echo                                >> $OUTFILE
-echo =ready=                        >> $OUTFILE
+export LC_NUMERIC=C
 
-mv $OUTFILE $SOLVERPATH/results/$BASENAME.out
-mv $ERRFILE $SOLVERPATH/results/$BASENAME.err
+for i in $FILES
+do
+    NAME=`basename $i .out`
+    DIR=`dirname $i`
+    OUTFILE=$DIR/$NAME.out
+    RESFILE=$DIR/$NAME.res
+    TEXFILE=$DIR/$NAME.tex
+    PAVFILE=$DIR/$NAME.pav
 
-rm -f $TMPFILE
-#chmod g+r $ERRFILE
-#chmod g+r $SCIPPATH/results/$BASENAME.out
-#chmod g+r $SCIPPATH/results/$BASENAME.set
+    TSTNAME=`echo $NAME | sed 's/check.\([a-zA-Z0-9_-]*\).*/\1/g'`
+
+    if test -f testset/$TSTNAME.test
+    then
+	TESTFILE=testset/$TSTNAME.test
+    else
+	TESTFILE=""
+    fi
+
+    if test -f testset/$TSTNAME.solu
+    then
+	SOLUFILE=testset/$TSTNAME.solu
+    else if test -f testset/all.solu
+    then
+	SOLUFILE=testset/all.solu
+    else
+        SOLUFILE=""
+    fi
+    fi
+
+    awk -f check_dip.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
+done

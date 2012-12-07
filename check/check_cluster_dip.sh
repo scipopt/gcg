@@ -49,7 +49,7 @@
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
-BINID=$4
+BINID=$BINNAME.$4
 TIMELIMIT=$5
 NODELIMIT=$6
 MEMLIMIT=$7
@@ -63,11 +63,9 @@ PPN=${14}
 CLIENTTMPDIR=${15}
 NOWAITCLUSTER=${16}
 EXCLUSIVE=${17}
-PERMUTE=${18}
-MODE=${19}
 
 # check all variables defined
-if [ -z ${MODE} ]
+if [ -z ${EXCLUSIVE} ]
 then
     echo Skipping test since not all variables are defined
     echo "TSTNAME       = $TSTNAME"
@@ -87,8 +85,6 @@ then
     echo "CLIENTTMPDIR  = $CLIENTTMPDIR"
     echo "NOWAITCLUSTER = $NOWAITCLUSTER"
     echo "EXCLUSIVE     = $EXCLUSIVE"
-    echo "PERMUTE       = $PERMUTE"
-    echo "MODE          = $MODE"
     exit 1;
 fi
 
@@ -101,36 +97,24 @@ then
     mkdir $GCGPATH/results
 fi
 
-SETTINGS=$GCGPATH/../settings/$SETNAME.set
-
-# check if the settings file exists
+# set the path to the settings file
 if test $SETNAME != "default"
 then
-    if test ! -e $SETTINGS
-    then
-        echo Skipping test since the settings file $SETTINGS does not exist.
-        exit
-    fi
+    SETTINGS=$GCGPATH/../settings/$SETNAME.parm
+else
+    SETTINGS=$GCGPATH/../settings/dip.parm
+fi
+
+if test ! -e $SETTINGS
+then
+    echo Skipping test since the settings file $SETTINGS does not exist.
+    exit
 fi
 
 # check if binary exists
-if test ! -e $GCGPATH/../$BINNAME
+if test ! -e $GCGPATH/$BINNAME
 then
     echo Skipping test since the binary $BINNAME does not exist.
-    exit
-fi
-
-# check if queue has been defined
-if test "$QUEUE" = ""
-then
-    echo Skipping test since the queue name has not been defined.
-    exit
-fi
-
-# check if number of nodes has been defined
-if test "$PPN" = ""
-then
-    echo Skipping test since the number of nodes has not been defined.
     exit
 fi
 
@@ -234,182 +218,114 @@ fi
 # counter to define file names for a test set uniquely
 COUNT=1
 
-# loop over permutations
-for ((p = 0; $p <= $PERMUTE; p++))
-do
-    # if number of permutations is positive, add postfix
-    if test $PERMUTE -gt 0
-    then
-	EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME"#p"$p.eval
-    else
-	EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.eval
-    fi
-    echo > $EVALFILE
+EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.eval
+echo > $EVALFILE
 
-    # loop over testset
-    for i in `cat testset/$TSTNAME.test` DONE
-    do
-	if test "$i" = "DONE"
+# loop over testset
+for i in `cat testset/$TSTNAME.test` DONE
+do
+    if test "$i" = "DONE"
+    then
+	break
+    fi
+
+    # increase the index for the instance tried to solve, even if the filename does not exist
+    COUNT=`expr $COUNT + 1`
+
+    # check if problem instance exists
+    if test -f $GCGPATH/$i
+    then
+
+        # the cluster queue has an upper bound of 2000 jobs; if this limit is
+        # reached the submitted jobs are dumped; to avoid that we check the total
+        # load of the cluster and wait until it is save (total load not more than
+        # 1600 jobs) to submit the next job.
+	if test "$NOWAITCLUSTER" != "1"
 	then
-	    break
+	    if test  "$QUEUETYPE" != "qsub"
+	    then
+		echo "waitcluster does not work on slurm cluster"
+	    fi
+	    ./waitcluster.sh 1600 $QUEUE 200
 	fi
 
-        # increase the index for the inctance tried to solve, even if the filename does not exist
-	COUNT=`expr $COUNT + 1`
+	SHORTPROBNAME=`basename $i .gz`
+	SHORTPROBNAME=`basename $SHORTPROBNAME .mps`
+	SHORTPROBNAME=`basename $SHORTPROBNAME .lp`
+	SHORTPROBNAME=`basename $SHORTPROBNAME .opb`
 
-        # check if problem instance exists
-	if test -f $GCGPATH/$i
-	then
+	FILENAME=$USER.$TSTNAME.$COUNT"_"$SHORTPROBNAME.$BINID.$QUEUE.$SETNAME
+	BASENAME=$GCGPATH/results/$FILENAME
 
-            # the cluster queue has an upper bound of 2000 jobs; if this limit is
-            # reached the submitted jobs are dumped; to avoid that we check the total
-            # load of the cluster and wait until it is save (total load not more than
-            # 1900 jobs) to submit the next job.
-	    if test "$NOWAITCLUSTER" != "1"
-	    then
-		if test  "$QUEUETYPE" != "qsub"
-		then
-		    echo "waitcluster does not work on slurm cluster"
-		fi
-		./waitcluster.sh 1600 $QUEUE 200
-	    fi
+	TMPFILE=$BASENAME.tmp
+	SETFILE=$BASENAME.set
 
-	    SHORTPROBNAME=`basename $i .gz`
-	    SHORTPROBNAME=`basename $SHORTPROBNAME .mps`
-	    SHORTPROBNAME=`basename $SHORTPROBNAME .lp`
-	    SHORTPROBNAME=`basename $SHORTPROBNAME .opb`
-
-	    # if number of permutations is positive, add postfix
-	    if test $PERMUTE -gt 0
-	    then
-		FILENAME=$USER.$TSTNAME.$COUNT"_"$SHORTPROBNAME.$BINID.$QUEUE.$SETNAME#"p"$p
-	    else
-		FILENAME=$USER.$TSTNAME.$COUNT"_"$SHORTPROBNAME.$BINID.$QUEUE.$SETNAME
-	    fi
-
-	    BASENAME=$GCGPATH/results/$FILENAME
-
-	    DIRNAME=`dirname $i`
-	    DECFILE=$GCGPATH/$DIRNAME/$SHORTPROBNAME.dec.gz
-	    BLKFILE=$GCGPATH/$DIRNAME/$SHORTPROBNAME.blk.gz
-
-	    TMPFILE=$BASENAME.tmp
-	    SETFILE=$BASENAME.set
-
-	    echo $BASENAME >> $EVALFILE
+	echo $BASENAME >> $EVALFILE
 
             # in case we want to continue we check if the job was already performed
-	    if test "$CONTINUE" != "false"
+	if test "$CONTINUE" != "false"
+	then
+	    if test -e results/$FILENAME.out
 	    then
-		if test -e results/$FILENAME.out
-		then
-		    echo skipping file $i due to existing output file $FILENAME.out
-		    continue
-		fi
+		echo skipping file $i due to existing output file $FILENAME.out
+		continue
 	    fi
+	fi
 
-	    echo > $TMPFILE
-	    if test $SETNAME != "default"
-	    then
-		echo set load $SETTINGS            >>  $TMPFILE
-	    fi
-	    if test $FEASTOL != "default"
-	    then
-		echo set numerics feastol $FEASTOL >> $TMPFILE
-	    fi
+	i=`echo "$i" | sed 's/.gz//'`
+	i=`echo "$i" | sed 's/.lp/.mps/'`
 
-	    # if permutation counter is positive add permutation seed (0 = default)
-	    if test $p -gt 0
-	    then
-		echo set misc permutationseed $p   >> $TMPFILE
-	    fi
+	echo $i
 
-	    echo set limits time $TIMELIMIT        >> $TMPFILE
-	    echo set limits nodes $NODELIMIT       >> $TMPFILE
-	    echo set limits memory $MEMLIMIT       >> $TMPFILE
-	    echo set lp advanced threads $THREADS  >> $TMPFILE
-	    echo set timing clocktype 1            >> $TMPFILE
-	    echo set display verblevel 4           >> $TMPFILE
-	    echo set display freq $DISPFREQ        >> $TMPFILE
-	    echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
-	    echo set save $SETFILE                 >> $TMPFILE
-	    echo read $GCGPATH/$i                 >> $TMPFILE
-#           echo presolve                         >> $TMPFILE
-	    if test $MODE = "detect"
-	    then
-		echo presolve                      >> $TMPFILE
-		echo detect                        >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-		echo presolve                      >> $TMPFILE
-	    else
-		if test -f $DECFILE -a $MODE = "readdec"
-		then
-		    if test -f $DECFILE
-		    then
-			BLKFILE=$DECFILE
-		    fi
-		    if test -f $BLKFILE
-		    then
-			presol=`grep -A1 PRESOLVE $BLKFILE`
-		    # if we find a presolving file
-			if test $? = 0
-			then
-                        # look if its in there
-			    if grep -xq 1 - <<EOF
-$presol
-EOF
-			    then
-				echo presolve      >> $TMPFILE
-			    fi
-			fi
-			echo read $BLKFILE         >> $TMPFILE
-		    fi
-		fi
-		echo optimize                      >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-		echo display additionalstatistics  >> $TMPFILE
-#               echo display solution                  >> $TMPFILE
-		echo checksol                      >> $TMPFILE
-	    fi
-	    echo quit                              >> $TMPFILE
+	cp $SETTINGS $TMPFILE
 
-            # additional environment variables needed by runcluster.sh
-	    export SOLVERPATH=$GCGPATH
-	    export BINNAME=$BINNAME
-	    export BASENAME=$FILENAME
-	    export FILENAME=$i
-	    export CLIENTTMPDIR=$CLIENTTMPDIR
+	# change the time limit in the param file
+	sed -i "s,\$TIMELIMIT,$TIMELIMIT," $TMPFILE
+
+	# change the instance in the param file
+	sed -i "s,\$INSTANCE,$i," $TMPFILE
+
+	# change the block file in the param file
+	sed -i "s,\$BLOCK,$i.block," $TMPFILE
+
+        cp $TMPFILE $SETFILE
+
+        # additional environment variables needed by runcluster.sh
+	export SOLVERPATH=$GCGPATH
+	export BINNAME=$BINNAME
+	export BASENAME=$FILENAME
+	export FILENAME=$i
+	export CLIENTTMPDIR=$CLIENTTMPDIR
 
             # check queue type
-	    if test  "$QUEUETYPE" = "srun"
-	    then
-		sbatch --job-name=GCG$SHORTPROBNAME --mem=$HARDMEMLIMIT -p $CLUSTERQUEUE -A $ACCOUNT $NICE --time=${HARDTIMELIMIT} ${EXCLUSIVE} --output=/dev/null runcluster.sh
-	    elif test  "$QUEUETYPE" = "bsub"
-	    then
-		cp runcluster_aachen.sh runcluster_tmp.sh
-		TLIMIT=`expr $HARDTIMELIMIT / 60`
-		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
-		sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
-		sed -i "s,\$BASENAME,$BASENAME," runcluster_tmp.sh
-		sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
-		sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
-		sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
-		sed -i "s,\$SHORTPROBNAME,$SHORTPROBNAME," runcluster_tmp.sh
-		sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
-		sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
-		sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
-#	        sed -i "s,,," runcluster_tmp.sh
+	if test  "$QUEUETYPE" = "srun"
+	then
+	    sbatch --job-name=GCG$SHORTPROBNAME --mem=$HARDMEMLIMIT -p $CLUSTERQUEUE -A $ACCOUNT $NICE --time=${HARDTIMELIMIT} ${EXCLUSIVE} --output=/dev/null runcluster_dip.sh
+	elif test  "$QUEUETYPE" = "bsub"
+	then
+	    cp runcluster_aachen_dip.sh runcluster_tmp.sh
+	    TLIMIT=`expr $HARDTIMELIMIT / 60`
+	    ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
+	    sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
+	    sed -i "s,\$BASENAME,$BASENAME," runcluster_tmp.sh
+	    sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
+	    sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
+	    sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
+	    sed -i "s,\$SHORTPROBNAME,$SHORTPROBNAME," runcluster_tmp.sh
+	    sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
+	    sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
+	    sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
+#	    sed -i "s,,," runcluster_tmp.sh
 
-#	        less runcluster_aachen.sh
-#	        bsub -J GCG$SHORTPROBNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
-	        bsub -q $QUEUE -o error/out_$SHORTPROBNAME_%I_%J.txt < runcluster_tmp.sh &
-#	        bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
-	    else
-                # -V to copy all environment variables
-		qsub -l walltime=$HARDTIMELIMIT -l mem=$HARDMEMLIMIT -l nodes=1:ppn=$PPN -N GCG$SHORTPROBNAME -V -q $QUEUE -o /dev/null -e /dev/null runcluster.sh
-	    fi
+#	    less runcluster_aachen.sh
+#	    bsub -J GCG$SHORTPROBNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
+	    bsub -q $QUEUE -o error/out_$SHORTPROBNAME_%I_%J.txt < runcluster_tmp.sh &
+#	    bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
 	else
-	    echo "input file "$GCGPATH/$i" not found!"
+            # -V to copy all environment variables
+	    qsub -l walltime=$HARDTIMELIMIT -l mem=$HARDMEMLIMIT -l nodes=1:ppn=$PPN -N GCG$SHORTPROBNAME -V -q $QUEUE -o /dev/null -e /dev/null runcluster_dip.sh
 	fi
-    done
+    else
+	echo "input file "$GCGPATH/$i" not found!"
+    fi
 done

@@ -180,6 +180,9 @@ SCIP_RETCODE writeData(
    varindexmap = NULL;
    consindexmap = NULL;
 
+   varindexmap = NULL;
+   consindexmap = NULL;
+
    if( decdecomp != NULL )
    {
       assert(decdecomp->type == DEC_DECTYPE_ARROWHEAD

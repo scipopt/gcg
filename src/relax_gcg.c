@@ -260,6 +260,8 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetNSubscipvars(decdecomp) != 0);
    assert(DECdecompGetSubscipvars(decdecomp) != NULL);
 
+   SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+
    origvars = SCIPgetOrigVars(scip);
    nvars = SCIPgetNOrigVars(scip);
    linkingconss = DECdecompGetLinkingconss(decdecomp);
@@ -293,7 +295,7 @@ SCIP_RETCODE convertStructToGCG(
       SCIP_VAR* transvar;
       SCIP_CALL( SCIPgetTransformedVar(scip, origvars[i], &transvar) );
       assert(transvar != NULL);
-      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, transvar, origvars[i]) );
+      SCIP_CALL( SCIPhashmapInsert(transvar2origvar, SCIPvarGetProbvar(transvar), origvars[i]) );
    }
 
    for( i = 0; i < nblocks; ++i )
@@ -882,6 +884,7 @@ SCIP_RETCODE createPricingVar(
    assert(origvar != NULL);
 
    pricingprobnr = GCGvarGetBlock(origvar);
+   assert(pricingprobnr >= 0);
 
    SCIP_CALL( GCGoriginalVarCreatePricingVar(relaxdata->pricingprobs[pricingprobnr], origvar, &var) );
    assert(var != NULL);
@@ -1026,18 +1029,15 @@ SCIP_RETCODE createPricingVariables(
       blocknr = GCGvarGetBlock(probvar);
       if( blocknr == -1 )
       {
-         size_t tempblock;
-         tempblock = (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar); /*lint !e507*/
-         if( tempblock == 0 )
+         int tempblock;
+         tempblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(relaxdata->decdecomp), probvar)-1; /*lint !e507*/
+         if( tempblock == DECdecompGetNBlocks(relaxdata->decdecomp) )
          {
-            assert(!SCIPhashmapExists(DECdecompGetVartoblock(relaxdata->decdecomp), probvar));
             blocknr = -1;
          }
          else
          {
-            assert(tempblock < INT_MAX);
-            assert(tempblock > 0);
-            blocknr = (int) (tempblock -1); /*lint !e806*/
+            blocknr = tempblock; /*lint !e806*/
          }
       }
 

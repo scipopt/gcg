@@ -400,6 +400,8 @@ SCIP_RETCODE findConnectedComponents(
    }
    SCIPdebugPrintf("\n");
 
+   detectordata->nblocks = tempblock-1;
+
    /* convert temporary data to detectordata */
    for( i = 0; i < nconss; ++i )
    {
@@ -410,7 +412,10 @@ SCIP_RETCODE findConnectedComponents(
          continue;
 
       if( detectordata->consismaster[i] )
+      {
+         SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*) (size_t) (detectordata->nblocks+1)) );
          continue;
+      }
 
       if( !SCIPhashmapExists(constoblock, cons) )
          continue;
@@ -435,7 +440,12 @@ SCIP_RETCODE findConnectedComponents(
 
       assert(vartoblock[varindex] < nextblock);
       if( vartoblock[varindex] < 0 )
+      {
+         SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]),
+                        (void*)(size_t)(detectordata->nblocks+1)) );
          continue;
+      }
+
 
       varblock = blockrepresentative[vartoblock[varindex]];
       assert(varblock == -1 || varblock > 0);
@@ -452,7 +462,6 @@ SCIP_RETCODE findConnectedComponents(
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
-   detectordata->nblocks = tempblock-1;
 
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;
