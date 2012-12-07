@@ -137,6 +137,7 @@ SCIP_RETCODE findRandomPartition(
          ++nblocks;
       }
       SCIPdebugMessage("Assigning cons <%s> to block %d.\n", SCIPconsGetName(conss[i]), nblocks);
+      assert(nblocks > 0);
       SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (nblocks)) ); /*lint !e866*/
    }
 
