@@ -80,7 +80,6 @@ MAINOBJ		=	reader_blk.o \
 			branch_master.o \
 			branch_relpsprob.o \
 			masterplugins.o \
-			pricingplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
 			disp_gcg.o \
