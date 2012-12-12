@@ -119,7 +119,6 @@ static
 SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONS* cons;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -131,14 +130,6 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    /* prepare stack */
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
    conshdlrData->nstack = 0;
-
-   /* create origbranch constraint corresponding to the root node only if there is some problem */
-   if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
-   {
-      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
-      conshdlrData->stack[0] = cons;
-      conshdlrData->nstack = 1;
-   }
 
    /* check consistency */
    GCGconsOrigbranchCheckConsistency(scip);
@@ -159,7 +150,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
-   assert(conshdlrData->nstack == 1);
+   assert(conshdlrData->nstack <= 1);
    SCIPdebugMessage("exiting branch orig constraint handler\n");
 
    /* free stack */
@@ -818,18 +809,20 @@ SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
    {
-      SCIPerrorMessage("original constraint handler not found\n");
+      SCIPerrorMessage("origbranch constraint handler not found\n");
       return SCIP_ERROR;
    }
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
 
-   cons = conshdlrData->stack[0];
-   assert(conshdlrData->nstack == 1);
-   conshdlrData->nstack = 0;
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
 
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
    SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+
+   /* check consistency */
+   GCGconsOrigbranchCheckConsistency(scip);
+
 
    return SCIP_OKAY;
 }

@@ -920,7 +920,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, valid);
    SCIP_CALL( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking));
 
-
    if( haslinking )
    {
       SCIPdebugMessage("Decomposition has linking constraints and is bordered.\n");
@@ -1161,8 +1160,6 @@ SCIP_RETCODE DECdecompTransform(
    SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
 
-   SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
-
    /* transform all constraints and put them into constoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
@@ -1315,6 +1312,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
+#ifndef NDEBUG
    // SCIP_Bool* varishandled;
    // SCIP_Bool* consishandled;
 
@@ -1380,7 +1378,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
       }
    }
 
-   /* check linking constraint and variables */
+   /* check linking constraints and variables */
    for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
    {
       assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp));
@@ -1412,5 +1410,6 @@ SCIP_RETCODE DECdecompCheckConsistency(
          break;
    }
 
+#endif
    return SCIP_OKAY;
 }
