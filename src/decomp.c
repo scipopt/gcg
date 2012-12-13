@@ -1183,27 +1183,41 @@ SCIP_RETCODE DECdecompTransform(
    /* transform all variables and put them into vartoblock */
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
-      for( v = 0; v < decdecomp->nsubscipvars[b]; ++v )
+      int idx;
+      for( v = 0, idx = 0; v < decdecomp->nsubscipvars[b]; ++v )
       {
-         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
          assert(decdecomp->subscipvars[b][v] != NULL);
-         if( !SCIPvarIsTransformed(decdecomp->subscipvars[b][v]) )
-         {
-            SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->subscipvars[b][v], &newvar) );
-            SCIP_CALL( SCIPcaptureVar(scip, newvar) );
-            SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->subscipvars[b][v])) );
-         }
-         else
-            newvar = decdecomp->subscipvars[b][v];
+
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]),
+            decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
+
+         /* make sure that newvar is a transformed variable */
+         SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->subscipvars[b][v], &newvar) );
+         SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->subscipvars[b][v])) );
+
          assert(newvar != NULL);
          assert(SCIPvarIsTransformed(newvar));
+
          newvar = SCIPvarGetProbvar(newvar);
-         decdecomp->subscipvars[b][v] = newvar;
-         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]), decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
-         assert(decdecomp->subscipvars[b][v] != NULL);
-         assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][v]));
-         SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->subscipvars[b][v], (void*) (size_t) (b+1)) );
+         assert(newvar != NULL);
+
+         /* the probvar can also be fixed, in which case we do not need it in the block; furthermore, multiple variables
+          * can resolve to the same active problem variable, so we check whether we already handled the variable
+          */
+         if( SCIPvarIsActive(newvar) && !SCIPhashmapExists(newvartoblock, newvar) )
+         {
+            decdecomp->subscipvars[b][idx] = newvar;
+            SCIP_CALL( SCIPcaptureVar(scip, newvar) );
+            SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][idx]),
+               decdecomp->subscipvars[b][idx], SCIPvarIsTransformed(decdecomp->subscipvars[b][idx])?"t":"o" );
+
+            assert(decdecomp->subscipvars[b][idx] != NULL);
+            assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][idx]));
+            SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->subscipvars[b][idx], (void*) (size_t) (b+1)) );
+            ++idx;
+         }
       }
+      decdecomp->nsubscipvars[b] = idx;
    }
 
    /* transform all linking constraints */
@@ -1394,7 +1408,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(FALSE);
       break;
    case DEC_DECTYPE_ARROWHEAD:
-      assert(DECdecompGetNLinkingvars(decdecomp) > 0);
+      //assert(DECdecompGetNLinkingvars(decdecomp) > 0);
       break;
    case DEC_DECTYPE_BORDERED:
       assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) > 0);
