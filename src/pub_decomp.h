@@ -36,6 +36,8 @@
 #ifndef __SCIP_PUB_DECOMP_H__
 #define __SCIP_PUB_DECOMP_H__
 
+#include <string.h>
+
 #include "type_decomp.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
@@ -295,6 +297,12 @@ extern
 SCIP_RETCODE DECdecompCheckConsistency(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
+/** returns whether the constraint belongs to GCG or not */
+extern
+SCIP_Bool GCGisConsGCGCons(
+   SCIP_CONS*            cons                /**< constraint to check */
    );
 
 #ifdef __cplusplus

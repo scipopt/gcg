@@ -1349,7 +1349,10 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
    {
-      assert(SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), SCIPgetConss(scip)[c]));
+      if( !GCGisConsGCGCons(SCIPgetConss(scip)[c]) )
+      {
+         assert(SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), SCIPgetConss(scip)[c]));
+      }
    }
 
    /* Check whether subscipcons are correct */
@@ -1426,4 +1429,20 @@ SCIP_RETCODE DECdecompCheckConsistency(
 
 #endif
    return SCIP_OKAY;
+}
+
+/** returns whether the constraint belongs to GCG or not */
+SCIP_Bool GCGisConsGCGCons(
+   SCIP_CONS*            cons                /**< constraint to check */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   assert(cons != NULL);
+   conshdlr = SCIPconsGetHdlr(cons);
+   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+
+   return FALSE;
 }

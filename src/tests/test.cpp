@@ -18,7 +18,7 @@ class GcgTest : public ::testing::Test {
   }
 
   static void TearDownTestCase() {
-        SCIPfree(&scip);
+     SCIP_CALL_ABORT( SCIPfree(&scip) );
   }
 
    virtual void SetUp() {
@@ -50,7 +50,7 @@ class GcgResultTest : public ::testing::Test {
   }
 
   static void TearDownTestCase() {
-        SCIPfree(&scip);
+     SCIP_CALL_ABORT( SCIPfree(&scip) );
   }
 
    virtual void SetUp() {
@@ -110,6 +110,83 @@ TEST_F(GcgResultTest, performanceTest) {
    // expect solving time less than 5 seconds in debug mode
    EXPECT_GT(5, SCIPgetSolvingTime(scip)); 
 }
+
+
+class GcgLibTest : public ::testing::Test {
+ protected:
+  static SCIP *scip;
+
+  static void SetUpTestCase() {
+     SCIP_RESULT result;
+     SCIP_CALL_ABORT( SCIPcreate(&scip) );
+     SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+     SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
+     SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+     SCIP_CALL_ABORT( SCIPpresolve(scip) );
+     SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
+     SCIP_CALL_ABORT( SCIPsolve(scip) );
+  }
+
+  static void TearDownTestCase() {
+     SCIP_CALL_ABORT( SCIPfree(&scip) );
+  }
+
+   virtual void SetUp() {
+
+   }
+
+   virtual void TearDown() {
+   }
+};
+
+SCIP* GcgLibTest::scip = NULL;
+
+
+TEST_F(GcgLibTest, FreeTransformTest) {
+   SCIP_RESULT result;
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+   SCIP_CALL_ABORT( SCIPfreeTransform(scip) );
+   ASSERT_EQ(SCIP_STAGE_PROBLEM, SCIPgetStage(scip));
+   ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_ABORT( SCIPpresolve(scip) );
+   SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_ABORT( SCIPsolve(scip) );
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
+}
+
+TEST_F(GcgLibTest, FreeProbTest) {
+   SCIP_RESULT result;
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+   SCIP_CALL_ABORT( SCIPfreeProb(scip) );
+   ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   SCIP_CALL_ABORT( SCIPpresolve(scip) );
+   SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_ABORT( SCIPsolve(scip) );
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
+}
+
+TEST_F(GcgLibTest, FreeSolveTest) {
+   SCIP_RESULT result;
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+   SCIP_CALL_ABORT( SCIPfreeSolve(scip, FALSE) );
+   ASSERT_EQ(SCIP_STAGE_TRANSFORMED, SCIPgetStage(scip));
+   ASSERT_LE(1, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_ABORT( SCIPpresolve(scip) );
+  // SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
+   SCIP_CALL_ABORT( SCIPsolve(scip) );
+   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
+}
+
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

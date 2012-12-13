@@ -1976,6 +1976,8 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
 
+   relaxdata->relaxisinitialized = FALSE;
+
    return SCIP_OKAY;
 }
 
