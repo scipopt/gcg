@@ -168,7 +168,7 @@ do
             echo @01 $i ===========
 	    NAME=`basename $i`
 	    base=${NAME%%.*}
-	    echo $base
+#	    echo $base
             echo @01 $i ===========                >> $ERRFILE
             echo > $TMPFILE
             if test "$SETNAME" != "default"
@@ -210,7 +210,7 @@ do
 		then
 		    if test -f $DECFILE
 		    then
-			BLKFILE = $DECFILE
+			BLKFILE=$DECFILE
 		    fi
 		    if test -f $BLKFILE
 		    then
