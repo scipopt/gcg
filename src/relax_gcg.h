@@ -42,6 +42,10 @@
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** creates the GCG relaxator and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeRelaxGcg(
@@ -365,4 +369,7 @@ SCIP_Bool GCGrelaxIsInitialized(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+#ifdef __cplusplus
+}
+#endif
 #endif

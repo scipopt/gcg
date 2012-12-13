@@ -783,6 +783,8 @@ SCIP_RETCODE DECdetectStructure(
 
       if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
          conshdlrdata->hasrun = TRUE;
+
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 

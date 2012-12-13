@@ -41,6 +41,10 @@
 #include "scip/scip.h"
 #include "type_solver.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum GCG_Pricetype
 {
    GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
@@ -142,4 +146,18 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns whether the scip is the original problem scip */
+extern
+SCIP_Bool GCGisOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns whether the scip is the master problem scip */
+SCIP_Bool GCGisMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
+}
+#endif
 #endif
