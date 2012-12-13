@@ -420,7 +420,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-
+/*
    if( conshdlrdata->ndecomps > 0 )
    {
       int i;
@@ -433,7 +433,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
       conshdlrdata->ndecomps = 0;
    }
    conshdlrdata->hasrun = FALSE;
-
+*/
    return SCIP_OKAY;
 }
 
@@ -574,8 +574,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
-      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = decdecomp;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+1) );
+      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = conshdlrdata->decdecomps[0];
+      conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps += 1;
    }
    return SCIP_OKAY;
