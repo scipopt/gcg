@@ -803,17 +803,15 @@ SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
    )
 {
    SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
    assert(scip != NULL);
+
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
    {
       SCIPerrorMessage("origbranch constraint handler not found\n");
       return SCIP_ERROR;
    }
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
 
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
 
