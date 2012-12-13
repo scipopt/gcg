@@ -134,7 +134,6 @@
 #endif
 
 #include "scip/scipshell.h"
-#include "scip/disp_default.h"
 #include "reader_blk.h"
 #include "reader_dec.h"
 #include "pricer_gcg.h"
@@ -296,7 +295,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
-   SCIP_CALL( SCIPincludeDispDefault(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
 
 
