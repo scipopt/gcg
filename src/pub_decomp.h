@@ -36,8 +36,6 @@
 #ifndef GCG_PUB_DECOMP_H__
 #define GCG_PUB_DECOMP_H__
 
-#include <string.h>
-
 #include "type_decomp.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"

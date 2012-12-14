@@ -43,7 +43,9 @@
 #include "scip_misc.h"
 
 #include <assert.h>
+#include <string.h>
 
+/** fill out subscipvars arrays from the information from vartoblock */
 static
 SCIP_RETCODE fillOutVarsFromVartoblock(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -55,7 +57,6 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    SCIP_Bool*            haslinking          /**< returns whether there are linking variables */
    )
 {
-
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
 
@@ -148,10 +149,11 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    SCIPfreeBufferArray(scip, &subscipvars);
    SCIPfreeBufferArray(scip, &linkingvars);
 
-
    return SCIP_OKAY;
 }
 
+
+/** fill out subscipcons arrays from the information from constoblock */
 static
 SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -163,7 +165,6 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP_Bool*            haslinking          /**< returns whether there are linking constraints */
    )
 {
-
    SCIP_CONS*** subscipconss;
    int* nsubscipconss;
 
@@ -177,7 +178,6 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    assert(nblocks > 0);
    assert(conss != NULL);
    assert(nconss > 0);
-
 
    DECdecompSetConstoblock(decdecomp, constoblock, &valid);
    assert(valid);
