@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_SCIP_MISC_H_
-#define GCG_SCIP_MISC_H_
+#ifndef GCG_SCIP_MISC_H__
+#define GCG_SCIP_MISC_H__
 
 #include "scip/scip.h"
 #include "scip/cons_setppc.h"

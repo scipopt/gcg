@@ -1001,7 +1001,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
             }
             else
             {
-               assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);
+               assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);  /*lint !e507*/
                SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(idx+1)) );
                ++idx;
             }
@@ -1363,9 +1363,9 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIP_VAR** curvars;
          int ncurvars;
          SCIP_CONS* cons = DECdecompGetSubscipconss(decdecomp)[b][c];
-         SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);
+         SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
-         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b);
+         assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
          ncurvars = SCIPgetNVarsXXX(scip, cons);
          SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
@@ -1374,7 +1374,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          {
             int varblock;
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[v]);
-            varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;
+            varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;  /*lint !e507*/
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
@@ -1387,7 +1387,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
       {
          int varblock;
          SCIP_VAR* var = DECdecompGetSubscipvars(decdecomp)[b][v];
-         varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1;
+         varblock = ((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), var)) -1; /*lint !e507*/
          SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
          assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
          assert(SCIPvarIsActive(var));
@@ -1398,11 +1398,11 @@ SCIP_RETCODE DECdecompCheckConsistency(
    /* check linking constraints and variables */
    for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
    {
-      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp));
+      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp)); /*lint !e507*/
    }
    for (c = 0; c < DECdecompGetNLinkingconss(decdecomp); ++c)
    {
-      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), DECdecompGetLinkingconss(decdecomp)[c])) -1 ==  DECdecompGetNBlocks(decdecomp));
+      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), DECdecompGetLinkingconss(decdecomp)[c])) -1 ==  DECdecompGetNBlocks(decdecomp)); /*lint !e507*/
    }
 
    switch(DECdecompGetType(decdecomp))
