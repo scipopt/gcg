@@ -918,7 +918,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    *valid = TRUE;
 
    DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL, valid);
-   SCIP_CALL( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking));
+   SCIP_CALL( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking) );
 
    if( haslinking )
    {
@@ -927,7 +927,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       assert(*valid);
    }
 
-   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decdecomp, vartoblock, nblocks, vars, nvars, &haslinking));
+   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decdecomp, vartoblock, nblocks, vars, nvars, &haslinking) );
 
    if( haslinking )
    {
@@ -936,7 +936,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       assert(*valid);
    }
 
-   if(!staircase)
+   if( !staircase )
    {
       SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
       return SCIP_OKAY;
@@ -1316,7 +1316,7 @@ void DECdecompPrintDecomp(
    SCIPinfoMessage(scip, NULL, "========================================\n");
 }
 
-/** Checks the consistency of the data structure
+/** checks the consistency of the data structure
  *
  *  In particular, it checks whether the redundant information in the structure agree and
  *  whether the variables in the structure are both existant in the arrays and in the problem
@@ -1405,7 +1405,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
       assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), DECdecompGetLinkingconss(decdecomp)[c])) -1 ==  DECdecompGetNBlocks(decdecomp)); /*lint !e507*/
    }
 
-   switch(DECdecompGetType(decdecomp))
+   switch( DECdecompGetType(decdecomp) )
    {
    case DEC_DECTYPE_UNKNOWN:
          assert(FALSE);

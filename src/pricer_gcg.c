@@ -1462,7 +1462,7 @@ SCIP_Bool abortHeuristicPricing(
 
    assert( pricetype == GCG_PRICETYPE_FARKAS || pricetype == GCG_PRICETYPE_REDCOST );
 
-   if( pricetype == GCG_PRICETYPE_REDCOST)
+   if( pricetype == GCG_PRICETYPE_REDCOST )
    {
       return !((nfoundvars < pricerdata->maxvarsroundredcost)
          && successfulmips < pricerdata->maxsuccessfulmipsredcost

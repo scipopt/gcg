@@ -991,7 +991,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalgap)
 
    if( SCIPisEQ(scip, primalbound, dualbound) )
       gap = 0.0;
-   else if( SCIPisZero(scip, primalbound)
+   else if( SCIPisZero(scip, primalbound )
       || SCIPisInfinity(scip, REALABS(primalbound))
       || primalbound * dualbound < 0.0 )
       gap = SCIPinfinity(scip);

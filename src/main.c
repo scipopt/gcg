@@ -117,7 +117,7 @@ SCIP_RETCODE readParams(
    return SCIP_OKAY;
 }
 
-/** Runs GCG from the command line */
+/** runs GCG from the command line */
 static
 SCIP_RETCODE fromCommandLine(
    SCIP*                 scip,               /**< SCIP data structure */
