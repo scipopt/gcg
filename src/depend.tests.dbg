@@ -48,4 +48,5 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp lib/gtest/gtest/gtest.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
- src/type_solver.h src/cons_decomp.h src/type_detector.h
+ src/type_solver.h src/cons_decomp.h src/type_detector.h src/reader_blk.h \
+ src/reader_dec.h
