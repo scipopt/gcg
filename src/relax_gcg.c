@@ -283,7 +283,10 @@ SCIP_RETCODE convertStructToGCG(
    {
       assert(linkingconss[i] != NULL);
       SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
-      SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
+      if( SCIPconsIsActive(linkingconss[i]) )
+      {
+         SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
+      }
    }
 
    /* prepare the map from transformed to original variables */
