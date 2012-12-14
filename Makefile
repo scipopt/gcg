@@ -26,7 +26,7 @@ SCIPDIR         =       lib/scip
 
 
 LIBDIR          =       lib
-DIRECTORIES     =       $(LIBDIR)
+DIRECTORIES     =       $(LIBDIR) $(LIBOBJDIR)
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -275,9 +275,6 @@ $(GCGLIBFILE):	$(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)  $(GCGLIBOBJFILES)
 ifneq ($(RANLIB),)
 		$(RANLIB) $@
 endif
-
-$(LIBOBJDIR):	$(OBJDIR)
-		@-mkdir -p $(LIBOBJDIR)
 
 $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		@rm -f $@
