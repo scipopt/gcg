@@ -893,7 +893,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP_VAR*** stairlinkingvars;
    SCIP_CONS*** subscipconss;
    SCIP_Bool success;
-   int index;
+   int idx;
    int linkindex;
    int cindex;
    int cumindex;
@@ -957,7 +957,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    subscipconss = DECdecompGetSubscipconss(decdecomp);
    nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
 
-   index = 0;
+   idx = 0;
    cindex = 0;
    cumindex = 0;
 
@@ -1002,13 +1002,13 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
             else
             {
                assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);
-               SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(index+1)) );
-               ++index;
+               SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(idx+1)) );
+               ++idx;
             }
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
-      index += linkindex;
+      idx += linkindex;
       cumindex += linkindex;
    }
    DECdecompSetVarindex(decdecomp, varindex);
@@ -1339,12 +1339,12 @@ SCIP_RETCODE DECdecompCheckConsistency(
    //
    //BMSclearMemoryArray(varishandled, SCIPgetNVars(scip));
    //BMSclearMemoryArray(consishandled, SCIPgetNConss(scip));
-   {
 
-      for( v = 0; v < SCIPgetNVars(scip); ++v )
-      {
-         assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), SCIPgetVars(scip)[v]));
-      }
+   SCIPdebugMessage("Problem is %stransformed\n", SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED ? "": "not ");
+
+   for( v = 0; v < SCIPgetNVars(scip); ++v )
+   {
+      assert(SCIPhashmapExists(DECdecompGetVartoblock(decdecomp), SCIPgetVars(scip)[v]));
    }
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
@@ -1411,7 +1411,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
          assert(FALSE);
       break;
    case DEC_DECTYPE_ARROWHEAD:
-      //assert(DECdecompGetNLinkingvars(decdecomp) > 0);
+      assert(DECdecompGetNLinkingvars(decdecomp) > 0);
       break;
    case DEC_DECTYPE_BORDERED:
       assert(DECdecompGetNLinkingvars(decdecomp) == 0 && DECdecompGetNLinkingconss(decdecomp) > 0);
