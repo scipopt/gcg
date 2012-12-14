@@ -415,25 +415,6 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(conshdlr != NULL);
-   assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-/*
-   if( conshdlrdata->ndecomps > 0 )
-   {
-      int i;
-      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-      {
-         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-      }
-      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-      conshdlrdata->decdecomps = NULL;
-      conshdlrdata->ndecomps = 0;
-   }
-   conshdlrdata->hasrun = FALSE;
-*/
    return SCIP_OKAY;
 }
 
