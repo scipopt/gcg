@@ -16,3 +16,4 @@ release
 lib/linkscreated.scip
 gcg-*.*.*
 lib/scip
+lib/gtest*
