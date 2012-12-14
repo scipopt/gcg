@@ -133,30 +133,32 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nread problem <%s>\n", filename);
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
+   SCIP_CALL( SCIPtransformProb(scip) );
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
       SCIPinfoMessage(scip, NULL, "==================\n\n");
       SCIP_CALL( SCIPreadProb(scip, decname, NULL) );
+      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
    }
-
+   else
+   {
+      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( DECdetectStructure(scip, &result) );
+   }
 
    /*******************
     * Problem Solving *
     *******************/
-
-   /* solve problem */
-   SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
-   SCIPinfoMessage(scip, NULL, "=============\n\n");
-
-   SCIP_CALL( SCIPpresolve(scip) );
-   SCIP_CALL( DECdetectStructure(scip, &result) );
 
    if( decname == NULL && result != SCIP_SUCCESS )
    {
       SCIPinfoMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
       return SCIP_OKAY;
    }
+   /* solve problem */
+   SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
+   SCIPinfoMessage(scip, NULL, "=============\n\n");
 
    SCIP_CALL( SCIPsolve(scip) );
 
