@@ -45,11 +45,11 @@ typedef struct DecDecomp DEC_DECOMP; /**< decomposition structure */
 /** type of the decomposition */
 enum Dectype
 {
-   DEC_DECTYPE_UNKNOWN   =  0,              /**< unknown structure (used for initialization) */
-   DEC_DECTYPE_ARROWHEAD =  1,              /**< arrowhead structure (linking variables and constraints) */
-   DEC_DECTYPE_STAIRCASE =  2,              /**< staircase structure (linking variables between consecutive blocks) */
-   DEC_DECTYPE_DIAGONAL  =  3,              /**< block diagonal structure (no linking variables and constraints) */
-   DEC_DECTYPE_BORDERED  =  4               /**< bordered block diagonal structure (linking constraints only) */
+   DEC_DECTYPE_UNKNOWN   = 0,                /**< unknown structure (used for initialization) */
+   DEC_DECTYPE_ARROWHEAD = 1,                /**< arrowhead structure (linking variables and constraints) */
+   DEC_DECTYPE_STAIRCASE = 2,                /**< staircase structure (linking variables between consecutive blocks) */
+   DEC_DECTYPE_DIAGONAL  = 3,                /**< block diagonal structure (no linking variables and constraints) */
+   DEC_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
 };
 
 typedef enum Dectype DEC_DECTYPE; /**< decomposition type */

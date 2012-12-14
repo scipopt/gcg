@@ -1273,8 +1273,8 @@ SCIP_RETCODE DECdecompTransform(
 
 /** prints out detailed information on the contents of decdecomp*/
 void DECdecompPrintDecomp(
-   SCIP*      scip,           /**< SCIP data structure */
-   DEC_DECOMP* decdecomp       /**< decdecomp instance */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    )
 {
    int i;
