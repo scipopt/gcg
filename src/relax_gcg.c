@@ -1954,7 +1954,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    /* free master problem */
    if( relaxdata->masterprob != NULL )
    {
-      SCIP_CALL( SCIPfreeTransform(relaxdata->masterprob) );
+      SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
    }
 
    /* free pricing problems */
