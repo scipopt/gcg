@@ -49,7 +49,7 @@ GTEST		=	true
 #-----------------------------------------------------------------------------
 
 MAINNAME	=	gcg
-TESTNAME	=	gcg_test
+
 LIBOBJ		=	reader_blk.o \
 			reader_dec.o \
 			reader_ref.o \
@@ -101,9 +101,6 @@ LIBOBJ		=	reader_blk.o \
 
 MAINOBJ		=	main.o
 
-TESTOBJ		=	tests/test.o
-TESTSRCDIR		=	$(SRCDIR)/tests
-
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
 
@@ -112,15 +109,6 @@ MAINFILE	=	$(BINDIR)/$(MAIN)
 MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
-TESTSRC		=	$(filter $(wildcard $(TESTSRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.c))) $(filter $(wildcard $(TESTSRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.cpp)))
-TESTDEP		=	$(SRCDIR)/depend.tests.$(OPT)
-
-TEST		=	$(TESTNAME).$(BASE).$(LPS)$(EXEEXTENSION)
-TESTFILE	=	$(BINDIR)/$(TEST)
-TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
-TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
-TESTOBJDIR      =	$(OBJDIR)/tests
-TESTLDFLAGS		+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest
 
 SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
@@ -148,18 +136,15 @@ LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
+.PHONY: all
+all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
+-include make/local/make.targets
 
 ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
 endif
 
-ifeq ($(GTEST),true)
-FLAGS+=-I$(LIBDIR)/gtest/
-endif
-
-.PHONY: all
-all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
@@ -210,7 +195,6 @@ $(BINDIR):
 
 # include target to detect the current git hash
 -include make/local/make.detectgithash
--include make/local/make.targets
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
@@ -219,22 +203,6 @@ githash::   # do not remove the double-colon
 test:
 		cd check; \
 		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
-
-.PHONY: tests
-tests: 		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
-
-$(TESTSHORTLINK):	$(TESTFILE)
-		@rm -f $@
-		cd $(dir $@) && ln -s $(notdir $(TESTFILE)) $(notdir $@)
-
-$(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE) $(TESTOBJFILES)
-		@echo "-> linking $@"
-		$(LINKCXX) $(TESTOBJFILES) $(LINKCXX_l)$(GCGLIB) \
-		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) $(TESTLDFLAGS) \
-		$(OFLAGS) $(LPSLDFLAGS) $(LDFLAGS) \
-		$(LINKCXX_o)$@
 
 .PHONY: eval
 eval:
@@ -271,12 +239,6 @@ gcglibdepend:
 		>$(GCGLIBDEP)'
 -include	$(GCGLIBDEP)
 
-.PHONY: testdepend
-testdepend:
-		$(SHELL) -ec '$(DCC) $(FLAGS) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
-		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
-		>$(TESTDEP)'
--include	$(TESTDEP)
 
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
@@ -316,9 +278,6 @@ endif
 
 $(LIBOBJDIR):	$(OBJDIR)
 		@-mkdir -p $(LIBOBJDIR)
-
-$(TESTOBJDIR):	$(OBJDIR)
-		@-mkdir -p $(TESTOBJDIR)
 
 $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		@rm -f $@
