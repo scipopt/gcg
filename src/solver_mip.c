@@ -283,6 +283,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    int i;
 
    SCIP_Real memlimit;
+   SCIP_RETCODE retcode;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -304,8 +305,12 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    }
 
    /* solve the pricing submip */
-   SCIP_CALL( SCIPsolve(pricingprob) );
+   retcode = SCIPsolve(pricingprob);
 
+   if( retcode != SCIP_OKAY )
+   {
+      SCIPwarningMessage(scip, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
+   }
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
        || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
