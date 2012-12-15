@@ -928,6 +928,10 @@ SCIP_RETCODE setPricingObjs(
       }
       if( !SCIPisZero(scip, dualsol) )
       {
+#ifdef PRINTDUALSOLS
+         SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
+#endif
+
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
          consvars = SCIPgetVarsLinear(origprob, origconss[i]);
          consvals = SCIPgetValsLinear(origprob, origconss[i]);
@@ -1022,6 +1026,12 @@ SCIP_RETCODE setPricingObjs(
          assert(pricetype == GCG_PRICETYPE_FARKAS);
          pricerdata->dualsolconv[i] = SCIPgetDualfarkasLinear(scip, GCGrelaxGetConvCons(origprob, i));
       }
+#ifdef PRINTDUALSOLS
+      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
+      {
+         SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGrelaxGetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
+      }
+#endif
    }
 
    return SCIP_OKAY;

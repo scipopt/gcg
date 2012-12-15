@@ -288,6 +288,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
    SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+   SCIP_CALL( SCIPprintOrigProblem(pricingprob, NULL, "lp", FALSE) );
 #endif
 
    solverdata = GCGpricerGetSolverdata(scip, solver);
