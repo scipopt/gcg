@@ -1,4 +1,4 @@
-GCG next
+GCG Version 1.1
 ===============
 features
 - the set partitioning detector can create decompositions with one block
@@ -9,6 +9,7 @@ bug fixes
 - decompositions are now correctly classified
 - clean up lots of errors related to inconsistent decompositions
 - safe handling of empty problems
+- fix detection of identical pricingproblems for aggregation
 
 code cleanup
 - use DECfilloutDecdecompFromHashmaps where appropriate to remove redundant
