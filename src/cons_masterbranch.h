@@ -31,8 +31,8 @@
  * @author Martin Bergner
  */
 
-#ifndef CONSMASTERBRANCH_H
-#define CONSMASTERBRANCH_H
+#ifndef GCG_CONS_MASTERBRANCH_H__
+#define GCG_CONS_MASTERBRANCH_H__
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"

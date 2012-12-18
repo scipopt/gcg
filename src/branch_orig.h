@@ -33,17 +33,24 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_BRANCH_ORIG_H__
-#define __SCIP_BRANCH_ORIG_H__
+#ifndef GCG_BRANCH_ORIG_H__
+#define GCG_BRANCH_ORIG_H__
 
 
 #include "scip/scip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** creates the branching on original variable branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

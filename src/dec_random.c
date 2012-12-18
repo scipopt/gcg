@@ -107,7 +107,7 @@ SCIP_RETCODE findRandomPartition(
    SCIP_CALL( SCIPallocMemoryArray(scip, &consblocks, nconss) );
    BMSclearMemoryArray(consblocks, nconss);
    
-   if( detectordata->seed == -1)
+   if( detectordata->seed == -1 )
       seed = SCIPround(scip, SCIPclockGetTimeOfDay());
    else
       seed = detectordata->seed;
@@ -218,7 +218,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
 
-   if(detectordata->nblocks > 0)
+   if( detectordata->nblocks > 0 )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );

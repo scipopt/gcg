@@ -140,9 +140,14 @@ SCIP_RETCODE solveProblem(
    int s;
    int i;
 
+   SCIP_RETCODE retcode;
    /* solve the pricing submip */
-   SCIP_CALL( SCIPsolve(pricingprob) );
+   retcode = SCIPsolve(pricingprob);
 
+   if( retcode != SCIP_OKAY )
+   {
+      SCIPwarningMessage(pricingprob, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
+   }
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
@@ -246,7 +251,7 @@ SCIP_RETCODE solveProblem(
       {
          SCIP_Bool feasible;
 
-         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) ||  SCIPisLT(pricingprob, SCIPinfinity(pricingprob), -SCIPgetSolOrigObj(pricingprob, probsols[s])))
+         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) ||  SCIPisLT(pricingprob, SCIPinfinity(pricingprob), -SCIPgetSolOrigObj(pricingprob, probsols[s])) )
          {
            SCIPdebugMessage("unbounded solution\n");
            SCIPdebug(SCIPprintSol(pricingprob, probsols[s], NULL, FALSE));

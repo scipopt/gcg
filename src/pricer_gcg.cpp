@@ -572,7 +572,7 @@ SCIP_RETCODE ObjPricerGcg::getSolverPointers(
    assert(solver != NULL);
    assert(clock != NULL);
    assert(calls != NULL);
-   switch(optimal)
+   switch( optimal )
    {
    case TRUE:
       if( pricetype->getType() == GCG_PRICETYPE_FARKAS )
@@ -768,7 +768,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
             GCGpricerCollectStatistic(pricerdata, pricetype->getType(), prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
-            if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING)
+            if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING )
             {
                #pragma omp atomic
                pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
@@ -876,6 +876,10 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
       if( !SCIPisZero(scip_, dualsol) )
       {
+#ifdef PRINTDUALSOLS
+         SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
+#endif
+
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
          consvars = SCIPgetVarsLinear(origprob, origconss[i]);
          consvals = SCIPgetValsLinear(origprob, origconss[i]);
@@ -958,6 +962,12 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       }
 
       pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGrelaxGetConvCons(origprob, i));
+#ifdef PRINTDUALSOLS
+      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
+      {
+         SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGrelaxGetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
+      }
+#endif
    }
 
    return SCIP_OKAY;
@@ -2669,7 +2679,7 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if(SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
    {
       return pricerdata->avgrootnodedegeneracy;
    }

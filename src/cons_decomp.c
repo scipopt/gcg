@@ -415,25 +415,6 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(conshdlr != NULL);
-   assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( conshdlrdata->ndecomps > 0 )
-   {
-      int i;
-      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-      {
-         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-      }
-      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-      conshdlrdata->decdecomps = NULL;
-      conshdlrdata->ndecomps = 0;
-   }
-   conshdlrdata->hasrun = FALSE;
-
    return SCIP_OKAY;
 }
 
@@ -574,8 +555,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
-      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = decdecomp;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+1) );
+      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = conshdlrdata->decdecomps[0];
+      conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps += 1;
    }
    return SCIP_OKAY;
@@ -783,6 +765,7 @@ SCIP_RETCODE DECdetectStructure(
 
       if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
          conshdlrdata->hasrun = TRUE;
+
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }

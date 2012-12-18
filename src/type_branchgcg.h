@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_TYPE_BRANCHGCG_H__
-#define __SCIP_TYPE_BRANCHGCG_H__
+#ifndef GCG_TYPE_BRANCHGCG_H__
+#define GCG_TYPE_BRANCHGCG_H__
 
 #include "scip/def.h"
 #include "scip/type_result.h"

@@ -2,7 +2,7 @@
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="1.0.0.1"
+VERSION="1.1.0.1"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME
@@ -24,6 +24,7 @@ echo adjust file modes
 find ./ -name lib -prune -o -type d -exec chmod 750 {} \;
 find ./ -name lib -prune -o -type f -exec chmod 640 {} \;
 find ./ -name lib -prune -o -name "*.sh" -exec chmod 750 {} \;
+find ./ -name lib -prune -o -name "*.py" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "*.prl" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "hmetis" -exec chmod 750 {} \;
 chmod 750 bin/*

@@ -211,7 +211,7 @@ SCIP_RETCODE markConsMaster(
       SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->markedmasterconss), nconss) );
       relaxdata->nmarkedmasterconss = 0;
    }
-   assert(relaxdata->nmarkedmasterconss < SCIPgetNConss(scip));
+   assert(relaxdata->nmarkedmasterconss <= SCIPgetNConss(scip));
 
 #ifndef NDEBUG
    /* check that constraints are not marked more than one time */
@@ -286,7 +286,10 @@ SCIP_RETCODE convertStructToGCG(
    {
       assert(linkingconss[i] != NULL);
       SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
-      SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
+      if( SCIPconsIsActive(linkingconss[i]) )
+      {
+         SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
+      }
    }
 
    /* prepare the map from transformed to original variables */
@@ -656,19 +659,44 @@ SCIP_RETCODE pricingprobsAreIdentical(
          return SCIP_OKAY;
       }
 
-      coefs1 = GCGoriginalVarGetCoefs(origvars1[0]);
-      ncoefs1 = GCGoriginalVarGetNCoefs(origvars2[0]);
-      coefs2 = GCGoriginalVarGetCoefs(origvars1[0]);
-      ncoefs2 = GCGoriginalVarGetNCoefs(origvars2[0]);
-
       assert(GCGvarIsOriginal(origvars1[0]));
       assert(GCGvarIsOriginal(origvars2[0]));
 
-      if( !realArraysAreEqual(scip, coefs1, ncoefs1, coefs2, ncoefs2) )
+      ncoefs1 = GCGoriginalVarGetNCoefs(origvars2[0]);
+      ncoefs2 = GCGoriginalVarGetNCoefs(origvars2[0]);
+
+      /* nunber of coefficients differs */
+      if( ncoefs1 != ncoefs2 )
       {
-         SCIPdebugMessage("--> coefs differ for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
+         SCIPdebugMessage("--> number of coefficients differs for var %s and var %s!\n",
+               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
          return SCIP_OKAY;
       }
+
+      /* get master constraints and corresponding coefficients of both variables */
+      conss1 = GCGoriginalVarGetMasterconss(origvars1[0]);
+      conss2 = GCGoriginalVarGetMasterconss(origvars2[0]);
+      coefs1 = GCGoriginalVarGetCoefs(origvars1[0]);
+      coefs2 = GCGoriginalVarGetCoefs(origvars1[0]);
+
+      /* check that the master constraints and the coefficients are the same */
+      for( j = 0; j < ncoefs1; ++j )
+      {
+         if( conss1[j] != conss2[j] )
+         {
+            SCIPdebugMessage("--> constraints differ for var %s and var %s!\n",
+               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
+            return SCIP_OKAY;
+         }
+
+         if( !SCIPisEQ(scip, coefs1[i], coefs2[i]) )
+         {
+            SCIPdebugMessage("--> coefficients differ for var %s and var %s!\n",
+               SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
+            return SCIP_OKAY;
+         }
+      }
+
       SCIP_CALL( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
 
    }
@@ -1468,6 +1496,16 @@ SCIP_RETCODE createMaster(
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
 
+#if 0
+   /* print pricing problems and master problem */
+   for( i = 0; i < npricingprobs; i++ )
+   {
+      SCIP_CALL( SCIPprintOrigProblem(relaxdata->pricingprobs[i], NULL, "lp", FALSE) );
+   }
+
+   SCIP_CALL( SCIPprintOrigProblem(relaxdata->masterprob, NULL, "lp", FALSE) );
+#endif
+
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );
 
@@ -1960,7 +1998,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    /* free master problem */
    if( relaxdata->masterprob != NULL )
    {
-      SCIP_CALL( SCIPfreeTransform(relaxdata->masterprob) );
+      SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
    }
 
    /* free pricing problems */
@@ -1981,6 +2019,8 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeSol(scip, &relaxdata->storedorigsol) );
    }
+
+   relaxdata->relaxisinitialized = FALSE;
 
    return SCIP_OKAY;
 }
@@ -3428,7 +3468,7 @@ SCIP_Real GCGgetDegeneracy(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
    degeneracy = 0.0;
-   if( relaxdata->masterprob != NULL)
+   if( relaxdata->masterprob != NULL )
    {
       degeneracy = GCGpricerGetDegeneracy(relaxdata->masterprob);
       if( SCIPisInfinity(relaxdata->masterprob, degeneracy) )

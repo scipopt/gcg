@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_DISP_GCG_H__
-#define __SCIP_DISP_GCG_H__
+#ifndef GCG_DISP_GCG_H__
+#define GCG_DISP_GCG_H__
 
 
 #include "scip/scip.h"

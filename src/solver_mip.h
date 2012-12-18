@@ -33,16 +33,24 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __GCG_SOLVER_MIP_H__
-#define __GCG_SOLVER_MIP_H__
+#ifndef GCG_SOLVER_MIP_H__
+#define GCG_SOLVER_MIP_H__
 
 #include "scip/scip.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** creates the mip solver for pricing problems and includes it in GCG */
 extern
 SCIP_RETCODE GCGincludeSolverMip(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
