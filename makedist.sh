@@ -19,6 +19,8 @@ make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false scip -j4
 make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false -j4
 bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
+sed -i '$ d' doc/inc/parameters.set
+
 # Before we create a tarball change the director and file rights in a command way
 echo adjust file modes
 find ./ -name lib -prune -o -type d -exec chmod 750 {} \;
