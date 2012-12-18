@@ -260,6 +260,7 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata->seed = -1;
    detectordata->constoblock = NULL;
    detectordata->nblocks = 0;
+   detectordata->clock = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectRandom, initRandom, exitRandom) );
 
