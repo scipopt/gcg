@@ -181,8 +181,9 @@ SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
    SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
    eventhdlrdata->origprob = GCGpricerGetOrigprob(scip);
    eventhdlrdata->file = NULL;
-
+   eventhdlrdata->filename = NULL;
    eventhdlr = NULL;
+
    /* create event handler for events on watched variables */
    SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecSolvingstats, eventhdlrdata) );
    assert(eventhdlr != NULL);

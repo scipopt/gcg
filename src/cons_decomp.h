@@ -35,8 +35,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_CONS_DECOMP_H__
-#define __SCIP_CONS_DECOMP_H__
+#ifndef GCG_CONS_DECOMP_H__
+#define GCG_CONS_DECOMP_H__
 
 #include "scip/scip.h"
 #include "type_detector.h"

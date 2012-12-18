@@ -34,6 +34,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 
 /** transforms given solution of the master problem into solution of the original problem
@@ -506,4 +507,23 @@ void GCGrelaxPrintVar(
       }
       SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
    }
+}
+
+
+/** returns whether the scip is the original scip instance */
+SCIP_Bool GCGisOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return SCIPfindRelax(scip, "gcg") != NULL;
+}
+
+/** returns whether the scip is the master problem scip */
+SCIP_Bool GCGisMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return SCIPfindPricer(scip, "gcg") != NULL;
 }

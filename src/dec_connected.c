@@ -76,24 +76,6 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
-/** returns whether the constraint belongs to GCG or not */
-static
-SCIP_Bool isConsGCGCons(
-   SCIP_CONS*            cons                /**< constraint to check */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   assert(cons != NULL);
-   conshdlr = SCIPconsGetHdlr(cons);
-   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-
-   return FALSE;
-}
-
-
 /* returns true if the constraint should be a master constraint and false otherwise */
 static
 SCIP_Bool isConsMaster(
@@ -241,7 +223,7 @@ SCIP_RETCODE findConnectedComponents(
 
       cons = conss[i];
       assert(cons != NULL);
-      if( isConsGCGCons(cons) )
+      if( GCGisConsGCGCons(cons) )
          continue;
 
       if( detectordata->consismaster[i] )
@@ -408,7 +390,7 @@ SCIP_RETCODE findConnectedComponents(
       int consblock;
 
       cons = conss[i];
-      if( isConsGCGCons(cons) )
+      if( GCGisConsGCGCons(cons) )
          continue;
 
       if( detectordata->consismaster[i] )

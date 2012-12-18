@@ -18,7 +18,7 @@
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
-VERSION         :=	1.0.0.1
+VERSION         :=	1.1.0.1
 SCIPDIR         =       lib/scip
 #-----------------------------------------------------------------------------
 # necessary information
@@ -26,7 +26,7 @@ SCIPDIR         =       lib/scip
 
 
 LIBDIR          =       lib
-DIRECTORIES     =       $(LIBDIR)
+DIRECTORIES     =       $(LIBDIR) $(LIBOBJDIR)
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -38,7 +38,7 @@ DIP		=	dip
 
 VALGRIND        =       false
 MODE		=	readdec
-
+GTEST		=	true
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -49,7 +49,8 @@ MODE		=	readdec
 #-----------------------------------------------------------------------------
 
 MAINNAME	=	gcg
-MAINOBJ		=	reader_blk.o \
+
+LIBOBJ		=	reader_blk.o \
 			reader_dec.o \
 			reader_ref.o \
 			gcgplugins.o \
@@ -80,7 +81,6 @@ MAINOBJ		=	reader_blk.o \
 			branch_master.o \
 			branch_relpsprob.o \
 			masterplugins.o \
-			pricingplugins.o \
 			nodesel_master.o \
 			sepa_master.o \
 			disp_gcg.o \
@@ -104,10 +104,11 @@ MAINOBJ		=	reader_blk.o \
 			scip_misc.o \
 			misc.o \
 			gcgvar.o \
-			stat.o\
-			main.o
+			stat.o
 
-MAINSRC		=	$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))
+MAINOBJ		=	main.o
+
+MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
 
 MAIN		=	$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
@@ -120,22 +121,45 @@ SOFTLINKS	+=	$(LIBDIR)/scip
 LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
 
+# GCG Library
+LIBOBJDIR	=	$(OBJDIR)/lib
+LIBOBJSUBDIRS	=
+
+GCGLIBSHORTNAME =	gcg
+GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
+
+GCGLIBOBJ	=	${LIBOBJ}
+GCGLIB		=	$(GCGLIBNAME).$(BASE)
+GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
+GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
+GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
+GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
+GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
+GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
+
+ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
+LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
+
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
-
-
-ifeq ($(VERBOSE),false)
-.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK)
-endif
-
 .PHONY: all
 all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
+-include make/local/make.targets
+
+ifeq ($(VERBOSE),false)
+.SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
+endif
+
+
 $(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
+.PHONY: libs
+libs:		$(GCGLIBFILE) $(GCGLIBSHORTLINK)
+
 .PHONY: lint
-lint:		$(MAINSRC)
+lint:		$(ALLSRC)
 		-rm -f lint.out
 ifeq ($(FILES),)
 		$(SHELL) -ec 'for i in $^; \
@@ -178,7 +202,6 @@ $(BINDIR):
 
 # include target to detect the current git hash
 -include make/local/make.detectgithash
--include make/local/make.targets
 
 # this empty target is needed for the SCIP release versions
 githash::   # do not remove the double-colon
@@ -196,31 +219,53 @@ eval:
 .PHONY: clean
 clean:
 ifneq ($(OBJDIR),)
+		-(cd ./$(LIBOBJDIR) && rm -f *.o)
+		-rmdir $(LIBOBJDIR)
+		-(cd ./$(TESTOBJDIR) && rm -f *.o)
+		-rmdir $(TESTOBJDIR)
 		-(cd ./$(OBJDIR) && rm -f *.o)
 		-rmdir $(OBJDIR)
 endif
-		-rm -f $(MAINFILE) $(MAINSHORTLINK)
+		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE) $(TESTFILE) $(TESTSHORTLINK)
 
 .PHONY: tags
 tags:
-		cd src/; rm -f TAGS; etags *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h;
+		cd src/; rm -f TAGS; etags *.cpp *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h ../$(SCIPDIR)/src/objscip/*.cpp ../$(SCIPDIR)/src/objscip/*.h;
 
 .PHONY: depend
-depend:		$(SCIPDIR)
+depend:		$(SCIPDIR) gcglibdepend testdepend
 		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(MAINSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z\_]*\).c|$$\(OBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(MAINDEP)'
-
 -include	$(MAINDEP)
 
-$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES)
+.PHONY: gcglibdepend
+gcglibdepend:
+		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(GCGLIBSRC) \
+		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(LIBOBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
+		>$(GCGLIBDEP)'
+-include	$(GCGLIBDEP)
+
+
+$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
+		$(LINKCXX_l)$(GCGLIB) \
+		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_l)$(NLPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
+
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
+		@echo "-> compiling $@"
+		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
+
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
+		@echo "-> compiling $@"
+		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
+
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"
@@ -229,6 +274,18 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
+
+$(GCGLIBFILE):	$(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)  $(GCGLIBOBJFILES)
+		@echo "-> generating library $@"
+		-rm -f $@
+		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
+ifneq ($(RANLIB),)
+		$(RANLIB) $@
+endif
+
+$(GCGLIBSHORTLINK):	$(GCGLIBFILE)
+		@rm -f $@
+		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
 $(LINKSMARKERFILE): links

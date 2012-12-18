@@ -621,7 +621,7 @@ SCIP_RETCODE getSolverPointers(
    assert(solver != NULL);
    assert(clock != NULL);
    assert(calls != NULL);
-   switch(optimal)
+   switch( optimal )
    {
    case TRUE:
       if( pricetype == GCG_PRICETYPE_FARKAS )
@@ -731,7 +731,7 @@ SCIP_RETCODE solvePricingProblem(
             GCGpricerCollectStatistic(pricerdata, pricetype, prob,
                SCIPgetSolvingTime(pricerdata->pricingprobs[prob]));
 #endif
-            if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING)
+            if( SCIPgetStage(pricerdata->pricingprobs[prob]) > SCIP_STAGE_SOLVING )
                pricerdata->pricingiters += SCIPgetNLPIterations(pricerdata->pricingprobs[prob]);
          }
          break;
@@ -884,6 +884,10 @@ SCIP_RETCODE setPricingObjs(
       }
       if( !SCIPisZero(scip, dualsol) )
       {
+#ifdef PRINTDUALSOLS
+         SCIPdebugMessage("mastercons <%s> dualsol: %g\n", SCIPconsGetName(masterconss[i]), dualsol);
+#endif
+
          /* for all variables in the constraint, modify the objective of the corresponding variable in a pricing problem */
          consvars = SCIPgetVarsLinear(origprob, origconss[i]);
          consvals = SCIPgetValsLinear(origprob, origconss[i]);
@@ -978,6 +982,12 @@ SCIP_RETCODE setPricingObjs(
          assert(pricetype == GCG_PRICETYPE_FARKAS);
          pricerdata->dualsolconv[i] = SCIPgetDualfarkasLinear(scip, GCGrelaxGetConvCons(origprob, i));
       }
+#ifdef PRINTDUALSOLS
+      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
+      {
+         SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGrelaxGetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
+      }
+#endif
    }
 
    return SCIP_OKAY;
@@ -1583,7 +1593,7 @@ SCIP_RETCODE performOptimalPricing(
 
       if( optimal && abortOptimalPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
-      else if(!optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
+      else if( !optimal && abortHeuristicPricing(scip, pricerdata, pricetype, *nfoundvars, solvedmips, successfulmips) )
          break;
 
       prob = pricerdata->permu[i];
@@ -2853,7 +2863,7 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricerdata = SCIPpricerGetData(pricer);
    assert(pricerdata != NULL);
 
-   if(SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
    {
       return pricerdata->avgrootnodedegeneracy;
    }
