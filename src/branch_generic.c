@@ -17,7 +17,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -2039,13 +2039,13 @@ int GCGbranchGenericGetNChildnodes(
 				}
 			}
 			
-			SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
+	//		SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) );
 			SCIP_CALL( CallSeparate(scip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes) );
 		}
 		else
 		{
 			SCIPdebugMessage("C == NULL\n");
-			SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
+	//		SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
 			SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 		}
 		SCIPfreeMemoryArray(scip, &sequencesizes);
@@ -2056,7 +2056,7 @@ int GCGbranchGenericGetNChildnodes(
 	else
 	{
 		SCIPdebugMessage("masterbanchcons == NULL\n");
-		SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
+	//	SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
 		SCIP_CALL( CallSeparate( scip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
 	}
 	assert(S!=NULL);

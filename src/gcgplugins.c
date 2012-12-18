@@ -140,7 +140,9 @@
 #include "relax_gcg.h"
 #include "branch_orig.h"
 #include "branch_ryanfoster.h"
+
 #include "branch_generic.h"
+
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
