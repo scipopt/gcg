@@ -17,3 +17,4 @@ lib/linkscreated.scip
 gcg-*.*.*
 lib/scip
 lib/gtest*
+lib/libgcg*
