@@ -63,6 +63,8 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#include "bliss_automorph.h"
+
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
 #define RELAX_PRIORITY         -1
@@ -561,20 +563,21 @@ SCIP_Bool realArraysAreEqual(
    return TRUE;
 }
 
-/* checks whether two pricingproblems represent identical blocks */
+#ifdef NBLISS
+/** checks whether two pricingproblems represent identical blocks */
 static
-SCIP_RETCODE pricingprobsAreIdentical(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
-   int                   probnr1,            /**< number of the first pricingproblem */
-   int                   probnr2,            /**< number of the second pricingproblem */
-   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
-                                              *   to those of the first pricing problem */
-   SCIP_Bool*            identical           /**< return value: are blocks identical */
-   )
+SCIP_RETCODE checkIdentical(
+	SCIP*               scip,               /**< SCIP data structure */
+	SCIP_RELAXDATA*     relaxdata,          /**< the relaxator's data */
+	int                 probnr1,            /**< number of the first pricingproblem */
+	int                 probnr2,            /**< number of the second pricingproblem */
+	SCIP_HASHMAP*       varmap,             /**< hashmap mapping the variables of the second pricing problem
+	                                         *   to those of the first pricing problem */
+	SCIP_Bool*          identical,          /**< return value: are blocks identical */
+	SCIP*               scip1,              /**< first SCIP data structure to check */
+	SCIP*               scip2               /**< second SCIP data structure to check */
+	)
 {
-   SCIP* scip1;
-   SCIP* scip2;
    SCIP_VAR** vars1;
    SCIP_VAR** vars2;
    int nvars1;
@@ -593,19 +596,6 @@ SCIP_RETCODE pricingprobsAreIdentical(
    int ncoefs2;
    int i;
    int j;
-
-   assert(relaxdata != NULL);
-   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
-   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
-   assert(varmap != NULL);
-   assert(identical != NULL);
-
-   scip1 = relaxdata->pricingprobs[probnr1];
-   scip2 = relaxdata->pricingprobs[probnr2];
-   assert(scip1 != NULL);
-   assert(scip2 != NULL);
-
-   *identical = FALSE;
 
    SCIPdebugMessage("check block %d and block %d for identity...\n", probnr1, probnr2);
 
@@ -697,7 +687,6 @@ SCIP_RETCODE pricingprobsAreIdentical(
       }
 
       SCIP_CALL( SCIPhashmapInsert(varmap, (void*) vars1[i], (void*) vars2[i]) );
-
    }
 
    /* check whether the conss are the same */
@@ -746,6 +735,51 @@ SCIP_RETCODE pricingprobsAreIdentical(
    *identical = TRUE;
    return SCIP_OKAY;
 }
+#endif
+
+/* checks whether two pricingproblems represent identical blocks */
+static
+SCIP_RETCODE pricingprobsAreIdentical(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator's data */
+   int                   probnr1,            /**< number of the first pricingproblem */
+   int                   probnr2,            /**< number of the second pricingproblem */
+   SCIP_HASHMAP*         varmap,             /**< hashmap mapping the variables of the second pricing problem
+                                              *   to those of the first pricing problem */
+   SCIP_Bool*            identical           /**< return value: are blocks identical */
+   )
+{
+   SCIP* scip1;
+   SCIP* scip2;
+   SCIP_RESULT result;
+   SCIP_HASHMAP* consmap;
+
+   assert(relaxdata != NULL);
+   assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);
+   assert(0 <= probnr2 && probnr2 < relaxdata->npricingprobs);
+   assert(varmap != NULL);
+   assert(identical != NULL);
+
+   scip1 = relaxdata->pricingprobs[probnr1];
+   scip2 = relaxdata->pricingprobs[probnr2];
+   assert(scip1 != NULL);
+   assert(scip2 != NULL);
+
+   *identical = FALSE;
+
+#ifdef NBLISS
+   checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
+#else
+   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
+   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, &result, varmap, consmap) );
+
+   *identical = (result == SCIP_SUCCESS);
+
+   SCIPhashmapFree(&consmap);
+#endif
+
+   return SCIP_OKAY;
+}
 
 /** checks whether there are identical pricing blocks
   * @todo we should really use something more sophisticated
@@ -769,7 +803,7 @@ SCIP_RETCODE checkIdenticalBlocks(
 
    int nrelevant;
 
-
+   SCIPdebugMessage("checking identical blocks \n");
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
@@ -782,11 +816,18 @@ SCIP_RETCODE checkIdenticalBlocks(
    nrelevant = 0;
 
    if( !relaxdata->discretization || !relaxdata->aggregation )
+   {
+      SCIPdebugMessage("discretization is off, aggregation is off\n");
       return SCIP_OKAY;
+   }
+
 
    /* aggregate only if the master problem has a set partitioning or set covering structure */
    if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
+   {
+      SCIPdebugMessage("Master is no setcover and no set partitioning.\n");
       return SCIP_OKAY;
+   }
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
@@ -1501,16 +1542,6 @@ SCIP_RETCODE createMaster(
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
-
-#if 0
-   /* print pricing problems and master problem */
-   for( i = 0; i < npricingprobs; i++ )
-   {
-      SCIP_CALL( SCIPprintOrigProblem(relaxdata->pricingprobs[i], NULL, "lp", FALSE) );
-   }
-
-   SCIP_CALL( SCIPprintOrigProblem(relaxdata->masterprob, NULL, "lp", FALSE) );
-#endif
 
    /* check for identity of blocks */
    SCIP_CALL( checkIdenticalBlocks(scip, relaxdata) );

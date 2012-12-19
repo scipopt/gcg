@@ -14,7 +14,6 @@
 #@author  Martin Bergner
 #@author  Christian Puchert
 
-
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
@@ -43,6 +42,16 @@ GTEST		=	true
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
 -include $(SCIPDIR)/make/make.project
+
+#-----------------------------------------------------------------------------
+# BLISS
+#-----------------------------------------------------------------------------
+
+ifeq ($(BLISS),false)
+FLAGS		+=	-DNBLISS
+else
+LDFLAGS     += -lbliss
+endif
 
 #-----------------------------------------------------------------------------
 # Main Program
@@ -105,7 +114,8 @@ LIBOBJ		=	reader_blk.o \
 			misc.o \
 			gcgvar.o \
 			class_pricingtype.o \
-			stat.o
+			stat.o \
+			bliss_automorph.o
 
 MAINOBJ		=	main.o
 
@@ -258,7 +268,6 @@ testdepend:: # do not remove double colon
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
-		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
