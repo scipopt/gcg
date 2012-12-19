@@ -1,20 +1,32 @@
 #!/usr/bin/env bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program and library             *
+#*                  This file is part of the program                         *
+#*          GCG --- Generic Column Generation                                *
+#*                  a Dantzig-Wolfe decomposition based extension            *
+#*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#*    Copyright (C) 2002-2011 Konrad-Zuse-Zentrum                            *
-#*                            fuer Informationstechnik Berlin                *
+#* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       *
+#*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
-#*  SCIP is distributed under the terms of the ZIB Academic License.         *
+#* This program is free software; you can redistribute it and/or             *
+#* modify it under the terms of the GNU Lesser General Public License        *
+#* as published by the Free Software Foundation; either version 3            *
+#* of the License, or (at your option) any later version.                    *
 #*                                                                           *
-#*  You should have received a copy of the ZIB Academic License              *
-#*  along with SCIP; see the file COPYING. If not email to scip@zib.de.      *
+#* This program is distributed in the hope that it will be useful,           *
+#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+#* GNU Lesser General Public License for more details.                       *
+#*                                                                           *
+#* You should have received a copy of the GNU Lesser General Public License  *
+#* along with this program; if not, write to the Free Software               *
+#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
-# check if tmp-path exists 
+# check if tmp-path exists
 if test ! -d $CLIENTTMPDIR
 then
     echo Skipping test since the path for the tmp-dir does not exist.
@@ -27,7 +39,7 @@ TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
 
 uname -a                            > $OUTFILE
 uname -a                            > $ERRFILE
-echo @01 $FILENAME ===========      >> $OUTFILE 
+echo @01 $FILENAME ===========      >> $OUTFILE
 echo @01 $FILENAME ===========      >> $ERRFILE
 echo -----------------------------  >> $OUTFILE
 date                                >> $OUTFILE

@@ -733,7 +733,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t)NOVALUE);
-         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*)(size_t)LINKINGVALUE) );
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*)(size_t) (blkinput->nblocks +1)) );
       }
    }
 
@@ -752,22 +752,13 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
-   SCIP_VAR** allvars;
    SCIP_CONS** allcons;
-   SCIP_CONS*** subscipconss;
-   SCIP_CONS** linkingconss;
-   SCIP_VAR*** subscipvars;
-   SCIP_VAR** linkingvars;
+
    SCIP_VAR** consvars;
-   int* nsubscipconss;
-   int* nsubscipvars;
-   int nlinkingconss;
-   int nlinkingvars;
    int i;
    int j;
    int nvars;
    int blocknr;
-   int idx;
    int nconss;
    int nblocks;
    SCIP_Bool valid;
@@ -776,7 +767,6 @@ SCIP_RETCODE fillDecompStruct(
    assert(blkinput != NULL);
    assert(readerdata != NULL);
 
-   allvars = SCIPgetVars(scip);
    allcons = SCIPgetConss(scip);
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
@@ -787,70 +777,6 @@ SCIP_RETCODE fillDecompStruct(
    DECdecompSetDetector(decomp, NULL);
 
    DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
-   assert(valid);
-
-   /* get memory for subscip variables and constraints */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipvars, nblocks) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars, nblocks) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss, nblocks) );
-
-   for( i = 0; i < nblocks; ++i )
-   {
-      nsubscipvars[i] = 0;
-      nsubscipconss[i] = 0;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipvars[i], readerdata->nblockvars[i]) ); /*lint !e866*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
-   }
-
-   /* get memory for linking variables and constraints */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingvars, readerdata->nlinkingvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
-   nlinkingvars = 0;
-   nlinkingconss = 0;
-
-   /* assign variables to blocks or as linking variables according to the varstoblock structure */
-   for( i = 0; i < nvars; ++i )
-   {
-      SCIPdebugMessage("var %s ", SCIPvarGetName(allvars[i]));
-      blocknr = readerdata->varstoblock[i];
-
-      if( blocknr == NOVALUE )
-      {
-         SCIPdebugMessage("is unknown\n" );
-         /** @todo variable should be copied directly into master */
-      }
-      else if( blocknr == LINKINGVALUE )
-      {
-         /* add variable to array of linking variables */
-         linkingvars[nlinkingvars] = allvars[i];
-         ++nlinkingvars;
-
-         SCIPdebugMessage("is linking\n" );
-      }
-      else
-      {
-         assert(blocknr >= 0);
-         assert(blocknr <= nblocks);
-         assert(SCIPvarGetProbindex(allvars[i]) == i);
-
-         /* get current number of variables in the block */
-         idx = nsubscipvars[blocknr];
-         assert(idx >= 0);
-         assert(idx <= readerdata->nblockvars[blocknr]);
-
-         /* add variable to array of variables in the block */
-         subscipvars[blocknr][idx] = allvars[i];
-         ++(nsubscipvars[blocknr]);
-
-         SCIPdebugMessage("is in block %d\n", blocknr);
-      }
-   }
-
-   /* set subscip and linking variables in decomposition structure */
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, &valid) );
    assert(valid);
 
    /* hashmaps */
@@ -867,9 +793,7 @@ SCIP_RETCODE fillDecompStruct(
 
       if( SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE )
       {
-         linkingconss[nlinkingconss] = cons;
-         ++nlinkingconss;
-         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
 
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(cons));
       }
@@ -940,45 +864,19 @@ SCIP_RETCODE fillDecompStruct(
 
          if( blocknr == -1 )
          {
-            linkingconss[nlinkingconss] = cons;
-            ++nlinkingconss;
-            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) LINKINGVALUE) );
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
 
             SCIPdebugMessage("constraint <%s> is a linking constraint\n",
                SCIPconsGetName(cons));
          }
          else
          {
-            idx = nsubscipconss[blocknr];
-            subscipconss[blocknr][idx] = cons;
-            ++(nsubscipconss[blocknr]);
-            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) blocknr) );
-
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (blocknr+1)) );
             SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
          }
       }
    }
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss, &valid) );
-   assert(valid);
-   DECdecompSetConstoblock(decomp, constoblock, &valid);
-   assert(valid);
-   DECdecompSetVartoblock(decomp, vartoblock, &valid);
-   assert(valid);
-
-   SCIPfreeMemoryArray(scip, &consvars);
-   SCIPfreeMemoryArray(scip, &linkingconss);
-   SCIPfreeMemoryArray(scip, &linkingvars);
-   for( i = nblocks - 1; i >= 0; --i )
-   {
-      SCIPfreeMemoryArray(scip, &subscipconss[i]);
-      SCIPfreeMemoryArray(scip, &subscipvars[i]);
-   }
-   SCIPfreeMemoryArray(scip, &subscipconss);
-   SCIPfreeMemoryArray(scip, &subscipvars);
-   SCIPfreeMemoryArray(scip, &nsubscipconss);
-   SCIPfreeMemoryArray(scip, &nsubscipvars);
+   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
 
    return SCIP_OKAY;
 }

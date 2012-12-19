@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_TYPE_DEC_DECOMP_H__
-#define __SCIP_TYPE_DEC_DECOMP_H__
+#ifndef GCG_TYPE_DECOMP_H__
+#define GCG_TYPE_DECOMP_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,11 +45,11 @@ typedef struct DecDecomp DEC_DECOMP; /**< decomposition structure */
 /** type of the decomposition */
 enum Dectype
 {
-   DEC_DECTYPE_UNKNOWN,    /**< unknown structure (used for initialization) */
-   DEC_DECTYPE_ARROWHEAD,  /**< arrowhead structure (linking variables and constraints) */
-   DEC_DECTYPE_STAIRCASE,  /**< staircase structure (linking variables between consecutive blocks) */
-   DEC_DECTYPE_DIAGONAL,   /**< block diagonal structure (no linking variables and constraints) */
-   DEC_DECTYPE_BORDERED    /**< bordered block diagonal structure (linking constraints only) */
+   DEC_DECTYPE_UNKNOWN   = 0,                /**< unknown structure (used for initialization) */
+   DEC_DECTYPE_ARROWHEAD = 1,                /**< arrowhead structure (linking variables and constraints) */
+   DEC_DECTYPE_STAIRCASE = 2,                /**< staircase structure (linking variables between consecutive blocks) */
+   DEC_DECTYPE_DIAGONAL  = 3,                /**< block diagonal structure (no linking variables and constraints) */
+   DEC_DECTYPE_BORDERED  = 4                 /**< bordered block diagonal structure (linking constraints only) */
 };
 
 typedef enum Dectype DEC_DECTYPE; /**< decomposition type */

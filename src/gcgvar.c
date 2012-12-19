@@ -37,6 +37,7 @@
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "relax_gcg.h"
+#include "pricer_gcg.h"
 #include "scip_misc.h"
 #include "scip/cons_linear.h"
 
@@ -269,7 +270,9 @@ SCIP_RETCODE GCGorigVarCreateData(
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
       if( SCIPvarGetTransVar(var) != NULL )
-         SCIPvarSetData(SCIPvarGetTransVar(var), vardata);
+      {
+         SCIPvarSetData(SCIPvarGetProbvar(SCIPvarGetTransVar(var)), vardata);
+      }
    }
    else
    {

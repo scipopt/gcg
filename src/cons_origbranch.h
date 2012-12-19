@@ -30,8 +30,8 @@
  * @author Gerald Gamrath
  */
 
-#ifndef CONSORIGBRANCH_H
-#define CONSORIGBRANCH_H
+#ifndef GCG_CONS_ORIGBRANCH_H__
+#define GCG_CONS_ORIGBRANCH_H__
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"

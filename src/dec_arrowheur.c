@@ -874,11 +874,11 @@ static SCIP_RETCODE buildTransformedProblem(
 
             /* finally set the hashmap image */
             assert(!SCIPhashmapExists(vartoblock, var));
-            SCIP_CALL( SCIPhashmapInsert(vartoblock, var, (void*) (size_t) varblock) );
+            SCIP_CALL( SCIPhashmapInsert(vartoblock, var, (void*) (size_t) (varblock+1)) );
          }
          else
          {
-            varblock = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
+            varblock = (int)(size_t)SCIPhashmapGetImage(vartoblock, var)-1; /*lint !e507*/
             assert(varblock == detectordata->varpart[SCIPvarGetProbindex(var)] ||  detectordata->varpart[SCIPvarGetProbindex(var)] == -2);
          }
 
@@ -937,7 +937,7 @@ static SCIP_RETCODE buildTransformedProblem(
       {
          subscipconss[consblock][nsubscipconss[consblock]] = conss[i];
          assert(!SCIPhashmapExists(constoblock, conss[i]));
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) consblock) ); /*lint !e866*/
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (consblock+1)) ); /*lint !e866*/
          ++(nsubscipconss[consblock]);
       }
    }

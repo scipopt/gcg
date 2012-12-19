@@ -65,8 +65,8 @@ do
 
 	echo "make LPS=$i OPT=$k USRCFLAGS=\"$USRDEFS\"" -j
 	echo
-	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" -j scip || exit 1
-	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" -j || exit 1
+	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" -j16 scip || exit 1
+	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" -j16 || exit 1
 	echo
 
 	echo "make LPS=$i OPT=$k USRCFLAGS=\"$USRDEFS\" CC=g++ CFLAGS=\"\" ZIMPL=false clean"
@@ -77,8 +77,8 @@ do
 
 	echo "make LPS=$i OPT=$k USRCFLAGS=\"$USRDEFS\" CC=g++ CFLAGS=\"\"" ZIMPL=false -j
 	echo
-	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" CC=g++ CFLAGS="" ZIMPL=false -j scip|| exit 1
-	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" CC=g++ CFLAGS="" ZIMPL=false -j || exit 1
+	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" CC=g++ CFLAGS="" ZIMPL=false -j16 scip|| exit 1
+	make LPS=$i OPT=$k USRCFLAGS="$USRDEFS" CC=g++ CFLAGS="" ZIMPL=false -j16 || exit 1
 	echo
 
 #	if test "$?" = 0

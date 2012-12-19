@@ -76,24 +76,6 @@ struct DEC_DetectorData
 
 /* put your local methods here, and declare them static */
 
-/** returns whether the constraint belongs to GCG or not */
-static
-SCIP_Bool isConsGCGCons(
-   SCIP_CONS*            cons                /**< constraint to check */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   assert(cons != NULL);
-   conshdlr = SCIPconsGetHdlr(cons);
-   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-
-   return FALSE;
-}
-
-
 /* returns true if the constraint should be a master constraint and false otherwise */
 static
 SCIP_Bool isConsMaster(
@@ -241,7 +223,7 @@ SCIP_RETCODE findConnectedComponents(
 
       cons = conss[i];
       assert(cons != NULL);
-      if( isConsGCGCons(cons) )
+      if( GCGisConsGCGCons(cons) )
          continue;
 
       if( detectordata->consismaster[i] )
@@ -400,17 +382,22 @@ SCIP_RETCODE findConnectedComponents(
    }
    SCIPdebugPrintf("\n");
 
+   detectordata->nblocks = tempblock-1;
+
    /* convert temporary data to detectordata */
    for( i = 0; i < nconss; ++i )
    {
       int consblock;
 
       cons = conss[i];
-      if( isConsGCGCons(cons) )
+      if( GCGisConsGCGCons(cons) )
          continue;
 
       if( detectordata->consismaster[i] )
+      {
+         SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*) (size_t) (detectordata->nblocks+1)) );
          continue;
+      }
 
       if( !SCIPhashmapExists(constoblock, cons) )
          continue;
@@ -435,7 +422,12 @@ SCIP_RETCODE findConnectedComponents(
 
       assert(vartoblock[varindex] < nextblock);
       if( vartoblock[varindex] < 0 )
+      {
+         SCIP_CALL( SCIPhashmapInsert(detectordata->vartoblock, SCIPvarGetProbvar(vars[i]),
+                        (void*)(size_t)(detectordata->nblocks+1)) );
          continue;
+      }
+
 
       varblock = blockrepresentative[vartoblock[varindex]];
       assert(varblock == -1 || varblock > 0);
@@ -452,7 +444,6 @@ SCIP_RETCODE findConnectedComponents(
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &blockrepresentative);
    SCIPhashmapFree(&constoblock);
-   detectordata->nblocks = tempblock-1;
 
    if( detectordata->nblocks > 1 )
       *result = SCIP_SUCCESS;

@@ -33,8 +33,8 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef __SCIP_PUB_DECOMP_H__
-#define __SCIP_PUB_DECOMP_H__
+#ifndef GCG_PUB_DECOMP_H__
+#define GCG_PUB_DECOMP_H__
 
 #include "type_decomp.h"
 #include "scip/type_scip.h"
@@ -289,6 +289,18 @@ SCIP_RETCODE DECdecompTransform(
 void DECdecompPrintDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   );
+
+extern
+SCIP_RETCODE DECdecompCheckConsistency(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
+/** returns whether the constraint belongs to GCG or not */
+extern
+SCIP_Bool GCGisConsGCGCons(
+   SCIP_CONS*            cons                /**< constraint to check */
    );
 
 #ifdef __cplusplus

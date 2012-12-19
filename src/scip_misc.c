@@ -285,28 +285,28 @@ SCIP_RETCODE SCIPgetVarsXXX(
       if( nvars < SCIPgetNVarsLinear(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsLinear(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsLinear(scip, cons), SCIPgetNVarsLinear(scip, cons));
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
       if( nvars < SCIPgetNVarsSetppc(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), SCIPgetNVarsSetppc(scip, cons));
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
       if( nvars < SCIPgetNVarsLogicor(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), SCIPgetNVarsLogicor(scip, cons));
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
       if( nvars < SCIPgetNVarsKnapsack(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), SCIPgetNVarsKnapsack(scip, cons));
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {

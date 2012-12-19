@@ -148,6 +148,7 @@ SCIP_RETCODE solveProblem(
    int i;
 
    SCIP_Real memlimit;
+   SCIP_RETCODE retcode;
 
    SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memlimit) );
    if( !SCIPisInfinity(scip, memlimit) )
@@ -159,8 +160,12 @@ SCIP_RETCODE solveProblem(
    }
 
    /* solve the pricing submip */
-   SCIP_CALL( SCIPsolve(pricingprob) );
+   retcode = SCIPsolve(pricingprob);
 
+   if( retcode != SCIP_OKAY )
+   {
+      SCIPwarningMessage(scip, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
+   }
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
@@ -230,7 +235,8 @@ SCIP_RETCODE solveProblem(
          SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]), SCIPvarGetObj(probvars[i]));
       }
       solisray[0] = TRUE;
-
+      SCIP_CALL( SCIPfreeSolve(pricingprob, TRUE) );
+      SCIP_CALL( SCIPtransformProb(pricingprob) );
       SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
       SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
       *nsols = 1;
@@ -263,9 +269,11 @@ SCIP_RETCODE solveProblem(
       {
          SCIP_Bool feasible;
 
-         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) )
+         if( SCIPisInfinity(pricingprob, -SCIPgetSolOrigObj(pricingprob, probsols[s])) ||  SCIPisLT(pricingprob, SCIPinfinity(pricingprob), -SCIPgetSolOrigObj(pricingprob, probsols[s])) )
          {
            SCIPdebugMessage("unbounded solution\n");
+           SCIPdebug(SCIPprintSol(pricingprob, probsols[s], NULL, FALSE));
+           assert(SCIPgetStatus(pricingprob) != SCIP_STATUS_OPTIMAL);
          }
 
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, FALSE, FALSE) );

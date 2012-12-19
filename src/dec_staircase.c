@@ -68,9 +68,9 @@ struct DEC_DetectorData
 
 static SCIP_DECL_SORTPTRCOMP(cmp)
 {
-   if(elem1 == elem2)
+   if( elem1 == elem2 )
       return 0;
-   else if(elem1 < elem2)
+   else if( elem1 < elem2 )
       return -1;
    else {
       assert(elem1 > elem2);
@@ -107,7 +107,7 @@ SCIP_RETCODE createGraph(
 
    /* Be aware: the following has n*n*m*log(m) complexity but doesn't need any additional memory
       With additional memory, we can get it down to probably n*m + m*m*n  */
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       SCIP_VAR** curvars1;
       int ncurvars1;
@@ -214,7 +214,7 @@ SCIP_RETCODE doBFS(
    SCIP_CALL( SCIPallocMemoryArray(scip, &queue, nnodes) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &marked, nnodes) );
 
-   for( i = 0; i < nnodes; ++i)
+   for( i = 0; i < nnodes; ++i )
    {
       marked[i] = FALSE;
    }
@@ -225,7 +225,7 @@ SCIP_RETCODE doBFS(
    distances[startnode][startnode] = 0;
    marked[startnode] = TRUE;
 
-   while(equeue > squeue)
+   while( equeue > squeue )
    {
       int currentnode;
       int* lastneighbour;
@@ -249,9 +249,9 @@ SCIP_RETCODE doBFS(
 
             marked[*node] = TRUE;
             queue[equeue] = *node;
-            if(*node < startnode)
+            if( *node < startnode )
                distances[startnode][*node] = curdistance+1;
-            else if(*node > startnode)
+            else if( *node > startnode )
                distances[*node][startnode] = curdistance+1;
 
             ++equeue;
@@ -287,11 +287,11 @@ SCIP_RETCODE findMaximalPath(
 
    max = -1;
 
-   for(i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i)
+   for( i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i )
    {
-      for(j = 0; j < i; ++j)
+      for( j = 0; j < i; ++j )
       {
-         if(distance[i][j] > max)
+         if( distance[i][j] > max )
          {
             max = distance[i][j];
             *start = i;
@@ -305,7 +305,7 @@ SCIP_RETCODE findMaximalPath(
    return SCIP_OKAY;
 }
 
-/** This method will construct the cuts based on the longest shortest path and the distance matrix */
+/** this method will construct the cuts based on the longest shortest path and the distance matrix */
 static
 SCIP_RETCODE constructCuts(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -338,7 +338,7 @@ SCIP_RETCODE constructCuts(
     * The vertices  of distance i will be in block i
     */
 
-   for(i = 0; i < nnodes; ++i)
+   for( i = 0; i < nnodes; ++i )
    {
       int dist;
       dist = getDistance(start, i, distance);
@@ -373,13 +373,13 @@ SCIP_RETCODE findStaircaseComponents(
 
    /* allocate triangular distance matrix */
    SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), i+1) ); /*lint !e866*/
       BMSclearMemoryArray(distance[i], i+1); /*lint !e866*/
    }
 
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       SCIP_CALL( doBFS(scip, detectordata, i, distance) );
    }
@@ -387,7 +387,7 @@ SCIP_RETCODE findStaircaseComponents(
    SCIP_CALL( findMaximalPath(scip, detectordata, distance, &start, &end) );
    SCIP_CALL( constructCuts(scip, detectordata, start, end, distance, &cuts) );
 
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
       SCIPfreeMemoryArray(scip, &distance[i]);
    }
@@ -495,8 +495,10 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
    else
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      SCIPhashmapFree(&detectordata->constoblock);
-      SCIPhashmapFree(&detectordata->vartoblock);
+      if( detectordata->constoblock != NULL )
+         SCIPhashmapFree(&detectordata->constoblock);
+      if( detectordata->vartoblock != NULL )
+         SCIPhashmapFree(&detectordata->vartoblock);
    }
 
    return SCIP_OKAY;
@@ -519,7 +521,8 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-
+   detectordata->vartoblock = NULL;
+   detectordata->constoblock = NULL;
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
 
    return SCIP_OKAY;

@@ -64,7 +64,7 @@
  * - \ref LICENSE      "Licensing information"
  * - \ref LITERATURE   "Papers dealing with GCG"
  *
- * @version  1.0.0
+ * @version  1.1.0
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
@@ -95,6 +95,7 @@
  *
  * GCG can be downloaded from two locations in two versions
  * - Standalone from the server at  RWTH Aachen
+ *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (680K)
  *  - <a href="download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670K)
  * - Complete with SCIP in the SCIP Optimization Suite 3.0.0 from the Zuse Institute Berlin
  *  - <a href="http://scip.zib.de">http://scip.zib.de</a>
