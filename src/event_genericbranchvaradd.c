@@ -90,45 +90,45 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
    origvarsunion = NULL;
    assert(mastervars != NULL);
 
-   for(i=0; i<nmastervars; ++i)
+   for( i=0; i<nmastervars; ++i )
    {
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
       norigvars = GCGmasterVarGetNOrigvars(mastervars[i]);
 
-      if(blocknr != GCGvarGetBlock(mastervars[i]))
+      if( blocknr != GCGvarGetBlock(mastervars[i]) )
          continue;
       else
          ++nvarsinblock;
-      if(*generatorsize==0 && norigvars>0)
+      if( *generatorsize==0 && norigvars>0 )
       {
          *generatorsize = norigvars;
          SCIP_CALL( SCIPallocMemoryArray(scip, generator, *generatorsize) );
          SCIP_CALL( SCIPallocMemoryArray(scip, compisinteger, *generatorsize) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &origvarsunion, *generatorsize) );
-         for(j=0; j<*generatorsize; ++j)
+         for( j=0; j<*generatorsize; ++j )
          {
             origvarsunion[j] = origvars[j];
             (*generator)[j] = 0;
             (*compisinteger)[j] = TRUE;
-            if(SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT)
+            if( SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT )
                (*compisinteger)[j] = FALSE;
          }
       }
       else
       {
-         for(j=0; j<norigvars; ++j)
+         for( j=0; j<norigvars; ++j )
          {
             int oldgeneratorsize;
 
             oldgeneratorsize = *generatorsize;
 
-            for(k=0; k<oldgeneratorsize; ++k)
+            for( k=0; k<oldgeneratorsize; ++k )
             {
-               if(origvarsunion[k] == origvars[j])
+               if( origvarsunion[k] == origvars[j] )
                {
                   break;
                }
-               if(k == oldgeneratorsize-1) //norigvars-1)
+               if( k == oldgeneratorsize-1) //norigvars-1 )
                {
                   ++(*generatorsize);
                   SCIP_CALL( SCIPreallocMemoryArray(scip, generator, *generatorsize) );
@@ -137,7 +137,7 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
                   origvarsunion[*generatorsize-1] = origvars[j];
                   (*generator)[*generatorsize-1] = 0;
                   (*compisinteger)[(*generatorsize)-1] = TRUE;
-                  if(SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT)
+                  if( SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT )
                      (*compisinteger)[(*generatorsize)-1] = FALSE;
                }
             }
@@ -149,15 +149,15 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
 
-   for(i=0; i<norigvars; ++i)
+   for( i=0; i<norigvars; ++i )
    {
-      for(j=0; j<*generatorsize; ++j)
+      for( j=0; j<*generatorsize; ++j )
       {
-         if(origvarsunion[j]==origvars[i])
+         if( origvarsunion[j]==origvars[i] )
          {
-            if(SCIPvarGetType(origvars[i]) == SCIP_VARTYPE_CONTINUOUS)
+            if( SCIPvarGetType(origvars[i]) == SCIP_VARTYPE_CONTINUOUS )
                (*compisinteger)[j] = FALSE;
-            if(!SCIPisZero(scip, origvals[i]))
+            if( !SCIPisZero(scip, origvals[i]) )
                (*generator)[j] = origvals[i];
             break;
          }
@@ -255,9 +255,9 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    parentcons = masterbranchcons;
 
-   if(masterbranchcons != NULL && GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL)
+   if( masterbranchcons != NULL && GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL )
    {
-      while( parentcons != NULL && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consSsize >0 && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL)
+      while( parentcons != NULL && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consSsize >0 && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL )
       {
          branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
          assert(branchdata != NULL);
@@ -268,7 +268,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             continue;
          }
 
-         for( p=0; p<branchdata->consSsize; ++p)
+         for( p=0; p<branchdata->consSsize; ++p )
          {
             SCIP_Real* generator;
             SCIP_Bool* compisinteger;
@@ -281,7 +281,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             generator_i = generator[(int) SCIPceil(scip, branchdata->consS[p][0]-0.5)];
 
 
-            if(branchdata->consS[p][1] == 1 )
+            if( branchdata->consS[p][1] == 1 )
             {
                if( SCIPisLT(scip, generator_i, branchdata->consS[p][2]) )
                {
@@ -291,7 +291,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             }
             else
             {
-               if(SCIPisGE(scip, generator_i, branchdata->consS[p][2]) )
+               if( SCIPisGE(scip, generator_i, branchdata->consS[p][2]) )
                {
                   varinS = FALSE;
                   break;

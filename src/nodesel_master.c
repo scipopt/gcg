@@ -147,10 +147,10 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          parentmastercons = GCGconsOrigbranchGetMastercons(parentorigcons);
          assert(parentmastercons != NULL);
 
-         if(BRANCHRULE_VANDERBECK == 1)
+         if( BRANCHRULE_VANDERBECK == 1 )
          {
             nchildvanderbeck = GCGconsOrigbranchGetNChildvanderbeckcons( parentorigcons );
-            for(i=0; i<nchildvanderbeck; ++i)
+            for( i=0; i<nchildvanderbeck; ++i )
             {
                if( GCGconsOrigbranchGetChildvanderbeckcons( parentorigcons, i+1) == origcons )
                {

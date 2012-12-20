@@ -128,16 +128,16 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
    assert(scip != NULL);
    assert(result != NULL);
    SCIPdebugMessage("Execlp method of master branching\n");
-   if(BRANCHRULE_VANDERBECK == 1)
+   if( BRANCHRULE_VANDERBECK == 1 )
    {
       //return SCIP_OKAY;
       nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
       SCIPdebugMessage("creating %d nodes\n", nchildnodes);
-      if(nchildnodes == 0)
+      if( nchildnodes == 0 )
          nchildnodes = 2;
       //SCIP_CALL( SCIPallocMemoryArray(scip, &childvanderbeck, nchildnodes) );
       //SCIP_CALL( SCIPallocMemoryArray(scip, &consvanderbeck, nchildnodes) );
-      for( i=0; i<nchildnodes; ++i)
+      for( i=0; i<nchildnodes; ++i )
       {
          SCIP_NODE* child;
          SCIP_CONS* cons;
@@ -150,11 +150,11 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
          SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
        //  consvanderbeck[i] = cons;
       //}
-      //for( i=0; i<nchildnodes; ++i)
+      //for( i=0; i<nchildnodes; ++i )
       //{
          SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
       //}
-     // for( i=0; i<nchildnodes; ++i)
+     // for( i=0; i<nchildnodes; ++i )
      // {
          SCIP_CALL( SCIPreleaseCons(scip, &cons ) );
       }
@@ -201,11 +201,11 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
    assert(result != NULL);
    SCIPdebugMessage("Execps method of master branching\n");
 
-   if(BRANCHRULE_VANDERBECK == 1)
+   if( BRANCHRULE_VANDERBECK == 1 )
    {
       return SCIP_OKAY;
       nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
-      for( i=0; i<nchildnodes; ++i)
+      for( i=0; i<nchildnodes; ++i )
       {
          SCIP_NODE* child;
          SCIP_CONS* cons;
