@@ -21,18 +21,66 @@
 
 
 #include "scip/scip.h"
+#include "type_branchgcg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum {
+   GCG_COMPSENSE_GE = 1,
+   GCG_COMPSENSE_LT = 0
+} GCG_COMPSENSE;
+
+struct ComponentBoundSequence
+{
+   int component;
+   GCG_COMPSENSE sense;
+   SCIP_Real bound;
+};
+
+typedef struct ComponentBoundSequence GCG_COMPSEQUENCE;
 
 /** returns the number of successor nodes needed for branch_master while using the generic branching scheme */
 extern
 int GCGbranchGenericGetNChildnodes(
-   SCIP*            scip,
-   SCIP_Bool        createorignodes
+   SCIP*                scip,
+   SCIP_Bool            createorignodes
    );
 
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                scip                /**< SCIP data structure */
    );
+/** initializes branchdata */
+extern
+SCIP_RETCODE GCGbranchGenericCreateBranchdata(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_BRANCHDATA**     branchdata          /**< branching data to initialize */
+   );
+
+extern
+GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
+   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   );
+
+extern
+int GCGbranchGenericBranchdataGetConsSsize(
+   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   );
+
+extern
+int GCGbranchGenericBranchdataGetConsblocknr(
+   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   );
+
+extern
+SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
+   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   );
+#ifdef __cplusplus
+}
+#endif
 
 #endif

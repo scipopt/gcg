@@ -92,26 +92,6 @@ struct SCIP_ConshdlrData
    SCIP_CONS*            rootcons;           /**< constraint in the root node */
 };
 
-typedef SCIP_Real ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1 means >=, sense=0 means <
-struct GCG_BranchData
-{
-   ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
-   int*               sequencesizes;                 /**< number of bounds in S[k] */
-   int                Csize;
-   ComponentBoundSequence*   S;             /**< component bound sequence which induce the child branching constraints */
-   int                Ssize;
-   int                blocknr;             /**< number of block branching was performed */
-   int                childnr;
-   SCIP_Real          lhs;
-   int                nchildNodes;
-   SCIP_Real*         childlhs;
-   SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
-   GCG_BRANCHDATA**   childbranchdatas;
-   ComponentBoundSequence*   consS;             /**< component bound sequence which induce the current branching constraint */
-    int                consSsize;
-    int                consblocknr;
-};
-
 /*
  * Callback methods of constraint handler
  */
@@ -546,15 +526,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
       if( BRANCHRULE_VANDERBECK == 1 )
       {
-         SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
-         branchdata->consS = NULL;
-         branchdata->consSsize = 0;
-         branchdata->Ssize = 0;
-         branchdata->S = NULL;
-         branchdata->sequencesizes = 0;
-         branchdata->C = NULL;
-         branchdata->mastercons = NULL;
-         branchdata->consblocknr = -2;
+         SCIP_CALL( GCGbranchGenericCreateBranchdata(scip, &branchdata) );
       }
    }
 

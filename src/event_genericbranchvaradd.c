@@ -23,7 +23,6 @@
 
 #include "event_genericbranchvaradd.h"
 #include "branch_generic.h"
-//#include "branch_generic.c"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "pricer_gcg.h"
@@ -34,31 +33,6 @@
 #define EVENTHDLR_NAME         "genericbranchvaradd"
 #define EVENTHDLR_DESC         "event handler for adding a new generated mastervar into the right branching constraints by using Vanderbecks generic branching scheme"
 
-
-typedef SCIP_Real ComponentBoundSequence[3];
-
-/*
- * Data structures
- */
-struct GCG_BranchData
-{
-   ComponentBoundSequence**   C;             /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
-   int*               sequencesizes;                 /**< number of bounds in S[k] */
-   int                Csize;
-   ComponentBoundSequence*   S;             /**< component bound sequence which induce the child branching constraints */
-   int                Ssize;
-   int                blocknr;             /**< number of block branching was performed */
-   int                childnr;
-   SCIP_Real          lhs;
-   int                nchildNodes;
-   SCIP_Real*         childlhs;
-   SCIP_CONS*         mastercons;          /**< constraint enforcing the branching restriction in the master problem */
-   GCG_BRANCHDATA**   childbranchdatas;
-   ComponentBoundSequence*   consS;             /**< component bound sequence which induce the current branching constraint */
-   int                consSsize;
-   int                consblocknr;
-};
-/* TODO: fill in the necessary event handler data */
 
 /** event handler data */
 struct SCIP_EventhdlrData
@@ -254,21 +228,22 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    parentcons = masterbranchcons;
-
-   if( masterbranchcons != NULL && GCGvarIsMaster(mastervar) && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL )
+   branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+   if( masterbranchcons != NULL && GCGvarIsMaster(mastervar) &&  branchdata != NULL && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL )
    {
-      while( parentcons != NULL && GCGconsMasterbranchGetBranchdata(parentcons) != NULL && GCGconsMasterbranchGetBranchdata(parentcons)->consSsize >0 && GCGconsMasterbranchGetBranchdata(parentcons)->consS != NULL )
+      while( parentcons != NULL && branchdata != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL )
       {
-         branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
          assert(branchdata != NULL);
 
-         if( branchdata->consblocknr != GCGvarGetBlock(mastervar) )
+         if( GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) )
          {
             parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
+            branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
             continue;
          }
 
-         for( p=0; p<branchdata->consSsize; ++p )
+         for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {
             SCIP_Real* generator;
             SCIP_Bool* compisinteger;
@@ -277,13 +252,13 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
             generator = NULL;
 
-            getGenerators(scip, &generator, &generatorsize, &compisinteger, branchdata->consblocknr, mastervars, nmastervars, mastervar);
-            generator_i = generator[(int) SCIPceil(scip, branchdata->consS[p][0]-0.5)];
+            getGenerators(scip, &generator, &generatorsize, &compisinteger, GCGbranchGenericBranchdataGetConsblocknr(branchdata), mastervars, nmastervars, mastervar);
+            generator_i = generator[(int) SCIPceil(scip, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component-0.5)];
 
 
-            if( branchdata->consS[p][1] == 1 )
+            if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
             {
-               if( SCIPisLT(scip, generator_i, branchdata->consS[p][2]) )
+               if( SCIPisLT(scip, generator_i, GCGbranchGenericBranchdataGetConsS(branchdata)[p].bound) )
                {
                   varinS = FALSE;
                   break;
@@ -291,7 +266,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             }
             else
             {
-               if( SCIPisGE(scip, generator_i, branchdata->consS[p][2]) )
+               if( SCIPisGE(scip, generator_i, GCGbranchGenericBranchdataGetConsS(branchdata)[p].bound) )
                {
                   varinS = FALSE;
                   break;
@@ -301,15 +276,12 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          if( varinS )
          {
             SCIPdebugMessage("mastervar is added\n");
-            SCIP_CALL( SCIPaddCoefLinear(masterscip, branchdata->mastercons, mastervar, 1.0) );
+            SCIP_CALL( SCIPaddCoefLinear(masterscip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
          }
 
          parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+         branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
       }
-   }
-   else
-   {
-      //empty
    }
 
    return SCIP_OKAY;
