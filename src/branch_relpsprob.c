@@ -1579,7 +1579,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
          &branchruledata->uselp, FALSE, DEFAULT_USELP, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
          "branching/relpsprob/reliability",
-         "reliability value for probing ",
+         "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
 
    return SCIP_OKAY;

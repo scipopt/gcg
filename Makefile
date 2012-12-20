@@ -246,6 +246,8 @@ gcglibdepend:
 		>$(GCGLIBDEP)'
 -include	$(GCGLIBDEP)
 
+.PHONY: testdepend
+testdepend:: # do not remove double colon
 
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
