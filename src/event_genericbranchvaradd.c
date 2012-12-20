@@ -144,18 +144,7 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 }
 
 /** copy method for event handler plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_EVENTCOPY(eventCopyGenericbranchvaradd)
-{  /*lint --e{715}*/
-	assert(scip != NULL);
-	assert(eventhdlr != NULL);
-	assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-
-	/* call inclusion method of event handler */
-	SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(scip) );
-
-	return SCIP_OKAY;
-}
+#define eventCopyGenericbranchvaradd NULL
 
 /** destructor of event handler to free user data (called when SCIP is exiting) */
 #define eventFreeGenericbranchvaradd NULL
