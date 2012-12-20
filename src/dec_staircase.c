@@ -462,7 +462,10 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    if( detectordata->clock != NULL )
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
-   tcliqueFree(&detectordata->graph);
+   if( detectordata->graph != NULL )
+   {
+      tcliqueFree(&detectordata->graph);
+   }
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -523,6 +526,8 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    assert(detectordata != NULL);
    detectordata->vartoblock = NULL;
    detectordata->constoblock = NULL;
+   detectordata->clock = NULL;
+   detectordata->graph = NULL;
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
 
    return SCIP_OKAY;
