@@ -40,7 +40,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
@@ -783,11 +783,16 @@ SCIP_RETCODE checkIdenticalBlocks(
    nrelevant = 0;
 
    if( !relaxdata->discretization || !relaxdata->aggregation )
-      return SCIP_OKAY;
-
-   /* aggregate only if the master problem has a set partitioning or set covering structure */
+   {
+      SCIPdebugMessage("no discretization nor aggregation\n");
+   //   return SCIP_OKAY;
+   }
+      /* aggregate only if the master problem has a set partitioning or set covering structure */
    if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
-      return SCIP_OKAY;
+   {
+      SCIPdebugMessage("no setcovert nor set part\n");
+   //   return SCIP_OKAY;
+   }
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
    {
