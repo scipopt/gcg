@@ -689,7 +689,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
             return SCIP_OKAY;
          }
 
-         if( !SCIPisEQ(scip, coefs1[i], coefs2[i]) )
+         if( !SCIPisEQ(scip, coefs1[j], coefs2[j]) )
          {
             SCIPdebugMessage("--> coefficients differ for var %s and var %s!\n",
                SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
