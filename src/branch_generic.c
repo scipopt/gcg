@@ -541,12 +541,12 @@ SCIP_RETCODE InducedLexicographicSort(
 static
 SCIP_RETCODE Separate(
    SCIP*                scip,               /**< */
-   struct GCG_Strip**   F,                  /**< */
-   int                  Fsize,              /**< */
-   int*                 IndexSet,           /**< */
-   int                  IndexSetSize,       /**< */
-   GCG_COMPSEQUENCE*    S,                  /**< */
-   int                  Ssize,              /**< */
+   struct GCG_Strip**   F,                  /**< fractional strips? */
+   int                  Fsize,              /**< size of the strips */
+   int*                 IndexSet,           /**< index set */
+   int                  IndexSetSize,       /**< size of index set */
+   GCG_COMPSEQUENCE*    S,                  /**< ordered set of bound restrictions */
+   int                  Ssize,              /**< size of the ordered set */
    struct GCG_Record**  record              /**< */
    )
 {
@@ -592,6 +592,7 @@ SCIP_RETCODE Separate(
 
    SCIPdebugMessage("Separate with ");
 
+   /* if there are no fractional columns, return*/
    if( Fsize == 0 || IndexSetSize == 0 )
       return SCIP_OKAY;
 
@@ -619,6 +620,8 @@ SCIP_RETCODE Separate(
 
    for( j=0; j<Fsize; ++j )
       muF += max * F[j]->mastervarValue;
+
+   /* detect fractional alpha_i */
    SCIP_CALL( SCIPallocMemoryArray(scip, &alpha, IndexSetSize) );
 
    for( k=0; k<IndexSetSize; ++k )
@@ -656,8 +659,11 @@ SCIP_RETCODE Separate(
       if( SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) )
       {
          found = TRUE;
+         /* ********************************** *
+          *   add the current pair to record   *
+          * ********************************** */
 
-         //add to record
+         /** @todo extract function */
          ++Ssize;
          SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize) );
          for( l=0; l < Ssize-1; ++l )
@@ -723,6 +729,9 @@ SCIP_RETCODE Separate(
          (*record)->record[(*record)->recordsize-1] = copyS;
          (*record)->sequencesizes[(*record)->recordsize-1] = Ssize;
          --Ssize;
+         /* ********************************** *
+          *  end adding to record              *
+          * ********************************** */
       }
    }
 
@@ -734,7 +743,9 @@ SCIP_RETCODE Separate(
       return SCIP_OKAY;
    }
 
-   //discriminating components
+   /* ********************************** *
+    *  discriminating components         *
+    * ********************************** */
    SCIP_CALL( SCIPallocMemoryArray(scip, &J, Jsize) );
    j=0;
    for( k=0; k<IndexSetSize; ++k )
@@ -746,7 +757,9 @@ SCIP_RETCODE Separate(
       }
    }
 
-   //compute priority  (max-min)
+   /* ********************************** *
+    *  compute priority  (max-min)       *
+    * ********************************** */
    SCIP_CALL( SCIPallocMemoryArray(scip, &priority, Jsize) );
    for( j=0; j<Jsize; ++j )
    {
@@ -770,7 +783,9 @@ SCIP_RETCODE Separate(
       priority[j] = maxcomp-mincomp;
    }
 
-   //Partition
+   /* ********************************** *
+    *  partitioning                      *
+    * ********************************** */
    SCIPdebugMessage("Partitioning\n");
    do{
       min = INT_MAX;
@@ -839,7 +854,10 @@ SCIP_RETCODE Separate(
          ++Flower;
    }
 
-   //choose smallest partition
+   /* ********************************** *
+    *  choose smallest partition         *
+    * ********************************** */
+
    if( (Flower <= Fupper && Flower > 0) || Fupper <= 0 )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
@@ -872,8 +890,9 @@ SCIP_RETCODE Separate(
 
    assert(j < Fsize+1);
 
-   Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize, record );
+   /** @todo This is incosistent with the paper */
 
+   Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize, record );
 
    SCIPfreeMemoryArray(scip, &copyF);
    SCIPfreeMemoryArray(scip, &upperLowerS);
@@ -1019,7 +1038,9 @@ SCIP_RETCODE Explore(
 
    SCIPdebugMessage("with Fsize = %d, Csize = %d, Ssize = %d\n", Fsize, Csize, *Ssize);
 
-   //call separate?
+   /* ********************************** *
+    *   if C=Ø, call separate            *
+    * ********************************** */
    if( C == NULL || Fsize==0 || IndexSetSize==0 || Csize == 0 )
    {
       SCIPdebugMessage("go to Separate\n");
@@ -1041,7 +1062,10 @@ SCIP_RETCODE Explore(
    assert( IndexSet != NULL );
    assert( sequencesizes != NULL );
 
-   //find i which is in all S in C on position p
+   /* ******************************************* *
+    * find i which is in all S in C on position p *
+    * ******************************************* */
+
    while( sequencesizes[k] < p )
    {
       SCIPdebugMessage("sequencesizes[%d] = %d\n", k, sequencesizes[k]);
@@ -1092,6 +1116,10 @@ SCIP_RETCODE Explore(
    }
 
    SCIPdebugMessage("muF = %g\n", muF);
+
+   /* ******************************************* *
+    * compute alpha_i                             *
+    * ******************************************* */
 
    alpha_i = 0;
    for( j=0; j<Fsize; ++j )
@@ -1162,7 +1190,9 @@ SCIP_RETCODE Explore(
       found = TRUE;
       SCIPdebugMessage("fractional alpha[%d] = %g\n", i, alpha_i);
 
-      //add to record
+      /* ******************************************* *
+       * add to record                               *
+       * ******************************************* */
       ++(*Ssize);
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize) );
       for( l=0; l < *Ssize-1; ++l )
@@ -1220,6 +1250,8 @@ SCIP_RETCODE Explore(
       return SCIP_OKAY;
    }
 
+
+   /** @todo mb: from here that's unclear to me */
    ++(*Ssize);
    if( S==NULL || *S==NULL )
    {
