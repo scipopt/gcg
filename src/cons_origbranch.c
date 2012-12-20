@@ -149,8 +149,6 @@ static
 SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrData;
-   SCIP_CONS* cons;
-   GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -158,7 +156,6 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
-   branchdata = NULL;
 
    /* prepare stack */
    SCIP_CALL( SCIPallocMemoryArray(scip, &conshdlrData->stack, conshdlrData->maxstacksize) );
@@ -175,20 +172,9 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
    /* create origbranch constraint corresponding to the root node only if there is some problem */
    if( SCIPgetNVars(scip)> 0 || SCIPgetNConss(scip) > 0 )
    {
-      //alloc cons/branchdata for vanderbeck branching scheme
-      if(BRANCHRULE_VANDERBECK == 1)
-      {
-         SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
-         branchdata->consS = NULL;
-         branchdata->consSsize = 0;
-         branchdata->Ssize = 0;
-         branchdata->S = NULL;
-         branchdata->sequencesizes = 0;
-         branchdata->C = NULL;
-         branchdata->mastercons = NULL;
-         branchdata->consblocknr = -2;
-      }
+
    }
+
    GCGconsOrigbranchCheckConsistency(scip);
 
    return SCIP_OKAY;
@@ -214,8 +200,11 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
    if(BRANCHRULE_VANDERBECK == 1)
    {
       //check for root
-      branchdata = GCGconsOrigbranchGetBranchdata(conshdlrData->stack[0]);
-      SCIPfreeMemory(scip, &branchdata );
+      if(conshdlrData->rootcons != NULL )
+      {
+         branchdata = GCGconsOrigbranchGetBranchdata(conshdlrData->rootcons);
+         SCIPfreeMemory(scip, &branchdata );
+      }
    }
 
    /* free stack */
@@ -327,7 +316,10 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
     * otherwise, the mastercons deletes the branchdata when it is deleted itself */
    if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL )
    {
-      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+      if( (*consdata)->branchrule != NULL )
+      {
+         SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+      }
    }
 
    /* free propagation domain changes arrays */
@@ -547,6 +539,24 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
+
+   if( branchdata == NULL )
+   {
+      assert(NULL == node);
+
+      if(BRANCHRULE_VANDERBECK == 1)
+      {
+         SCIP_CALL( SCIPallocMemory(scip, &branchdata) );
+         branchdata->consS = NULL;
+         branchdata->consSsize = 0;
+         branchdata->Ssize = 0;
+         branchdata->S = NULL;
+         branchdata->sequencesizes = 0;
+         branchdata->C = NULL;
+         branchdata->mastercons = NULL;
+         branchdata->consblocknr = -2;
+      }
+   }
 
    /* initialize the fields in the constraint data */
    consdata->parentcons = parentcons;
