@@ -8,7 +8,6 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-//#define SCIP_DEBUG
 /**@file   branch_generic.c
  * @ingroup BRANCHINGRULES
  * @brief  branching rule based on vanderbeck's generic branching scheme
@@ -105,7 +104,16 @@ typedef struct GCG_Record GCG_RECORD;
 
 /** method for calculating the generator of mastervar*/
 static
-SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize, SCIP_Bool** compisinteger, int blocknr, SCIP_VAR** mastervars, int nmastervars, SCIP_VAR* mastervar)
+SCIP_RETCODE getGenerators(
+   SCIP*                scip,               /**< */
+   SCIP_Real**          generator,          /**< */
+   int*                 generatorsize,      /**< */
+   SCIP_Bool**          compisinteger,      /**< */
+   int                  blocknr,            /**< */
+   SCIP_VAR**           mastervars,         /**< */
+   int                  nmastervars,        /**< */
+   SCIP_VAR*            mastervar           /**< */
+   )
 {
    int i;
    int j;
@@ -207,7 +215,12 @@ SCIP_RETCODE getGenerators(SCIP* scip, SCIP_Real** generator, int* generatorsize
 
 /** method for calculating the median over all fractional components values if its the minimum return ceil(arithm middle)*/
 static
-SCIP_Real GetMedian(SCIP* scip, SCIP_Real* array, int arraysize, SCIP_Real min)
+SCIP_Real GetMedian(
+   SCIP*                scip,               /**< */
+   SCIP_Real*           array,              /**< */
+   int                  arraysize,          /**< */
+   SCIP_Real            min                 /**< */
+   )
 {
    SCIP_Real Median;
    SCIP_Real swap;
@@ -295,7 +308,10 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 // lexicographical sort using scipsort
 // !!! changes the array
 static
-SCIP_RETCODE LexicographicSort( struct GCG_Strip** array, int arraysize)
+SCIP_RETCODE LexicographicSort(
+   struct GCG_Strip**   array,              /**< */
+   int                  arraysize           /**< */
+   )
 {
 
    SCIPdebugMessage("Lexicographic sorting\n");
@@ -307,9 +323,17 @@ SCIP_RETCODE LexicographicSort( struct GCG_Strip** array, int arraysize)
 }
 
 
-// compare function for ILO: returns 1 if bd1 < bd2 else -1
+ /** compare function for ILO: returns 1 if bd1 < bd2 else -1 */
 static
-int ILOcomp( SCIP* scip, struct GCG_Strip* strip1, struct GCG_Strip* strip2, ComponentBoundSequence** C, int NBoundsequences, int* sequencesizes, int p) // ComponentBoundSequence* S, int Ssize, int* IndexSet, int indexsetsize)
+int ILOcomp(
+   SCIP*                scip,               /**< */
+   struct GCG_Strip*    strip1,             /**< */
+   struct GCG_Strip*    strip2,             /**< */
+   ComponentBoundSequence** C,              /**< */
+   int                  NBoundsequences,    /**< */
+   int*                 sequencesizes,      /**< */
+   int                  p                   /**< */
+   )
 {
    int i;
    int ivalue;
@@ -506,9 +530,18 @@ SCIP_RETCODE InducedLexicographicSort( SCIP* scip, struct GCG_Strip** array, int
 }
 
 
-// separation at the root node
+/** separation at the root node */
 static
-SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence* S, int Ssize, struct GCG_Record** record )
+SCIP_RETCODE Separate(
+   SCIP*                scip,               /**< */
+   struct GCG_Strip**   F,                  /**< */
+   int                  Fsize,              /**< */
+   int*                 IndexSet,           /**< */
+   int                  IndexSetSize,       /**< */
+   ComponentBoundSequence* S,               /**< */
+   int                  Ssize,              /**< */
+   struct GCG_Record**  record              /**< */
+   )
 {
    int i;
    int j;
@@ -839,9 +872,14 @@ SCIP_RETCODE Separate( SCIP* scip, struct GCG_Strip** F, int Fsize, int* IndexSe
    return SCIP_OKAY;
 }
 
-// choose a component bound sequence
+/** choose a component bound sequence */
 static
-SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record** record, ComponentBoundSequence** S, int* Ssize )
+SCIP_RETCODE ChoseS(
+   SCIP*                scip,               /**< */
+   struct GCG_Record**  record,             /**< */
+   ComponentBoundSequence** S,              /**< */
+   int*                 Ssize               /**< */
+   )
 {
    int minSizeOfMaxPriority;  //needed if the last comp priority is euqal to the one in other bound sequences
    int maxPriority;
@@ -908,9 +946,22 @@ SCIP_RETCODE ChoseS( SCIP* scip, struct GCG_Record** record, ComponentBoundSeque
 
 
 
-// separation at a node other than the root node
+/** separation at a node other than the root node */
 static
-SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* sequencesizes, int p, struct GCG_Strip** F, int Fsize, int* IndexSet, int IndexSetSize, ComponentBoundSequence** S, int* Ssize, struct GCG_Record** record )
+SCIP_RETCODE Explore(
+   SCIP*                scip,               /**< */
+   ComponentBoundSequence** C,              /**< */
+   int                  Csize,              /**< */
+   int*                 sequencesizes,      /**< */
+   int                  p,                  /**< */
+   struct GCG_Strip**   F,                  /**< */
+   int                  Fsize,              /**< */
+   int*                 IndexSet,           /**< */
+   int                  IndexSetSize,       /**< */
+   ComponentBoundSequence** S,              /**< */
+   int*                 Ssize,              /**< */
+   struct GCG_Record**  record              /**< */
+   )
 {
    int i;
    int j;
@@ -1291,9 +1342,20 @@ SCIP_RETCODE Explore( SCIP* scip, ComponentBoundSequence** C, int Csize, int* se
    return SCIP_OKAY;
 }
 
-// callup method for seperate
+/** callup method for seperate
+ * @todo mb: Watt, was willst du denn? Namen Ändern
+ */
 static
-SCIP_RETCODE CallSeparate( SCIP* scip, struct GCG_Strip** F, int Fsize, ComponentBoundSequence** S, int* Ssize, ComponentBoundSequence** C, int Csize, int* CompSizes )
+SCIP_RETCODE CallSeparate(
+   SCIP*                scip,               /**< */
+   struct GCG_Strip**   F,                  /**< */
+   int                  Fsize,              /**< */
+   ComponentBoundSequence** S,              /**< */
+   int*                 Ssize,              /**< */
+   ComponentBoundSequence** C,              /**< */
+   int                  Csize,              /**< */
+   int*                 CompSizes           /**< */
+   )
 {
    int i;
    int* IndexSet;
@@ -1421,12 +1483,12 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
 /** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
 static
 SCIP_Bool pruneChildNodeByDominanceGeneric(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Real             lhs,                /**< lhs for childnode which is checkes to be pruned */
-   ComponentBoundSequence* childS,           /**< Component Bound Sequence defining the childnode */
-   int                   childSsize,
-   SCIP_CONS*            masterbranch,
-   int                   childBlocknr             /**< number of the block for the childnode */
+   SCIP*                 scip,              /**< SCIP data structure */
+   SCIP_Real             lhs,               /**< lhs for childnode which is checkes to be pruned */
+   ComponentBoundSequence* childS,          /**< Component Bound Sequence defining the childnode */
+   int                   childSsize,        /**< */
+   SCIP_CONS*            masterbranch,      /**< */
+   int                   childBlocknr       /**< number of the block for the childnode */
    )
 {
    SCIP_CONS* cons;
@@ -1490,16 +1552,16 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
 /** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
 static
 SCIP_RETCODE createChildNodesGeneric(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
-   ComponentBoundSequence* S,              /**< Component Bound Sequence defining the nodes */
-   int                   Ssize,
-   int                   blocknr,             /**< number of the block */
-   struct GCG_Strip**    F,                   /**< strips with mu>0 */  //for rhs, will be small than
-   int                   Fsize,
-   SCIP_CONS*            parentcons,
-   int*                  nmasternodes,
-   SCIP_Bool             createorignodes
+   SCIP*                 scip,              /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,        /**< branching rule */
+   ComponentBoundSequence* S,               /**< Component Bound Sequence defining the nodes */
+   int                   Ssize,             /**< */
+   int                   blocknr,           /**< number of the block */
+   struct GCG_Strip**    F,                 /**< strips with mu>0 */  //for rhs, will be small than
+   int                   Fsize,             /**< */
+   SCIP_CONS*            parentcons,        /**< */
+   int*                  nmasternodes,      /**< */
+   SCIP_Bool             createorignodes    /**< */
    )
 {
    SCIP*  masterscip;
@@ -1831,8 +1893,8 @@ SCIP_RETCODE createChildNodesGeneric(
 /** returns the number of successor nodes needed for branch_master while using the generic branching scheme */
 /** @return SCIP_RETCODE, int as input, createorignodes auslagern */
 int GCGbranchGenericGetNChildnodes(
-   SCIP*            masterscip,
-   SCIP_Bool        createorignodes
+   SCIP*                masterscip,         /**< */
+   SCIP_Bool            createorignodes     /**< */
    )
 {
    int nmasternodes;
