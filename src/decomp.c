@@ -499,6 +499,10 @@ SCIP_RETCODE DECdecompSetSubscipvars(
             SCIP_CALL( SCIPcaptureVar(scip, decdecomp->subscipvars[b][i]) );
          }
       }
+      else
+      {
+         decdecomp->subscipvars[b] = NULL;
+      }
    }
 
    return SCIP_OKAY;
