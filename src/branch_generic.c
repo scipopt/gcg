@@ -594,22 +594,22 @@ SCIP_RETCODE Separate(
 
    /* if there are no fractional columns, return*/
    if( Fsize == 0 || IndexSetSize == 0 )
+   {
+      SCIPdebugPrintf("noting, no fractional columns\n");
       return SCIP_OKAY;
+   }
 
-   SCIPdebugMessage("Fsize = %d; Ssize = %d, IndexSetSize = %d\n", Fsize, Ssize, IndexSetSize);
+   SCIPdebugPrintf("Fsize = %d; Ssize = %d, IndexSetSize = %d\n", Fsize, Ssize, IndexSetSize);
 
    assert( F != NULL );
    assert( IndexSet != NULL );
 
-   for( j=0; j<Fsize; ++j )
+   for( j = 0; j < Fsize; ++j )
    {
-      for( i=0; i<IndexSetSize; ++i )
+      for( i = 0; i < IndexSetSize; ++i )
       {
          assert(IndexSet[i] < F[j]->generatorsize);
-         if( F[j]->generator[IndexSet[i]] > max )
-         {
-            max = F[j]->generator[IndexSet[i]];
-         }
+         max = MAX(F[j]->generator[IndexSet[i]], max);
       }
    }
 
@@ -624,7 +624,7 @@ SCIP_RETCODE Separate(
    /* detect fractional alpha_i */
    SCIP_CALL( SCIPallocMemoryArray(scip, &alpha, IndexSetSize) );
 
-   for( k=0; k<IndexSetSize; ++k )
+   for( k=0; k < IndexSetSize; ++k )
    {
       GCG_COMPSEQUENCE* copyS;
       SCIP_Real mu_F;
@@ -641,20 +641,20 @@ SCIP_RETCODE Separate(
       if( !F[0]->compisinteger[i] )
          continue;
 
-      for( j=0; j<Fsize; ++j )
+      for( j = 0; j < Fsize; ++j )
       {
          assert(i < F[j]->generatorsize);
          alpha[k] += F[j]->generator[i] * F[j]->mastervarValue;
          if( F[j]->generator[i] != 0 && F[j]->mastervarValue != 0 )
          {
-            //		SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-            //		SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
+            // SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
+            // SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
          }
       }
       if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
       {
          ++Jsize;
-         //			SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
+         // SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
       }
       if( SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) )
       {
@@ -1132,8 +1132,8 @@ SCIP_RETCODE Explore(
             alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
             if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
             {
-               //					SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-               //					SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
+               // SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
+               // SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
             }
          }
       }
@@ -1163,8 +1163,8 @@ SCIP_RETCODE Explore(
                alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
                if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
                {
-                  //					SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-                  //					SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
+                  // SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
+                  // SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
                }
             }
          }
@@ -2047,23 +2047,23 @@ int GCGbranchGenericGetNChildnodes(
          mastervarValue = SCIPgetSolVal(masterscip, NULL, mastervar);
          if( SCIPisGT(scip, mastervarValue - SCIPfloor(scip, mastervarValue), 0) )
          {
+
             if( Fsize == 0 )
             {
-               ++Fsize;
-               SCIP_CALL( SCIPallocMemoryArray(scip, &F, Fsize) );
+               SCIP_CALL( SCIPallocMemoryArray(scip, &F, Fsize+1) );
             }
             else
             {
-               ++Fsize;
-               SCIP_CALL( SCIPreallocMemoryArray(scip, &F, Fsize) );
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &F, Fsize+1) );
             }
-            SCIP_CALL( SCIPallocBuffer(scip, &(F[Fsize-1]) ) );
-            F[Fsize-1]->blocknr = blocknr;
-            F[Fsize-1]->mastervar = mastervar;
-            F[Fsize-1]->mastervarValue= mastervarValue;
 
-            getGenerators(scip, &(F[Fsize-1]->generator), &(F[Fsize-1]->generatorsize), &(F[Fsize-1]->compisinteger), blocknr, mastervars, nmastervars, mastervar);
+            SCIP_CALL( SCIPallocBuffer(scip, &(F[Fsize]) ) );
+            F[Fsize]->blocknr = blocknr;
+            F[Fsize]->mastervar = mastervar;
+            F[Fsize]->mastervarValue= mastervarValue;
 
+            getGenerators(scip, &(F[Fsize]->generator), &(F[Fsize]->generatorsize), &(F[Fsize]->compisinteger), blocknr, mastervars, nmastervars, mastervar);
+            ++Fsize;
             ++k;
          }
       }
