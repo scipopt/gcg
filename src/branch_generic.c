@@ -1006,6 +1006,36 @@ int computeNewSequence(
    return k;
 }
 
+static
+double computeAlpha(
+   SCIP* scip,
+   int Fsize,
+   GCG_COMPSENSE isense,
+   double ivalue,
+   int i,
+   struct GCG_Strip** F
+   )
+{
+   int j;
+   SCIP_Real alpha_i = 0;
+   for ( j = 0; j < Fsize; ++j )
+   {
+      assert( i < F[j]->generatorsize);
+      if ( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, F[j]->generator[i], ivalue)) ||
+           (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, F[j]->generator[i], ivalue)) )
+      {
+         alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
+         if ( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
+         {
+            SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
+            SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
+         }
+      }
+   }
+
+   return alpha_i;
+}
+
 /** separation at a node other than the root node */
 static
 SCIP_RETCODE Explore(
@@ -1145,67 +1175,12 @@ SCIP_RETCODE Explore(
     * compute alpha_i                             *
     * ******************************************* */
 
-   alpha_i = 0;
-   for( j=0; j<Fsize; ++j )
-   {
-      if( isense == 1 )
-      {
-         if( SCIPisGE(scip, F[j]->generator[i], ivalue) )
-         {
-            assert( i < F[j]->generatorsize);
-            alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
-            if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
-            {
-               // SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-               // SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
-            }
-         }
-      }
-      else
-      {
-         if( SCIPisLT(scip, F[j]->generator[i], ivalue) ) //F[j]->generator[i] < ivalue )
-         {
-            alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
-            if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
-            {
-               SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-               SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
-            }
-         }
+   alpha_i = computeAlpha(scip, Fsize, isense, ivalue, i, F);
 
-      }
-   }
    if( alpha_i == 0 && isense != GCG_COMPSENSE_GE )
    {
-      isense = 1;
-      for( j=0; j<Fsize; ++j )
-      {
-         if( isense == 1 )
-         {
-            if( SCIPisGE(scip, F[j]->generator[i], ivalue) )
-            {
-               alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
-               if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
-               {
-                  // SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-                  // SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
-               }
-            }
-         }
-         else
-         {
-            if( SCIPisLT(scip, F[j]->generator[i], ivalue) )
-            {
-               alpha_i += F[j]->generator[i] * F[j]->mastervarValue;
-               if( F[j]->mastervarValue != 0 && F[j]->generator[i] != 0 )
-               {
-                  SCIPdebugMessage("generator[%d] = %g\n", i, F[j]->generator[i]);
-                  SCIPdebugMessage("mastervarvalue = %g\n", F[j]->mastervarValue);
-               }
-            }
-
-         }
-      }
+      isense = GCG_COMPSENSE_GE;
+      alpha_i = computeAlpha(scip, Fsize, isense, ivalue, i, F);
    }
    SCIPdebugMessage("alpha[%d] = %g\n", i, alpha_i);
 
@@ -1219,7 +1194,7 @@ SCIP_RETCODE Explore(
        * ******************************************* */
       ++(*Ssize);
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize) );
-      for( l=0; l < *Ssize-1; ++l )
+      for( l = 0; l < *Ssize-1; ++l )
       {
          copyS[l].component = (*S)[l].component;
          copyS[l].sense = (*S)[l].sense;
@@ -1231,16 +1206,11 @@ SCIP_RETCODE Explore(
       copyS[*Ssize-1].bound = ivalue;
 
       mu_F = 0;
-      for( l=0; l<Fsize; ++l )
+      for( l = 0; l < Fsize; ++l )
       {
-         if( isense == 1 )
+         if( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, F[l]->generator[i], ivalue)) ||
+             (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, F[l]->generator[i], ivalue)) )
          {
-            if( SCIPisGE(scip, F[l]->generator[i], ivalue) )
-               mu_F += F[l]->mastervarValue;
-         }
-         else
-         {
-            if( SCIPisLT(scip, F[l]->generator[i], ivalue) )
                mu_F += F[l]->mastervarValue;
          }
       }
