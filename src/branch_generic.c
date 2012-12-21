@@ -2409,7 +2409,46 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
    return SCIP_OKAY;
 }
 
+/** initialize branchdata at the node */
+static
+SCIP_RETCODE initNodeBranchdata(
+   GCG_BRANCHDATA*      nodebranchdata,     /**< branching data to set */
+   GCG_BRANCHDATA*      branchdata          /**< branchdata to copy from */
+   )
+{
+   int j;
 
+   assert( nodebranchdata != NULL);
+   assert( branchdata != NULL );
+
+   nodebranchdata->lhs = branchdata->lhs;
+   nodebranchdata->nchildNodes = 0;
+   nodebranchdata->consblocknr = branchdata->consblocknr;
+   nodebranchdata->mastercons = branchdata->mastercons;
+   nodebranchdata->S = NULL;
+   nodebranchdata->consS = NULL;
+   nodebranchdata->childbranchdatas = NULL;
+   nodebranchdata->childlhs = NULL;
+   nodebranchdata->C = NULL;
+   nodebranchdata->sequencesizes = NULL;
+   nodebranchdata->childnr = branchdata->childnr;
+   nodebranchdata->consSsize = branchdata->consSsize;
+
+   SCIPdebugMessage("consSsize = %d, lhs = %g\n", nodebranchdata->consSsize, nodebranchdata->lhs);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(nodebranchdata->consS), nodebranchdata->consSsize) );
+
+   for ( j = 0; j < nodebranchdata->consSsize; ++j )
+   {
+      nodebranchdata->consS[j].component = branchdata->consS[j].component;
+      nodebranchdata->consS[j].sense = branchdata->consS[j].sense;
+      nodebranchdata->consS[j].bound = branchdata->consS[j].bound;
+      SCIPdebugMessage("consS[%d].component = %d\n", j, nodebranchdata->consS[j].component);
+      SCIPdebugMessage("consS[%d].sense = %d\n", j, nodebranchdata->consS[j].sense);
+      SCIPdebugMessage("consS[%d].bound = %.6g\n", j, nodebranchdata->consS[j].bound);
+   }
+
+   return SCIP_OKAY;
+}
 
 /** branching execution method for relaxation solutions */
 static
@@ -2421,9 +2460,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
    SCIP_CONS* masterbranchcons;
    GCG_BRANCHDATA* branchdata;
    int i;
-   int j;
-   i = 0;
-   j = 0;
+
    feasible = TRUE;
    branchdata = NULL;
 
@@ -2456,26 +2493,27 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
    #else
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
    #endif
+
    if( feasible )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
 
       *result = SCIP_CUTOFF;
-
       return SCIP_OKAY;
    }
 
    masterscip = GCGrelaxGetMasterprob(scip);
-
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+
    if( masterbranchcons != NULL )
       branchdata = GCGconsMasterbranchGetBranchdata(masterbranchcons);
 
    if( branchdata!=NULL )
    {
       SCIPdebugMessage("branchdata->nchildNodes = %d\n", branchdata->nchildNodes);
-      for( i=0; i<branchdata->nchildNodes; ++i )
+
+      for( i = 0; i < branchdata->nchildNodes; ++i )
       {
          SCIP_CONS* origcons;
          SCIP_NODE* origchild;
@@ -2484,30 +2522,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 
          //set branchdata
          SCIP_CALL( SCIPallocMemory(scip, &nodebranchdata) );
-         nodebranchdata->lhs = branchdata->childbranchdatas[i]->lhs;
-         nodebranchdata->nchildNodes = 0;
-         nodebranchdata->consblocknr = branchdata->childbranchdatas[i]->consblocknr;
-         nodebranchdata->mastercons = branchdata->childbranchdatas[i]->mastercons;
-         nodebranchdata->S = NULL;
-         nodebranchdata->consS = NULL;
-         nodebranchdata->childbranchdatas = NULL;
-         nodebranchdata->childlhs = NULL;
-         nodebranchdata->C = NULL;
-         nodebranchdata->sequencesizes = NULL;
-         nodebranchdata->childnr = branchdata->childbranchdatas[i]->childnr;
-         nodebranchdata->consSsize =	branchdata->childbranchdatas[i]->consSsize;
-         SCIPdebugMessage("consSsize = %d, lhs = %g\n", nodebranchdata->consSsize, nodebranchdata->lhs);
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(nodebranchdata->consS), nodebranchdata->consSsize) );
-
-         for( j=0; j< nodebranchdata->consSsize; ++j )
-         {
-            nodebranchdata->consS[j].component = branchdata->childbranchdatas[i]->consS[j].component;
-            nodebranchdata->consS[j].sense = branchdata->childbranchdatas[i]->consS[j].sense;
-            nodebranchdata->consS[j].bound = branchdata->childbranchdatas[i]->consS[j].bound;
-            SCIPdebugMessage("consS[%d].component = %d\n", j, nodebranchdata->consS[j].component);
-            SCIPdebugMessage("consS[%d].sense = %d\n", j, nodebranchdata->consS[j].sense);
-            SCIPdebugMessage("consS[%d].bound = %.6g\n", j, nodebranchdata->consS[j].bound);
-         }
+         SCIP_CALL( initNodeBranchdata(nodebranchdata, branchdata) );
 
          // define name for constraint
          (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %g)", i, nodebranchdata->lhs);
@@ -2519,10 +2534,12 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
          SCIP_CALL( SCIPaddConsNode(scip, origchild, origcons, NULL) );
          SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
       }
+
       if( branchdata->childbranchdatas != NULL )
       {
-         for( i=0; i< branchdata->nchildNodes; ++i )
+         for( i = 0; i < branchdata->nchildNodes; ++i )
             SCIPfreeMemory(scip, &(branchdata->childbranchdatas[i]));
+
          SCIPfreeMemoryArray(scip, &(branchdata->childbranchdatas));
          branchdata->childbranchdatas = NULL;
       }
@@ -2535,7 +2552,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
    }
 
    *result = SCIP_BRANCHED;
-
    return SCIP_OKAY;
 }
 
@@ -2578,7 +2594,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 
    if( branchdata!=NULL )
    {
-      for( i=0; i<branchdata->nchildNodes; ++i )
+      for( i = 0; i < branchdata->nchildNodes; ++i )
       {
          SCIP_CONS* origcons;
          SCIP_NODE* origchild;
@@ -2594,9 +2610,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
          SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
       }
       SCIPfreeMemoryArray(scip, &(branchdata->childbranchdatas));
+      *result = SCIP_BRANCHED;
    }
-
-   *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
 }
