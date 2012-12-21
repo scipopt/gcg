@@ -401,9 +401,7 @@ int ILOcomp(
             SCIP_CALL( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) );
             for( l=0; l< sequencesizes[j]; ++l )
             {
-               CopyC[k][l].component = C[j][l].component;
-               CopyC[k][l].sense = C[j][l].sense;
-               CopyC[k][l].bound = C[j][l].bound;
+               CopyC[k][l] = C[j][l];
             }
             newsequencesizes[k] = sequencesizes[j];
             ++k;
@@ -448,9 +446,7 @@ int ILOcomp(
             SCIP_CALL( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) );
             for( l=0; l< sequencesizes[j]; ++l )
             {
-               CopyC[k][l].component = C[j][l].component;
-               CopyC[k][l].sense = C[j][l].sense;
-               CopyC[k][l].bound = C[j][l].bound;
+               CopyC[k][l] = C[j][l];
             }
             newsequencesizes[k] = sequencesizes[j];
             ++k;
@@ -668,9 +664,7 @@ SCIP_RETCODE Separate(
          SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize) );
          for( l=0; l < Ssize-1; ++l )
          {
-            copyS[l].bound = S[l].bound;
-            copyS[l].component = S[l].component;
-            copyS[l].sense = S[l].sense;
+            copyS[l] = S[l];
          }
 
          copyS[Ssize-1].component = i;
@@ -837,9 +831,7 @@ SCIP_RETCODE Separate(
    SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize) );
    for( l=0; l < Ssize-1; ++l )
    {
-      upperLowerS[l].bound = S[l].bound;
-      upperLowerS[l].component = S[l].component;
-      upperLowerS[l].sense = S[l].sense;
+      upperLowerS[l] = S[l];
    }
 
    upperLowerS[Ssize-1].component = i;
@@ -955,9 +947,7 @@ SCIP_RETCODE ChoseS(
    SCIP_CALL( SCIPallocMemoryArray(scip, S, *Ssize) );
    for( i=0; i< *Ssize;++i )
    {
-      (*S)[i].bound =  (*record)->record[Index][i].bound;
-      (*S)[i].component = (*record)->record[Index][i].component;
-      (*S)[i].sense = (*record)->record[Index][i].sense;
+      (*S)[i] =  (*record)->record[Index][i];
    }
 
    assert(S!=NULL);
@@ -1196,10 +1186,7 @@ SCIP_RETCODE Explore(
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize) );
       for( l = 0; l < *Ssize-1; ++l )
       {
-         copyS[l].component = (*S)[l].component;
-         copyS[l].sense = (*S)[l].sense;
-         copyS[l].bound = (*S)[l].bound;
-
+         copyS[l] = (*S)[l];
       }
       copyS[*Ssize-1].component = i;
       copyS[*Ssize-1].sense = isense;
@@ -1354,6 +1341,7 @@ SCIP_RETCODE Explore(
    SCIPfreeMemoryArray(scip, &copyF);
    if( CopyC != NULL )
       SCIPfreeMemoryArray(scip, &CopyC);
+
    if( newsequencesizes != NULL )
       SCIPfreeMemoryArray(scip, &newsequencesizes);
 
@@ -1731,34 +1719,20 @@ SCIP_RETCODE createChildNodesGeneric(
          if( k == Ssize )
          {
             assert( p == Ssize );
-            compBound.component = S[k-1].component;
-            compBound.bound = S[k-1].bound;
-            compBound.sense = S[k-1].sense;
-            branchchilddata->consS[k-1].component = compBound.component;
-            branchchilddata->consS[k-1].bound = compBound.bound;
-            branchchilddata->consS[k-1].sense = compBound.sense;
+            compBound = S[k-1];
+            branchchilddata->consS[k-1] = compBound;
          }
          else
          {
-            if( k < p )
+            compBound = S[k];
+            if( k >= p )
             {
-               compBound.component = S[k].component;
-               compBound.bound = S[k].bound;
-               compBound.sense = S[k].sense;
-            }
-            else
-            {
-               compBound.component = S[k].component;
-               compBound.bound = S[k].bound;
                if( S[p].sense == GCG_COMPSENSE_GE )
                   compBound.sense = GCG_COMPSENSE_LT;
                else
                   compBound.sense = GCG_COMPSENSE_GE;
-
             }
-            branchchilddata->consS[k].component = compBound.component;
-            branchchilddata->consS[k].sense = compBound.sense;
-            branchchilddata->consS[k].bound = compBound.bound;
+            branchchilddata->consS[k] = compBound;
          }
       }
 
@@ -2064,9 +2038,7 @@ int GCGbranchGenericGetNChildnodes(
          SCIP_CALL( SCIPallocMemoryArray(scip, &(C[0]), branchdata->consSsize) );
          for( i=0; i<branchdata->consSsize; ++i )
          {
-            C[0][i].component = branchdata->consS[i].component;
-            C[0][i].sense = branchdata->consS[i].sense;
-            C[0][i].bound = branchdata->consS[i].bound;
+            C[0][i] = branchdata->consS[i];
          }
          sequencesizes[0] = branchdata->consSsize;
 
@@ -2110,9 +2082,7 @@ int GCGbranchGenericGetNChildnodes(
             /** @todo copy memory */
             for( i=0; i<branchdata->consSsize; ++i )
             {
-               C[Csize-1][i].component = branchdata->consS[i].component;
-               C[Csize-1][i].sense = branchdata->consS[i].sense;
-               C[Csize-1][i].bound = branchdata->consS[i].bound;
+               C[Csize-1][i] = branchdata->consS[i];
             }
             sequencesizes[Csize-1] = branchdata->consSsize;
          }
