@@ -977,7 +977,34 @@ SCIP_RETCODE ChoseS(
    return SCIP_OKAY;
 }
 
+static
+int computeNewSequence(
+   int Csize,
+   int p,
+   int i,
+   int* sequencesizes,
+   GCG_COMPSEQUENCE** C,
+   GCG_COMPSEQUENCE** CopyC,
+   int* newsequencesizes,
+   GCG_COMPSENSE sense
+   )
+{
+   int j;
+   int k;
+   for ( k = 0, j = 0; j < Csize; ++j )
+   {
+      if ( sequencesizes[j] >= p )
+         assert(C[j][p-1].component == i);
 
+      if ( sequencesizes[j] >= p && C[j][p - 1].sense == sense )
+      {
+         CopyC[k] = C[j];
+         newsequencesizes[k] = sequencesizes[j];
+         ++k;
+      }
+   }
+   return k;
+}
 
 /** separation at a node other than the root node */
 static
@@ -1038,9 +1065,9 @@ SCIP_RETCODE Explore(
 
    SCIPdebugMessage("with Fsize = %d, Csize = %d, Ssize = %d\n", Fsize, Csize, *Ssize);
 
-   /* ********************************** *
-    *   if C=Ø, call separate            *
-    * ********************************** */
+   /* *************************************** *
+    *   if C=Ø, call separate and return that *
+    * *************************************** */
    if( C == NULL || Fsize==0 || IndexSetSize==0 || Csize == 0 )
    {
       SCIPdebugMessage("go to Separate\n");
@@ -1091,7 +1118,7 @@ SCIP_RETCODE Explore(
    ivalue = C[k][p-1].bound;
 
    assert(i < F[0]->generatorsize);
-
+   assert(i >= 0);
    SCIPdebugMessage("i = %d; ivalue = %g\n", i, ivalue);
 
    for( j=0; j<Fsize; ++j )
@@ -1099,10 +1126,7 @@ SCIP_RETCODE Explore(
       for( l=0; l<IndexSetSize; ++l )
       {
          assert(IndexSet[l] < F[j]->generatorsize);
-         if( F[j]->generator[IndexSet[l]] > max )
-         {
-            max = F[j]->generator[IndexSet[l]];
-         }
+         max = MAX(max, F[j]->generator[IndexSet[l]]);
       }
    }
 
@@ -1151,7 +1175,7 @@ SCIP_RETCODE Explore(
 
       }
    }
-   if( alpha_i == 0 && isense != 1 )
+   if( alpha_i == 0 && isense != GCG_COMPSENSE_GE )
    {
       isense = 1;
       for( j=0; j<Fsize; ++j )
@@ -1296,9 +1320,10 @@ SCIP_RETCODE Explore(
    //choose smallest partition
    if( ((Fupper <= Flower && Fupper > 0 ) || Flower <= 0) && Fupper != INT_MAX )
    {
+      SCIPdebugMessage("chose upper bound Fupper = %d, Cupper = %d\n", Fupper, Cupper);
+
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Fupper) );
-      j = 0;
-      for( k=0; k<Fsize; ++k )
+      for( j = 0, k = 0; k < Fsize; ++k )
       {
          if( SCIPisGE(scip, F[k]->generator[i], median) )
          {
@@ -1309,28 +1334,18 @@ SCIP_RETCODE Explore(
       Fsize = Fupper;
 
       //new C
-      k=0;
       if( Cupper > 0 )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Cupper) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Cupper) );
-         for( j=0; j< Csize; ++j )
-         {
-            if( sequencesizes[j] >= p )
-               assert(C[j][p-1].component == i);
-
-            if( sequencesizes[j] >= p &&  C[j][p-1].sense != GCG_COMPSENSE_GE )
-            {
-               CopyC[k] = C[j];
-               newsequencesizes[k] = sequencesizes[j];
-               ++k;
-            }
-         }
+         k = computeNewSequence(Csize, p, i, sequencesizes, C, CopyC, newsequencesizes, GCG_COMPSENSE_LT);
       }
       else
+      {
          CopyC = NULL;
+         k = 0;
+      }
       Csize = Cupper;
-      SCIPdebugMessage("chose upper bound Fupper = %d, Cupper = %d\n", Fupper, Cupper);
    }
    else
    {
@@ -1349,26 +1364,17 @@ SCIP_RETCODE Explore(
       Fsize = Flower;
 
       //new C
-      k=0;
       if( Clower > 0 )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Clower) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Clower) );
-         for( j=0; j< Csize; ++j )
-         {
-            if( sequencesizes[j] >= p )
-               assert(C[j][p-1].component == i);
-
-            if( sequencesizes[j] >= p && C[j][p-1].sense == GCG_COMPSENSE_GE )
-            {
-               CopyC[k] = C[j];
-               newsequencesizes[k] = sequencesizes[j];
-               ++k;
-            }
-         }
+         k = computeNewSequence(Csize, p, i, sequencesizes, C, CopyC, newsequencesizes, GCG_COMPSENSE_GE);
       }
       else
+      {
          CopyC = NULL;
+         k = 0;
+      }
       Csize = Clower;
    }
    assert( k <= Csize+1 );
