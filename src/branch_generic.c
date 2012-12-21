@@ -1319,7 +1319,7 @@ SCIP_RETCODE Explore(
             if( sequencesizes[j] >= p )
                assert(C[j][p-1].component == i);
 
-            if( sequencesizes[j] >= p &&  C[j][p-1].sense == GCG_COMPSENSE_GE )
+            if( sequencesizes[j] >= p &&  C[j][p-1].sense != GCG_COMPSENSE_GE )
             {
                CopyC[k] = C[j];
                newsequencesizes[k] = sequencesizes[j];
@@ -2240,6 +2240,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    SCIPdebugMessage("branchActiveMasterGeneric: Block %d, Ssize %d)\n", branchdata->consblocknr,
       branchdata->consSsize);
 
+   assert( (branchdata->consSsize == 0 ) == (branchdata->consS == NULL) );
+
    if( branchdata->consS == NULL )
    {
       assert(branchdata->consSsize == 0);
@@ -2522,7 +2524,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
 
          //set branchdata
          SCIP_CALL( SCIPallocMemory(scip, &nodebranchdata) );
-         SCIP_CALL( initNodeBranchdata(nodebranchdata, branchdata) );
+         SCIP_CALL( initNodeBranchdata(nodebranchdata, branchdata->childbranchdatas[i]) );
 
          // define name for constraint
          (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "child(%d, %g)", i, nodebranchdata->lhs);
