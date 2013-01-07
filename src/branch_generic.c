@@ -529,6 +529,75 @@ SCIP_RETCODE InducedLexicographicSort(
    return SCIP_OKAY;
 }
 
+/** partitions the strip according to the priority */
+static
+SCIP_RETCODE partition(
+   SCIP*                scip,               /**< */
+   int*                 Jsize,              /**< */
+   int                  Fsize,              /**< */
+   int*                 priority,           /**< */
+   GCG_STRIP**          F,                  /**< */
+   int*                 J,                  /**< */
+   int*                 i,                  /**< */
+   double*              median              /**< */
+   )
+{
+   int j;
+   int l;
+   double min;
+   double maxPriority;
+   double* compvalues;
+
+   do
+   {
+      min = INT_MAX;
+      maxPriority = INT_MIN;
+
+      //max-min priority
+      for ( j = 0; j < *Jsize; ++j )
+      {
+         if ( priority[j] > maxPriority && F[0]->compisinteger[J[j]] )
+         {
+            maxPriority = priority[j];
+            *i = J[j];
+         }
+      }
+      SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
+      for ( l = 0; l < Fsize; ++l )
+      {
+         compvalues[l] = F[l]->generator[*i];
+         if ( SCIPisLT(scip, compvalues[l], min) )
+            min = compvalues[l];
+      }
+      *median = GetMedian(scip, compvalues, Fsize, min);
+      SCIPfreeBufferArray(scip, &compvalues);
+
+      if ( !SCIPisEQ(scip, *median, 0) )
+      {
+         SCIPdebugMessage("median = %g\n", *median);
+         SCIPdebugMessage("min = %g\n", min);
+      }
+
+      if ( SCIPisEQ(scip, *median, min) )
+      {
+         //here with max-min priority
+         for ( j = 0; j < *Jsize; ++j )
+         {
+            if ( *i == J[j] )
+            {
+               J[j] = J[*Jsize - 1];
+               break;
+            }
+         }
+         --(*Jsize);
+
+      }
+      assert(*Jsize>=0);
+
+   } while ( SCIPisEQ(scip, *median, min) );
+
+   return SCIP_OKAY;
+}
 
 /** separation at the root node */
 static
@@ -561,7 +630,6 @@ SCIP_RETCODE Separate(
    SCIP_Real* alpha;
    SCIP_Real* compvalues;
    SCIP_Real  muF;
-   SCIP_Real maxPriority;
 
    i = 0;
    j = 0;
@@ -573,7 +641,6 @@ SCIP_RETCODE Separate(
    max = 0;
    muF = 0;
    min = INT_MAX;
-   maxPriority = INT_MIN;
    priority = NULL;
    compvalues = NULL;
    J = NULL;
@@ -654,15 +721,14 @@ SCIP_RETCODE Separate(
           * ********************************** */
 
          /** @todo extract function */
-         ++Ssize;
-         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize) );
-         for( l=0; l < Ssize-1; ++l )
+         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize+1) );
+         for( l=0; l < Ssize; ++l )
          {
             copyS[l] = S[l];
          }
 
-         copyS[Ssize-1].component = i;
-         copyS[Ssize-1].sense = GCG_COMPSENSE_GE;
+         copyS[Ssize].component = i;
+         copyS[Ssize].sense = GCG_COMPSENSE_GE;
 
          SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
          for( l=0; l<Fsize; ++l )
@@ -698,7 +764,7 @@ SCIP_RETCODE Separate(
 
          }while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
 
-         copyS[Ssize-1].bound = median;
+         copyS[Ssize].bound = median;
 
          SCIPfreeBufferArray(scip, &compvalues);
          compvalues = NULL;
@@ -715,8 +781,8 @@ SCIP_RETCODE Separate(
             SCIP_CALL( SCIPreallocMemoryArray(scip, &((*record)->sequencesizes), (*record)->recordsize) );
          }
          (*record)->record[(*record)->recordsize-1] = copyS;
-         (*record)->sequencesizes[(*record)->recordsize-1] = Ssize;
-         --Ssize;
+         (*record)->sequencesizes[(*record)->recordsize-1] = Ssize+1;
+
          /* ********************************** *
           *  end adding to record              *
           * ********************************** */
@@ -768,66 +834,18 @@ SCIP_RETCODE Separate(
       priority[j] = maxcomp-mincomp;
    }
 
-   /* ********************************** *
-    *  partitioning                      *
-    * ********************************** */
    SCIPdebugMessage("Partitioning\n");
-   do{
-      min = INT_MAX;
-      maxPriority = INT_MIN;
+   SCIP_CALL( partition(scip, &Jsize, Fsize, priority, F, J, &i, &median) );
 
-      //max-min priority
-      for( j=0; j<Jsize; ++j )
-      {
-         if( priority[j] > maxPriority && F[0]->compisinteger[J[j]] )
-         {
-            maxPriority = priority[j];
-            i = J[j];
-         }
-      }
-      SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
-      for( l=0; l<Fsize; ++l )
-      {
-         compvalues[l] = F[l]->generator[i];
-         if( SCIPisLT(scip, compvalues[l], min) )
-            min = compvalues[l];
-      }
-      median = GetMedian(scip, compvalues, Fsize, min);
-      SCIPfreeBufferArray(scip, &compvalues);
-
-      if( !SCIPisEQ(scip, median, 0) )
-      {
-         SCIPdebugMessage("median = %g\n", median);
-         SCIPdebugMessage("min = %g\n", min);
-      }
-
-      if( SCIPisEQ(scip, median, min) )
-      {
-         //here with max-min priority
-         for( j=0; j<Jsize; ++j )
-         {
-            if( i == J[j] )
-            {
-               J[j] = J[Jsize-1];
-               break;
-            }
-         }
-         --Jsize;
-
-      }
-      assert(Jsize>=0);
-   }while( SCIPisEQ(scip, median, min) );
-
-   ++Ssize;
-   SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize) );
-   for( l=0; l < Ssize-1; ++l )
+   SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize+1) );
+   for( l=0; l < Ssize; ++l )
    {
       upperLowerS[l] = S[l];
    }
 
-   upperLowerS[Ssize-1].component = i;
-   upperLowerS[Ssize-1].sense = GCG_COMPSENSE_GE;
-   upperLowerS[Ssize-1].bound = median;
+   upperLowerS[Ssize].component = i;
+   upperLowerS[Ssize].sense = GCG_COMPSENSE_GE;
+   upperLowerS[Ssize].bound = median;
 
    for( k=0; k<Fsize; ++k )
    {
@@ -841,10 +859,10 @@ SCIP_RETCODE Separate(
     *  choose smallest partition         *
     * ********************************** */
 
-   if( (Flower <= Fupper && Flower > 0) || Fupper <= 0 )
+   SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Fsize) );
+   j = 0;
+   if( (Flower <= Fupper && Flower > 0) || Fupper == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
-      j = 0;
       for( k=0; k<Fsize; ++k )
       {
          if( SCIPisLT(scip, F[k]->generator[i], median) )
@@ -857,9 +875,8 @@ SCIP_RETCODE Separate(
    }
    else
    {
-      upperLowerS[Ssize-1].sense = GCG_COMPSENSE_LT;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Fupper) );
-      j = 0;
+      upperLowerS[Ssize].sense = GCG_COMPSENSE_LT;
+
       for( k=0; k<Fsize; ++k )
       {
          if( SCIPisGE(scip, F[k]->generator[i], median) )
@@ -873,9 +890,8 @@ SCIP_RETCODE Separate(
 
    assert(j < Fsize+1);
 
-   /** @todo This is incosistent with the paper */
-
-   Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize, record );
+   /** @todo mb: This is a simplification according to the paper, only selecting one side */
+   Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize+1, record );
 
    SCIPfreeMemoryArray(scip, &copyF);
    SCIPfreeMemoryArray(scip, &upperLowerS);
