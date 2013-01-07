@@ -155,11 +155,11 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
    varindexmap = NULL;
    consindexmap = NULL;
+
+   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if( decdecomp != NULL )
    {
