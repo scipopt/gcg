@@ -630,6 +630,7 @@ SCIP_RETCODE Separate(
    SCIP_Real* alpha;
    SCIP_Real* compvalues;
    SCIP_Real  muF;
+   SCIP_Bool found;
 
    assert(scip != NULL);
    assert((Fsize == 0) == (F == NULL));
@@ -645,6 +646,7 @@ SCIP_RETCODE Separate(
    max = 0;
    muF = 0;
    min = INT_MAX;
+   found = FALSE;
    priority = NULL;
    compvalues = NULL;
    J = NULL;
@@ -720,6 +722,7 @@ SCIP_RETCODE Separate(
       }
       if( SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) )
       {
+         found = TRUE;
          /* ********************************** *
           *   add the current pair to record   *
           * ********************************** */
@@ -790,12 +793,15 @@ SCIP_RETCODE Separate(
          /* ********************************** *
           *  end adding to record              *
           * ********************************** */
-
-         SCIPfreeMemoryArray(scip, &alpha);
-         SCIPdebugMessage("one S found with size %d\n", (*record)->sequencesizes[(*record)->recordsize-1]);
-
-         return SCIP_OKAY;
       }
+   }
+
+   if( found )
+   {
+      SCIPfreeMemoryArray(scip, &alpha);
+      SCIPdebugMessage("one S found with size %d\n", (*record)->sequencesizes[(*record)->recordsize-1]);
+
+      return SCIP_OKAY;
    }
 
    /* ********************************** *
@@ -1071,6 +1077,7 @@ SCIP_RETCODE Explore(
    int* newsequencesizes;
    SCIP_Real alpha_i;
    SCIP_Real  muF;
+   SCIP_Bool found;
    SCIP_Real mu_F;
    SCIP_Real max;
 
@@ -1089,6 +1096,7 @@ SCIP_RETCODE Explore(
    copyS = NULL;
    muF = 0;
    max = 0;
+   found = FALSE;
 
    SCIPdebugMessage("Explore\n");
 
@@ -1188,6 +1196,7 @@ SCIP_RETCODE Explore(
     * ******************************************* */
    if( SCIPisGT(scip, alpha_i - SCIPfloor(scip, alpha_i), 0) )
    {
+      found = TRUE;
       SCIPdebugMessage("fractional alpha[%d] = %g\n", i, alpha_i);
 
       /* ******************************************* *
@@ -1229,10 +1238,17 @@ SCIP_RETCODE Explore(
          (*record)->record[(*record)->recordsize-1] = copyS;
          (*record)->sequencesizes[(*record)->recordsize-1] = *Ssize;
          --(*Ssize);
-
-         SCIPdebugMessage("found fractional alpha\n");
-         return SCIP_OKAY;
       }
+      else
+      {
+         found = FALSE;
+      }
+   }
+
+   if( found )
+   {
+      SCIPdebugMessage("found fractional alpha\n");
+      return SCIP_OKAY;
    }
 
    /** @todo mb: from here that's unclear to me, I suppose he explores only one path */
