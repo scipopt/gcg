@@ -565,7 +565,6 @@ SCIP_RETCODE Separate(
    SCIP_Real* compvalues;
    SCIP_Real  muF;
    SCIP_Real maxPriority;
-   SCIP_Bool found;
 
    i = 0;
    j = 0;
@@ -578,7 +577,6 @@ SCIP_RETCODE Separate(
    muF = 0;
    min = INT_MAX;
    maxPriority = INT_MIN;
-   found = FALSE;
    priority = NULL;
    compvalues = NULL;
    J = NULL;
@@ -654,7 +652,6 @@ SCIP_RETCODE Separate(
       }
       if( SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) )
       {
-         found = TRUE;
          /* ********************************** *
           *   add the current pair to record   *
           * ********************************** */
@@ -726,15 +723,12 @@ SCIP_RETCODE Separate(
          /* ********************************** *
           *  end adding to record              *
           * ********************************** */
+
+         SCIPfreeMemoryArray(scip, &alpha);
+         SCIPdebugMessage("one S found with size %d\n", (*record)->sequencesizes[(*record)->recordsize-1]);
+
+         return SCIP_OKAY;
       }
-   }
-
-   if( found )
-   {
-      SCIPfreeMemoryArray(scip, &alpha);
-      SCIPdebugMessage("one S found with size %d\n", (*record)->sequencesizes[(*record)->recordsize-1]);
-
-      return SCIP_OKAY;
    }
 
    /* ********************************** *
@@ -1060,7 +1054,6 @@ SCIP_RETCODE Explore(
    int* newsequencesizes;
    SCIP_Real alpha_i;
    SCIP_Real  muF;
-   SCIP_Bool found;
    SCIP_Real mu_F;
    SCIP_Real max;
 
@@ -1079,7 +1072,6 @@ SCIP_RETCODE Explore(
    copyS = NULL;
    muF = 0;
    max = 0;
-   found = FALSE;
 
    SCIPdebugMessage("Explore\n");
 
@@ -1174,9 +1166,11 @@ SCIP_RETCODE Explore(
    }
    SCIPdebugMessage("alpha[%d] = %g\n", i, alpha_i);
 
+   /* ******************************************* *
+    * if f > 0, add pair to record                *
+    * ******************************************* */
    if( SCIPisGT(scip, alpha_i - SCIPfloor(scip, alpha_i), 0) )
    {
-      found = TRUE;
       SCIPdebugMessage("fractional alpha[%d] = %g\n", i, alpha_i);
 
       /* ******************************************* *
@@ -1218,21 +1212,13 @@ SCIP_RETCODE Explore(
          (*record)->record[(*record)->recordsize-1] = copyS;
          (*record)->sequencesizes[(*record)->recordsize-1] = *Ssize;
          --(*Ssize);
-      }
-      else
-      {
-         found = FALSE;
+
+         SCIPdebugMessage("found fractional alpha\n");
+         return SCIP_OKAY;
       }
    }
 
-   if( found )
-   {
-      SCIPdebugMessage("found fractional alpha\n");
-      return SCIP_OKAY;
-   }
-
-
-   /** @todo mb: from here that's unclear to me */
+   /** @todo mb: from here that's unclear to me, I suppose he explores only one path */
    ++(*Ssize);
    if( S==NULL || *S==NULL )
    {
@@ -1274,6 +1260,7 @@ SCIP_RETCODE Explore(
    if( SCIPisEQ(scip, alpha_i, muF) && Flower != 0 )
       Fupper = INT_MAX; //Flower
 
+   /** @todo mb: one can easily merge these two branches as they are similar */
    //choose smallest partition
    if( ((Fupper <= Flower && Fupper > 0 ) || Flower <= 0) && Fupper != INT_MAX )
    {
@@ -1688,6 +1675,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
       // allocate branchdata for same child and store information
       SCIP_CALL( SCIPallocMemory(scip, &branchchilddata) );
+      /** @todo use initialisation ! */
       branchchilddata->consblocknr = blocknr;
       branchchilddata->mastercons = NULL;
       branchchilddata->S = NULL;
@@ -1843,15 +1831,16 @@ SCIP_RETCODE createChildNodesGeneric(
             ++(parentdata->nchildNodes);
             if( parentdata->nchildNodes == 1 )
             {
-               //	SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childlhs), parentdata->nchildNodes) );
+               // SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childlhs), parentdata->nchildNodes) );
                SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childbranchdatas), parentdata->nchildNodes) );
             }
             else
             {
-               //					SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childlhs), parentdata->nchildNodes) );
+               // SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childlhs), parentdata->nchildNodes) );
                SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childbranchdatas), parentdata->nchildNodes) );
 
             }
+            /** @todo use initalisation */
             SCIP_CALL( SCIPallocMemory(scip, &(parentdata->childbranchdatas[parentdata->nchildNodes-1])) );
             parentdata->childbranchdatas[parentdata->nchildNodes-1]->S = NULL;
             parentdata->childbranchdatas[parentdata->nchildNodes-1]->C = NULL;
@@ -1952,11 +1941,13 @@ int GCGbranchGenericGetNChildnodes(
    {
       scip = masterscip;
       masterscip = GCGrelaxGetMasterprob(scip);
+      assert(scip == masterscip);
    }
    else
    {
       scip = GCGpricerGetOrigprob(masterscip);
    }
+
    assert(scip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
 
