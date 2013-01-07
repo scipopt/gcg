@@ -1516,10 +1516,12 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
 
             if( !SCIPisEQ(scip, parentdata->childlhs[i], lhs) )
                continue;
+
             if( parentdata->S[i].component == childS[i].component && SCIPisEQ(scip, parentdata->S[i].bound, childS[i].bound) )
             {
                if( parentdata->S[i].sense != childS[i].sense && i < childSsize-1 )
                   break; //subset = FALSE;
+
                if( i == childSsize-1 )
                {
                   if( childSsize == parentdata->Ssize )
@@ -1577,6 +1579,12 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_VAR** copymastervars;
    GCG_BRANCHDATA* parentdata;
 
+   assert(scip != NULL);
+   assert(Ssize > 0);
+   assert(S != NULL);
+   assert(F != NULL);
+   assert(Fsize > 0);
+
    SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGrelaxGetNIdenticalBlocks(scip, blocknr));
 
    lhs = 0;
@@ -1588,7 +1596,7 @@ SCIP_RETCODE createChildNodesGeneric(
    mu = 0;
    *nmasternodes = 0;
    parentdata = NULL;
-
+   /** @todo mb: BEGIN extract, that doesn't belong here !!! **/
    if( createorignodes )
    {
       parentdata = GCGconsMasterbranchGetBranchdata(parentcons);
@@ -1614,7 +1622,7 @@ SCIP_RETCODE createChildNodesGeneric(
       return SCIP_OKAY;
    }
 
-
+   /** @todo mb: use initialization */
    if( parentcons != NULL )
    {
       parentdata = GCGconsMasterbranchGetBranchdata(parentcons);
@@ -1636,26 +1644,16 @@ SCIP_RETCODE createChildNodesGeneric(
    }
    else
       parentdata = NULL;
+   /** @todo mb: END extract **/
 
    // get variable data of the master problem
    masterscip = GCGrelaxGetMasterprob(scip);
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    nmastervars2 = nmastervars;
    assert(nmastervars >= 0);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &copymastervars, nmastervars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &mastervars2, nmastervars) );
 
-   for( i=0; i<nmastervars; ++i )
-   {
-      mastervars2[i] = mastervars[i];
-      copymastervars[i] = mastervars[i];
-   }
-
-   assert(scip != NULL);
-   assert(Ssize > 0);
-   assert(S != NULL);
-   assert(F != NULL);
-   assert(Fsize > 0);
+   SCIP_CALL( SCIPduplicateMemoryArray(scip, &copymastervars, mastervars[i], nmastervars) );
+   SCIP_CALL( SCIPduplicateMemoryArray(scip, &mastervars2, mastervars[i], nmastervars) );
 
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
 
@@ -1746,48 +1744,12 @@ SCIP_RETCODE createChildNodesGeneric(
                   getGenerators(scip, &generator, &generatorsize, &compisinteger, blocknr, mastervars, nmastervars, mastervars2[i]);
                   generator_i = generator[ (int) SCIPceil(scip, S[k].component-0.5)];
 
-                  if( S[k].sense == GCG_COMPSENSE_GE )
+                  if( (S[k].sense == GCG_COMPSENSE_GE && SCIPisGE(scip, generator_i, S[k].bound) && k == p) ||
+                      (S[k].sense == GCG_COMPSENSE_LT && SCIPisLT(scip, generator_i, S[k].bound) && k == p) )
                   {
-                     if( SCIPisGE(scip, generator_i, S[k].bound) )
-                     {
-                        if( k == p )
-                           mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
-                     }
-                     else
-                     {
-                        if( ncopymastervars > 0 )
-                        {
-                           swap = mastervars2[i];
-                           mastervars2[i] = mastervars2[ncopymastervars-1];
-                           mastervars2[ncopymastervars-1] = swap;
-                           --ncopymastervars;
-                           --i;
-                        }
-                     }
+                     mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
                   }
-                  else  //nested erasing
-                  {
-                     if( SCIPisLT(scip, generator_i, S[k].bound) )
-                     {
-                        if( k == p )
-                           mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
-                     }
-                     else
-                     {
-                        if( ncopymastervars > 0 )
-                        {
-                           swap = mastervars2[i];
-                           mastervars2[i] = mastervars2[ncopymastervars-1];
-                           mastervars2[ncopymastervars-1] = swap;
-                           --ncopymastervars;
-                           --i;
-                        }
-                     }
-                  }
-               }
-               else
-               {
-                  if( ncopymastervars > 0 )
+                  else if( ncopymastervars > 0 )
                   {
                      swap = mastervars2[i];
                      mastervars2[i] = mastervars2[ncopymastervars-1];
@@ -1795,6 +1757,14 @@ SCIP_RETCODE createChildNodesGeneric(
                      --ncopymastervars;
                      --i;
                   }
+               }
+               else if( ncopymastervars > 0 )
+               {
+                  swap = mastervars2[i];
+                  mastervars2[i] = mastervars2[ncopymastervars-1];
+                  mastervars2[ncopymastervars-1] = swap;
+                  --ncopymastervars;
+                  --i;
                }
             }
             nmastervars2 = ncopymastervars;
