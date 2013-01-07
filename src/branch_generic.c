@@ -40,9 +40,6 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-/** @todo enum and struct, extract from event handler, move to own file */
-//typedef SCIP_Real ComponentBoundSequence[3];  // [[comp], [sense], [bound]]    sense=1 means >=, sense=0 means <
-
 struct GCG_BranchData
 {
    GCG_COMPSEQUENCE**   C;                  /**< S[k] bound sequence for block k */ //!!! sort of each C[i]=S[i] is important !!!
@@ -76,7 +73,7 @@ struct GCG_Strip
    int*                 sequencesizes;
 };
 
-
+typedef struct GCG_Strip GCG_STRIP;
 
 /** set of component bounds in separate */
 struct GCG_Record
@@ -283,12 +280,12 @@ SCIP_Real GetMedian(
 static
 SCIP_DECL_SORTPTRCOMP(ptrcomp)
 {
-   struct GCG_Strip* strip1;
-   struct GCG_Strip* strip2;
+   GCG_STRIP* strip1;
+   GCG_STRIP* strip2;
    int i;
 
-   strip1 = (struct GCG_Strip*) elem1;
-   strip2 = (struct GCG_Strip*) elem2;
+   strip1 = (GCG_STRIP*) elem1;
+   strip2 = (GCG_STRIP*) elem2;
 
    i = 0;
 
@@ -309,7 +306,7 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 // !!! changes the array
 static
 SCIP_RETCODE LexicographicSort(
-   struct GCG_Strip**   array,              /**< */
+   GCG_STRIP**          array,              /**< */
    int                  arraysize           /**< */
    )
 {
@@ -327,8 +324,8 @@ SCIP_RETCODE LexicographicSort(
 static
 int ILOcomp(
    SCIP*                scip,               /**< */
-   struct GCG_Strip*    strip1,             /**< */
-   struct GCG_Strip*    strip2,             /**< */
+   GCG_STRIP*           strip1,             /**< */
+   GCG_STRIP*           strip2,             /**< */
    GCG_COMPSEQUENCE**   C,                  /**< */
    int                  NBoundsequences,    /**< */
    int*                 sequencesizes,      /**< */
@@ -483,12 +480,12 @@ int ILOcomp(
 static
 SCIP_DECL_SORTPTRCOMP(ptrilocomp)
 {
-   struct GCG_Strip* strip1;
-   struct GCG_Strip* strip2;
+   GCG_STRIP* strip1;
+   GCG_STRIP* strip2;
    int returnvalue;
 
-   strip1 = (struct GCG_Strip*) elem1;
-   strip2 = (struct GCG_Strip*) elem2;
+   strip1 = (GCG_STRIP*) elem1;
+   strip2 = (GCG_STRIP*) elem2;
 
    returnvalue = ILOcomp( strip1->scip, strip1, strip2, strip1->C, strip1->Csize, strip1->sequencesizes, 1); //NULL, 0, strip1->IndexSet, strip1->generatorsize, 1);
 
@@ -498,12 +495,12 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
 // induced lexicographical sort
 static
 SCIP_RETCODE InducedLexicographicSort(
-   SCIP* scip,
-   struct GCG_Strip** array,
-   int arraysize,
-   GCG_COMPSEQUENCE** C,
-   int NBoundsequences,
-   int* sequencesizes
+   SCIP*                scip,               /**< */
+   GCG_STRIP**          array,              /**< */
+   int                  arraysize,          /**< */
+   GCG_COMPSEQUENCE**   C,                  /**< */
+   int                  NBoundsequences,    /**< */
+   int*                 sequencesizes       /**< */
    )
 {
    int i;
@@ -537,7 +534,7 @@ SCIP_RETCODE InducedLexicographicSort(
 static
 SCIP_RETCODE Separate(
    SCIP*                scip,               /**< */
-   struct GCG_Strip**   F,                  /**< fractional strips? */
+   GCG_STRIP**          F,                  /**< fractional strips? */
    int                  Fsize,              /**< size of the strips */
    int*                 IndexSet,           /**< index set */
    int                  IndexSetSize,       /**< size of index set */
@@ -559,7 +556,7 @@ SCIP_RETCODE Separate(
    int Fupper;
    int Flower;
    int* priority;
-   struct GCG_Strip** copyF;
+   GCG_STRIP** copyF;
    GCG_COMPSEQUENCE* upperLowerS;
    SCIP_Real* alpha;
    SCIP_Real* compvalues;
@@ -894,7 +891,7 @@ SCIP_RETCODE Separate(
 static
 SCIP_RETCODE ChoseS(
    SCIP*                scip,               /**< */
-   struct GCG_Record**  record,             /**< */
+   GCG_RECORD**         record,             /**< */
    GCG_COMPSEQUENCE**   S,                  /**< */
    int*                 Ssize               /**< */
    )
@@ -997,7 +994,7 @@ double computeAlpha(
    GCG_COMPSENSE isense,
    double ivalue,
    int i,
-   struct GCG_Strip** F
+   GCG_STRIP** F
    )
 {
    int j;
@@ -1023,18 +1020,18 @@ double computeAlpha(
 /** separation at a node other than the root node */
 static
 SCIP_RETCODE Explore(
-   SCIP*                scip,               /**< */
+   SCIP*                scip,               /**< SCIP data structure */
    GCG_COMPSEQUENCE**   C,                  /**< */
    int                  Csize,              /**< */
    int*                 sequencesizes,      /**< */
    int                  p,                  /**< */
-   struct GCG_Strip**   F,                  /**< */
+   GCG_STRIP**   F,                  /**< */
    int                  Fsize,              /**< */
    int*                 IndexSet,           /**< */
    int                  IndexSetSize,       /**< */
    GCG_COMPSEQUENCE**   S,                  /**< */
    int*                 Ssize,              /**< */
-   struct GCG_Record**  record              /**< */
+   GCG_RECORD**         record              /**< */
    )
 {
    int i;
@@ -1048,7 +1045,7 @@ SCIP_RETCODE Explore(
    int Flower;
    int Cupper;
    int Clower;
-   struct GCG_Strip** copyF;
+   GCG_STRIP** copyF;
    GCG_COMPSEQUENCE* copyS;
    GCG_COMPSEQUENCE** CopyC;
    int* newsequencesizes;
@@ -1348,7 +1345,7 @@ SCIP_RETCODE Explore(
 static
 SCIP_RETCODE CallSeparate(
    SCIP*                scip,               /**< */
-   struct GCG_Strip**   F,                  /**< */
+   GCG_STRIP**          F,                  /**< */
    int                  Fsize,              /**< */
    GCG_COMPSEQUENCE**   S,                  /**< */
    int*                 Ssize,              /**< */
@@ -1373,8 +1370,6 @@ SCIP_RETCODE CallSeparate(
 
    SCIPdebugMessage("Calling Separate\n");
 
-
-   //record = (struct GCG_Record*) malloc(sizeof(struct GCG_Record));
    SCIP_CALL( SCIPallocBuffer(scip, &record) );
    record->recordsize = 0;
    record->record = NULL;
@@ -1557,7 +1552,7 @@ SCIP_RETCODE createChildNodesGeneric(
    GCG_COMPSEQUENCE*     S,                 /**< Component Bound Sequence defining the nodes */
    int                   Ssize,             /**< */
    int                   blocknr,           /**< number of the block */
-   struct GCG_Strip**    F,                 /**< strips with mu>0 */  //for rhs, will be small than
+   GCG_STRIP**           F,                 /**< strips with mu>0 */  //for rhs, will be small than
    int                   Fsize,             /**< */
    SCIP_CONS*            parentcons,        /**< */
    int*                  nmasternodes,      /**< */
@@ -1902,7 +1897,7 @@ int GCGbranchGenericGetNChildnodes(
    SCIP_Real mastervarValue;
    GCG_COMPSEQUENCE* S;
    GCG_COMPSEQUENCE** C;
-   struct GCG_Strip** F;
+   GCG_STRIP** F;
    int Ssize;
    int Csize;
    int Fsize;
