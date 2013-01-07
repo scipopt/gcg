@@ -1100,7 +1100,7 @@ SCIP_RETCODE Explore(
    SCIP_Real alpha_i;
    SCIP_Real  muF;
    SCIP_Bool found;
-   SCIP_Real mu_F;
+   SCIP_Real nu_F;
    SCIP_Real max;
 
    i = 0;
@@ -1142,11 +1142,11 @@ SCIP_RETCODE Explore(
       return SCIP_OKAY;
    }
 
-   assert( C!=NULL );
-   assert( Csize>0 );
-   assert( F != NULL );
-   assert( IndexSet != NULL );
-   assert( sequencesizes != NULL );
+   assert(C != NULL);
+   assert(Csize > 0);
+   assert(F != NULL);
+   assert(IndexSet != NULL);
+   assert(sequencesizes != NULL);
 
    /* ******************************************* *
     * find i which is in all S in C on position p *
@@ -1222,32 +1222,32 @@ SCIP_RETCODE Explore(
       SCIPdebugMessage("fractional alpha[%d] = %g\n", i, alpha_i);
 
       /* ******************************************* *
-       * add to record                               *
+       * compute nu_F                                *
        * ******************************************* */
-      ++(*Ssize);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize) );
-      for( l = 0; l < *Ssize-1; ++l )
-      {
-         copyS[l] = (*S)[l];
-      }
-      copyS[*Ssize-1].component = i;
-      copyS[*Ssize-1].sense = isense;
-      copyS[*Ssize-1].bound = ivalue;
-
-      mu_F = 0;
+      nu_F = 0;
       for( l = 0; l < Fsize; ++l )
       {
          if( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, F[l]->generator[i], ivalue)) ||
              (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, F[l]->generator[i], ivalue)) )
          {
-               mu_F += F[l]->mastervarValue;
+               nu_F += F[l]->mastervarValue;
          }
       }
 
-      if( SCIPisGT(scip, mu_F - SCIPfloor(scip, mu_F), 0) )
+      /* ******************************************* *
+       * add to record                               *
+       * ******************************************* */
+      if( SCIPisGT(scip, nu_F - SCIPfloor(scip, nu_F), 0) )
       {
-         SCIP_CALL( addToRecord(scip, record, copyS, *Ssize) );
-         --(*Ssize);
+         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize+1) );
+         for( l = 0; l < *Ssize; ++l )
+         {
+            copyS[l] = (*S)[l];
+         }
+         copyS[*Ssize].component = i;
+         copyS[*Ssize].sense = isense;
+         copyS[*Ssize].bound = ivalue;
+         SCIP_CALL( addToRecord(scip, record, copyS, *Ssize+1) );
       }
       else
       {
