@@ -532,12 +532,12 @@ SCIP_RETCODE InducedLexicographicSort(
 /** partitions the strip according to the priority */
 static
 SCIP_RETCODE partition(
-   SCIP*                scip,               /**< */
-   int*                 Jsize,              /**< */
-   int                  Fsize,              /**< */
-   int*                 priority,           /**< */
-   GCG_STRIP**          F,                  /**< */
+   SCIP*                scip,               /**< SCIP data structure */
    int*                 J,                  /**< */
+   int*                 Jsize,              /**< */
+   int*                 priority,           /**< branching priorities */
+   GCG_STRIP**          F,                  /**< set of fractional solutions satisfying bounds */
+   int                  Fsize,              /**< size of list of fractional solutions satisfying bounds */
    int*                 i,                  /**< */
    double*              median              /**< */
    )
@@ -602,14 +602,14 @@ SCIP_RETCODE partition(
 /** separation at the root node */
 static
 SCIP_RETCODE Separate(
-   SCIP*                scip,               /**< */
-   GCG_STRIP**          F,                  /**< fractional strips? */
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_STRIP**          F,                  /**< fractional strips respectiong bound restrictions */
    int                  Fsize,              /**< size of the strips */
    int*                 IndexSet,           /**< index set */
    int                  IndexSetSize,       /**< size of index set */
    GCG_COMPSEQUENCE*    S,                  /**< ordered set of bound restrictions */
    int                  Ssize,              /**< size of the ordered set */
-   struct GCG_Record**  record              /**< */
+   GCG_RECORD**         record              /**< identified bound sequences */
    )
 {
    int i;
@@ -631,6 +631,10 @@ SCIP_RETCODE Separate(
    SCIP_Real* compvalues;
    SCIP_Real  muF;
 
+   assert(scip != NULL);
+   assert((Fsize == 0) == (F == NULL));
+   assert((IndexSetSize == 0) == (IndexSet == NULL));
+
    i = 0;
    j = 0;
    k = 0;
@@ -650,10 +654,10 @@ SCIP_RETCODE Separate(
 
    SCIPdebugMessage("Separate with ");
 
-   /* if there are no fractional columns, return*/
+   /* if there are no fractional columns, return */
    if( Fsize == 0 || IndexSetSize == 0 )
    {
-      SCIPdebugPrintf("noting, no fractional columns\n");
+      SCIPdebugPrintf("nothing, no fractional columns\n");
       return SCIP_OKAY;
    }
 
@@ -835,7 +839,7 @@ SCIP_RETCODE Separate(
    }
 
    SCIPdebugMessage("Partitioning\n");
-   SCIP_CALL( partition(scip, &Jsize, Fsize, priority, F, J, &i, &median) );
+   SCIP_CALL( partition(scip, J, &Jsize, priority, F, Fsize, &i, &median) );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize+1) );
    for( l=0; l < Ssize; ++l )
@@ -1041,12 +1045,12 @@ SCIP_RETCODE Explore(
    int                  Csize,              /**< */
    int*                 sequencesizes,      /**< */
    int                  p,                  /**< */
-   GCG_STRIP**   F,                  /**< */
-   int                  Fsize,              /**< */
+   GCG_STRIP**          F,                  /**< Strip of fractional columns */
+   int                  Fsize,              /**< size of the strips */
    int*                 IndexSet,           /**< */
    int                  IndexSetSize,       /**< */
-   GCG_COMPSEQUENCE**   S,                  /**< */
-   int*                 Ssize,              /**< */
+   GCG_COMPSEQUENCE**   S,                  /**< component sequences */
+   int*                 Ssize,              /**< lengt of component sequences */
    GCG_RECORD**         record              /**< */
    )
 {
@@ -1232,6 +1236,7 @@ SCIP_RETCODE Explore(
    }
 
    /** @todo mb: from here that's unclear to me, I suppose he explores only one path */
+   /* add something to the end of S */
    ++(*Ssize);
    if( S==NULL || *S==NULL )
    {
