@@ -599,6 +599,35 @@ SCIP_RETCODE partition(
    return SCIP_OKAY;
 }
 
+/** add identified sequence to record */
+static
+SCIP_RETCODE addToRecord(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_RECORD*          record,             /**< record of identified sequences */
+   GCG_COMPSEQUENCE*    S,                  /**< bound restriction sequence */
+   int                  Ssize               /**< size of bound restriction sequence */
+)
+{
+
+   if( record->recordsize == 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->sequencesizes), 1) );
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), record->recordsize+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), record->recordsize+1) );
+   }
+   record->record[record->recordsize] = S;
+   record->sequencesizes[record->recordsize] = Ssize+1;
+
+   record->recordsize++;
+
+   return SCIP_OKAY;
+}
+
+
 /** separation at the root node */
 static
 SCIP_RETCODE Separate(
@@ -609,7 +638,7 @@ SCIP_RETCODE Separate(
    int                  IndexSetSize,       /**< size of index set */
    GCG_COMPSEQUENCE*    S,                  /**< ordered set of bound restrictions */
    int                  Ssize,              /**< size of the ordered set */
-   GCG_RECORD**         record              /**< identified bound sequences */
+   GCG_RECORD*          record              /**< identified bound sequences */
    )
 {
    int i;
@@ -728,15 +757,14 @@ SCIP_RETCODE Separate(
           * ********************************** */
 
          /** @todo extract function */
+         /* copy S */
          SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize+1) );
          for( l=0; l < Ssize; ++l )
          {
             copyS[l] = S[l];
          }
 
-         copyS[Ssize].component = i;
-         copyS[Ssize].sense = GCG_COMPSENSE_GE;
-
+         /* create temporary array to compute median */
          SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) );
          for( l=0; l<Fsize; ++l )
          {
@@ -746,6 +774,10 @@ SCIP_RETCODE Separate(
          }
 
          median = GetMedian(scip, compvalues, Fsize, min);
+         SCIPfreeBufferArray(scip, &compvalues);
+         compvalues = NULL;
+
+         /** @todo mb: ??? */
          j = 0;
 
          do
@@ -771,24 +803,14 @@ SCIP_RETCODE Separate(
 
          }while( SCIPisEQ(scip, mu_F - SCIPfloor(scip, mu_F), 0) );
 
+         /* add last bound change to the copy of S */
+         copyS[Ssize].component = i;
+         copyS[Ssize].sense = GCG_COMPSENSE_GE;
          copyS[Ssize].bound = median;
 
-         SCIPfreeBufferArray(scip, &compvalues);
-         compvalues = NULL;
+         /* add identified sequence to record */
+         SCIP_CALL( addToRecord(scip, record, copyS, Ssize+1) );
 
-         (*record)->recordsize++;
-         if( (*record)->recordsize == 1 )
-         {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &((*record)->record), (*record)->recordsize) );
-            SCIP_CALL( SCIPallocMemoryArray(scip, &((*record)->sequencesizes), (*record)->recordsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &((*record)->record), (*record)->recordsize) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &((*record)->sequencesizes), (*record)->recordsize) );
-         }
-         (*record)->record[(*record)->recordsize-1] = copyS;
-         (*record)->sequencesizes[(*record)->recordsize-1] = Ssize+1;
 
          /* ********************************** *
           *  end adding to record              *
@@ -799,7 +821,7 @@ SCIP_RETCODE Separate(
    if( found )
    {
       SCIPfreeMemoryArray(scip, &alpha);
-      SCIPdebugMessage("one S found with size %d\n", (*record)->sequencesizes[(*record)->recordsize-1]);
+      SCIPdebugMessage("one S found with size %d\n", record->sequencesizes[record->recordsize-1]);
 
       return SCIP_OKAY;
    }
@@ -1057,7 +1079,7 @@ SCIP_RETCODE Explore(
    int                  IndexSetSize,       /**< */
    GCG_COMPSEQUENCE**   S,                  /**< component sequences */
    int*                 Ssize,              /**< lengt of component sequences */
-   GCG_RECORD**         record              /**< */
+   GCG_RECORD*          record              /**< */
    )
 {
    int i;
@@ -1224,19 +1246,7 @@ SCIP_RETCODE Explore(
 
       if( SCIPisGT(scip, mu_F - SCIPfloor(scip, mu_F), 0) )
       {
-         (*record)->recordsize++;
-         if( (*record)->recordsize == 1 )
-         {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &((*record)->record), (*record)->recordsize) );
-            SCIP_CALL( SCIPallocMemoryArray(scip, &((*record)->sequencesizes), (*record)->recordsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &((*record)->record), (*record)->recordsize) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &((*record)->sequencesizes), (*record)->recordsize) );
-         }
-         (*record)->record[(*record)->recordsize-1] = copyS;
-         (*record)->sequencesizes[(*record)->recordsize-1] = *Ssize;
+         SCIP_CALL( addToRecord(scip, record, copyS, *Ssize) );
          --(*Ssize);
       }
       else
@@ -1421,11 +1431,11 @@ SCIP_RETCODE CallSeparate(
 
    //rootnode?
    if( Csize<=0 )
-      Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, &record );
+      Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
    else
    {
       assert( C!=NULL );
-      Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, &record);
+      Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, record);
       if( exploreS != NULL )
          SCIPfreeMemoryArray(scip, &exploreS);
    }
