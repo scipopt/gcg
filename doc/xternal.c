@@ -41,7 +41,7 @@
  *
  *
  * <b> Latest Version </b>
- *  - The latest version is 1.0.0.
+ *  - The latest version is 1.1.0.
  *  - Get it \ref DOWNLOAD "here"
  *
  *
