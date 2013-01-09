@@ -119,18 +119,17 @@ SCIP_RETCODE getGenerators(
    SCIP_VAR** origvars;
    SCIP_Real* origvals;
    int norigvars;
-   int nvarsinblock;
 
    i = 0;
    j = 0;
    k = 0;
    *generatorsize = 0;
-   nvarsinblock = 0;
    origvarsunion = NULL;
    assert(mastervars != NULL);
 
    //	SCIPdebugMessage("get generator, block = %d, nvars = %d \n", blocknr, nmastervars);
 
+   /** @todo mb: As I understand this, this is calculating the union of all original variables of master variables */
    for( i=0; i<nmastervars; ++i )
    {
       origvars = GCGmasterVarGetOrigvars(mastervars[i]);
@@ -138,8 +137,8 @@ SCIP_RETCODE getGenerators(
 
       if( blocknr != GCGvarGetBlock(mastervars[i]) )
          continue;
-      else
-         ++nvarsinblock;
+
+      /* if the */
       if( *generatorsize == 0 && norigvars > 0 )
       {
          *generatorsize = norigvars;
@@ -150,9 +149,7 @@ SCIP_RETCODE getGenerators(
          {
             origvarsunion[j] = origvars[j];
             (*generator)[j] = 0;
-            (*compisinteger)[j] = TRUE;
-            if( SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT )
-               (*compisinteger)[j] = FALSE;
+            (*compisinteger)[j] = SCIPvarGetType(origvars[j]) != SCIP_VARTYPE_CONTINUOUS && SCIPvarGetType(origvars[j]) != SCIP_VARTYPE_IMPLINT;
          }
       }
       else
@@ -165,21 +162,22 @@ SCIP_RETCODE getGenerators(
 
             for( k=0; k<oldgeneratorsize; ++k )
             {
+               /* if variable already in union */
                if( origvarsunion[k] == origvars[j] )
                {
                   break;
                }
                if( k == oldgeneratorsize-1) //norigvars-1 )
                {
+                  /* add variable to the end */
                   ++(*generatorsize);
                   SCIP_CALL( SCIPreallocMemoryArray(scip, generator, *generatorsize) );
                   SCIP_CALL( SCIPreallocMemoryArray(scip, compisinteger, *generatorsize) );
                   SCIP_CALL( SCIPreallocMemoryArray(scip, &origvarsunion, *generatorsize) );
+
                   origvarsunion[*generatorsize-1] = origvars[j];
                   (*generator)[*generatorsize-1] = 0;
-                  (*compisinteger)[(*generatorsize)-1] = TRUE;
-                  if( SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_CONTINUOUS || SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT )
-                     (*compisinteger)[(*generatorsize)-1] = FALSE;
+                  (*compisinteger)[(*generatorsize)-1] = SCIPvarGetType(origvars[j]) != SCIP_VARTYPE_CONTINUOUS && SCIPvarGetType(origvars[j]) == SCIP_VARTYPE_IMPLINT;
                }
             }
          }
@@ -190,6 +188,7 @@ SCIP_RETCODE getGenerators(
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
 
+   /* go through all original variables and if you find the original variable, add the value to the generator */
    for( i=0; i<norigvars; ++i )
    {
       for( j=0; j<*generatorsize; ++j )
@@ -210,13 +209,19 @@ SCIP_RETCODE getGenerators(
    return SCIP_OKAY;
 }
 
-/** method for calculating the median over all fractional components values if its the minimum return ceil(arithm middle)*/
+/** method for calculating the median over all fractional components values using
+ * the quickselect algorithm (or a variant of it)
+ *
+ * This method will change the array
+ *
+ * @return median or if the median is the mimimum return ceil(arithm middle)
+ */
 static
 SCIP_Real GetMedian(
-   SCIP*                scip,               /**< */
-   SCIP_Real*           array,              /**< */
-   int                  arraysize,          /**< */
-   SCIP_Real            min                 /**< */
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_Real*           array,              /**< array to find the median in (will be destroyed) */
+   int                  arraysize,          /**< size of the array */
+   SCIP_Real            min                 /**< minimum of array */
    )
 {
    SCIP_Real Median;
@@ -227,6 +232,10 @@ SCIP_Real GetMedian(
    int j;
    int MedianIndex;
    SCIP_Real arithmMiddle;
+
+   assert(scip != NULL);
+   assert(array != NULL);
+   assert(arraysize > 0);
 
    r = arraysize -1;
    l = 0;
@@ -239,7 +248,7 @@ SCIP_Real GetMedian(
 
    while( l < r-1 )
    {
-      Median = array[ MedianIndex ];
+      Median = array[MedianIndex];
       i = l;
       j = r;
       do
@@ -262,21 +271,21 @@ SCIP_Real GetMedian(
       if( i > MedianIndex )
          r = j;
    }
-   Median = array[ MedianIndex ];
+   Median = array[MedianIndex];
 
    if( SCIPisEQ(scip, Median, min) )
    {
-      for( i=0; i<arraysize; ++i )
-         arithmMiddle += array[i];
 
-      arithmMiddle /= arraysize;
+      for( i=0; i<arraysize; ++i )
+         arithmMiddle += 1.0*array[i]/arraysize;
+
       Median = SCIPceil(scip, arithmMiddle);
    }
 
    return Median;
 }
 
-// comparefunction for lexicographical sort
+/** comparefunction for lexicographical sort */
 static
 SCIP_DECL_SORTPTRCOMP(ptrcomp)
 {
@@ -302,33 +311,36 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
    return 0;
 }
 
-// lexicographical sort using scipsort
-// !!! changes the array
+/** lexicographical sort using scipsort
+ * This method will change the array
+ */
 static
 SCIP_RETCODE LexicographicSort(
-   GCG_STRIP**          array,              /**< */
-   int                  arraysize           /**< */
+   GCG_STRIP**          array,              /**< array to sort (will be changed) */
+   int                  arraysize           /**< size of the array */
    )
 {
+
+   assert(array != NULL);
+   assert(arraysize > 0);
 
    SCIPdebugMessage("Lexicographic sorting\n");
 
    SCIPsortPtr((void**)array, ptrcomp, arraysize );
 
-   //change array
    return SCIP_OKAY;
 }
 
 
- /** compare function for ILO: returns 1 if bd1 < bd2 else -1 */
+/** compare function for ILO: returns 1 if bd1 < bd2 else -1 with respect to bound sequence */
 static
 int ILOcomp(
-   SCIP*                scip,               /**< */
-   GCG_STRIP*           strip1,             /**< */
-   GCG_STRIP*           strip2,             /**< */
-   GCG_COMPSEQUENCE**   C,                  /**< */
-   int                  NBoundsequences,    /**< */
-   int*                 sequencesizes,      /**< */
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_STRIP*           strip1,             /**< first strip */
+   GCG_STRIP*           strip2,             /**< second strip */
+   GCG_COMPSEQUENCE**   C,                  /**< component bound sequence to compare with */
+   int                  NBoundsequences,    /**< size of the bound sequence */
+   int*                 sequencesizes,      /**< sizes of the bound sequences */
    int                  p                   /**< */
    )
 {
@@ -350,14 +362,14 @@ int ILOcomp(
    Nupper = 0;
    Nlower = 0;
 
-   //lexicographic Order ?
+   /* lexicographic Order? */
    if( C == NULL || NBoundsequences <= 1 )
       return (*ptrcomp)( strip1, strip2);// == -1);
 
    assert(C != NULL);
    assert(NBoundsequences > 0);
 
-   //find i which is in all S in C on position p
+   /* find i which is in all S in C on position p */
    while( sequencesizes[k] < p )
    {
       ++k;
@@ -369,7 +381,7 @@ int ILOcomp(
 
    assert(i >= 0);
 
-   //calculate subset of C
+   /* calculate subset of C */
    for( j=0; j< NBoundsequences; ++j )
    {
       if( sequencesizes[j] >= p )
@@ -476,7 +488,7 @@ int ILOcomp(
       return -1;
 }
 
-// comparefunction for induced lexicographical sort
+/** comparefunction for induced lexicographical sort */
 static
 SCIP_DECL_SORTPTRCOMP(ptrilocomp)
 {
@@ -492,7 +504,7 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
    return returnvalue;
 }
 
-// induced lexicographical sort
+/** induced lexicographical sort */
 static
 SCIP_RETCODE InducedLexicographicSort(
    SCIP*                scip,               /**< */
@@ -685,7 +697,7 @@ SCIP_RETCODE Separate(
 
    SCIPdebugMessage("Separate with ");
 
-   /* if there are no fractional columns, return */
+   /* if there are no fractional columns or potential columns, return */
    if( Fsize == 0 || IndexSetSize == 0 )
    {
       SCIPdebugPrintf("nothing, no fractional columns\n");
@@ -734,6 +746,7 @@ SCIP_RETCODE Separate(
       if( !F[0]->compisinteger[i] )
          continue;
 
+      /** @todo mb: if we uses sorted master and origvars arrays and use the variable as index, we can get rid of generator here */
       for( j = 0; j < Fsize; ++j )
       {
          assert(i < F[j]->generatorsize);
@@ -777,7 +790,7 @@ SCIP_RETCODE Separate(
          SCIPfreeBufferArray(scip, &compvalues);
          compvalues = NULL;
 
-         /** @todo mb: ??? */
+         /** @todo mb: this is a fix for an issue that Marcel claims that Vanderbeck did wrong */
          j = 0;
 
          do
@@ -829,6 +842,8 @@ SCIP_RETCODE Separate(
    /* ********************************** *
     *  discriminating components         *
     * ********************************** */
+
+   /** @todo mb: this is a filter */
    SCIP_CALL( SCIPallocMemoryArray(scip, &J, Jsize) );
    j=0;
    for( k=0; k<IndexSetSize; ++k )
@@ -862,13 +877,14 @@ SCIP_RETCODE Separate(
          if( F[l]->generator[J[j]] < mincomp )
             mincomp = F[l]->generator[J[j]];
       }
-      //assert(J[j] < Jsize);
+
       priority[j] = maxcomp-mincomp;
    }
 
    SCIPdebugMessage("Partitioning\n");
    SCIP_CALL( partition(scip, J, &Jsize, priority, F, Fsize, &i, &median) );
 
+   /** @todo mb: this is a copy of S for the recursive call below */
    SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize+1) );
    for( l=0; l < Ssize; ++l )
    {
@@ -931,17 +947,16 @@ SCIP_RETCODE Separate(
    SCIPfreeMemoryArray(scip, &J);
    SCIPfreeMemoryArray(scip, &alpha);
 
-   //	return record;
    return SCIP_OKAY;
 }
 
-/** choose a component bound sequence */
+/** choose a component bound sequence to create branching */
 static
 SCIP_RETCODE ChoseS(
-   SCIP*                scip,               /**< */
-   GCG_RECORD**         record,             /**< */
-   GCG_COMPSEQUENCE**   S,                  /**< */
-   int*                 Ssize               /**< */
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_RECORD**         record,             /**< candidate of bound sequences */
+   GCG_COMPSEQUENCE**   S,                  /**< pointer to return chosen bound sequence */
+   int*                 Ssize               /**< size of the chosen bound sequence */
    )
 {
    int minSizeOfMaxPriority;  //needed if the last comp priority is euqal to the one in other bound sequences
@@ -1006,21 +1021,22 @@ SCIP_RETCODE ChoseS(
    return SCIP_OKAY;
 }
 
+/** */
 static
 int computeNewSequence(
-   int Csize,
-   int p,
-   int i,
-   int* sequencesizes,
-   GCG_COMPSEQUENCE** C,
-   GCG_COMPSEQUENCE** CopyC,
-   int* newsequencesizes,
-   GCG_COMPSENSE sense
+   int                   Csize,              /**< size of the sequence */
+   int                   p,                  /**< index of ??? */
+   int                   i,                  /**< another index ?? */
+   int*                  sequencesizes,      /**< size of the sequences */
+   GCG_COMPSEQUENCE**    C,                  /**< original sequence */
+   GCG_COMPSEQUENCE**    CopyC,              /**< new sequence */
+   int*                  newsequencesizes,   /**< output parameter for the new sequence */
+   GCG_COMPSENSE         sense               /**< sense of the comparison */
    )
 {
    int j;
    int k;
-   for ( k = 0, j = 0; j < Csize; ++j )
+   for( k = 0, j = 0; j < Csize; ++j )
    {
       if ( sequencesizes[j] >= p )
          assert(C[j][p-1].component == i);
@@ -1035,14 +1051,15 @@ int computeNewSequence(
    return k;
 }
 
+/** auxilary function to compute alpha for given index */
 static
 double computeAlpha(
-   SCIP* scip,
-   int Fsize,
-   GCG_COMPSENSE isense,
-   double ivalue,
-   int i,
-   GCG_STRIP** F
+   SCIP*                 scip,               /**< SCIP data structure */
+   int                   Fsize,              /**< size of F */
+   GCG_COMPSENSE         isense,             /**< sense of the ??? */
+   double                ivalue,             /**< value of the ??? */
+   int                   i,                  /**< index of the variable */
+   GCG_STRIP**           F                   /**< */
    )
 {
    int j;
@@ -1409,7 +1426,7 @@ SCIP_RETCODE CallSeparate(
    GCG_COMPSEQUENCE* exploreS;
 
    assert(Fsize > 0);
-   assert(F!=NULL);
+   assert(F != NULL);
    exploreSsize = 0;
    exploreS = NULL;
    record = NULL;
@@ -2606,7 +2623,7 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
 
 /** initializes branchdata */
 SCIP_RETCODE GCGbranchGenericCreateBranchdata(
-   SCIP*                scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
    )
 {
