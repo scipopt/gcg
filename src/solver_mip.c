@@ -251,13 +251,13 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
       SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
    }
 
-   SCIPfreeMemoryArray(scip, &(solverdata->tmpsolvals));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->tmpsolvals));
 
    /* free arrays for storing the solutions */
-   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->nsolvars));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solisray));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solvars));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solvals));
 
    return SCIP_OKAY;
 }
@@ -673,6 +673,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    data->solvars = NULL;
    data->solvals = NULL;
    data->solisray = NULL;
+   data->tmpsolvals = NULL;
    data->origprob = GCGpricerGetOrigprob(scip);
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,

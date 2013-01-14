@@ -303,6 +303,13 @@ SCIP_Bool GCGisConsGCGCons(
    SCIP_CONS*            cons                /**< constraint to check */
    );
 
+/** creates a decomposition with all constraints in the master */
+extern
+SCIP_RETCODE DECcreateBasicDecomp(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp               /**< decomposition structure */
+   );
+
 #ifdef __cplusplus
 }
 #endif

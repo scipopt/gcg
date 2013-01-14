@@ -1,3 +1,10 @@
+GCG Version next
+===============
+features
+- GCG can now automatically create a decomposition to solve the LP with
+  empty pricing problems. See the cons/decomp/createbasicdecomp parameter
+
+
 GCG Version 1.1
 ===============
 features

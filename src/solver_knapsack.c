@@ -136,10 +136,10 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolKnapsack)
       SCIPfreeMemoryArray(scip, &(solverdata->solvals[i]));
    }
 
-   SCIPfreeMemoryArray(scip, &(solverdata->nsolvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solisray));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->solvals));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->nsolvars));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solisray));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solvars));
+   SCIPfreeMemoryArrayNull(scip, &(solverdata->solvals));
 
    return SCIP_OKAY;
 }

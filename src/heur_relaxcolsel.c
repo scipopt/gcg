@@ -969,6 +969,7 @@ SCIP_RETCODE SCIPincludeHeurRelaxcolsel(
 
    /* create relaxation based column selection primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   heurdata->zerovars = NULL;
 
    /* include primal heuristic */
    SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,

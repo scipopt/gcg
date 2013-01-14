@@ -252,6 +252,18 @@ TEST_F(GcgDecTest, ReadBlkTest) {
    ASSERT_NEAR(16.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 }
 
+TEST_F(GcgDecTest, NoDecTest) {
+   SCIP_RESULT result;
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+   SCIP_CALL_EXPECT( SCIPsetLongintParam(scip, "limits/nodes", 1L) );
+
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
+   ASSERT_NEAR(15.873333333333, SCIPgetLowerbound(scip), SCIPfeastol(scip));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

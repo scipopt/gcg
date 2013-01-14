@@ -254,8 +254,7 @@ SCIP_RETCODE convertStructToGCG(
    assert(scip != NULL);
 
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
-   assert(DECdecompGetNSubscipvars(decdecomp) != 0);
-   assert(DECdecompGetSubscipvars(decdecomp) != NULL);
+   assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
 
@@ -1035,7 +1034,6 @@ SCIP_RETCODE createPricingVariables(
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
-   assert(hashorig2pricingvar != NULL);
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
@@ -1078,6 +1076,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIP_CALL( createPricingVar(relaxdata, probvar) );
          assert(GCGoriginalVarGetPricingVar(probvar) != NULL);
+         assert(hashorig2pricingvar != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
 
          SCIPdebugPrintf("-> %p\n", GCGoriginalVarGetPricingVar(probvar));
@@ -1105,7 +1104,8 @@ SCIP_RETCODE createPricingVariables(
             if( pricingvars[i] != NULL )
             {
                assert(GCGvarIsPricing(pricingvars[i]));
-
+               assert(hashorig2pricingvar != NULL);
+               assert(hashorig2pricingvar[blocknr] != NULL);
                assert(!SCIPhashmapExists(hashorig2pricingvar[i], probvar));
                SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(probvar),
                      (void*)(pricingvars[i])) );
