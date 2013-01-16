@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgrens.h
- * @brief  GCG RENS primal heuristic
+ * @brief  LNS heuristic that finds the optimal rounding to a given point
  * @author Timo Berthold
  * @author Christian Puchert
  * @ingroup PRIMALHEURISTICS
