@@ -1451,8 +1451,6 @@ TERMINATE:
 
 
 
-
-
 /*
  * primal heuristic specific interface methods
  */
