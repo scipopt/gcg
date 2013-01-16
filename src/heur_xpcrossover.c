@@ -1438,10 +1438,6 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
 
    int i;
 
-#ifdef NDEBUG
-   SCIP_RETCODE retstat;
-#endif
-
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
@@ -1640,11 +1636,11 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
        * Hence in optimized mode, the return code is catched and a warning is printed, only in debug mode, SCIP will stop.
        */
 #ifdef NDEBUG
-      retstat = SCIPsolve(subscip);
-      if( retstat != SCIP_OKAY )
+      retcode = SCIPsolve(subscip);
+      if( retcode != SCIP_OKAY )
       {
          SCIPwarningMessage(scip, "Error while solving subproblem in XP Crossover heuristic; sub-SCIP terminated with code <%d>\n",
-            retstat);
+            retcode);
       }
 #else
       SCIP_CALL( SCIPsolve(subscip) );
