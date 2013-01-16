@@ -200,7 +200,7 @@ SCIP_RETCODE createSubproblem(
    if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
-      SCIPstatisticPrintf("GCG RENS statistic: fixed only %5.2f integer variables --> abort \n", *intfixingrate);
+      SCIPstatisticPrintf("GCG RENS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
    
@@ -447,11 +447,6 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_CALL( createSubproblem(scip, subscip, subvars, minfixingrate, binarybounds, uselprows, &intfixingrate, &zerofixingrate, &success) );
    SCIPdebugMessage("RENS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
-#ifdef SCIP_STATISTIC
-   heurdata->avgfixrate += intfixingrate;
-   heurdata->avgzerorate += zerofixingrate;
-#endif
-
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );
 
@@ -530,6 +525,11 @@ SCIP_RETCODE GCGapplyGcgrens(
       SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
    }
 
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
+
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
 
@@ -606,7 +606,7 @@ SCIP_RETCODE GCGapplyGcgrens(
    }
    else
    {
-      SCIPstatisticPrintf("GCG RENS statistic: fixed only %6.3f integer variables, %6.3f all variables --> abort \n", intfixingrate, allfixingrate);
+      SCIPstatisticPrintf("GCG RENS statistic: fixed only %6.3f integer variables (%6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
    /* free subproblem */
@@ -619,9 +619,6 @@ SCIP_RETCODE GCGapplyGcgrens(
 /*
  * Callback methods of primal heuristic
  */
-
-/** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#define heurCopyGcgrens NULL  /* copy method should not be used unless GCG supports copying the extended instance */
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
@@ -662,9 +659,6 @@ SCIP_DECL_HEURINIT(heurInitGcgrens)
 
    return SCIP_OKAY;
 }
-
-/** deinitialization method of primal heuristic (called before transformed problem is freed) */
-#define heurExitGcgrens NULL
 
 #ifdef SCIP_STATISTIC
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
@@ -826,7 +820,6 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurCopy(scip, heur, heurCopyGcgrens) );
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgrens) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgrens) );
 #ifdef SCIP_STATISTIC

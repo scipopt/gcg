@@ -182,7 +182,7 @@ SCIP_RETCODE createSubproblem(
    if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f integer variables --> abort \n", *intfixingrate);
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
 
@@ -307,9 +307,6 @@ SCIP_RETCODE createNewSol(
  * Callback methods of primal heuristic
  */
 
-/** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-#define heurCopyGcgrins NULL  /* copy method should not be used unless GCG supports copying the extended instance */
-
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_HEURFREE(heurFreeGcgrins)
@@ -349,9 +346,6 @@ SCIP_DECL_HEURINIT(heurInitGcgrins)
 
    return SCIP_OKAY;
 }
-
-/** deinitialization method of primal heuristic (called before transformed problem is freed) */
-#define heurExitGcgrins NULL
 
 #ifdef SCIP_STATISTIC
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
@@ -488,6 +482,25 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
    *result = SCIP_DIDNOTRUN;
 
+   /* check whether there is enough time and memory left */
+   timelimit = 0.0;
+   memorylimit = 0.0;
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
+   if( !SCIPisInfinity(scip, timelimit) )
+      timelimit -= SCIPgetSolvingTime(scip);
+   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
+
+   /* substract the memory already used by the main SCIP and the estimated memory usage of external software */
+   if( !SCIPisInfinity(scip, memorylimit) )
+   {
+      memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
+      memorylimit -= SCIPgetMemExternEstim(scip)/1048576.0;
+   }
+
+   /* abort if no time is left or not enough memory to create a copy of SCIP, including external memory usage */
+   if( timelimit <= 0.0 || memorylimit <= 2.0*SCIPgetMemExternEstim(scip)/1048576.0 )
+      return SCIP_OKAY;
+
    /* calculate the maximal number of branching nodes until heuristic is aborted */
    nstallnodes = (SCIP_Longint)(heurdata->nodesquot * SCIPgetNNodes(scip));
 
@@ -566,11 +579,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    SCIP_CALL( createSubproblem(scip, subscip, subvars, heurdata->minfixingrate, heurdata->uselprows, &intfixingrate, &zerofixingrate, &success) );
    SCIPdebugMessage("RINS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
-#ifdef SCIP_STATISTIC
-   heurdata->avgfixrate += intfixingrate;
-   heurdata->avgzerorate += zerofixingrate;
-#endif
-
    if( !success )
    {
       *result = SCIP_DIDNOTRUN;
@@ -579,23 +587,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
 
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(subscip, "display/verblevel", 0) );
-
-   /* check whether there is enough time and memory left */
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-   if( !SCIPisInfinity(scip, timelimit) )
-      timelimit -= SCIPgetSolvingTime(scip);
-   SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
-
-   /* substract the memory already used by the main SCIP and the estimated memory usage of external software */
-   if( !SCIPisInfinity(scip, memorylimit) )
-   {
-      memorylimit -= SCIPgetMemUsed(scip)/1048576.0;
-      memorylimit -= SCIPgetMemExternEstim(scip)/1048576.0;
-   }
-
-   /* abort if no time is left or not enough memory to create a copy of SCIP, including external memory usage */
-   if( timelimit <= 0.0 || memorylimit <= 2.0*SCIPgetMemExternEstim(scip)/1048576.0 )
-      goto TERMINATE;
 
    /* set limits for the subproblem */
    SCIP_CALL( SCIPsetLongintParam(subscip, "limits/nodes", nstallnodes) );
@@ -664,6 +655,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    }
    cutoff = MIN(upperbound, cutoff );
    SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
+
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
 
    /* presolve the subproblem */
    retcode = SCIPpresolve(subscip);
@@ -736,7 +732,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    }
    else
    {
-      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables, %6.3f all variables --> abort \n", intfixingrate, allfixingrate);
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables (%6.3f zero), %6.3f all variables --> abort \n", intfixingrate, zerofixingrate, allfixingrate);
    }
 
  TERMINATE:
@@ -770,7 +766,6 @@ SCIP_RETCODE SCIPincludeHeurGcgrins(
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurCopy(scip, heur, heurCopyGcgrins) );
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgrins) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgrins) );
 #ifdef SCIP_STATISTIC

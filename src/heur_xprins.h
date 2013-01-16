@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/** creates the xprins primal heuristic and includes it in SCIP */
+/** creates the Extreme Point RINS primal heuristic and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeHeurXprins(
    SCIP*                 scip                /**< SCIP data structure */
