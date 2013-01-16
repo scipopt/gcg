@@ -49,8 +49,8 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** main procedure of the RENS heuristic, creates and solves a subMIP */
-SCIP_RETCODE SCIPapplyGcgrens(
+/** main procedure of the GCG RENS heuristic, creates and solves a sub-SCIP */
+SCIP_RETCODE GCGapplyGcgrens(
    SCIP*                 scip,               /**< original SCIP data structure                                   */
    SCIP_HEUR*            heur,               /**< heuristic data structure                                       */
    SCIP_RESULT*          result,             /**< result data structure                                          */
