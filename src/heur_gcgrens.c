@@ -114,9 +114,6 @@ SCIP_RETCODE createSubproblem(
    SCIP*                 scip,               /**< original SCIP data structure                                   */
    SCIP*                 subscip,            /**< SCIP data structure for the subproblem                         */
    SCIP_VAR**            subvars,            /**< the variables of the subproblem                                */
-#ifdef SCIP_STATISTIC
-   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                          */
-#endif
    SCIP_Real             minfixingrate,      /**< percentage of integer variables that have to be fixed          */
    SCIP_Bool             binarybounds,       /**< should general integers get binary bounds [floor(.),ceil(.)] ? */
    SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
@@ -137,9 +134,6 @@ SCIP_RETCODE createSubproblem(
    assert(scip != NULL);
    assert(subscip != NULL);
    assert(subvars != NULL);
-#ifdef SCIP_STATISTIC
-   assert(heurdata != NULL);
-#endif
 
    assert(0.0 <= minfixingrate && minfixingrate <= 1.0);
 
@@ -191,6 +185,8 @@ SCIP_RETCODE createSubproblem(
    /* abort, if all integer variables were fixed (which should not happen for MIP) */
    if( fixingcounter == nbinvars + nintvars )
    {
+      *intfixingrate = 1.0;
+      *zerofixingrate = 1.0;
       *success = FALSE;
       return SCIP_OKAY;
    }
@@ -199,11 +195,6 @@ SCIP_RETCODE createSubproblem(
       *intfixingrate = fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
       *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
    }
-
-#ifdef SCIP_STATISTIC
-   heurdata->avgfixrate += *intfixingrate;
-   heurdata->avgzerorate += *zerofixingrate;
-#endif
 
    /* abort, if the amount of fixed variables is insufficient */
    if( *intfixingrate < minfixingrate )
@@ -453,12 +444,13 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIPhashmapFree(&varmapfw);
 
    /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
-#ifdef SCIP_STATISTIC
-   SCIP_CALL( createSubproblem(scip, subscip, subvars, heurdata, minfixingrate, binarybounds, uselprows, &intfixingrate, &zerofixingrate, &success) );
-#else
    SCIP_CALL( createSubproblem(scip, subscip, subvars, minfixingrate, binarybounds, uselprows, &intfixingrate, &zerofixingrate, &success) );
-#endif
    SCIPdebugMessage("RENS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
+
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
 
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(subscip, "misc/catchctrlc", FALSE) );

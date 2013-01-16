@@ -66,7 +66,6 @@
 #define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                          * of the original scip be copied to constraints of the subscip
                                          */
-#define DEFAULT_PRINTSTATISTICS FALSE   /**< shall additional statistics about this heuristic be printed?        */
 
 
 /*
@@ -88,14 +87,15 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
-   SCIP_Bool             printstatistics;    /**< shall additional statistics about this heuristic be printed?        */
+#ifdef SCIP_STATISTIC
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                            */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                       */
    SCIP_Longint          totalsols;          /**< total number of subSCIP solutions (including those which have not
                                               *   been added)
                                               */
-   SCIP_Real             subsciptime;        /**< total subSCIP solving time in seconds                             */
+   SCIP_Real             subsciptime;        /**< total subSCIP solving time in seconds                               */
    SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic            */
+#endif
 };
 
 /*
@@ -105,28 +105,34 @@ struct SCIP_HeurData
 /** creates a subproblem for subscip by fixing a number of variables */
 static
 SCIP_RETCODE createSubproblem(
-   SCIP*                 scip,               /**< original SCIP data structure                                  */
-   SCIP*                 subscip,            /**< SCIP data structure for the subproblem                        */
-   SCIP_VAR**            subvars,            /**< the variables of the subproblem                               */
-   SCIP_HEURDATA*        heurdata,           /**< primal heuristic data                                          */
-   SCIP_Real             minfixingrate,      /**< percentage of integer variables that have to be fixed         */
+   SCIP*                 scip,               /**< original SCIP data structure                                   */
+   SCIP*                 subscip,            /**< SCIP data structure for the subproblem                         */
+   SCIP_VAR**            subvars,            /**< the variables of the subproblem                                */
+   SCIP_Real             minfixingrate,      /**< percentage of integer variables that have to be fixed          */
    SCIP_Bool             uselprows,          /**< should subproblem be created out of the rows in the LP rows?   */
-   SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully */
+   SCIP_Real*            intfixingrate,      /**< percentage of integers that get actually fixed                 */
+   SCIP_Real*            zerofixingrate,     /**< percentage of variables fixed to zero                          */
+   SCIP_Bool*            success             /**< pointer to store whether the problem was created successfully  */
    )
 {
    SCIP_SOL* bestsol;                        /* incumbent solution of the original problem */
    SCIP_VAR** vars;                          /* original scip variables                    */
    SCIP_ROW** rows;                          /* original scip rows                         */
-   SCIP_Real fixingrate;
-   SCIP_Real zerorate;                       /* percentage of fixed variables that are zero */
 
    int nrows;
    int nvars;
    int nbinvars;
    int nintvars;
    int i;
+
    int fixingcounter;
    int zerocounter;
+
+   assert(scip != NULL);
+   assert(subscip != NULL);
+   assert(subvars != NULL);
+
+   assert(0.0 <= minfixingrate && minfixingrate <= 1.0);
 
    /* get required data of the original problem */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
@@ -157,30 +163,26 @@ SCIP_RETCODE createSubproblem(
             zerocounter++;
       }
    }
-   
-   fixingrate = 0.0;
-   zerorate = 0.0;
 
    /* abort, if all variables were fixed */
    if( fixingcounter == nbinvars + nintvars )
    {
+      *intfixingrate = 1.0;
+      *zerofixingrate = 1.0;
       *success = FALSE;
       return SCIP_OKAY;
    }
    else
    {
-      fixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
-      zerorate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
+      *intfixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
+      *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
    }
-   SCIPdebugMessage("fixing rate: %g = %d of %d\n", fixingrate, fixingcounter, nbinvars + nintvars);
-
-   heurdata->avgfixrate += fixingrate;
-   heurdata->avgzerorate += zerorate;
 
    /* abort, if the amount of fixed variables is insufficient */
-   if( fixingrate < minfixingrate )
+   if( *intfixingrate < minfixingrate )
    {
       *success = FALSE;
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %5.2f integer variables --> abort \n", *intfixingrate);
       return SCIP_OKAY;
    }
 
@@ -248,7 +250,9 @@ SCIP_RETCODE createNewSol(
    SCIP_Bool*            success             /**< used to store whether new solution was found or not */
 )
 {
+#ifdef SCIP_STATISTIC
    SCIP_HEURDATA* heurdata;
+#endif
    SCIP_VAR** vars;                          /* the original problem's variables                */
    int        nvars;
    SCIP_Real* subsolvals;                    /* solution values of the subproblem               */
@@ -259,9 +263,11 @@ SCIP_RETCODE createNewSol(
    assert( subvars != NULL );
    assert( subsol != NULL );
 
-   /* get heuristic's data */
+#ifdef SCIP_STATISTIC
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert( heurdata != NULL );
+#endif
 
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
@@ -282,11 +288,13 @@ SCIP_RETCODE createNewSol(
    /* try to add new solution to scip and free it immediately */
    SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
 
+#ifdef SCIP_STATISTIC
    if( *success )
    {
       if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
          heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
    }
+#endif
 
    SCIPfreeSol(scip, &newsol);
 
@@ -345,6 +353,7 @@ SCIP_DECL_HEURINIT(heurInitGcgrins)
 /** deinitialization method of primal heuristic (called before transformed problem is freed) */
 #define heurExitGcgrins NULL
 
+#ifdef SCIP_STATISTIC
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_HEURINITSOL(heurInitsolGcgrins)
@@ -387,27 +396,25 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgrins)
    heurdata->avgzerorate /= MAX((SCIP_Real)ncalls, 1.0);
 
    /* print detailed statistics */
-   if( heurdata->printstatistics )
-   {
-      SCIPinfoMessage(scip, NULL, "Heuristic Statistics -- GCG RINS:\n");
-      SCIPinfoMessage(scip, NULL, "Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
-      SCIPinfoMessage(scip, NULL, "Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
-      SCIPinfoMessage(scip, NULL, "Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
-      SCIPinfoMessage(scip, NULL, "Total Sols       : %13"SCIP_LONGINT_FORMAT"\n", heurdata->totalsols);
-      SCIPinfoMessage(scip, NULL, "subSCIP time     : %13.2f\n", heurdata->subsciptime);
-      SCIPinfoMessage(scip, NULL, "subSCIP nodes    : %13"SCIP_LONGINT_FORMAT"\n", heurdata->usednodes);
-      SCIPinfoMessage(scip, NULL, "Avg. fixing rate : %13.2f\n", 100.0 * heurdata->avgfixrate);
-      SCIPinfoMessage(scip, NULL, "Avg. zero rate   : %13.2f\n", 100.0 * heurdata->avgzerorate);
-      SCIPinfoMessage(scip, NULL, "Best primal bd.  :");
-      if( SCIPisInfinity(scip, heurdata->bestprimalbd) )
-         SCIPinfoMessage(scip, NULL, "      infinity\n");
-      else
-         SCIPinfoMessage(scip, NULL, " %13.6e\n", heurdata->bestprimalbd);
-      SCIPinfoMessage(scip, NULL, "\n");
-   }
+   SCIPstatisticPrintf("LNS Statistics -- GCG RINS:\n");
+   SCIPstatisticPrintf("Calls            : %13"SCIP_LONGINT_FORMAT"\n", ncalls);
+   SCIPstatisticPrintf("Sols             : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNSolsFound(heur));
+   SCIPstatisticPrintf("Improving Sols   : %13"SCIP_LONGINT_FORMAT"\n", SCIPheurGetNBestSolsFound(heur));
+   SCIPstatisticPrintf("Total Sols       : %13"SCIP_LONGINT_FORMAT"\n", heurdata->totalsols);
+   SCIPstatisticPrintf("subSCIP time     : %13.2f\n", heurdata->subsciptime);
+   SCIPstatisticPrintf("subSCIP nodes    : %13"SCIP_LONGINT_FORMAT"\n", heurdata->usednodes);
+   SCIPstatisticPrintf("Avg. fixing rate : %13.2f\n", 100.0 * heurdata->avgfixrate);
+   SCIPstatisticPrintf("Avg. zero rate   : %13.2f\n", 100.0 * heurdata->avgzerorate);
+   SCIPstatisticPrintf("Best primal bd.  :");
+   if( SCIPisInfinity(scip, heurdata->bestprimalbd) )
+      SCIPstatisticPrintf("      infinity\n");
+   else
+      SCIPstatisticPrintf(" %13.6e\n", heurdata->bestprimalbd);
+   SCIPstatisticPrintf("\n");
 
    return SCIP_OKAY;
 }
+#endif
 
 
 /** execution method of primal heuristic */
@@ -427,6 +434,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    SCIP_Real memorylimit;
    SCIP_Real cutoff;                         /* objective cutoff for the subproblem */
    SCIP_Real upperbound;
+   SCIP_Real allfixingrate;                  /* percentage of all variables fixed               */
+   SCIP_Real intfixingrate;                  /* percentage of integer variables fixed           */
+   SCIP_Real zerofixingrate;                 /* percentage of variables fixed to zero           */
 
    int nvars;
    int nbinvars;
@@ -553,8 +563,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    success = FALSE;
 
    /* create a new problem, which fixes variables with same value in bestsol and LP relaxation */
-   SCIP_CALL( createSubproblem(scip, subscip, subvars, heurdata, heurdata->minfixingrate, heurdata->uselprows, &success) );
+   SCIP_CALL( createSubproblem(scip, subscip, subvars, heurdata->minfixingrate, heurdata->uselprows, &intfixingrate, &zerofixingrate, &success) );
    SCIPdebugMessage("RINS subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
+
+#ifdef SCIP_STATISTIC
+   heurdata->avgfixrate += intfixingrate;
+   heurdata->avgzerorate += zerofixingrate;
+#endif
 
    if( !success )
    {
@@ -650,46 +665,82 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    cutoff = MIN(upperbound, cutoff );
    SCIP_CALL( SCIPsetObjlimit(subscip, cutoff) );
 
-   /* solve the subproblem */
-   retcode = SCIPsolve(subscip);
+   /* presolve the subproblem */
+   retcode = SCIPpresolve(subscip);
 
-   /* Errors in solving the subproblem should not kill the overall solving process
-    * Hence, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
+   /* errors in solving the subproblem should not kill the overall solving process;
+    * hence, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
     */
    if( retcode != SCIP_OKAY )
    {
 #ifndef NDEBUG
       SCIP_CALL( retcode );
 #endif
-      SCIPwarningMessage(scip, "Error while solving subproblem in GCG RINS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      SCIPwarningMessage(scip, "Error while presolving subproblem in GCG RINS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      goto TERMINATE;
    }
 
-   heurdata->usednodes += SCIPgetNNodes(subscip);
-   heurdata->subsciptime += SCIPgetTotalTime(subscip);
+   SCIPdebugMessage("GCG RINS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
-   /* check, whether a solution was found */
-   if( SCIPgetNSols(subscip) > 0 )
+   allfixingrate = (SCIPgetNOrigVars(subscip) - SCIPgetNVars(subscip)) / (SCIP_Real)SCIPgetNOrigVars(subscip);
+
+   /* additional variables added in presolving may lead to the subSCIP having more variables than the original */
+   allfixingrate = MAX(allfixingrate, 0.0);
+
+   /* after presolving, we should have at least reached a certain fixing rate over ALL variables (including continuous)
+    * to ensure that not only the MIP but also the LP relaxation is easy enough
+    */
+   if( allfixingrate >= heurdata->minfixingrate / 2.0 )
    {
       SCIP_SOL** subsols;
       int nsubsols;
+
+      /* solve the subproblem */
+      retcode = SCIPsolve(subscip);
+
+      /* Errors in solving the subproblem should not kill the overall solving process
+       * Hence, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
+       */
+      if( retcode != SCIP_OKAY )
+      {
+#ifndef NDEBUG
+         SCIP_CALL( retcode );
+#endif
+         SCIPwarningMessage(scip, "Error while solving subproblem in GCG RINS heuristic; sub-SCIP terminated with code <%d>\n",retcode);
+      }
+
+#ifdef SCIP_STATISTIC
+      heurdata->usednodes += SCIPgetNNodes(subscip);
+      heurdata->subsciptime += SCIPgetTotalTime(subscip);
+#endif
 
       /* check, whether a solution was found;
        * due to numerics, it might happen that not all solutions are feasible -> try all solutions until one was accepted
        */
       nsubsols = SCIPgetNSols(subscip);
       subsols = SCIPgetSols(subscip);
+#ifdef SCIP_STATISTIC
       heurdata->totalsols += nsubsols;
+#endif
       success = FALSE;
       for( i = 0; i < nsubsols && !success; ++i )
       {
          SCIP_CALL( createNewSol(scip, subscip, subvars, heur, subsols[i], &success) );
+         if( success )
+            *result = SCIP_FOUNDSOL;
       }
-      if( success )
-         *result = SCIP_FOUNDSOL;
+
+      SCIPstatisticPrintf("GCG RINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
+            intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
+            success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
+   }
+   else
+   {
+      SCIPstatisticPrintf("GCG RINS statistic: fixed only %6.3f integer variables, %6.3f all variables --> abort \n", intfixingrate, allfixingrate);
    }
 
  TERMINATE:
-      /* free subproblem */
+   /* free subproblem */
    SCIPfreeBufferArray(scip, &subvars);
    SCIP_CALL( SCIPfree(&subscip) );
 
@@ -722,8 +773,10 @@ SCIP_RETCODE SCIPincludeHeurGcgrins(
    SCIP_CALL( SCIPsetHeurCopy(scip, heur, heurCopyGcgrins) );
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgrins) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgrins) );
+#ifdef SCIP_STATISTIC
    SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolGcgrins) );
    SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolGcgrins) );
+#endif
 
    /* add RINS primal heuristic parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
@@ -761,10 +814,6 @@ SCIP_RETCODE SCIPincludeHeurGcgrins(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/printstatistics",
-         "shall additional statistics about this heuristic be printed?",
-         &heurdata->printstatistics, TRUE, DEFAULT_PRINTSTATISTICS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
