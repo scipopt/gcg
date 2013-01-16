@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   heur_gcgrins.h
- * @brief  GCG RINS primal heuristic
+ * @brief  LNS heuristic that combines the incumbent with the LP optimum
  * @author Timo Berthold
  * @author Christian Puchert
  * @ingroup PRIMALHEURISTICS
