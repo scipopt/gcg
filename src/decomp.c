@@ -1486,3 +1486,18 @@ SCIP_RETCODE DECcreateBasicDecomp(
 
    return SCIP_OKAY;
 }
+
+/** creates a decomposition with provided constraints in the master
+ * The function will put the remaining constraints in one or more pricing problems
+ * depending on whether the subproblems decompose with no variables in common.
+ */
+extern
+SCIP_RETCODE DECcreateDecompFromMasterconss(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition structure */
+   SCIP_CONS**           conss,               /**< constraints to be put in the master */
+   int                   nconss               /**< number of constraints in the master */
+   )
+{
+   return SCIP_INVALIDCALL;
+}
