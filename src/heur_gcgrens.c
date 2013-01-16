@@ -68,7 +68,8 @@
 #define DEFAULT_COPYCUTS      TRUE      /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                          * of the original scip be copied to constraints of the subscip
                                          */
-#define DEFAULT_PRINTSTATISTICS FALSE       /**< shall additional statistics about this heuristic be printed?    */
+#define DEFAULT_ADDALLSOLS   FALSE      /* should all subproblem solutions be added to the original SCIP?       */
+#define DEFAULT_PRINTSTATISTICS FALSE   /**< shall additional statistics about this heuristic be printed?    */
 
 
 /*
@@ -90,6 +91,7 @@ struct SCIP_HeurData
    SCIP_Bool             copycuts;           /**< if uselprows == FALSE, should all active cuts from cutpool be copied
                                               *   to constraints in subproblem?
                                               */
+   SCIP_Bool             addallsols;         /**< should all subproblem solutions be added to the original SCIP? */
    SCIP_Bool             printstatistics;    /**< shall additional statistics about this heuristic be printed?        */
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                            */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                       */
@@ -576,7 +578,7 @@ SCIP_RETCODE SCIPapplyGcgrens(
       subsols = SCIPgetSols(subscip);
       heurdata->totalsols += nsubsols;
       success = FALSE;
-      for( i = 0; i < nsubsols && !success; ++i )
+      for( i = 0; i < nsubsols && (!success || heurdata->addallsols); ++i )
       {
          SCIP_CALL( createNewSol(scip, subscip, subvars, heur, subsols[i], &success) );
          if( success )
@@ -850,9 +852,13 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
 
-	SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
+         
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/addallsols",
+         "should all subproblem solutions be added to the original SCIP?",
+         &heurdata->addallsols, TRUE, DEFAULT_ADDALLSOLS, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/printstatistics",
          "shall additional statistics about this heuristic be printed?",
