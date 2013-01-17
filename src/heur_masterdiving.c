@@ -30,7 +30,7 @@
  * @author Tobias Achterberg
  * @author Christian Puchert
  */
-
+#define SCIP_STATISTIC
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
@@ -74,13 +74,14 @@
 #define DEFAULT_MAXDISCDEPTH          3 /**< maximal depth until which a limited discrepancy search is performed */
 #define DEFAULT_VARSELRULE          'v' /**< which variable selection should be used? ('c'oefficient, 'f'ractionality,
                                          *   'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules) */
-#define DEFAULT_PRINTSTATISTICS FALSE       /**< shall additional statistics about this heuristic be printed? */
 
 #define ALLOWEDRULES              "cflpv" /**< possible variable selection rules */
 #define MINLPITER                 10000 /**< minimal number of LP iterations allowed in each LP solving call */
 
+#ifdef SCIP_STATISTIC
 #define EVENTHDLR_NAME         "masterdiving"
 #define EVENTHDLR_DESC         "event handler for masterdiving solution statistics"
+#endif
 
 
 /* locally defined heuristic data */
@@ -109,7 +110,7 @@ struct SCIP_HeurData
    int                   npricerounds;       /**< pricing rounds used in this heuristic */
    int                   nsuccess;           /**< number of runs that produced at least one feasible solution */
 
-   SCIP_Bool             printstatistics;    /**< shall additional statistics about this heuristic be printed?      */
+#ifdef SCIP_STATISTIC
    SCIP_Longint*         ncalls;             /**< number of calls per diving strategy                               */
    SCIP_Longint*         nsols;              /**< number of solutions                                               */
    SCIP_Longint*         nimpsols;           /**< number of improving solutions                                     */
@@ -122,13 +123,16 @@ struct SCIP_HeurData
    SCIP_Longint*         nrulepricerds;      /**< number of pricing rounds (per diving rule)                        */
    SCIP_Real*            bestprimalbds;      /**< objective value of best solution found by this heuristic          */
    SCIP_Bool*            bestsolrounded;     /**< was the best solution obtained by rounding?                       */
+#endif
 };
 
+#ifdef SCIP_STATISTIC
 /** event handler data */
 struct SCIP_EventhdlrData
 {
    SCIP_Bool             heurisrunning;      /**< is the masterdiving heuristic currently running? */
 };
+#endif
 
 
 /*
@@ -945,14 +949,17 @@ SCIP_RETCODE getNextRule(
 static
 SCIP_DECL_HEURFREE(heurFreeMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
+#ifdef SCIP_STATISTIC
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
+#endif
    SCIP_HEURDATA* heurdata;
 
    assert(heur != NULL);
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(scip != NULL);
 
+#ifdef SCIP_STATISTIC
    /* free event handler data */
    eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
@@ -960,6 +967,7 @@ SCIP_DECL_HEURFREE(heurFreeMasterdiving) /*lint --e{715}*/
    assert(eventhdlrdata != NULL);
    SCIPfreeMemory(scip, &eventhdlrdata);
    SCIPeventhdlrSetData(eventhdlr, NULL);
+#endif
 
    /* free heuristic data */
    heurdata = SCIPheurGetData(heur);
@@ -1032,6 +1040,7 @@ SCIP_DECL_HEUREXIT(heurExitMasterdiving) /*lint --e{715}*/
 }
 
 
+#ifdef SCIP_STATISTIC
 /** solving process initialization method of primal heuristic (called when branch and bound process is about to begin) */
 static
 SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
@@ -1039,6 +1048,8 @@ SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
    SCIP_HEURDATA* heurdata;
    const char* rules;
    int nrules;
+
+   int i;
 
    assert(heur != NULL);
    assert(scip != NULL);
@@ -1052,38 +1063,33 @@ SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
    nrules = strlen(rules);
 
    /* initialize statistical data */
-   if( heurdata->printstatistics )
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ncalls, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nsols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpsols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndivesols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpdivesols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nroundsols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimproundsols, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndives, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulelpiters, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulepricerds, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestprimalbds, nrules) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestsolrounded, nrules) );
+
+   for( i = 0; i < nrules; ++i )
    {
-      int i;
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ncalls, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nsols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpsols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndivesols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimpdivesols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nroundsols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nimproundsols, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->ndives, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulelpiters, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->nrulepricerds, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestprimalbds, nrules) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &heurdata->bestsolrounded, nrules) );
-
-      for( i = 0; i < nrules; ++i )
-      {
-         heurdata->ncalls[i] = 0;
-         heurdata->nsols[i] = 0;
-         heurdata->nimpsols[i] = 0;
-         heurdata->ndivesols[i] = 0;
-         heurdata->nimpdivesols[i] = 0;
-         heurdata->nroundsols[i] = 0;
-         heurdata->nimproundsols[i] = 0;
-         heurdata->ndives[i] = 0;
-         heurdata->nrulelpiters[i] = 0;
-         heurdata->nrulepricerds[i] = 0;
-         heurdata->bestprimalbds[i] = SCIPinfinity(scip);
-         heurdata->bestsolrounded[i] = FALSE;
-      }
+      heurdata->ncalls[i] = 0;
+      heurdata->nsols[i] = 0;
+      heurdata->nimpsols[i] = 0;
+      heurdata->ndivesols[i] = 0;
+      heurdata->nimpdivesols[i] = 0;
+      heurdata->nroundsols[i] = 0;
+      heurdata->nimproundsols[i] = 0;
+      heurdata->ndives[i] = 0;
+      heurdata->nrulelpiters[i] = 0;
+      heurdata->nrulepricerds[i] = 0;
+      heurdata->bestprimalbds[i] = SCIPinfinity(scip);
+      heurdata->bestsolrounded[i] = FALSE;
    }
 
    return SCIP_OKAY;
@@ -1098,6 +1104,8 @@ SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
    const char* rules;
    int nrules;
 
+   int i;
+
    assert(heur != NULL);
    assert(scip != NULL);
 
@@ -1110,39 +1118,35 @@ SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
    nrules = strlen(rules);
 
    /* print detailed statistics */
-   if( heurdata->printstatistics )
+   SCIPstatisticPrintf("Master Diving Heuristics   :      Calls       Sols  Improving   DiveSols  Improving  RoundSols  Improving      Dives   LP iters  Price rds    BestPrimal Rounded?\n");
+   for( i = 0; i < nrules; ++i )
    {
-      int i;
-
-      SCIPinfoMessage(scip, NULL, "Master Diving Heuristics   :      Calls       Sols  Improving   DiveSols  Improving  RoundSols  Improving      Dives   LP iters  Price rds    BestPrimal Rounded?\n");
-      for( i = 0; i < nrules; ++i )
-      {
-         SCIPinfoMessage(scip, NULL, "%c                          : %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT,
-            rules[i], heurdata->ncalls[i], heurdata->nsols[i], heurdata->nimpsols[i], heurdata->ndivesols[i], heurdata->nimpdivesols[i], heurdata->nroundsols[i], heurdata->nimproundsols[i], heurdata->ndives[i], heurdata->nrulelpiters[i], heurdata->nrulepricerds[i]);
-         if( SCIPisInfinity(scip, heurdata->bestprimalbds[i]) )
-            SCIPinfoMessage(scip, NULL, "      infinity");
-         else
-            SCIPinfoMessage(scip, NULL, " %13.6e", heurdata->bestprimalbds[i]);
-         SCIPinfoMessage(scip, NULL, heurdata->bestsolrounded[i] ? "      yes\n" : "       no\n");
-      }
-      SCIPinfoMessage(scip, NULL, "\n");
-
-      SCIPfreeMemoryArray(scip, &heurdata->bestsolrounded);
-      SCIPfreeMemoryArray(scip, &heurdata->bestprimalbds);
-      SCIPfreeMemoryArray(scip, &heurdata->nrulepricerds);
-      SCIPfreeMemoryArray(scip, &heurdata->nrulelpiters);
-      SCIPfreeMemoryArray(scip, &heurdata->ndives);
-      SCIPfreeMemoryArray(scip, &heurdata->nimproundsols);
-      SCIPfreeMemoryArray(scip, &heurdata->nroundsols);
-      SCIPfreeMemoryArray(scip, &heurdata->nimpdivesols);
-      SCIPfreeMemoryArray(scip, &heurdata->ndivesols);
-      SCIPfreeMemoryArray(scip, &heurdata->nimpsols);
-      SCIPfreeMemoryArray(scip, &heurdata->nsols);
-      SCIPfreeMemoryArray(scip, &heurdata->ncalls);
+      SCIPstatisticPrintf("%c                          : %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT" %10"SCIP_LONGINT_FORMAT,
+         rules[i], heurdata->ncalls[i], heurdata->nsols[i], heurdata->nimpsols[i], heurdata->ndivesols[i], heurdata->nimpdivesols[i], heurdata->nroundsols[i], heurdata->nimproundsols[i], heurdata->ndives[i], heurdata->nrulelpiters[i], heurdata->nrulepricerds[i]);
+      if( SCIPisInfinity(scip, heurdata->bestprimalbds[i]) )
+         SCIPstatisticPrintf("      infinity");
+      else
+         SCIPstatisticPrintf(" %13.6e", heurdata->bestprimalbds[i]);
+      SCIPstatisticPrintf(heurdata->bestsolrounded[i] ? "      yes\n" : "       no\n");
    }
+   SCIPstatisticPrintf("\n");
+
+   SCIPfreeMemoryArray(scip, &heurdata->bestsolrounded);
+   SCIPfreeMemoryArray(scip, &heurdata->bestprimalbds);
+   SCIPfreeMemoryArray(scip, &heurdata->nrulepricerds);
+   SCIPfreeMemoryArray(scip, &heurdata->nrulelpiters);
+   SCIPfreeMemoryArray(scip, &heurdata->ndives);
+   SCIPfreeMemoryArray(scip, &heurdata->nimproundsols);
+   SCIPfreeMemoryArray(scip, &heurdata->nroundsols);
+   SCIPfreeMemoryArray(scip, &heurdata->nimpdivesols);
+   SCIPfreeMemoryArray(scip, &heurdata->ndivesols);
+   SCIPfreeMemoryArray(scip, &heurdata->nimpsols);
+   SCIPfreeMemoryArray(scip, &heurdata->nsols);
+   SCIPfreeMemoryArray(scip, &heurdata->ncalls);
 
    return SCIP_OKAY;
 }
+#endif
 
 
 /** execution method of primal heuristic */
@@ -1150,8 +1154,10 @@ static
 SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP* origprob;
+#ifdef SCIP_STATISTIC
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
+#endif
    SCIP_HEURDATA* heurdata;
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_SOL* bestsol;
@@ -1178,10 +1184,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_Bool origfeas;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
-   SCIP_Longint nlpiterations;
+   SCIP_Longint nlpiterations;         /* lp iterations performed in one single diving loop */
    SCIP_Longint maxnlpiterations;
-   int npricerounds;
-   int totalpricerounds;
+   int npricerounds;                   /* pricing rounds performed in one single diving loop */
+   int totalpricerounds;               /* pricing rounds performed in one call of the heuristic */
    int nlpcands;
    int startnlpcands;
    int depth;
@@ -1191,6 +1197,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    int bestcand;
    int nrules;
    int ruleindex;
+
+#ifdef SCIP_STATISTIC
+   /* variable declarations for additional statistics */
+   int ndives;                         /* diving loops performed in one call of the heuristic */
+   SCIP_Longint totallpiters;          /* lp iterations performed in one call of the heuristic */
+#endif
 
    int i;
 
@@ -1203,11 +1215,13 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
 
+#ifdef SCIP_STATISTIC
    /* get the masterdiving event handler and its data */
    eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+#endif
 
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
@@ -1339,8 +1353,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    *result = SCIP_DIDNOTFIND;
 
+#ifdef SCIP_STATISTIC
    eventhdlrdata->heurisrunning = TRUE;
    ++heurdata->ncalls[ruleindex];
+#endif
 
    /* start diving */
    SCIP_CALL( SCIPstartProbing(scip) );
@@ -1367,6 +1383,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    totalpricerounds = 0;
    startnlpcands = nlpcands;
 
+#ifdef SCIP_STATISTIC
+   ndives = 0;
+   totallpiters = 0;
+#endif
+
    while( !lperror && !cutoff && lpsolstat == SCIP_LPSOLSTAT_OPTIMAL && nlpcands > 0
       && (divedepth < 10
          || nlpcands <= startnlpcands - divedepth/2
@@ -1376,7 +1397,11 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    {
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
+
+#ifdef SCIP_STATISTIC
       ++heurdata->ndives[ruleindex];
+      ++ndives;
+#endif
 
       bestcand = -1;
       bestfrac = SCIP_INVALID;
@@ -1493,14 +1518,17 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             if( lperror )
                break;
 
-            /* update iteration count */
+            /* update iteration counts */
             heurdata->nlpiterations += SCIPgetNLPIterations(scip) - nlpiterations;
             heurdata->npricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
             totalpricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
+#ifdef SCIP_STATISTIC
+            SCIPstatistic( totallpiters += SCIPgetNLPIterations(scip) - nlpiterations );
 
-            /* update statistics */
+            /* update summarized statistics */
             heurdata->nrulelpiters[ruleindex] += SCIPgetNLPIterations(scip) - nlpiterations;
             heurdata->nrulepricerds[ruleindex] += SCIPgetNPriceRounds(scip) - npricerounds;
+#endif
 
             /* get LP solution status */
             lpsolstat = SCIPgetLPSolstat(scip);
@@ -1607,10 +1635,17 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* end diving */
    SCIP_CALL( SCIPendProbing(scip) );
 
+#ifdef SCIP_STATISTIC
    eventhdlrdata->heurisrunning = FALSE;
+#endif
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
+
+#ifdef SCIP_STATISTIC
+   SCIPstatisticPrintf("Masterdiving statistic: rule %c, %3d diveloops, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
+      heurdata->currentrule, ndives, totallpiters, totalpricerounds);
+#endif
 
    /* free memory */
    SCIPfreeBufferArray(scip, &selectedvars);
@@ -1634,6 +1669,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 }
 
 
+#ifdef SCIP_STATISTIC
 /** initialization method of event handler (called after problem was transformed) */
 static
 SCIP_DECL_EVENTINIT(eventInitMasterdiving)
@@ -1744,6 +1780,7 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
 
    return SCIP_OKAY;
 }
+#endif
 
 
 /*
@@ -1755,12 +1792,14 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_EVENTHDLRDATA* eventhdlrdata;
-   SCIP_EVENTHDLR* eventhdlr;
    SCIP_HEURDATA* heurdata;
    SCIP_HEUR* heur;
+#ifdef SCIP_STATISTIC
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_EVENTHDLR* eventhdlr;
 
    eventhdlr = NULL;
+#endif
 
    /* create Masterdiving primal heuristic data */
    SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
@@ -1776,6 +1815,7 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeMasterdiving) );
    SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitMasterdiving) );
    SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitMasterdiving) );
+#ifdef SCIP_STATISTIC
    SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolMasterdiving) );
    SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolMasterdiving) );
 
@@ -1790,68 +1830,65 @@ SCIP_RETCODE SCIPincludeHeurMasterdiving(
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitMasterdiving) );
    SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitMasterdiving) );
+#endif
 
    /* masterdiving heuristic parameters */
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/minreldepth",
+         "heuristics/"HEUR_NAME"/minreldepth",
          "minimal relative depth to start diving",
          &heurdata->minreldepth, TRUE, DEFAULT_MINRELDEPTH, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxreldepth",
+         "heuristics/"HEUR_NAME"/maxreldepth",
          "maximal relative depth to start diving",
          &heurdata->maxreldepth, TRUE, DEFAULT_MAXRELDEPTH, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxlpiterquot",
+         "heuristics/"HEUR_NAME"/maxlpiterquot",
          "maximal fraction of diving LP iterations compared to node LP iterations",
          &heurdata->maxlpiterquot, FALSE, DEFAULT_MAXLPITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterdiving/maxlpiterofs",
+         "heuristics/"HEUR_NAME"/maxlpiterofs",
          "additional number of allowed LP iterations",
          &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterdiving/maxpricerounds",
+         "heuristics/"HEUR_NAME"/maxpricerounds",
          "maximal number of allowed pricing rounds (-1: no limit)",
          &heurdata->maxpricerounds, FALSE, DEFAULT_MAXPRICEROUNDS, -1, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "heuristics/masterdiving/usefarkasonly",
+         "heuristics/"HEUR_NAME"/usefarkasonly",
          "perform pricing only if infeasibility is encountered",
          &heurdata->usefarkasonly, FALSE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxdiveubquot",
+         "heuristics/"HEUR_NAME"/maxdiveubquot",
          "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
          &heurdata->maxdiveubquot, TRUE, DEFAULT_MAXDIVEUBQUOT, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxdiveavgquot",
+         "heuristics/"HEUR_NAME"/maxdiveavgquot",
          "maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)",
          &heurdata->maxdiveavgquot, TRUE, DEFAULT_MAXDIVEAVGQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxdiveubquotnosol",
+         "heuristics/"HEUR_NAME"/maxdiveubquotnosol",
          "maximal UBQUOT when no solution was found yet (0.0: no limit)",
          &heurdata->maxdiveubquotnosol, TRUE, DEFAULT_MAXDIVEUBQUOTNOSOL, 0.0, 1.0, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
-         "heuristics/masterdiving/maxdiveavgquotnosol",
+         "heuristics/"HEUR_NAME"/maxdiveavgquotnosol",
          "maximal AVGQUOT when no solution was found yet (0.0: no limit)",
          &heurdata->maxdiveavgquotnosol, TRUE, DEFAULT_MAXDIVEAVGQUOTNOSOL, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip,
-         "heuristics/masterdiving/backtrack",
+         "heuristics/"HEUR_NAME"/backtrack",
          "use one level of backtracking if infeasibility is encountered?",
          &heurdata->backtrack, FALSE, DEFAULT_BACKTRACK, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterdiving/maxdiscrepancy",
+         "heuristics/"HEUR_NAME"/maxdiscrepancy",
          "maximal discrepancy in limited discrepancy search",
          &heurdata->maxdiscrepancy, FALSE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
-         "heuristics/masterdiving/maxdiscdepth",
+         "heuristics/"HEUR_NAME"/maxdiscdepth",
          "maximal depth until which a limited discrepancy search is performed",
          &heurdata->maxdiscdepth, FALSE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddCharParam(scip,
          "heuristics/"HEUR_NAME"/varselrule",
          "which variable selection should be used? ('c'oefficient, 'f'ractionality, 'l'inesearch, 'p'scost, 'v'eclen; '*': alternate between rules)",
          &heurdata->varselrule, FALSE, DEFAULT_VARSELRULE, ALLOWEDRULES"*", NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/printstatistics",
-         "shall additional statistics about this heuristic be printed?",
-         &heurdata->printstatistics, TRUE, DEFAULT_PRINTSTATISTICS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
-

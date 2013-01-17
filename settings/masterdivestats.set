@@ -1,6 +1,0 @@
-# SCIP version 3.0.1
-
-# shall additional statistics about this heuristic be printed?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/masterdiving/printstatistics = TRUE
-
