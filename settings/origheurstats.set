@@ -19,20 +19,3 @@ detectors/borderheur/enabled = FALSE
 # flag to indicate whether detector <arrowheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/arrowheur/enabled = FALSE
-
-# shall additional statistics about this heuristic be printed?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/gcgrens/printstatistics = TRUE
-
-# shall additional statistics about this heuristic be printed?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/gcgrins/printstatistics = TRUE
-
-# shall additional statistics about this heuristic be printed?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/xpcrossover/printstatistics = TRUE
-
-# shall additional statistics about this heuristic be printed?
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-heuristics/xprins/printstatistics = TRUE
-
