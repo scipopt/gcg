@@ -1058,6 +1058,7 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(solvars != NULL);
       assert(solvals != NULL);
 
+      assert(!SCIPisInfinity(scip, solvals[i]));
       if( !SCIPisZero(scip, solvals[i]) )
       {
          newvardata->data.mastervardata.norigvars++;

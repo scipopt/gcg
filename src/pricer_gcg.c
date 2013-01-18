@@ -24,7 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+//#define SCIP_DEBUG
 /**@file   pricer_gcg.c
  * @brief  pricer for generic column generation
  * @author Gerald Gamrath
@@ -1229,10 +1229,13 @@ SCIP_RETCODE createNewMasterVar(
    {
       /* compute the objective function value of the solution */
       for( i = 0; i < nsolvars; i++ )
+      {
+         assert(!SCIPisInfinity(scip, solvals[i]));
          objvalue += solvals[i] * SCIPvarGetObj(solvars[i]);
 
+      }
       /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
-      redcost = ( solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
+      redcost = ( solisray == 1 ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
@@ -1280,7 +1283,7 @@ SCIP_RETCODE createNewMasterVar(
       objcoeff = SCIPinfinity(scip) / 2;
    }
 
-   if( solisray )
+   if( solisray == 1 )
    {
       (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "r_%d_%d", prob, pricerdata->nraysprob[prob]);
       pricerdata->nraysprob[prob]++;
@@ -1292,7 +1295,7 @@ SCIP_RETCODE createNewMasterVar(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
+         pricerdata->vartype, solisray == 1, prob, nsolvars, solvals, solvars));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -1315,7 +1318,7 @@ SCIP_RETCODE createNewMasterVar(
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
-   if( !solisray )
+   if( !(solisray == 1))
    {
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
    }
@@ -1678,10 +1681,6 @@ SCIP_RETCODE performOptimalPricing(
          SCIP_CALL( createNewMasterVar(scip, solvars, solvals, nsolvars, solisray[prob][j], prob,
                FALSE, &added, NULL) );
 
-         if( solisray[prob][j] )
-         {
-            SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
-         }
          if( added )
          {
             ++(*nfoundvars);
@@ -1693,6 +1692,19 @@ SCIP_RETCODE performOptimalPricing(
          SCIPfreeMemoryArray(scip, &solvals);
       }
    }
+
+   for( prob = 0; prob < pricerdata->npricingprobs; ++prob )
+   {
+      for( j = 0; j < nsols[prob]; ++j )
+      {
+         if( solisray[prob][j] )
+         {
+            SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
+            SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, prob);
+         }
+      }
+   }
+
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems(scip, pricerdata) );
 

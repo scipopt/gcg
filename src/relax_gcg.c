@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -257,8 +257,7 @@ SCIP_RETCODE convertStructToGCG(
    assert(scip != NULL);
 
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
-   assert(DECdecompGetNSubscipvars(decdecomp) != 0);
-   assert(DECdecompGetSubscipvars(decdecomp) != NULL);
+   assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
 
@@ -882,6 +881,12 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/dualfix/maxrounds", 0) );
    SCIP_CALL( SCIPfixParam(scip, "presolving/dualfix/maxrounds") );
 
+   /* disable solution storage ! */
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+
+   /* disable multiaggregation because of infinite values */
+   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
+
    /* disable output to console */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
 #if SCIP_VERSION > 210
@@ -1038,7 +1043,6 @@ SCIP_RETCODE createPricingVariables(
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
-   assert(hashorig2pricingvar != NULL);
 
    /* create pricing variables and map them to the original variables */
    vars = SCIPgetVars(scip);
@@ -1081,6 +1085,7 @@ SCIP_RETCODE createPricingVariables(
          assert(GCGoriginalVarGetPricingVar(probvar) == NULL);
          SCIP_CALL( createPricingVar(relaxdata, probvar) );
          assert(GCGoriginalVarGetPricingVar(probvar) != NULL);
+         assert(hashorig2pricingvar != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
 
          SCIPdebugPrintf("-> %p\n", GCGoriginalVarGetPricingVar(probvar));
@@ -1108,7 +1113,8 @@ SCIP_RETCODE createPricingVariables(
             if( pricingvars[i] != NULL )
             {
                assert(GCGvarIsPricing(pricingvars[i]));
-
+               assert(hashorig2pricingvar != NULL);
+               assert(hashorig2pricingvar[i] != NULL);
                assert(!SCIPhashmapExists(hashorig2pricingvar[i], probvar));
                SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[i], (void*)(probvar),
                      (void*)(pricingvars[i])) );
