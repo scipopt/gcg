@@ -892,6 +892,8 @@ SCIP_RETCODE fixVariables(
    fixingcounter = 0;
    zerocounter = 0;
 
+   *success = FALSE;
+
    /* allocate memory */
    SCIP_CALL( SCIPallocBufferArray(scip, &fixvals, nbinvars + nintvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &fixable, nbinvars + nintvars) );
@@ -1101,18 +1103,17 @@ SCIP_RETCODE fixVariables(
    *intfixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
    *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
 
-   /* if all variables were fixed or amount of fixed variables is insufficient, skip residual part of
-    * subproblem creation and abort immediately */
+   /* if all variables were fixed or amount of fixed variables is insufficient, abort immediately */
    if( *intfixingrate < heurdata->minfixingrate )
    {
-      *success = FALSE;
       SCIPstatisticPrintf("XP Crossover statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
    }
    if( fixingcounter == nbinvars + nintvars )
    {
-      *success = FALSE;
       SCIPstatisticPrintf("XP Crossover statistic: fixed all (%5.2f zero) integer variables --> abort \n", *zerofixingrate);
    }
+
+   *success = TRUE;
 
    /* free memory */
    SCIPfreeBufferArray(scip, &fixvals);
