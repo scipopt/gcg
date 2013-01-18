@@ -1198,10 +1198,15 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    int nrules;
    int ruleindex;
 
+#ifdef NDEBUG
+   SCIP_RETCODE retstat;
+#endif
+
 #ifdef SCIP_STATISTIC
    /* variable declarations for additional statistics */
    int ndives;                         /* diving loops performed in one call of the heuristic */
    SCIP_Longint totallpiters;          /* lp iterations performed in one call of the heuristic */
+   SCIP_CLOCK* lptime;                 /* time spent for solving diving LPs */
 #endif
 
    int i;
@@ -1337,6 +1342,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_CALL( SCIPallocBufferArray(scip, &discrepancies, heurdata->maxdiscdepth) );
    SCIP_CALL( SCIPallocBufferArray(scip, &tabulist, heurdata->maxdiscrepancy) );
    SCIP_CALL( SCIPallocBufferArray(scip, &selectedvars, heurdata->maxdiscdepth) );
+
+   SCIPstatistic( SCIP_CALL( SCIPcreateClock(scip, &lptime) ) );
 
    /* initialize arrays */
    for( i = 0; i < heurdata->maxdiscdepth; ++i )
@@ -1491,10 +1498,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
              * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.
              */
-#ifdef NDEBUG
-            SCIP_RETCODE retstat;
             nlpiterations = SCIPgetNLPIterations(scip);
             npricerounds = SCIPgetNPriceRounds(scip);
+            SCIPstatistic( SCIP_CALL( SCIPstartClock(scip, lptime) ) );
+#ifdef NDEBUG
             if( (!heurdata->usefarkasonly || farkaspricing)
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
                retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror);
@@ -1506,14 +1513,13 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                SCIPwarningMessage(scip, "Error while solving LP in Masterdiving heuristic; LP solve terminated with code <%d>\n",retstat);
             }
 #else
-            nlpiterations = SCIPgetNLPIterations(scip);
-            npricerounds = SCIPgetNPriceRounds(scip);
             if( (!heurdata->usefarkasonly || farkaspricing)
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
                SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror) );
             else
                SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
 #endif
+            SCIPstatistic( SCIP_CALL( SCIPstopClock(scip, lptime) ) );
 
             if( lperror )
                break;
@@ -1643,11 +1649,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       heurdata->nsuccess++;
 
 #ifdef SCIP_STATISTIC
-   SCIPstatisticPrintf("Masterdiving statistic: rule %c, %3d diveloops, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
-      heurdata->currentrule, ndives, totallpiters, totalpricerounds);
+   SCIPstatisticPrintf("Masterdiving statistic: rule %c, %3d diveloops, lptime=%6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
+      heurdata->currentrule, ndives, SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
 #endif
 
    /* free memory */
+   SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
    SCIPfreeBufferArray(scip, &selectedvars);
    SCIPfreeBufferArray(scip, &tabulist);
    SCIPfreeBufferArray(scip, &discrepancies);
