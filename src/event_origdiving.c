@@ -250,6 +250,10 @@ SCIP_DECL_EVENTEXEC(eventExecOrigdiving)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* this event handler is not called if statistics for original diving are switched off */
+   if( !eventhdlrdata->printstatistics )
+      return SCIP_OKAY;
+
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
    nrules = strlen(rules);
@@ -324,6 +328,10 @@ SCIP_RETCODE GCGeventOrigdivingCalled(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* this event handler is not called if statistics for original diving are switched off */
+   if( !eventhdlrdata->printstatistics )
+      return SCIP_OKAY;
+
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
    nrules = strlen(rules);
@@ -371,6 +379,10 @@ SCIP_RETCODE GCGeventOrigdivingNewDivingsol(
    /* get event handler data */
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+
+   /* this event handler is not called if statistics for original diving are switched off */
+   if( !eventhdlrdata->printstatistics )
+      return SCIP_OKAY;
 
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
@@ -434,6 +446,10 @@ SCIP_RETCODE GCGeventOrigdivingDiveround(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* this event handler is not called if statistics for original diving are switched off */
+   if( !eventhdlrdata->printstatistics )
+      return SCIP_OKAY;
+
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
    nrules = strlen(rules);
@@ -477,6 +493,10 @@ SCIP_RETCODE GCGeventOrigdivingUpdateLPstats(
    /* get event handler data */
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+
+   /* this event handler is not called if statistics for original diving are switched off */
+   if( !eventhdlrdata->printstatistics )
+      return SCIP_OKAY;
 
    /* get possible variable selection rules */
    rules = ALLOWEDRULES;
