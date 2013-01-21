@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -301,6 +301,25 @@ SCIP_RETCODE DECdecompCheckConsistency(
 extern
 SCIP_Bool GCGisConsGCGCons(
    SCIP_CONS*            cons                /**< constraint to check */
+   );
+
+/** creates a decomposition with all constraints in the master */
+extern
+SCIP_RETCODE DECcreateBasicDecomp(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp               /**< decomposition structure */
+   );
+
+/** creates a decomposition with provided constraints in the master
+ * The function will put the remaining constraints in one or more pricing problems
+ * depending on whether the subproblems decompose with no variables in common.
+ */
+extern
+SCIP_RETCODE DECcreateDecompFromMasterconss(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition structure */
+   SCIP_CONS**           conss,               /**< constraints to be put in the master */
+   int                   nconss               /**< number of constraints in the master */
    );
 
 #ifdef __cplusplus
