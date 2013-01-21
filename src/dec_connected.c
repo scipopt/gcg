@@ -149,7 +149,7 @@ int processBlockRepresentatives(
    int i;
    int tempblock = 1;
 
-   assert(maxblock > 1);
+   assert(maxblock >= 1);
    assert(blockrepresentative != NULL );
 
    /* postprocess blockrepresentatives */

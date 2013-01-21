@@ -1696,8 +1696,12 @@ SCIP_RETCODE performOptimalPricing(
       }
    }
 
-   for( prob = 0; prob < pricerdata->npricingprobs; ++prob )
+   for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
+      prob = pricerdata->permu[i];
+      if( pricerdata->pricingprobs[prob] == NULL )
+         continue;
+
       for( j = 0; j < nsols[prob]; ++j )
       {
          if( solisray[prob][j] )
