@@ -218,7 +218,6 @@ class GcgDecTest : public ::testing::Test {
    virtual void SetUp() {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-     SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    }
 
@@ -266,6 +265,14 @@ TEST_F(GcgDecTest, NoDecTest) {
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
 }
 
+TEST_F(GcgDecTest, DISABLED_WrongDecompTest) {
+   SCIP_RESULT result;
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/miplib/noswot.dec", &result) );
+   ASSERT_EQ(SCIP_SUCCESS, result);
+}
+
 TEST_F(GcgDecTest, MasterSpecificationTest) {
    SCIP_CONS** conss = NULL;
    DEC_DECOMP* decomp = NULL;
@@ -273,7 +280,10 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
    char name[SCIP_MAXSTRLEN];
 
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+
    SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
+
    for( i = 0; i < 50; ++i )
    {
       SCIP_CONS* cons;
@@ -284,21 +294,21 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
    }
 
    SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
-   ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(50, DECdecompGetNBlocks(decomp));
+
+ ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
    ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
-
    ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
 
-   for( i = 0; i < 50; ++i )
+   for( i = 0; i < 24; ++i )
    {
       ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
       ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
    }
 
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
    SCIPfreeMemoryArray(scip, &conss);
-
 }
 
 int main(int argc, char** argv) {

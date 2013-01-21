@@ -151,6 +151,7 @@ int processBlockRepresentatives(
 
    assert(maxblock >= 1);
    assert(blockrepresentative != NULL );
+   SCIPdebugPrintf("Blocks: ");
 
    /* postprocess blockrepresentatives */
    for (i = 1; i < maxblock; ++i)
@@ -207,10 +208,12 @@ SCIP_Bool identifyMasterconss(
 static
 SCIP_RETCODE assignConstraintsToRepresentatives(
    SCIP*                 scip,               /**< */
-   DEC_DETECTORDATA*     detectordata,       /**< */
+   SCIP_CONS**           conss,              /**< */
+   int                   nconss,             /**< */
+   SCIP_Bool*            consismaster,       /**< */
    SCIP_HASHMAP*         constoblock,        /**< */
-   int*                  nextblock,          /**< */
    int*                  vartoblock,         /**< */
+   int*                  nextblock,          /**< */
    int*                  blockrepresentative /**< */
    )
 {
@@ -221,8 +224,6 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
    SCIP_VAR** curvars;
    int ncurvars;
    SCIP_CONS* cons;
-   SCIP_CONS** conss;
-   int nconss;
    int nvars;
 
    conss = SCIPgetConss(scip);
@@ -239,7 +240,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
       if (GCGisConsGCGCons(cons))
          continue;
 
-      if (detectordata->consismaster[i])
+      if (consismaster[i])
          continue;
 
       /* get variables of constraint */
@@ -379,19 +380,18 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
 /** */
 static
 SCIP_RETCODE fillConstoblock(
-   SCIP*                 scip,               /**< */
-   DEC_DETECTORDATA*     detectordata,       /**< */
+   SCIP_CONS**           conss,
+   int                   nconss,
+   SCIP_Bool*            consismaster,       /**< */
+   int                   nblocks,            /**< */
    SCIP_HASHMAP*         constoblock,        /**< */
+   SCIP_HASHMAP*         newconstoblock,     /**< */
    int*                  blockrepresentative /**< */
    )
 {
    int i;
    SCIP_CONS* cons;
-   int nconss;
-   SCIP_CONS** conss;
 
-   nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
 
    /* convert temporary data to detectordata */
    for( i = 0; i < nconss; ++i )
@@ -402,9 +402,9 @@ SCIP_RETCODE fillConstoblock(
       if( GCGisConsGCGCons(cons) )
          continue;
 
-      if( detectordata->consismaster[i] )
+      if( consismaster[i] )
       {
-         SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*) (size_t) (detectordata->nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(newconstoblock, cons, (void*) (size_t) (nblocks+1)) );
          continue;
       }
 
@@ -414,8 +414,8 @@ SCIP_RETCODE fillConstoblock(
       consblock = (int) (size_t) SCIPhashmapGetImage(constoblock, cons); /*lint !e507*/
       assert(consblock > 0);
       consblock = blockrepresentative[consblock];
-      assert(consblock <= detectordata->nblocks);
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, cons, (void*)(size_t)consblock) );
+      assert(consblock <= nblocks);
+      SCIP_CALL( SCIPhashmapInsert(newconstoblock, cons, (void*)(size_t)consblock) );
       SCIPdebugMessage("%d %s\n", consblock, SCIPconsGetName(cons));
    }
    return SCIP_OKAY;
@@ -523,15 +523,13 @@ SCIP_RETCODE findConnectedComponents(
       findextended = identifyMasterconss(scip, conss, nconss, detectordata, &masterisempty, findextended);
    }
    /* go through the all constraints */
-   SCIP_CALL(assignConstraintsToRepresentatives(scip, detectordata, constoblock, &nextblock, vartoblock, blockrepresentative) );
-
-   SCIPdebugPrintf("Blocks: ");
+   SCIP_CALL(assignConstraintsToRepresentatives(scip, SCIPgetConss(scip), SCIPgetNConss(scip), detectordata->consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );
 
    /* postprocess blockrepresentatives */
    detectordata->nblocks = processBlockRepresentatives(nextblock, blockrepresentative);
 
    /* convert temporary data to detectordata */
-   SCIP_CALL( fillConstoblock(scip, detectordata, constoblock, blockrepresentative) );
+   SCIP_CALL( fillConstoblock(SCIPgetConss(scip), SCIPgetNConss(scip), detectordata->consismaster, detectordata->nblocks, constoblock, detectordata->constoblock, blockrepresentative) );
    SCIP_CALL( fillVartoblock(scip, detectordata, vartoblock, blockrepresentative) );
 
    /* free method data */
