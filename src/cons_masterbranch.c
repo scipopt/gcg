@@ -714,7 +714,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          {
             if( conshdlrData->pendingbndtypes[i] == SCIP_BOUNDTYPE_LOWER )
             {
-               if( !SCIPisEQ(scip, SCIPvarGetLbGlobal(conshdlrData->pendingvars[i]), conshdlrData->pendingnewbnds[i]) )
+               if( SCIPisLT(scip, SCIPvarGetLbGlobal(conshdlrData->pendingvars[i]), conshdlrData->pendingnewbnds[i]) )
                {
                   SCIPdebugMessage("Global lower bound of var <%s> set to %g\n", SCIPvarGetName(conshdlrData->pendingvars[i]),
                      conshdlrData->pendingnewbnds[i]);
@@ -723,7 +723,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             }
             else
             {
-               if( !SCIPisEQ(scip, SCIPvarGetUbGlobal(conshdlrData->pendingvars[i]), conshdlrData->pendingnewbnds[i]) )
+               if( SCIPisGT(scip, SCIPvarGetUbGlobal(conshdlrData->pendingvars[i]), conshdlrData->pendingnewbnds[i]) )
                {
                   SCIPdebugMessage("Global upper bound of var <%s> set to %g\n", SCIPvarGetName(conshdlrData->pendingvars[i]),
                      conshdlrData->pendingnewbnds[i]);
@@ -1513,7 +1513,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
@@ -1538,7 +1537,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(mastervars[0]), oldbound));
             SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
