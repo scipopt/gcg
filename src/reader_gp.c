@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -176,12 +176,11 @@ SCIP_RETCODE writeData(
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
-
    varindexmap = NULL;
    consindexmap = NULL;
 
-   varindexmap = NULL;
-   consindexmap = NULL;
+   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    if( decdecomp != NULL )
    {
@@ -194,9 +193,6 @@ SCIP_RETCODE writeData(
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
-         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
-
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
          consindex = 1;
@@ -290,7 +286,6 @@ SCIP_RETCODE writeData(
 
       SCIPfreeBufferArrayNull(scip, &vars);
    }
-
 
    if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )
    {

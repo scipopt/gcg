@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -750,7 +750,6 @@ SCIP_RETCODE fillDecompStruct(
    )
 {
 
-   SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
    SCIP_CONS** allcons;
 
@@ -781,7 +780,6 @@ SCIP_RETCODE fillDecompStruct(
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &consvars, nvars) );
 
    /* assign constraints to blocks or declare them linking */
@@ -877,6 +875,8 @@ SCIP_RETCODE fillDecompStruct(
       }
    }
    SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIPfreeMemoryArray(scip, &consvars);
 
    return SCIP_OKAY;
 }

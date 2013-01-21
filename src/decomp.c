@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -68,7 +68,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(vartoblock != NULL);
-   assert(nblocks > 0);
+   assert(nblocks >= 0);
    assert(vars != NULL);
    assert(nvars > 0);
 
@@ -134,9 +134,11 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          subscipvars[i] = NULL;
       }
    }
-
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
+   if( nblocks > 0 )
+   {
+      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
+      assert(valid);
+   }
    DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
    assert(valid);
    SCIPfreeBufferArray(scip, &nsubscipvars);
@@ -175,7 +177,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(constoblock != NULL);
-   assert(nblocks > 0);
+   assert(nblocks >= 0);
    assert(conss != NULL);
    assert(nconss > 0);
 
@@ -238,9 +240,11 @@ SCIP_RETCODE fillOutConsFromConstoblock(
       assert(valid);
       *haslinking = TRUE;
    }
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
-   assert(valid);
-
+   if( nblocks > 0 )
+   {
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss, &valid) );
+      assert(valid);
+   }
    SCIPfreeMemoryArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &nsubscipconss);
 
@@ -499,7 +503,7 @@ SCIP_RETCODE DECdecompSetSubscipvars(
             SCIP_CALL( SCIPcaptureVar(scip, decdecomp->subscipvars[b][i]) );
          }
       }
-      else if( nsubscipvars[b] == 0 )
+      else
       {
          decdecomp->subscipvars[b] = NULL;
       }
@@ -907,7 +911,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    assert(decdecomp != NULL);
    assert(vartoblock != NULL);
    assert(constoblock != NULL);
-   assert(nblocks > 0);
+   assert(nblocks >= 0);
    assert(vars != NULL);
    assert(nvars > 0);
    assert(conss != NULL);
@@ -1061,7 +1065,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(constoblock != NULL);
-   assert(nblocks > 0);
+   assert(nblocks >= 0);
    assert(vars != NULL);
    assert(nvars > 0);
    assert(conss != NULL);
@@ -1437,4 +1441,55 @@ SCIP_Bool GCGisConsGCGCons(
       return TRUE;
 
    return FALSE;
+}
+
+/** creates a decomposition with all constraints in the master */
+extern
+SCIP_RETCODE DECcreateBasicDecomp(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp               /**< decomposition structure */
+   )
+{
+   SCIP_HASHMAP* constoblock;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
+   int c;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+
+   SCIP_CALL( DECdecompCreate(scip, decomp) );
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
+
+   for( c = 0,i = 0; c < nconss; ++c )
+   {
+      if( GCGisConsGCGCons(conss[c]) )
+         continue;
+
+      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) 1 ) );
+      ++i;
+   }
+
+   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, *decomp, constoblock, 0, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** creates a decomposition with provided constraints in the master
+ * The function will put the remaining constraints in one or more pricing problems
+ * depending on whether the subproblems decompose with no variables in common.
+ */
+extern
+SCIP_RETCODE DECcreateDecompFromMasterconss(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP**          decomp,              /**< decomposition structure */
+   SCIP_CONS**           conss,               /**< constraints to be put in the master */
+   int                   nconss               /**< number of constraints in the master */
+   )
+{
+   return SCIP_INVALIDCALL;
 }

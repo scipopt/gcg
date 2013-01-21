@@ -59,7 +59,7 @@ TESTOBJDIR      =	$(OBJDIR)/tests
 TESTLDFLAGS		+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest
 
 .PHONY: testdepend
-testdepend:
+testdepend::
 		$(SHELL) -ec '$(DCC) $(FLAGS) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'

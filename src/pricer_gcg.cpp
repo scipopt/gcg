@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -24,7 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+//#define SCIP_DEBUG
 /**@file   pricer_gcg.cpp
  * @brief  pricer for generic column generation
  * @author Gerald Gamrath
@@ -461,6 +461,9 @@ SCIP_RETCODE ObjPricerGcg::solversExit()
 SCIP_RETCODE ObjPricerGcg::solversInitsol()
 {
    int i;
+
+   if( pricerdata->npricingprobs == 0 )
+      return SCIP_OKAY;
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
@@ -1204,7 +1207,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( !force )
    {
       /* compute the objective function value of the solution */
-      redcost = computeRedCost(solvars, solvals, nsolvars, solisray, prob);
+      redcost = computeRedCost(solvars, solvals, nsolvars, solisray == TRUE, prob);
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
@@ -1250,7 +1253,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       objcoeff = SCIPinfinity(scip) / 2;
    }
 
-   if( solisray )
+   if( solisray == 1 )
    {
       (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "r_%d_%d", prob, pricerdata->nraysprob[prob]);
       pricerdata->nraysprob[prob]++;
@@ -1262,7 +1265,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
+         pricerdata->vartype, solisray == 1, prob, nsolvars, solvals, solvars));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -1285,7 +1288,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
-   if( !solisray )
+   if( !(solisray == 1))
    {
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
    }
@@ -1612,12 +1615,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIPfreeMemoryArray(scip, &solvals);
          }
 
-
          if( solisray[prob][j] )
          {
             SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
+            SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, prob);
          }
-
       }
 
       if( nfoundvarsprob > 0 )

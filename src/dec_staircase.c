@@ -463,8 +463,9 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
       SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
    if( detectordata->graph != NULL )
-     tcliqueFree(&detectordata->graph);
-
+   {
+      tcliqueFree(&detectordata->graph);
+   }
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
