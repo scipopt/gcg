@@ -1768,8 +1768,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
 
    assert(scip != NULL);
    assert(decomp != NULL);
-   assert(masterconss != NULL);
-   assert(nmasterconss > 0);
+   assert((masterconss == NULL) == ( nmasterconss == 0));
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
    conss = SCIPgetConss(scip);
