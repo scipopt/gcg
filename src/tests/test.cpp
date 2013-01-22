@@ -249,29 +249,55 @@ SCIP* GcgDecTest::scip = NULL;
 
 TEST_F(GcgDecTest, ReadDecTest) {
    SCIP_RESULT result;
+   DEC_DECOMP* decomp;
+   int i;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.mps", "mps") );
    SCIP_CALL_EXPECT( SCIPreadDec(scip, "check/instances/miplib/noswot.dec", &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-   SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   ASSERT_NEAR(-41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   EXPECT_EQ(5, DECdecompGetNBlocks(decomp));
+   EXPECT_EQ(6, DECdecompGetNLinkingconss(decomp));
+   EXPECT_EQ(0, DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+
+   for( i = 0; i < 5; ++i )
+   {
+      EXPECT_EQ(33, DECdecompGetNSubscipconss(decomp)[i]);
+      EXPECT_EQ(24, DECdecompGetNSubscipvars(decomp)[i]);
+   }
 }
 
 TEST_F(GcgDecTest, ReadBlkTest) {
    SCIP_RESULT result;
+   DEC_DECOMP* decomp;
+   int i;
+
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/bpp/N1C3W1_A.blk", &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-   SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   ASSERT_NEAR(16.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+
+   for( i = 0; i < 24; ++i )
+   {
+      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
+      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
+   }
 }
 
 TEST_F(GcgDecTest, NoDecTest) {
+   DEC_DECOMP* decomp;
+
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
    ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
@@ -282,6 +308,15 @@ TEST_F(GcgDecTest, NoDecTest) {
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    ASSERT_NEAR(15.873333333333, SCIPgetLowerbound(scip), SCIPfeastol(scip));
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
+   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(0, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(SCIPgetNOrigConss(scip), DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(SCIPgetNOrigVars(scip), DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) == NULL);
 }
 
 TEST_F(GcgDecTest, DISABLED_WrongDecompTest) {
@@ -314,7 +349,7 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
 
    SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
 
- ASSERT_TRUE(decomp != NULL);
+   ASSERT_TRUE(decomp != NULL);
    ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
    ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
