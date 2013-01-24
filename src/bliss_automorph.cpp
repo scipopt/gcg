@@ -32,12 +32,13 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#include "scip/scip.h"
-#include "scip/scipdefplugins.h"
-#include "bliss_C.h"
-#include <string.h>
+
+#include "graph.hh"
 #include "bliss_automorph.h"
 #include "scip_misc.h"
+#include "scip/scip.h"
+#include <cstring>
+
 
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
@@ -748,7 +749,7 @@ SCIP_RETCODE createGraph(
    SCIP**               scips,              /**< SCIPs to compare */
    int                  nscips,             /**< number of SCIPs */
    AUT_COLOR            colorinfo,          /**< result pointer to indicate success or failure */
-   BlissGraph*          graph,              /**< graph needed for discovering isomorphism */
+   bliss::Graph*        graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*         result              /**< result pointer to indicate success or failure */
    )
 {
@@ -775,7 +776,7 @@ SCIP_RETCODE createGraph(
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)
    {
       SCIP *scip = scips[s];
-      BlissGraph* h = graph;
+      bliss::Graph* h = graph;
       nnodesoffset[s] = nnodes;
       nconss = SCIPgetNConss(scip);
       nvars = SCIPgetNVars(scip);
@@ -797,7 +798,7 @@ SCIP_RETCODE createGraph(
          }
 
          SCIPdebugMessage("cons <%s> color %d\n", SCIPconsGetName(conss[i]), color);
-         bliss_add_vertex(h, color);
+         h->add_vertex(color);
          nnodes++;
       }
       //add a node for every variable
@@ -810,7 +811,7 @@ SCIP_RETCODE createGraph(
             break;
          }
 
-         bliss_add_vertex(h, (colorinfo.getLenCons() + color));
+         h->add_vertex(colorinfo.getLenCons() + color);
          nnodes++;
       }
       //connecting the nodes with an additional node in the middle
@@ -835,10 +836,10 @@ SCIP_RETCODE createGraph(
                break;
             }
             curvar = SCIPvarGetProbindex(curvars[j]);
-            bliss_add_vertex(h, (colorinfo.getLenCons() + colorinfo.getLenVar() + color));
+            h->add_vertex(colorinfo.getLenCons() + colorinfo.getLenVar() + color);
             nnodes++;
-            bliss_add_edge(h, nnodesoffset[s] + i, (nnodesoffset[s] + nconss + nvars + z));
-            bliss_add_edge(h, (nnodesoffset[s] + nconss + nvars + z), nnodesoffset[s]+nconss + curvar);
+            h->add_edge(nnodesoffset[s] + i, nnodesoffset[s] + nconss + nvars + z);
+            h->add_edge(nnodesoffset[s] + nconss + nvars + z, nnodesoffset[s]+nconss + curvar);
             SCIPdebugMessage("nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
                               SCIPconsGetName(conss[i]),
                               nnodesoffset[s] + i,
@@ -855,7 +856,7 @@ SCIP_RETCODE createGraph(
          SCIPfreeMemoryArray(origscip, &curvars);
       }
       SCIPdebugMessage("Iteration %d: nnodes = %d\n", s, nnodes);
-      assert(*result == SCIP_SUCCESS && nnodes == bliss_get_nof_vertices(h));
+      assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
    }
    //free all allocated memory
    freeMemory(origscip, &colorinfo);
@@ -869,19 +870,18 @@ SCIP_RETCODE cmpGraphPair(
    SCIP*                 scip1,               /**< first SCIP data structure to compare */
    SCIP*                 scip2,               /**< second SCIP data structure to compare */
    SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP* 		 varmap,              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP* 		 consmap              /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP* 	 varmap,              /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP* 	 consmap              /**< hashmap to save permutation of constraints */
    )
 {
-   BlissGraph* graph;
-   BlissStats bstats;
+   bliss::Graph graph;
+   bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
    int nscips;
    SCIP* scips[2];
 
    colorinfo = new AUT_COLOR(0, 0, 0, 0 );
-   graph = bliss_new(0);
    scips[0] = scip1;
    scips[1] = scip2;
    nscips = 2;
@@ -891,15 +891,13 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( testScipCons(scips[0], scips[1], result) );
 
    SCIP_CALL( setuparrays(origscip, scips, nscips, colorinfo, result) );
-   SCIP_CALL( createGraph(origscip, scips, nscips, *colorinfo, graph, result) );
+   SCIP_CALL( createGraph(origscip, scips, nscips, *colorinfo, &graph, result) );
 
-   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, bliss_get_nof_vertices(graph), scips);
-   bliss_find_automorphisms(graph, hook, ptrhook, &bstats);
+   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, graph.get_nof_vertices(), scips);
+   graph.find_automorphisms(bstats, hook, ptrhook);
 
    varmap = ptrhook->getVarHash();
    consmap = ptrhook->getConsHash();
-
-   bliss_release(graph);
 
    return SCIP_OKAY;
 }

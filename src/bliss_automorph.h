@@ -32,8 +32,9 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#include "bliss_C.h"
-
+#include "scip/type_scip.h"
+#include "scip/type_result.h"
+#include "scip/type_misc.h"
 
 #ifndef BLISS_AUTOMORPH_H_
 #define BLISS_AUTOMORPH_H_
