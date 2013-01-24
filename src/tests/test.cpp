@@ -47,8 +47,11 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
      SCIP_CALL_ABORT( SCIPpresolve(scip) );
      SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
@@ -132,6 +135,10 @@ class GcgLibTest : public ::testing::Test {
    virtual void SetUp() {
       SCIP_CALL_ABORT( SCIPcreate(&scip) );
       SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
       SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
       SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    }
@@ -226,8 +233,11 @@ class GcgDecTest : public ::testing::Test {
    virtual void SetUp() {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-     SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
    }
 
    virtual void TearDown() {
@@ -274,6 +284,14 @@ TEST_F(GcgDecTest, NoDecTest) {
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
 }
 
+TEST_F(GcgDecTest, DISABLED_WrongDecompTest) {
+   SCIP_RESULT result;
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/miplib/noswot.dec", &result) );
+   ASSERT_EQ(SCIP_SUCCESS, result);
+}
+
 TEST_F(GcgDecTest, MasterSpecificationTest) {
    SCIP_CONS** conss = NULL;
    DEC_DECOMP* decomp = NULL;
@@ -281,7 +299,10 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
    char name[SCIP_MAXSTRLEN];
 
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+
    SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
+
    for( i = 0; i < 50; ++i )
    {
       SCIP_CONS* cons;
@@ -292,21 +313,21 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
    }
 
    SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
-   ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(50, DECdecompGetNBlocks(decomp));
+
+ ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
    ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
-
    ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
 
-   for( i = 0; i < 50; ++i )
+   for( i = 0; i < 24; ++i )
    {
       ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
       ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
    }
 
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
    SCIPfreeMemoryArray(scip, &conss);
-
 }
 
 int main(int argc, char** argv) {
