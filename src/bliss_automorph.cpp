@@ -28,6 +28,7 @@
 /**@file    bliss_automorph.cpp
  * @brief   automorphism recognition of SCIPs
  * @author  Daniel Peters
+ * @author  Martin Bergner
  *
  */
 
@@ -37,6 +38,7 @@
 #include "bliss_automorph.h"
 #include "scip_misc.h"
 #include "scip/scip.h"
+#include "pub_gcgvar.h"
 #include <cstring>
 
 
@@ -375,6 +377,9 @@ struct_colorinformation::struct_colorinformation(
    lenvarsarray = lenvars;
    lenconssarray = lenconss;
    lencoefsarray = lencoefs;
+   ptrarraycoefs = NULL;
+   ptrarrayconss = NULL;
+   ptrarrayvars = NULL;
 }
 
 /** constructor of the hook struct */
@@ -444,8 +449,8 @@ int comp(
       return comp(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar()));
    assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar())));
 
-   if(comp(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar())) != 0)
-      return comp(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar()));
+   if(comp(scip, SCIPvarGetObj(GCGpricingVarGetOriginalVar(var1->getVar())), SCIPvarGetObj(GCGpricingVarGetOriginalVar(var2->getVar()))) != 0)
+      return comp(scip, SCIPvarGetObj(GCGpricingVarGetOriginalVar(var1->getVar())), SCIPvarGetObj(GCGpricingVarGetOriginalVar(var2->getVar())));
    assert(SCIPisEQ(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar())));
 
    if( SCIPvarGetType(var1->getVar()) < SCIPvarGetType(var2->getVar()) )
@@ -512,8 +517,10 @@ void hook(void* user_param,                 /**< data structure to save hashmaps
          break;
    }
    if( j == n / 2 )
+   {
+      SCIPdebugMessage("j = %d\n", n/2);
       hook->setBool(TRUE);
-
+   }
    if( !hook->getBool() )
       return;
 
@@ -535,13 +542,17 @@ void hook(void* user_param,                 /**< data structure to save hashmaps
          assert( aut[i] < INT_MAX);
          assert( (int) (aut[i]-n/2) < nvars);
          SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), vars1[i], vars2[aut[i]-n/2]) );
+         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[aut[i]-n/2]));
       }
       else if (i < nvars+nconss)
       {
          assert( i-nvars >= 0);
          assert( aut[i] < INT_MAX);
          assert( (int) (aut[i]-nvars-n/2) < nconss);
+
          SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), conss1[i-nvars], conss2[aut[i]-nvars-n/2]) );
+         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(conss1[i-nvars]), SCIPconsGetName(conss2[aut[i]-nvars-n/2]));
+
       }
    }
 }
@@ -898,7 +909,8 @@ SCIP_RETCODE cmpGraphPair(
 
    varmap = ptrhook->getVarHash();
    consmap = ptrhook->getConsHash();
-
+   if( !ptrhook->getBool() )
+      *result = SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
 

@@ -862,6 +862,7 @@ SCIP_RETCODE checkIdenticalBlocks(
                origvar = GCGpricingVarGetOrigvars(vars[k])[0];
 
                pricingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, (void*) vars[k]);
+               assert(pricingvar != NULL);
                blocknr = GCGvarGetBlock(pricingvar);
 
                assert(GCGvarIsPricing(pricingvar));
