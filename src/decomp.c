@@ -1079,8 +1079,12 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
 
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
-      assert(consblock > 0 && consblock < nblocks+2);
-
+      assert(consblock > 0 && consblock <= nblocks+1);
+      if(consblock == nblocks+1)
+      {
+         SCIPdebugMessage("cons <%s> is linking and need not be handled\n", SCIPconsGetName(conss[i]));
+         continue;
+      }
       SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
 
@@ -1088,18 +1092,36 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
 
       SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
+      SCIPdebugMessage("cons <%s> (%d vars) is in block %d.\n", SCIPconsGetName(conss[i]), ncurvars, consblock);
 
       for( j = 0; j < ncurvars; ++j )
       {
+         int varblock;
          SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
          assert( SCIPvarIsActive(probvar) );
+         if( SCIPhashmapExists(vartoblock, probvar) )
+            varblock = (int) (size_t) SCIPhashmapGetImage(vartoblock, probvar);
+         else
+            varblock = nblocks+1;
+         /** if the constraint is in a block and the variable is not in the same block */
          if( !SCIPhashmapExists(vartoblock, probvar) && consblock <= nblocks )
          {
+            SCIPdebugMessage(" var <%s> not been handled before, adding to block %d\n", SCIPvarGetName(probvar), consblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) consblock) );
          }
-         else if( consblock <= nblocks )
+         else if( varblock != consblock && consblock <= nblocks )
          {
+            SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
+         }
+         else if(consblock == nblocks+1)
+         {
+            SCIPdebugMessage(" var <%s> not handled and current cons linking.\n", SCIPvarGetName(probvar));
+         }
+         else
+         {
+            assert(consblock == varblock);
+            SCIPdebugMessage(" var <%s> is handled and in same block as cons (%d == %d).\n", SCIPvarGetName(probvar), consblock, varblock);
          }
 
          DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
@@ -1115,6 +1137,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
       {
+         SCIPdebugMessage(" var <%s> not handled at all and now linking\n", SCIPvarGetName(vars[i]));
          SCIP_CALL( SCIPhashmapSetImage(vartoblock, vars[i], (void*) (size_t) (nblocks+1)) );
       }
    }
@@ -1768,7 +1791,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
 
-   nblocks = MIN(nvars, nconss-nmasterconss+1);
+   nblocks = nconss-nmasterconss+1;
 
    SCIP_CALL(SCIPallocMemoryArray(scip, &blockrepresentative, nblocks));
    SCIP_CALL(SCIPallocMemoryArray(scip, &consismaster, nconss));
@@ -1785,9 +1808,15 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    {
       consismaster[i] = SCIPhashmapExists(constoblock, conss[i]);
    }
+
    for( i = 0; i < nvars; ++i )
    {
       vartoblock[i] = -1;
+   }
+
+   for( i = 0; i < nblocks; ++i )
+   {
+      blockrepresentative[i] = -1;
    }
 
    SCIP_CALL(assignConstraintsToRepresentatives(scip, conss, nconss, consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );

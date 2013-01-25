@@ -259,14 +259,14 @@ TEST_F(GcgDecTest, ReadDecTest) {
    decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
    ASSERT_TRUE(decomp != NULL);
    EXPECT_EQ(5, DECdecompGetNBlocks(decomp));
-   EXPECT_EQ(6, DECdecompGetNLinkingconss(decomp));
-   EXPECT_EQ(0, DECdecompGetNLinkingvars(decomp));
+   EXPECT_EQ(17, DECdecompGetNLinkingconss(decomp));
+   EXPECT_EQ(3, DECdecompGetNLinkingvars(decomp));
    ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
 
    for( i = 0; i < 5; ++i )
    {
       EXPECT_EQ(33, DECdecompGetNSubscipconss(decomp)[i]);
-      EXPECT_EQ(24, DECdecompGetNSubscipvars(decomp)[i]);
+      EXPECT_EQ(25, DECdecompGetNSubscipvars(decomp)[i]);
    }
 }
 
