@@ -1791,6 +1791,9 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
 
+   if( GCGisConsGCGCons(conss[nconss-1]) )
+      --nconss;
+
    nblocks = nconss-nmasterconss+1;
 
    SCIP_CALL(SCIPallocMemoryArray(scip, &blockrepresentative, nblocks));
@@ -1806,6 +1809,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
 
    for( i = 0; i < nconss; ++i )
    {
+      assert(!GCGisConsGCGCons(conss[i]));
       consismaster[i] = SCIPhashmapExists(constoblock, conss[i]);
    }
 
