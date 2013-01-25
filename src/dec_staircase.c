@@ -524,10 +524,11 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-   detectordata->vartoblock = NULL;
-   detectordata->constoblock = NULL;
-   detectordata->clock = NULL;
    detectordata->graph = NULL;
+   detectordata->clock = NULL;
+   detectordata->constoblock = NULL;
+   detectordata->vartoblock = NULL;
+   detectordata->nblocks = 0;
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectStaircase, initStaircase, exitStaircase) );
 
    return SCIP_OKAY;

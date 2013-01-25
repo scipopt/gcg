@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -563,4 +563,14 @@ SCIP_Bool SCIPgetConsIsSetppc(
 
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
+}
+
+/** returns TRUE or FALSE, depending whether we are in the root node or not */
+extern
+SCIP_Bool isRootNode(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
 }

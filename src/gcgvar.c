@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1058,6 +1058,7 @@ SCIP_RETCODE GCGcreateMasterVar(
       assert(solvars != NULL);
       assert(solvals != NULL);
 
+      assert(!SCIPisInfinity(scip, solvals[i]));
       if( !SCIPisZero(scip, solvals[i]) )
       {
          newvardata->data.mastervardata.norigvars++;
@@ -1194,129 +1195,171 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 /** set creation node of variable */
 void GCGsetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
-   long long int         creationNode        /**< node in which the variable is created */
+   SCIP_VAR*             var,                /**< variable data structure */
+   SCIP_Longint          creationNode        /**< node in which the variable is created */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
    assert(creationNode >= 0);
 
+   vardata = SCIPvarGetData(var);
    vardata->creationnode = creationNode;
 }
 
 /** return creation node of variable */
 long long int GCGgetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
 
+   vardata = SCIPvarGetData(var);
    return vardata->creationnode;
 }
 
 /** store creation time */
 void GCGsetCreationTime(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             time                /**< time at which the variable is created */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
    assert(time >= 0.0);
 
+   vardata = SCIPvarGetData(var);
    vardata->creationtime = time;
 }
 
 /** return stored creation time */
 SCIP_Real GCGgetCreationTime(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
 
+   vardata = SCIPvarGetData(var);
    return vardata->creationtime;
 }
 
 /** store iteration */
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Longint          iteration           /**< iteration at which the variable is created */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
    assert(iteration >= 0);
 
+   vardata = SCIPvarGetData(var);
    vardata->iteration = iteration;
 }
 
 /** return stored iteration */
 SCIP_Longint GCGgetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
 
+   vardata = SCIPvarGetData(var);
    return vardata->iteration;
-
 }
 
 /** store gap */
 void GCGsetGap(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             gap                 /**< present gap when variable is created */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
    assert(gap >= 0.0);
 
+   vardata = SCIPvarGetData(var);
    vardata->gap = gap;
 }
 
 /** return stored gap */
 SCIP_Real GCGgetGap(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
 
+   vardata = SCIPvarGetData(var);
    return vardata->gap;
 }
 
 /** store reduced cost */
 void GCGsetRedcost(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
    assert(SCIPisLE(scip, redcost, 0.0));
+
+   vardata = SCIPvarGetData(var);
    vardata->redcost = redcost;
 }
 
 /** return stored reduced cost */
 SCIP_Real GCGgetRedcost(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    )
 {
+   SCIP_VARDATA* vardata;
    assert(scip != NULL);
-   assert(vardata != NULL);
+   assert(var != NULL);
 
+   vardata = SCIPvarGetData(var);
    return vardata->redcost;
+}
+
+/** updates the statistics part of the variable */
+void GCGupdateVarStatistics(
+    SCIP*                scip,               /** master SCIP data structure */
+    SCIP*                origprob,           /** original SCIP data structure */
+    SCIP_VAR*            newvar,             /** new variable for statistic update */
+    SCIP_Real            redcost             /** reduced cost of the variable */
+    )
+{
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(origprob != NULL);
+   assert(GCGisOriginal(origprob));
+   assert(newvar != NULL);
+
+   GCGsetCreationNode(origprob, newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
+   GCGsetCreationTime(origprob, newvar, SCIPgetSolvingTime(scip));
+   GCGsetIteration(origprob, newvar, SCIPgetNLPIterations(scip));
+   GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip)));
+   GCGsetRedcost(origprob, newvar, redcost);
+
 }

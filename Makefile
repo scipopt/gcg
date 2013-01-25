@@ -14,19 +14,18 @@
 #@author  Martin Bergner
 #@author  Christian Puchert
 
-
 #-----------------------------------------------------------------------------
 # paths
 #-----------------------------------------------------------------------------
 VERSION         :=	1.1.0.1
-SCIPDIR         =       lib/scip
+SCIPDIR         =   lib/scip
 #-----------------------------------------------------------------------------
 # necessary information
 #-----------------------------------------------------------------------------
 
 
-LIBDIR          =       lib
-DIRECTORIES     =       $(LIBDIR) $(LIBOBJDIR)
+LIBDIR          =	lib
+DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR)
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -34,15 +33,40 @@ READ		=	read -e
 LN_s		= 	ln -s
 GCGDIR		=	$(realpath .)
 TIME		=	3600
-DIP		=	dip
+DIP			=	dip
 
-VALGRIND        =       false
+VALGRIND	=	false
 MODE		=	readdec
 GTEST		=	true
+PARASCIP	= 	true
+BLISS       =   true
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
 -include $(SCIPDIR)/make/make.project
+
+#-----------------------------------------------------------------------------
+# SCIP
+#-----------------------------------------------------------------------------
+
+SOFTLINKS	+=	$(LIBDIR)/scip
+LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
+
+#-----------------------------------------------------------------------------
+# BLISS
+#-----------------------------------------------------------------------------
+
+ifeq ($(BLISS),false)
+FLAGS		+=	-DNBLISS
+else
+LDFLAGS		+= 	-lbliss
+FLAGS		+=	-I$(LIBDIR)/blissinc
+SOFTLINKS	+=	$(LIBDIR)/blissinc
+SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
+LPIINSTMSG	+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
+LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libcplex.a\"\n"
+endif
 
 #-----------------------------------------------------------------------------
 # Main Program
@@ -106,7 +130,13 @@ LIBOBJ		=	reader_blk.o \
 			scip_misc.o \
 			misc.o \
 			gcgvar.o \
+			class_pricingtype.o \
 			stat.o
+
+ifeq ($(BLISS),true)
+LIBOBJ		+=	bliss_automorph.o
+endif
+
 
 MAINOBJ		=	main.o
 
@@ -117,11 +147,6 @@ MAIN		=	$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
 MAINFILE	=	$(BINDIR)/$(MAIN)
 MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
-
-
-SOFTLINKS	+=	$(LIBDIR)/scip
-LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\""
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
@@ -154,6 +179,11 @@ ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
 endif
 
+ifeq ($(OPENMP),true)
+CFLAGS+=-fopenmp
+LDFLAGS+=-fopenmp
+CXXFLAGS+=-fopenmp
+endif
 
 $(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
@@ -254,7 +284,6 @@ testdepend:: # do not remove double colon
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
-		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_l)$(GCGLIB) \
 		$(LINKCXX_L)$(SCIPDIR)/lib $(LINKCXX_l)$(SCIPLIB)$(LINKLIBSUFFIX) \
                 $(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \

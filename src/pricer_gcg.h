@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -47,8 +47,9 @@ extern "C" {
 
 enum GCG_Pricetype
 {
-   GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
-   GCG_PRICETYPE_FARKAS = 1,                /**< farkas pricing */
+   GCG_PRICETYPE_UNKNOWN = -1,               /**< unknown pricing type */
+   GCG_PRICETYPE_INIT = 0,                   /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                 /**< farkas pricing */
    GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
 };
 typedef enum GCG_Pricetype GCG_PRICETYPE;
@@ -108,15 +109,13 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
 /** returns the solverdata of a solver */
 extern
-GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+GCG_SOLVERDATA* GCGsolverGetSolverdata(
    GCG_SOLVER*           solver              /**< pointer so solver */
    );
 
 /** sets solver data of specific solver */
 extern
-void GCGpricerSetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+void GCGsolverSetSolverdata(
    GCG_SOLVER*           solver,             /**< pointer to solver  */
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
@@ -180,4 +179,5 @@ SCIP_Bool GCGisMaster(
 #ifdef __cplusplus
 }
 #endif
+
 #endif

@@ -6,6 +6,7 @@
 #include "cons_decomp.h"
 #include "reader_blk.h"
 #include "reader_dec.h"
+#include "pub_decomp.h"
 
 #define SCIP_CALL_EXPECT(x) do { EXPECT_EQ(SCIP_OKAY, (x)); } while(FALSE)
 
@@ -46,6 +47,11 @@ class GcgResultTest : public ::testing::Test {
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
      SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+
      SCIP_CALL_ABORT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
      SCIP_CALL_ABORT( SCIPpresolve(scip) );
      SCIP_CALL_ABORT( DECdetectStructure(scip, &result) );
@@ -129,6 +135,10 @@ class GcgLibTest : public ::testing::Test {
    virtual void SetUp() {
       SCIP_CALL_ABORT( SCIPcreate(&scip) );
       SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
       SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
       SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    }
@@ -144,6 +154,8 @@ SCIP* GcgLibTest::scip = NULL;
 TEST_F(GcgLibTest, FreeTransformTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -164,6 +176,8 @@ TEST_F(GcgLibTest, FreeTransformTest) {
 TEST_F(GcgLibTest, FreeProbTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -185,6 +199,8 @@ TEST_F(GcgLibTest, FreeProbTest) {
 TEST_F(GcgLibTest, FreeSolveTest) {
    SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
@@ -217,8 +233,11 @@ class GcgDecTest : public ::testing::Test {
    virtual void SetUp() {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-     SCIP_CALL_ABORT( SCIPcreateProb(scip, "test", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
    }
 
    virtual void TearDown() {
@@ -230,26 +249,120 @@ SCIP* GcgDecTest::scip = NULL;
 
 TEST_F(GcgDecTest, ReadDecTest) {
    SCIP_RESULT result;
+   DEC_DECOMP* decomp;
+   int i;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/miplib/noswot.mps", "mps") );
    SCIP_CALL_EXPECT( SCIPreadDec(scip, "check/instances/miplib/noswot.dec", &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-   SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   ASSERT_NEAR(-41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   EXPECT_EQ(5, DECdecompGetNBlocks(decomp));
+   EXPECT_EQ(17, DECdecompGetNLinkingconss(decomp));
+   EXPECT_EQ(3, DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+
+   for( i = 0; i < 5; ++i )
+   {
+      EXPECT_EQ(33, DECdecompGetNSubscipconss(decomp)[i]);
+      EXPECT_EQ(25, DECdecompGetNSubscipvars(decomp)[i]);
+   }
 }
 
 TEST_F(GcgDecTest, ReadBlkTest) {
    SCIP_RESULT result;
+   DEC_DECOMP* decomp;
+   int i;
+
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
    SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/bpp/N1C3W1_A.blk", &result) );
    ASSERT_EQ(SCIP_SUCCESS, result);
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+
+   for( i = 0; i < 24; ++i )
+   {
+      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
+      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
+   }
+}
+
+TEST_F(GcgDecTest, NoDecTest) {
+   DEC_DECOMP* decomp;
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 1) );
+   SCIP_CALL_EXPECT( SCIPsetLongintParam(scip, "limits/nodes", 1L) );
+
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
-   ASSERT_NEAR(16.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
+   ASSERT_NEAR(15.873333333333, SCIPgetLowerbound(scip), SCIPfeastol(scip));
+   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
+   ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
+   SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
+
+   decomp = SCIPconshdlrDecompGetDecdecomps(scip)[0];
+   ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(0, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(SCIPgetNOrigConss(scip), DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(SCIPgetNOrigVars(scip), DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) == NULL);
+}
+
+TEST_F(GcgDecTest, DISABLED_WrongDecompTest) {
+   SCIP_RESULT result;
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/miplib/noswot.dec", &result) );
+   ASSERT_EQ(SCIP_SUCCESS, result);
+}
+
+TEST_F(GcgDecTest, MasterSpecificationTest) {
+   SCIP_CONS** conss = NULL;
+   DEC_DECOMP* decomp = NULL;
+   int i = 0;
+   char name[SCIP_MAXSTRLEN];
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+
+   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
+
+   for( i = 0; i < 50; ++i )
+   {
+      SCIP_CONS* cons;
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Allocate_%d", i+1);
+      cons = SCIPfindCons(scip, name);
+      ASSERT_TRUE(cons != NULL);
+      conss[i] = cons;
+   }
+
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
+
+   ASSERT_TRUE(decomp != NULL);
+   ASSERT_EQ(24, DECdecompGetNBlocks(decomp));
+   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
+   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
+   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
+
+   for( i = 0; i < 24; ++i )
+   {
+      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
+      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
+   }
+
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
+   SCIPfreeMemoryArray(scip, &conss);
 }
 
 int main(int argc, char** argv) {

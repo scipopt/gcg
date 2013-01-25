@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,32 +25,37 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_xprins.h
- * @brief  Extreme Point RINS
- * @author Christian Puchert
- * @ingroup PRIMALHEURISTICS
+/**@file    bliss_automorph.h
+ * @brief   automorphism recognition of SCIPs
+ * @author  Daniel Peters
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#include "scip/type_scip.h"
+#include "scip/type_result.h"
+#include "scip/type_misc.h"
 
-#ifndef GCG_HEUR_XPRINS_H__
-#define GCG_HEUR_XPRINS_H__
-
-
-#include "scip/scip.h"
+#ifndef BLISS_AUTOMORPH_H_
+#define BLISS_AUTOMORPH_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the xprins primal heuristic and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeHeurXprins(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE cmpGraphPair(
+   SCIP*                 origscip,            /**< SCIP data structure */
+   SCIP*                 scip1,               /**< first SCIP data structure to compare */
+   SCIP*                 scip2,               /**< second SCIP data structure to compare */
+   SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP* 	 varmap,              /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP* 	 consmap              /**< hashmap to save permutation of constraints */
    );
+
+/** returns bliss version */
+const char* getBlissVersion(void);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif
+#endif /* BLISS_AUTOMORPH_H_ */
