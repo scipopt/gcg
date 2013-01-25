@@ -63,4 +63,4 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp lib/gtest/gtest/gtest.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
  src/type_solver.h src/cons_decomp.h src/type_detector.h src/reader_blk.h \
- src/reader_dec.h
+ src/reader_dec.h src/pub_decomp.h
