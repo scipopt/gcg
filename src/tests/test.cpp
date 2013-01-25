@@ -198,7 +198,9 @@ TEST_F(GcgLibTest, FreeProbTest) {
 
 TEST_F(GcgLibTest, FreeSolveTest) {
    SCIP_RESULT result;
+   int nconss;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   nconss = SCIPgetNConss(scip);
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
@@ -208,7 +210,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
    SCIP_CALL_EXPECT( SCIPfreeSolve(scip, FALSE) );
-
+   ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
    ASSERT_EQ(SCIP_STAGE_TRANSFORMED, SCIPgetStage(scip));
    ASSERT_LE(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
@@ -217,6 +219,7 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
    ASSERT_EQ(SCIP_STATUS_OPTIMAL, SCIPgetStatus(scip));
+   ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
 }
 
 class GcgDecTest : public ::testing::Test {

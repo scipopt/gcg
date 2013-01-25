@@ -3043,8 +3043,7 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode,
-         GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode, GCGconsMasterbranchGetActiveCons(masterscip)) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
 

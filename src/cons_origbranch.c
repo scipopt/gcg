@@ -103,7 +103,7 @@ SCIP_DECL_CONSFREE(consFreeOrigbranch)
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
 
-   SCIPdebugMessage("freeing branch orig constraint handler\n");
+   SCIPdebugMessage("freeing branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
 
    /* free constraint handler storage */
    assert(conshdlrData->stack == NULL);
@@ -152,20 +152,25 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
 static
 SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrData;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
 
-   conshdlrData = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrData != NULL);
-   assert(conshdlrData->nstack <= 1);
-   SCIPdebugMessage("exiting solution process branch orig constraint handler\n");
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   assert(conshdlrdata->nstack <= 1);
+   SCIPdebugMessage("exiting solution process branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
 
+   if( conshdlrdata->rootcons != NULL )
+   {
+      SCIP_CALL( SCIPreleaseCons(scip, &conshdlrdata->rootcons) );
+      conshdlrdata->rootcons = NULL;
+   }
    /* free stack */
-   SCIPfreeMemoryArray(scip, &conshdlrData->stack);
-   conshdlrData->stack = NULL;
+   SCIPfreeMemoryArray(scip, &conshdlrdata->stack);
+   conshdlrdata->stack = NULL;
 
    return SCIP_OKAY;
 }
@@ -179,7 +184,7 @@ SCIP_DECL_CONSEXIT(consExitOrigbranch)
    assert(scip != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
-   SCIPdebugMessage("exiting transformed branch orig constraint handler\n");
+   SCIPdebugMessage("exiting transformed branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
 
    if( conshdlrdata->rootcons != NULL )
    {
@@ -471,7 +476,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    consdata->propboundtypes = NULL;
    consdata->propbounds = NULL;
 
-   SCIPdebugMessage("Creating branch orig constraint: <%s>.\n", name);
+   SCIPdebugMessage("Creating branch orig constraint: <%s> (nconss = %d).\n", name, SCIPconshdlrGetNConss(conshdlr));
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
@@ -506,7 +511,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    return SCIP_OKAY;
 }
-
 
 
 
@@ -663,8 +667,6 @@ void GCGconsOrigbranchSetMastercons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   //   if( consdata->mastercons != mastercons )
-   //   assert(consdata->mastercons == NULL || mastercons == NULL);
 
    consdata->mastercons = mastercons;
 }
@@ -834,6 +836,9 @@ SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONS* cons;
+   SCIP_CONS** conss;
+   int nconss;
+   int i;
    assert(scip != NULL);
 
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -843,12 +848,20 @@ SCIP_RETCODE SCIPconsOrigbranchAddRootCons(
       return SCIP_ERROR;
    }
 
+   nconss = SCIPconshdlrGetNConss(conshdlr);
+   assert(nconss <= 1);
+   conss = SCIPconshdlrGetConss(conshdlr);
+   for( i = 0; i  < nconss; ++i )
+   {
+      SCIP_CALL( SCIPdelCons(scip, conss[i]) );
+   }
+
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+   assert(SCIPconshdlrGetNConss(conshdlr) == 0);
    if( conshdlrdata->rootcons == NULL )
    {
       SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
-
       SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
       conshdlrdata->rootcons = cons;
    }
