@@ -3,7 +3,12 @@ GCG Version next
 features
 - GCG can now automatically create a decomposition to solve the LP with
   empty pricing problems. See the cons/decomp/createbasicdecomp parameter
+- GCG can aggregate pricing problems using bliss
+- GCG can solve pricingproblems in parallel
 
+code cleanup
+- moved some detection methods to a more global scope to make it usable
+- added testing framework to do regression testing (uses google test)
 
 GCG Version 1.1
 ===============
