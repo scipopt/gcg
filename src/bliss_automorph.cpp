@@ -901,3 +901,10 @@ SCIP_RETCODE cmpGraphPair(
 
    return SCIP_OKAY;
 }
+
+/** returns bliss version */
+extern
+const char* getBlissVersion(void)
+{
+   return bliss::version;
+}

@@ -63,7 +63,9 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 
+#ifndef NBLISS
 #include "bliss_automorph.h"
+#endif
 
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
@@ -2242,6 +2244,11 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    )
 {
    SCIP_RELAXDATA* relaxdata;
+#ifndef NBLISS
+   char name[SCIP_MAXSTRLEN];
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "bliss %s", getBlissVersion());
+   SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+#endif
 
    /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
