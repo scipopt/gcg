@@ -4,6 +4,8 @@ features
 - GCG can now automatically create a decomposition to solve the LP with
   empty pricing problems. See the cons/decomp/createbasicdecomp parameter
 
+Makefile
+- the version number is now part of the binary and library name
 
 GCG Version 1.1
 ===============

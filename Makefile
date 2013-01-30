@@ -48,8 +48,6 @@ GTEST		=	true
 # Main Program
 #-----------------------------------------------------------------------------
 
-MAINNAME	=	gcg
-
 LIBOBJ		=	reader_blk.o \
 			reader_dec.o \
 			reader_ref.o \
@@ -104,9 +102,11 @@ MAINOBJ		=	main.o
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
 
-MAIN		=	$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
-MAINFILE	=	$(BINDIR)/$(MAIN)
-MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
+MAINSHORTNAME	=	gcg
+MAINNAME	=	$(MAINSHORTNAME)-$(VERSION)
+MAINFILE	=	$(BINDIR)/$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
+MAINSHORTLINK	=	$(BINDIR)/$(MAINSHORTNAME)
+
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 
@@ -158,14 +158,14 @@ ifeq ($(FILES),)
 		$(SHELL) -ec 'for i in $^; \
 			do \
 			echo $$i; \
-			$(LINT) lint/$(MAINNAME).lnt +os\(lint.out\) -u -zero \
+			$(LINT) lint/$(MAINSHORTNAME).lnt +os\(lint.out\) -u -zero \
 			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
 else
 		$(SHELL) -ec  'for i in $(FILES); \
 			do \
 			echo $$i; \
-			$(LINT) lint/$(MAINNAME).lnt +os\(lint.out\) -u -zero \
+			$(LINT) lint/$(MAINSHORTNAME).lnt +os\(lint.out\) -u -zero \
 			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
 			done'
 endif
@@ -181,7 +181,7 @@ scip_clean:
 
 .PHONY: doc
 doc:
-		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
+		cd doc; $(DOXY) $(MAINSHORTNAME).dxy; cp tabs.css html/
 
 $(MAINSHORTLINK):	$(MAINFILE)
 		@rm -f $@
@@ -202,12 +202,12 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
 
 .PHONY: eval
 eval:
 		cd check; \
-		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
+		$(SHELL) ./eval.sh $(TEST) $(MAINFILE) $(SETTINGS) $(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
 
 .PHONY: clean
 clean:
