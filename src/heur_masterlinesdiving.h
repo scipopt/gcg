@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,21 +25,22 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_gcgintdiving.h
+/**@file   heur_masterlinesdiving.h
  * @ingroup PRIMALHEURISTICS
- * @brief  LP diving heuristic that fixes variables with integral LP value
+ * @brief  master LP diving heuristic that fixes variables with a large difference to their root solution
  * @author Tobias Achterberg
  *
  * Diving heuristic: Iteratively fixes some fractional variable and resolves the LP-relaxation, thereby simulating a
- * depth-first-search in the tree. Integer Diving fixes variables with integral LP values in order to enable further
- * domain propagations.  One-level backtracking is applied: If the LP gets infeasible, the last fixing is undone, and
- * the opposite fixing is tried. If this is infeasible, too, the procedure aborts.
+ * depth-first-search in the tree. Line search diving chooses the variable with the greatest difference of its root LP
+ * solution and the current LP solution, hence, the variable that developed most.  It is fixed to the next integer in
+ * the direction it developed. One-level backtracking is applied: If the LP gets infeasible, the last fixing is undone,
+ * and the opposite fixing is tried. If this is infeasible, too, the procedure aborts.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_GCGINTDIVING_H__
-#define __SCIP_HEUR_GCGINTDIVING_H__
+#ifndef __SCIP_HEUR_MASTERLINESDIVING_H__
+#define __SCIP_HEUR_MASTERLINESDIVING_H__
 
 
 #include "scip/scip.h"
@@ -48,9 +49,9 @@
 extern "C" {
 #endif
 
-/** creates the GCG intdiving heuristic and includes it in SCIP */
+/** creates the masterlinesdiving primal heuristic and includes it in GCG */
 EXTERN
-SCIP_RETCODE SCIPincludeHeurGcgintdiving(
+SCIP_RETCODE GCGincludeHeurMasterlinesdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

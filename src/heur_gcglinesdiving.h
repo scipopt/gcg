@@ -44,9 +44,9 @@
 extern "C" {
 #endif
 
-/** creates the GCG linesearchdiving primal heuristic and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeHeurGcglinesdiving(
+/** creates the gcglinesdiving heuristic and includes it in GCG */
+EXTERN
+SCIP_RETCODE GCGincludeHeurGcglinesdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

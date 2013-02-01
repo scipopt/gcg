@@ -25,20 +25,20 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_masterdiving.h
+/**@file   heur_origdiving.h
  * @ingroup PRIMALHEURISTICS
- * @brief  primal heuristic interface for LP diving heuristics on the master variables
+ * @brief  primal heuristic interface for LP diving heuristics on the original variables
  * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_HEUR_MASTERDIVING_H__
-#define __SCIP_HEUR_MASTERDIVING_H__
+#ifndef __SCIP_HEUR_ORIGDIVING_H__
+#define __SCIP_HEUR_ORIGDIVING_H__
 
 
 #include "scip/scip.h"
-#include "type_masterdiving.h"
+#include "type_origdiving.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,43 +46,43 @@ extern "C" {
 
 /** gets diving rule specific data of a diving heuristic */
 EXTERN
-GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
+GCG_DIVINGDATA* GCGheurGetDivingDataOrig(
    SCIP_HEUR*               heur                    /**< primal heuristic */
    );
 
 /** sets diving rule specific data of a diving heuristic */
 EXTERN
-void GCGheurSetDivingDataMaster(
+void GCGheurSetDivingDataOrig(
    SCIP_HEUR*               heur,                   /**< primal heuristic */
    GCG_DIVINGDATA*          divingdata              /**< diving rule specific data */
    );
 
-/** creates a master diving heuristic and includes it in GCG */
+/** creates an original diving heuristic and includes it in GCG */
 EXTERN
-SCIP_RETCODE GCGincludeDivingHeurMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_HEUR**           heur,               /**< pointer to diving heuristic */
-   const char*           name,               /**< name of primal heuristic */
-   const char*           desc,               /**< description of primal heuristic */
-   char                  dispchar,           /**< display character of primal heuristic */
-   int                   priority,           /**< priority of the primal heuristic */
-   int                   freq,               /**< frequency for calling primal heuristic */
-   int                   freqofs,            /**< frequency offset for calling primal heuristic */
-   int                   maxdepth,           /**< maximal depth level to call heuristic at (-1: no limit) */
-   GCG_DECL_DIVINGFREE   ((*divingfree)),    /**< destructor of diving heuristic */
-   GCG_DECL_DIVINGINIT   ((*divinginit)),    /**< initialize diving heuristic */
-   GCG_DECL_DIVINGEXIT   ((*divingexit)),    /**< deinitialize diving heuristic */
-   GCG_DECL_DIVINGINITSOL ((*divinginitsol)), /**< solving process initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITSOL ((*divingexitsol)), /**< solving process deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGINITEXEC ((*divinginitexec)), /**< execution initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITEXEC ((*divingexitexec)), /**< execution deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGSELECTVAR ((*divingselectvar)), /**< variable selection method of diving heuristic */
-   GCG_DIVINGDATA*       divingdata          /**< diving rule specific data (or NULL) */
+SCIP_RETCODE GCGincludeDivingHeurOrig(
+   SCIP*                    scip,                   /**< SCIP data structure */
+   SCIP_HEUR**              heur,                   /**< pointer to diving heuristic */
+   const char*              name,                   /**< name of primal heuristic */
+   const char*              desc,                   /**< description of primal heuristic */
+   char                     dispchar,               /**< display character of primal heuristic */
+   int                      priority,               /**< priority of the primal heuristic */
+   int                      freq,                   /**< frequency for calling primal heuristic */
+   int                      freqofs,                /**< frequency offset for calling primal heuristic */
+   int                      maxdepth,               /**< maximal depth level to call heuristic at (-1: no limit) */
+   GCG_DECL_DIVINGFREE      ((*divingfree)),        /**< destructor of diving heuristic */
+   GCG_DECL_DIVINGINIT      ((*divinginit)),        /**< initialize diving heuristic */
+   GCG_DECL_DIVINGEXIT      ((*divingexit)),        /**< deinitialize diving heuristic */
+   GCG_DECL_DIVINGINITSOL   ((*divinginitsol)),     /**< solving process initialization method of diving heuristic */
+   GCG_DECL_DIVINGEXITSOL   ((*divingexitsol)),     /**< solving process deinitialization method of diving heuristic */
+   GCG_DECL_DIVINGINITEXEC  ((*divinginitexec)),    /**< execution initialization method of diving heuristic */
+   GCG_DECL_DIVINGEXITEXEC  ((*divingexitexec)),    /**< execution deinitialization method of diving heuristic */
+   GCG_DECL_DIVINGSELECTVAR ((*divingselectvar)),   /**< variable selection method of diving heuristic */
+   GCG_DIVINGDATA*          divingdata              /**< diving rule specific data (or NULL) */
    );
 
-/** creates event handler for masterdiving event */
+/** creates event handler for origdiving event */
 EXTERN
-SCIP_RETCODE SCIPincludeEventHdlrMasterdiving(
+SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

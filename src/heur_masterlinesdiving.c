@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   heur_gcgveclendiving.c
- * @brief  LP diving heuristic that rounds variables with long column vectors
+/**@file   heur_masterlinesdiving.c
+ * @brief  LP diving heuristic that fixes variables with a large difference to their root solution
  * @author Tobias Achterberg
  * @author Christian Puchert
  */
@@ -36,17 +36,16 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgveclendiving.h"
-#include "heur_origdiving.h"
+#include "heur_masterlinesdiving.h"
+#include "heur_masterdiving.h"
 
 
-#define HEUR_NAME             "gcgveclendiving"
-#define HEUR_DESC             "LP diving heuristic that rounds variables with long column vectors"
-#define HEUR_DISPCHAR         'v'
-#define HEUR_PRIORITY         -1003100
-//#define HEUR_FREQ             10
-#define HEUR_FREQ             -1
-#define HEUR_FREQOFS          4
+#define HEUR_NAME             "masterlinesdiving"
+#define HEUR_DESC             "master LP diving heuristic that chooses fixings following the line from root solution to current solution"
+#define HEUR_DISPCHAR         'l'
+#define HEUR_PRIORITY         -1006000
+#define HEUR_FREQ             10
+#define HEUR_FREQOFS          6
 #define HEUR_MAXDEPTH         -1
 
 
@@ -63,7 +62,7 @@ struct GCG_DivingData
 
 
 /*
- * local methods
+ * Local methods
  */
 
 
@@ -72,19 +71,19 @@ struct GCG_DivingData
  */
 
 /** variable selection method of diving heuristic;
- * finds best candidate variable w.r.t. vector length:
- * - round variables in direction where objective value gets worse; for zero objective coefficient, round upwards
- * - round variable with least objective value deficit per row the variable appears in
- *   (we want to "fix" as many rows as possible with the least damage to the objective function)
+ * finds best candidate variable w.r.t. the root LP solution:
+ * - in the projected space of fractional variables, extend the line segment connecting the root solution and
+ *   the current LP solution up to the point, where one of the fractional variables becomes integral
+ * - round this variable to the integral value
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
+GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
    SCIP_Real* lpcandsfrac;
    int nlpcands;
-   SCIP_Real bestscore;
+   SCIP_Real bestdistquot;
    int c;
 
    /* check preconditions */
@@ -92,52 +91,56 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
-   assert(bestcandroundup != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
-   bestscore = SCIP_REAL_MAX;
+   *bestcandmayround = TRUE;
+   bestdistquot = SCIPinfinity(scip);
 
    /* get best candidate */
    for( c = 0; c < nlpcands; ++c )
    {
       SCIP_VAR* var;
-      SCIP_Real obj;
-      SCIP_Real frac;
-      SCIP_Real objdelta;
-      SCIP_Real score;
-      SCIP_Bool roundup;
-      int colveclen;
+      SCIP_Real solval;
+      SCIP_Real rootsolval;
+      SCIP_Real distquot;
+
+      int i;
 
       var = lpcands[c];
-      frac = lpcandsfrac[c];
-      obj = SCIPvarGetObj(var);
-      roundup = (obj >= 0.0);
-      objdelta = (roundup ? (1.0-frac)*obj : -frac * obj);
-      assert(objdelta >= 0.0);
+      solval = lpcandssol[c];
+      rootsolval = SCIPvarGetRootSol(var);
 
-      colveclen = (SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN ? SCIPcolGetNNonz(SCIPvarGetCol(var)) : 0);
+      /* if the variable is on the tabu list, do not choose it */
+      for( i = 0; i < tabulistsize; ++i )
+         if( tabulist[i] == var )
+            break;
+      if( i < tabulistsize )
+         continue;
+
+      if( SCIPisGT(scip, solval, rootsolval) )
+      {
+         distquot = (SCIPfeasCeil(scip, solval) - solval) / (solval - rootsolval);
+
+         /* avoid roundable candidates */
+         if( SCIPvarMayRoundUp(var) )
+            distquot *= 1000.0;
+      }
+      else
+         distquot = SCIPinfinity(scip);
 
       /* check whether the variable is roundable */
       *bestcandmayround = *bestcandmayround && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
 
-      /* smaller score is better */
-      score = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
-
-      /* prefer decisions on binary variables */
-      if( SCIPvarGetType(var) != SCIP_VARTYPE_BINARY )
-         score *= 1000.0;
-
       /* check, if candidate is new best candidate */
-      if( score < bestscore )
+      if( distquot < bestdistquot )
       {
          *bestcand = var;
-         bestscore = score;
-         *bestcandroundup = roundup;
+         bestdistquot = distquot;
       }
    }
 
@@ -149,20 +152,19 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
  * heuristic specific interface methods
  */
 
-/** creates the gcgveclendiving heuristic and includes it in GCG */
-SCIP_RETCODE GCGincludeHeurGcgveclendiving(
+/** creates the masterlinesdiving heuristic and includes it in GCG */
+SCIP_RETCODE GCGincludeHeurMasterlinesdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
-         HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarGcgveclendiving, NULL) );
+         HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMasterlinesdiving, NULL) );
 
    assert(heur != NULL);
 
    return SCIP_OKAY;
 }
-

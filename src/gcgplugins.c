@@ -160,7 +160,6 @@
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
-#include "heur_gcgintdiving.h"
 #include "heur_gcglinesdiving.h"
 #include "heur_gcgpscostdiving.h"
 #include "heur_gcgrens.h"
@@ -170,6 +169,7 @@
 #include "heur_gcgsimplerounding.h"
 #include "heur_gcgveclendiving.h"
 #include "heur_gcgzirounding.h"
+#include "heur_origdiving.h"
 #include "heur_xpcrossover.h"
 #include "heur_xprins.h"
 
@@ -294,18 +294,18 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgintdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcgcoefdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcgfracdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcgguideddiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcglinesdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcgpscostdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );

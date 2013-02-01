@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -49,9 +49,9 @@
 extern "C" {
 #endif
 
-/** creates the mastervecldiving heuristic and includes it in SCIP */
+/** creates the mastervecldiving heuristic and includes it in GCG */
 EXTERN
-SCIP_RETCODE SCIPincludeHeurMastervecldiving(
+SCIP_RETCODE GCGincludeHeurMastervecldiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

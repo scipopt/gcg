@@ -64,7 +64,6 @@ MAINOBJ		=	reader_blk.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \
-			heur_gcgintdiving.o \
 			heur_gcglinesdiving.o \
 			heur_gcgpscostdiving.o \
 			heur_gcgrens.o \
@@ -78,8 +77,10 @@ MAINOBJ		=	reader_blk.o \
 			heur_masterdiving.o \
 			heur_mastercoefdiving.o \
 			heur_masterfracdiving.o \
-			heur_masterintdiving.o \
+			heur_masterlinesdiving.o \
+			heur_masterpscstdiving.o \
 			heur_mastervecldiving.o \
+			heur_origdiving.o \
 			heur_relaxcolsel.o \
 			heur_restmaster.o \
 			heur_xpcrossover.o \
@@ -94,7 +95,6 @@ MAINOBJ		=	reader_blk.o \
 			disp_master.o \
 			dialog_gcg.o \
 			dialog_master.o \
-			event_origdiving.o \
 			event_solvingstats.o \
 			solver_mip.o \
 			solver_knapsack.o \

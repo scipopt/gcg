@@ -44,9 +44,9 @@
 extern "C" {
 #endif
 
-/** creates the coefdiving heuristic and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeHeurGcgcoefdiving(
+/** creates the gcgcoefdiving heuristic and includes it in GCG */
+EXTERN
+SCIP_RETCODE GCGincludeHeurGcgcoefdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

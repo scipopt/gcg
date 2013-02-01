@@ -62,7 +62,6 @@
 #include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
-#include "event_origdiving.h"
 
 #define RELAX_NAME             "gcg"
 #define RELAX_DESC             "relaxator for gcg project representing the master lp"
@@ -3246,14 +3245,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             (stored ? "" : "not"));
 
          if( stored )
-         {
             *feasible = TRUE;
-            /* inform the origdiving event handler that a diving heuristic has found a new solution;
-             * @todo: this should be checked at some other place
-             */
-            if( mastersol == NULL && GCGrelaxGetProbingheur(scip) != NULL )
-               SCIP_CALL( GCGeventOrigdivingNewDivingsol(relaxdata->masterprob, relaxdata->currentorigsol) );
-         }
 
          /* store branching candidates */
          for( i = 0; i < norigvars; i++ )
