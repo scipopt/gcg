@@ -24,18 +24,21 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**@file   branch_master.c
- * @brief  branching rule for master problem
- * @author Gerald Gamrath
+
+/**@file   branch_empty.c
+ * @brief  branching rule for original problem in GCG while real branching is applied in the master
+ * @author Marcel Schmickerath
  */
+
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
-#include "branch_master.h"
-#include "branch_generic.h"
-#include "cons_origbranch.h"
+
+#include "branch_empty.h"
+#include "relax_gcg.h"
 #include "cons_masterbranch.h"
+#include "cons_origbranch.h"
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -49,25 +52,29 @@
 #include "scip/branch_pscost.h"
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
+#include "pricer_gcg.h"
+#include "scip/cons_varbound.h"
+#include "type_branchgcg.h"
+#include "pub_gcgvar.h"
 
-#define BRANCHRULE_NAME          "master"
-#define BRANCHRULE_DESC          "branching for generic column generation master"
-#define BRANCHRULE_PRIORITY      0//1000000
+#define BRANCHRULE_NAME          "empty"
+#define BRANCHRULE_DESC          "empty branching in generic column generation"
+#define BRANCHRULE_PRIORITY      1000000
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-#define BRANCHRULE_VANDERBECK        0
-/** includes all plugins in the master copy.
- *
- * This method makes SCIPcopy work for heuristics in the master
+/*
+ * Callback methods for enforcing branching constraints
+ */
+
+/* copy default SCIP branching rules to allow solving restrictions of the original problem as a subSCIP without
+ * Dantzig-Wolfe decomposition
  */
 static
-SCIP_RETCODE GCGincludeMasterCopyPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeOriginalCopyPlugins(
+   SCIP* scip
    )
 {
-   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
-   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
    SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
    SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
    SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
@@ -81,138 +88,59 @@ SCIP_RETCODE GCGincludeMasterCopyPlugins(
    SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
    return SCIP_OKAY;
 }
-/*
- * Callback methods
- */
 /** copy method for master branching rule */
 static
-SCIP_DECL_BRANCHCOPY(branchCopyMaster)
+SCIP_DECL_BRANCHCOPY(branchCopyEmpty)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
    SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
    return SCIP_OKAY;
 }
+
+
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
-#define branchFreeMaster NULL
+#define branchFreeEmpty NULL
 
 /** initialization method of branching rule (called after problem was transformed) */
-#define branchInitMaster NULL
+#define branchInitEmpty NULL
 
 /** deinitialization method of branching rule (called before transformed problem is freed) */
-#define branchExitMaster NULL
+#define branchExitEmpty NULL
 
 /** solving process initialization method of branching rule (called when branch and bound process is about to begin) */
-#define branchInitsolMaster NULL
+#define branchInitsolEmpty NULL
 
 /** solving process deinitialization method of branching rule (called before branch and bound process data is freed) */
-#define branchExitsolMaster NULL
+#define branchExitsolEmpty NULL
 
 /** branching execution method for fractional LP solutions */
 static
-SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
+SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
 {  /*lint --e{715}*/
-   SCIP_NODE* child1;
-   SCIP_NODE* child2;
-   SCIP_CONS* cons1;
-   SCIP_CONS* cons2;
-   int nchildnodes;
-   int i;
-   i = 0;
-   nchildnodes = 2;
 
-   assert(scip != NULL);
-   assert(result != NULL);
-   SCIPdebugMessage("Execlp method of master branching\n");
-   if( BRANCHRULE_VANDERBECK == 1 )
-   {
-      //return SCIP_OKAY;
-      nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
-      SCIPdebugMessage("creating %d nodes\n", nchildnodes);
-      if( nchildnodes == 0 )
-         nchildnodes = 2;
-      for( i=0; i<nchildnodes; ++i )
-      {
-         SCIP_NODE* child;
-         SCIP_CONS* cons;
-         SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
-
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
-         SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
-         SCIP_CALL( SCIPreleaseCons(scip, &cons ) );
-      }
-
-   }
-   else
-   {
-      /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
-      SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-      SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-      SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-      SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-      /* release constraints */
-      SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-      SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-   }
    *result = SCIP_BRANCHED;
+
    return SCIP_OKAY;
 }
 /** branching execution method relaxation solutions */
 static
-SCIP_DECL_BRANCHEXECEXT(branchExecextMaster)
+SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 {  /*lint --e{715}*/
-   SCIPdebugMessage("Execext method of master branching\n");
+
+   SCIPdebugMessage("Execext method of empty branching\n");
+
    return SCIP_OKAY;
 }
+
 /** branching execution method for not completely fixed pseudo solutions */
 static
-SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
+SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 {  /*lint --e{715}*/
-   SCIP_NODE* child1;
-   SCIP_NODE* child2;
-   SCIP_CONS* cons1;
-   SCIP_CONS* cons2;
-   int nchildnodes;
-   int i;
 
-   i = 0;
-   nchildnodes = 2;
-   assert(scip != NULL);
-   assert(result != NULL);
-   SCIPdebugMessage("Execps method of master branching\n");
-
-   if( BRANCHRULE_VANDERBECK == 1 )
-   {
-      return SCIP_OKAY;
-      nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
-      for( i=0; i<nchildnodes; ++i )
-      {
-         SCIP_NODE* child;
-         SCIP_CONS* cons;
-         SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
-         SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
-         /* release constraints */
-         SCIP_CALL( SCIPreleaseCons(scip, &cons) );
-      }
-   }
-   else
-   {
-      /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
-      SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-      SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-      SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-      SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-      SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-      /* release constraints */
-      SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-      SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-   }
    *result = SCIP_BRANCHED;
+
    return SCIP_OKAY;
 }
 
@@ -220,7 +148,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsMaster)
  * branching specific interface methods
  */
 /** creates the master branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleMaster(
+SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -230,8 +158,8 @@ SCIP_RETCODE SCIPincludeBranchruleMaster(
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
-         branchCopyMaster, branchFreeMaster, branchInitMaster, branchExitMaster, branchInitsolMaster,
-         branchExitsolMaster, branchExeclpMaster, branchExecextMaster, branchExecpsMaster,
+         branchCopyEmpty, branchFreeEmpty, branchInitEmpty, branchExitEmpty, branchInitsolEmpty,
+         branchExitsolEmpty, branchExeclpEmpty, branchExecextEmpty, branchExecpsEmpty,
          branchruledata) );
    return SCIP_OKAY;
 }

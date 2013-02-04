@@ -105,6 +105,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
 			branch_master.o \
+			branch_empty.o \
 			branch_relpsprob.o \
 			masterplugins.o \
 			nodesel_master.o \

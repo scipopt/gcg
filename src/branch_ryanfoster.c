@@ -31,13 +31,27 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
 #include "branch_ryanfoster.h"
 #include "relax_gcg.h"
+#include "cons_masterbranch.h"
 #include "cons_origbranch.h"
+#include "scip/nodesel_bfs.h"
+#include "scip/nodesel_dfs.h"
+#include "scip/nodesel_estimate.h"
+#include "scip/nodesel_hybridestim.h"
+#include "scip/nodesel_restartdfs.h"
+#include "scip/branch_allfullstrong.h"
+#include "scip/branch_fullstrong.h"
+#include "scip/branch_inference.h"
+#include "scip/branch_mostinf.h"
+#include "scip/branch_leastinf.h"
+#include "scip/branch_pscost.h"
+#include "scip/branch_random.h"
+#include "scip/branch_relpscost.h"
 #include "pricer_gcg.h"
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
@@ -64,6 +78,40 @@ struct GCG_BranchData
 /*
  * Callback methods for enforcing branching constraints
  */
+
+
+//from branch_master
+static
+SCIP_RETCODE GCGincludeMasterCopyPlugins(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
+   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
+   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
+   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
+   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
+   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+   return SCIP_OKAY;
+}
+/** copy method for master branching rule */
+static
+SCIP_DECL_BRANCHCOPY(branchCopyRyanfoster)
+{
+   assert(branchrule != NULL);
+   assert(scip != NULL);
+   SCIPdebugMessage("pricer copy called.\n");
+   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+   return SCIP_OKAY;
+}
+
 
 /** callback activation method */
 static
@@ -392,226 +440,253 @@ SCIP_RETCODE createChildNodesRyanfoster(
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {  /*lint --e{715}*/
-   SCIPdebugMessage("Execlp method of ryanfoster branching\n");
-
-   *result = SCIP_DIDNOTRUN;
-
-   return SCIP_OKAY;
-}
-
-/** branching execution method for relaxation solutions */
-static
-SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
-{  /*lint --e{715}*/
    SCIP* masterscip;
+      SCIP* origscip;
 
-   SCIP_Bool feasible;
-   SCIP_Bool contained;
+      SCIP_Bool feasible;
+      SCIP_Bool contained;
 
-   SCIP_VAR** branchcands;
-   int nbranchcands;
+      SCIP_VAR** branchcands;
+      int nbranchcands;
 
-   int v1;
-   int v2;
-   int o1;
-   int o2;
-   int j;
+      int v1;
+      int v2;
+      int o1;
+      int o2;
+      int j;
 
-   SCIP_VAR* mvar1;
-   SCIP_VAR* mvar2;
-   SCIP_VAR* ovar1;
-   SCIP_VAR* ovar2;
+      SCIP_VAR* mvar1;
+      SCIP_VAR* mvar2;
+      SCIP_VAR* ovar1;
+      SCIP_VAR* ovar2;
 
-   SCIP_VAR** origvars1;
-   SCIP_VAR** origvars2;
-   int norigvars1;
-   int norigvars2;
+      SCIP_VAR** origvars1;
+      SCIP_VAR** origvars2;
+      int norigvars1;
+      int norigvars2;
 
-   assert(branchrule != NULL);
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-   assert(scip != NULL);
-   assert(result != NULL);
+      //from branch_master
+      SCIP_NODE* child1;
+      SCIP_NODE* child2;
+      SCIP_CONS* cons1;
+      SCIP_CONS* cons2;
 
-   SCIPdebugMessage("Execrel method of ryanfoster branching\n");
 
-   *result = SCIP_DIDNOTRUN;
+      assert(branchrule != NULL);
+      assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+      assert(scip != NULL);
+      assert(result != NULL);
 
-   /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(scip) && !GCGrelaxIsMasterSetPartitioning(scip) )
-   {
-      SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
-      return SCIP_OKAY;
-   }
+      SCIPdebugMessage("Execrel method of ryanfoster branching\n");
 
-   /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+      origscip = GCGpricerGetOrigprob(scip);
+      assert(origscip != NULL);
 
-      *result = SCIP_CUTOFF;
+      //ugly stuff from branch_master
+      /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
+            SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+            SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+            SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+            SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+            SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+            SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+            /* release constraints */
+            SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+            SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
 
-      return SCIP_OKAY;
-   }
 
-   /* the current original solution is not integral, now we have to branch;
-    * first, get the master problem and all variables of the master problem
-    */
-   masterscip = GCGrelaxGetMasterprob(scip);
-   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
+      *result = SCIP_DIDNOTRUN;
 
-   /* now search for two (fractional) columns mvar1, mvar2 in the master and 2 original variables ovar1, ovar2
-    * s.t. mvar1 contains both ovar1 and ovar2 and mvar2 contains ovar1, but not ovar2
-    */
-   ovar1 = NULL;
-   ovar2 = NULL;
-   mvar1 = NULL;
-   mvar2 = NULL;
-   feasible = FALSE;
+      masterscip = scip;
+      scip = origscip;
 
-   /* select first fractional column (mvar1) */
-   for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
-   {
-      mvar1 = branchcands[v1];
-      assert(GCGvarIsMaster(mvar1));
-
-      origvars1 = GCGmasterVarGetOrigvars(mvar1);
-      norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
-
-      /* select first original variable ovar1, that should be contained in both master variables */
-      for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
+      /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
+      if( !GCGrelaxIsMasterSetCovering(scip) && !GCGrelaxIsMasterSetPartitioning(scip) )
       {
-         ovar1 = origvars1[o1];
-         /* if we deal with a trivial variable, skip it */
-         if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
-            continue;
+         SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
+         return SCIP_OKAY;
+      }
 
-         /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
-         for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
+      /* check whether the current original solution is integral */
+   #ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+   #else
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+   #endif
+      if( feasible )
+      {
+         SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
+            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+
+         *result = SCIP_CUTOFF;
+
+         return SCIP_OKAY;
+      }
+
+      /* the current original solution is not integral, now we have to branch;
+       * first, get the master problem and all variables of the master problem
+       */
+   //   masterscip = GCGrelaxGetMasterprob(scip);
+      SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
+
+      /* now search for two (fractional) columns mvar1, mvar2 in the master and 2 original variables ovar1, ovar2
+       * s.t. mvar1 contains both ovar1 and ovar2 and mvar2 contains ovar1, but not ovar2
+       */
+      ovar1 = NULL;
+      ovar2 = NULL;
+      mvar1 = NULL;
+      mvar2 = NULL;
+      feasible = FALSE;
+
+      /* select first fractional column (mvar1) */
+      for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
+      {
+         mvar1 = branchcands[v1];
+         assert(GCGvarIsMaster(mvar1));
+
+         origvars1 = GCGmasterVarGetOrigvars(mvar1);
+         norigvars1 = GCGmasterVarGetNOrigvars(mvar1);
+
+         /* select first original variable ovar1, that should be contained in both master variables */
+         for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
          {
-            mvar2 = branchcands[v2];
-            assert(GCGvarIsMaster(mvar2));
-
-            origvars2 = GCGmasterVarGetOrigvars(mvar2);
-            norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
-
-            /* check whether ovar1 is contained in mvar2, too */
-            contained = FALSE;
-            for( j = 0; j < norigvars2; j++ )
-            {
-               /* if we deal with a trivial variable, skip it */
-               if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
-                  continue;
-
-               if( origvars2[j] == ovar1 )
-               {
-                  contained = TRUE;
-                  break;
-               }
-            }
-
-            /* mvar2 does not contain ovar1, so look for another mvar2 */
-            if( !contained )
+            ovar1 = origvars1[o1];
+            /* if we deal with a trivial variable, skip it */
+            if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
                continue;
 
-            /* mvar2 also contains ovar1, now look for ovar2 contained in mvar1, but not in mvar2 */
-            for( o2 = 0; o2 < norigvars1; o2++ )
+            /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
+            for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
             {
-               /* if we deal with a trivial variable, skip it */
-               if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]) )
-                  continue;
+               mvar2 = branchcands[v2];
+               assert(GCGvarIsMaster(mvar2));
 
-               ovar2 = origvars1[o2];
-               if( ovar2 == ovar1 )
-                  continue;
+               origvars2 = GCGmasterVarGetOrigvars(mvar2);
+               norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
 
-               /* check whether ovar2 is contained in mvar2, too */
+               /* check whether ovar1 is contained in mvar2, too */
                contained = FALSE;
                for( j = 0; j < norigvars2; j++ )
                {
                   /* if we deal with a trivial variable, skip it */
-                  if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
+                  if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
                      continue;
 
-                  if( origvars2[j] == ovar2 )
+                  if( origvars2[j] == ovar1 )
                   {
                      contained = TRUE;
                      break;
                   }
                }
 
-               /* ovar2 should be contained in mvar1 but not in mvar2, so look for another ovar2,
-                * if the current one is contained in mvar2
-                */
-               if( contained )
+               /* mvar2 does not contain ovar1, so look for another mvar2 */
+               if( !contained )
                   continue;
 
-               /* if we arrive here, ovar2 is contained in mvar1 but not in mvar2, so everything is fine */
-               feasible = TRUE;
-               break;
-            }
-
-            /* we did not find an ovar2 contained in mvar1, but not in mvar2,
-             * now look for one contained in mvar2, but not in mvar1
-             */
-            if( !feasible )
-            {
-               for( o2 = 0; o2 < norigvars2; o2++ )
+               /* mvar2 also contains ovar1, now look for ovar2 contained in mvar1, but not in mvar2 */
+               for( o2 = 0; o2 < norigvars1; o2++ )
                {
                   /* if we deal with a trivial variable, skip it */
-                  if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]) )
+                  if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[o2]) )
                      continue;
 
-                  ovar2 = origvars2[o2];
-
+                  ovar2 = origvars1[o2];
                   if( ovar2 == ovar1 )
                      continue;
 
+                  /* check whether ovar2 is contained in mvar2, too */
                   contained = FALSE;
-                  for( j = 0; j < norigvars1; j++ )
+                  for( j = 0; j < norigvars2; j++ )
                   {
                      /* if we deal with a trivial variable, skip it */
-                     if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]) )
+                     if( !SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[j]) )
                         continue;
-                     if( origvars1[j] == ovar2 )
+
+                     if( origvars2[j] == ovar2 )
                      {
                         contained = TRUE;
                         break;
                      }
                   }
 
-                  /* ovar2 should be contained in mvar2 but not in mvar1, so look for another ovar2,
-                   * if the current one is contained in mvar1
+                  /* ovar2 should be contained in mvar1 but not in mvar2, so look for another ovar2,
+                   * if the current one is contained in mvar2
                    */
                   if( contained )
                      continue;
 
-                  /* if we arrive here, ovar2 is contained in mvar2 but not in mvar1, so everything is fine */
+                  /* if we arrive here, ovar2 is contained in mvar1 but not in mvar2, so everything is fine */
                   feasible = TRUE;
                   break;
+               }
+
+               /* we did not find an ovar2 contained in mvar1, but not in mvar2,
+                * now look for one contained in mvar2, but not in mvar1
+                */
+               if( !feasible )
+               {
+                  for( o2 = 0; o2 < norigvars2; o2++ )
+                  {
+                     /* if we deal with a trivial variable, skip it */
+                     if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar2)[o2]) )
+                        continue;
+
+                     ovar2 = origvars2[o2];
+
+                     if( ovar2 == ovar1 )
+                        continue;
+
+                     contained = FALSE;
+                     for( j = 0; j < norigvars1; j++ )
+                     {
+                        /* if we deal with a trivial variable, skip it */
+                        if( SCIPisZero(scip, GCGmasterVarGetOrigvals(mvar1)[j]) )
+                           continue;
+                        if( origvars1[j] == ovar2 )
+                        {
+                           contained = TRUE;
+                           break;
+                        }
+                     }
+
+                     /* ovar2 should be contained in mvar2 but not in mvar1, so look for another ovar2,
+                      * if the current one is contained in mvar1
+                      */
+                     if( contained )
+                        continue;
+
+                     /* if we arrive here, ovar2 is contained in mvar2 but not in mvar1, so everything is fine */
+                     feasible = TRUE;
+                     break;
+                  }
                }
             }
          }
       }
-   }
 
-   if( !feasible )
-   {
-      SCIPdebugMessage("Ryanfoster branching rule could not find variables to branch on!\n");
+      if( !feasible )
+      {
+         SCIPdebugMessage("Ryanfoster branching rule could not find variables to branch on!\n");
+         return SCIP_OKAY;
+      }
+
+      /* create the two child nodes in the branch-and-bound tree */
+      SCIP_CALL( createChildNodesRyanfoster(scip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1)) );
+
+      *result = SCIP_BRANCHED;
+
       return SCIP_OKAY;
-   }
+}
 
-   /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(scip, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1)) );
+/** branching execution method for relaxation solutions */
+static
+SCIP_DECL_BRANCHEXECEXT(branchExecextRyanfoster)
+{  /*lint --e{715}*/
 
-   *result = SCIP_BRANCHED;
+   *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
+
 }
 
 /** branching execution method for not completely fixed pseudo solutions */
@@ -630,6 +705,14 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    int o2;
    int c;
 
+   //from branch_master
+   SCIP_NODE* child1;
+      SCIP_NODE* child2;
+      SCIP_CONS* cons1;
+      SCIP_CONS* cons2;
+
+   SCIP* origscip;
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
@@ -637,7 +720,21 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
    SCIPdebugMessage("Execps method of ryanfoster branching\n");
 
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   //from branch_master
+   /* create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
+         SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+         SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+         SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+         SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+
    *result = SCIP_DIDNOTRUN;
+
+   scip =  origscip;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
    if( !GCGrelaxIsMasterSetCovering(scip) || !GCGrelaxIsMasterSetPartitioning(scip) )
@@ -708,9 +805,13 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 static
 SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 {
-   assert(branchrule != NULL);
+   SCIP* origprob;
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterRyanfoster,
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(branchrule != NULL);
+   assert(origprob != NULL);
+
+   SCIP_CALL( GCGrelaxIncludeBranchrule(origprob, branchrule, branchActiveMasterRyanfoster,
          branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster) );
 
    return SCIP_OKAY;
@@ -719,7 +820,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 
 
 /* define not used callback as NULL*/
-#define branchCopyRyanfoster NULL
+//#define branchCopyRyanfoster NULL
 #define branchFreeRyanfoster NULL
 #define branchExitRyanfoster NULL
 #define branchInitsolRyanfoster NULL
