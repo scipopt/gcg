@@ -56,7 +56,7 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
-#define BRANCHRULE_VANDERBECK        1
+#define BRANCHRULE_VANDERBECK        0
 /** includes all plugins in the master copy.
  *
  * This method makes SCIPcopy work for heuristics in the master
@@ -115,11 +115,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
 {  /*lint --e{715}*/
    SCIP_NODE* child1;
    SCIP_NODE* child2;
-   //SCIP_NODE** childvanderbeck;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
-//   GCG_BRANCHDATA* branchdata;
-   //SCIP_CONS** consvanderbeck;
    int nchildnodes;
    int i;
    i = 0;
@@ -135,31 +132,17 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
       SCIPdebugMessage("creating %d nodes\n", nchildnodes);
       if( nchildnodes == 0 )
          nchildnodes = 2;
-      //SCIP_CALL( SCIPallocMemoryArray(scip, &childvanderbeck, nchildnodes) );
-      //SCIP_CALL( SCIPallocMemoryArray(scip, &consvanderbeck, nchildnodes) );
       for( i=0; i<nchildnodes; ++i )
       {
          SCIP_NODE* child;
          SCIP_CONS* cons;
          SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
-       //  childvanderbeck[i] = child;
-      //}
-      //for( i=0; i<nchildnodes; ++i )
-      //{
-         //SCIP_CONS* cons;
+
          SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons, child, GCGconsMasterbranchGetActiveCons(scip)) );
-       //  consvanderbeck[i] = cons;
-      //}
-      //for( i=0; i<nchildnodes; ++i )
-      //{
          SCIP_CALL( SCIPaddConsNode(scip, child, cons, NULL) );
-      //}
-     // for( i=0; i<nchildnodes; ++i )
-     // {
          SCIP_CALL( SCIPreleaseCons(scip, &cons ) );
       }
-     // SCIP_CALL( SCIPfreeMemoryArray(scip, &childvanderbeck, nchildnodes) );
-     // SCIP_CALL( SCIPfreeMemoryArray(scip, &consvanderbeck, nchildnodes) );
+
    }
    else
    {

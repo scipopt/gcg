@@ -288,7 +288,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nlinkingconss; ++i )
    {
       assert(linkingconss[i] != NULL);
-      SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
+      //SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
       if( SCIPconsIsActive(linkingconss[i]) )
       {
          SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
@@ -306,7 +306,7 @@ SCIP_RETCODE convertStructToGCG(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]);
+      //SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]);
       assert((subscipvars[i] == NULL) == (nsubscipvars[i] == 0));
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
@@ -322,7 +322,7 @@ SCIP_RETCODE convertStructToGCG(
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
-            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]),subscipvars[i][j],i );
+            //SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]),subscipvars[i][j],i );
          }
          else
          {
@@ -342,7 +342,7 @@ SCIP_RETCODE convertStructToGCG(
       if( GCGvarIsLinking(linkingvars[i]) )
          continue;
 
-      SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
+    //  SCIPdebugMessage("\tDetecting constraint blocks of linking var %s\n", SCIPvarGetName(linkingvars[i]));
       /* HACK; @todo find out constraint blocks more intelligently */
       for( j = 0; j < nblocks; ++j )
       {
@@ -846,7 +846,7 @@ SCIP_RETCODE checkIdenticalBlocks(
 
          if( identical )
          {
-            SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
+            //SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
 
             /* block i will be represented by block j */
             relaxdata->blockrepresentative[i] = j;
@@ -1119,7 +1119,7 @@ SCIP_RETCODE createPricingVariables(
          }
       }
 
-      SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
+//      SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
 
@@ -1400,7 +1400,7 @@ SCIP_RETCODE createMasterprobConss(
             TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE) );
 
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, mastercons) );
-      SCIPdebugMessage("Copying %s to masterproblem\n", SCIPconsGetName(masterconss[c]));
+      //SCIPdebugMessage("Copying %s to masterproblem\n", SCIPconsGetName(masterconss[c]));
       /* store the constraints in the arrays origmasterconss and masterconss in the problem data */
       SCIP_CALL( ensureSizeMasterConss(scip, relaxdata, relaxdata->nmasterconss+1) );
       SCIP_CALL( SCIPcaptureCons(scip, masterconss[c]) );
@@ -1440,7 +1440,7 @@ SCIP_RETCODE createPricingprobConss(
    {
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
-         SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(subscipconss[b][c]), b);
+         //SCIPdebugMessage("copying %s to pricing problem %d\n",  SCIPconsGetName(subscipconss[b][c]), b);
          if( !SCIPconsIsActive( subscipconss[b][c]) )
             continue;
 

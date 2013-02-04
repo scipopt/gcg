@@ -65,7 +65,7 @@
 #define EVENTHDLR_NAME         "origvarbound"
 #define EVENTHDLR_DESC         "event handler for origvarbound event"
 
-#define BRANCHRULE_VANDERBECK        1
+#define BRANCHRULE_VANDERBECK        0
 
 
 /** constraint data for masterbranch constraints */

@@ -46,7 +46,7 @@
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
 
-#define BRANCHRULE_VANDERBECK        1
+#define BRANCHRULE_VANDERBECK        0
 
 
 /** node selector data */

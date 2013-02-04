@@ -56,7 +56,7 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS         TRUE /**< should the constraint handler be skipped, if no constraints are available? */
 
-#define BRANCHRULE_VANDERBECK        1
+#define BRANCHRULE_VANDERBECK        0
 
 /** constraint data for branch orig constraints */
 struct SCIP_ConsData
