@@ -63,6 +63,7 @@
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
+
 /*
  * Callback methods for enforcing branching constraints
  */
@@ -120,7 +121,7 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
 {  /*lint --e{715}*/
 
-   *result = SCIP_BRANCHED;
+   *result = SCIP_DIDNOTRUN;
 
    return SCIP_OKAY;
 }
@@ -128,9 +129,105 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 {  /*lint --e{715}*/
+   SCIP* masterscip;
+   SCIP_Bool feasible;
+   SCIP_CONS* masterbranchcons;
+   SCIP_CONS* masterbranchchildcons;
+   SCIP_CONS* origbranch;
+   SCIP_CONS* origbranch2;
+   SCIP_CONS** origbranchcons;
+   SCIP_CONSDATA* consdata;
+   SCIP_CONSDATA* parentconsdata;
+   SCIP_NODE* child;
+   SCIP_NODE* child2;
+   int i;
+   int norigbranchcons;
+
+   feasible = TRUE;
+
+   assert(branchrule != NULL);
+   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+   assert(scip != NULL);
+   assert(result != NULL);
+
+   *result = SCIP_DIDNOTRUN;
+
+   /* check whether the current original solution is integral */
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+#else
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+#endif
+
+   if( feasible )
+   {
+      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
+         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
 
    SCIPdebugMessage("Execext method of empty branching\n");
 
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+   assert(masterbranchcons != NULL);
+
+   parentconsdata = SCIPconsGetData(masterbranchcons);
+
+//   for( i=0; i<parentconsdata->nchildvanderbeck; ++i )
+//   {
+//
+//   }
+
+   masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
+   assert(masterbranchchildcons != NULL);
+
+   SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), child,
+            GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
+
+   SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
+
+   SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
+
+   norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
+   origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
+
+   for( i=0; i<norigbranchcons; ++i)
+   {
+      SCIP_CALL( SCIPaddConsNode(scip, child, origbranchcons[i], NULL) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
+   }
+   SCIPfreeMemoryArray(scip, &origbranchcons);
+
+   masterbranchchildcons = GCGconsMasterbranchGetChild2cons(masterbranchcons);
+   assert(masterbranchchildcons != NULL);
+
+   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+
+   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), child2,
+            GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
+
+   SCIP_CALL( SCIPaddConsNode(scip, child2, origbranch, NULL) );
+
+   SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
+
+   norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
+   origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
+
+   for( i=0; i<norigbranchcons; ++i)
+   {
+      SCIP_CALL( SCIPaddConsNode(scip, child2, origbranchcons[i], NULL) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
+   }
+   SCIPfreeMemoryArray(scip, &origbranchcons);
+
+   *result = SCIP_BRANCHED;
    return SCIP_OKAY;
 }
 

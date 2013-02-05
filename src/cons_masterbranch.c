@@ -102,6 +102,17 @@ struct SCIP_ConsData
    int                   nbranchingchanges;  /**< number of bound changes due to branching (<= nboundchanges) */
    int                   nactivated;         /**< number of times the constraint was activated so far */
    char*                 name;               /**< name of the constraint */
+
+
+   /*following data is NULL after corresponding cons_origbranch was created */
+   char*                 origbranchconsname; /**< name of the constraint for cons_origbranch */
+   SCIP_BRANCHRULE*      origbranchrule;     /**< branching rule that created the corresponding node in the original problem and imposed
+                                              *   branching restrictions for cons_origbranch */
+   GCG_BRANCHDATA*       origbranchdata;     /**< branching data stored by the branching rule at the corresponding origcons constraint
+                                              *   containing information about the branching restrictions for cons_origbranch */
+   SCIP_CONS**           origbranchcons;     /**< the corresponding origbranch cons in the original program for cons_origbranch */
+   int                   norigbranchcons;    /**< number of origbranchcons */
+
 };
 
 /** constraint handler data */
@@ -129,6 +140,120 @@ struct SCIP_EventhdlrData
 /*
  * Local methods
  */
+
+
+/** the function initializes the condata data structure */
+SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
+   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   char*                 name,
+   SCIP_BRANCHRULE*      branchrule,
+   GCG_BRANCHDATA*       branchdata,
+   SCIP_CONS**           origcons,
+   int                   norigcons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   consdata->origbranchconsname = name;
+   consdata->origbranchrule = branchrule;
+   consdata->origbranchdata = branchdata;
+   consdata->origbranchcons = origcons;
+   consdata->norigbranchcons = norigcons;
+
+   return SCIP_OKAY;
+}
+
+/** the function initializes the origconsdata data structure */
+SCIP_RETCODE GCGconsMasterbranchSetNChildVanderbeck(
+   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   int                   nchildcons
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   consdata->nchildvanderbeck = nchildcons;
+
+   return SCIP_OKAY;
+}
+
+/** the function returns the name of the constraint in the origconsdata data structure */
+char* GCGconsMasterbranchGetOrigbranchConsName(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->origbranchconsname;
+}
+
+/** the function returns the branchrule of the constraint in the origconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetOrigbranchrule(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->origbranchrule;
+}
+
+/** the function returns the branchdata of the constraint in the origconsdata data structure */
+GCG_BRANCHDATA* GCGconsMasterbranchGetOrigbranchdata(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->origbranchdata;
+}
+
+/** the function returns the array of origcons of the constraint in the origconsdata data structure */
+SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->origbranchcons;
+}
+
+/** the function returns the size of the array of origcons of the constraint in the origconsdata data structure */
+int GCGconsMasterbranchGetNOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->norigbranchcons;
+}
 
 /** the function initializes the condata data structure */
 static
@@ -171,10 +296,6 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
    {
       consdata->nchildvanderbeck = 0;
       consdata->childvanderbeck = NULL;
-   }
-   else
-   {
-
    }
 
    GCGconsOrigbranchSetMastercons(origcons, cons);

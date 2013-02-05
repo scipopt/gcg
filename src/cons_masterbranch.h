@@ -40,6 +40,55 @@
 extern "C" {
 #endif
 
+extern
+/** the function initializes the condata data structure */
+SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
+   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   char*                 name,
+   SCIP_BRANCHRULE*      branchrule,
+   GCG_BRANCHDATA*       branchdata,
+   SCIP_CONS**           origcons,
+   int                   norigcons
+   );
+
+extern
+/** the function initializes the origconsdata data structure */
+SCIP_RETCODE GCGconsMasterbranchSetNChildVanderbeck(
+   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   int                   nchildcons
+   );
+
+extern
+/** the function returns the name of the constraint in the origconsdata data structure */
+char* GCGconsMasterbranchGetOrigbranchConsName(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchrule of the constraint in the origconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetOrigbranchrule(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchdata of the constraint in the origconsdata data structure */
+GCG_BRANCHDATA* GCGconsMasterbranchGetOrigbranchdata(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the array of origcons of the constraint in the origconsdata data structure */
+SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the size of the array of origcons of the constraint in the origconsdata data structure */
+int GCGconsMasterbranchGetNOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
 /** returns the masterbranch constraint of the current node */
 extern
 SCIP_CONS* GCGconsMasterbranchGetActiveCons(
