@@ -153,7 +153,9 @@ SCIP_DECL_HEURFREE(heurFreeOrigdiving) /*lint --e{715}*/
    assert(heurdata != NULL);
 
    if( heurdata->divingfree != NULL )
+   {
       SCIP_CALL( heurdata->divingfree(scip, heur) );
+   }
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -202,7 +204,9 @@ SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
 
    /* diving rule specific initialization */
    if( heurdata->divinginit != NULL )
+   {
       SCIP_CALL( heurdata->divinginit(scip, heur) );
+   }
 
 #ifdef SCIP_STATISTIC
    /* register the diving heuristic to the origdiving event handler */
@@ -252,7 +256,9 @@ SCIP_DECL_HEURINITSOL(heurInitsolOrigdiving)
 
    /* diving rule specific initialization */
    if( heurdata->divinginitsol != NULL )
+   {
       SCIP_CALL( heurdata->divinginitsol(scip, heur) );
+   }
 
    return SCIP_OKAY;
 }
@@ -273,7 +279,9 @@ SCIP_DECL_HEUREXITSOL(heurExitsolOrigdiving)
 
    /* diving rule specific deinitialization */
    if( heurdata->divingexitsol != NULL )
+   {
       SCIP_CALL( heurdata->divingexitsol(scip, heur) );
+   }
 
    return SCIP_OKAY;
 }
@@ -293,7 +301,9 @@ SCIP_DECL_HEUREXIT(heurExitOrigdiving) /*lint --e{715}*/
 
    /* diving rule specific deinitialization */
    if( heurdata->divingexit != NULL )
+   {
       SCIP_CALL( heurdata->divingexit(scip, heur) );
+   }
 
    /* free working solution */
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
@@ -390,7 +400,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
     *       in that case, don't execute it */
    if( !SCIPisRelaxSolValid(scip) )
    {
-      SCIPdebugMessage("not executing GCG veclendiving: invalid relaxation solution (should not happen!)\n");
+      SCIPdebugMessage("not executing %s: invalid relaxation solution (should not happen!)\n",
+         SCIPheurGetName(heur));
       return SCIP_OKAY;
    }
 
@@ -471,7 +482,9 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
    /* diving rule specific initialization */
    if( heurdata->divinginitexec != NULL )
+   {
       SCIP_CALL( heurdata->divinginitexec(scip, heur) );
+   }
 
 
    *result = SCIP_DIDNOTFIND;
@@ -795,13 +808,18 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 #ifdef SCIP_STATISTIC
    eventhdlrdata->runningheur = NULL;
 
-   SCIPstatisticPrintf("%s statistic: lptime=%6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
-      SCIPheurGetName(heur), SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
+   if( divedepth > 0 )
+   {
+      SCIPstatisticPrintf("%s statistic: lptime=%6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
+         SCIPheurGetName(heur), SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
+   }
 #endif
 
    /* free memory */
    if( heurdata->divingexitexec != NULL )
+   {
       SCIP_CALL( heurdata->divingexitexec(scip, heur) );
+   }
    SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
 
    SCIPdebugMessage("(node %"SCIP_LONGINT_FORMAT") finished %s heuristic: %d fractionals, dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d, objval=%g/%g, lpsolstat=%d, cutoff=%u\n",

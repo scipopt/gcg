@@ -157,7 +157,9 @@ SCIP_DECL_HEURFREE(heurFreeMasterdiving) /*lint --e{715}*/
    assert(heurdata != NULL);
 
    if( heurdata->divingfree != NULL )
+   {
       SCIP_CALL( heurdata->divingfree(scip, heur) );
+   }
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -188,7 +190,9 @@ SCIP_DECL_HEURINIT(heurInitMasterdiving) /*lint --e{715}*/
 
    /* diving rule specific initialization */
    if( heurdata->divinginit != NULL )
+   {
       SCIP_CALL( heurdata->divinginit(scip, heur) );
+   }
 
    return SCIP_OKAY;
 }
@@ -208,7 +212,9 @@ SCIP_DECL_HEUREXIT(heurExitMasterdiving) /*lint --e{715}*/
 
    /* diving rule specific deinitialization */
    if( heurdata->divingexit != NULL )
+   {
       SCIP_CALL( heurdata->divingexit(scip, heur) );
+   }
 
    /* free working solution */
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
@@ -246,7 +252,9 @@ SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
 
    /* diving rule specific initialization */
    if( heurdata->divinginitsol != NULL )
+   {
       SCIP_CALL( heurdata->divinginitsol(scip, heur) );
+   }
 
    return SCIP_OKAY;
 }
@@ -267,7 +275,9 @@ SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
 
    /* diving rule specific deinitialization */
    if( heurdata->divingexitsol != NULL )
+   {
       SCIP_CALL( heurdata->divingexitsol(scip, heur) );
+   }
 
    return SCIP_OKAY;
 }
@@ -445,7 +455,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    /* diving rule specific initialization */
    if( heurdata->divinginitexec != NULL )
+   {
       SCIP_CALL( heurdata->divinginitexec(scip, heur) );
+   }
 
 
    *result = SCIP_DIDNOTFIND;
@@ -731,7 +743,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
    /* free memory */
    if( heurdata->divingexitexec != NULL )
+   {
       SCIP_CALL( heurdata->divingexitexec(scip, heur) );
+   }
    SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
    SCIPfreeBufferArray(scip, &selectedvars);
    SCIPfreeBufferArray(scip, &tabulist);
