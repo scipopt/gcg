@@ -2059,6 +2059,12 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
          assert(origsols[i] != NULL);
          SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
       }
+      /* return if we transferred solutions as the master should be feasible */
+      if( norigsols > 0 )
+      {
+         farkaspricing->incCalls();
+         return SCIP_OKAY;
+      }
    }
 
    SCIP_CALL( farkaspricing->startClock() );
