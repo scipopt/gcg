@@ -96,6 +96,29 @@ struct SCIP_ConshdlrData
  * Callback methods of constraint handler
  */
 
+/** initializes array of cons */
+SCIP_RETCODE SCIPinitOrigconsArray(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_CONS***           cons,
+   int                   ncons
+   )
+{
+   int i;
+
+   i = 0;
+   *cons = NULL;
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, cons, ncons) );
+
+   for( i=0; i<ncons; ++i )
+   {
+      (*cons)[i] = NULL;
+   }
+
+   return SCIP_OKAY;
+}
+
+
 /** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
 static
 SCIP_DECL_CONSFREE(consFreeOrigbranch)

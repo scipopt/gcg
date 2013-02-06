@@ -361,6 +361,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
    assert(GCGvarIsOriginal(ovar1));
    assert(GCGvarIsOriginal(ovar2));
 
+   origbranchcons = NULL;
+   origbranchcons2 = NULL;
+
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
 
@@ -421,14 +424,22 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
    if( norigvars1 > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchcons, norigvars1) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchcons2, norigvars1) );
+      //SCIP_CALL( SCIPinitOrigconsArray(scip, &origbranchcons, norigvars1) );
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons, norigvars1) );
+
+      //SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchcons, norigvars1) );
+
+      //SCIP_CALL( SCIPinitOrigconsArray(scip, &origbranchcons2, norigvars1) );
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons2, norigvars1) );
+
+      //SCIP_CALL( SCIPallocMemoryArray(scip, &origbranchcons2, norigvars1) );
    }
 
    /* add branching decision as varbound constraints to original problem */
    for( v = 0; v < norigvars1; v++ )
    {
       SCIP_CONS* origcons;
+      SCIP_CONS* origcons2;
 
       assert(GCGvarGetBlock(origvars1[v]) == GCGvarGetBlock(origvars2[v]));
 
@@ -439,14 +450,14 @@ SCIP_RETCODE createChildNodesRyanfoster(
       origbranchcons[v] = origcons;
 
       /* create constraint for differ-child */
-      SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, differname, origvars1[v], origvars2[v],
+      SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons2, differname, origvars1[v], origvars2[v],
             1.0, -SCIPinfinity(scip), 1.0, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
-      origbranchcons2[v] = origcons;
+      origbranchcons2[v] = origcons2;
    }
 
-   GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata, origbranchcons, norigvars1);
-   GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata, origbranchcons2, norigvars1);
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata, origbranchcons, norigvars1) );
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata, origbranchcons2, norigvars1) );
 
    // release constraints
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );
@@ -483,7 +494,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    int norigvars1;
    int norigvars2;
 
-   /*
+   /*GCGconsMasterbranchGetOrigbranchConsName
    //from branch_master
    SCIP_NODE* child1;
    SCIP_NODE* child2;

@@ -40,6 +40,14 @@
 extern "C" {
 #endif
 
+extern
+/** initializes array of cons */
+SCIP_RETCODE SCIPinitOrigconsArray(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_CONS***           cons,
+   int                   ncons
+   );
+
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 extern
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(

@@ -159,7 +159,22 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 
    assert(consdata != NULL);
 
-   consdata->origbranchconsname = name;
+   if( name != NULL )
+   {
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(consdata->origbranchconsname), name, strlen(name)+1));
+   }
+   else if( consdata->origbranchconsname != NULL )
+   {
+      SCIPfreeMemoryArray(scip, &consdata->origbranchconsname);
+      consdata->origbranchconsname = NULL;
+   }
+   else
+   {
+      assert(consdata->origbranchconsname == NULL);
+      assert(name == NULL);
+      consdata->origbranchconsname = name;
+   }
+
    consdata->origbranchrule = branchrule;
    consdata->origbranchdata = branchdata;
    consdata->origbranchcons = origcons;
