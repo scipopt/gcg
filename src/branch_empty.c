@@ -134,8 +134,9 @@ SCIP_RETCODE GCGceateConsOrigbranchNode(
       SCIP_CALL( SCIPaddConsNode(scip, child, origbranchcons[i], NULL) );
       SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
    }
-   //SCIPfreeMemoryArray(scip, &origbranchcons);
-  // SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
+
+   SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
+
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL, NULL, NULL, 0) );
 
    return SCIP_OKAY;
@@ -175,16 +176,8 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    SCIP_CONS* masterbranchcons;
    SCIP_CONS* masterbranchchildcons;
    SCIP_CONS* masterbranchchildcons2;
-   //SCIP_CONS* origbranch;
-   //SCIP_CONS* origbranch2;
-   //SCIP_CONS** origbranchcons;
-   //SCIP_CONS** origbranchcons2;
-   SCIP_CONSDATA* consdata;
    SCIP_CONSDATA* parentconsdata;
-   //SCIP_NODE* child;
-   //SCIP_NODE* child2;
-   int i;
-   int norigbranchcons;
+
 
    feasible = TRUE;
 
@@ -236,60 +229,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons2));
 
 
-
-/*
-   masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
-   assert(masterbranchchildcons != NULL);
-
-   SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
-
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), child,
-            GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
-
-   SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
-
-   SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
-
-   norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
-   origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
-
-   for( i=0; i<norigbranchcons; ++i)
-   {
-      SCIP_CALL( SCIPaddConsNode(scip, child, origbranchcons[i], NULL) );
-      SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
-   }
-   //SCIPfreeMemoryArray(scip, &origbranchcons);
-   SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
-
-   GCGconsMasterbranchSetOrigConsData(masterscip, masterbranchchildcons, NULL, NULL, NULL, NULL, 0);
-*/
-/*
-   masterbranchchildcons2 = GCGconsMasterbranchGetChild2cons(masterbranchcons);
-   assert(masterbranchchildcons2 != NULL);
-
-   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch2, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons2), child2,
-            GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons2), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons2)) );
-
-   SCIP_CALL( SCIPaddConsNode(scip, child2, origbranch2, NULL) );
-
-   SCIP_CALL( SCIPreleaseCons(scip, &origbranch2) );
-
-   norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons2);
-   origbranchcons2 = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons2);
-
-   for( i=0; i<norigbranchcons; ++i)
-   {
-      SCIP_CALL( SCIPaddConsNode(scip, child2, origbranchcons2[i], NULL) );
-      SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons2[i])) );
-   }
-   //SCIPfreeMemoryArray(scip, &origbranchcons2);
-   SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons2);
-
-   GCGconsMasterbranchSetOrigConsData(masterscip, masterbranchchildcons2, NULL, NULL, NULL, NULL, 0);
-*/
-
    *result = SCIP_BRANCHED;
    return SCIP_OKAY;
 }
@@ -298,9 +237,65 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 {  /*lint --e{715}*/
+   SCIP* masterscip;
+   SCIP_Bool feasible;
+   SCIP_CONS* masterbranchcons;
+   SCIP_CONS* masterbranchchildcons;
+   SCIP_CONS* masterbranchchildcons2;
+   SCIP_CONSDATA* parentconsdata;
+
+
+   feasible = TRUE;
+
+   assert(branchrule != NULL);
+   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+   assert(scip != NULL);
+   assert(result != NULL);
+
+   *result = SCIP_DIDNOTRUN;
+
+   /* check whether the current original solution is integral */
+#ifdef SCIP_DEBUG
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+#else
+   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+#endif
+
+   if( feasible )
+   {
+      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
+         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
+
+   SCIPdebugMessage("Execext method of empty branching\n");
+
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+   assert(masterbranchcons != NULL);
+
+   parentconsdata = SCIPconsGetData(masterbranchcons);
+
+   //   for( i=0; i<parentconsdata->nchildvanderbeck; ++i )
+   //   {
+   //
+   //   }
+   masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
+   assert(masterbranchchildcons != NULL);
+
+   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons));
+
+   masterbranchchildcons2 = GCGconsMasterbranchGetChild2cons(masterbranchcons);
+   assert(masterbranchchildcons2 != NULL);
+
+   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons2));
+
 
    *result = SCIP_BRANCHED;
-
    return SCIP_OKAY;
 }
 
@@ -310,16 +305,16 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 /** creates the master branching rule and includes it in SCIP */
 SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
-   )
+)
 {
    SCIP_BRANCHRULEDATA* branchruledata;
    /* create inference branching rule data */
    branchruledata = NULL;
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
-         branchCopyEmpty, branchFreeEmpty, branchInitEmpty, branchExitEmpty, branchInitsolEmpty,
-         branchExitsolEmpty, branchExeclpEmpty, branchExecextEmpty, branchExecpsEmpty,
-         branchruledata) );
+      BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST,
+      branchCopyEmpty, branchFreeEmpty, branchInitEmpty, branchExitEmpty, branchInitsolEmpty,
+      branchExitsolEmpty, branchExeclpEmpty, branchExecextEmpty, branchExecpsEmpty,
+      branchruledata) );
    return SCIP_OKAY;
 }
