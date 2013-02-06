@@ -225,6 +225,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
    /* get diving data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
+   assert(divingdata->rootsol != NULL);
 
    /* get fractional variables that should be integral */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );

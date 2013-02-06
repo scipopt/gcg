@@ -38,6 +38,7 @@
 
 #include "heur_gcgpscostdiving.h"
 #include "heur_origdiving.h"
+#include "pub_gcgvar.h"
 #include "relax_gcg.h"
 
 
@@ -54,13 +55,16 @@
  * Default diving rule specific parameter settings
  */
 
+#define DEFAULT_USEMASTERPSCOSTS  FALSE      /**< shall pseudocosts be calculated w.r.t. the master problem? */
 
 
 /* locally defined diving heuristic data */
 struct GCG_DivingData
 {
+   SCIP_Bool             usemasterpscosts;   /**< shall pseudocosts be calculated w.r.t. the master problem? */
    SCIP_SOL*             rootsol;            /**< relaxation solution at the root node */
    SCIP_Bool             firstrun;           /**< is the heuristic running for the first time? */
+   SCIP_Real*            masterpscosts;      /**< pseudocosts of the master variables */
 };
 
 
@@ -106,10 +110,268 @@ SCIP_RETCODE getRootRelaxSol(
    return SCIP_OKAY;
 }
 
+/** calculate pseudocosts for the master variables */
+static
+SCIP_RETCODE calcMasterPscosts(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real**           masterpscosts       /**< pointer to store the array of master pseudocosts */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   int nbinvars;
+   int nintvars;
+
+   int i;
+   int j;
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variable data */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, NULL, &nbinvars, &nintvars, NULL, NULL) );
+
+   /* allocate memory */
+   SCIP_CALL( SCIPallocBufferArray(scip, masterpscosts, nbinvars + nintvars) );
+
+   /* calculate pseudocosts */
+   for( i = 0; i < nbinvars + nintvars; ++i )
+   {
+      SCIP_VAR* mastervar;
+      SCIP_VAR** masterorigvars;
+      SCIP_Real* masterorigvals;
+      int nmasterorigvars;
+
+      mastervar = mastervars[i];
+      masterorigvars = GCGmasterVarGetOrigvars(mastervar);
+      masterorigvals = GCGmasterVarGetOrigvals(mastervar);
+      nmasterorigvars = GCGmasterVarGetNOrigvars(mastervar);
+
+      (*masterpscosts)[i] = 0.0;
+      for( j = 0; j < nmasterorigvars; ++j )
+      {
+         SCIP_VAR* origvar;
+
+         origvar = masterorigvars[j];
+         if( !SCIPvarIsBinary(origvar) && !SCIPvarIsIntegral(origvar) )
+            continue;
+         (*masterpscosts)[i] += SCIPgetVarPseudocostVal(scip, origvar, 0.0-masterorigvals[j]);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** check whether an original variable and a master variable belong to the same block */
+static
+SCIP_Bool areVarsInSameBlock(
+   SCIP_VAR*             origvar,            /**< original variable */
+   SCIP_VAR*             mastervar           /**< master variable */
+   )
+{
+   int origblock;
+   int masterblock;
+
+   /* get the blocks the variables belong to */
+   origblock = GCGvarGetBlock(origvar);
+   masterblock = GCGvarGetBlock(mastervar);
+
+   /* the original variable is a linking variable:
+    * check whether the master variable is either its direct copy
+    * or in one of its blocks
+    */
+   if( GCGvarIsLinking(origvar) )
+   {
+      assert(origblock == -2);
+      if( masterblock == -1 )
+      {
+         SCIP_VAR** mastervars;
+
+         mastervars = GCGoriginalVarGetMastervars(origvar);
+         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+         return mastervars[0] == mastervar;
+      }
+      else
+      {
+         assert(masterblock >= 0);
+         return GCGisLinkingVarInBlock(origvar, masterblock);
+      }
+   }
+   /* the original variable was directly copied to the master problem:
+    * check whether the master variable is its copy
+    */
+   else if( origblock == -1 )
+   {
+      SCIP_VAR** mastervars;
+
+      mastervars = GCGoriginalVarGetMastervars(origvar);
+      assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+      return mastervars[0] == mastervar;
+   }
+   /* the original variable belongs to exactly one block */
+   else
+   {
+      assert(origblock >= 0);
+      return origblock == masterblock;
+   }
+}
+
+/** calculates the down-pseudocost for a given original variable w.r.t. the master variables in which it is contained */
+static
+SCIP_RETCODE calcPscostDownMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< problem variable */
+   SCIP_Real*            masterpscosts,      /**< master variable pseudocosts */
+   SCIP_Real*            pscostdown          /**< pointer to store the pseudocost value */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   SCIP_VAR** origmastervars;
+   SCIP_Real* origmastervals;
+   int nbinmastervars;
+   int nintmastervars;
+   int norigmastervars;
+   SCIP_Real roundval;
+   SCIP_Real masterlpval;
+   int idx;
+
+   int i;
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variable information */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, NULL, &nbinmastervars, &nintmastervars, NULL, NULL) );
+
+   /* get master variables in which the original variable appears */
+   origmastervars = GCGoriginalVarGetMastervars(var);
+   origmastervals = GCGoriginalVarGetMastervals(var);
+   norigmastervars = GCGoriginalVarGetNMastervars(var);
+
+   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
+   *pscostdown = 0.0;
+
+   /* calculate sum of pseudocosts over all master variables
+    * which would violate the new original variable bound
+    */
+   if( SCIPisFeasNegative(masterprob, roundval) )
+   {
+      for( i = 0; i < nbinmastervars + nintmastervars; ++i )
+      {
+         if( areVarsInSameBlock(var, mastervars[i]) )
+         {
+            masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+            *pscostdown += masterpscosts[i] * SCIPfeasFrac(masterprob, masterlpval);
+         }
+      }
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         idx = SCIPvarGetProbindex(origmastervars[i]);
+         masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+            && SCIPisFeasLE(masterprob, origmastervals[i], roundval) )
+            *pscostdown -= masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+   else
+   {
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         idx = SCIPvarGetProbindex(origmastervars[i]);
+         masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+            && SCIPisFeasGT(masterprob, origmastervals[i], roundval) )
+            *pscostdown += masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calculates the up-pseudocost for a given original variable w.r.t. the master variables in which it is contained */
+static
+SCIP_RETCODE calcPscostUpMaster(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< problem variable */
+   SCIP_Real*            masterpscosts,      /**< master variable pseudocosts */
+   SCIP_Real*            pscostup            /**< pointer to store the pseudocost value */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   SCIP_VAR** origmastervars;
+   SCIP_Real* origmastervals;
+   int nbinmastervars;
+   int nintmastervars;
+   int norigmastervars;
+   SCIP_Real roundval;
+   SCIP_Real masterlpval;
+   int idx;
+
+   int i;
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variable information */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, NULL, &nbinmastervars, &nintmastervars, NULL, NULL) );
+
+   /* get master variables in which the original variable appears */
+   origmastervars = GCGoriginalVarGetMastervars(var);
+   origmastervals = GCGoriginalVarGetMastervals(var);
+   norigmastervars = GCGoriginalVarGetNMastervars(var);
+
+   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   *pscostup = 0.0;
+
+   /* calculate sum of pseudocosts over all master variables
+    * which would violate the new original variable bound
+    */
+   if( SCIPisFeasPositive(masterprob, roundval) )
+   {
+      for( i = 0; i < nbinmastervars + nintmastervars; ++i )
+      {
+         if( areVarsInSameBlock(var, mastervars[i]) )
+         {
+            masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+            *pscostup += masterpscosts[i] * SCIPfeasFrac(masterprob, masterlpval);
+         }
+      }
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         idx = SCIPvarGetProbindex(origmastervars[i]);
+         masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+            && SCIPisFeasGE(masterprob, origmastervals[i], roundval) )
+            *pscostup -= masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+   else
+   {
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         idx = SCIPvarGetProbindex(origmastervars[i]);
+         masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+            && SCIPisFeasLT(masterprob, origmastervals[i], roundval) )
+            *pscostup += masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** calculates the pseudocost score for a given variable w.r.t. a given solution value and a given rounding direction */
 static
-void calcPscostQuot(
+SCIP_RETCODE calcPscostQuot(
    SCIP*                 scip,               /**< SCIP data structure */
+   GCG_DIVINGDATA*       divingdata,         /**< diving data */
    SCIP_VAR*             var,                /**< problem variable */
    SCIP_Real             primsol,            /**< primal solution of variable */
    SCIP_Real             rootsolval,         /**< root relaxation solution of variable */
@@ -131,10 +393,18 @@ void calcPscostQuot(
    frac = MIN(frac, 0.9);
 
    /* get pseudo cost quotient */
-   pscostdown = SCIPgetVarPseudocostVal(scip, var, 0.0-frac);
-   pscostup = SCIPgetVarPseudocostVal(scip, var, 1.0-frac);
+   if( divingdata->usemasterpscosts )
+   {
+      SCIP_CALL( calcPscostDownMaster(scip, var, divingdata->masterpscosts, &pscostdown) );
+      SCIP_CALL( calcPscostUpMaster(scip, var, divingdata->masterpscosts, &pscostup) );
+   }
+   else
+   {
+      pscostdown = SCIPgetVarPseudocostVal(scip, var, 0.0-frac);
+      pscostup = SCIPgetVarPseudocostVal(scip, var, 1.0-frac);
+   }
    SCIPdebugMessage("Pseudocosts of variable %s: %g down, %g up\n", SCIPvarGetName(var), pscostdown, pscostup);
-   assert(pscostdown >= 0.0 && pscostup >= 0.0);
+   assert(!SCIPisNegative(scip, pscostdown) && !SCIPisNegative(scip,pscostup));
 
    /* choose rounding direction */
    if( rounddir == -1 )
@@ -163,6 +433,8 @@ void calcPscostQuot(
    /* prefer decisions on binary variables */
    if( SCIPvarIsBinary(var) )
       (*pscostquot) *= 1000.0;
+
+   return SCIP_OKAY;
 }
 
 
@@ -204,6 +476,7 @@ GCG_DECL_DIVINGINIT(heurInitGcgpscostdiving) /*lint --e{715}*/
    /* initialize data */
    divingdata->firstrun = TRUE;
    divingdata->rootsol = NULL;
+   divingdata->masterpscosts = NULL;
 
    return SCIP_OKAY;
 }
@@ -252,6 +525,27 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgpscostdiving) /*lint --e{715}*/
       divingdata->firstrun = FALSE;
    }
 
+   SCIP_CALL( calcMasterPscosts(scip, &divingdata->masterpscosts) );
+
+   return SCIP_OKAY;
+}
+
+
+/** execution deinitialization method of diving heuristic (called when execution data is freed) */
+static
+GCG_DECL_DIVINGEXITEXEC(heurExitexecGcgpscostdiving) /*lint --e{715}*/
+{  /*lint --e{715}*/
+   GCG_DIVINGDATA* divingdata;
+
+   assert(heur != NULL);
+
+   /* get diving data */
+   divingdata = GCGheurGetDivingDataOrig(heur);
+   assert(divingdata != NULL);
+
+   /* free memory */
+   SCIPfreeBufferArray(scip, &divingdata->masterpscosts);
+
    return SCIP_OKAY;
 }
 
@@ -288,6 +582,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
    /* get diving data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
+   assert(divingdata->rootsol != NULL);
 
    /* get fractional variables that should be integral */
    SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
@@ -331,11 +626,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
              */
             roundup = FALSE;
             if( mayrounddown && mayroundup )
-               calcPscostQuot(scip, var, primsol, rootsolval, frac, 0, &pscostquot, &roundup);
+            {
+               SCIP_CALL( calcPscostQuot(scip, divingdata, var, primsol, rootsolval, frac, 0, &pscostquot, &roundup) );
+            }
             else if( mayrounddown )
-               calcPscostQuot(scip, var, primsol, rootsolval, frac, +1, &pscostquot, &roundup);
+            {
+               SCIP_CALL( calcPscostQuot(scip, divingdata, var, primsol, rootsolval, frac, +1, &pscostquot, &roundup) );
+            }
             else
-               calcPscostQuot(scip, var, primsol, rootsolval, frac, -1, &pscostquot, &roundup);
+            {
+               SCIP_CALL( calcPscostQuot(scip, divingdata, var, primsol, rootsolval, frac, -1, &pscostquot, &roundup) );
+            }
 
             /* check, if candidate is new best candidate */
             if( pscostquot > bestpscostquot )
@@ -351,7 +652,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgpscostdiving) /*lint --e{715}*/
       else
       {
          /* the candidate may not be rounded: calculate pseudo cost quotient and preferred direction */
-         calcPscostQuot(scip, var, primsol, rootsolval, frac, 0, &pscostquot, &roundup);
+         SCIP_CALL( calcPscostQuot(scip, divingdata, var, primsol, rootsolval, frac, 0, &pscostquot, &roundup) );
 
          /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
          if( bestcandmayrounddown || bestcandmayroundup || pscostquot > bestpscostquot )
@@ -390,9 +691,14 @@ SCIP_RETCODE GCGincludeHeurGcgpscostdiving(
    SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcgpscostdiving, heurInitGcgpscostdiving, heurExitGcgpscostdiving, NULL, NULL,
-         heurInitexecGcgpscostdiving, NULL, heurSelectVarGcgpscostdiving, divingdata) );
+         heurInitexecGcgpscostdiving, heurExitexecGcgpscostdiving, heurSelectVarGcgpscostdiving, divingdata) );
 
    assert(heur != NULL);
+
+   /* add gcgpscostdiving specific parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterpscosts",
+         "shall pseudocosts be calculated w.r.t. the master problem?",
+         &divingdata->usemasterpscosts, TRUE, DEFAULT_USEMASTERPSCOSTS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

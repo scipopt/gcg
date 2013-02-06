@@ -69,6 +69,62 @@ struct GCG_DivingData
  * local methods
  */
 
+/** check whether an original variable and a master variable belong to the same block */
+static
+SCIP_Bool areVarsInSameBlock(
+   SCIP_VAR*             origvar,            /**< original variable */
+   SCIP_VAR*             mastervar           /**< master variable */
+   )
+{
+   int origblock;
+   int masterblock;
+
+   /* get the blocks the variables belong to */
+   origblock = GCGvarGetBlock(origvar);
+   masterblock = GCGvarGetBlock(mastervar);
+
+   /* the original variable is a linking variable:
+    * check whether the master variable is either its direct copy
+    * or in one of its blocks
+    */
+   if( GCGvarIsLinking(origvar) )
+   {
+      assert(origblock == -2);
+      if( masterblock == -1 )
+      {
+         SCIP_VAR** mastervars;
+
+         mastervars = GCGoriginalVarGetMastervars(origvar);
+         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+         return mastervars[0] == mastervar;
+      }
+      else
+      {
+         assert(masterblock >= 0);
+         return GCGisLinkingVarInBlock(origvar, masterblock);
+      }
+   }
+   /* the original variable was directly copied to the master problem:
+    * check whether the master variable is its copy
+    */
+   else if( origblock == -1 )
+   {
+      SCIP_VAR** mastervars;
+
+      mastervars = GCGoriginalVarGetMastervars(origvar);
+      assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+      return mastervars[0] == mastervar;
+   }
+   /* the original variable belongs to exactly one block */
+   else
+   {
+      assert(origblock >= 0);
+      return origblock == masterblock;
+   }
+}
+
 /** get the number of down-locks for an original variable w.r.t. the master problem */
 static
 SCIP_RETCODE getNLocksDown(
@@ -99,7 +155,7 @@ SCIP_RETCODE getNLocksDown(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
    *nlocksdown = 0;
 
    /* calculate locks = the sum of down-locks of all master variables
@@ -108,10 +164,13 @@ SCIP_RETCODE getNLocksDown(
    if( SCIPisFeasNegative(masterprob, roundval) )
    {
       for( i = 0; i < nmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
+      {
+         if( areVarsInSameBlock(var, mastervars[i])
+            && !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
             *nlocksdown += SCIPvarGetNLocksDown(mastervars[i]);
+      }
       for( i = 0; i < norigmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]) )
+         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]))
             && SCIPisFeasLE(masterprob, origmastervals[i], roundval) )
             *nlocksdown -= SCIPvarGetNLocksDown(origmastervars[i]);
    }
@@ -166,8 +225,11 @@ SCIP_RETCODE getNLocksUp(
    if( SCIPisFeasPositive(masterprob, roundval) )
    {
       for( i = 0; i < nmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
+      {
+         if( areVarsInSameBlock(var, mastervars[i])
+            && !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
             *nlocksup += SCIPvarGetNLocksDown(mastervars[i]);
+      }
       for( i = 0; i < norigmastervars; ++i )
          if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]) )
             && SCIPisFeasGE(masterprob, origmastervals[i], roundval) )
