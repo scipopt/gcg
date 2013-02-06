@@ -82,6 +82,28 @@ struct GCG_BranchData
 };
 
 
+//from branch_master
+static
+SCIP_RETCODE GCGincludeMasterCopyPlugins(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
+   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
+   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
+   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
+   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
+   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+   return SCIP_OKAY;
+}
+
 /** branches on a given variable */
 static
 SCIP_RETCODE branchVar(
@@ -92,10 +114,15 @@ SCIP_RETCODE branchVar(
    )
 {
    /* data for b&b child creation */
+   SCIP* masterscip;
    SCIP_NODE* childup;
    SCIP_NODE* childdown;
+   SCIP_NODE* child1;
+   SCIP_NODE* child2;
    SCIP_CONS* origbranchup;
    SCIP_CONS* origbranchdown;
+   SCIP_CONS* cons1;
+   SCIP_CONS* cons2;
    GCG_BRANCHDATA* branchupdata;
    GCG_BRANCHDATA* branchdowndata;
    char upname[SCIP_MAXSTRLEN];
@@ -109,6 +136,22 @@ SCIP_RETCODE branchVar(
    assert(branchrule != NULL);
    assert(branchvar != NULL);
 
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
+   //for cons_masterbranch
+   //number of childnodes
+   if( GCGconsMasterbranchGetActiveCons(masterscip) != NULL )
+   {
+      GCGconsMasterbranchSetNChildVanderbeck(GCGconsMasterbranchGetActiveCons(masterscip), 2);
+   }
+   // create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints
+   SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+   SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, child1, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons2, child2, GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, child1, cons1, NULL) );
+   SCIP_CALL( SCIPaddConsNode(masterscip, child2, cons2, NULL) );
 
    /* get values of parameters */
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/enforcebycons", &enforcebycons) );
@@ -116,8 +159,8 @@ SCIP_RETCODE branchVar(
    SCIPdebugMessage("Branching on var %s with value %g in current solution\n", SCIPvarGetName(branchvar), solval);
 
    /* create the b&b-tree child-nodes of the current node */
-   SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
+//   SCIP_CALL( SCIPcreateChild(scip, &childup, 0.0, SCIPgetLocalTransEstimate(scip)) );
+//   SCIP_CALL( SCIPcreateChild(scip, &childdown, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
    /** @todo use block memory here */
    /* create the branch data for the childs and assign the values */
@@ -162,8 +205,8 @@ SCIP_RETCODE branchVar(
       SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
 
       /* add constraints to nodes */
-      SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
-      SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
+ //     SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
+ //     SCIP_CALL( SCIPaddConsNode(scip, childdown, consdown, NULL) );
 
       branchupdata->cons = consup;
       branchdowndata->cons = consdown;
@@ -179,14 +222,14 @@ SCIP_RETCODE branchVar(
    }
 
    /* create the origbranch constraints */
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup,
-         GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, downname, childdown,
-         GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
+//   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchup, upname, childup,
+   //        GCGconsOrigbranchGetActiveCons(scip), branchrule, branchupdata) );
+//   SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranchdown, downname, childdown,
+   //      GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdowndata) );
 
    /* add constraints to nodes */
-   SCIP_CALL( SCIPaddConsNode(scip, childup, origbranchup, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
+//   SCIP_CALL( SCIPaddConsNode(scip, childup, origbranchup, NULL) );
+//   SCIP_CALL( SCIPaddConsNode(scip, childdown, origbranchdown, NULL) );
 
    /* store bound change of variables that were directly transferred to the master problem */
    if( !enforcebycons && GCGvarGetBlock(branchvar) == -1 )
@@ -198,8 +241,8 @@ SCIP_RETCODE branchVar(
    }
 
    /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
-   SCIP_CALL( SCIPreleaseCons(scip, &origbranchdown) );
+//   SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
+//   SCIP_CALL( SCIPreleaseCons(scip, &origbranchdown) );
 
    return SCIP_OKAY;
 }
@@ -518,12 +561,16 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {  /*lint --e{715}*/
+   SCIP* origscip;
+
    SCIPdebugMessage("Execlp method of orig branching\n");
 
-   if( SCIPgetNExternBranchCands(scip) > 0 )
+   origscip = GCGpricerGetOrigprob(scip);
+
+   if( SCIPgetNExternBranchCands(origscip) > 0 )
    {
-      assert(SCIPisRelaxSolValid(scip));
-      SCIP_CALL( branchExtern(scip, branchrule, result) );
+      assert(SCIPisRelaxSolValid(origscip));
+      SCIP_CALL( branchExtern(origscip, branchrule, result) );
    }
 
    return SCIP_OKAY;
@@ -533,7 +580,11 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 {  /*lint --e{715}*/
-   SCIP_CALL( branchExtern(scip, branchrule, result) );
+   SCIP* origscip;
+
+   origscip = GCGpricerGetOrigprob(scip);
+
+   SCIP_CALL( branchExtern(origscip, branchrule, result) );
 
    return SCIP_OKAY;
 }
@@ -555,6 +606,7 @@ static
 SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 {  /*lint --e{715}*/
    int i;
+   SCIP* origscip;
 
    /* branching candidates */
    SCIP_VAR** branchcands;
@@ -570,14 +622,17 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(scip != NULL);
    assert(result != NULL);
 
+   origscip = GCGpricerGetOrigprob(scip);
+   //masterscip = scip;
+
    SCIPdebugMessage("Execps method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) > SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(scip) > SCIP_STAGE_SOLVING )
       return SCIP_OKAY;
 
    /* get the branching candidates */
-   SCIP_CALL( SCIPgetPseudoBranchCands(scip, &branchcands, &nbranchcands, &npriobranchcands) );
+   SCIP_CALL( SCIPgetPseudoBranchCands(origscip, &branchcands, &nbranchcands, &npriobranchcands) );
 
    branchvar = NULL;
    solval = 0.0;
@@ -618,15 +673,15 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
             int j;
 
             nvarblocks = GCGlinkingVarGetNBlocks(branchcands[i]);
-            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( SCIPallocBufferArray(origscip, &varblocks, nvarblocks) );
             SCIP_CALL( GCGlinkingVarGetBlocks(branchcands[i], nvarblocks, varblocks) );
 
             unique = TRUE;
             for( j = 0; j < nvarblocks; ++j )
-               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+               if( GCGrelaxGetNIdenticalBlocks(origscip, varblocks[j]) != 1 )
                   unique = FALSE;
 
-            SCIPfreeBufferArray(scip, &varblocks);
+            SCIPfreeBufferArray(origscip, &varblocks);
 
             if( !unique )
                continue;
@@ -646,7 +701,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    assert(branchvar != NULL);
 
-   SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
+   SCIP_CALL( branchVar(origscip, branchrule, branchvar, solval) );
 
    *result = SCIP_BRANCHED;
 
@@ -656,11 +711,18 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 static
 SCIP_DECL_BRANCHCOPY(branchCopyOrig)
 {
+   SCIP* origscip;
+
    assert(scip != NULL);
    assert(branchrule != NULL);
 
+   origscip = GCGpricerGetOrigprob(scip);
+
    SCIPdebugMessage("orig copy called.\n");
-   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
+   SCIP_CALL( GCGincludeOriginalCopyPlugins(origscip) );
+
+   SCIPdebugMessage("pricer copy called.\n");
+   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }
