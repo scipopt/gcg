@@ -49,7 +49,10 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_BRANCHRULE*      branchrule,
    GCG_BRANCHDATA*       branchdata,
    SCIP_CONS**           origcons,
-   int                   norigcons
+   int                   norigcons,
+   SCIP_Bool             chgVarUbNode,
+   SCIP_Bool             chgVarLbNode,
+   SCIP_Bool             addPropBoundChg
    );
 
 extern
@@ -62,6 +65,44 @@ SCIP_RETCODE GCGconsMasterbranchSetNChildVanderbeck(
 extern
 /** the function returns the name of the constraint in the origconsdata data structure */
 char* GCGconsMasterbranchGetOrigbranchConsName(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_VAR* GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_BOUNDTYPE* GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if upperbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if lowerbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if PropBoundChg should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
 

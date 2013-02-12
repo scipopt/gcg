@@ -112,6 +112,13 @@ struct SCIP_ConsData
                                               *   containing information about the branching restrictions for cons_origbranch */
    SCIP_CONS**           origbranchcons;     /**< the corresponding origbranch cons in the original program for cons_origbranch */
    int                   norigbranchcons;    /**< number of origbranchcons */
+   SCIP_Bool             chgVarUbNode;
+   SCIP_Bool             chgVarLbNode;
+   SCIP_Bool             addPropBoundChg;
+   SCIP_VAR*             chgVarNodeVar;
+   SCIP_Real             chgVarNodeBound;
+   SCIP_BOUNDTYPE*       addPropBoundChgBoundtype;
+   SCIP_Real             addPropBoundChgBound;
 
 };
 
@@ -150,7 +157,14 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_BRANCHRULE*      branchrule,
    GCG_BRANCHDATA*       branchdata,
    SCIP_CONS**           origcons,
-   int                   norigcons
+   int                   norigcons,
+   SCIP_Bool             chgVarUbNode,
+   SCIP_Bool             chgVarLbNode,
+   SCIP_Bool             addPropBoundChg,
+   SCIP_VAR*             chgVarNodeVar,
+   SCIP_Real             chgVarNodeBound,
+   SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
+   SCIP_Real             addPropBoundChgBound,
    )
 {
    SCIP_CONSDATA* consdata;
@@ -179,6 +193,14 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    consdata->origbranchdata = branchdata;
    consdata->origbranchcons = origcons;
    consdata->norigbranchcons = norigcons;
+
+   consdata->chgVarUbNode = chgVarUbNode;
+   consdata->chgVarLbNode = chgVarLbNode;
+   consdata->addPropBoundChg = addPropBoundChg;
+   consdata->chgVarNodeVar = chgVarNodeVar;
+   consdata->chgVarNodeBound = chgVarNodeBound;
+   consdata->addPropBoundChgBoundtype = addPropBoundChgBoundtype;
+   consdata->addPropBoundChgBound = addPropBoundChgBound;
 
    return SCIP_OKAY;
 }
@@ -212,6 +234,100 @@ char* GCGconsMasterbranchGetOrigbranchConsName(
    assert(consdata != NULL);
 
    return consdata->origbranchconsname;
+}
+
+SCIP_VAR* GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->chgVarNodeVar;
+}
+
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->chgVarNodeBound;
+}
+
+SCIP_BOUNDTYPE* GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->addPropBoundChgBoundtype;
+}
+
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->addPropBoundChgBound;
+}
+
+/** the function returns if upperbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->chgVarUbNode;
+}
+
+/** the function returns if lowerbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->chgVarLbNode;
+}
+
+/** the function returns if PropBoundChg should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->addPropBoundChg;
 }
 
 /** the function returns the branchrule of the constraint in the origconsdata data structure */

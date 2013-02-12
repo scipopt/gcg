@@ -450,8 +450,10 @@ SCIP_RETCODE createChildNodesRyanfoster(
       origbranchcons2[v] = origcons2;
    }
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata, origbranchcons, norigvars1) );
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata, origbranchcons2, norigvars1) );
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata,
+         origbranchcons, norigvars1, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata,
+         origbranchcons2, norigvars1, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
 
    // release constraints
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );

@@ -119,14 +119,22 @@ SCIP_RETCODE branchVar(
    SCIP_NODE* childdown;
    SCIP_NODE* child1;
    SCIP_NODE* child2;
-   SCIP_CONS* origbranchup;
-   SCIP_CONS* origbranchdown;
+   //SCIP_CONS* origbranchup;
+   //SCIP_CONS* origbranchdown;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   SCIP_CONS** origbranchcons1;
+   SCIP_CONS** origbranchcons2;
    GCG_BRANCHDATA* branchupdata;
    GCG_BRANCHDATA* branchdowndata;
+   SCIP_Bool chgVarUbNodeup;
+   SCIP_Bool chgVarUbNodedown;
+   SCIP_Bool chgVarLbNodeup;
+   SCIP_Bool chgVarLbNodedown;
+   SCIP_Bool addPropBoundChg;
    char upname[SCIP_MAXSTRLEN];
    char downname[SCIP_MAXSTRLEN];
+   int norigbranchcons;
 
    /* parameter data */
    SCIP_Bool enforcebycons;
@@ -138,6 +146,14 @@ SCIP_RETCODE branchVar(
 
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
+   chgVarUbNodeup = FALSE;
+   chgVarUbNodedown = FALSE;
+   chgVarLbNodeup = FALSE;
+   chgVarLbNodedown = FALSE;
+   addPropBoundChg = FALSE;
+   origbranchcons1 = NULL;
+   origbranchcons2 = NULL;
+   norigbranchcons = 0;
 
    //for cons_masterbranch
    //number of childnodes
@@ -194,6 +210,11 @@ SCIP_RETCODE branchVar(
       SCIP_CONS* consup;
       SCIP_CONS* consdown;
 
+      norigbranchcons = 1;
+
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons1, norigbranchcons) );
+      SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons2, norigbranchcons) );
+
       /* create corresponding constraints */
       SCIP_CALL( SCIPcreateConsLinear(scip, &consup, upname, 0, NULL, NULL,
             SCIPceil(scip, solval), SCIPinfinity(scip),
@@ -203,6 +224,9 @@ SCIP_RETCODE branchVar(
             TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE) );
       SCIP_CALL( SCIPaddCoefLinear(scip, consup, branchvar, 1.0) );
       SCIP_CALL( SCIPaddCoefLinear(scip, consdown, branchvar, 1.0) );
+
+      origbranchcons1[0] = consup;
+      origbranchcons2[0] = consdown;
 
       /* add constraints to nodes */
  //     SCIP_CALL( SCIPaddConsNode(scip, childup, consup, NULL) );
@@ -214,8 +238,11 @@ SCIP_RETCODE branchVar(
    else
    {
       /* enforce new bounds by setting variable bounds */
-      SCIP_CALL( SCIPchgVarUbNode(scip, childdown, branchvar, solval) );
-      SCIP_CALL( SCIPchgVarLbNode(scip, childup, branchvar, solval) );
+    //  SCIP_CALL( SCIPchgVarUbNode(scip, childdown, branchvar, solval) ); // ???
+    //  SCIP_CALL( SCIPchgVarLbNode(scip, childup, branchvar, solval) );   // ???
+
+      chgVarUbNodedown = TRUE;
+      chgVarLbNodeup = TRUE;
 
       branchupdata->cons = NULL;
       branchdowndata->cons = NULL;
@@ -234,11 +261,21 @@ SCIP_RETCODE branchVar(
    /* store bound change of variables that were directly transferred to the master problem */
    if( !enforcebycons && GCGvarGetBlock(branchvar) == -1 )
    {
-      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchup, branchdowndata->origvar,
-            branchupdata->boundtype, branchupdata->newbound) );
-      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchdown, branchdowndata->origvar,
-            branchdowndata->boundtype, branchdowndata->newbound) );
+      //SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchup, branchdowndata->origvar,
+           // branchupdata->boundtype, branchupdata->newbound) );
+      //SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranchdown, branchdowndata->origvar,
+           // branchdowndata->boundtype, branchdowndata->newbound) );
+
+      addPropBoundChg = TRUE;
+
    }
+
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
+         branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
+         branchvar, solval, branchupdata->boundtype, branchupdata->newbound) );
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
+         branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
+         branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
 
    /* release constraints */
 //   SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );

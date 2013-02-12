@@ -135,9 +135,30 @@ SCIP_RETCODE GCGceateConsOrigbranchNode(
       SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
    }
 
-   SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
+   if( GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(masterbranchchildcons) )
+   {
+      SCIP_CALL( SCIPchgVarUbNode(scip, child,
+         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
+         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+   }
+   if( GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(masterbranchchildcons) )
+   {
+      SCIP_CALL( SCIPchgVarUbNode(scip, child,
+         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
+         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+   }
+   if( GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(masterbranchchildcons) )
+   {
+      SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
+            GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(masterbranchchildcons),
+            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(masterbranchchildcons)) );
+   }
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL, NULL, NULL, 0) );
+   if( norigbranchcons > 0 )
+      SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
+
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL, NULL, NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
 
    return SCIP_OKAY;
 }
