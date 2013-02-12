@@ -66,10 +66,9 @@ SCIP_RETCODE DECdecompFree(
    );
 
 /** sets the type of the decomposition */
-void DECdecompSetType(
+SCIP_RETCODE DECdecompSetType(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   DEC_DECTYPE           type,               /**< type of the decomposition */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   DEC_DECTYPE           type               /**< type of the decomposition */
    );
 
 /** gets the type of the decomposition */
@@ -104,8 +103,7 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR***           subscipvars,        /**< subscipvars array  */
-   int*                  nsubscipvars,       /**< number of subscipvars per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int*                  nsubscipvars        /**< number of subscipvars per block */
    );
 
 /** returns the subscipvars array of the given decdecomp structure */
@@ -123,8 +121,7 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_CONS***          subscipconss,       /**< subscipconss array  */
-   int*                  nsubscipconss,      /**< number of subscipconss per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int*                  nsubscipconss       /**< number of subscipconss per block */
    );
 
 /** returns the subscipconss array of the given decdecomp structure */
@@ -142,8 +139,7 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_CONS**           linkingconss,       /**< linkingconss array  */
-   int                   nlinkingconss,      /**< number of linkingconss per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int                   nlinkingconss       /**< number of linkingconss per block */
    );
 
 /** returns the linkingconss array of the given decdecomp structure */
@@ -161,8 +157,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars,       /**< number of linkingvars per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int                   nlinkingvars        /**< number of linkingvars per block */
    );
 
 /** returns the linkingvars array of the given decdecomp structure */
@@ -180,8 +175,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
-   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
-   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
+   int*                  nstairlinkingvars   /**< number of linkingvars per block */
    );
 
 /** returns the stairlinkingvars array of the given decdecomp structure */
@@ -197,8 +191,7 @@ int* DECdecompGetNStairlinkingvars(
 /** sets the vartoblock hashmap of the given decdecomp structure */
 void DECdecompSetVartoblock(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   SCIP_HASHMAP*         vartoblock,         /**< Vartoblock hashmap */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
    );
 
 /** returns the vartoblock hashmap of the given decdecomp structure */
@@ -209,8 +202,7 @@ SCIP_HASHMAP* DECdecompGetVartoblock(
 /** sets the constoblock hashmap of the given decdecomp structure */
 void DECdecompSetConstoblock(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   SCIP_HASHMAP*         constoblock,        /**< Constoblock hashmap */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
    );
 
 /** returns the constoblock hashmap of the given decdecomp structure */
@@ -251,7 +243,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
    int                   nconss,             /**< number of constraints */
-   SCIP_Bool*            valid,              /**< pointer to indicate whether the structure is valid */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 

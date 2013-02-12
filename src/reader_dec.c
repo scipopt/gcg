@@ -791,14 +791,11 @@ SCIP_RETCODE fillDecompStruct(
    int nblockconss;
    int nconss;
    int nblocks;
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(decinput != NULL);
    assert(decomp != NULL);
    assert(readerdata != NULL);
-
-   valid = FALSE;
 
    allcons = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
@@ -808,8 +805,7 @@ SCIP_RETCODE fillDecompStruct(
    DECdecompSetNBlocks(decomp, nblocks);
    DECdecompSetDetector(decomp, NULL);
 
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
-   assert(valid);
+   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -829,7 +825,7 @@ SCIP_RETCODE fillDecompStruct(
          SCIP_CALL( SCIPhashmapSetImage(constoblock, readerdata->blockconss[i][j], (void*) (size_t) (i+1)) );
       }
    }
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+   SCIP_CALL_QUIET( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
 
    return SCIP_OKAY;
 }
@@ -843,6 +839,7 @@ SCIP_RETCODE readDECFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   SCIP_RETCODE retcode;
    SCIP_READERDATA* readerdata;
    SCIP_CONS** conss;
    DEC_DECOMP* decdecomp;
@@ -961,11 +958,17 @@ SCIP_RETCODE readDECFile(
    SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 
    /* fill decomp */
-   SCIP_CALL( fillDecompStruct(scip, decinput, decdecomp, readerdata) );
+   retcode =  fillDecompStruct(scip, decinput, decdecomp, readerdata);
 
-   /* add decomp to cons_decomp */
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-
+   if( retcode == SCIP_OKAY )
+   {
+      /* add decomp to cons_decomp */
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
+   }
+   else
+   {
+      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+   }
 
  TERMINATE:
    if( nblocksread )
@@ -986,7 +989,7 @@ SCIP_RETCODE readDECFile(
    /* close file */
    SCIPfclose(decinput->file);
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 
@@ -1065,6 +1068,7 @@ SCIP_RETCODE SCIPreadDec(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
+   SCIP_RETCODE retcode;
    SCIP_READER* reader;
    DECINPUT decinput;
    int i;
@@ -1098,7 +1102,7 @@ SCIP_RETCODE SCIPreadDec(
    decinput.haserror = FALSE;
 
    /* read the file */
-   SCIP_CALL( readDECFile(scip, reader, &decinput, filename) );
+   retcode = readDECFile(scip, reader, &decinput, filename);
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &decinput.token);
@@ -1111,12 +1115,12 @@ SCIP_RETCODE SCIPreadDec(
    /* evaluate the result */
    if( decinput.haserror )
       return SCIP_READERROR;
-   else
+   else if( retcode == SCIP_OKAY)
    {
       *result = SCIP_SUCCESS;
    }
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 /** write the data optionally using the decomposition data */

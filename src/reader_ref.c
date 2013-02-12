@@ -567,7 +567,6 @@ SCIP_RETCODE readREFFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(reader != NULL);
@@ -626,13 +625,11 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid, FALSE) );
+   SCIP_CALL_QUIET( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
 
    DECdecompSetPresolved(decomp, FALSE);
    DECdecompSetDetector(decomp, NULL);
-
-   assert(valid);
 
    return SCIP_OKAY;
 }
@@ -786,6 +783,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
+   SCIP_RETCODE retcode;
    REFINPUT refinput;
    DEC_DECOMP* decomp;
    int i;
@@ -824,24 +822,30 @@ SCIP_RETCODE SCIPreadRef(
    /* read the file */
    SCIP_CALL( DECdecompCreate(scip, &decomp) );
 
-   SCIP_CALL( readREFFile(scip, reader, &refinput, decomp, filename) );
+   retcode = readREFFile(scip, reader, &refinput, decomp, filename);
 
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
-
-   SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
-   SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
-
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-
-   for( i = 0; i < nvars; i++ )
+   if( retcode == SCIP_OKAY )
    {
-      if( GCGvarGetBlock(vars[i]) == -1 )
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+      SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
+      SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+
+      for( i = 0; i < nvars; i++ )
       {
-         SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
+         if( GCGvarGetBlock(vars[i]) == -1 )
+         {
+            SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
+         }
       }
-   }
 #endif
+   }
+   else
+   {
+      SCIP_CALL( DECdecompFree(scip, &decomp) );
+   }
+
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);
@@ -856,10 +860,10 @@ SCIP_RETCODE SCIPreadRef(
    /* evaluate the result */
    if( refinput.haserror )
       return SCIP_READERROR;
-   else
+   else if( retcode == SCIP_OKAY)
    {
       *result = SCIP_SUCCESS;
    }
 
-   return SCIP_OKAY;
+   return retcode;
 }

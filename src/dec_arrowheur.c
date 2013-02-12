@@ -753,7 +753,6 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_VAR **vars;
    int nvars;
    SCIP_Bool emptyblocks = FALSE;
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -957,11 +956,9 @@ static SCIP_RETCODE buildTransformedProblem(
    {
       /* copy the local data to the decomp structure */
       DECdecompSetNBlocks(decdecomp, nblocks);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED, &valid);
-      assert(valid);
+      SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED) );
 
-      SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, &valid, FALSE) );
-      assert(valid);
+      SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);

@@ -1021,7 +1021,6 @@ SCIP_RETCODE GetVartoblock(
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
    )
 {
-   SCIP_Bool valid;
    int i;
    int j;
    int stop;
@@ -1061,10 +1060,8 @@ SCIP_RETCODE GetVartoblock(
       }
    }
 
-   DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
+   DECdecompSetVartoblock(decdecomp, vartoblock);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
 
    for( i = 0; i < detectordata->nblocks; ++i )
    {
@@ -1114,7 +1111,6 @@ SCIP_RETCODE GetConsindex(
    SCIP_VAR** linkingvars;
    int nlinkingvars;
    SCIP_HASHMAP* linking;
-   SCIP_Bool valid;
 
    indexcons = 1;
    indexvar = 1;
@@ -1239,17 +1235,12 @@ SCIP_RETCODE GetConsindex(
    if( !detectordata->fixedblocks )
    {
       DECdecompSetNBlocks(decdecomp, detectordata->nblocks);
-      DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE, &valid);
-      assert(valid);
+      SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE) );
       SCIP_CALL( GetVartoblock(scip, detectordata,decdecomp) );
-      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss2, nsubscipconss2, &valid) );
-      assert(valid);
-      SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars, &valid) );
-      assert(valid);
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
-      assert(valid);
-      DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
-      assert(valid);
+      SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, subscipconss2, nsubscipconss2) );
+      SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
       DECdecompSetVarindex(decdecomp, varindex);
       DECdecompSetConsindex(decdecomp, consindex);
 
@@ -1292,7 +1283,6 @@ static SCIP_RETCODE GetLinkingVars(
    SCIP_VAR*** subscipvars;
    int* nsubscipvars;
    SCIP_HASHMAP* vartoblock;
-   SCIP_Bool valid;
 
    varinconss = detectordata->varinconss;
    nvarinconss = detectordata->nvarinconss;
@@ -1360,12 +1350,9 @@ static SCIP_RETCODE GetLinkingVars(
    assert(detectordata->nrelvars == SCIPhashmapGetNEntries(vartoblock));
 #endif
 
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars, &valid) );
-   assert(valid);
-   DECdecompSetVartoblock(decdecomp, vartoblock, &valid);
-   assert(valid);
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+   DECdecompSetVartoblock(decdecomp, vartoblock);
 
    for( i = 0; i < detectordata->nblocks; ++i )
    {
@@ -1391,7 +1378,6 @@ static SCIP_RETCODE FixedBlocks(
    int indexcons;
    int newblock;
    SCIP_HASHMAP* consindex;
-   SCIP_Bool valid;
 
    SCIP_CALL( SCIPhashmapCreate(&consindex, SCIPblkmem(scip),detectordata->nrelconss) );
 
@@ -1440,12 +1426,9 @@ static SCIP_RETCODE FixedBlocks(
    assert( SCIPhashmapGetNEntries(detectordata->constoblock) == detectordata->nrelconss);
 
    DECdecompSetNBlocks(decdecomp, block);
-   DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD, &valid);
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->subscipconss, detectordata->nsubscipconss, &valid) );
-   assert(valid);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
-   assert(valid);
+   SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->subscipconss, detectordata->nsubscipconss) );
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
 
    #ifdef SCIP_DEBUG
    for( i = 0; i < block-1; ++i )

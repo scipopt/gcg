@@ -323,12 +323,20 @@ TEST_F(GcgDecTest, NoDecTest) {
    ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) == NULL);
 }
 
-TEST_F(GcgDecTest, DISABLED_WrongDecompTest) {
+TEST_F(GcgDecTest, WrongDecompTestBlk) {
    SCIP_RESULT result;
-
+   SCIP_RETCODE retcode;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPreadBlk(scip, "check/instances/miplib/noswot.dec", &result) );
-   ASSERT_EQ(SCIP_SUCCESS, result);
+   retcode = SCIPreadBlk(scip, "check/instances/miplib/noswot.dec", &result);
+   ASSERT_EQ(SCIP_READERROR, retcode);
+}
+
+TEST_F(GcgDecTest, WrongDecompTestDec) {
+   SCIP_RESULT result;
+   SCIP_RETCODE retcode;
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   retcode = SCIPreadDec(scip, "check/instances/cpmp/p2050-1.txt.dec", &result);
+   ASSERT_EQ(SCIP_READERROR, retcode);
 }
 
 TEST_F(GcgDecTest, MasterSpecificationTest) {
