@@ -539,6 +539,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgcoefdiving) /*lint --e{715}*/
          }
 
          probingnode = SCIPgetCurrentNode(scip);
+         probingcons = NULL;
 
          /* apply rounding of best candidate */
          if( bestcandroundup == !backtracked )

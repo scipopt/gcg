@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
@@ -55,6 +55,10 @@
 #include "scip/branch_pscost.h"
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
+
+#include "cons_masterbranch.h"
+#include "scip/nodesel_bfs.h"
+#include "scip/nodesel_dfs.h"
 
 
 #define BRANCHRULE_NAME          "orig"
@@ -101,6 +105,41 @@ SCIP_RETCODE GCGincludeMasterCopyPlugins(
    SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
    SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+
+
+   return SCIP_OKAY;
+}
+
+/** updates extern branching candidates before branching */
+SCIP_RETCODE updateExternBranchcandsForMasterbranch(
+   SCIP*                 scip               /**< SCIP data structure */
+)
+{
+   SCIP_VAR** origvars;
+   int norigvars;
+   int i;
+
+   i = 0;
+   norigvars = 0;
+
+   origvars = SCIPgetVars(scip);
+   norigvars = SCIPgetNVars(scip);
+   assert(origvars != NULL);
+
+   SCIPclearExternBranchCands(scip);
+
+   /* store branching candidates */
+   for( i = 0; i < norigvars; i++ )
+      if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
+      {
+         assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
+
+         SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,
+            origvars[i]) - SCIPfloor(scip, SCIPgetRelaxSolVal(scip, origvars[i])),
+            SCIPgetRelaxSolVal(scip, origvars[i])) );
+      }
+   SCIPdebugMessage("updated relaxation branching candidates\n");
+
    return SCIP_OKAY;
 }
 
@@ -115,8 +154,8 @@ SCIP_RETCODE branchVar(
 {
    /* data for b&b child creation */
    SCIP* masterscip;
-   SCIP_NODE* childup;
-   SCIP_NODE* childdown;
+//   SCIP_NODE* childup;
+//   SCIP_NODE* childdown;
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    //SCIP_CONS* origbranchup;
@@ -272,10 +311,10 @@ SCIP_RETCODE branchVar(
 
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
          branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
-         branchvar, solval, branchupdata->boundtype, branchupdata->newbound) );
+         branchvar, solval, &(branchupdata->boundtype), branchupdata->newbound) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
          branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
-         branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
+         branchvar, solval, &(branchdowndata->boundtype), branchdowndata->newbound) );
 
    /* release constraints */
 //   SCIP_CALL( SCIPreleaseCons(scip, &origbranchup) );
@@ -488,6 +527,10 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP* scip
    )
 {
+   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+
+
    SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
    SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
    SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
@@ -599,10 +642,24 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
+   SCIP_Bool feasible;
 
    SCIPdebugMessage("Execlp method of orig branching\n");
 
    origscip = GCGpricerGetOrigprob(scip);
+   feasible = FALSE;
+
+   assert(origscip != NULL);
+
+   SCIPdebugMessage("Update current sol.\n");
+   //SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
+
+   /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
+   if( feasible )
+   {
+      *result = SCIP_CUTOFF;
+      SCIPdebugMessage("solution was feasible, node can be cut off!");
+   }
 
    if( SCIPgetNExternBranchCands(origscip) > 0 )
    {
@@ -618,9 +675,24 @@ static
 SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 {  /*lint --e{715}*/
    SCIP* origscip;
+   SCIP_Bool feasible;
+
+   SCIPdebugMessage("Execext method of orig branching\n");
 
    origscip = GCGpricerGetOrigprob(scip);
+   feasible = FALSE;
 
+   assert(origscip != NULL);
+
+   SCIPdebugMessage("Update current sol.\n");
+  // SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
+
+   /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
+   if( feasible )
+   {
+      *result = SCIP_CUTOFF;
+      SCIPdebugMessage("solution was feasible, node can be cut off!");
+   }
    SCIP_CALL( branchExtern(origscip, branchrule, result) );
 
    return SCIP_OKAY;
@@ -630,9 +702,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 static
 SCIP_DECL_BRANCHINIT(branchInitOrig)
 {
-   assert(branchrule != NULL);
+   SCIP* origprob;
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig,
+   origprob = GCGpricerGetOrigprob(scip);
+   assert(branchrule != NULL);
+   assert(origprob != NULL);
+
+   SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterOrig,
          branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig) );
 
    return SCIP_OKAY;
@@ -661,6 +737,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    origscip = GCGpricerGetOrigprob(scip);
    //masterscip = scip;
+   assert(origscip != NULL);
 
    SCIPdebugMessage("Execps method of orig branching\n");
 
@@ -753,13 +830,13 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
    assert(scip != NULL);
    assert(branchrule != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   //origscip = GCGpricerGetOrigprob(scip);
 
    SCIPdebugMessage("orig copy called.\n");
-   SCIP_CALL( GCGincludeOriginalCopyPlugins(origscip) );
+   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) ); //origscip
 
-   SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+   //SCIPdebugMessage("pricer copy called.\n");
+   //SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }
@@ -780,25 +857,27 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIPdebugMessage("include method of branchorig called.\n");
+
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
          BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyOrig,
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
          branchExeclpOrig, branchExecextOrig, branchExecpsOrig, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/enforcebycons",
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
          NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/mostfrac",
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/mostfrac",
          "should branching be performed on the most fractional variable instead of the first variable?",
          NULL, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/usepseudocosts",
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "branching/orig/usepsstrong",
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepsstrong",
          "should strong branching with propagation be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 

@@ -72,10 +72,12 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    int v;
    int i;
 
+   /*
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   */
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -130,20 +132,20 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
       if( !SCIPisFeasIntegral(scip, solval) )
       {
          /* create the b&b-tree child-nodes of the current node */
-         SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-         SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+     //    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+     //    SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+     //    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+     //    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
 
-         SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-         SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+     //    SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+     //    SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
 
          /* release constraints */
-         SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-         SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+     //    SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+     //    SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
 
-         *result = SCIP_BRANCHED;
+     //    *result = SCIP_BRANCHED;
 
          return SCIP_OKAY;
       }
@@ -161,10 +163,12 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    SCIP* origprob;
    SCIP_Bool discretization;
 
+   /*
    SCIP_NODE* child1;
    SCIP_NODE* child2;
    SCIP_CONS* cons1;
    SCIP_CONS* cons2;
+   */
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -189,20 +193,20 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(SCIPgetNPseudoBranchCands(origprob) > 0);
 
    /* create the b&b-tree child-nodes of the current node */
-   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+ //  SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
+ //  SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+ //  SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
+ //  SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
 
-   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
+ //  SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
+ //  SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
 
    /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
+ //  SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
+ //  SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
 
-   *result = SCIP_BRANCHED;
+  // *result = SCIP_BRANCHED;
 
    return SCIP_OKAY;
 }

@@ -100,7 +100,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyEmpty)
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE GCGceateConsOrigbranchNode(
+SCIP_RETCODE GCGcreateConsOrigbranchNode(
       SCIP* scip,
       SCIP_CONS* masterbranchchildcons
    )
@@ -242,12 +242,12 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
    assert(masterbranchchildcons != NULL);
 
-   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons));
+   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
 
    masterbranchchildcons2 = GCGconsMasterbranchGetChild2cons(masterbranchcons);
    assert(masterbranchchildcons2 != NULL);
 
-   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons2));
+   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons2));
 
 
    *result = SCIP_BRANCHED;
@@ -308,12 +308,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
    assert(masterbranchchildcons != NULL);
 
-   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons));
+   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
 
    masterbranchchildcons2 = GCGconsMasterbranchGetChild2cons(masterbranchcons);
    assert(masterbranchchildcons2 != NULL);
 
-   SCIP_CALL( GCGceateConsOrigbranchNode(scip, masterbranchchildcons2));
+   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons2));
 
 
    *result = SCIP_BRANCHED;

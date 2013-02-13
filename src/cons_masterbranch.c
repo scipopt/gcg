@@ -164,7 +164,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_VAR*             chgVarNodeVar,
    SCIP_Real             chgVarNodeBound,
    SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
-   SCIP_Real             addPropBoundChgBound,
+   SCIP_Real             addPropBoundChgBound
    )
 {
    SCIP_CONSDATA* consdata;
@@ -262,7 +262,7 @@ SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
    return consdata->chgVarNodeBound;
 }
 
-SCIP_BOUNDTYPE* GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
+SCIP_BOUNDTYPE GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -272,7 +272,7 @@ SCIP_BOUNDTYPE* GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
 
    assert(consdata != NULL);
 
-   return consdata->addPropBoundChgBoundtype;
+   return *(consdata->addPropBoundChgBoundtype);
 }
 
 SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(

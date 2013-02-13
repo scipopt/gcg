@@ -49,6 +49,12 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** updates extern branching candidates before branching */
+extern
+SCIP_RETCODE updateExternBranchcandsForMasterbranch(
+   SCIP*                 scip               /**< SCIP data structure */
+);
+
 #ifdef __cplusplus
 }
 #endif
