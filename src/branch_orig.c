@@ -798,8 +798,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
 {
    SCIP_BRANCHRULE* branchrule;
 
-   SCIPdebugMessage("include method of branchorig called.\n origbranch\n origbranch\n origbranch\n origbranch\n "
-      "origbranch\n origbranch\n origbranch\n origbranch\n origbranch\n origbranch\n origbranch\n origbranch\n origbranch\n");
+   SCIPdebugMessage("include method of branchorig called.\n");
 
    /* include branching rule */
    SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
@@ -826,7 +825,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
-   GCGcreateBranchruleConsIntegralOrig(scip, branchrule);
+   GCGcreateBranchruleConsOrig(scip, branchrule);
 
    return SCIP_OKAY;
 }

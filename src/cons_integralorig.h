@@ -49,7 +49,7 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    );
 
 extern
-SCIP_RETCODE GCGcreateBranchruleConsIntegralOrig(
+SCIP_RETCODE GCGcreateBranchruleConsOrig(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule
    );

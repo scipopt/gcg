@@ -68,8 +68,8 @@ struct SCIP_ConshdlrData
    int                         nbranchrules;             /**< number of active branchrules */
 };
 
-
-SCIP_RETCODE GCGcreateBranchruleConsIntegralOrig(
+/** insert branchrule in constraint handler data */
+SCIP_RETCODE GCGcreateBranchruleConsOrig(
    SCIP*                 scip,
    SCIP_BRANCHRULE*      branchrule
    )
@@ -153,7 +153,6 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    int i;
    SCIP_CONSHDLRDATA* conshdlrdata;
 
-
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
@@ -181,62 +180,13 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
       return SCIP_OKAY;
    }
 
-   /*
-   origvars = SCIPgetOrigVars(origprob);
-   norigvars = SCIPgetNOrigVars(origprob);
-
-   // check for each integral original variable whether it has a fractional value /
-   for( v = 0; v < norigvars; v++ )
-   {
-      SCIP_Real* mastervals;
-      SCIP_VAR** mastervars;
-      int nmastervars;
-
-      if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
-         continue;
-
-      solval = 0;
-      assert(GCGvarIsOriginal(origvars[v]));
-
-      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
-      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
-      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
-
-      for( i = 0; i < nmastervars; i++ )
-      {
-         solval += mastervals[i] * SCIPgetSolVal(scip, NULL, mastervars[i]);
-      }
-      // create two children if a variable with fractional value is found /
-      if( !SCIPisFeasIntegral(scip, solval) )
-      {
-         // create the b&b-tree child-nodes of the current node /
-     //    SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-     //    SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-
-     //    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-     //    SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-
-     //    SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-     //    SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-
-         // release constraints /
-     //    SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-     //    SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-
-
-     //    *result = SCIP_BRANCHED;
-
-         return SCIP_OKAY;
-      }
-   }
-   */
-
    sortBranchrules(conshdlrdata->branchrules, conshdlrdata->nbranchrules);
 
    i = 0;
 
    while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
    {
+      /** todo handle bool allowaddcons; here default TRUE */
       conshdlrdata->branchrules[i]->branchexeclp(scip, conshdlrdata->branchrules[i], TRUE, result);
       ++i;
    }
@@ -280,26 +230,11 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 
    assert(SCIPgetNPseudoBranchCands(origprob) > 0);
 
-   /* create the b&b-tree child-nodes of the current node */
- //  SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
- //  SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
-
- //  SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
- //  SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-
- //  SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
- //  SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-
-   /* release constraints */
- //  SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
- //  SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-
-   // *result = SCIP_BRANCHED;
-
    sortBranchrules(conshdlrdata->branchrules, conshdlrdata->nbranchrules);
 
    while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
    {
+      /** todo handle bool allowaddcons; here default TRUE */
       conshdlrdata->branchrules[i]->branchexecps(scip, conshdlrdata->branchrules[i], TRUE, result);
       ++i;
    }
