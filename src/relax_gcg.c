@@ -534,7 +534,7 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-
+#ifdef NBLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -565,7 +565,7 @@ SCIP_Bool realArraysAreEqual(
    return TRUE;
 }
 
-#ifdef NBLISS
+
 /** checks whether two pricingproblems represent identical blocks */
 static
 SCIP_RETCODE checkIdentical(

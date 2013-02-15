@@ -322,6 +322,29 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    int                   nconss               /**< number of constraints in the master */
    );
 
+/** return the number of variables and binary, integer, implied integer, continuous variables of all subproblems */
+extern
+void DECgetSubproblemVarsData(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition structure */
+   int*                  nvars,               /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
+   int*                  nbinvars,            /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
+   int*                  nintvars,            /**< pointer to array of size nproblems to store number of integer subproblem vars or NULL */
+   int*                  nimplvars,           /**< pointer to array of size nproblems to store number of implied subproblem vars or NULL */
+   int*                  ncontvars,           /**< pointer to array of size nproblems to store number of continuous subproblem vars or NULL */
+   int                   nproblems            /**< size of the arrays*/
+   );
+
+/** return the number of variables and binary, integer, implied integer, continuous variables of the master */
+void DECgetLinkingVarsData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   int*                  nvars,              /**< pointer to store number of linking vars or NULL */
+   int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
+   int*                  nintvars,           /**< pointer to store number of integer linking vars or NULL */
+   int*                  nimplvars,          /**< pointer to store number of implied linking vars or NULL */
+   int*                  ncontvars           /**< pointer to store number of continuous linking vars or NULL */
+   );
 #ifdef __cplusplus
 }
 #endif

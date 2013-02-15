@@ -71,14 +71,14 @@
  */
 
 /** score data structure **/
-struct SCIP_DecScores
+struct Dec_Scores
 {
    SCIP_Real             borderscore;        /**< score of the border */
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
 };
-typedef struct SCIP_DecScores SCIP_DECSCORES;
+typedef struct Dec_Scores DEC_SCORES;
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
@@ -105,7 +105,7 @@ static
 SCIP_RETCODE evaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
-   SCIP_DECSCORES*       score               /**< returns the score of the decomposition */
+   DEC_SCORES*           score               /**< returns the score of the decomposition */
       )
 {
    int matrixarea;
@@ -841,7 +841,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIP_DECSCORES score;
+      DEC_SCORES score;
       score.totalscore = 0.0;
 
       SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );

@@ -1840,3 +1840,114 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
 
    return SCIP_OKAY;
 }
+
+/** increase the corresponding count of the */
+static
+void incVarsData(
+   SCIP_VAR*              var,                /**< variable to consider */
+   int*                   nbinvars,           /**< pointer to array of size nproblems to store number of binary subproblem vars */
+   int*                   nintvars,           /**< pointer to array of size nproblems to store number of integer subproblem vars */
+   int*                   nimplvars,          /**< pointer to array of size nproblems to store number of implied subproblem vars */
+   int*                   ncontvars,          /**< pointer to array of size nproblems to store number of continues subproblem vars */
+   int                    nproblems,          /**< size of the arrays*/
+   int                    i                   /**< index of the array to increase */
+)
+{
+   assert(var != NULL);
+   assert(i > 0);
+   assert(i < nproblems);
+
+   if( nbinvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarIsBinary(var)) )
+   {
+      ++(nbinvars[i]);
+      assert(nbinvars[i] > 0);
+   }
+   if( nintvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER && !SCIPvarIsBinary(var)) )
+   {
+      ++(nintvars[i]);
+      assert(nintvars[i] > 0);
+   }
+   if( nimplvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT) )
+   {
+      ++(nimplvars[i]);
+      assert(nimplvars[i] > 0);
+   }
+   if( ncontvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_CONTINUOUS) )
+   {
+      ++(ncontvars[i]);
+      assert(ncontvars[i] > 0);
+   }
+}
+
+/* score methods */
+
+/** return the number of variables and binary, integer, implied integer, continuous variables of all subproblems */
+void DECgetSubproblemVarsData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   int*                  nvars,              /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
+   int*                  nbinvars,           /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
+   int*                  nintvars,           /**< pointer to array of size nproblems to store number of integer subproblem vars or NULL */
+   int*                  nimplvars,          /**< pointer to array of size nproblems to store number of implied subproblem vars or NULL */
+   int*                  ncontvars,          /**< pointer to array of size nproblems to store number of continuous subproblem vars or NULL */
+   int                   nproblems           /**< size of the arrays*/
+)
+{
+   int i;
+   int j;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(nproblems > 0);
+
+   assert(DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN);
+
+   for( i = 0; i < nproblems; ++i)
+   {
+      SCIP_VAR*** subscipvars;
+      int* nsubscipvars;
+
+      nsubscipvars = DECdecompGetNSubscipvars(decomp);
+      subscipvars = DECdecompGetSubscipvars(decomp);
+      if(nvars != NULL)
+         nvars[i] = nsubscipvars[i];
+
+      for( j = 0; j < nsubscipvars[i]; ++j )
+      {
+         incVarsData(subscipvars[i][j], nbinvars, nintvars, nimplvars, ncontvars, nproblems, i);
+      }
+   }
+}
+
+
+/** return the number of variables and binary, integer, implied integer, continuous variables of the master */
+void DECgetLinkingVarsData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   int*                  nvars,              /**< pointer to store number of linking vars or NULL */
+   int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
+   int*                  nintvars,           /**< pointer to store number of integer linking vars or NULL */
+   int*                  nimplvars,          /**< pointer to store number of implied linking vars or NULL */
+   int*                  ncontvars           /**< pointer to store number of continuous linking vars or NULL */
+)
+{
+   int i;
+   SCIP_VAR** linkingvars;
+   int nlinkingvars;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+
+   assert(DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN);
+
+   nlinkingvars = DECdecompGetNLinkingvars(decomp);
+   linkingvars = DECdecompGetLinkingvars(decomp);
+
+   if(nvars != NULL)
+      *nvars = nlinkingvars;
+
+   for( i = 0; i < nlinkingvars; ++i )
+   {
+      incVarsData(linkingvars[i], nbinvars, nintvars, nimplvars, ncontvars, 1, 0);
+   }
+}
