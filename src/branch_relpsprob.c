@@ -498,6 +498,9 @@ SCIP_RETCODE applyProbing(
    SCIP_NODE* probingnode;
    SCIP_CONS* probingcons;
 
+   //SCIP_NODE* probingnodemaster; // ?
+   //SCIP_CONS* probingconsmaster; // ?
+
 //   SCIP_Real varsol;
    SCIP_Real leftlbprobing;
    SCIP_Real leftubprobing;
@@ -546,8 +549,18 @@ SCIP_RETCODE applyProbing(
       SCIPvarGetNCliques(probingvar, FALSE), SCIPvarGetNCliques(probingvar, TRUE));
 
    /* start probing mode */
+
+   //SCIP_CALL( SCIPstartProbing(masterscip) );    // ?
+   //SCIP_CALL( SCIPnewProbingNode(masterscip) );  // ?
+
    SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( SCIPnewProbingNode(scip) );
+
+   //probingnodemaster = SCIPgetCurrentNode(masterscip);  // ?
+   //SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &probingconsmaster, "probingconsmaster", probingnodemaster,
+   //           GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL) );   // ?
+   //SCIP_CALL( SCIPaddConsNode(masterscip, probingnodemaster, probingconsmaster, NULL) );  // ?
+   //SCIP_CALL( SCIPreleaseCons(masterscip, &probingconsmaster) );   // ?
 
    probingnode = SCIPgetCurrentNode(scip);
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
@@ -597,6 +610,8 @@ SCIP_RETCODE applyProbing(
 
    /* exit probing mode */
    SCIP_CALL( SCIPendProbing(scip) );
+
+   //SCIP_CALL( SCIPendProbing(masterscip) );   // ?
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
       *cutoff?"cutoff":"no cutoff", *lpsolved?"lpsolved":"lp not solved", *lpobjvalue);
@@ -1646,6 +1661,7 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    )
 {
    SCIP_BRANCHRULE* branchrule;
+   SCIP* origscip;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -1653,9 +1669,11 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    /* find branching rule */
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
 
    /* execute branching rule */
-   SCIP_CALL( execRelpsprob(scip, branchrule, branchcands, branchcandssol, branchcandsfrac, nbranchcands, nvars, result, branchvar) );
+   SCIP_CALL( execRelpsprob(origscip, branchrule, branchcands, branchcandssol, branchcandsfrac, nbranchcands, nvars, result, branchvar) );
 
    return SCIP_OKAY;
 }

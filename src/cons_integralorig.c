@@ -186,6 +186,14 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
    {
+      assert(conshdlrdata->branchrules[i] != NULL);
+
+      if(conshdlrdata->branchrules[i]->branchexeclp == NULL)
+      {
+         ++i;
+         continue;
+      }
+
       /** todo handle bool allowaddcons; here default TRUE */
       conshdlrdata->branchrules[i]->branchexeclp(scip, conshdlrdata->branchrules[i], TRUE, result);
       ++i;
@@ -234,6 +242,13 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 
    while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
    {
+      assert(conshdlrdata->branchrules[i] != NULL);
+
+      if(conshdlrdata->branchrules[i]->branchexecps == NULL)
+      {
+         ++i;
+         continue;
+      }
       /** todo handle bool allowaddcons; here default TRUE */
       conshdlrdata->branchrules[i]->branchexecps(scip, conshdlrdata->branchrules[i], TRUE, result);
       ++i;

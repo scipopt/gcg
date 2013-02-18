@@ -71,7 +71,7 @@
 #define DEFAULT_ENFORCEBYCONS FALSE
 #define DEFAULT_MOSTFRAC      FALSE
 #define DEFAULT_USEPSEUDO     TRUE
-#define DEFAULT_USEPSSTRONG   FALSE
+#define DEFAULT_USEPSSTRONG   TRUE //FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -272,6 +272,7 @@ SCIP_RETCODE branchExtern(
    SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
+   SCIP* masterscip;
    int i;
 
    /* parameter data */
@@ -302,6 +303,8 @@ SCIP_RETCODE branchExtern(
    SCIPdebugMessage("Execrel method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
 
    /* get values of parameters */
    SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/mostfrac", &mostfrac) );
@@ -320,7 +323,7 @@ SCIP_RETCODE branchExtern(
 
    if( usepsstrong )
    {
-      SCIP_CALL( SCIPgetRelpsprobBranchVar(scip, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
+      SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, branchcandsscore, npriobranchcands,
             npriobranchcands, result, &branchvar) );
       assert(branchvar != NULL || *result == SCIP_CUTOFF);
       assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);

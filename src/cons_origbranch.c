@@ -560,7 +560,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
    if( branchdata == NULL )
    {
-      assert(NULL == node);
+      //assert(NULL == node);
 
       if( BRANCHRULE_VANDERBECK == 1 )
       {
