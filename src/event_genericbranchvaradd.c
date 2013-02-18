@@ -190,7 +190,8 @@ SCIP_DECL_EVENTEXIT(eventExitGenericbranchvaradd)
 static
 SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 {  /*lint --e{715}*/
-   SCIP* masterscip;
+   //SCIP* masterscip;
+   SCIP* origscip;
    SCIP_CONS* masterbranchcons;
    SCIP_CONS* parentcons;
    SCIP_Bool varinS;
@@ -211,10 +212,14 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    varinS = TRUE;
    p = 0;
    mastervar = SCIPeventGetVar(event);
-   masterscip = scip;//GCGrelaxGetMasterprob(scip);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   //masterscip = scip;//GCGrelaxGetMasterprob(scip);  scip = masterscip
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
-   SCIP_CALL( SCIPgetVarsData(scip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    parentcons = masterbranchcons;
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
@@ -266,7 +271,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          if( varinS )
          {
             SCIPdebugMessage("mastervar is added\n");
-            SCIP_CALL( SCIPaddCoefLinear(masterscip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
+            SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
          }
 
          parentcons = GCGconsMasterbranchGetParentcons(parentcons);

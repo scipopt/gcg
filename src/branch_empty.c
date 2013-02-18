@@ -196,10 +196,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    SCIP_CONS* masterbranchchildcons;
-   SCIP_CONS* masterbranchchildcons2;
-   SCIP_CONSDATA* parentconsdata;
+   //SCIP_CONS* masterbranchchildcons2;
+   //SCIP_CONSDATA* parentconsdata;
+   int nchildnodes;
+   int i;
 
-
+   nchildnodes = 0;
+   i = 0;
    feasible = TRUE;
 
    assert(branchrule != NULL);
@@ -233,12 +236,17 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
    assert(masterbranchcons != NULL);
 
-   parentconsdata = SCIPconsGetData(masterbranchcons);
+   //parentconsdata = SCIPconsGetData(masterbranchcons);
+   nchildnodes = GCGconsMasterbranchGetNChildvanderbeckcons(masterbranchcons);
 
-//   for( i=0; i<parentconsdata->nchildvanderbeck; ++i )
-//   {
-//
-//   }
+   for( i=0; i<nchildnodes; ++i )
+   {
+      masterbranchchildcons = GCGconsOrigbranchGetChildvanderbeckcons(masterbranchcons, i);
+      assert(masterbranchchildcons != NULL);
+
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+   }
+/*
    masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
    assert(masterbranchchildcons != NULL);
 
@@ -248,7 +256,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    assert(masterbranchchildcons2 != NULL);
 
    SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons2));
-
+*/
 
    *result = SCIP_BRANCHED;
    return SCIP_OKAY;
@@ -262,10 +270,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
    SCIP_CONS* masterbranchchildcons;
-   SCIP_CONS* masterbranchchildcons2;
-   SCIP_CONSDATA* parentconsdata;
+   //SCIP_CONSDATA* parentconsdata;
+   int nchildnodes;
+   int i;
 
-
+   nchildnodes = 0;
+   i = 0;
    feasible = TRUE;
 
    assert(branchrule != NULL);
@@ -291,7 +301,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Execext method of empty branching\n");
+   SCIPdebugMessage("Execeps method of empty branching\n");
 
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
@@ -299,22 +309,16 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
    assert(masterbranchcons != NULL);
 
-   parentconsdata = SCIPconsGetData(masterbranchcons);
+   //parentconsdata = SCIPconsGetData(masterbranchcons);
+   nchildnodes = GCGconsMasterbranchGetNChildvanderbeckcons(masterbranchcons);
 
-   //   for( i=0; i<parentconsdata->nchildvanderbeck; ++i )
-   //   {
-   //
-   //   }
-   masterbranchchildcons = GCGconsMasterbranchGetChild1cons(masterbranchcons);
-   assert(masterbranchchildcons != NULL);
+   for( i=0; i<nchildnodes; ++i )
+   {
+      masterbranchchildcons = GCGconsOrigbranchGetChildvanderbeckcons(masterbranchcons, i);
+      assert(masterbranchchildcons != NULL);
 
-   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
-
-   masterbranchchildcons2 = GCGconsMasterbranchGetChild2cons(masterbranchcons);
-   assert(masterbranchchildcons2 != NULL);
-
-   SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons2));
-
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+   }
 
    *result = SCIP_BRANCHED;
    return SCIP_OKAY;

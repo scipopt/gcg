@@ -65,7 +65,7 @@
 #define EVENTHDLR_NAME         "origvarbound"
 #define EVENTHDLR_DESC         "event handler for origvarbound event"
 
-#define BRANCHRULE_VANDERBECK        0
+//#define BRANCHRULE_VANDERBECK        0
 
 
 /** constraint data for masterbranch constraints */
@@ -612,8 +612,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    {
       consdata2 = SCIPconsGetData((*consdata)->parentcons);
 
-      if( BRANCHRULE_VANDERBECK == 1 )
-      {
+     // if( BRANCHRULE_VANDERBECK == 1 )
+      //{
          if( consdata2->probingtmpcons == cons )
          {
             assert(SCIPinProbing(scip));
@@ -638,9 +638,9 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
                }
             }
          }
-      }
-      else
-      {
+      //}
+      //else
+      /*{
 
          if( consdata2->child1cons == cons )
          {
@@ -667,7 +667,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
                consdata2->probingtmpcons = NULL;
             }
          }
-      }
+      }*/
    }
    /* the node should not have children anymore */
    assert((*consdata)->child1cons == NULL);
@@ -1785,8 +1785,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       parentdata = SCIPconsGetData(parentcons);
       assert(parentdata != NULL);
 
-      if( BRANCHRULE_VANDERBECK == 1 )
-      {
+      //if( BRANCHRULE_VANDERBECK == 1 )
+      //{
          ++parentdata->nchildvanderbeck;
          if( parentdata->nchildvanderbeck == 1 )
          {
@@ -1805,10 +1805,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
             parentdata->probingtmpcons = parentdata->childvanderbeck[parentdata->nchildvanderbeck - 1];
          }
          parentdata->childvanderbeck[parentdata->nchildvanderbeck - 1] = *cons;
-      }
-      else
-      {
-
+      //}
+      //else
+      /*{
          if( parentdata->child1cons == NULL )
          {
             parentdata->child1cons = *cons;
@@ -1817,7 +1816,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
          {
             assert(parentdata->child2cons == NULL || SCIPinProbing(scip));
 
-            /* store the second child in case we are in probing and have to overwrite it */
+            // store the second child in case we are in probing and have to overwrite it
             if( SCIPinProbing(scip) )
             {
                assert(parentdata->probingtmpcons == NULL);
@@ -1826,7 +1825,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
             parentdata->child2cons = *cons;
          }
-      }
+      }*/
    }
 
    return SCIP_OKAY;
@@ -1909,6 +1908,20 @@ SCIP_RETCODE GCGconsMasterbranchSetNChildVanderbeck(
 
    return SCIP_OKAY;
 }
+/*
+// the function returns the number of childnodes
+int GCGconsMasterbranchGetNChildVanderbeck(
+   SCIP_CONS*            cons                // constraint for which the consdata is setted
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->nchildvanderbeck;
+}*/
 
 /** the function returns the name of the constraint in the origconsdata data structure */
 char* GCGconsMasterbranchGetOrigbranchConsName(
@@ -2212,9 +2225,9 @@ SCIP_CONS* GCGconsMasterbranchGetChildvanderbeckcons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    assert(consdata->childvanderbeck != NULL);
-   assert(consdata->nchildvanderbeck >= childnr);
+   assert(consdata->nchildvanderbeck > childnr);
 
-   return consdata->childvanderbeck[childnr-1];
+   return consdata->childvanderbeck[childnr];
 }
 
 /** returns the masterbranch constraint of the first child of the node at which the
@@ -2228,10 +2241,10 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( BRANCHRULE_VANDERBECK == 1 )
+   //if( BRANCHRULE_VANDERBECK == 1 )
       return consdata->childvanderbeck[0];
 
-   return consdata->child1cons;
+   //return consdata->child1cons;
 }
 
 /** returns the masterbranch constraint of the second child of the node at which the
@@ -2245,10 +2258,10 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( BRANCHRULE_VANDERBECK == 1 )
+   //if( BRANCHRULE_VANDERBECK == 1 )
       return consdata->childvanderbeck[1];
 
-   return consdata->child2cons;
+   //return consdata->child2cons;
 }
 
 /** returns the origbranch constraint of the node in the original program corresponding to the node
@@ -2326,14 +2339,17 @@ void GCGconsMasterbranchCheckConsistency(
 
       assert(consdata->origcons == NULL || consdata->created);
 
-      if( BRANCHRULE_VANDERBECK != 1 )
+      /** todo case for general */
+      /*
+      //if( BRANCHRULE_VANDERBECK != 1 )
          assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
             || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
             || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
-      if( BRANCHRULE_VANDERBECK != 1 )
+      //if( BRANCHRULE_VANDERBECK != 1 )
          assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);
-      if( BRANCHRULE_VANDERBECK != 1 )
+      //if( BRANCHRULE_VANDERBECK != 1 )
          assert(consdata->child2cons == NULL || SCIPconsGetData(consdata->child2cons)->parentcons == conss[i]);
+      */
 
       assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
