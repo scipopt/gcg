@@ -89,7 +89,7 @@ typedef struct GCG_Record GCG_RECORD;
  */
 
 /* define not used callback as NULL*/
-#define branchCopyGeneric NULL
+//#define branchCopyGeneric NULL
 #define branchFreeGeneric NULL
 #define branchExitGeneric NULL
 #define branchInitsolGeneric NULL
@@ -2166,6 +2166,38 @@ int GCGbranchGenericGetNChildnodes(
    return nmasternodes;
 }
 
+//from branch_master
+static
+SCIP_RETCODE GCGincludeMasterCopyPlugins(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
+   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
+   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
+   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
+   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
+   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
+   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+   return SCIP_OKAY;
+}
+/** copy method for master branching rule */
+static
+SCIP_DECL_BRANCHCOPY(branchCopyGeneric)
+{
+   assert(branchrule != NULL);
+   assert(scip != NULL);
+   SCIPdebugMessage("pricer copy called.\n");
+   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+   return SCIP_OKAY;
+}
+
 /** callback activation method */
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
@@ -2588,9 +2620,13 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 static
 SCIP_DECL_BRANCHINIT(branchInitGeneric)
 {
-   assert(branchrule != NULL);
+   SCIP* origscip;
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterGeneric,
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(branchrule != NULL);
+   assert(origscip != NULL);
+
+   SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterGeneric,
          branchDeactiveMasterGeneric, branchPropMasterGeneric, NULL, branchDataDeleteGeneric) );
 
    return SCIP_OKAY;
@@ -2616,7 +2652,7 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
          branchruledata) );
 
    /* include event handler for adding generated mastervars to the branching constraints */
-   SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(GCGrelaxGetMasterprob(scip)) );
+   SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(scip) );  // GCGrelaxGetMasterprob(scip)) );
 
    return SCIP_OKAY;
 }

@@ -72,7 +72,7 @@
 
 #define BRANCHRULE_NAME          "relpsprob"
 #define BRANCHRULE_DESC          "generalized reliability branching using probing"
-#define BRANCHRULE_PRIORITY      9999//-100
+#define BRANCHRULE_PRIORITY      -100
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 

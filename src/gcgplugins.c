@@ -144,7 +144,6 @@
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
-//#include "branch_relpsprob.h"
 #include "reader_ref.h"
 
 /* Martin's detection stuff */
@@ -280,7 +279,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderRef(scip) );
    //SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
-   //SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
 
