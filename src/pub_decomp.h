@@ -336,6 +336,7 @@ void DECgetSubproblemVarsData(
    );
 
 /** return the number of variables and binary, integer, implied integer, continuous variables of the master */
+extern
 void DECgetLinkingVarsData(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition structure */
@@ -345,6 +346,32 @@ void DECgetLinkingVarsData(
    int*                  nimplvars,          /**< pointer to store number of implied linking vars or NULL */
    int*                  ncontvars           /**< pointer to store number of continuous linking vars or NULL */
    );
+
+/**
+ * returns the number of nonzeros of each column of the constraint matrix both in the subproblem and in the master
+ * @note For linking variables, the number of nonzeros in the subproblems corresponds to the number on nonzeros
+ * in the border
+ *
+ * @note The arrays have to be allocated by the caller
+ *
+ * @pre This function assumes that constraints are partitioned in the decomp structure, no constraint is present in more than one block
+ *
+ */
+extern
+SCIP_RETCODE DECgetDensityData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< pointer to array to store constraints belonging to the density */
+   int                   nconss,             /**< number of constraints */
+   int*                  varsubproblemdensity, /**< pointer to array to store the nonzeros for the subproblems */
+   int*                  varmasterdensity,   /**< pointer to array to store the nonzeros for the master */
+   int*                  conssubproblemdensity, /**< pointer to array to store the nonzeros for the subproblems */
+   int*                  consmasterdensity   /**< pointer to array to store the nonzeros for the master */
+);
+
+
 #ifdef __cplusplus
 }
 #endif
