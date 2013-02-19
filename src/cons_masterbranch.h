@@ -61,7 +61,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 
 extern
 /** the function initializes the origconsdata data structure */
-SCIP_RETCODE GCGconsMasterbranchSetNChildVanderbeck(
+SCIP_RETCODE GCGconsMasterbranchSetNChildcons(
    SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
    int                   nchildcons
    );
@@ -189,17 +189,17 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
-/** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
+/** returns the number of origbranch constraints of the childarray of the node at which the
     given masterbranch constraint is sticking */
 extern
-int GCGconsMasterbranchGetNChildvanderbeckcons(
+int GCGconsMasterbranchGetNChildcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
-/** returns the masterbranch constraint of the vanderbeckchild of the node at which the
+/** returns the masterbranch constraint of the child of the node at which the
     given masterbranch constraint is sticking */
 extern
-SCIP_CONS* GCGconsMasterbranchGetChildvanderbeckcons(
+SCIP_CONS* GCGconsMasterbranchGetChildcons(
    SCIP_CONS*            cons,                /**< constraint pointer */
    int                   childnr
    );

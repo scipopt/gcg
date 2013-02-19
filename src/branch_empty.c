@@ -237,11 +237,11 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    assert(masterbranchcons != NULL);
 
    //parentconsdata = SCIPconsGetData(masterbranchcons);
-   nchildnodes = GCGconsMasterbranchGetNChildvanderbeckcons(masterbranchcons);
+   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
 
    for( i=0; i<nchildnodes; ++i )
    {
-      masterbranchchildcons = GCGconsOrigbranchGetChildvanderbeckcons(masterbranchcons, i);
+      masterbranchchildcons = GCGconsOrigbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
       SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
@@ -310,11 +310,11 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    assert(masterbranchcons != NULL);
 
    //parentconsdata = SCIPconsGetData(masterbranchcons);
-   nchildnodes = GCGconsMasterbranchGetNChildvanderbeckcons(masterbranchcons);
+   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
 
    for( i=0; i<nchildnodes; ++i )
    {
-      masterbranchchildcons = GCGconsOrigbranchGetChildvanderbeckcons(masterbranchcons, i);
+      masterbranchchildcons = GCGconsOrigbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
       SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));

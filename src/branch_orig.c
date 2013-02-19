@@ -170,7 +170,7 @@ SCIP_RETCODE branchVar(
    //number of childnodes
    if( GCGconsMasterbranchGetActiveCons(masterscip) != NULL )
    {
-      GCGconsMasterbranchSetNChildVanderbeck(GCGconsMasterbranchGetActiveCons(masterscip), 2);
+      GCGconsMasterbranchSetNChildcons(GCGconsMasterbranchGetActiveCons(masterscip), 2);
    }
    // create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints
    SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );

@@ -151,14 +151,14 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
          //if( BRANCHRULE_VANDERBECK == 1 )
          //{
-            nchildvanderbeck = GCGconsOrigbranchGetNChildvanderbeckcons( parentorigcons );
+            nchildvanderbeck = GCGconsOrigbranchGetNChildcons( parentorigcons );
             for( i=0; i<nchildvanderbeck; ++i )
             {
-               if( GCGconsOrigbranchGetChildvanderbeckcons( parentorigcons, i) == origcons )
+               if( GCGconsOrigbranchGetChildcons( parentorigcons, i) == origcons )
                {
-                  assert(GCGconsMasterbranchGetChildvanderbeckcons( parentmastercons, i) != NULL);
-                  assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildvanderbeckcons( parentmastercons, i)) != NULL);
-                  *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildvanderbeckcons( parentmastercons, i));
+                  assert(GCGconsMasterbranchGetChildcons( parentmastercons, i) != NULL);
+                  assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildcons( parentmastercons, i)) != NULL);
+                  *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildcons( parentmastercons, i));
                   SCIPdebugMessage( "Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
                         SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
                         SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
