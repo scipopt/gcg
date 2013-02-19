@@ -566,7 +566,6 @@ SCIP_Bool SCIPgetConsIsSetppc(
 }
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
-extern
 SCIP_Bool isRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    )

@@ -120,7 +120,7 @@ public:
         return maxvarsround;
     }
 
-    inline virtual void incCalls()
+    virtual void incCalls()
     {
         calls++;
     }
