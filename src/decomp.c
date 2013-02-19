@@ -1950,10 +1950,10 @@ void DECgetLinkingVarsData(
 
 /**
  * returns the number of nonzeros of each column of the constraint matrix both in the subproblem and in the master
- * @note that for linking variables, the number of nonzeros in the subproblems corresponds to the number on nonzeros
+ * @note For linking variables, the number of nonzeros in the subproblems corresponds to the number on nonzeros
  * in the border
  *
- * @note the arrays have to be allocated by the caller
+ * @note The arrays have to be allocated by the caller
  *
  * @pre This function assumes that constraints are partitioned in the decomp structure, no constraint is present in more than one block
  *
@@ -2003,6 +2003,8 @@ SCIP_RETCODE DECgetDensityData(
    BMSclearMemoryArray(varmasterdensity, nvars);
    BMSclearMemoryArray(conssubproblemdensity, nconss);
    BMSclearMemoryArray(consmasterdensity, nconss);
+
+   BMScopyMemoryArray(vars, SCIPgetVars(scip), nvars);
 
    vartoblock = DECdecompGetVartoblock(decomp);
    c = 0;
@@ -2081,6 +2083,179 @@ SCIP_RETCODE DECgetDensityData(
       c++;
 
       SCIPfreeMemoryArray(scip, &curvars);
+   }
+
+   return SCIP_OKAY;
+}
+
+/** helper function to increase correct lock */
+static
+void increaseLock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             lhs,                /**< left side of constraint */
+   SCIP_Real             coef,               /**< coefficient of variable in constraint */
+   SCIP_Real             rhs,                /**< right side of constraint */
+   int*                  downlock,           /**< pointer to store downlock */
+   int*                  uplock              /**< pointer to store uplock */
+   )
+{
+   assert(scip != NULL);
+   assert(downlock != NULL);
+   assert(uplock != NULL);
+
+   if( !SCIPisInfinity(scip, -lhs) )
+   {
+      if( SCIPisPositive(scip, coef) )
+         ++(*downlock);
+      if( SCIPisNegative(scip, coef) )
+         ++(*uplock);
+
+   }
+   if( !SCIPisInfinity(scip, rhs) )
+   {
+      if( SCIPisPositive(scip, coef) )
+         ++(*uplock);
+      if( SCIPisNegative(scip, coef) )
+         ++(*downlock);
+   }
+
+}
+
+/**
+ *  calculates the number of up and down locks of variables for a given decomposition in both the original problem and the pricingproblems
+ *
+ *  @note All arrays need to be allocated by the caller
+ *
+ *  @warning This function needs a lot of memory (nvars*nblocks+1) array entries
+ */
+SCIP_RETCODE DECgetVarLockData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
+   int                   nvars,              /**< number of variables */
+   int                   nsubproblems,       /**< number of sub problems */
+   int**                 subsciplocksdown,   /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int**                 subsciplocksup,     /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
+   int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
+   )
+{
+   int nlinkingconss;
+   SCIP_CONS** curconss;
+   SCIP_HASHMAP* vartoblock;
+   SCIP_VAR** curvars;
+   SCIP_Real* curvals;
+   int ncurvars;
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+
+   SCIP_Bool success;
+
+   int i;
+   int j;
+   int v;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(vars != NULL);
+   assert(nvars > 0);
+   assert(nvars == SCIPgetNVars(scip));
+   assert(subsciplocksdown != NULL);
+   assert(subsciplocksup != NULL);
+   assert(masterlocksdown != NULL);
+   assert(masterlocksup != NULL);
+
+   /* make sure the passed data is initialised to 0 */
+   BMSclearMemoryArray(vars, nvars);
+   BMScopyMemoryArray(vars, SCIPgetVars(scip), nvars);
+   BMSclearMemoryArray(masterlocksdown, nvars);
+   BMSclearMemoryArray(masterlocksup, nvars);
+   for( i = 0; i < nsubproblems; ++i )
+   {
+      BMSclearMemoryArray(subsciplocksdown[i], nvars);
+      BMSclearMemoryArray(subsciplocksup[i], nvars);
+   }
+
+   vartoblock = DECdecompGetVartoblock(decomp);
+
+   for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
+   {
+      curconss = DECdecompGetSubscipconss(decomp)[i];
+      assert(curconss != NULL);
+
+      for( j = 0; j < DECdecompGetNSubscipconss(decomp)[i]; ++j )
+      {
+
+         SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
+         assert(success);
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+
+         SCIP_CALL( SCIPgetValsXXX(scip, curconss[j], curvals, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
+         assert(success);
+
+         rhs = SCIPgetRhsXXX(scip, curconss[j]);
+         lhs = SCIPgetLhsXXX(scip, curconss[j]);
+
+         for( v = 0; v < ncurvars; ++v )
+         {
+            SCIP_VAR* var;
+            int block;
+            int probindex;
+            var = curvars[v];
+            var = SCIPvarGetProbvar(var);
+            probindex = SCIPvarGetProbindex(var);
+            assert(probindex >= 0);
+            assert(probindex < nvars);
+
+            block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
+            assert(block > 0);
+            if( block < DECdecompGetNBlocks(decomp) )
+            {
+               increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
+            }
+            else
+            {
+               increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
+            }
+         }
+
+         SCIPfreeMemoryArray(scip, &curvars);
+         SCIPfreeMemoryArray(scip, &curvals);
+      }
+   }
+
+   nlinkingconss = DECdecompGetNLinkingvars(decomp);
+   curconss = DECdecompGetLinkingconss(decomp);
+   for( j = 0; j < nlinkingconss; ++j )
+   {
+      SCIP_CALL( SCIPgetConsNVars(scip, curconss[j], &ncurvars, &success) );
+      assert(success);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
+
+      SCIP_CALL( SCIPgetValsXXX(scip, curconss[j], curvals, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
+      assert(success);
+
+      rhs = SCIPgetRhsXXX(scip, curconss[j]);
+      lhs = SCIPgetLhsXXX(scip, curconss[j]);
+
+      for( v = 0; v < ncurvars; ++v )
+      {
+         SCIP_VAR* var;
+         int probindex;
+         var = curvars[v];
+         var = SCIPvarGetProbvar(var);
+         probindex = SCIPvarGetProbindex(var);
+         assert(probindex >= 0);
+         assert(probindex < nvars);
+         increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(masterlocksup[probindex]));
+      }
+
+      SCIPfreeMemoryArray(scip, &curvars);
+      SCIPfreeMemoryArray(scip, &curvals);
    }
 
    return SCIP_OKAY;

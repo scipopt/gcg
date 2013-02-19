@@ -371,6 +371,24 @@ SCIP_RETCODE DECgetDensityData(
    int*                  consmasterdensity   /**< pointer to array to store the nonzeros for the master */
 );
 
+/**
+ *  calculates the number of up and down locks of variables for a given decomposition in both the original problem and the pricingproblems
+ *
+ *  @note All arrays need to be allocated by the caller
+ *
+ *  @warning This function needs a lot of memory (nvars*nblocks+1) array entries
+ */
+SCIP_RETCODE DECgetVarLockData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
+   int                   nvars,              /**< number of variables */
+   int                   nsubproblems,       /**< number of sub problems */
+   int**                 subsciplocksdown,   /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int**                 subsciplocksup,     /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
+   int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
+   );
 
 #ifdef __cplusplus
 }
