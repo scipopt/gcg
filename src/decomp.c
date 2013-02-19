@@ -1850,7 +1850,7 @@ void incVarsData(
 )
 {
    assert(var != NULL);
-   assert(i > 0);
+   assert(i >= 0);
    assert(i < nproblems);
 
    if( nbinvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarIsBinary(var)) )
@@ -1897,6 +1897,16 @@ void DECgetSubproblemVarsData(
    assert(nproblems > 0);
 
    assert(DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN);
+   if(nvars != NULL)
+      BMSclearMemoryArray(nvars, nproblems);
+   if(nbinvars != NULL)
+      BMSclearMemoryArray(nbinvars, nproblems);
+   if(nintvars != NULL)
+      BMSclearMemoryArray(nintvars, nproblems);
+   if(nimplvars != NULL)
+      BMSclearMemoryArray(nimplvars, nproblems);
+   if(ncontvars != NULL)
+      BMSclearMemoryArray(ncontvars, nproblems);
 
    for( i = 0; i < nproblems; ++i)
    {
@@ -1941,6 +1951,15 @@ void DECgetLinkingVarsData(
 
    if(nvars != NULL)
       *nvars = nlinkingvars;
+   if(nbinvars != NULL)
+      *nbinvars = 0;
+   if(nintvars != NULL)
+      *nintvars = 0;
+   if(nimplvars != NULL)
+      *nimplvars = 0;
+   if(ncontvars != NULL)
+      *ncontvars = 0;
+
 
    for( i = 0; i < nlinkingvars; ++i )
    {
@@ -2038,7 +2057,7 @@ SCIP_RETCODE DECgetDensityData(
             assert(varsubproblemdensity[probindex] > 0);
             block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
             assert(block > 0);
-            if( block < DECdecompGetNBlocks(decomp) )
+            if( block <= DECdecompGetNBlocks(decomp) )
             {
                conssubproblemdensity[c] +=1;
             }
@@ -2211,14 +2230,7 @@ SCIP_RETCODE DECgetVarLockData(
 
             block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
             assert(block > 0);
-            if( block < DECdecompGetNBlocks(decomp) )
-            {
-               increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
-            }
-            else
-            {
-               increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
-            }
+            increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
          SCIPfreeMemoryArray(scip, &curvars);
@@ -2251,7 +2263,7 @@ SCIP_RETCODE DECgetVarLockData(
          probindex = SCIPvarGetProbindex(var);
          assert(probindex >= 0);
          assert(probindex < nvars);
-         increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(masterlocksup[probindex]));
+         increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
       }
 
       SCIPfreeMemoryArray(scip, &curvars);

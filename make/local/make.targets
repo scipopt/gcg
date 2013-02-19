@@ -46,7 +46,7 @@ testexamples:
 # google testing framework
 TESTNAME	=	gcg_test
 TESTOBJ		=	tests/test.o
-TESTSRCDIR		=	$(SRCDIR)/tests
+TESTSRCDIR	=	$(SRCDIR)/tests
 
 TESTSRC		=	$(filter $(wildcard $(TESTSRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.c))) $(filter $(wildcard $(TESTSRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.cpp)))
 TESTDEP		=	$(SRCDIR)/depend.tests.$(OPT)
@@ -56,7 +56,7 @@ TESTFILE	=	$(BINDIR)/$(TESTMAIN)
 TESTSHORTLINK	=	$(BINDIR)/$(TESTNAME)
 TESTOBJFILES	=	$(addprefix $(OBJDIR)/,$(TESTOBJ))
 TESTOBJDIR      =	$(OBJDIR)/tests
-TESTLDFLAGS		+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest
+TESTLDFLAGS	+=	$(LINKCXX_L)$(LIBDIR) $(LINKCXX_l)gtest
 
 .PHONY: testdepend
 testdepend::
