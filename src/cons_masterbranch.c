@@ -215,7 +215,7 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
 #endif
 
    assert(SCIPgetCurrentNode(scip) == consdata->node || consdata->node == SCIPgetRootNode(scip));
-   assert((SCIPgetNNodesLeft(scip)+SCIPgetNNodes(scip) == 1) == (consdata->node == SCIPgetRootNode(scip)));
+//   assert((SCIPgetNNodesLeft(scip)+SCIPgetNNodes(scip) == 1) == (consdata->node == SCIPgetRootNode(scip)));
    assert(SCIPnodeGetDepth(GCGconsOrigbranchGetNode(consdata->origcons)) == SCIPnodeGetDepth(consdata->node));
    assert(consdata->parentcons != NULL || SCIPnodeGetDepth(consdata->node) == 0);
 
@@ -614,30 +614,30 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
      // if( BRANCHRULE_VANDERBECK == 1 )
       //{
-         if( consdata2->probingtmpcons == cons )
-         {
-            assert(SCIPinProbing(scip));
-            assert(consdata2->probingtmpcons == cons);
-            assert(SCIPisLE(scip, SCIPgetCutoffbound(scip), SCIPgetNodeLowerbound(scip, (*consdata)->node)));
+         //if( consdata2->probingtmpcons == cons )
+         //{
+           // assert(SCIPinProbing(scip));
+           // assert(consdata2->probingtmpcons == cons);
+           // assert(SCIPisLE(scip, SCIPgetCutoffbound(scip), SCIPgetNodeLowerbound(scip, (*consdata)->node)));
 
-            consdata2->probingtmpcons = NULL;
-         }
-         else
+            //consdata2->probingtmpcons = NULL;
+      //}
+      if( SCIPinProbing(scip) )
+      {
+         consdata2->probingtmpcons = NULL;
+      }
+      else
+      {
+         for( i=0; i<(*consdata)->nchildcons; ++i )
          {
-            for( i=0; i<(*consdata)->nchildcons; ++i )
+            if( consdata2->childcons[i] == cons )
             {
-               if( consdata2->childcons[i] == cons )
-               {
-                  consdata2->childcons[i] = NULL;
-                  if( SCIPinProbing(scip) && i>0 )
-                  {
-                     consdata2->childcons[i] = consdata2->probingtmpcons;
-                     consdata2->probingtmpcons = NULL;
-                  }
-                  break;
-               }
+               consdata2->childcons[i] = NULL;
+
+               break;
             }
          }
+      }
       //}
       //else
       /*{
@@ -1787,24 +1787,32 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
       //if( BRANCHRULE_VANDERBECK == 1 )
       //{
+      if( SCIPinProbing(scip) )
+      {
+         parentdata->probingtmpcons = *cons;
+      }
+      else
+      {
          ++parentdata->nchildcons;
          if( parentdata->nchildcons == 1 )
          {
             SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
          }
-         else if( !SCIPinProbing(scip) )
+         else //if( !SCIPinProbing(scip) )
          {
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
          }
 
          /* store the last child in case we are in probing and have to overwrite it */
+         /*
          if( SCIPinProbing(scip) && parentdata->nchildcons > 1 )
          {
             assert(parentdata->probingtmpcons == NULL);
             --parentdata->nchildcons;
             parentdata->probingtmpcons = parentdata->childcons[parentdata->nchildcons - 1];
-         }
+         }*/
          parentdata->childcons[parentdata->nchildcons - 1] = *cons;
+      }
       //}
       //else
       /*{
@@ -1817,7 +1825,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
             assert(parentdata->child2cons == NULL || SCIPinProbing(scip));
 
             // store the second child in case we are in probing and have to overwrite it
-            if( SCIPinProbing(scip) )
+            if( SCIPinProbing(scip) ) assert(SCIPisLE(scip, SCIPgetCutoffbound(scip), SCIPgetNodeLowerbound(scip, (*consdata)->node)));
             {
                assert(parentdata->probingtmpcons == NULL);
                parentdata->probingtmpcons = parentdata->child2cons;
@@ -2258,6 +2266,8 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+   //if( SCIPinProbing(scip) )
+
    assert(consdata->nchildcons >= 2);
 
    //if( BRANCHRULE_VANDERBECK == 1 )

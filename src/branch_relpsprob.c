@@ -554,6 +554,7 @@ SCIP_RETCODE applyProbing(
    //SCIP_CALL( SCIPnewProbingNode(masterscip) );  // ?
 
    SCIP_CALL( SCIPstartProbing(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
    SCIP_CALL( SCIPnewProbingNode(scip) );
 
    //probingnodemaster = SCIPgetCurrentNode(masterscip);  // ?
@@ -610,6 +611,7 @@ SCIP_RETCODE applyProbing(
 
    /* exit probing mode */
    SCIP_CALL( SCIPendProbing(scip) );
+   SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    //SCIP_CALL( SCIPendProbing(masterscip) );   // ?
 

@@ -1944,6 +1944,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
 /** returns the number of successor nodes needed for branch_master while using the generic branching scheme */
 /** @return SCIP_RETCODE, int as input, createorignodes auslagern */
+static
 SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                masterscip         /**< */
    //SCIP_Bool            createorignodes     /**< */

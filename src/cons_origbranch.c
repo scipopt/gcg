@@ -281,6 +281,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
       //if( BRANCHRULE_VANDERBECK == 1 )
       //{
+      /*
          if( parentdata->probingtmpcons == cons )
          {
             assert(SCIPinProbing(scip));
@@ -301,7 +302,23 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
                   break;
                }
             }
-         }
+         }*/
+      if( SCIPinProbing(scip) )
+            {
+               parentdata->probingtmpcons = NULL;
+            }
+            else
+            {
+               for( i=0; i<(*consdata)->nchildcons; ++i )
+               {
+                  if( parentdata->childcons[i] == cons )
+                  {
+                     parentdata->childcons[i] = NULL;
+
+                     break;
+                  }
+               }
+            }
       //}
       //else
       /*{
@@ -326,8 +343,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       }*/
    }
    /* no child nodes may exist */
-   assert((*consdata)->childcons[0] == NULL);
-   assert((*consdata)->childcons[1] == NULL);
    for( i=0; i<(*consdata)->nchildcons; ++i )
          assert((*consdata)->childcons[i] == NULL);
 
@@ -559,7 +574,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
-   if( branchdata == NULL )
+   if( branchdata == NULL && branchrule != NULL )
    {
       //assert(NULL == node);
 
@@ -603,6 +618,12 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
       //if( BRANCHRULE_VANDERBECK == 1 )
       //{
+      if( SCIPinProbing(scip) )
+      {
+         parentdata->probingtmpcons = *cons;
+      }
+      else
+      {
          ++parentdata->nchildcons;
          if( parentdata->nchildcons == 1 )
             SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
@@ -616,6 +637,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
             parentdata->probingtmpcons = parentdata->childcons[parentdata->nchildcons-1];
          }
          parentdata->childcons[parentdata->nchildcons-1] = *cons;
+      }
       //}
       //else
       /*{
