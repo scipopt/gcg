@@ -2781,4 +2781,4 @@ $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/type_history.h \
  lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
- lib/scip/src/scip/cons_setppc.h
+ lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h
