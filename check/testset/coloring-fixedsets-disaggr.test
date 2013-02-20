@@ -11,11 +11,3 @@ database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhdec.
 database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhdec.order60.holes1152.bal.1.col.lp.gz
 database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhdec.order60.holes1440.1.col.lp.gz
 database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhdec.order60.holes1620.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order5.holes10.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order18.holes120.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order30.holes316.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order30.holes320.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order35.holes405.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order40.holes528.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order60.holes1440.1.col.lp.gz
-database/problems/coloring/testsets/fixedsets/data/coloring-disagregiert/qwhopt.order60.holes1620.1.col.lp.gz
