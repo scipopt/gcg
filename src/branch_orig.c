@@ -71,7 +71,7 @@
 #define DEFAULT_ENFORCEBYCONS FALSE
 #define DEFAULT_MOSTFRAC      FALSE
 #define DEFAULT_USEPSEUDO     TRUE
-#define DEFAULT_USEPSSTRONG   TRUE  //FALSE
+#define DEFAULT_USEPSSTRONG   FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData

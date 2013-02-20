@@ -206,19 +206,23 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
 
 /** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
+/*
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
    SCIP*                 scip,
-   SCIP_CONS*            cons                /**< constraint pointer */
+   SCIP_CONS*            cons                // constraint pointer
    );
+*/
 
 /** returns the masterbranch constraint of the second child of the node at which the
     given masterbranch constraint is sticking */
+/*
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
    SCIP*                 scip,
-   SCIP_CONS*            cons                /**< constraint pointer */
+   SCIP_CONS*            cons                // constraint pointer
    );
+*/
 
 /** returns the origbranch constraint of the node in the original program corresponding to the node
     at which the given masterbranch constraint is sticking */
