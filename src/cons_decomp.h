@@ -149,6 +149,10 @@ SCIP_Bool DEChasDetectionRun(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** returns the character of the detector */
+char DECdetectorGetChar(
+   DEC_DETECTOR*         detector            /**< pointer to detector */
+);
 
 #ifdef __cplusplus
 }

@@ -1014,3 +1014,12 @@ SCIP_Bool DEChasDetectionRun(
 
    return conshdlrdata->hasrun;
 }
+
+/** returns the character of the detector */
+char DECdetectorGetChar(
+   DEC_DETECTOR*         detector            /**< pointer to detector */
+)
+{
+   assert(detector != NULL);
+   return detector->decchar;
+}
