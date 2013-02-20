@@ -1749,8 +1749,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
    consdata->node = node;
    consdata->parentcons = parentcons;
-   //consdata->child1cons = NULL;
-   //consdata->child2cons = NULL;
 
    consdata->childcons = NULL;
    consdata->nchildcons = 0;
@@ -2241,6 +2239,7 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
 /** returns the masterbranch constraint of the first child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
@@ -2248,10 +2247,13 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+   if( SCIPinProbing(scip) )
+      return consdata->probingtmpcons;
+
    assert(consdata->nchildcons >= 1);
 
    //if( BRANCHRULE_VANDERBECK == 1 )
-      return consdata->childcons[0];
+   return consdata->childcons[0];
 
    //return consdata->child1cons;
 }
@@ -2259,6 +2261,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
 /** returns the masterbranch constraint of the second child of the node at which the
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
+   SCIP*                 scip,               /**< scip pointer */
    SCIP_CONS*            cons                /**< constraint pointer */
    )
 {
@@ -2266,12 +2269,14 @@ SCIP_CONS* GCGconsMasterbranchGetChild2cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   //if( SCIPinProbing(scip) )
+
+   if( SCIPinProbing(scip) )
+      return consdata->probingtmpcons;
 
    assert(consdata->nchildcons >= 2);
 
    //if( BRANCHRULE_VANDERBECK == 1 )
-      return consdata->childcons[1];
+   return consdata->childcons[1];
 
    //return consdata->child2cons;
 }

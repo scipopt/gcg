@@ -134,6 +134,7 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
     given origbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetChild1cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the first child node is requested */
    );
@@ -142,6 +143,7 @@ SCIP_CONS* GCGconsOrigbranchGetChild1cons(
     given origbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetChild2cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the second child node is requested */
    );

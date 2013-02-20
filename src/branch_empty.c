@@ -241,7 +241,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 
    for( i=0; i<nchildnodes; ++i )
    {
-      masterbranchchildcons = GCGconsOrigbranchGetChildcons(masterbranchcons, i);
+      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
       SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));

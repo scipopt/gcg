@@ -208,6 +208,7 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild1cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
@@ -215,6 +216,7 @@ SCIP_CONS* GCGconsMasterbranchGetChild1cons(
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsMasterbranchGetChild2cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 

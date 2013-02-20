@@ -831,6 +831,7 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
 /** returns the origbranch constraint of the first child of the node at which the
     given origbranch constraint is sticking */
 SCIP_CONS* GCGconsOrigbranchGetChild1cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the first child node is requested */
    )
@@ -840,10 +841,13 @@ SCIP_CONS* GCGconsOrigbranchGetChild1cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+   if( SCIPinProbing(scip) )
+      return consdata->probingtmpcons;
+
    assert(consdata->nchildcons >= 1);
 
    //if( BRANCHRULE_VANDERBECK == 1 )
-      return consdata->childcons[0];
+   return consdata->childcons[0];
 
    //return consdata->child1cons;
 }
@@ -851,6 +855,7 @@ SCIP_CONS* GCGconsOrigbranchGetChild1cons(
 /** returns the origbranch constraint of the second child of the node at which the
     given origbranch constraint is sticking */
 SCIP_CONS* GCGconsOrigbranchGetChild2cons(
+   SCIP*                 scip,
    SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
                                               *   the second child node is requested */
    )
@@ -860,6 +865,10 @@ SCIP_CONS* GCGconsOrigbranchGetChild2cons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+
+   if( SCIPinProbing(scip) )
+      return consdata->probingtmpcons;
+
    assert(consdata->nchildcons >= 2);
 
    //if( BRANCHRULE_VANDERBECK == 1 )
