@@ -122,6 +122,9 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &origbranch, GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons), child,
             GCGconsOrigbranchGetActiveCons(scip), GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons), GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons)) );
 
+   if( GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons) == NULL )
+      SCIPdebugMessage("origbranch with no branchdata created\n");
+
    SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
 
    SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
@@ -158,7 +161,8 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    if( norigbranchcons > 0 )
       SCIPfreeMemoryArray(GCGrelaxGetMasterprob(scip), &origbranchcons);
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL, NULL, NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL,
+      GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons), NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
 
    return SCIP_OKAY;
 }

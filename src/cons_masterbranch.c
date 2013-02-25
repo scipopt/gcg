@@ -31,7 +31,7 @@
  * @author Gerald Gamrath
  * @author Martin Bergner
  */
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -1796,10 +1796,12 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
          if( parentdata->nchildcons == 1 )
          {
             SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
+            parentdata->childcons[0] = NULL;
          }
          else //if( !SCIPinProbing(scip) )
          {
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
+            parentdata->childcons[parentdata->nchildcons - 1] = NULL;
          }
 
          /* store the last child in case we are in probing and have to overwrite it */
@@ -1810,6 +1812,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
             --parentdata->nchildcons;
             parentdata->probingtmpcons = parentdata->childcons[parentdata->nchildcons - 1];
          }*/
+         assert(parentdata->childcons[parentdata->nchildcons - 1] == NULL);
          parentdata->childcons[parentdata->nchildcons - 1] = *cons;
       }
       //}
@@ -1898,10 +1901,10 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 
    return SCIP_OKAY;
 }
-
-/** the function initializes the origconsdata data structure */
+/*
+// the function initializes the origconsdata data structure
 SCIP_RETCODE GCGconsMasterbranchSetNChildcons(
-   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   SCIP_CONS*            cons,                //< constraint for which the consdata is setted
    int                   nchildcons
    )
 {
@@ -1915,6 +1918,7 @@ SCIP_RETCODE GCGconsMasterbranchSetNChildcons(
 
    return SCIP_OKAY;
 }
+*/
 /*
 // the function returns the number of childnodes
 int GCGconsMasterbranchGetNChildVanderbeck(
@@ -2036,6 +2040,20 @@ SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
    assert(consdata != NULL);
 
    return consdata->addPropBoundChg;
+}
+
+/** the function returns the branchrule of the constraint in the masterbranchconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetbranchrule(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+
+   assert(consdata != NULL);
+
+   return consdata->branchrule;
 }
 
 /** the function returns the branchrule of the constraint in the origconsdata data structure */
@@ -2412,7 +2430,7 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
-   SCIP_CONSDATA* consdata;
+  // SCIP_CONSDATA* consdata;
    //GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
@@ -2429,6 +2447,8 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    assert(conshdlrData->nstack == 1);
    conshdlrData->nstack = 0;
 
+
+   /*
    if( cons == NULL)
    {
       SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
@@ -2437,6 +2457,7 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    }
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
+*/
    //if( conshdlrData->rootcons != NULL )
    //{
      // branchdata = GCGconsMasterbranchGetBranchdata(cons);
@@ -2445,8 +2466,9 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    //}
    //if( strcmp(SCIPbranchruleGetName(branchrule), "generic") == 0 )
    //{
-      SCIP_CALL( GCGbranchGenericCreateBranchdata(scip, &(consdata->branchdata)) );
+     // SCIP_CALL( GCGbranchGenericCreateBranchdata(scip, &(consdata->branchdata)) );
    //}
+
 
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
    SCIP_CALL( SCIPreleaseCons(scip, &cons) );

@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 extern
-/** the function initializes the condata data structure */
+/** the function initializes the consdata data structure */
 SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP*                 scip,               /**< SCIP data structure*/
    SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
@@ -58,13 +58,14 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
    SCIP_Real             addPropBoundChgBound
    );
-
+/*
 extern
-/** the function initializes the origconsdata data structure */
+// the function initializes the origconsdata data structure
 SCIP_RETCODE GCGconsMasterbranchSetNChildcons(
-   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   SCIP_CONS*            cons,                // constraint for which the consdata is setted
    int                   nchildcons
    );
+*/
 
 extern
 /** the function returns the name of the constraint in the origconsdata data structure */
@@ -107,6 +108,12 @@ SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
 extern
 /** the function returns if PropBoundChg should be enforced of the constraint in the origconsdata data structure */
 SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchrule of the constraint in the masterbranchconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetbranchrule(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
 
