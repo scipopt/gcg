@@ -46,11 +46,25 @@ extern
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
    SCIP*                scip                /**< SCIP data structure */
    );
+
 /** initializes branchdata */
 extern
 SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    SCIP*                scip,               /**< SCIP data structure */
    GCG_BRANCHDATA**     branchdata          /**< branching data to initialize */
+   );
+
+/** computes the generator of mastervar */
+extern
+SCIP_RETCODE getGenerators(
+   SCIP*                scip,               /**< */
+   SCIP_Real**          generator,          /**< */
+   int*                 generatorsize,      /**< */
+   SCIP_Bool**          compisinteger,      /**< */
+   int                  blocknr,            /**< */
+   SCIP_VAR**           mastervars,         /**< */
+   int                  nmastervars,        /**< */
+   SCIP_VAR*            mastervar           /**< */
    );
 
 extern

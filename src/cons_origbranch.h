@@ -132,25 +132,6 @@ SCIP_CONS* GCGconsOrigbranchGetChildcons(
 
 /** returns the origbranch constraint of the first child of the node at which the
     given origbranch constraint is sticking */
-/*
-extern
-SCIP_CONS* GCGconsOrigbranchGetChild1cons(
-   SCIP*                 scip,
-   SCIP_CONS*            cons                // origbranch constraint for which the origbranch constraint of
-                                             //   the first child node is requested
-   );
-*/
-
-/** returns the origbranch constraint of the second child of the node at which the
-    given origbranch constraint is sticking */
-/*
-extern
-SCIP_CONS* GCGconsOrigbranchGetChild2cons(
-   SCIP*                 scip,
-   SCIP_CONS*            cons                // origbranch constraint for which the origbranch constraint of
-                                             //    the second child node is requested
-   );
-*/
 
 /** sets the masterbranch constraint of the node in the master program corresponding to the node
     at which the given origbranchbranch constraint is sticking */

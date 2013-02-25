@@ -400,7 +400,6 @@ SCIP_RETCODE createChildNodesRyanfoster(
    /* define names for origbranch constraints */
    (void) SCIPsnprintf(samename, SCIP_MAXSTRLEN, "same(%s, %s)", SCIPvarGetName(branchsamedata->var1),
       SCIPvarGetName(branchsamedata->var2));
-   //consdata1->origbranchconsname = samename;
 
    (void) SCIPsnprintf(differname, SCIP_MAXSTRLEN, "differ(%s, %s)", SCIPvarGetName(branchsamedata->var1),
       SCIPvarGetName(branchsamedata->var2));
@@ -461,7 +460,6 @@ SCIP_RETCODE createChildNodesRyanfoster(
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {  /*lint --e{715}*/
- //  SCIP* masterscip;
    SCIP* origscip;
 
    SCIP_Bool feasible;
@@ -496,8 +494,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
- //  masterscip = scip;
- //  scip = origscip;
 
    *result = SCIP_DIDNOTRUN;
 
@@ -804,7 +800,6 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 
 
 /* define not used callback as NULL*/
-//#define branchCopyRyanfoster NULL
 #define branchFreeRyanfoster NULL
 #define branchExitRyanfoster NULL
 #define branchInitsolRyanfoster NULL

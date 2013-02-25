@@ -763,18 +763,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 static
 SCIP_DECL_BRANCHCOPY(branchCopyOrig)
 {
-//   SCIP* origscip;
 
    assert(scip != NULL);
    assert(branchrule != NULL);
 
-   //origscip = GCGpricerGetOrigprob(scip);
-
    SCIPdebugMessage("orig copy called.\n");
-   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) ); //origscip
-
-   //SCIPdebugMessage("pricer copy called.\n");
-   //SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }
