@@ -272,69 +272,23 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    {
       parentdata = SCIPconsGetData((*consdata)->parentcons);
 
-      //if( BRANCHRULE_VANDERBECK == 1 )
-      //{
-      /*
-         if( parentdata->probingtmpcons == cons )
-         {
-            assert(SCIPinProbing(scip));
-            parentdata->probingtmpcons = NULL;
-         }
-         else
-         {
-            for( i=0; i<parentdata->nchildcons; ++i )
-            {
-               if( parentdata->childcons[i] == cons )
-               {
-                  parentdata->childcons[i] = NULL;
-                  if( SCIPinProbing(scip) && i>0 )
-                  {
-                     parentdata->childcons[i] = parentdata->probingtmpcons;
-                     parentdata->probingtmpcons = NULL;
-                  }
-                  break;
-               }
-            }
-         }*/
       if( SCIPinProbing(scip) )
-            {
-               parentdata->probingtmpcons = NULL;
-            }
-            else
-            {
-               for( i=0; i<(*consdata)->nchildcons; ++i )
-               {
-                  if( parentdata->childcons[i] == cons )
-                  {
-                     parentdata->childcons[i] = NULL;
-
-                     break;
-                  }
-               }
-            }
-      //}
-      //else
-      /*{
-
-         if( parentdata->child1cons == cons )
-            parentdata->child1cons = NULL;
-         else if( parentdata->probingtmpcons == cons )
+      {
+         parentdata->probingtmpcons = NULL;
+      }
+      else
+      {
+         for( i=0; i < parentdata->nchildcons; ++i )
          {
-            assert(SCIPinProbing(scip));
-            parentdata->probingtmpcons = NULL;
-         }
-         else
-         {
-            assert(parentdata->child2cons == cons);
-            parentdata->child2cons = NULL;
-            if( SCIPinProbing(scip) )
+            if( parentdata->childcons[i] == cons )
             {
-               parentdata->child2cons = parentdata->probingtmpcons;
-               parentdata->probingtmpcons = NULL;
+               parentdata->childcons[i] = NULL;
+               break;
             }
          }
-      }*/
+      }
    }
+   assert(i != parentdata->nchildcons);
    /* no child nodes may exist */
    for( i=0; i<(*consdata)->nchildcons; ++i )
          assert((*consdata)->childcons[i] == NULL);

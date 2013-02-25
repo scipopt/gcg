@@ -118,25 +118,30 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
+   assert(masterbranchcons != NULL);
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    parentcons = masterbranchcons;
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
-   if( masterbranchcons != NULL && GCGvarIsMaster(mastervar) &&  branchdata != NULL && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL )
+   if( GCGvarIsMaster(mastervar) )
    {
       while( parentcons != NULL && branchdata != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL )
       {
          assert(branchdata != NULL);
 
+         varinS = TRUE;
+
          if( GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) )
          {
-            parentcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
-            branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+            if(parentcons != NULL)
+               branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
             continue;
          }
+         SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
 
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {

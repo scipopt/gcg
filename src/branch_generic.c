@@ -2119,6 +2119,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
       }
    }
+   SCIPdebugMessage("branching in block %d \n", blocknr);
 
    //old data to regard?
    if( masterbranchcons != NULL && GCGconsMasterbranchGetBranchdata(masterbranchcons) != NULL )
@@ -2159,6 +2160,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
          if( branchdata->consS == NULL || branchdata->consSsize == 0 )
             break;
+         if( branchdata->consblocknr != blocknr )
+         {
+            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+            continue;
+         }
          //S not yet in C ?
          SinC = FALSE;
          for( c=0; c<Csize && !SinC; ++c )
