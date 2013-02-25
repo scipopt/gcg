@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "cons_masterbranch.h"
+#include "branch_generic.h"
 #include "scip/cons_linear.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
@@ -2411,6 +2412,8 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONS* cons;
+   SCIP_CONSDATA* consdata;
+   //GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
@@ -2425,6 +2428,25 @@ SCIP_RETCODE SCIPconsMasterbranchAddRootCons(
    conshdlrData->stack[0] = NULL;
    assert(conshdlrData->nstack == 1);
    conshdlrData->nstack = 0;
+
+   if( cons == NULL)
+   {
+      SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
+      SCIP_CALL( SCIPcreateCons(scip, &cons, "masterbranchrootcons", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
+               TRUE, FALSE, FALSE, FALSE, TRUE) );
+   }
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+   //if( conshdlrData->rootcons != NULL )
+   //{
+     // branchdata = GCGconsMasterbranchGetBranchdata(cons);
+     // if( branchdata != NULL )
+      //   SCIPfreeMemory(scip, &branchdata );
+   //}
+   //if( strcmp(SCIPbranchruleGetName(branchrule), "generic") == 0 )
+   //{
+      SCIP_CALL( GCGbranchGenericCreateBranchdata(scip, &(consdata->branchdata)) );
+   //}
 
    SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
    SCIP_CALL( SCIPreleaseCons(scip, &cons) );
