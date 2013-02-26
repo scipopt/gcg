@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -1579,7 +1579,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
          &branchruledata->uselp, FALSE, DEFAULT_USELP, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip,
          "branching/relpsprob/reliability",
-         "reliability value for probing ",
+         "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
 
    return SCIP_OKAY;

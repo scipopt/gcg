@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -35,16 +35,21 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_PRICER_GCG__
-#define __SCIP_PRICER_GCG__
+#ifndef GCG_PRICER_GCG__
+#define GCG_PRICER_GCG__
 
 #include "scip/scip.h"
 #include "type_solver.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum GCG_Pricetype
 {
-   GCG_PRICETYPE_INIT = 0,                /**< initial pricing */
-   GCG_PRICETYPE_FARKAS = 1,                /**< farkas pricing */
+   GCG_PRICETYPE_UNKNOWN = -1,               /**< unknown pricing type */
+   GCG_PRICETYPE_INIT = 0,                   /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                 /**< farkas pricing */
    GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
 };
 typedef enum GCG_Pricetype GCG_PRICETYPE;
@@ -104,15 +109,13 @@ SCIP_RETCODE GCGpricerIncludeSolver(
 
 /** returns the solverdata of a solver */
 extern
-GCG_SOLVERDATA* GCGpricerGetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+GCG_SOLVERDATA* GCGsolverGetSolverdata(
    GCG_SOLVER*           solver              /**< pointer so solver */
    );
 
 /** sets solver data of specific solver */
 extern
-void GCGpricerSetSolverdata(
-   SCIP*                 scip,               /**< SCIP data structure */
+void GCGsolverSetSolverdata(
    GCG_SOLVER*           solver,             /**< pointer to solver  */
    GCG_SOLVERDATA*       solverdata          /**< solverdata data structure */
    );
@@ -161,5 +164,20 @@ SCIP_RETCODE GCGpricerPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );
+
+/** returns whether the scip is the original problem scip */
+extern
+SCIP_Bool GCGisOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns whether the scip is the master problem scip */
+SCIP_Bool GCGisMaster(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

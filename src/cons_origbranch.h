@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -30,8 +30,8 @@
  * @author Gerald Gamrath
  */
 
-#ifndef CONSORIGBRANCH_H
-#define CONSORIGBRANCH_H
+#ifndef GCG_CONS_ORIGBRANCH_H__
+#define GCG_CONS_ORIGBRANCH_H__
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"

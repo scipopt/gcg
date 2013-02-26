@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -66,12 +66,12 @@ GCG_DECL_SOLVERFREE(solverFreeKnapsack)
    assert(scip != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
    SCIPfreeMemory(scip, &solverdata);
 
-   GCGpricerSetSolverdata(scip, solver, NULL);
+   GCGsolverSetSolverdata(solver, NULL);
 
    return SCIP_OKAY;
 }
@@ -123,11 +123,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    int k;
 
    assert(pricingprob != NULL);
-   assert(scip != NULL);
    assert(result != NULL);
    assert(solver != NULL);
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
@@ -154,32 +153,32 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          nitems++;
    }
 
-   if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) ||
-      !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
+   if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
+      !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   capacity = (SCIP_Longint)SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
+   capacity = (SCIP_Longint)SCIPfloor(pricingprob, SCIPgetRhsLinear(pricingprob, cons));
    consvars = SCIPgetVarsLinear(pricingprob, cons);
    nconsvars = SCIPgetNVarsLinear(pricingprob, cons);
    consvals = SCIPgetValsLinear(pricingprob, cons);
 
    for( i = 0; i < nconsvars; i++ )
    {
-      if( !SCIPisIntegral(scip, consvals[i]) )
+      if( !SCIPisIntegral(pricingprob, consvals[i]) )
       {
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
       }
    }
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &items, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &weights, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &profits, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &solitems, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nonsolitems, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &profits, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solitems, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &nonsolitems, nitems) );
 
    BMSclearMemoryArray(weights, nitems);
 
@@ -197,28 +196,28 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
    for( i = 0; i < nconsvars; i++ )
    {
-      assert(SCIPisIntegral(scip, consvals[i]));
+      assert(SCIPisIntegral(pricingprob, consvals[i]));
 
-      if( SCIPisEQ(scip, SCIPvarGetUbLocal(consvars[i]), 0.0) )
+      if( SCIPisEQ(pricingprob, SCIPvarGetUbLocal(consvars[i]), 0.0) )
          continue;
-      if( SCIPisEQ(scip, SCIPvarGetLbLocal(consvars[i]), 1.0) )
+      if( SCIPisEQ(pricingprob, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
-         capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+         capacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
          continue;
       }
       for( k = 0; k < nitems; k++ )
       {
          if( pricingprobvars[items[k]] == consvars[i] )
          {
-            if( SCIPisPositive(scip, consvals[i]) )
+            if( SCIPisPositive(pricingprob, consvals[i]) )
             {
-               weights[k] = (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
                break;
             }
             else
             {
-               capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
-               weights[k] = (SCIP_Longint)SCIPfloor(scip, -1.0*consvals[i]);
+               capacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(pricingprob, -1.0*consvals[i]);
                profits[k] *= -1.0;
 
                break;
@@ -240,7 +239,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
    for( i = 0; i < nsolitems; i++ )
    {
-      if( !SCIPisNegative(scip, consvals[solitems[i]]) )
+      if( !SCIPisNegative(pricingprob, consvals[solitems[i]]) )
       {
          solvars[nsolvars] = pricingprobvars[solitems[i]];
          solvals[nsolvars] = 1;
@@ -250,7 +249,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 
    for( i = 0; i < nnonsolitems; i++ )
    {
-      if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
+      if( SCIPisNegative(pricingprob, consvals[nonsolitems[i]]) )
       {
          solvars[nsolvars] = pricingprobvars[nonsolitems[i]];
          solvals[nsolvars] = 1;
@@ -271,11 +270,11 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
    SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
 
-   SCIPfreeBufferArray(scip, &nonsolitems);
-   SCIPfreeBufferArray(scip, &solitems);
-   SCIPfreeBufferArray(scip, &profits);
-   SCIPfreeBufferArray(scip, &weights);
-   SCIPfreeBufferArray(scip, &items);
+   SCIPfreeBufferArray(pricingprob, &nonsolitems);
+   SCIPfreeBufferArray(pricingprob, &solitems);
+   SCIPfreeBufferArray(pricingprob, &profits);
+   SCIPfreeBufferArray(pricingprob, &weights);
+   SCIPfreeBufferArray(pricingprob, &items);
    SCIPfreeMemoryArray(pricingprob, &solvars);
    SCIPfreeMemoryArray(pricingprob, &solvals);
 
@@ -321,10 +320,9 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    int k;
 
    assert(pricingprob != NULL);
-   assert(scip != NULL);
    assert(result != NULL);
 
-   solverdata = GCGpricerGetSolverdata(scip, solver);
+   solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
@@ -348,32 +346,32 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          nitems++;
    }
 
-   if( !SCIPisIntegral(scip, SCIPgetRhsLinear(pricingprob, cons)) ||
-      !SCIPisInfinity(scip, - SCIPgetLhsLinear(pricingprob, cons)) )
+   if( !SCIPisIntegral(pricingprob, SCIPgetRhsLinear(pricingprob, cons)) ||
+      !SCIPisInfinity(pricingprob, - SCIPgetLhsLinear(pricingprob, cons)) )
    {
       *result = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
 
-   capacity = (SCIP_Longint)SCIPfloor(scip, SCIPgetRhsLinear(pricingprob, cons));
+   capacity = (SCIP_Longint)SCIPfloor(pricingprob, SCIPgetRhsLinear(pricingprob, cons));
    consvars = SCIPgetVarsLinear(pricingprob, cons);
    nconsvars = SCIPgetNVarsLinear(pricingprob, cons);
    consvals = SCIPgetValsLinear(pricingprob, cons);
 
    for( i = 0; i < nconsvars; i++ )
    {
-      if( !SCIPisIntegral(scip, consvals[i]) )
+      if( !SCIPisIntegral(pricingprob, consvals[i]) )
       {
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
       }
    }
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &items, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &weights, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &profits, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &solitems, nitems) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nonsolitems, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &profits, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solitems, nitems) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, &nonsolitems, nitems) );
 
    BMSclearMemoryArray(weights, nitems);
 
@@ -391,28 +389,28 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
    for( i = 0; i < nconsvars; i++ )
    {
-      assert(SCIPisIntegral(scip, consvals[i]));
+      assert(SCIPisIntegral(pricingprob, consvals[i]));
 
-      if( SCIPisEQ(scip, SCIPvarGetUbLocal(consvars[i]), 0.0) )
+      if( SCIPisEQ(pricingprob, SCIPvarGetUbLocal(consvars[i]), 0.0) )
          continue;
-      if( SCIPisEQ(scip, SCIPvarGetLbLocal(consvars[i]), 1.0) )
+      if( SCIPisEQ(pricingprob, SCIPvarGetLbLocal(consvars[i]), 1.0) )
       {
-         capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+         capacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
          continue;
       }
       for( k = 0; k < nitems; k++ )
       {
          if( pricingprobvars[items[k]] == consvars[i] )
          {
-            if( SCIPisPositive(scip, consvals[i]) )
+            if( SCIPisPositive(pricingprob, consvals[i]) )
             {
-               weights[k] = (SCIP_Longint)SCIPfloor(scip, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
                break;
             }
             else
             {
-               capacity -= (SCIP_Longint)SCIPfloor(scip, consvals[i]);
-               weights[k] = (SCIP_Longint)SCIPfloor(scip, -1.0*consvals[i]);
+               capacity -= (SCIP_Longint)SCIPfloor(pricingprob, consvals[i]);
+               weights[k] = (SCIP_Longint)SCIPfloor(pricingprob, -1.0*consvals[i]);
                profits[k] *= -1.0;
 
                break;
@@ -433,7 +431,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
    for( i = 0; i < nsolitems; i++ )
    {
-      if( !SCIPisNegative(scip, consvals[solitems[i]]) )
+      if( !SCIPisNegative(pricingprob, consvals[solitems[i]]) )
       {
          solvars[nsolvars] = pricingprobvars[solitems[i]];
          solvals[nsolvars] = 1;
@@ -443,7 +441,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
    for( i = 0; i < nnonsolitems; i++ )
    {
-      if( SCIPisNegative(scip, consvals[nonsolitems[i]]) )
+      if( SCIPisNegative(pricingprob, consvals[nonsolitems[i]]) )
       {
          solvars[nsolvars] = pricingprobvars[nonsolitems[i]];
          solvals[nsolvars] = 1;
@@ -464,17 +462,17 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
    SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
 
-   SCIPfreeBufferArray(scip, &nonsolitems);
-   SCIPfreeBufferArray(scip, &solitems);
-   SCIPfreeBufferArray(scip, &profits);
-   SCIPfreeBufferArray(scip, &weights);
-   SCIPfreeBufferArray(scip, &items);
+   SCIPfreeBufferArray(pricingprob, &nonsolitems);
+   SCIPfreeBufferArray(pricingprob, &solitems);
+   SCIPfreeBufferArray(pricingprob, &profits);
+   SCIPfreeBufferArray(pricingprob, &weights);
+   SCIPfreeBufferArray(pricingprob, &items);
    SCIPfreeMemoryArray(pricingprob, &solvars);
    SCIPfreeMemoryArray(pricingprob, &solvals);
 
    *nsols = 1;
 
-   *lowerbound = -SCIPinfinity(scip);
+   *lowerbound = -SCIPinfinity(pricingprob);
 
    *result = SCIP_STATUS_OPTIMAL;
 

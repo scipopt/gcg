@@ -55,7 +55,7 @@
 #define DEC_PRIORITY             -10           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
-#define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to number of constraints */
+#define DEFAULT_MAXBLOCKS        1000        /**< the maximal number of blocks, -1 defaults to number of constraints */
 #define DEFAULT_SEED             -1          /**< random seed for the random number generator, -1 is the current time */
 
 /*
@@ -107,7 +107,7 @@ SCIP_RETCODE findRandomPartition(
    SCIP_CALL( SCIPallocMemoryArray(scip, &consblocks, nconss) );
    BMSclearMemoryArray(consblocks, nconss);
    
-   if( detectordata->seed == -1)
+   if( detectordata->seed == -1 )
       seed = SCIPround(scip, SCIPclockGetTimeOfDay());
    else
       seed = detectordata->seed;
@@ -137,6 +137,7 @@ SCIP_RETCODE findRandomPartition(
          ++nblocks;
       }
       SCIPdebugMessage("Assigning cons <%s> to block %d.\n", SCIPconsGetName(conss[i]), nblocks);
+      assert(nblocks > 0);
       SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (nblocks)) ); /*lint !e866*/
    }
 
@@ -217,7 +218,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
 
-   if(detectordata->nblocks > 0)
+   if( detectordata->nblocks > 0 )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
@@ -259,6 +260,7 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata->seed = -1;
    detectordata->constoblock = NULL;
    detectordata->nblocks = 0;
+   detectordata->clock = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectRandom, initRandom, exitRandom) );
 

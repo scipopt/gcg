@@ -1,17 +1,37 @@
-GCG next
+GCG Version next
+===============
+features
+- GCG can now automatically create a decomposition to solve the LP with
+  empty pricing problems. See the cons/decomp/createbasicdecomp parameter
+- GCG can aggregate pricing problems using bliss
+- GCG can solve pricingproblems in parallel
+
+code cleanup
+- moved some detection methods to a more global scope to make it usable
+- added testing framework to do regression testing (uses google test)
+
+GCG Version 1.1
 ===============
 features
 - add staircase structure information
 - add staircase structure detection
 - the set partitioning detector can create decompositions with one block
+- GCG is now separated in a library and a main file so that you can link
+  against it
 
 bug fixes
 - decompositions are now correctly classified
+- clean up lots of errors related to inconsistent decompositions
+- safe handling of empty problems
+- fix detection of identical pricingproblems for aggregation
 
 code cleanup
 - use DECfilloutDecdecompFromHashmaps where appropriate to remove redundant
   code
-
+- Provide DECfillOutFromConstoblock to enable creation of decomposition
+  structures by just specifying constraint to block partition
+- Add consistency check function for decompositions
+- removed a bit of redundant and leftover code
 
 GCG Version 1.0
 ===============

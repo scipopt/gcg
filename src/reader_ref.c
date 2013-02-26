@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -91,8 +91,8 @@ struct RefInput
    int*                  blocksizes;         /**< array of block sizes */
    int                   totalconss;         /**< total number of constraints */
    int                   totalreadconss;     /**< total number of read constraints */
-   SCIP_CONS**           markedmasterconss;  /**< array of constraints to be in the master */
-   int                   nmarkedmasterconss; /**< number of constraints to be in the master */
+   SCIP_CONS**           masterconss;        /**< array of constraints to be in the master */
+   int                   nmasterconss;       /**< number of constraints to be in the master */
    REFSECTION            section;            /**< current section */
    SCIP_Bool             haserror;           /**< flag to indicate an error occurence */
    SCIP_HASHMAP*         vartoblock;         /**< hashmap mapping variables to blocks (1..nblocks) */
@@ -567,7 +567,6 @@ SCIP_RETCODE readREFFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(reader != NULL);
@@ -626,17 +625,11 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   DECdecompSetDetector(decomp, NULL);
+   SCIP_CALL_QUIET( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
+         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
    DECdecompSetPresolved(decomp, FALSE);
-   DECdecompSetVartoblock(decomp, refinput->vartoblock, &valid);
-   assert(valid);
-   DECdecompSetConstoblock(decomp, refinput->constoblock, &valid);
-   assert(valid);
-
-   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), &valid, FALSE) );
-
-   assert(valid);
+   DECdecompSetDetector(decomp, NULL);
 
    return SCIP_OKAY;
 }
@@ -790,6 +783,7 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
+   SCIP_RETCODE retcode;
    REFINPUT refinput;
    DEC_DECOMP* decomp;
    int i;
@@ -809,7 +803,7 @@ SCIP_RETCODE SCIPreadRef(
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &refinput.pushedtokens[i], REF_MAX_LINELEN) ); /*lint !e506 !e866*/
    }
-   SCIP_CALL( SCIPallocBufferArray(scip, &refinput.markedmasterconss, 1) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &refinput.masterconss, 1) );
 
    refinput.npushedtokens = 0;
    refinput.linenumber = 0;
@@ -819,7 +813,7 @@ SCIP_RETCODE SCIPreadRef(
    refinput.totalconss = 0;
    refinput.totalreadconss = 0;
    refinput.nassignedvars = 0;
-   refinput.nmarkedmasterconss = 0;
+   refinput.nmasterconss = 0;
    refinput.haserror = FALSE;
 
    SCIP_CALL( SCIPhashmapCreate(&refinput.vartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
@@ -828,24 +822,30 @@ SCIP_RETCODE SCIPreadRef(
    /* read the file */
    SCIP_CALL( DECdecompCreate(scip, &decomp) );
 
-   SCIP_CALL( readREFFile(scip, reader, &refinput, decomp, filename) );
+   retcode = readREFFile(scip, reader, &refinput, decomp, filename);
 
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
-
-   SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
-   SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
-
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
-
-   for( i = 0; i < nvars; i++ )
+   if( retcode == SCIP_OKAY )
    {
-      if( GCGvarGetBlock(vars[i]) == -1 )
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+      SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
+      SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+
+      for( i = 0; i < nvars; i++ )
       {
-         SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
+         if( GCGvarGetBlock(vars[i]) == -1 )
+         {
+            SCIPdebugMessage("  -> not assigned: variable %s\n", SCIPvarGetName(vars[i]));
+         }
       }
-   }
 #endif
+   }
+   else
+   {
+      SCIP_CALL( DECdecompFree(scip, &decomp) );
+   }
+
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);
@@ -854,16 +854,16 @@ SCIP_RETCODE SCIPreadRef(
    {
       SCIPfreeMemoryArray(scip, &refinput.pushedtokens[i]);
    }
-   SCIPfreeBufferArray(scip, &refinput.markedmasterconss);
+   SCIPfreeBufferArray(scip, &refinput.masterconss);
    SCIPfreeBufferArray(scip, &refinput.blocksizes);
 
    /* evaluate the result */
    if( refinput.haserror )
       return SCIP_READERROR;
-   else
+   else if( retcode == SCIP_OKAY)
    {
       *result = SCIP_SUCCESS;
    }
 
-   return SCIP_OKAY;
+   return retcode;
 }

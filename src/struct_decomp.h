@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -32,8 +32,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef STRUCT_DECOMP_H_
-#define STRUCT_DECOMP_H_
+#ifndef GCG_STRUCT_DECOMP_H_
+#define GCG_STRUCT_DECOMP_H_
+
+
 #include "scip/scip.h"
 #include "type_decomp.h"
 #include "type_detector.h"
@@ -41,7 +43,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /** decomposition structure information */
 struct DecDecomp

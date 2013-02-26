@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_SCIP_MISC_H_
-#define GCG_SCIP_MISC_H_
+#ifndef GCG_SCIP_MISC_H__
+#define GCG_SCIP_MISC_H__
 
 #include "scip/scip.h"
 #include "scip/cons_setppc.h"
@@ -113,6 +113,12 @@ SCIP_Bool SCIPgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
+   );
+
+/** returns TRUE or FALSE, depending whether we are in the root node or not */
+extern
+SCIP_Bool isRootNode(
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

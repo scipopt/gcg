@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,7 +33,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 100
+#define GCG_VERSION 110
 #define GCG_SUBVERSION 1
 
 #include <string.h>
@@ -126,7 +126,7 @@ SCIP_RETCODE fromCommandLine(
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
-   SCIP_RESULT result;
+   SCIP_RESULT result = SCIP_DIDNOTRUN;
    /********************
     * Problem Creation *
     ********************/
@@ -134,30 +134,32 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nread problem <%s>\n", filename);
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
+   SCIP_CALL( SCIPtransformProb(scip) );
    if( decname != NULL )
    {
       SCIPinfoMessage(scip, NULL, "\nread decomposition <%s>\n", decname);
       SCIPinfoMessage(scip, NULL, "==================\n\n");
       SCIP_CALL( SCIPreadProb(scip, decname, NULL) );
+      SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
    }
-
+   else
+   {
+      SCIP_CALL( SCIPpresolve(scip) );
+      SCIP_CALL( DECdetectStructure(scip, &result) );
+   }
 
    /*******************
     * Problem Solving *
     *******************/
-
-   /* solve problem */
-   SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
-   SCIPinfoMessage(scip, NULL, "=============\n\n");
-
-   SCIP_CALL( SCIPpresolve(scip) );
-   SCIP_CALL( DECdetectStructure(scip, &result) );
 
    if( decname == NULL && result != SCIP_SUCCESS )
    {
       SCIPinfoMessage(scip, NULL, "No decomposition exists or could be detected. You need to specify one.\n");
       return SCIP_OKAY;
    }
+   /* solve problem */
+   SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
+   SCIPinfoMessage(scip, NULL, "=============\n\n");
 
    SCIP_CALL( SCIPsolve(scip) );
 

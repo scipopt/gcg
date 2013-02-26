@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -58,27 +58,27 @@
 #define CONSHDLR_SEPAFREQ            -1 /**< frequency for separating cuts; zero means to separate only in the root node */
 #define CONSHDLR_PROPFREQ            -1 /**< frequency for propagating domains; zero means only preprocessing propagation */
 #define CONSHDLR_EAGERFREQ           -1 /**< frequency for using all instead of only the useful constraints in separation,
-                                              *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
+                                          *   propagation and enforcement, -1 for no eager evaluations, 0 for first only */
 #define CONSHDLR_MAXPREROUNDS         0 /**< maximal number of presolving rounds the constraint handler participates in (-1: no limit) */
 #define CONSHDLR_DELAYSEPA         TRUE /**< should separation method be delayed, if other separators found cuts? */
 #define CONSHDLR_DELAYPROP         TRUE /**< should propagation method be delayed, if other propagators found reductions? */
 #define CONSHDLR_DELAYPRESOL       TRUE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
-
+#define DEFAULT_CREATEBASICDECOMP FALSE /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 /*
  * Data structures
  */
 
 /** score data structure **/
-struct SCIP_DecScores
+struct Dec_Scores
 {
    SCIP_Real             borderscore;        /**< score of the border */
    SCIP_Real             densityscore;       /**< score of block densities */
    SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
    SCIP_Real             totalscore;         /**< accumulated score */
 };
-typedef struct SCIP_DecScores SCIP_DECSCORES;
+typedef struct Dec_Scores DEC_SCORES;
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
@@ -90,6 +90,7 @@ struct SCIP_ConshdlrData
    SCIP_CLOCK*           detectorclock;      /**< clock to measure detection time */
    SCIP_Bool             hasrun;             /**< flag to indicate whether we have already detected */
    int                   ndecomps;           /**< number of decomposition structures  */
+   SCIP_Bool             createbasicdecomp;  /**< indicates whether to create a decomposition with all constraints in the master if no other specified */
 };
 
 
@@ -104,7 +105,7 @@ static
 SCIP_RETCODE evaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
-   SCIP_DECSCORES*       score               /**< returns the score of the decomposition */
+   DEC_SCORES*           score               /**< returns the score of the decomposition */
       )
 {
    int matrixarea;
@@ -415,25 +416,6 @@ SCIP_DECL_CONSINITSOL(consInitsolDecomp)
 static
 SCIP_DECL_CONSEXITSOL(consExitsolDecomp)
 {  /*lint --e{715}*/
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   assert(conshdlr != NULL);
-   assert(scip != NULL);
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   if( conshdlrdata->ndecomps > 0 )
-   {
-      int i;
-      for( i = 0; i < conshdlrdata->ndecomps; ++i )
-      {
-         SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
-      }
-      SCIPfreeMemoryArray(scip, &conshdlrdata->decdecomps);
-      conshdlrdata->decdecomps = NULL;
-      conshdlrdata->ndecomps = 0;
-   }
-   conshdlrdata->hasrun = FALSE;
-
    return SCIP_OKAY;
 }
 
@@ -516,6 +498,8 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
          consGetVarsDecomp, consGetNVarsDecomp,
          conshdlrdata) );
 
+   SCIP_CALL( SCIPaddBoolParam(scip, "constraints/decomp/createbasicdecomp", "indicates whether to create a decomposition with all constraints in the master if no other specified", &conshdlrdata->createbasicdecomp, FALSE, DEFAULT_CREATEBASICDECOMP, NULL, NULL) );
+
    return SCIP_OKAY;
 }
 
@@ -574,8 +558,9 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps) );
-      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = decdecomp;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+1) );
+      conshdlrdata->decdecomps[conshdlrdata->ndecomps] = conshdlrdata->decdecomps[0];
+      conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps += 1;
    }
    return SCIP_OKAY;
@@ -783,6 +768,8 @@ SCIP_RETCODE DECdetectStructure(
 
       if( SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
          conshdlrdata->hasrun = TRUE;
+
+      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
@@ -854,7 +841,7 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIP_DECSCORES score;
+      DEC_SCORES score;
       score.totalscore = 0.0;
 
       SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
@@ -955,8 +942,28 @@ DEC_DECOMP* DECgetBestDecomp(
 
    if( conshdlrdata->ndecomps > 0 )
       return conshdlrdata->decdecomps[0];
-   else
-      return NULL;
+
+   else if ( conshdlrdata->createbasicdecomp)
+   {
+      SCIP_RETCODE retcode;
+      DEC_DECOMP* decomp = NULL;
+      retcode = DECcreateBasicDecomp(scip, &decomp);
+      assert(retcode == SCIP_OKAY);
+      assert(decomp != NULL );
+
+      retcode = SCIPconshdlrDecompAddDecdecomp(scip, decomp);
+      if( retcode != SCIP_OKAY )
+      {
+         SCIPerrorMessage("Could not add decomp to cons_decomp!\n");
+         return NULL;
+      }
+
+      assert(conshdlrdata->ndecomps > 0);
+      assert(conshdlrdata->decdecomps[0] != NULL);
+      return conshdlrdata->decdecomps[0];
+   }
+
+   return NULL;
 }
 
 /** writes out a list of all detectors */

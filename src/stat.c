@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -102,7 +102,6 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    )
 {
    SCIP_VAR** vars;
-   SCIP_VARDATA* vardata;
    SCIP_SOL* sol;
    SCIP_Real time;
    SCIP_Real solvingtime;
@@ -146,12 +145,11 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\tredcost\tgap\tsolval\n");
    for( i = 0; i < nvars; i++ )
    {
-      vardata = SCIPvarGetData(vars[i]);
-      node = GCGgetCreationNode(scip, vardata);
-      time = GCGgetCreationTime(scip, vardata);
-      iteration = GCGgetIteration(scip, vardata);
-      redcost = GCGgetRedcost(scip, vardata);
-      gap = GCGgetGap(scip, vardata);
+      node = GCGgetCreationNode(scip, vars[i]);
+      time = GCGgetCreationTime(scip, vars[i]);
+      iteration = GCGgetIteration(scip, vars[i]);
+      redcost = GCGgetRedcost(scip, vars[i]);
+      gap = GCGgetGap(scip, vars[i]);
 
       SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
          iteration, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]));

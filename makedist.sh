@@ -2,7 +2,7 @@
 
 # For release versions, only use VERSION="x.x.x".
 # For development versions, use VERSION="x.x.x.x" with subversion number.
-VERSION="1.0.0.1"
+VERSION="1.1.0.1"
 NAME="gcg-$VERSION"
 rm -f $NAME
 ln -s . $NAME
@@ -19,11 +19,14 @@ make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false scip -j4
 make LPS=none OPT=opt-gccold READLINE=false ZLIB=false ZIMPL=false -j4
 bin/gcg -c "set default set save doc/inc/parameters.set quit"
 
+sed -i '$ d' doc/inc/parameters.set
+
 # Before we create a tarball change the director and file rights in a command way
 echo adjust file modes
 find ./ -name lib -prune -o -type d -exec chmod 750 {} \;
 find ./ -name lib -prune -o -type f -exec chmod 640 {} \;
 find ./ -name lib -prune -o -name "*.sh" -exec chmod 750 {} \;
+find ./ -name lib -prune -o -name "*.py" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "*.prl" -exec chmod 750 {} \;
 find ./ -name lib -prune -o -name "hmetis" -exec chmod 750 {} \;
 chmod 750 bin/*

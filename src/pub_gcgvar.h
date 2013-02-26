@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __GCG_PUB_GCGVAR_H__
-#define __GCG_PUB_GCGVAR_H__
+#ifndef GCG_PUB_GCGVAR_H__
+#define GCG_PUB_GCGVAR_H__
 
 
 #include "scip/scip.h"
@@ -336,22 +336,22 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 extern
 void GCGsetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< created variable */
-   long long int         creationNode        /**< node */
+   SCIP_VAR*             var,                /**< created variable */
+   SCIP_Longint          creationNode        /**< node */
    );
 
 /** returns the creation node of this var */
 extern
 long long int GCGgetCreationNode(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< created variable */
+   SCIP_VAR*             var                 /**< created variable */
    );
 
 /** sets the creation time of this var */
 extern
 void GCGsetCreationTime(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< created variable */
+   SCIP_VAR*             var,                /**< created variable */
    SCIP_Real             time                /**< creation time */
    );
 
@@ -359,48 +359,56 @@ void GCGsetCreationTime(
 extern
 SCIP_Real GCGgetCreationTime(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< created variable */
+   SCIP_VAR*             var                 /**< created variable */
    );
 
 /** returns the iteration when the var was created */
 extern
 SCIP_Longint GCGgetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< created variable */
+   SCIP_VAR*             var                 /**< created variable */
    );
 
 /** sets the iteration when the var was created */
 extern
 void GCGsetIteration(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< created variable */
+   SCIP_VAR*             var,                /**< created variable */
    SCIP_Longint          iteration           /**< iteration that this var was created */
    );
 
 /** store gap */
 void GCGsetGap(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             gap                 /**< present gap when variable is created */
    );
 
 /** return stored gap */
 SCIP_Real GCGgetGap(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
    );
 
 /** store reduced cost */
 void GCGsetRedcost(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata,            /**< variable data structure */
+   SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    );
 
 /** return stored reduced cost */
 SCIP_Real GCGgetRedcost(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VARDATA*         vardata             /**< variable data structure */
+   SCIP_VAR*             var                 /**< variable data structure */
+   );
+
+/** updates the statistics part of the variable */
+void GCGupdateVarStatistics(
+    SCIP*                scip,               /** master SCIP data structure */
+    SCIP*                origprob,           /** original SCIP data structure */
+    SCIP_VAR*            newvar,             /** new variable for statistic update */
+    SCIP_Real            redcost             /** reduced cost of the variable */
    );
 
 #ifdef __cplusplus

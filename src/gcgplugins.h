@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -32,11 +32,15 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_SCIPGCGPLUGINS_H__
-#define __SCIP_SCIPGCGPLUGINS_H__
+#ifndef GCG_GCGPLUGINS_H__
+#define GCG_GCGPLUGINS_H__
 
 
 #include "scip/scip.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** includes default SCIP plugins into SCIP */
 extern
@@ -44,5 +48,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

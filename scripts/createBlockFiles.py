@@ -20,5 +20,6 @@ if len(sys.argv) == 2:
             mpsinstance = instance
         os.system('bin/gcg -c "read check/%s detect write problem check/%s.ref quit"' %(mpsinstance, mpsinstance))
         os.system('scripts/ref2block.sh check/%s.ref > check/%s.block' %(mpsinstance, mpsinstance))
+        os.system('rm -f check/%s.ref' %(mpsinstance))
 else:
     print "usage: createBlockFiles.py <testset>"

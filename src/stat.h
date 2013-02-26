@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -27,11 +27,12 @@
 /**@file   stat.h
  * @brief  Prints information about the best decomposition
  * @author Alexander Gross
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#ifndef GCG_STAT_H_
-#define GCG_STAT_H_
+#ifndef GCG_STAT_H__
+#define GCG_STAT_H__
 
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"

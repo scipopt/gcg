@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -33,9 +33,12 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_STRUCT_VARDATA_H__
-#define __SCIP_STRUCT_VARDATA_H__
+#ifndef GCG_STRUCT_VARDATA_H__
+#define GCG_STRUCT_VARDATA_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** type of the variable */
 enum GCG_Vartype
@@ -113,5 +116,8 @@ struct SCIP_VarData
    SCIP_Real             redcost;            /**< reduced cost of the variable  */
 };
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

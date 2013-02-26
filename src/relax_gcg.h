@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -35,12 +35,16 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef __SCIP_RELAX_GCG_H__
-#define __SCIP_RELAX_GCG_H__
+#ifndef GCG_RELAX_GCG_H__
+#define GCG_RELAX_GCG_H__
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** creates the GCG relaxator and includes it in SCIP */
 extern
@@ -364,5 +368,9 @@ extern
 SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

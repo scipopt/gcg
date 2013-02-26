@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -285,28 +285,28 @@ SCIP_RETCODE SCIPgetVarsXXX(
       if( nvars < SCIPgetNVarsLinear(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsLinear(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsLinear(scip, cons), SCIPgetNVarsLinear(scip, cons));
    }
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
       if( nvars < SCIPgetNVarsSetppc(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsSetppc(scip, cons), SCIPgetNVarsSetppc(scip, cons));
    }
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
       if( nvars < SCIPgetNVarsLogicor(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsLogicor(scip, cons), SCIPgetNVarsLogicor(scip, cons));
    }
    else if( strcmp(conshdlrname, "knapsack") == 0 )
    {
       if( nvars < SCIPgetNVarsKnapsack(scip, cons) )
          return SCIP_INVALIDDATA;
 
-      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), nvars);
+      BMScopyMemoryArray(vars, SCIPgetVarsKnapsack(scip, cons), SCIPgetNVarsKnapsack(scip, cons));
    }
    else if( strcmp(conshdlrname, "varbound") == 0 )
    {
@@ -563,4 +563,13 @@ SCIP_Bool SCIPgetConsIsSetppc(
 
    SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
    return relevant;
+}
+
+/** returns TRUE or FALSE, depending whether we are in the root node or not */
+SCIP_Bool isRootNode(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   assert(scip != NULL);
+   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
 }

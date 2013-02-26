@@ -7,7 +7,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -28,6 +28,7 @@
 #
 # @author Martin Bergner
 # @author Christian Puchert
+# @author Gerald Gamrath
 
 export LANG=C
 
@@ -45,25 +46,25 @@ do
       else
 	  AWKARGS="$AWKARGS $i"
       fi
-  else	
+  else
       FILES="$FILES $i"
   fi
 done
 
 for FILE in $FILES
 do
- 
+
   DIR=`dirname $FILE`
   EVALFILE=`basename $FILE .eval`
   EVALFILE=`basename $EVALFILE .out`
 
-  OUTFILE=$DIR/$EVALFILE.out 
+  OUTFILE=$DIR/$EVALFILE.out
   ERRFILE=$DIR/$EVALFILE.err
   SETFILE=$DIR/$EVALFILE.set
   RESFILE=$DIR/$EVALFILE.res
   TEXFILE=$DIR/$EVALFILE.tex
   PAVFILE=$DIR/$EVALFILE.pav
-  
+
   # check if the eval file exists; if this is the case construct the overall solution files
   if test -e $DIR/$EVALFILE.eval
   then
@@ -77,7 +78,7 @@ do
 	then
 	    break
 	fi
-	
+
 	FILE=$i.out
 	if test -e $FILE
 	then
@@ -89,7 +90,7 @@ do
 	else
 	    echo Missing $i
 	fi
-      
+
 	FILE=$i.err
 	if test -e $FILE
 	then
@@ -99,7 +100,7 @@ do
 		rm -f $FILE
 	    fi
 	fi
-      
+
 	FILE=$i.set
 	if test -e $FILE
 	then
@@ -109,7 +110,7 @@ do
 		rm -f $FILE
 	    fi
 	fi
-      
+
 	FILE=$i.tmp
 	if test -e $FILE
         then
@@ -119,7 +120,7 @@ do
 	    fi
 	fi
       done
-      
+
       if test "$REMOVE" = "1"
       then
 	  rm -f $DIR/$EVALFILE.eval
@@ -131,21 +132,12 @@ do
   then
       echo create results for $EVALFILE
 
-      # detect used queue
-      QUEUE=`echo $EVALFILE | sed 's/check.\([a-zA-Z0-9_-]*\).*/\1/g'`
-
       # detect test set
-      if test "$QUEUE" = ""
-      then
-          TSTNAME=$QUEUE
-      else
-          TSTNAME=`echo $EVALFILE | sed 's/check.'$QUEUE'.\([a-zA-Z0-9_-]*\).*/\1/g'`
-      fi
+      TSTNAME=`echo $EVALFILE | sed 's/check.\([a-zA-Z0-9_-]*\).*/\1/g'`
 
       # detect test used solver
-      SOLVER=`echo $EVALFILE | sed 's/check.\([a-zA-Z0-9_-]*\).\([a-zA-Z0-9_-]*\).\([a-zA-Z0-9_]*\).*/\3/g'`
-      
-      echo "Queue   " $QUEUE
+      SOLVER=`echo $EVALFILE | sed 's/check.\([a-zA-Z0-9_-]*\).\([a-zA-Z0-9_]*\).*/\2/g'`
+
       echo "Testset " $TSTNAME
       echo "Solver  " $SOLVER
 
@@ -159,7 +151,7 @@ do
       if test -f testset/$TSTNAME.solu
       then
 	  SOLUFILE=testset/$TSTNAME.solu
-      else 
+      else
 	  if test -f testset/all.solu
 	  then
 	      SOLUFILE=testset/all.solu
@@ -171,13 +163,11 @@ do
       if test  "$SOLVER" = "cplex"
       then
 	  awk -f check_cplex.awk -v "TEXFILE=$TEXFILE" $AWKARGS $SOLUFILE $OUTFILE | tee $RESFILE
+      elif test  "$SOLVER" = "dip"
+      then
+	  awk -f check_dip.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
       else
-	  if test  "$SOLVER" = "cbc"
-	  then
-	      awk -f check_cbc.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
-	  else
-	      awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
-	  fi
+	  awk -f check.awk -v "TEXFILE=$TEXFILE" -v "PAVFILE=$PAVFILE" $AWKARGS $TESTFILE $SOLUFILE $OUTFILE | tee $RESFILE
       fi
   fi
 done
