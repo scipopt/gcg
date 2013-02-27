@@ -127,7 +127,8 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    if( GCGvarIsMaster(mastervar) )
    {
-      while( parentcons != NULL && branchdata != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL )
+      while( parentcons != NULL && branchdata != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0
+            && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
          assert(branchdata != NULL);
 
@@ -152,7 +153,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
             generator = NULL;
 
-            getGenerators(scip, &generator, &generatorsize, &compisinteger, GCGbranchGenericBranchdataGetConsblocknr(branchdata), mastervars, nmastervars, mastervar);
+            getGenerators(origscip, &generator, &generatorsize, &compisinteger, GCGbranchGenericBranchdataGetConsblocknr(branchdata), mastervars, nmastervars, mastervar);
             generator_i = generator[(int) SCIPceil(scip, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component-0.5)];
 
 

@@ -627,7 +627,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       }
    }
    /* the node should not have children anymore */
-   assert(i != consdata2->nchildcons);
+   assert(i != consdata2->nchildcons || consdata2->nchildcons == 0);
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
     * corresponding origbranch constraint */
