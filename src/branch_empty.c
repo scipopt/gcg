@@ -239,6 +239,13 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    assert(masterbranchcons != NULL);
 
    nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+   if( nchildnodes <= 0 )
+   {
+      SCIPdebugMessage("node cut off, since there is no successor node\n");
+
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
 
    for( i=0; i<nchildnodes; ++i )
    {
