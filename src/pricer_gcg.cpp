@@ -1544,7 +1544,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( optimal )
       {
         if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
-            assert(!SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]));
+        {
+           if( SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]) )
+           {
+              SCIPwarningMessage(scip_, "Numerical troubles solving pricing %d (error is %.4g)\n", prob, pricinglowerbound - pricerdata->dualsolconv[prob]);
+              *bestredcostvalid = FALSE;
+              assert(SCIPisLT(scip_, pricinglowerbound - pricerdata->dualsolconv[prob], 1.0));
+           }
+        }
+
 
          #pragma omp atomic
          *bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);

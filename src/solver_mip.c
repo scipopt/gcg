@@ -478,6 +478,8 @@ SCIP_RETCODE solveProblem(
    if( retcode != SCIP_OKAY )
    {
       SCIPwarningMessage(pricingprob, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
+      *result = SCIP_STATUS_UNKNOWN;
+      return SCIP_OKAY;
    }
    SCIPdebugMessage("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
 
@@ -551,6 +553,10 @@ SCIP_RETCODE solveProblem(
          {
             SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
+            if( *result != SCIP_STATUS_OPTIMAL )
+            {
+               *result = SCIP_STATUS_UNKNOWN;
+            }
          }
 
          /* check whether the solution is equal to one of the previous solutions */
