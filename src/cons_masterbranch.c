@@ -1290,7 +1290,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
       if( propboundtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
-         if( !SCIPisEQ(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
+         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
          {
             SCIP_CALL( SCIPchgVarLb(scip, mastervar, propbounds[i]) );
             propcount++;
@@ -1299,7 +1299,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       }
       else
       {
-         if( !SCIPisEQ(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
+         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
          {
             SCIP_CALL( SCIPchgVarUb(scip, mastervar, propbounds[i]) );
             propcount++;
