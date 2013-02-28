@@ -1462,6 +1462,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    int maxsols;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
+   SCIP_Bool pricinghaserror;
+
    assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
 
    assert(nfoundvars != NULL);
@@ -1475,6 +1477,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    retcode = SCIP_OKAY;
    *nfoundvars = 0;
    infeasible = FALSE;
+   pricinghaserror = FALSE;
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = SCIPinfinity(scip_);
@@ -1507,7 +1510,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
    }
 
-   #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips) reduction(+:solvedmips)
+   #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;
@@ -1532,7 +1535,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          retcode = private_retcode;
 
          #pragma omp atomic
-         infeasible = (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+         infeasible = infeasible || (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+
+         #pragma omp atomic
+         pricinghaserror = pricinghaserror || (status == SCIP_STATUS_UNKNOWN);
 
          if( !infeasible )
          {
@@ -1556,6 +1562,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
               SCIPwarningMessage(scip_, "Numerical troubles solving pricing %d (error is %.4g)\n", prob, pricinglowerbound - pricerdata->dualsolconv[prob]);
               *bestredcostvalid = FALSE;
               assert(SCIPisLT(scip_, pricinglowerbound - pricerdata->dualsolconv[prob], 1.0));
+              pricinghaserror = TRUE;
            }
         }
 
@@ -1657,9 +1664,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    if( result != NULL )
    {
-      if( *nfoundvars > 0 || infeasible )
+      if( infeasible )
+      {
+         *bestredcost = SCIPinfinity(scip_);
          *result = SCIP_SUCCESS;
-      else if( *bestredcostvalid == FALSE )
+      }
+      else if( *nfoundvars > 0)
+         *result = SCIP_SUCCESS;
+      else if( pricinghaserror )
          *result = SCIP_DIDNOTRUN;
    }
 
