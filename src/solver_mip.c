@@ -461,7 +461,7 @@ SCIP_RETCODE solveProblem(
    int                   maxsols,            /**< size of preallocated array */
    int*                  nsols,              /**< pointer to store number of solutions */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
-   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
+   SCIP_STATUS*          status              /**< pointer to store pricing problem status */
    )
 {
    SCIP_SOL** probsols;
@@ -478,11 +478,12 @@ SCIP_RETCODE solveProblem(
    if( retcode != SCIP_OKAY )
    {
       SCIPwarningMessage(pricingprob, "Encountered non recoverable issues solving pricingproblem, ignoring problem\n");
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = SCIP_STATUS_UNKNOWN;
       return SCIP_OKAY;
    }
    SCIPdebugMessage("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
 
+   *status = SCIPgetStatus(pricingprob);
 
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
@@ -499,6 +500,14 @@ SCIP_RETCODE solveProblem(
    /* the pricing problem was declared to be (infeasible or) unbounded and we should have a primal ray at hand,
     * so copy the primal ray into the solution structure and mark it to be a primal ray
     */
+
+   if( SCIPgetStatus(pricingprob) == SCIP_STATUS_INFEASIBLE )
+   {
+      SCIPdebugMessage("Pricing is infeasible, abort immediately.\n");
+      *status = SCIP_STATUS_INFEASIBLE;
+      return SCIP_OKAY;
+   }
+
    if( problemIsUnbounded(pricingprob) )
    {
       if( !SCIPhasPrimalRay(pricingprob) )
@@ -510,13 +519,13 @@ SCIP_RETCODE solveProblem(
 
       *nsols = 1;
       solisray[0] = TRUE;
-      *result = SCIP_STATUS_UNBOUNDED;
+      *status = SCIP_STATUS_UNBOUNDED;
    }
    /* the solving process was interrupted, so we have no solutions and set the status pointer accordingly */
    else if( problemIsInterrupted(pricingprob) )
    {
       *nsols = 0;
-      *result = SCIPgetStatus(pricingprob);
+      *status = SCIPgetStatus(pricingprob);
    }
    /* the pricing problem has an unbounded solution but finite solution, resolve it and extract a finite solution if necessary */
    else if( problemHasUnboundedSolution(pricingprob) )
@@ -524,7 +533,7 @@ SCIP_RETCODE solveProblem(
       SCIP_SOL* sol = NULL;
       SCIP_Bool isray;
       SCIP_Bool freesol;
-      *result = SCIP_STATUS_UNKNOWN;
+      *status = SCIP_STATUS_UNKNOWN;
       SCIP_CALL( inferFiniteSolution(pricingprob, SCIPgetBestSol(pricingprob), &sol, &isray, &freesol) );
       if( sol != NULL )
       {
@@ -532,7 +541,7 @@ SCIP_RETCODE solveProblem(
          sols[0] = sol;
          solisray[0] = isray ? TRUE: freesol ? 2 : FALSE;
          SCIPdebugMessage("# changing solution\n");
-         *result = SCIP_STATUS_OPTIMAL;
+         *status = SCIP_STATUS_OPTIMAL;
       }
    }
    /* the pricing problem was solved to optimality, copy all solutions found into the solution arrays */
@@ -553,9 +562,9 @@ SCIP_RETCODE solveProblem(
          {
             SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
-            if( *result != SCIP_STATUS_OPTIMAL )
+            if( *status != SCIP_STATUS_OPTIMAL )
             {
-               *result = SCIP_STATUS_UNKNOWN;
+               *status = SCIP_STATUS_UNKNOWN;
             }
          }
 
@@ -576,7 +585,7 @@ SCIP_RETCODE solveProblem(
       if( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL )
          *lowerbound = SCIPgetDualbound(pricingprob);
 
-      *result = SCIP_STATUS_OPTIMAL;
+      *status = SCIP_STATUS_OPTIMAL;
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
 

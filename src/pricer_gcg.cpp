@@ -1461,7 +1461,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool** solisray;
    int maxsols;
    SCIP_RETCODE retcode;
-
+   SCIP_Bool infeasible;
    assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
 
    assert(nfoundvars != NULL);
@@ -1474,7 +1474,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    successfulmips = 0;
    retcode = SCIP_OKAY;
    *nfoundvars = 0;
-
+   infeasible = FALSE;
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = SCIPinfinity(scip_);
@@ -1521,7 +1521,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( pricerdata->pricingprobs[prob] == NULL || retcode != SCIP_OKAY)
          goto done;
 
-      if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
+      if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) || infeasible )
          goto done;
 
       #pragma omp ordered
@@ -1532,7 +1532,13 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          retcode = private_retcode;
 
          #pragma omp atomic
-         *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+         infeasible = (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+
+         if( !infeasible )
+         {
+            #pragma omp atomic
+            *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+         }
 
          if(nvarsfound < *nfoundvars)
          {
@@ -1575,7 +1581,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    /** @todo solve all pricing problems all k iterations? */
    *nfoundvars = 0;
 
-   for( i = 0; i < pricerdata->npricingprobs; ++i )
+   for( i = 0; i < pricerdata->npricingprobs && !infeasible; ++i )
    {
       int prob;
       prob = pricerdata->permu[i];
@@ -1648,6 +1654,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );
+
+   if( result != NULL )
+   {
+      if( *nfoundvars > 0 || infeasible )
+         *result = SCIP_SUCCESS;
+      else if( *bestredcostvalid == FALSE )
+         *result = SCIP_DIDNOTRUN;
+   }
 
    return SCIP_OKAY;
 }
