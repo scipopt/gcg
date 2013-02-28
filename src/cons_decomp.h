@@ -46,6 +46,16 @@
 extern "C" {
 #endif
 
+/** score data structure **/
+struct Dec_Scores
+{
+   SCIP_Real             borderscore;        /**< score of the border */
+   SCIP_Real             densityscore;       /**< score of block densities */
+   SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
+   SCIP_Real             totalscore;         /**< accumulated score */
+};
+typedef struct Dec_Scores DEC_SCORES;
+
 /** creates the handler for decomp constraints and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeConshdlrDecomp(
@@ -153,6 +163,14 @@ SCIP_Bool DEChasDetectionRun(
 char DECdetectorGetChar(
    DEC_DETECTOR*         detector            /**< pointer to detector */
 );
+
+/** computes the score of the given decomposition */
+extern
+SCIP_RETCODE DECevaluateDecomposition(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
+   DEC_SCORES*           score               /**< returns the score of the decomposition */
+   );
 
 #ifdef __cplusplus
 }

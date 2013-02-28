@@ -70,15 +70,6 @@
  * Data structures
  */
 
-/** score data structure **/
-struct Dec_Scores
-{
-   SCIP_Real             borderscore;        /**< score of the border */
-   SCIP_Real             densityscore;       /**< score of block densities */
-   SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
-   SCIP_Real             totalscore;         /**< accumulated score */
-};
-typedef struct Dec_Scores DEC_SCORES;
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
@@ -101,12 +92,11 @@ struct SCIP_ConshdlrData
 /* put your local methods here, and declare them static */
 
 /** computes the score of the given decomposition */
-static
-SCIP_RETCODE evaluateDecomposition(
+SCIP_RETCODE DECevaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
    DEC_SCORES*           score               /**< returns the score of the decomposition */
-      )
+   )
 {
    int matrixarea;
    int borderarea;
@@ -844,7 +834,7 @@ SCIP_RETCODE DECdetectStructure(
       DEC_SCORES score;
       score.totalscore = 0.0;
 
-      SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
+      SCIP_CALL( DECevaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
       scores[i] = score.totalscore;
    }
 
