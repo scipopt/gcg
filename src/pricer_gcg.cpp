@@ -1535,10 +1535,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          retcode = private_retcode;
 
          #pragma omp atomic
-         infeasible = infeasible || (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+         infeasible |= (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
 
          #pragma omp atomic
-         pricinghaserror = pricinghaserror || (status == SCIP_STATUS_UNKNOWN);
+         pricinghaserror |= (status == SCIP_STATUS_UNKNOWN);
 
          if( !infeasible )
          {
