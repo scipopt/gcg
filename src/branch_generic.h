@@ -34,7 +34,8 @@ typedef enum {
 
 struct ComponentBoundSequence
 {
-   int component;
+   //int component;
+   SCIP_VAR* component;
    GCG_COMPSENSE sense;
    SCIP_Real bound;
 };
@@ -54,18 +55,26 @@ SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    GCG_BRANCHDATA**     branchdata          /**< branching data to initialize */
    );
 
-/** computes the generator of mastervar */
+/** computes the generator of mastervar for the entry in origvar */
+extern
+SCIP_Real getGeneratorEntry(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_VAR*            mastervar,          /**< current mastervariable */
+   SCIP_VAR*            origvar             /**< corresponding origvar */
+   );
+/*
 extern
 SCIP_RETCODE getGenerators(
-   SCIP*                scip,               /**< */
-   SCIP_Real**          generator,          /**< */
-   int*                 generatorsize,      /**< */
-   SCIP_Bool**          compisinteger,      /**< */
-   int                  blocknr,            /**< */
-   SCIP_VAR**           mastervars,         /**< */
-   int                  nmastervars,        /**< */
-   SCIP_VAR*            mastervar           /**< */
+   SCIP*                scip,               // /
+   SCIP_Real**          generator,          // /
+   int*                 generatorsize,      // /
+   SCIP_Bool**          compisinteger,      // /
+   int                  blocknr,            // /
+   SCIP_VAR**           mastervars,         // /
+   int                  nmastervars,        // /
+   SCIP_VAR*            mastervar           // /
    );
+*/
 
 extern
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
