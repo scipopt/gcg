@@ -262,9 +262,13 @@ SCIP_RETCODE selectExtremePoints(
    int j;
    int k;
 
+   /* check preconditions */
    assert(scip != NULL);
+   assert(heurdata != NULL);
+   assert(selection != NULL);
+   assert(success != NULL);
 
-   /* get master problem, number of blocks and extreme points per block */
+   /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
@@ -301,7 +305,8 @@ SCIP_RETCODE selectExtremePoints(
 
    /* loop over all given master variables;
     * this loop treats master variables that have value one or greater
-    * (in particular important if blocks are represented by others) */
+    * (in particular important if blocks are represented by others)
+    */
    for( i = 0; i < nmastervars; i++ )
    {
       SCIP_VAR* mastervar;
@@ -329,10 +334,6 @@ SCIP_RETCODE selectExtremePoints(
       if( block == -1 )
          continue;
 
-      /* ignore "empty" master variables, i.e. variables representing the zero vector */
-//      if( norigvars == 0 )
-//         continue;
-
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
 #ifndef NDEBUG
@@ -345,10 +346,8 @@ SCIP_RETCODE selectExtremePoints(
          j = identblock[block] * nusedpts;
          assert(selection[j] == -1);
 
-         SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
-            identblock[block]+1, i, 1.0, j % nusedpts);
          selection[j] = i;
-         selvalue[j] = mastervals[i];
+         selvalue[j] = 1.0;
 
          mastervals[i] = mastervals[i] - 1.0;
          blocknrs[block]++;
@@ -386,18 +385,13 @@ SCIP_RETCODE selectExtremePoints(
       if( SCIPisFeasZero(scip, value) )
          continue;
 
-      /* ignore rays
-       * @todo do it smarter */
+      /* ignore rays */
       if( GCGmasterVarIsRay(mastervar) )
          continue;
 
       /* variables belonging to no block are not treated here */
       if( block == -1 )
          continue;
-
-      /* ignore "empty" master variables, i.e. variables representing the zero vector */
-//      if( norigvars == 0 )
-//         continue;
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
@@ -415,14 +409,12 @@ SCIP_RETCODE selectExtremePoints(
          for( j = identblock[block] * nusedpts; j < (identblock[block] + 1) * nusedpts; ++j )
          {
             /* if the extreme point is better than a point in the selection
-             * or there are < nusedpts, insert it */
+             * or there are < nusedpts, insert it
+             */
             if( selection[j] == -1 || SCIPisGT(scip, value, selvalue[j]) )
             {
-               SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
-                     identblock[block]+1, i, value, j % nusedpts);
                for( k = (identblock[block] + 1) * nusedpts - 1; k > j; --k )
                {
-                  SCIPdebugMessage("  shift point %d from pos %d to pos %d\n", selection[k-1], (k-1) % nusedpts, k % nusedpts);
                   selection[k] = selection[k-1];
                   selvalue[k] = selvalue[k-1];
                }
@@ -443,7 +435,7 @@ SCIP_RETCODE selectExtremePoints(
             blockvalue[block] = 0.0;
             blocknrs[block]++;
 
-            /* search the next block to be considered */
+            /* search the next identical block to be considered */
             for( j = identblock[block] + 1; j < nblocks; ++j )
                if( GCGrelaxGetBlockRepresentative(scip, j) == block )
                {
@@ -479,7 +471,7 @@ SCIP_RETCODE selectExtremePoints(
 }
 
 
-/** select extreme points (represented by mastervars) to be crossed randomly*/
+/** select extreme points (represented by mastervars) to be crossed randomly */
 static
 SCIP_RETCODE selectExtremePointsRandomized(
    SCIP*                 scip,               /**< original SCIP data structure                                    */
@@ -507,9 +499,13 @@ SCIP_RETCODE selectExtremePointsRandomized(
    int j;
    int k;
 
+   /* check preconditions */
    assert(scip != NULL);
+   assert(heurdata != NULL);
+   assert(selection != NULL);
+   assert(success != NULL);
 
-   /* get master problem, number of blocks and extreme points per block */
+   /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
@@ -857,8 +853,7 @@ SCIP_RETCODE fixVariables(
 {
    SCIP* masterprob;                         /* master problem                         */
    SCIP_VAR** mastervars;                    /* master variables                       */
-
-   SCIP_VAR** vars;                          /* original scip variables                     */
+   SCIP_VAR** vars;                          /* original scip variables                */
 
    int nblocks;                              /* number of blocks                                   */
    int nusedpts;                             /* number of extreme points per block                 */
@@ -868,6 +863,7 @@ SCIP_RETCODE fixVariables(
 
    SCIP_Real* fixvals;                       /* values to which original variables should be fixed    */
    SCIP_Bool* fixable;                       /* for each original variable, remember if it is fixable */
+   SCIP_Bool* zeroblocks;                    /* blocks that would be entirely fixed to zero           */
    int* ptcounter;                           /* for each original variable, count in how many extreme points it appears */
    int fixingcounter;                        /* count how many original variables are fixed           */
    int zerocounter;                          /* count how many variables are fixed to zero            */
@@ -877,6 +873,16 @@ SCIP_RETCODE fixVariables(
    int k;
    int l;
    int idx;
+
+   /* check preconditions */
+   assert(scip != NULL);
+   assert(subscip != NULL);
+   assert(subvars != NULL);
+   assert(selection != NULL);
+   assert(heurdata != NULL);
+   assert(intfixingrate != NULL);
+   assert(zerofixingrate != NULL);
+   assert(success != NULL);
 
    /* get master problem and its variables */
    masterprob = GCGrelaxGetMasterprob(scip);
@@ -889,6 +895,8 @@ SCIP_RETCODE fixVariables(
 
    nblocks = GCGrelaxGetNPricingprobs(scip);
    nusedpts = heurdata->nusedpts;
+   assert(nusedpts >= 2);
+
    fixingcounter = 0;
    zerocounter = 0;
 
@@ -898,15 +906,17 @@ SCIP_RETCODE fixVariables(
    SCIP_CALL( SCIPallocBufferArray(scip, &fixvals, nbinvars + nintvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &fixable, nbinvars + nintvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &ptcounter, nbinvars + nintvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &zeroblocks, nblocks) );
 
-   /* by default, each original variable can be fixed to zero */
+   /* calculate fixing values for original variables;
+    * by default, each original variable can be fixed to zero
+    */
    for( i = 0; i < nbinvars + nintvars; ++i )
    {
       fixable[i] = TRUE;
       fixvals[i] = 0.0;
       ptcounter[i] = 0;
    }
-
    /* for each block, compare the selected extreme points */
    for( i = 0; i < nblocks; ++i )
    {
@@ -921,10 +931,16 @@ SCIP_RETCODE fixVariables(
       blockrep = GCGrelaxGetBlockRepresentative(scip, i);
 
       /* at least one extreme point must have been selected */
-#ifndef NDEBUG
-      selidx = i * nusedpts;
-      assert(selection[selidx] != -1);
-#endif
+      assert(selection[i * nusedpts] != -1);
+
+      /* check whether the block would be fixed entirely to zero;
+       * a neccessary condition is that only one extreme pt has been selected
+       * (actual original variable values are checked later)
+       */
+      if( selection[i * nusedpts + 1] == -1 )
+         zeroblocks[i] = TRUE;
+      else
+         zeroblocks[i] = FALSE;
 
       /* compare the selected extreme points, where the first point is the reference point */
       for( j = 0; j < nusedpts; ++j )
@@ -953,8 +969,9 @@ SCIP_RETCODE fixVariables(
                   continue;
 
                /* get the corresponding pricing variable;
-                  check whether this is the first block in which this variable appears;
-                  search for the right original variable (in case of aggregation) */
+                * check whether this is the first block in which this variable appears;
+                * search for the right original variable (in case of aggregation)
+                */
                if( GCGvarIsLinking(origvars[k]) )
                {
                   SCIP_VAR** linkingpricingvars;
@@ -967,7 +984,8 @@ SCIP_RETCODE fixVariables(
 #endif
 
                   /* for linking variables, also check whether this is
-                     the first block the variable appears in */
+                   * the first block the variable appears in
+                   */
                   for( l = 0; l < blockrep; ++l )
                      if( linkingpricingvars[l] != NULL )
                         break;
@@ -1010,7 +1028,10 @@ SCIP_RETCODE fixVariables(
                      fixable[idx] = FALSE;
 
                if( !SCIPisZero(scip, origvals[k]) )
+               {
                   ++ptcounter[idx];
+                  zeroblocks[i] = FALSE;
+               }
             }
          }
       }
@@ -1028,8 +1049,9 @@ SCIP_RETCODE fixVariables(
       assert(GCGvarIsOriginal(var));
       block = GCGvarGetBlock(var);
 
-      /* we still need to treat variables belonging to no block (as they did not appear in any extreme point) */
-      /* if the variable belongs to no block, fix it in a RENS-like fashion */
+      /* we still need to treat variables belonging to no block (as they did not appear in any extreme point)
+       * if the variable belongs to no block, fix it in a RENS-like fashion
+       */
       if( block == -1 )
       {
          fixvals[i] = SCIPgetRelaxSolVal(scip, var);
@@ -1054,7 +1076,8 @@ SCIP_RETCODE fixVariables(
          assert(ptcounter[i] <= nusedpts * nlinkblocks);
 
          /* a variable which has appeared nonzero in some points
-          * should have appeared nonzero in all extreme points in order to be fixed */
+          * should have appeared nonzero in all extreme points in order to be fixed
+          */
          if( ptcounter[i] > 0 )
          {
             if( ptcounter[i] < nusedpts * nlinkblocks )
@@ -1079,16 +1102,13 @@ SCIP_RETCODE fixVariables(
       if( fixable[i] && (lb > fixvals[i] || fixvals[i] > ub) )
          fixable[i] = FALSE;
 
-/*      SCIPdebugMessage("Trying to fix variable %s: block=%d, fixval=%g, ptcounter=%d, fixable=%d\n",
- *                  SCIPvarGetName(var), block+1, fixvals[i], ptcounter[i], fixable[i]);
- */
-
-      /* the variable can be fixed if it has not been marked unfixable and
+      /* the variable can be fixed if it has not been marked unfixable, which is the case if
        *  - it was directly transferred to the master problem and has integer value or
        *  - it appeared zero in all extreme points
-       *  - it did not appear zero in some extreme pts and nonzero in other extreme pts
+       *  - it did not appear zero in some extreme pts and nonzero in other extreme pts;
+       * besides, we do not fix entire blocks to zero
        */
-      if( fixable[i] )
+      if( fixable[i] && (block < 0 || !zeroblocks[block]) )
       {
          SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[i], fixvals[i]) );
          SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[i], fixvals[i]) );
@@ -1103,6 +1123,37 @@ SCIP_RETCODE fixVariables(
    *intfixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
    *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
 
+   /* if not enough variables were fixed, try to fix zero blocks until the minimum fixing rate is reached */
+   while( *intfixingrate < heurdata->minfixingrate )
+   {
+      SCIPdebugMessage("  fixing rate only %5.2f --> trying to fix a zero block\n", *intfixingrate);
+
+      /* get the next zero block */
+      for( i = 0; i < nblocks; ++i )
+         if( zeroblocks[i] )
+         {
+            /* fix variables */
+            for( j = 0; j < nbinvars + nintvars; ++j )
+               if( GCGvarGetBlock(vars[j]) == i && fixable[j] )
+               {
+                  assert(SCIPisZero(scip, fixvals[j]));
+                  SCIP_CALL( SCIPchgVarLbGlobal(subscip, subvars[j], 0.0) );
+                  SCIP_CALL( SCIPchgVarUbGlobal(subscip, subvars[j], 0.0) );
+                  fixingcounter++;
+                  zerocounter++;
+               }
+
+            zeroblocks[i] = FALSE;
+            break;
+         }
+
+      *intfixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
+      *zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
+
+      if( i == nblocks )
+         break;
+   }
+
    /* if all variables were fixed or amount of fixed variables is insufficient, abort immediately */
    if( *intfixingrate < heurdata->minfixingrate )
    {
@@ -1116,6 +1167,7 @@ SCIP_RETCODE fixVariables(
    *success = TRUE;
 
    /* free memory */
+   SCIPfreeBufferArray(scip, &zeroblocks);
    SCIPfreeBufferArray(scip, &fixvals);
    SCIPfreeBufferArray(scip, &fixable);
    SCIPfreeBufferArray(scip, &ptcounter);
@@ -1124,7 +1176,8 @@ SCIP_RETCODE fixVariables(
 }
 
 /** creates the rows of the subproblem by copying LP rows of the SCIP instance;
- *  only used if the uselprows parameter is TRUE */
+ *  only used if the uselprows parameter is TRUE
+ */
 static
 SCIP_RETCODE createRows(
    SCIP*                 scip,               /**< original SCIP data structure                                  */
@@ -1521,7 +1574,7 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    /* check whether we have enough nodes left to call subproblem solving */
    if( nstallnodes < heurdata->minnodes )
    {
-      SCIPdebugMessage("skipping Extreme Points Crossover: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
+      SCIPdebugMessage("skipping Extreme Point Crossover: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
       return SCIP_OKAY;
    }
 
