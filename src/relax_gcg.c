@@ -33,7 +33,6 @@
  * @author  Alexander Gross
  *
  * \bug
- * - Reading in the wrong decomposition leads to a crash
  * - The memory limit is not strictly enforced
  * - Dealing with timelimits is a working hack only
  * - CTRL-C handling is very flaky

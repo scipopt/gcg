@@ -589,7 +589,7 @@ SCIP_RETCODE solveProblem(
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
 
-   if( nsols > 0)
+   if( *nsols > 0)
    {
       SCIP_CALL( filterInfiniteSolutions(pricingprob, sols, nsols) );
       if( nsols == 0)
