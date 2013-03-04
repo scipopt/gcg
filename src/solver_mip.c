@@ -446,7 +446,7 @@ SCIP_RETCODE filterInfiniteSolutions(
          }
       }
    }
-   assert(*nsols >= 1);
+   assert(*nsols >= 0);
 
    return SCIP_OKAY;
 }
@@ -589,8 +589,16 @@ SCIP_RETCODE solveProblem(
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
 
-   SCIP_CALL( filterInfiniteSolutions(pricingprob, sols, nsols) );
-   assert(*nsols > 0);
+   if( nsols > 0)
+   {
+      SCIP_CALL( filterInfiniteSolutions(pricingprob, sols, nsols) );
+      if( nsols == 0)
+      {
+         *status = SCIP_STATUS_UNKNOWN;
+      }
+   }
+
+   assert(*nsols >= 0);
 
    for( s = 0; s < *nsols; ++s)
    {
