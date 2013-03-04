@@ -33,7 +33,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-//#define SCIP_DEBUG
 #define SCIP_STATISTIC
 
 #include <assert.h>
@@ -795,6 +794,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          heurdata->bestprimalbd = SCIPgetSolTransObj(scip, heurdata->sol);
          heurdata->bestsolrounded = FALSE;
       }
+
+      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %d , rounded = 0\n",
+         SCIPheurGetName(heur), SCIPgetSolTransObj(scip, heurdata->sol),
+         SCIPgetSolTransObj(scip, heurdata->sol) == SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)));
 #endif
    }
 
@@ -810,7 +813,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
    if( divedepth > 0 )
    {
-      SCIPstatisticPrintf("%s statistic: lptime=%6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
+      SCIPstatisticPrintf("Origdiving statistic: %s , lptime = %6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
          SCIPheurGetName(heur), SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
    }
 #endif
@@ -974,6 +977,9 @@ SCIP_DECL_EVENTEXEC(eventExecOrigdiving)
          heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
          heurdata->bestsolrounded = TRUE;
       }
+
+      SCIPstatisticPrintf("Origdiving statistic: %s found solution %13.6e , improving = %d , rounded = 1\n",
+         SCIPheurGetName(heur), SCIPgetSolTransObj(scip, sol), SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND);
    }
 
    return SCIP_OKAY;

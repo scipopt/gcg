@@ -737,7 +737,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #ifdef SCIP_STATISTIC
    eventhdlrdata->runningheur = NULL;
 
-   SCIPstatisticPrintf("%s statistic: %3d diveloops, lptime=%6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
+   SCIPstatisticPrintf("Masterdiving statistic: %s , %3d diveloops, lptime = %6.1f seconds, %"SCIP_LONGINT_FORMAT" lp iterations, %5d pricing rounds\n",
       SCIPheurGetName(heur), ndives, SCIPgetClockTime(scip, lptime), totallpiters, totalpricerounds);
 #endif
 
@@ -851,6 +851,8 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
    SCIP_HEURDATA* heurdata;
    SCIP_SOL* sol;
    SCIP_HEUR* solheur;
+   SCIP_Bool rounded;
+   SCIP_Bool improving;
 
    assert(eventhdlr != NULL);
 
@@ -879,31 +881,38 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
 
    /* update solution statistics */
    ++heurdata->nsols;
-   if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
-      ++heurdata->nimpsols;
 
+   if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+   {
+      ++heurdata->nimpsols;
+      improving = TRUE;
+   }
+   else
+      improving = FALSE;
+
+   rounded = FALSE;
    if( solheur != NULL && strcmp(SCIPheurGetName(solheur), "simplerounding") == 0 )
    {
+      rounded = TRUE;
       ++heurdata->nroundsols;
-      if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+      if( improving )
          ++heurdata->nimproundsols;
-      if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
-      {
-         heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
-         heurdata->bestsolrounded = TRUE;
-      }
    }
    else if( solheur == heur )
    {
       ++heurdata->ndivesols;
-      if( SCIPeventGetType(event) == SCIP_EVENTTYPE_BESTSOLFOUND )
+      if( improving )
          ++heurdata->nimpdivesols;
-      if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
-      {
-         heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
-         heurdata->bestsolrounded = FALSE;
-      }
    }
+
+   if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
+   {
+      heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
+      heurdata->bestsolrounded = rounded;
+   }
+
+   SCIPstatisticPrintf("Masterdiving statistic: %s found solution %13.6e , improving = %d , rounded = %d\n",
+      SCIPheurGetName(heur), SCIPgetSolTransObj(scip, sol), improving, rounded);
 
    return SCIP_OKAY;
 }

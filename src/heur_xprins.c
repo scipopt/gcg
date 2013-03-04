@@ -1103,15 +1103,21 @@ SCIP_RETCODE createNewSol(
    SCIP_CALL( SCIPcreateSol(scip, &newsol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newsol, nvars, vars, subsolvals) );
 
-   /* try to add new solution to scip and free it immediately */
-   SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
+   SCIPstatisticPrintf("XP RINS statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
+      SCIPgetSolTransObj(scip, newsol), SCIPsolGetNodenum(subsol));
+
+   /* try to add new solution to scip */
+#ifdef SCIP_STATISTIC
+   if( !*success )
+#endif
+      SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, success) );
 
 #ifdef SCIP_STATISTIC
-   if( *success )
-   {
-      if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
-         heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
-   }
+   if( SCIPgetSolTransObj(scip, newsol) < heurdata->bestprimalbd )
+      heurdata->bestprimalbd = SCIPgetSolTransObj(scip, newsol);
+
+   SCIPstatisticPrintf("XP RINS statistic: Solution %13.6e found at node %"SCIP_LONGINT_FORMAT"\n",
+      SCIPgetSolTransObj(scip, newsol), SCIPsolGetNodenum(subsol));
 #endif
 
    SCIPfreeSol(scip, &newsol);
@@ -1493,11 +1499,13 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
        */
       nsubsols = SCIPgetNSols(subscip);
       subsols = SCIPgetSols(subscip);
+      success = FALSE;
 #ifdef SCIP_STATISTIC
       heurdata->totalsols += nsubsols;
-#endif
-      success = FALSE;
+      for( i = 0; i < nsubsols; ++i )
+#else
       for( i = 0; i < nsubsols && !success; ++i )
+#endif
       {
          SCIP_CALL( createNewSol(scip, subscip, subvars, heur, subsols[i], &success) );
          if( success )
