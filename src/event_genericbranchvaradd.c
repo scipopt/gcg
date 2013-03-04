@@ -146,18 +146,9 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {
-//            SCIP_Real* generator;
-//            SCIP_Bool* compisinteger;
-//            int generatorsize;
-//            SCIP_Real generator_i;
             SCIP_Real generatorentry;
 
-            //generator = NULL;
             generatorentry = getGeneratorEntry(scip, mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
-
-//            getGenerators(origscip, &generator, &generatorsize, &compisinteger, GCGbranchGenericBranchdataGetConsblocknr(branchdata), mastervars, nmastervars, mastervar);
-//            generator_i = generator[(int) SCIPceil(scip, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component-0.5)];
-
 
             if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
             {

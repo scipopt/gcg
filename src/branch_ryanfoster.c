@@ -504,6 +504,12 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       return SCIP_OKAY;
    }
 
+   if( GCGnodeisVanderbeck(scip, result) )
+   {
+      SCIPdebugMessage("Not executing Ryan&Foster branching, node was branched by generic branchrule\n");
+      return SCIP_OKAY;
+   }
+
    /* check whether the current original solution is integral */
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(origscip, GCGrelaxGetCurrentOrigSol(origscip), TRUE, TRUE, TRUE, TRUE, &feasible) );
@@ -720,6 +726,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    if( !GCGrelaxIsMasterSetCovering(origscip) || !GCGrelaxIsMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Not executing Ryanfoster branching, master is neither set covering nor set partitioning\n");
+      return SCIP_OKAY;
+   }
+
+   if( GCGnodeisVanderbeck(scip, result) )
+   {
+      SCIPdebugMessage("Not executing Ryanfoster branching, node was branched by generic branchrule\n");
       return SCIP_OKAY;
    }
 

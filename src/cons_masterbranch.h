@@ -58,14 +58,15 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
    SCIP_Real             addPropBoundChgBound
    );
-/*
+
+/** checks branchrule of current masterbranchcons for "generic"
+ * if it is, we only use the "generic" branchule
+ * @return brancrule == "generic" */
 extern
-// the function initializes the origconsdata data structure
-SCIP_RETCODE GCGconsMasterbranchSetNChildcons(
-   SCIP_CONS*            cons,                // constraint for which the consdata is setted
-   int                   nchildcons
+SCIP_Bool GCGnodeisVanderbeck(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_RESULT*         result              /**< RESULT data structure */
    );
-*/
 
 extern
 /** the function returns the name of the constraint in the origconsdata data structure */

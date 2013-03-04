@@ -1769,6 +1769,42 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 /* ----------------------------------- external methods -------------------------- */
 
+/** checks branchrule of current masterbranchcons for "generic"
+ * if it is, we only use the "generic" branchule
+ * @return brancrule == "generic" */
+SCIP_Bool GCGnodeisVanderbeck(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_RESULT*         result              /**< RESULT data structure */
+   )
+{
+   SCIP_CONS* masterbranchcons;
+   SCIP_BRANCHRULE* branchrule;
+
+   masterbranchcons = NULL;
+   branchrule = NULL;
+
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
+
+   if( masterbranchcons == NULL )
+      return FALSE;
+
+   branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
+
+   if( branchrule == NULL )
+      branchrule = GCGconsMasterbranchGetOrigbranchrule(masterbranchcons);
+
+   if(branchrule == NULL )
+      return FALSE;
+
+   if( strcmp(SCIPbranchruleGetName(branchrule), "generic") == 0 )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
 /** the function initializes the condata data structure */
 SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP*                 scip,               /**< SCIP data structure*/

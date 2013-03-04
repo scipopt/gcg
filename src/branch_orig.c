@@ -589,6 +589,12 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
    assert(origscip != NULL);
 
+   if( GCGnodeisVanderbeck(scip, result) )
+   {
+      SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      return SCIP_OKAY;
+   }
+
    SCIPdebugMessage("Update current sol.\n");
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
 
@@ -621,6 +627,12 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    feasible = FALSE;
 
    assert(origscip != NULL);
+
+   if( GCGnodeisVanderbeck(scip, result) )
+   {
+      SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      return SCIP_OKAY;
+   }
 
    SCIPdebugMessage("Update current sol.\n");
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip, &feasible) );
@@ -676,6 +688,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    origscip = GCGpricerGetOrigprob(scip);
    //masterscip = scip;
    assert(origscip != NULL);
+
+   if( GCGnodeisVanderbeck(scip, result) )
+   {
+      SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
+      return SCIP_OKAY;
+   }
 
    SCIPdebugMessage("Execps method of orig branching\n");
 
