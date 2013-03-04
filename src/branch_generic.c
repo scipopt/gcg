@@ -2143,7 +2143,10 @@ SCIP_RETCODE createChildNodesGeneric(
       SCIPdebugMessage("lhs set to %g \n", lhs);
 
       /* define names for origbranch constraints */
-      (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %f) last comp=%s", p+1, blocknr, lhs, SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component));
+      (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %f) last comp=%s, sense %d, bound %g", p+1, blocknr, lhs,
+            SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
+            branchchilddata->consS[branchchilddata->consSsize-1].sense,
+            branchchilddata->consS[branchchilddata->consSsize-1].bound);
 
       if( masterbranchcons == NULL || !pruneChildNodeByDominanceGeneric(scip, lhs, branchchilddata->consS, branchchilddata->consSsize, masterbranchcons, blocknr) )
       {
@@ -2485,7 +2488,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyGeneric)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
-   SCIPdebugMessage("pricer copy called.\n");
+//   SCIPdebugMessage("pricer copy called.\n");
    SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
    return SCIP_OKAY;
 }
@@ -2521,11 +2524,11 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPduplicateMemoryArray(origscip, &copymastervars, mastervars, nmastervars) );
+   //SCIP_CALL( SCIPallocMemoryArray(origscip, &copymastervars, nmastervars) );
 
-   SCIP_CALL( SCIPallocMemoryArray(origscip, &copymastervars, nmastervars) );
-
-   for( i=0; i<nmastervars; ++i )
-      copymastervars[i] = mastervars[i];
+   //for( i=0; i<nmastervars; ++i )
+      //copymastervars[i] = mastervars[i];
 
   // oldnmastervars = nmastervars;
 
@@ -2566,14 +2569,18 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
          nnewmastervars = nmastervars;
          for( i=0; i<nnewmastervars; ++i )
          {
-            SCIP_Real* generator;
-            SCIP_Bool* compisinteger;
-            int generatorsize;
+//            SCIP_Real* generator;
+//            SCIP_Bool* compisinteger;
+//            int generatorsize;
             SCIP_Real generator_i;
 
-            generatorsize = 0;
-            generator = NULL;
-            compisinteger = NULL;
+//            generatorsize = 0;
+//            generator = NULL;
+//            compisinteger = NULL;
+
+            if( i >= nmastervars )
+               break;
+
             if( GCGvarGetBlock(copymastervars[i]) == branchdata->consblocknr )
             {
                //getGenerators(origscip, &generator, &generatorsize, &compisinteger, branchdata->consblocknr, mastervars, oldnmastervars, copymastervars[i]);
@@ -2595,9 +2602,9 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
                   else
                   {
                      //small down array
-                     copymastervars[i] = copymastervars[nnewmastervars-1];
+                     copymastervars[i] = copymastervars[nmastervars-1];
                      --i;
-                     --nnewmastervars;
+                     --nmastervars;
                   }
                }
                else
@@ -2614,28 +2621,28 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
                   else
                   {
                      //small down array
-                     copymastervars[i] = copymastervars[nnewmastervars-1];
+                     copymastervars[i] = copymastervars[nmastervars-1];
                      --i;
-                     --nnewmastervars;
+                     --nmastervars;
                   }
                }
             }
-            if( generatorsize > 0 )
-            {
-               SCIPfreeMemoryArray(origscip, &generator);
-               generator = NULL;
-               SCIPfreeMemoryArray(origscip, &compisinteger);
-               compisinteger = NULL;
-            }
+//            if( generatorsize > 0 )
+//            {
+//               SCIPfreeMemoryArray(origscip, &generator);
+//               generator = NULL;
+//               SCIPfreeMemoryArray(origscip, &compisinteger);
+//               compisinteger = NULL;
+//            }
             else
             {
                //small down array
-               copymastervars[i] = copymastervars[nnewmastervars-1];
+               copymastervars[i] = copymastervars[nmastervars-1];//copymastervars[nnewmastervars-1];
                --i;
-               --nnewmastervars;
+               --nmastervars;//--nnewmastervars;
             }
          }
-         nmastervars = nnewmastervars;
+         //nmastervars = nnewmastervars;
       }
    }
    /* add constraint to the master problem that enforces the branching decision */

@@ -115,7 +115,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
+   //SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
    assert(masterbranchcons != NULL);
