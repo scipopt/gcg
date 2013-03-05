@@ -70,15 +70,6 @@
  * Data structures
  */
 
-/** score data structure **/
-struct SCIP_DecScores
-{
-   SCIP_Real             borderscore;        /**< score of the border */
-   SCIP_Real             densityscore;       /**< score of block densities */
-   SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
-   SCIP_Real             totalscore;         /**< accumulated score */
-};
-typedef struct SCIP_DecScores SCIP_DECSCORES;
 
 /** constraint handler data */
 struct SCIP_ConshdlrData
@@ -101,12 +92,11 @@ struct SCIP_ConshdlrData
 /* put your local methods here, and declare them static */
 
 /** computes the score of the given decomposition */
-static
-SCIP_RETCODE evaluateDecomposition(
+SCIP_RETCODE DECevaluateDecomposition(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
-   SCIP_DECSCORES*       score               /**< returns the score of the decomposition */
-      )
+   DEC_SCORES*           score               /**< returns the score of the decomposition */
+   )
 {
    int matrixarea;
    int borderarea;
@@ -841,10 +831,10 @@ SCIP_RETCODE DECdetectStructure(
    SCIP_CALL( SCIPallocBufferArray(scip, &scores, conshdlrdata->ndecomps) );
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
-      SCIP_DECSCORES score;
+      DEC_SCORES score;
       score.totalscore = 0.0;
 
-      SCIP_CALL( evaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
+      SCIP_CALL( DECevaluateDecomposition(scip, conshdlrdata->decdecomps[i], &score) );
       scores[i] = score.totalscore;
    }
 
@@ -1013,4 +1003,13 @@ SCIP_Bool DEChasDetectionRun(
    assert(conshdlrdata != NULL);
 
    return conshdlrdata->hasrun;
+}
+
+/** returns the character of the detector */
+char DECdetectorGetChar(
+   DEC_DETECTOR*         detector            /**< pointer to detector */
+)
+{
+   assert(detector != NULL);
+   return detector->decchar;
 }

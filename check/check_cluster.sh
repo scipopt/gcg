@@ -232,7 +232,7 @@ then
 fi
 
 # counter to define file names for a test set uniquely
-COUNT=1
+COUNT=0
 
 # loop over permutations
 for ((p = 0; $p <= $PERMUTE; p++))
@@ -241,10 +241,15 @@ do
     if test $PERMUTE -gt 0
     then
 	EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME"#p"$p.eval
+	JOBFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME"#p"$p.job
     else
 	EVALFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.eval
+	JOBFILE=$GCGPATH/results/check.$TSTNAME.$BINID.$QUEUE.$SETNAME.job
     fi
-    echo > $EVALFILE
+    rm -f $EVALFILE
+    touch $EVALFILE
+    rm -f $JOBFILE
+    touch $JOBFILE
 
     # loop over testset
     for i in `cat testset/$TSTNAME.test` DONE
@@ -297,6 +302,7 @@ do
 	    SETFILE=$BASENAME.set
 
 	    echo $BASENAME >> $EVALFILE
+	    echo $SHORTPROBNAME >> $JOBFILE
 
             # in case we want to continue we check if the job was already performed
 	    if test "$CONTINUE" != "false"
@@ -390,11 +396,10 @@ EOF
 		TLIMIT=`expr $HARDTIMELIMIT / 60`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 		sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
-		sed -i "s,\$BASENAME,$BASENAME," runcluster_tmp.sh
 		sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
-		sed -i "s,\$FILENAME,$FILENAME," runcluster_tmp.sh
 		sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
-		sed -i "s,\$SHORTPROBNAME,$SHORTPROBNAME," runcluster_tmp.sh
+		sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.sh
+		sed -i "s,\$JOBFILE,$JOBFILE," runcluster_tmp.sh
 		sed -i "s,\$HARDMEMLIMIT,$HARDMEMLIMIT," runcluster_tmp.sh
 		sed -i "s,\$ULIMITMEMLIMIT,$ULIMITMEMLIMIT," runcluster_tmp.sh
 		sed -i "s,\$SOLVERPATH,$SOLVERPATH," runcluster_tmp.sh
@@ -402,7 +407,7 @@ EOF
 
 #	        less runcluster_aachen.sh
 #	        bsub -J GCG$SHORTPROBNAME -M $HARDMEMLIMIT -q $QUEUE -W $TLIMIT -o /dev/null < runcluster_tmp.sh &
-	        bsub -q $QUEUE -o error/out_$SHORTPROBNAME_%I_%J.txt < runcluster_tmp.sh &
+#	        bsub -q $QUEUE -o error/out_$SHORTPROBNAME_%I_%J.txt < runcluster_tmp.sh &
 #	        bsub -q $QUEUE -o /dev/null < runcluster_tmp.sh &
 	    else
                 # -V to copy all environment variables
@@ -412,4 +417,8 @@ EOF
 	    echo "input file "$GCGPATH/$i" not found!"
 	fi
     done
+    if test  "$QUEUETYPE" = "bsub"
+    then
+        bsub -J "$TSTNAME[1-$COUNT]" -q $QUEUE -o error/out_$TSTNAME_%I_%J.txt < runcluster_tmp.sh
+    fi
 done

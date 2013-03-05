@@ -30,8 +30,11 @@
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
+ * @author Christian Puchert
  */
 //#define SCIP_DEBUG
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <assert.h>
 #include <string.h>
@@ -148,11 +151,9 @@ struct SCIP_EventhdlrData
 
 
 
-/** the function initializes the condata data structure */
 static
-SCIP_RETCODE GCGconsMasterbranchCreateConsData(
+SCIP_RETCODE createConsData(
    SCIP*                 scip,               /**< SCIP data structure*/
-   SCIP*                 origscip,           /**< Original problem SCIP data structure*/
    SCIP_CONSDATA*        consdata,           /**< consdata to initialize*/
    SCIP_CONSHDLRDATA*    conshdlrData,       /**< constraint handler data */
    SCIP_CONS*            cons                /**< constraint for which the consdata is created */
@@ -163,21 +164,31 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
    SCIP_CONS* parent_origcons;
 #endif
 
+   SCIP* origscip;
    SCIP_CONS* origcons;
    SCIP_CONSDATA* parentdata;
+   SCIP_CONSDATA* stackconsdata;
+
+   SCIP_DOMCHG* domchg;
+   int ndomboundchgs;
+   SCIP_BOUNDCHG* boundchg;
+   SCIP_VAR* boundchgvar;
+   SCIP_BOUNDTYPE boundchgtype;
+   SCIP_Real boundchgnewbound;
+
    int i;
    int j;
 
-   SCIP_DOMCHG* domchg;
-   SCIP_BOUNDCHG* boundchg;
-
-   SCIP_CONSDATA* stackconsdata;
    assert(scip != NULL);
-   assert(origscip != NULL);
    assert(consdata != NULL);
    assert(conshdlrData != NULL);
    assert(cons != NULL);
 
+   /* get original problem */
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   /* get corresponding origbranch constraint in the original problem */
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
@@ -235,7 +246,7 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
 
    consdata->nbranchingchanges = 0;
 
-   for( i = 0; i < consdata->nboundchanges; i++ )
+   for( i = 0; i < consdata->nboundchanges; ++i )
    {
       boundchg = SCIPdomchgGetBoundchg(domchg, i);
 
@@ -261,19 +272,22 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
       assert(consdata->parentcons == conshdlrData->stack[conshdlrData->nstack-1]);
       assert(SCIPconsGetData(conshdlrData->stack[0])->parentcons == NULL);
 
-      /* check whether bound changes were added in nodes on the path to the current node after first activation */
-      for( i = 1; i < conshdlrData->nstack; i++ )
+      /* check whether bound changes were added in nodes on the path
+       * to the current node after activation of the parent node
+       */
+      for( i = 1; i < conshdlrData->nstack; ++i )
       {
          stackconsdata = SCIPconsGetData(conshdlrData->stack[i]);
          domchg = SCIPnodeGetDomchg(GCGconsOrigbranchGetNode(stackconsdata->origcons));
+         ndomboundchgs = SCIPdomchgGetNBoundchgs(domchg);
 
-         assert(SCIPdomchgGetNBoundchgs(domchg) >= parentdata->nboundchangestreated[i]);
+         assert(ndomboundchgs >= parentdata->nboundchangestreated[i]);
 
-         if( SCIPdomchgGetNBoundchgs(domchg) != parentdata->nboundchangestreated[i] )
+         if( ndomboundchgs != parentdata->nboundchangestreated[i] )
          {
             int diff;
 
-            diff = SCIPdomchgGetNBoundchgs(domchg) - parentdata->nboundchangestreated[i];
+            diff = ndomboundchgs - parentdata->nboundchangestreated[i];
 
             SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges + diff) );
             SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges + diff) );
@@ -281,16 +295,20 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
             SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges + diff) );
 
             /* add bound changes to the boundchanges array */
-            for( j = 0; j < SCIPdomchgGetNBoundchgs(domchg); j++ )
+            for( j = 0; j < ndomboundchgs; ++j )
             {
                int bndchgindex;
+
                boundchg = SCIPdomchgGetBoundchg(domchg, j);
+               boundchgvar = SCIPboundchgGetVar(boundchg);
+               boundchgtype = SCIPboundchgGetBoundtype(boundchg);
+               boundchgnewbound = SCIPboundchgGetNewbound(boundchg);
 
                if( j < stackconsdata->nboundchangestreated[i] )
                {
-                  assert(stackconsdata->boundchgvars[j] == SCIPboundchgGetVar(boundchg)
-                     && SCIPisEQ(scip, stackconsdata->newbounds[j], SCIPboundchgGetNewbound(boundchg))
-                     && stackconsdata->boundtypes[j] == SCIPboundchgGetBoundtype(boundchg));
+                  assert(stackconsdata->boundchgvars[j] == boundchgvar
+                     && SCIPisEQ(scip, stackconsdata->newbounds[j], boundchgnewbound)
+                     && stackconsdata->boundtypes[j] == boundchgtype);
                   continue;
                }
                if( j < parentdata->nboundchangestreated[i] )
@@ -298,33 +316,34 @@ SCIP_RETCODE GCGconsMasterbranchCreateConsData(
 
                bndchgindex = consdata->nboundchanges + j - parentdata->nboundchangestreated[i];
 
-               consdata->boundchgvars[bndchgindex] = SCIPboundchgGetVar(boundchg);
-               consdata->newbounds[bndchgindex] = SCIPboundchgGetNewbound(boundchg);
-               consdata->boundtypes[bndchgindex] = SCIPboundchgGetBoundtype(boundchg);
-
+               consdata->boundchgvars[bndchgindex] = boundchgvar;
+               consdata->newbounds[bndchgindex] = boundchgnewbound;
+               consdata->boundtypes[bndchgindex] = boundchgtype;
             }
+
             consdata->nboundchanges += diff;
          }
-         consdata->nboundchangestreated[i] = SCIPdomchgGetNBoundchgs(domchg);
+
+         consdata->nboundchangestreated[i] = ndomboundchgs;
       }
    }
 
    return SCIP_OKAY;
 }
 
-/** local method performs the bound change on pricing variables */
+/** reset bound changes on pricing variables (called when a node is deactivated) */
 static
-SCIP_RETCODE GCGresetPricingVarBound(
+SCIP_RETCODE resetPricingVarBound(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origscip,           /**< original problem SCIP data structure */
    SCIP_VAR*             pricingvar,         /**< variable on which the bound change should be performed */
    SCIP_CONSDATA*        consdata,           /**< constraint data structure */
    int                   i,                  /**< index of the information in the constraint data structure */
    int                   blocknr             /**< number of the pricing problem */
    )
 {
-   assert( scip != NULL );
-   assert(origscip != NULL);
+   SCIP* origscip;
+
+   assert(scip != NULL);
    assert(pricingvar != NULL);
    assert(consdata != NULL);
    assert(consdata->created);
@@ -332,15 +351,23 @@ SCIP_RETCODE GCGresetPricingVarBound(
    assert(consdata->boundtypes != NULL);
    assert(consdata->newbounds != NULL);
    assert(consdata->oldbounds != NULL);
+
+   /* get original problem */
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
    assert(blocknr >= 0 && blocknr < GCGrelaxGetNPricingprobs(origscip));
 
    /* lower bound was changed */
    if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
    {
-      assert( SCIPisEQ(scip, SCIPvarGetLbLocal(pricingvar), consdata->newbounds[i])
-           || SCIPisLE(scip, SCIPvarGetLbLocal(pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
+      assert(SCIPisGE(scip, SCIPvarGetLbLocal(pricingvar), consdata->newbounds[i])
+         || SCIPisLE(scip, SCIPvarGetLbLocal(pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
 
       if( SCIPisEQ(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
+         return SCIP_OKAY;
+
+      if( SCIPisGT(scip, consdata->oldbounds[i], consdata->newbounds[i]) )
          return SCIP_OKAY;
 
       if( SCIPisGT(scip, SCIPvarGetLbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
@@ -359,10 +386,13 @@ SCIP_RETCODE GCGresetPricingVarBound(
    /* upper bound was changed */
    else
    {
-      assert( SCIPisEQ(scip, SCIPvarGetUbLocal(pricingvar), consdata->newbounds[i])
-           || SCIPisGE(scip, SCIPvarGetUbLocal(pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
+      assert(SCIPisLE(scip, SCIPvarGetUbLocal(pricingvar), consdata->newbounds[i])
+         || SCIPisGE(scip, SCIPvarGetUbLocal(pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
 
       if( SCIPisEQ(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->newbounds[i]) )
+         return SCIP_OKAY;
+
+      if( SCIPisLT(scip, consdata->oldbounds[i], consdata->newbounds[i]) )
          return SCIP_OKAY;
 
       if( SCIPisLT(scip, SCIPvarGetUbGlobal(consdata->boundchgvars[i]), consdata->oldbounds[i]) )
@@ -381,19 +411,19 @@ SCIP_RETCODE GCGresetPricingVarBound(
    return SCIP_OKAY;
 }
 
-/** local method performs the bound change on pricing variables */
+/** perform bound changes on pricing variables (called when a node is activated) */
 static
-SCIP_RETCODE GCGtightenPricingVarBound(
+SCIP_RETCODE tightenPricingVarBound(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origscip,           /**< original problem SCIP data structure */
    SCIP_VAR*             pricingvar,         /**< variable on which the bound change should be performed */
    SCIP_CONSDATA*        consdata,           /**< constraint data structure */
    int                   i,                  /**< index of the information in the constraint data structure */
    int                   blocknr             /**< number of the pricing problem */
    )
 {
-   assert( scip != NULL );
-   assert(origscip != NULL);
+   SCIP* origscip;
+
+   assert(scip != NULL);
    assert(pricingvar != NULL);
    assert(consdata != NULL);
    assert(consdata->created);
@@ -401,6 +431,11 @@ SCIP_RETCODE GCGtightenPricingVarBound(
    assert(consdata->boundtypes != NULL);
    assert(consdata->newbounds != NULL);
    assert(consdata->oldbounds != NULL);
+
+   /* get original problem */
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
    assert(blocknr >= 0 && blocknr < GCGrelaxGetNPricingprobs(origscip));
 
    /* lower bound was changed */
@@ -408,25 +443,31 @@ SCIP_RETCODE GCGtightenPricingVarBound(
    {
       consdata->oldbounds[i] = SCIPvarGetLbLocal(pricingvar);
 
-      SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->newbounds[i]) );
-      SCIPdebugMessage("tightened lower bound of var %s from %g to %g\n",
-         SCIPvarGetName(pricingvar), consdata->oldbounds[i], consdata->newbounds[i]);
+      if( SCIPisGT(scip, consdata->newbounds[i], consdata->oldbounds[i]) )
+      {
+         SCIP_CALL( SCIPchgVarLb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->newbounds[i]) );
+         SCIPdebugMessage("tightened lower bound of var %s from %g to %g\n",
+            SCIPvarGetName(pricingvar), consdata->oldbounds[i], consdata->newbounds[i]);
+      }
    }
    /* upper bound was changed */
    else
    {
       consdata->oldbounds[i] = SCIPvarGetUbLocal(pricingvar);
 
-      SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->newbounds[i]) );
-      SCIPdebugMessage("tightened upper bound of var %s from %g to %g\n",
-         SCIPvarGetName(pricingvar), consdata->oldbounds[i], consdata->newbounds[i]);
+      if( SCIPisLT(scip, consdata->newbounds[i], consdata->oldbounds[i]) )
+      {
+         SCIP_CALL( SCIPchgVarUb(GCGrelaxGetPricingprob(origscip, blocknr), pricingvar, consdata->newbounds[i]) );
+         SCIPdebugMessage("tightened upper bound of var %s from %g to %g\n",
+            SCIPvarGetName(pricingvar), consdata->oldbounds[i], consdata->newbounds[i]);
+      }
    }
    return SCIP_OKAY;
 }
 
-/* local method to add a global bound change to the pending bound changes array */
+/** add a global bound change to the pending bound changes array */
 static
-SCIP_RETCODE GCGconsMasterbranchAddPendingBndChg(
+SCIP_RETCODE addPendingBndChg(
    SCIP*                 scip,
    SCIP_VAR*             var,
    SCIP_BOUNDTYPE        boundtype,
@@ -672,7 +713,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    SCIP_CONSDATA* consdata;
    int i;
 
-
    assert(scip != NULL);
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -701,7 +741,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    if( !consdata->created )
    {
       SCIPdebugPrintf("for the first time\n");
-      SCIP_CALL( GCGconsMasterbranchCreateConsData(scip, origscip, consdata, conshdlrData, cons) );
+      SCIP_CALL( createConsData(scip, consdata, conshdlrData, cons) );
       assert(consdata->created);
    }
    else
@@ -797,7 +837,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       {
          SCIPdebugMessage("adjusting bound of pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
-         SCIP_CALL(GCGtightenPricingVarBound(scip, origscip,
+         SCIP_CALL( tightenPricingVarBound(scip,
                GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, GCGvarGetBlock(consdata->boundchgvars[i])));
       }
       else if( GCGvarGetBlock(consdata->boundchgvars[i]) == -2 )
@@ -815,7 +855,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
             if( pricingvars[j] == NULL )
                continue;
 
-            SCIP_CALL( GCGtightenPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j) );
+            SCIP_CALL( tightenPricingVarBound(scip, pricingvars[j], consdata, i, j) );
          }
       }
       else
@@ -895,7 +935,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
 
          /* reset corresponding bound in the pricing problem */
 
-         SCIP_CALL(GCGresetPricingVarBound(scip, origscip,
+         SCIP_CALL( resetPricingVarBound(scip,
                GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr));
       }
       else if( blocknr == -2 )
@@ -920,7 +960,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
             assert(GCGrelaxGetPricingprob(origscip, j) != NULL);
 
             /* reset corresponding bound in the pricing problem */
-            SCIP_CALL( GCGresetPricingVarBound(scip, origscip, pricingvars[j], consdata, i, j) );
+            SCIP_CALL( resetPricingVarBound(scip, pricingvars[j], consdata, i, j) );
          }
       }
       else
@@ -1280,7 +1320,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
 
       if( propboundtypes[i] == SCIP_BOUNDTYPE_LOWER )
       {
-         if( !SCIPisEQ(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
+         if( SCIPisLT(scip, SCIPvarGetLbLocal(mastervar), propbounds[i]) )
          {
             SCIP_CALL( SCIPchgVarLb(scip, mastervar, propbounds[i]) );
             propcount++;
@@ -1289,7 +1329,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
       }
       else
       {
-         if( !SCIPisEQ(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
+         if( SCIPisGT(scip, SCIPvarGetUbLocal(mastervar), propbounds[i]) )
          {
             SCIP_CALL( SCIPchgVarUb(scip, mastervar, propbounds[i]) );
             propcount++;
@@ -1466,7 +1506,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+         SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
@@ -1474,7 +1514,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+         SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                GCGoriginalVarGetPricingVar(var), SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
    }
@@ -1491,7 +1531,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+         SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_GUBCHANGED) != 0 )
@@ -1499,7 +1539,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
          handled = TRUE;
 #endif
-         SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+         SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
       }
       if( (eventtype & SCIP_EVENTTYPE_LBTIGHTENED) != 0 )
@@ -1544,7 +1584,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+            SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
 
@@ -1556,7 +1596,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+            SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                   pricingvars[i], SCIP_BOUNDTYPE_LOWER, oldbound, newbound) );
          }
       }
@@ -1568,7 +1608,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
             handled = TRUE;
 #endif
             /* add the bound change in the master */
-            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+            SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                   mastervars[0], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
 
@@ -1580,7 +1620,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 #ifdef SCIP_DEBUG
             handled = TRUE;
 #endif
-            SCIP_CALL( GCGconsMasterbranchAddPendingBndChg(GCGrelaxGetMasterprob(scip),
+            SCIP_CALL( addPendingBndChg(GCGrelaxGetMasterprob(scip),
                   pricingvars[i], SCIP_BOUNDTYPE_UPPER, oldbound, newbound) );
          }
 

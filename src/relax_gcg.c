@@ -33,7 +33,6 @@
  * @author  Alexander Gross
  *
  * \bug
- * - Reading in the wrong decomposition leads to a crash
  * - The memory limit is not strictly enforced
  * - Dealing with timelimits is a working hack only
  * - CTRL-C handling is very flaky
@@ -534,7 +533,7 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-
+#ifdef NBLISS
 /** checks whether two arrays of SCIP_Real's are identical */
 static
 SCIP_Bool realArraysAreEqual(
@@ -565,7 +564,7 @@ SCIP_Bool realArraysAreEqual(
    return TRUE;
 }
 
-#ifdef NBLISS
+
 /** checks whether two pricingproblems represent identical blocks */
 static
 SCIP_RETCODE checkIdentical(
@@ -3043,8 +3042,7 @@ SCIP_RETCODE performProbing(
    /* create master constraint that captures the branching decision in the original instance */
    mprobingnode = SCIPgetCurrentNode(masterscip);
    assert(GCGconsMasterbranchGetActiveCons(masterscip) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode,
-         GCGconsMasterbranchGetActiveCons(masterscip)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &mprobingcons, mprobingnode, GCGconsMasterbranchGetActiveCons(masterscip)) );
    SCIP_CALL( SCIPaddConsNode(masterscip, mprobingnode, mprobingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &mprobingcons) );
 

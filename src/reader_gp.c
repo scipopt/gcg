@@ -375,7 +375,7 @@ SCIP_RETCODE SCIPwriteGp(
    if( decdecomp == NULL )
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s", name);
    else
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d", name, decdecomp->nblocks);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d", name, DECdetectorGetChar(decdecomp->detector), decdecomp->nblocks);
 
    SCIP_CALL( writeFileHeader(scip, file, outname) );
 

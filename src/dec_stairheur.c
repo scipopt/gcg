@@ -2163,30 +2163,23 @@ SCIP_RETCODE copyDetectorDataToDecomp(
       DEC_DECOMP*        decdecomp        /**< DECOMP data structure */
       )
 {
-   SCIP_Bool valid;
 
    assert(scip != 0);
    assert(detectordata != 0);
    assert(decdecomp != 0);
 
    DECdecompSetNBlocks(decdecomp, detectordata->blocks);
-   DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE, &valid);
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars, &valid) );
-   assert(valid);
-   SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss, &valid) );
-   assert(valid);
+   SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE) );
+   SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, detectordata->varsperblock, detectordata->nvarsperblock) );
+   SCIP_CALL( DECdecompSetSubscipconss(scip, decdecomp, detectordata->consperblock, detectordata->nconsperblock) );
+   SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, detectordata->linkingvars, detectordata->nlinkingvars) );
+   SCIP_CALL( DECdecompSetLinkingconss(scip, decdecomp, detectordata->linkingconss, detectordata->nlinkingconss) );
+
    //hashmaps: shallow copy
    DECdecompSetVarindex(decdecomp, detectordata->indexmap->varindex);
    DECdecompSetConsindex(decdecomp, detectordata->indexmap->consindex);
-   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock, &valid);
-   assert(valid);
-   DECdecompSetConstoblock(decdecomp, detectordata->constoblock, &valid);
-   assert(valid);
+   DECdecompSetVartoblock(decdecomp, detectordata->vartoblock);
+   DECdecompSetConstoblock(decdecomp, detectordata->constoblock);
    //debug
 //   PrintDetectordata(scip, detectordata);
 //   DECdecompPrintDecomp(scip, decdecomp);

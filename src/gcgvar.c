@@ -1359,7 +1359,7 @@ void GCGupdateVarStatistics(
    GCGsetCreationNode(origprob, newvar, SCIPnodeGetNumber(SCIPgetCurrentNode(origprob)));
    GCGsetCreationTime(origprob, newvar, SCIPgetSolvingTime(scip));
    GCGsetIteration(origprob, newvar, SCIPgetNLPIterations(scip));
-   GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip)));
+   GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);
 
 }

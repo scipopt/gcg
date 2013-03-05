@@ -44,10 +44,13 @@ ulimit -v $ULIMITMEMLIMIT
 ulimit -m $ULIMITMEMLIMIT
 
 export ILOG_LICENSE_FILE=$HOME/access.ilm
+
+BASENAME=`awk "NR==$LSB_JOBINDEX" $EVALFILE`
+BASENAME=`basename $BASENAME`
 OUTFILE=$CLIENTTMPDIR/$BASENAME.out
 ERRFILE=$CLIENTTMPDIR/$BASENAME.err
 TMPFILE=$SOLVERPATH/results/$BASENAME.tmp
-
+FILENAME=`awk "NR==$LSB_JOBINDEX" $JOBFILE`
 #if test ! -f $CLIENTTMPDIR/hmetis
 #then
 #    cp $HOME/bin/hmetis $CLIENTTMPDIR/
@@ -59,7 +62,6 @@ fi
 
 export PATH=$PATH:$HOME/bin/
 cd $CLIENTTMPDIR
-
 uname -a                            > $OUTFILE
 uname -a                            > $ERRFILE
 echo "@01 $FILENAME ==========="    >> $OUTFILE
@@ -82,6 +84,3 @@ mv $OUTFILE $SOLVERPATH/results/$BASENAME.out
 mv $ERRFILE $SOLVERPATH/results/$BASENAME.err
 
 rm -f $TMPFILE
-#chmod g+r $ERRFILE
-#chmod g+r $SCIPPATH/results/$BASENAME.out
-#chmod g+r $SCIPPATH/results/$BASENAME.set

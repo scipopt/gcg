@@ -1461,6 +1461,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool** solisray;
    int maxsols;
    SCIP_RETCODE retcode;
+   SCIP_Bool infeasible;
+   SCIP_Bool pricinghaserror;
 
    assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
 
@@ -1474,7 +1476,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    successfulmips = 0;
    retcode = SCIP_OKAY;
    *nfoundvars = 0;
-
+   infeasible = FALSE;
+   pricinghaserror = FALSE;
    *bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = SCIPinfinity(scip_);
@@ -1507,7 +1510,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
    }
 
-   #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips) reduction(+:solvedmips)
+   #pragma omp parallel for ordered firstprivate(pricinglowerbound) shared(retcode, optimal, solisray, sols, nsols, maxsols,pricetype,bestredcost,bestredcostvalid,nfoundvars,successfulmips,infeasible,pricinghaserror) reduction(+:solvedmips)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       int prob;
@@ -1521,7 +1524,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( pricerdata->pricingprobs[prob] == NULL || retcode != SCIP_OKAY)
          goto done;
 
-      if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) )
+      if( abortPricing(pricetype, *nfoundvars, solvedmips, successfulmips, optimal) || infeasible )
          goto done;
 
       #pragma omp ordered
@@ -1532,7 +1535,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          retcode = private_retcode;
 
          #pragma omp atomic
-         *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+         infeasible |= (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+
+         #pragma omp atomic
+         pricinghaserror |= (status == SCIP_STATUS_UNKNOWN);
+
+         if( !infeasible )
+         {
+            #pragma omp atomic
+            *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+         }
 
          if(nvarsfound < *nfoundvars)
          {
@@ -1544,7 +1556,16 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( optimal )
       {
         if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
-            assert(!SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]));
+        {
+           if( SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]) )
+           {
+              SCIPwarningMessage(scip_, "Numerical troubles solving pricing %d (error is %.4g)\n", prob, pricinglowerbound - pricerdata->dualsolconv[prob]);
+              *bestredcostvalid = FALSE;
+              assert(SCIPisLT(scip_, pricinglowerbound - pricerdata->dualsolconv[prob], 1.0));
+              pricinghaserror = TRUE;
+           }
+        }
+
 
          #pragma omp atomic
          *bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
@@ -1567,7 +1588,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    /** @todo solve all pricing problems all k iterations? */
    *nfoundvars = 0;
 
-   for( i = 0; i < pricerdata->npricingprobs; ++i )
+   for( i = 0; i < pricerdata->npricingprobs && !infeasible; ++i )
    {
       int prob;
       prob = pricerdata->permu[i];
@@ -1640,6 +1661,19 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );
+
+   if( result != NULL )
+   {
+      if( infeasible )
+      {
+         *bestredcost = SCIPinfinity(scip_);
+         *result = SCIP_SUCCESS;
+      }
+      else if( *nfoundvars > 0)
+         *result = SCIP_SUCCESS;
+      else if( pricinghaserror )
+         *result = SCIP_DIDNOTRUN;
+   }
 
    return SCIP_OKAY;
 }
@@ -2057,6 +2091,12 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       {
          assert(origsols[i] != NULL);
          SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+      }
+      /* return if we transferred solutions as the master should be feasible */
+      if( norigsols > 0 )
+      {
+         farkaspricing->incCalls();
+         return SCIP_OKAY;
       }
    }
 

@@ -65,7 +65,7 @@ FLAGS		+=	-I$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LPIINSTMSG	+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libcplex.a\"\n"
+LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libbliss.a\"\n"
 endif
 
 #-----------------------------------------------------------------------------

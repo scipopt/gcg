@@ -66,10 +66,9 @@ SCIP_RETCODE DECdecompFree(
    );
 
 /** sets the type of the decomposition */
-void DECdecompSetType(
+SCIP_RETCODE DECdecompSetType(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   DEC_DECTYPE           type,               /**< type of the decomposition */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   DEC_DECTYPE           type               /**< type of the decomposition */
    );
 
 /** gets the type of the decomposition */
@@ -104,8 +103,7 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR***           subscipvars,        /**< subscipvars array  */
-   int*                  nsubscipvars,       /**< number of subscipvars per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int*                  nsubscipvars        /**< number of subscipvars per block */
    );
 
 /** returns the subscipvars array of the given decdecomp structure */
@@ -123,8 +121,7 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_CONS***          subscipconss,       /**< subscipconss array  */
-   int*                  nsubscipconss,      /**< number of subscipconss per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int*                  nsubscipconss       /**< number of subscipconss per block */
    );
 
 /** returns the subscipconss array of the given decdecomp structure */
@@ -142,8 +139,7 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_CONS**           linkingconss,       /**< linkingconss array  */
-   int                   nlinkingconss,      /**< number of linkingconss per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int                   nlinkingconss       /**< number of linkingconss per block */
    );
 
 /** returns the linkingconss array of the given decdecomp structure */
@@ -161,8 +157,7 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
-   int                   nlinkingvars,       /**< number of linkingvars per block */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   int                   nlinkingvars        /**< number of linkingvars per block */
    );
 
 /** returns the linkingvars array of the given decdecomp structure */
@@ -180,8 +175,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
-   int*                  nstairlinkingvars,  /**< number of linkingvars per block */
-   SCIP_Bool*            valid               /**< returns whether the resulting decdecomp is valid */
+   int*                  nstairlinkingvars   /**< number of linkingvars per block */
    );
 
 /** returns the stairlinkingvars array of the given decdecomp structure */
@@ -197,8 +191,7 @@ int* DECdecompGetNStairlinkingvars(
 /** sets the vartoblock hashmap of the given decdecomp structure */
 void DECdecompSetVartoblock(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   SCIP_HASHMAP*         vartoblock,         /**< Vartoblock hashmap */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
    );
 
 /** returns the vartoblock hashmap of the given decdecomp structure */
@@ -209,8 +202,7 @@ SCIP_HASHMAP* DECdecompGetVartoblock(
 /** sets the constoblock hashmap of the given decdecomp structure */
 void DECdecompSetConstoblock(
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
-   SCIP_HASHMAP*         constoblock,        /**< Constoblock hashmap */
-   SCIP_Bool*            valid               /**< pointer to indicate whether the structure is valid */
+   SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
    );
 
 /** returns the constoblock hashmap of the given decdecomp structure */
@@ -251,7 +243,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< constraint array */
    int                   nconss,             /**< number of constraints */
-   SCIP_Bool*            valid,              /**< pointer to indicate whether the structure is valid */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
@@ -320,6 +311,74 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    DEC_DECOMP**          decomp,              /**< decomposition structure */
    SCIP_CONS**           conss,               /**< constraints to be put in the master */
    int                   nconss               /**< number of constraints in the master */
+   );
+
+/** return the number of variables and binary, integer, implied integer, continuous variables of all subproblems */
+extern
+void DECgetSubproblemVarsData(
+   SCIP*                 scip,                /**< SCIP data structure */
+   DEC_DECOMP*           decomp,              /**< decomposition structure */
+   int*                  nvars,               /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
+   int*                  nbinvars,            /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
+   int*                  nintvars,            /**< pointer to array of size nproblems to store number of integer subproblem vars or NULL */
+   int*                  nimplvars,           /**< pointer to array of size nproblems to store number of implied subproblem vars or NULL */
+   int*                  ncontvars,           /**< pointer to array of size nproblems to store number of continuous subproblem vars or NULL */
+   int                   nproblems            /**< size of the arrays*/
+   );
+
+/** return the number of variables and binary, integer, implied integer, continuous variables of the master */
+extern
+void DECgetLinkingVarsData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   int*                  nvars,              /**< pointer to store number of linking vars or NULL */
+   int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
+   int*                  nintvars,           /**< pointer to store number of integer linking vars or NULL */
+   int*                  nimplvars,          /**< pointer to store number of implied linking vars or NULL */
+   int*                  ncontvars           /**< pointer to store number of continuous linking vars or NULL */
+   );
+
+/**
+ * returns the number of nonzeros of each column of the constraint matrix both in the subproblem and in the master
+ * @note For linking variables, the number of nonzeros in the subproblems corresponds to the number on nonzeros
+ * in the border
+ *
+ * @note The arrays have to be allocated by the caller
+ *
+ * @pre This function assumes that constraints are partitioned in the decomp structure, no constraint is present in more than one block
+ *
+ */
+extern
+SCIP_RETCODE DECgetDensityData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< pointer to array to store constraints belonging to the density */
+   int                   nconss,             /**< number of constraints */
+   int*                  varsubproblemdensity, /**< pointer to array to store the nonzeros for the subproblems */
+   int*                  varmasterdensity,   /**< pointer to array to store the nonzeros for the master */
+   int*                  conssubproblemdensity, /**< pointer to array to store the nonzeros for the subproblems */
+   int*                  consmasterdensity   /**< pointer to array to store the nonzeros for the master */
+);
+
+/**
+ *  calculates the number of up and down locks of variables for a given decomposition in both the original problem and the pricingproblems
+ *
+ *  @note All arrays need to be allocated by the caller
+ *
+ *  @warning This function needs a lot of memory (nvars*nblocks+1) array entries
+ */
+SCIP_RETCODE DECgetVarLockData(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
+   int                   nvars,              /**< number of variables */
+   int                   nsubproblems,       /**< number of sub problems */
+   int**                 subsciplocksdown,   /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int**                 subsciplocksup,     /**< pointer to two dimensional array to store the down locks for the subproblems */
+   int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
+   int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    );
 
 #ifdef __cplusplus

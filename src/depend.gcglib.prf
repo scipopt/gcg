@@ -3667,4 +3667,4 @@ $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/scip/cons_setppc.h
+ lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h

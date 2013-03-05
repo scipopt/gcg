@@ -754,13 +754,13 @@ SCIP_RETCODE fillDecompStruct(
    SCIP_CONS** allcons;
 
    SCIP_VAR** consvars;
+   SCIP_RETCODE retcode;
    int i;
    int j;
    int nvars;
    int blocknr;
    int nconss;
    int nblocks;
-   SCIP_Bool valid;
 
    assert(scip != NULL);
    assert(blkinput != NULL);
@@ -775,8 +775,7 @@ SCIP_RETCODE fillDecompStruct(
    DECdecompSetNBlocks(decomp, nblocks);
    DECdecompSetDetector(decomp, NULL);
 
-   DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD, &valid);
-   assert(valid);
+   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
 
    /* hashmaps */
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
@@ -874,11 +873,10 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
-
+   retcode = DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 /** reads an BLK file */
@@ -890,6 +888,7 @@ SCIP_RETCODE readBLKFile(
    const char*           filename            /**< name of the input file */
    )
 {
+   SCIP_RETCODE retcode;
    DEC_DECOMP *decdecomp;
    int i;
    int nconss;
@@ -1012,11 +1011,16 @@ SCIP_RETCODE readBLKFile(
    SCIP_CALL( DECdecompCreate(scip, &decdecomp) );
 
    /* fill decomp */
-   SCIP_CALL( fillDecompStruct(scip, blkinput, decdecomp, readerdata) );
-
-   /* add decomp to cons_decomp */
-   SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
-
+   retcode = fillDecompStruct(scip, blkinput, decdecomp, readerdata);
+   if( retcode == SCIP_OKAY )
+   {
+      /* add decomp to cons_decomp */
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decdecomp) );
+   }
+   else
+   {
+      SCIP_CALL( DECdecompFree(scip, &decdecomp) );
+   }
    for( i = 0; i < nvars; ++i )
    {
       assert(readerdata->linkingvarsblocks[i] != NULL || readerdata->nlinkingvarsblocks[i] == 0);
@@ -1047,7 +1051,7 @@ SCIP_RETCODE readBLKFile(
    /* close file */
    SCIPfclose(blkinput->file);
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 
@@ -1122,6 +1126,7 @@ SCIP_RETCODE SCIPreadBlk(
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
    )
 {
+   SCIP_RETCODE retcode;
    SCIP_READER* reader;
    BLKINPUT blkinput;
    int i;
@@ -1152,7 +1157,7 @@ SCIP_RETCODE SCIPreadBlk(
    blkinput.haserror = FALSE;
 
    /* read the file */
-   SCIP_CALL( readBLKFile(scip, reader, &blkinput, filename) );
+   retcode = readBLKFile(scip, reader, &blkinput, filename);
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &blkinput.token);
@@ -1165,7 +1170,7 @@ SCIP_RETCODE SCIPreadBlk(
    /* evaluate the result */
    if( blkinput.haserror )
       return SCIP_READERROR;
-   else
+   else if( retcode == SCIP_OKAY)
    {
       *result = SCIP_SUCCESS;
    }
