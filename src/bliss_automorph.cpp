@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -881,8 +881,8 @@ SCIP_RETCODE cmpGraphPair(
    SCIP*                 scip1,               /**< first SCIP data structure to compare */
    SCIP*                 scip2,               /**< second SCIP data structure to compare */
    SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP* 	 varmap,              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP* 	 consmap              /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         varmap,              /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*         consmap              /**< hashmap to save permutation of constraints */
    )
 {
    bliss::Graph graph;

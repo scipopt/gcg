@@ -1815,16 +1815,20 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
 
+   assert( nmasterconss <= nconss );
+
+
    if( GCGisConsGCGCons(conss[nconss-1]) )
       --nconss;
 
    nblocks = nconss-nmasterconss+1;
+   assert(nblocks > 0);
 
-   SCIP_CALL(SCIPallocMemoryArray(scip, &blockrepresentative, nblocks));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &consismaster, nconss));
-   SCIP_CALL(SCIPallocMemoryArray(scip, &vartoblock, nvars));
-   SCIP_CALL(SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   SCIP_CALL(SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &blockrepresentative, nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consismaster, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &vartoblock, nvars) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), nconss) );
 
    for( i = 0; i < nmasterconss; ++i )
    {
