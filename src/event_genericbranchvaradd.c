@@ -127,7 +127,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    if( GCGvarIsMaster(mastervar) )
    {
-      while( parentcons != NULL && branchdata != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0
+      while( parentcons != NULL && branchdata != NULL && ( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0 || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
          assert(branchdata != NULL);
