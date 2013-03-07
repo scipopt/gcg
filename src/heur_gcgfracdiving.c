@@ -131,9 +131,9 @@ SCIP_Bool areVarsInSameBlock(
  */
 static
 SCIP_RETCODE getMasterDownFrac(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_VAR*             var,                /** original variable to get fractionality for */
-   SCIP_Real*            frac                /** pointer to store fractionality */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< original variable to get fractionality for */
+   SCIP_Real*            frac                /**< pointer to store fractionality */
    )
 {
    SCIP* masterprob;
@@ -201,9 +201,9 @@ SCIP_RETCODE getMasterDownFrac(
  */
 static
 SCIP_RETCODE getMasterUpFrac(
-   SCIP*                 scip,               /** SCIP data structure */
-   SCIP_VAR*             var,                /** original variable to get fractionality for */
-   SCIP_Real*            frac                /** pointer to store fractionality */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< original variable to get fractionality for */
+   SCIP_Real*            frac                /**< pointer to store fractionality */
    )
 {
    SCIP* masterprob;
