@@ -776,7 +776,7 @@ SCIP_DECL_READERFREE(readerFreeCluster)
    assert(readerdata != NULL);
 
    /* free decomp structure and readerdata */
-   if( DECdecompGetType(readerdata->decomp) == DEC_DECTYPE_UNKNOWN )
+   if( readerdata->decomp != NULL && DECdecompGetType(readerdata->decomp) == DEC_DECTYPE_UNKNOWN )
       DECdecompFree(scip, &readerdata->decomp);
    SCIPfreeMemory(scip, &readerdata);
 
@@ -819,7 +819,11 @@ SCIPincludeReaderCluster(
 
    /* create cluster reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
+   readerdata->copytooriginal = NULL;
+   readerdata->decomp = NULL;
+   readerdata->hedges = NULL;
+   readerdata->partition = NULL;
+   readerdata->varpart = NULL;
    /* include cluster reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeCluster, readerReadCluster, readerWriteCluster, readerdata));

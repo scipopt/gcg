@@ -496,7 +496,7 @@ SCIP_DECL_READERFREE(readerFreeBipartite)
    assert(readerdata != NULL);
 
    /* free decomp structure and readerdata */
-   if( DECdecompGetType(readerdata->decomp) == DEC_DECTYPE_UNKNOWN )
+   if( readerdata->decomp != NULL && DECdecompGetType(readerdata->decomp) == DEC_DECTYPE_UNKNOWN )
       DECdecompFree(scip, &readerdata->decomp);
    tcliqueFree(&readerdata->graph);
    SCIPfreeMemory(scip, &readerdata);
@@ -540,6 +540,9 @@ SCIPincludeReaderBipartite(
 
    /* create bipartite reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   readerdata->decomp = NULL;
+   readerdata->graph = NULL;
+   readerdata->partition = NULL;
 
    /* include bipartite reader */
    SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
