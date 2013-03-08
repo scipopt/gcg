@@ -167,7 +167,7 @@ static SCIP_RETCODE initReaderdata(
  *
  * @todo The nonzeroness is not checked, all variables in the variable array are considered
  */
-static SCIP_RETCODE buildGraphStructure(
+static SCIP_RETCODE buildBipartiteGraphStructure(
    SCIP*                 scip,               /**< scip data structure */
    SCIP_READERDATA*      readerdata          /**< reader data structure */
    )
@@ -202,11 +202,8 @@ static SCIP_RETCODE buildGraphStructure(
    for( i = 0; i < nconss; ++i )
    {
       SCIP_VAR **curvars;
-      /* get the number of nonzeros in this constraint  */
 
       int ncurvars = SCIPgetNVarsXXX( scip, conss[i] );
-
-      /* if there are no variables, skip the constraint */
       if( ncurvars == 0 )
          continue;
 
@@ -220,14 +217,11 @@ static SCIP_RETCODE buildGraphStructure(
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
       /** @todo Do more then one entry per variable actually work? */
 
-      /* allocate a hyperedge for the constraint */
-
       for( j = 0; j < ncurvars; ++j )
       {
          SCIP_VAR* var;
          int varIndex;
 
-         /* if the variable is inactive, skip it */
          if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
@@ -248,7 +242,7 @@ static SCIP_RETCODE buildGraphStructure(
 
 /** reads bipartite from file */
 static
-SCIP_RETCODE readBipartiteFromFile(
+SCIP_RETCODE readBipartitePartitionFromFile(
    SCIP*                 scip,               /**< SCIP data struture */
    SCIP_READERDATA*      readerdata,         /**< presolver data data structure */
    const char*           inputfile,          /**< input file */
@@ -330,24 +324,14 @@ static SCIP_RETCODE buildTransformedProblem(
    SCIP_RESULT*          result              /**< result pointer */
    )
 {
-   SCIP_VAR*** subscipvars;
-   SCIP_VAR** linkingvars;
-   SCIP_CONS*** subscipconss;
-   SCIP_CONS** linkingconss;
    SCIP_HASHMAP* vartoblock;
    SCIP_HASHMAP* constoblock;
-
-   int *nsubscipvars;
-   int *nsubscipconss;
-   int nlinkingvars;
-   int nlinkingconss;
    int i;
 
    SCIP_CONS **conss;
    int nconss;
    SCIP_VAR **vars;
    int nvars;
-   SCIP_Bool emptyblocks = FALSE;
 
    assert(scip != NULL);
    assert(readerdata != NULL);
@@ -357,27 +341,6 @@ static SCIP_RETCODE buildTransformedProblem(
 
    conss = SCIPgetConss( scip );
    vars = SCIPgetVars( scip );
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &subscipvars, nblocks) );
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipvars, nblocks) );
-
-   for( i = 0; i < nblocks; ++i )
-   {
-      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipconss[i]), nconss) ); /*lint !e866 */
-      SCIP_CALL( SCIPallocBufferArray(scip, &(subscipvars[i]), nvars) );   /*lint !e866 */
-
-      nsubscipconss[i] = 0;
-      nsubscipvars[i] = 0;
-   }
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingconss, nconss) );
-   nlinkingconss = 0;
-
-   SCIP_CALL( SCIPallocBufferArray(scip, &linkingvars, nvars) );
-   nlinkingvars = 0;
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nconss) );
@@ -395,13 +358,11 @@ static SCIP_RETCODE buildTransformedProblem(
 
       if( conspart > -1 && conspart < readerdata->nblocks)
       {
-         subscipconss[conspart][nsubscipconss[conspart]] = conss[i];
-         ++nsubscipconss[conspart];
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (conspart+1)) );
       }
       else
       {
-         linkingconss[nlinkingconss] = conss[i];
-         ++nlinkingconss;
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
       }
    }
 
@@ -417,67 +378,18 @@ static SCIP_RETCODE buildTransformedProblem(
 
       if( varpart > -1 && varpart < readerdata->nblocks )
       {
-         subscipvars[varpart][nsubscipvars[varpart]] = vars[i];
-         ++nsubscipvars[varpart];
+         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) (size_t) (varpart+1)) );
       }
       else
       {
-         linkingvars[nlinkingvars] = vars[i];
-         ++nlinkingvars;
+         SCIP_CALL( SCIPhashmapInsert(vartoblock, vars[i], (void*) (size_t) (nblocks+1)) );
       }
 
    }
 
-   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
-   for( i = 0; i < readerdata->nblocks; ++i )
-   {
-      if( nsubscipconss[i] == 0 )
-      {
-         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
-         //   emptyblocks = TRUE;
-      }
-   }
+   SCIP_CALL( DECfillOutDecdecompFromHashmaps(scip, decomp, vartoblock, constoblock, readerdata->nblocks, vars, nvars, conss, nconss, FALSE) );
 
-   if( !emptyblocks )
-   {
-      /* copy the local data to the decomp structure */
-      DECdecompSetNBlocks(decomp, nblocks);
-      DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL);
-      SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
-      SCIP_CALL( DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss) );
-      if( nlinkingconss > 0 )
-      {
-         SCIP_CALL( DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss) );
-         DECdecompSetType(decomp, DEC_DECTYPE_BORDERED);
-      }
-      if( nlinkingvars > 0 )
-      {
-         DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD);
-         SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
-      }
-      DECdecompSetVartoblock(decomp, vartoblock);
-      DECdecompSetConstoblock(decomp, constoblock);
-   }
-   else {
-      SCIPhashmapFree(&constoblock);
-      SCIPhashmapFree(&vartoblock);
-   }
-   /* free all local data */
-   for( i = nblocks-1; i >= 0; --i )
-   {
-      SCIPfreeBufferArray(scip, &(subscipvars[i]));
-      SCIPfreeBufferArray(scip, &(subscipconss[i]));
-   }
-
-   SCIPfreeBufferArray(scip, &nsubscipvars);
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-   SCIPfreeBufferArray(scip, &subscipvars);
-   SCIPfreeBufferArray(scip, &subscipconss);
-
-   SCIPfreeBufferArray(scip, &linkingconss);
-   SCIPfreeBufferArray(scip, &linkingvars);
-
-   *result = emptyblocks? SCIP_DIDNOTFIND:SCIP_SUCCESS;
+   *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
 
@@ -582,9 +494,9 @@ SCIP_RETCODE SCIPreadBipartite(
    }
    SCIP_CALL( initReaderdata(scip, readerdata) );
 
-   SCIP_CALL( buildGraphStructure(scip, readerdata) );
+   SCIP_CALL( buildBipartiteGraphStructure(scip, readerdata) );
 
-   SCIP_CALL( readBipartiteFromFile(scip, readerdata, filename, result) );
+   SCIP_CALL( readBipartitePartitionFromFile(scip, readerdata, filename, result) );
 
    SCIP_CALL( buildTransformedProblem(scip, readerdata, readerdata->decomp, readerdata->nblocks, result) );
 
@@ -620,7 +532,7 @@ SCIP_RETCODE SCIPwriteBipartite(
 
    SCIP_CALL( initReaderdata(scip, readerdata) );
 
-   SCIP_CALL( buildGraphStructure(scip, readerdata) );
+   SCIP_CALL( buildBipartiteGraphStructure(scip, readerdata) );
 
    nnodes = tcliqueGetNNodes(readerdata->graph);
    nedges = tcliqueGetNEdges(readerdata->graph);
