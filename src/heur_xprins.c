@@ -628,7 +628,7 @@ static SCIP_RETCODE fixVariables(
 
       var = vars[i];
       block = GCGvarGetBlock(var);
-      if( !SCIPisZero(scip, SCIPgetRelaxSolVal(scip, var)) )
+      if( block >= 0 && !SCIPisZero(scip, SCIPgetRelaxSolVal(scip, var)) )
          zeroblocks[block] = FALSE;
    }
 
