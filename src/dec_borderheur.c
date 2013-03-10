@@ -64,7 +64,7 @@
 #define DEFAULT_METIS_UBFACTOR   5.0            /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE    FALSE          /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB TRUE           /**< should metis use the rb or kway partitioning algorithm */
-#define DEFAULT_REALNAME          FALSE      /**< whether the metis name should be real or temporary */
+#define DEFAULT_REALNAME         FALSE          /**< whether the metis name should be real or temporary */
 
 /*
  * Data structures
@@ -205,7 +205,7 @@ SCIP_RETCODE computeHyperedgeWeight(
 /**
  * builds a graph structure out of the matrix.
  *
- * The function will create an HyperEdge for every constraint or an hyperedge for every variable depending on the type of bordered searched.
+ * The function will create an HyperEdge for every constraint
  * The weight of the hyperedges can be specified.
  *
  * @todo The nonzeroness is not checked, all variables in the variable array are considered

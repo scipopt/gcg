@@ -45,7 +45,10 @@ testexamples:
 
 # google testing framework
 TESTNAME	=	gcg_test
-TESTOBJ		=	tests/test.o
+TESTOBJ		=	tests/test.o \
+				tests/bipartitegraph_test.o \
+				tests/hyperrowcolgraph_test.o \
+				tests/weights_test.o
 TESTSRCDIR	=	$(SRCDIR)/tests
 
 TESTSRC		=	$(filter $(wildcard $(TESTSRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.c))) $(filter $(wildcard $(TESTSRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.cpp)))

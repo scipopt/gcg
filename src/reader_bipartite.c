@@ -47,7 +47,6 @@
 #include "scip_misc.h"
 #include "pub_gcgvar.h"
 #include "tclique/tclique.h"
-
 #include "cons_decomp.h"
 #include "pub_decomp.h"
 
@@ -62,7 +61,6 @@
 #define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
 #define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
 
-
 #define TCLIQUE_CALL(x)   do                                                                                  \
                        {                                                                                      \
                           SCIP_Bool _restat_;                                                                 \
@@ -73,6 +71,7 @@
                            }                                                                                  \
                        }                                                                                      \
                        while( FALSE )
+
 
 /*
  * Data structures

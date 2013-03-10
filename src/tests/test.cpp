@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 
-#include "gcgplugins.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_decomp.h"
@@ -9,7 +8,7 @@
 #include "pub_decomp.h"
 #include "scip/cons_linear.h"
 
-#define SCIP_CALL_EXPECT(x) do { EXPECT_EQ(SCIP_OKAY, (x)); } while(FALSE)
+#include "test.h"
 
 class GcgTest : public ::testing::Test {
  protected:
@@ -864,8 +863,6 @@ TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
    ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
    ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
 }
-
-
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

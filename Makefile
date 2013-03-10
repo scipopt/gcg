@@ -25,7 +25,7 @@ SCIPDIR         =   lib/scip
 
 
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR)
+DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -131,6 +131,10 @@ LIBOBJ		=	reader_blk.o \
 			misc.o \
 			gcgvar.o \
 			class_pricingtype.o \
+			graph/graph.o \
+			graph/bipartitegraph.o \
+			graph/hyperrowcolgraph.o \
+			graph/weights.o \
 			stat.o
 
 ifeq ($(BLISS),true)
@@ -150,7 +154,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-LIBOBJSUBDIRS	=
+LIBOBJSUBDIRS	= $(LIBOBJDIR)/graph
 
 GCGLIBSHORTNAME =	gcg
 GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
