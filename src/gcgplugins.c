@@ -139,7 +139,6 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "branch_empty.h"
-//#include "branch_generic.h"
 
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
@@ -277,7 +276,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
-   //SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );

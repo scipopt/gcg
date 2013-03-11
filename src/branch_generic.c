@@ -847,7 +847,7 @@ SCIP_RETCODE Separate(
             for( l=0; l<Fsize; ++l )
             {
                if( SCIPisGE(scip, getGeneratorEntry(scip, F[l], origvar), median) )
-                  mu_F += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+                  mu_F += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[l]);
             }
             ++j;
 
@@ -1702,6 +1702,26 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
    return FALSE;
 }
 
+/** initialize branchdata at the node */
+static
+SCIP_RETCODE initNodeBranchdata(
+   GCG_BRANCHDATA**      nodebranchdata,     /**< branching data to set */
+   int                   blocknr             /**< block we are branching in */
+   )
+{
+   SCIP_CALL( SCIPallocMemory(scip, nodebranchdata) );
+
+   (*nodebranchdata)->consblocknr = blocknr;
+   (*nodebranchdata)->mastercons = NULL;
+   (*nodebranchdata)->consS = NULL;
+   (*nodebranchdata)->C = NULL;
+   (*nodebranchdata)->sequencesizes = NULL;
+   (*nodebranchdata)->Csize = 0;
+   (*nodebranchdata)->consSsize = 0;
+
+   return SCIP_OKAY;
+}
+
 /** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
 static
 SCIP_RETCODE createChildNodesGeneric(
@@ -1731,13 +1751,10 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_VAR** mastervars2;
    SCIP_VAR** branchcands;
    SCIP_VAR** copymastervars;
-   GCG_BRANCHDATA* parentdata;
 
    assert(scip != NULL);
    assert(Ssize > 0);
    assert(S != NULL);
-
-   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGrelaxGetNIdenticalBlocks(scip, blocknr));
 
    lhs = 0;
    nchildnodes = 0;
@@ -1745,26 +1762,10 @@ SCIP_RETCODE createChildNodesGeneric(
    k = 0;
    i = 0;
    L = 0;
-   pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);
    mu = 0;
-   parentdata = NULL;
 
-
-   /** @todo mb: use initialization */
-   if( masterbranchcons != NULL )
-   {
-      parentdata = GCGconsMasterbranchGetBranchdata(masterbranchcons);
-      if( parentdata == NULL )
-      {
-         SCIP_CALL( SCIPallocMemory(scip, &parentdata) );
-         parentdata->consSsize = 0;
-      }
-      parentdata->C = NULL;
-      parentdata->sequencesizes = NULL;
-   }
-   else
-      parentdata = NULL;
-   /** @todo mb: END extract **/
+   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGrelaxGetNIdenticalBlocks(scip, blocknr));
+   pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);
 
    // get variable data of the master problem
    masterscip = GCGrelaxGetMasterprob(scip);
@@ -1789,16 +1790,8 @@ SCIP_RETCODE createChildNodesGeneric(
       mu = 0;
       branchchilddata = NULL;
 
-      // allocate branchdata for same child and store information
-      SCIP_CALL( SCIPallocMemory(scip, &branchchilddata) );
-      /** @todo use initialisation ! */
-      branchchilddata->consblocknr = blocknr;
-      branchchilddata->mastercons = NULL;
-      branchchilddata->consS = NULL;
-      branchchilddata->C = NULL;
-      branchchilddata->sequencesizes = NULL;
-      branchchilddata->Csize = 0;
-      branchchilddata->consSsize = 0;
+      // allocate branchdata for child and store information
+      SCIP_CALL( initNodeBranchdata(&branchchilddata, blocknr) );
 
       SCIPdebugMessage("p = %d \n", p);
 
@@ -1893,8 +1886,6 @@ SCIP_RETCODE createChildNodesGeneric(
       pL = L;
 
       branchchilddata->lhs = lhs;
-      branchchilddata->C = NULL;
-      branchchilddata->sequencesizes = NULL;
       SCIPdebugMessage("L = %g \n", L);
       SCIPdebugMessage("lhs set to %g \n", lhs);
 
@@ -1971,11 +1962,14 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    GCG_COMPSEQUENCE* S;
    GCG_COMPSEQUENCE** C;
    SCIP_VAR** F;
+   SCIP_VAR** pricingvars;
    int Ssize;
    int Csize;
    int Fsize;
    int* sequencesizes;
    int blocknr;
+   int pricingblocknr;
+   int nidenticalpricing;
    int i;
    int c;
    int allnorigvars;
@@ -1984,6 +1978,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    Ssize = 0;
    Csize = 0;
    Fsize = 0;
+   pricingblocknr = -2;
+   nidenticalpricing = 0;
    i = 0;
    c = 0;
    feasible = TRUE;
@@ -1995,6 +1991,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    C = NULL;
    F = NULL;
    sequencesizes = NULL;
+   pricingvars = NULL;
 
    assert(masterscip != NULL);
 
@@ -2028,8 +2025,46 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    else
       feasible = FALSE;
 
+   //a special case; branch on copy of an origvar directly:- here say blocknr = -3
+   if( blocknr == -1 && !GCGvarIsLinking(mastervar) )
+      blocknr = -3;
+
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
    SCIPdebugMessage("branching in block %d \n", blocknr);
+
+   if(blocknr == -1)
+   {
+     assert( GCGvarIsLinking(mastervar) );
+
+      pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+      assert(pricingvars != NULL );
+
+      for( i=0; i<GCGlinkingVarGetNBlocks(mastervar); ++i )
+      {
+         if(pricingvars[i] != NULL)
+         {
+            if(pricingblocknr == -2 )
+            {
+               pricingblocknr = GCGvarGetBlock(pricingvars[i]);
+               nidenticalpricing = GCGrelaxGetNIdenticalBlocks(origscip, pricingblocknr);
+            }
+            else
+            {
+               assert( nidenticalpricing == GCGrelaxGetNIdenticalBlocks(origscip, GCGvarGetBlock(pricingvars[i])));
+            }
+         }
+      }
+      assert(pricingblocknr > -2);
+
+      blocknr = pricingblocknr;
+   }
+
+   if( blocknr == -3 )
+   {
+      //direct branch
+      //branchDirectlyOnMastervar(mastervar);
+      //set branchdata
+   }
 
    //calculate F and the strips
    for( i=0; i<nbranchcands; ++i )
@@ -2394,42 +2429,6 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterGeneric)
 
    SCIPdebugMessage("branchPropMasterGeneric: Block %d ,Ssize %d)\n", branchdata->consblocknr,
       branchdata->consSsize);
-
-   return SCIP_OKAY;
-}
-
-/** initialize branchdata at the node */
-static
-SCIP_RETCODE initNodeBranchdata(
-   GCG_BRANCHDATA*      nodebranchdata,     /**< branching data to set */
-   GCG_BRANCHDATA*      branchdata          /**< branchdata to copy from */
-   )
-{
-   int j;
-
-   assert( nodebranchdata != NULL);
-   assert( branchdata != NULL );
-
-   nodebranchdata->lhs = branchdata->lhs;
-   nodebranchdata->consblocknr = branchdata->consblocknr;
-   nodebranchdata->mastercons = branchdata->mastercons;
-   nodebranchdata->consS = NULL;
-   nodebranchdata->C = NULL;
-   nodebranchdata->sequencesizes = NULL;
-   nodebranchdata->consSsize = branchdata->consSsize;
-
-   SCIPdebugMessage("consSsize = %d, lhs = %g\n", nodebranchdata->consSsize, nodebranchdata->lhs);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(nodebranchdata->consS), nodebranchdata->consSsize) );
-
-   for ( j = 0; j < nodebranchdata->consSsize; ++j )
-   {
-      nodebranchdata->consS[j].component = branchdata->consS[j].component;
-      nodebranchdata->consS[j].sense = branchdata->consS[j].sense;
-      nodebranchdata->consS[j].bound = branchdata->consS[j].bound;
-      SCIPdebugMessage("consS[%d].component = %s\n", j, SCIPvarGetName(nodebranchdata->consS[j].component) );
-      SCIPdebugMessage("consS[%d].sense = %d\n", j, nodebranchdata->consS[j].sense);
-      SCIPdebugMessage("consS[%d].bound = %.6g\n", j, nodebranchdata->consS[j].bound);
-   }
 
    return SCIP_OKAY;
 }
