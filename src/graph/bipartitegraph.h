@@ -56,4 +56,4 @@ public:
 };
 
 } /* namespace gcg */
-#endif /* BIPARTITEGRAPH_H_ */
+#endif /* GCG_BIPARTITEGRAPH_H_ */

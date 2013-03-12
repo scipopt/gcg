@@ -35,3 +35,36 @@
 #include "scip/scip.h"
 #include "graph.h"
 #include "tclique/tclique.h"
+
+namespace gcg {
+SCIP_RETCODE Graph::writeToFile(
+      const char* filename
+    )
+{
+   int nnodes;
+   int nedges;
+   FILE* file;
+   assert(filename != NULL);
+   file = fopen(filename, "w");
+   if( file == NULL )
+      return SCIP_FILECREATEERROR;
+
+   nnodes = getNNodes();
+   nedges = getNEdges();
+
+   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes, nedges/2);
+
+   for( int i = 0; i < nnodes; ++i )
+   {
+      int nneighbors = getNNeighbors(i);
+      for( int j = 0; j < nneighbors; ++j )
+      {
+         SCIPinfoMessage(scip_, file, "%d ", getNeighbours(i)[j]+1);
+      }
+      SCIPinfoMessage(scip_, file, "\n");
+   }
+
+   return SCIP_OKAY;
+}
+
+}

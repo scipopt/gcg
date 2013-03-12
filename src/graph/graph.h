@@ -91,12 +91,35 @@ public:
       tcliqueFree(&tgraph);
    }
 
+   int getNNodes() {
+      return tcliqueGetNNodes(tgraph);
+   }
+
+   int getNEdges() {
+      return tcliqueGetNEdges(tgraph);
+   }
+
+   int getNNeighbors(int i) {
+      assert( i >= 0);
+      return tcliqueGetLastAdjedge(tgraph,i)-tcliqueGetFirstAdjedge(tgraph, i)+1;
+   }
+
+   int* getNeighbours(int i) {
+      assert(i >= 0);
+      return tcliqueGetFirstAdjedge(tgraph, i);
+   }
+
+   /** create graph from the matrix, to be overriden by the implementation*/
    virtual SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */
       SCIP_VAR**            vars,               /**< variables for which graph should be created */
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
    ) = 0;
+
+   virtual SCIP_RETCODE writeToFile(
+      const char* filename
+    );
 };
 }
 

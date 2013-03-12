@@ -89,9 +89,15 @@ class BipartiteTest : public ::testing::Test {
 
 SCIP* BipartiteTest::scip = NULL;
 
+TEST_F(BipartiteTest, EmptyTest) {
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::BipartiteGraph graph(scip, weights );
+
+   ASSERT_EQ(0, graph.getNEdges());
+   ASSERT_EQ(0, graph.getNNodes());
+}
 
 TEST_F(BipartiteTest, CreateTest) {
-
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -104,5 +110,46 @@ TEST_F(BipartiteTest, CreateTest) {
    gcg::BipartiteGraph graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   ASSERT_EQ(7, graph.getNNodes());
+   ASSERT_EQ(16, graph.getNEdges());
 
+   /* the first nodes are the variables */
+   int neighbours[] = {3,2,2,1,3,3,2};
+   int array[7][7] = {
+         {4,5,6,0,0,0,0},
+         {4,5,0,0,0,0,0},
+         {5,6,0,0,0,0,0},
+         {4,0,0,0,0,0,0},
+         {0,1,3,0,0,0,0},
+         {0,1,2,0,0,0,0},
+         {0,3,0,0,0,0,0} };
+
+   for( int i = 0; i < graph.getNNodes(); ++i )
+   {
+      ASSERT_EQ(neighbours[i], graph.getNNeighbors(i));
+      for( int j; j < graph.getNNeighbors(i); ++j )
+      {
+         ASSERT_EQ(array[i][j], graph.getNeighbours(i)[j]);
+      }
+   }
+}
+
+TEST_F(BipartiteTest, WriteFileTest) {
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[continous] <x4>: obj=1.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x4>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::BipartiteGraph graph(scip, weights );
+
+   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("graph.g") );
+
+   ASSERT_EQ( TRUE, SCIPfileExists("graph.g") );
+   if( SCIPfileExists("graph.g") )
+      unlink("graph.g");
 }
