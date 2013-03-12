@@ -16,7 +16,7 @@ testdip:
 .PHONY: testcluster
 testcluster:
 		cd check; \
-		$(SHELL) ./check_cluster.sh $(TEST) $(MAINFILE) $(SETTINGS) \
+		$(SHELL) ./check_cluster.sh $(TEST) $(MAINFILE) $(SETTINGS) $(MASTERSETTINGS) \
 		$(notdir $(MAINFILE)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) \
 		$(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) \
 		$(QUEUETYPE) $(QUEUE) $(PPN) $(CLIENTTMPDIR) $(NOWAITCLUSTER) $(EXCLUSIVE) \

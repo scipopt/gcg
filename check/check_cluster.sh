@@ -49,22 +49,23 @@
 TSTNAME=$1
 BINNAME=$2
 SETNAME=$3
-BINID=$4
-TIMELIMIT=$5
-NODELIMIT=$6
-MEMLIMIT=$7
-THREADS=$8
-FEASTOL=$9
-DISPFREQ=${10}
-CONTINUE=${11}
-QUEUETYPE=${12}
-QUEUE=${13}
-PPN=${14}
-CLIENTTMPDIR=${15}
-NOWAITCLUSTER=${16}
-EXCLUSIVE=${17}
-PERMUTE=${18}
-MODE=${19}
+MSETNAME=$4
+BINID=$5
+TIMELIMIT=$6
+NODELIMIT=$7
+MEMLIMIT=$8
+THREADS=$9
+FEASTOL=${10}
+DISPFREQ=${11}
+CONTINUE=${12}
+QUEUETYPE=${13}
+QUEUE=${14}
+PPN=${15}
+CLIENTTMPDIR=${16}
+NOWAITCLUSTER=${17}
+EXCLUSIVE=${18}
+PERMUTE=${19}
+MODE=${20}
 
 # check all variables defined
 if [ -z ${MODE} ]
@@ -73,6 +74,7 @@ then
     echo "TSTNAME       = $TSTNAME"
     echo "BINNAME       = $BINNAME"
     echo "SETNAME       = $SETNAME"
+    echo "MSETNAME      = $MSETNAME"
     echo "BINID         = $BINID"
     echo "TIMELIMIT     = $TIMELIMIT"
     echo "NODELIMIT     = $NODELIMIT"
@@ -109,6 +111,18 @@ then
     if test ! -e $SETTINGS
     then
         echo Skipping test since the settings file $SETTINGS does not exist.
+        exit
+    fi
+fi
+
+MSETTINGS=$GCGPATH/../settings/$MSETNAME.set
+
+# check if the master settings file exists
+if test $MSETNAME != "default"
+then
+    if test ! -e $MSETTINGS
+    then
+        echo Skipping test since the settings file $MSETTINGS does not exist.
         exit
     fi
 fi
@@ -319,6 +333,10 @@ do
 	    then
 		echo set load $SETTINGS            >>  $TMPFILE
 	    fi
+        if test $MSETNAME != "default"
+        then
+        echo set loadmaster $MSETTINGS     >>  $TMPFILE
+        fi
 	    if test $FEASTOL != "default"
 	    then
 		echo set numerics feastol $FEASTOL >> $TMPFILE
