@@ -149,4 +149,37 @@ SCIP_RETCODE HyperrowcolGraph::createFromMatrix(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE HyperrowcolGraph::writeToFile(
+      const char* filename
+    )
+{
+   int nnodes;
+   int nedges;
+   FILE* file;
+   assert(filename != NULL);
+   file = fopen(filename, "w");
+   if( file == NULL )
+      return SCIP_FILECREATEERROR;
+
+   nnodes = getNNodes();
+   nedges = getNEdges();
+
+   SCIPinfoMessage(scip_, file, "%d %d\n", nnonzeroes, nvars+nconss);
+
+   for( int i = 0; i < nvars+nconss; ++i )
+   {
+      int nneighbors = getNNeighbors(i);
+      for( int j = 0; j < nneighbors; ++j )
+      {
+         SCIPinfoMessage(scip_, file, "%d ", getNeighbours(i)[j]+1-nvars-nconss);
+      }
+      SCIPinfoMessage(scip_, file, "\n");
+   }
+
+   if( !fclose(file) )
+      return SCIP_OKAY;
+   else
+      return SCIP_WRITEERROR;
+}
+
 } /* namespace gcg */

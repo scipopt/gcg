@@ -25,46 +25,71 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph_test.cpp
- * @brief  unit tests for row graph
- * @author Martin Bergner
+/**@file   graphtest.cpp
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "graph/rowgraph.h"
-#include "test.h"
 #include "graphtest.h"
+#include <fstream>
+#include <cerrno>
+#include <cstdio>
 
-class RowTest : public GraphTest
+void GraphTest::SetUp() {
+  SCIP_CALL_ABORT( SCIPcreate(&scip) );
+  SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+  SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+  SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+}
+
+void GraphTest::TearDown() {
+  SCIP_CALL_ABORT( SCIPfree(&scip) );
+}
+
+SCIP_RETCODE GraphTest::createVar(const char * str) {
+   SCIP_VAR* var;
+   SCIP_Bool success;
+   SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &success) );
+   assert(success);
+   SCIP_CALL( SCIPaddVar(scip, var) );
+   SCIP_CALL( SCIPreleaseVar(scip, &var) );
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GraphTest::createCons(const char * str) {
+   SCIP_CONS* cons;
+   SCIP_Bool success;
+   SCIP_CALL( SCIPparseCons(scip, &cons, str, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
+   assert(success);
+   SCIP_CALL( SCIPaddCons(scip, cons) );
+   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+   return SCIP_OKAY;
+}
+
+void GraphTest::parseFile(
+   const char *str,
+   std::vector<int> &array)
 {
+   std::ifstream stream(str);
+   stream.exceptions( std::ios::failbit );
 
-};
+   ASSERT_TRUE(stream.good());
 
-TEST_F(RowTest, WriteFileTest) {
-   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=1.0, original bounds=[0,3]") );
+   int input;
 
-   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x3>[I]<= 2") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] <= 5") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x3>[I] == 1") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x2>[I] == 1") );
-   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::RowGraph graph(scip, weights );
-
-   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
-
-   ASSERT_EQ( TRUE, SCIPfileExists("rowgraph.g") );
-
-   int tmp[] = {4, 8, 2, 4, 3, 1, 4, 1, 1, 2};
-
-   std::vector<int> array(&tmp[0], &tmp[0]+10);
-
-   if( SCIPfileExists("rowgraph.g") )
+   for( int i = 0; i < array.size(); ++i )
    {
-      parseFile("rowgraph.g", array);
-      unlink("rowgraph.g");
+      ASSERT_FALSE(stream.eof());
+      ASSERT_TRUE(stream >> input);
+      ASSERT_EQ(array[i], input);
    }
+   stream.close();
+
 }

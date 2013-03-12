@@ -25,46 +25,38 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph_test.cpp
- * @brief  unit tests for row graph
- * @author Martin Bergner
+/**@file   graphtest.h
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "graph/rowgraph.h"
+#ifndef GCG_GRAPHTEST_H_
+#define GCG_GRAPHTEST_H_
 #include "test.h"
-#include "graphtest.h"
+#include <vector>
+class GraphTest : public ::testing::Test {
+ protected:
+  SCIP *scip;
+ public:
+  static void SetUpTestCase() {
+  }
 
-class RowTest : public GraphTest
-{
+  static void TearDownTestCase() {
+
+  }
+
+  virtual void SetUp();
+
+  virtual void TearDown();
+
+  SCIP_RETCODE createVar(const char * str);
+
+  SCIP_RETCODE createCons(const char * str);
+
+  void parseFile(const char *str, std::vector<int> &array);
 
 };
 
-TEST_F(RowTest, WriteFileTest) {
-   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=1.0, original bounds=[0,3]") );
-
-   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x3>[I]<= 2") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] <= 5") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x3>[I] == 1") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x2>[I] == 1") );
-   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::RowGraph graph(scip, weights );
-
-   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
-
-   ASSERT_EQ( TRUE, SCIPfileExists("rowgraph.g") );
-
-   int tmp[] = {4, 8, 2, 4, 3, 1, 4, 1, 1, 2};
-
-   std::vector<int> array(&tmp[0], &tmp[0]+10);
-
-   if( SCIPfileExists("rowgraph.g") )
-   {
-      parseFile("rowgraph.g", array);
-      unlink("rowgraph.g");
-   }
-}
+#endif /* GCG_GRAPHTEST_H_ */

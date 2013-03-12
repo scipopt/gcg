@@ -39,7 +39,7 @@
 
 namespace gcg {
 
-class HyperrowcolGraph: public gcg::Graph
+class HyperrowcolGraph: public Graph
 {
 public:
    HyperrowcolGraph(
@@ -53,6 +53,10 @@ public:
       int                   nconss,             /**< number of constraints */
       int                   nvars               /**< number of variables */
       );
+
+   virtual SCIP_RETCODE writeToFile(
+      const char* filename
+    );
 
 };
 

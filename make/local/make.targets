@@ -46,6 +46,7 @@ testexamples:
 # google testing framework
 TESTNAME	=	gcg_test
 TESTOBJ		=	tests/test.o \
+				tests/graphtest.o \
 				tests/bipartitegraph_test.o \
 				tests/hyperrowcolgraph_test.o \
 				tests/weights_test.o \

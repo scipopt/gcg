@@ -34,60 +34,14 @@
 
 #include "graph/hyperrowcolgraph.h"
 #include "test.h"
+#include "graphtest.h"
 
-class HyperrowcolTest : public ::testing::Test {
- protected:
-  static SCIP *scip;
+class HyperrowcolTest : public GraphTest {
 
-  static void SetUpTestCase() {
-  }
-
-  static void TearDownTestCase() {
-
-  }
-
-   virtual void SetUp() {
-     SCIP_CALL_ABORT( SCIPcreate(&scip) );
-     SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-     SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
-     SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
-   }
-
-   virtual void TearDown() {
-     SCIP_CALL_ABORT( SCIPfree(&scip) );
-   }
-
-   SCIP_RETCODE createVar(const char * str) {
-      SCIP_VAR* var;
-      SCIP_Bool success;
-      SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &success) );
-      assert(success);
-      SCIP_CALL( SCIPaddVar(scip, var) );
-      SCIP_CALL( SCIPreleaseVar(scip, &var) );
-      return SCIP_OKAY;
-   }
-
-   SCIP_RETCODE createCons(const char * str) {
-      SCIP_CONS* cons;
-      SCIP_Bool success;
-      SCIP_CALL( SCIPparseCons(scip, &cons, str, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
-      assert(success);
-      SCIP_CALL( SCIPaddCons(scip, cons) );
-      SCIP_CALL( SCIPreleaseCons(scip, &cons) );
-      return SCIP_OKAY;
-   }
 };
-
-SCIP* HyperrowcolTest::scip = NULL;
 
 
 TEST_F(HyperrowcolTest, CreateTest) {
-
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -100,5 +54,34 @@ TEST_F(HyperrowcolTest, CreateTest) {
    gcg::HyperrowcolGraph graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+
+}
+
+TEST_F(HyperrowcolTest, WriteFileTest) {
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[continous] <x4>: obj=1.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x4>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::HyperrowcolGraph graph(scip, weights );
+
+   ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g") );
+
+   ASSERT_EQ( TRUE, SCIPfileExists("hypergraph.g") );
+
+   int tmp[] = {8, 7, 1, 4, 7, 2, 5, 6, 8, 3, 1, 2, 3, 4, 5, 6, 7, 8};
+
+   std::vector<int> array(&tmp[0], &tmp[0]+18);
+
+   if( SCIPfileExists("hypergraph.g") )
+   {
+      parseFile("hypergraph.g", array);
+      unlink("hypergraph.g");
+   }
 
 }
