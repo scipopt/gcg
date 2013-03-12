@@ -45,8 +45,7 @@
 #define HEUR_DESC             "LP diving heuristic that chooses fixings following the line from root solution to current solution"
 #define HEUR_DISPCHAR         'l'
 #define HEUR_PRIORITY         -1006000
-//#define HEUR_FREQ             10
-#define HEUR_FREQ             -1
+#define HEUR_FREQ             10
 #define HEUR_FREQOFS          6
 #define HEUR_MAXDEPTH         -1
 
