@@ -8,6 +8,10 @@ lp/solvefreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
+# should discretization (TRUE) or convexification (FALSE) approach be used?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+relaxing/gcg/discretization = FALSE
+
 # flag to indicate whether detector <borderheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/borderheur/enabled = FALSE
