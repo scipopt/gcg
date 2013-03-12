@@ -38,13 +38,15 @@
 
 #include "heur_gcgguideddiving.h"
 #include "heur_origdiving.h"
+#include "pub_gcgvar.h"
+#include "relax_gcg.h"
 
 
 #define HEUR_NAME             "gcgguideddiving"
 #define HEUR_DESC             "LP diving heuristic that chooses fixings in direction of incumbent solutions"
 #define HEUR_DISPCHAR         'g'
 #define HEUR_PRIORITY         -1007000
-#define HEUR_FREQ             -1
+#define HEUR_FREQ             10
 #define HEUR_FREQOFS          7
 #define HEUR_MAXDEPTH         -1
 
@@ -53,11 +55,13 @@
  * Default diving rule specific parameter settings
  */
 
+#define DEFAULT_USEMASTERFRACS    FALSE      /**< calculate the fractionalities w.r.t. the master LP? */
 
 
 /* locally defined diving heuristic data */
 struct GCG_DivingData
 {
+   SCIP_Bool             usemasterfracs;     /**< calculate the fractionalities w.r.t. the master LP? */
    SCIP_SOL*             bestsol;            /**< best known feasible solution before the diving loop */
 };
 
@@ -65,6 +69,202 @@ struct GCG_DivingData
 /*
  * local methods
  */
+
+/** check whether an original variable and a master variable belong to the same block */
+static
+SCIP_Bool areVarsInSameBlock(
+   SCIP_VAR*             origvar,            /**< original variable */
+   SCIP_VAR*             mastervar           /**< master variable */
+   )
+{
+   int origblock;
+   int masterblock;
+
+   /* get the blocks the variables belong to */
+   origblock = GCGvarGetBlock(origvar);
+   masterblock = GCGvarGetBlock(mastervar);
+
+   /* the original variable is a linking variable:
+    * check whether the master variable is either its direct copy
+    * or in one of its blocks
+    */
+   if( GCGvarIsLinking(origvar) )
+   {
+      assert(origblock == -2);
+      if( masterblock == -1 )
+      {
+         SCIP_VAR** mastervars;
+
+         mastervars = GCGoriginalVarGetMastervars(origvar);
+         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+         return mastervars[0] == mastervar;
+      }
+      else
+      {
+         assert(masterblock >= 0);
+         return GCGisLinkingVarInBlock(origvar, masterblock);
+      }
+   }
+   /* the original variable was directly copied to the master problem:
+    * check whether the master variable is its copy
+    */
+   else if( origblock == -1 )
+   {
+      SCIP_VAR** mastervars;
+
+      mastervars = GCGoriginalVarGetMastervars(origvar);
+      assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+
+      return mastervars[0] == mastervar;
+   }
+   /* the original variable belongs to exactly one block */
+   else
+   {
+      assert(origblock >= 0);
+      return origblock == masterblock;
+   }
+}
+
+/** get the 'down' fractionality of an original variable w.r.t. the master problem;
+ *  this is the sum of the fractionalities of the master variables
+ *  which would have to be fixed to zero if the original variable were rounded down
+ */
+static
+SCIP_RETCODE getMasterDownFrac(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< original variable to get fractionality for */
+   SCIP_Real*            frac                /**< pointer to store fractionality */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   SCIP_VAR** origmastervars;
+   SCIP_Real* origmastervals;
+   int nmastervars;
+   int norigmastervars;
+   SCIP_Real roundval;
+   SCIP_Real masterlpval;
+
+   int i;
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variable information */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   /* get master variables in which the original variable appears */
+   origmastervars = GCGoriginalVarGetMastervars(var);
+   origmastervals = GCGoriginalVarGetMastervals(var);
+   norigmastervars = GCGoriginalVarGetNMastervars(var);
+
+   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
+   *frac = 0.0;
+
+   /* calculate sum of fractionalities over all master variables
+    * which would violate the new original variable bound
+    */
+   if( SCIPisFeasNegative(masterprob, roundval) )
+   {
+      for( i = 0; i < nmastervars; ++i )
+      {
+         if( areVarsInSameBlock(var, mastervars[i]) )
+         {
+            masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+            *frac += SCIPfeasFrac(masterprob, masterlpval);
+         }
+      }
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
+         if( SCIPisFeasLE(masterprob, origmastervals[i], roundval) )
+            *frac -= SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+   else
+   {
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+         if( SCIPisFeasGT(masterprob, origmastervals[i], roundval) )
+            *frac += SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** get the 'up' fractionality of an original variable w.r.t. the master problem;
+ *  this is the sum of the fractionalities of the master variables
+ *  which would have to be fixed to zero if the original variable were rounded up
+ */
+static
+SCIP_RETCODE getMasterUpFrac(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             var,                /**< original variable to get fractionality for */
+   SCIP_Real*            frac                /**< pointer to store fractionality */
+   )
+{
+   SCIP* masterprob;
+   SCIP_VAR** mastervars;
+   SCIP_VAR** origmastervars;
+   SCIP_Real* origmastervals;
+   int nmastervars;
+   int norigmastervars;
+   SCIP_Real roundval;
+   SCIP_Real masterlpval;
+
+   int i;
+
+   /* get master problem */
+   masterprob = GCGrelaxGetMasterprob(scip);
+   assert(masterprob != NULL);
+
+   /* get master variable information */
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   /* get master variables in which the original variable appears */
+   origmastervars = GCGoriginalVarGetMastervars(var);
+   origmastervals = GCGoriginalVarGetMastervals(var);
+   norigmastervars = GCGoriginalVarGetNMastervars(var);
+
+   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   *frac = 0.0;
+
+   /* calculate sum of fractionalities over all master variables
+    * which would violate the new original variable bound
+    */
+   if( SCIPisFeasPositive(masterprob, roundval) )
+   {
+      for( i = 0; i < nmastervars; ++i )
+      {
+         if( areVarsInSameBlock(var, mastervars[i]) )
+         {
+            masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+            *frac += SCIPfeasFrac(masterprob, masterlpval);
+         }
+      }
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
+         if( SCIPisFeasGE(masterprob, origmastervals[i], roundval) )
+            *frac -= SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+   else
+   {
+      for( i = 0; i < norigmastervars; ++i )
+      {
+         masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
+         if( SCIPisFeasLT(masterprob, origmastervals[i], roundval) )
+            *frac += SCIPfeasFrac(masterprob, masterlpval);
+      }
+   }
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -150,7 +350,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
    SCIP_Real* lpcandsfrac;
    int nlpcands;
    SCIP_Real bestobjgain;
-   SCIP_Real bestfrac;                       /* fractionality of best candidate */
+   SCIP_Real bestscore;                       /* fractionality of best candidate */
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
    int c;
@@ -176,7 +376,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
    bestcandmayrounddown = TRUE;
    bestcandmayroundup = TRUE;
    bestobjgain = SCIPinfinity(scip);
-   bestfrac = SCIP_INVALID;
+   bestscore = SCIP_INVALID;
 
    /* get best candidate */
    for( c = 0; c < nlpcands; ++c )
@@ -188,6 +388,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
       SCIP_Real frac;
       SCIP_Real obj;
       SCIP_Real objgain;
+      SCIP_Real score;
       SCIP_Real solval;
       SCIP_Real bestsolval;
 
@@ -231,12 +432,24 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
             if( !SCIPvarIsBinary(var) )
                objgain *= 1000.0;
 
+            if( divingdata->usemasterfracs )
+            {
+               SCIP_Real downfrac;
+               SCIP_Real upfrac;
+
+               SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
+               SCIP_CALL( getMasterUpFrac(scip, var, &upfrac) );
+               score = roundup ? upfrac : downfrac;
+            }
+            else
+               score = frac;
+
             /* check, if candidate is new best candidate */
-            if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && frac < bestfrac) )
+            if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && score < bestscore) )
             {
                *bestcand = var;
                bestobjgain = objgain;
-               bestfrac = frac;
+               bestscore = score;
                bestcandmayrounddown = mayrounddown;
                bestcandmayroundup = mayroundup;
                *bestcandroundup = roundup;
@@ -246,22 +459,32 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
       else
       {
          /* the candidate may not be rounded */
-         if( roundup )
-            frac = 1.0 - frac;
+
+         if( divingdata->usemasterfracs )
+         {
+            SCIP_Real downfrac;
+            SCIP_Real upfrac;
+
+            SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
+            SCIP_CALL( getMasterUpFrac(scip, var, &upfrac) );
+            score = roundup ? upfrac : downfrac;
+         }
+         else
+            score = roundup? 1.0 - frac : frac;
 
          /* penalize too small fractions */
-         if( frac < 0.01 )
-            frac += 10.0;
+         if( score < 0.01 )
+            score += 10.0;
 
          /* prefer decisions on binary variables */
          if( !SCIPvarIsBinary(var) )
-            frac *= 1000.0;
+            score *= 1000.0;
 
          /* check, if candidate is new best candidate: prefer unroundable candidates in any case */
-         if( bestcandmayrounddown || bestcandmayroundup || frac < bestfrac )
+         if( bestcandmayrounddown || bestcandmayroundup || score < bestscore )
          {
             *bestcand = var;
-            bestfrac = frac;
+            bestscore = score;
             bestcandmayrounddown = FALSE;
             bestcandmayroundup = FALSE;
             *bestcandroundup = roundup;
@@ -297,6 +520,11 @@ SCIP_RETCODE GCGincludeHeurGcgguideddiving(
          heurExitexecGcgguideddiving, heurSelectVarGcgguideddiving, divingdata) );
 
    assert(heur != NULL);
+
+   /* add gcgguideddiving specific parameters */
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterfracs",
+         "calculate the fractionalities w.r.t. the master LP?",
+         &divingdata->usemasterfracs, TRUE, DEFAULT_USEMASTERFRACS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
