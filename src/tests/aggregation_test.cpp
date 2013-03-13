@@ -206,7 +206,7 @@ TEST_F(GcgAggregationTest, WrongCoeffSubproblemTest) {
 
 TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
    DEC_DECOMP* decomp;
-   SCIP_CONS* mastercons;
+   SCIP_CONS* mastercons[2];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,4]") );
@@ -214,11 +214,67 @@ TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
 
    SCIP_CALL_EXPECT( createCons("[linear] <c1>: 2<x1>[I] +2<x2>[I] >= 3") );
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x3>[I] +2<x4>[I] >= 3") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 3<x1>[I] +2<x3>[I] <= 4") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] <= 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] == 1") );
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
-   mastercons = SCIPfindCons(scip, "c3");
-   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, &(mastercons), 1) );
+   mastercons[0] = SCIPfindCons(scip, "c3");
+   mastercons[1] = SCIPfindCons(scip, "c4");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 2) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+}
+
+TEST_F(GcgAggregationTest, DISABLED_NonSetppcMasterTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[2];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,4]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 2<x1>[I] +2<x2>[I] >= 3") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x3>[I] +2<x4>[I] >= 3") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 2<x2>[I] +2<x4>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] <= 8") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c3");
+   mastercons[1] = SCIPfindCons(scip, "c4");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 2) );
+   SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
+   SCIP_CALL_EXPECT( SCIPsolve(scip) );
+
+   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
+   ASSERT_EQ(2, GCGrelaxGetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(0, GCGrelaxGetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
+   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 0));
+}
+
+TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
+   DEC_DECOMP* decomp;
+   SCIP_CONS* mastercons[2];
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,4]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 2<x1>[I] +2<x2>[I] >= 3") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x3>[I] +2<x4>[I] >= 3") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 2<x2>[I] +3<x4>[I] <= 10") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x3>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   mastercons[0] = SCIPfindCons(scip, "c3");
+   mastercons[1] = SCIPfindCons(scip, "c4");
+   SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, mastercons, 2) );
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
