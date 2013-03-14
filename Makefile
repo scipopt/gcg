@@ -164,6 +164,10 @@ GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
 LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
+SPLINT		=       splint
+#SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -preproc -formatcode +skip-sys-headers -weak +relaxtypes
+SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
+			-redef +export-header +export-local +decl-undef +relaxtypes
 
 #-----------------------------------------------------------------------------
 # Rules
@@ -214,6 +218,15 @@ scip:
 .PHONY: scip_clean
 scip_clean:
 		@$(MAKE) -C $(SCIPDIR) $^ clean
+
+.PHONY: splint
+splint:		$(ALLSRC)
+		-rm -f splint.out
+ifeq ($(FILES),)
+		$(SHELL) -c '$(SPLINT) -I$(SRCDIR) -I/usr/include/linux $(FLAGS) $(SPLINTFLAGS)  $(filter %.c %.h,$^) &>> splint.out;'
+else
+		$(SHELL) -c '$(SPLINT) -I$(SRCDIR) -I/usr/include/linux $(FLAGS) $(SPLINTFLAGS) $(FILES %.c %.h,$^) &>> splint.out;'
+endif
 
 
 .PHONY: doc
