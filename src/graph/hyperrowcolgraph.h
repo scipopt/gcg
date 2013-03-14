@@ -57,6 +57,9 @@ public:
    virtual SCIP_RETCODE writeToFile(
       const char* filename
     );
+   SCIP_RETCODE readPartition(
+      const char* filename
+   );
 
 };
 

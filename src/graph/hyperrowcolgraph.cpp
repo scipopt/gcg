@@ -34,6 +34,9 @@
 
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
+#include <fstream>
+
+using std::ifstream;
 
 namespace gcg {
 
@@ -181,5 +184,34 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
    else
       return SCIP_WRITEERROR;
 }
+
+
+SCIP_RETCODE HyperrowcolGraph::readPartition(
+   const char* filename
+)
+{
+   ifstream input(filename);
+   if( !input.good() )
+   {
+      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
+      return SCIP_READERROR;
+   }
+   assert(partition == NULL);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &partition, nnonzeroes) );
+   for( int i = 0; i < nnonzeroes; ++i )
+   {
+      int part = 0;
+      if( !(input >> part) )
+      {
+         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
+         return SCIP_READERROR;
+      }
+      partition[i] = part;
+   }
+
+   input.close();
+   return SCIP_OKAY;
+}
+
 
 } /* namespace gcg */

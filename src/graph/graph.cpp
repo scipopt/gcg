@@ -35,8 +35,12 @@
 #include "scip/scip.h"
 #include "graph.h"
 #include "tclique/tclique.h"
+#include <fstream>
+
+using std::ifstream;
 
 namespace gcg {
+
 SCIP_RETCODE Graph::writeToFile(
       const char* filename
     )
@@ -64,6 +68,33 @@ SCIP_RETCODE Graph::writeToFile(
       SCIPinfoMessage(scip_, file, "\n");
    }
 
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Graph::readPartition(
+   const char* filename
+)
+{
+   ifstream input(filename);
+   if( !input.good() )
+   {
+      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
+      return SCIP_READERROR;
+   }
+   assert(partition == NULL);
+   SCIP_CALL( SCIPallocMemoryArray(scip, &partition, getNNodes()) );
+   for( int i = 0; i < getNNodes(); ++i )
+   {
+      int part = 0;
+      if( !(input >> part) )
+      {
+         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
+         return SCIP_READERROR;
+      }
+      partition[i] = part;
+   }
+
+   input.close();
    return SCIP_OKAY;
 }
 

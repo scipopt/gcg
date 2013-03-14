@@ -75,12 +75,14 @@ protected:
    int nvars;
    int nnonzeroes;
    Weights weights;
+   int* partition;
+
 public:
 /** Constructor */
    Graph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               &w                 /**< weights for the given graph */
-   ) : scip_(scip),nconss(0),nvars(0),nnonzeroes(0),weights(w)
+   ) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),weights(w),partition(NULL)
    {
      TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
    }
@@ -88,7 +90,13 @@ public:
    /** Destruktor */
    virtual ~Graph()
    {
-      tcliqueFree(&tgraph);
+      if(tgraph != NULL)
+      {
+         tcliqueFree(&tgraph);
+         tgraph = NULL;
+      }
+
+      SCIPfreeMemoryArrayNull(scip_, &partition);
    }
 
    int getNNodes() {
@@ -109,17 +117,38 @@ public:
       return tcliqueGetFirstAdjedge(tgraph, i);
    }
 
+   int* getPartition()
+   {
+      return partition;
+   }
+
    /** create graph from the matrix, to be overriden by the implementation*/
    virtual SCIP_RETCODE createFromMatrix(
-      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
-      SCIP_VAR**            vars,               /**< variables for which graph should be created */
-      int                   nconss_,             /**< number of constraints */
-      int                   nvars_               /**< number of variables */
+      SCIP_CONS**        conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**         vars,               /**< variables for which graph should be created */
+      int                nconss_,            /**< number of constraints */
+      int                nvars_              /**< number of variables */
    ) = 0;
 
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
    virtual SCIP_RETCODE writeToFile(
-      const char* filename
+      const char*        filename            /**< filename where the graph should be written to */
     );
+
+   /**
+    * reads the partition from the given file.
+    * The format is graph dependent. The default is a file with one line for each node a
+    */
+   virtual SCIP_RETCODE readPartition(
+      const char*        filename            /**< filename where the partition is stored */
+   );
+
+   int getNNonzeroes() const
+   {
+      return nnonzeroes;
+   }
 };
 }
 

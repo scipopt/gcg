@@ -33,6 +33,8 @@
 #include "graph/bipartitegraph.h"
 #include "gtest/gtest.h"
 #include "test.h"
+#include <fstream>
+#include <iostream>
 
 namespace gcg {
 
@@ -152,4 +154,37 @@ TEST_F(BipartiteTest, WriteFileTest) {
    ASSERT_EQ( TRUE, SCIPfileExists("graph.g") );
    if( SCIPfileExists("graph.g") )
       unlink("graph.g");
+}
+
+TEST_F(BipartiteTest, ReadPartitionTest) {
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[continous] <x4>: obj=1.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x4>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::BipartiteGraph graph(scip, weights );
+   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+
+   std::ofstream out;
+   out.open("partition.part");
+   for( int i = 0; i < SCIPgetNConss(scip)+SCIPgetNVars(scip); ++i )
+   {
+      out << i << std::endl;
+   }
+   out.close();
+   SCIP_CALL_EXPECT( graph.readPartition("partition.part") );
+
+   int* partition = graph.getPartition();
+   ASSERT_TRUE( NULL != partition);
+   for( int i = 0; i < graph.getNNodes(); ++i )
+   {
+      ASSERT_EQ(i, partition[i]);
+   }
+
+   unlink("partition.part");
 }
