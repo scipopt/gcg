@@ -1063,6 +1063,7 @@ SCIP_RETCODE ChoseS(
 
    assert(S!=NULL);
    assert(*S!=NULL);
+   /**todo handle case with no S, i.e. sort the current solution by ILO and compute feasible solution directly on it. (should be integer) */
 
    //free record
    for( i=0; i< (*record)->recordsize; ++i )
@@ -2054,7 +2055,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             }
          }
       }
-      assert(pricingblocknr > -2);
+      assert(pricingblocknr > -1);
 
       blocknr = pricingblocknr;
    }
@@ -2327,12 +2328,48 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
          for( i=0; i<nnewmastervars; ++i )
          {
             SCIP_Real generator_i;
+            SCIP_VAR** pricingvars;
+            int k;
+            SCIP_Bool blockfound;
 
             if( i >= nmastervars )
                break;
 
-            if( GCGvarGetBlock(copymastervars[i]) == branchdata->consblocknr )
+
+            if( GCGvarGetBlock(copymastervars[i]) == branchdata->consblocknr
+               || ( GCGvarGetBlock(copymastervars[i]) == -1 && GCGvarIsLinking(copymastervars[i])) )
             {
+               blockfound = TRUE;
+
+               if( GCGvarGetBlock(copymastervars[i]) == -1 )
+               {
+                  assert( GCGvarIsLinking(copymastervars[i]) );
+                  blockfound = FALSE;
+
+                  pricingvars = GCGlinkingVarGetPricingVars(copymastervars[i]);
+                  assert(pricingvars != NULL );
+
+                  for( k=0; k<GCGlinkingVarGetNBlocks(copymastervars[i]); ++k )
+                  {
+                     if( pricingvars[k] != NULL )
+                     {
+                        if( GCGvarGetBlock(pricingvars[k]) == branchdata->consblocknr )
+                        {
+                           blockfound = TRUE;
+                           break;
+                        }
+                     }
+                  }
+               }
+               if( !blockfound )
+               {
+                  //small down array
+                  copymastervars[i] = copymastervars[nmastervars-1];
+                  --i;
+                  --nmastervars;
+                  continue;
+               }
+
                generator_i = getGeneratorEntry(origscip, copymastervars[i], branchdata->consS[p].component);
 
                if( branchdata->consS[p].sense == GCG_COMPSENSE_GE )

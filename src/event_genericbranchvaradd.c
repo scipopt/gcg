@@ -130,18 +130,58 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
       while( parentcons != NULL && branchdata != NULL && ( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0 || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
+         SCIP_Bool blockfound;
+         SCIP_VAR** pricingvars;
+         int k;
+
          assert(branchdata != NULL);
 
          varinS = TRUE;
 
-         if( GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) )
+         if( (GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) && GCGvarGetBlock(mastervar) != -1)
+               || (GCGvarGetBlock(mastervar) == -1 && !GCGvarIsLinking(mastervar)) )
          {
             parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+
             if(parentcons != NULL)
                branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
             continue;
          }
+
+         blockfound = TRUE;
+
+         if( GCGvarGetBlock(mastervar) == -1 )
+         {
+            assert( GCGvarIsLinking(mastervar) );
+            blockfound = FALSE;
+
+            pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+            assert(pricingvars != NULL );
+
+            for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
+            {
+               if( pricingvars[k] != NULL )
+               {
+                  if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
+                  {
+                     blockfound = TRUE;
+                     break;
+                  }
+               }
+            }
+         }
+         if( !blockfound )
+         {
+            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+
+            if(parentcons != NULL)
+               branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
+            continue;
+         }
+
+
          SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
 
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
