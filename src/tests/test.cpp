@@ -183,7 +183,6 @@ TEST_F(GcgLibTest, FreeProbTest) {
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
-   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
    SCIP_CALL_EXPECT( SCIPfreeProb(scip) );
 
@@ -208,14 +207,13 @@ TEST_F(GcgLibTest, FreeSolveTest) {
    SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
-   ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
    SCIP_CALL_EXPECT( SCIPfreeSolve(scip, FALSE) );
+
    ASSERT_EQ(nconss+1, SCIPgetNConss(scip));
    ASSERT_EQ(SCIP_STAGE_TRANSFORMED, SCIPgetStage(scip));
    ASSERT_LE(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPpresolve(scip) );
-  // SCIP_CALL_EXPECT( DECdetectStructure(scip, &result) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 
@@ -406,7 +404,7 @@ class GcgDecStatisticTest : public ::testing::Test {
      /*
       * create problem
       *
-      * min x1+x2+x3+x4+x5
+      * min 3*x1 + x2 + 3*x3 + x4 + 3*x5
       * s.t.
       *
       * x1 -x2       +x5  = 1
