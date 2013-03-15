@@ -35,6 +35,8 @@
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
 #include <fstream>
+#include <algorithm>
+#include <set>
 
 using std::ifstream;
 
@@ -166,10 +168,11 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
 
    for( int i = 0; i < nvars+nconss; ++i )
    {
-      int nneighbors = getNNeighbors(i);
+      std::vector<int> neighbors = Graph::getNeighbors(i);
+      int nneighbors = Graph::getNNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", getNeighbors(i)[j]+1-nvars-nconss);
+         SCIPinfoMessage(scip_, file, "%d ",neighbors[j]+1-nvars-nconss);
       }
       SCIPinfoMessage(scip_, file, "\n");
    }
@@ -207,5 +210,57 @@ SCIP_RETCODE HyperrowcolGraph::readPartition(
    return SCIP_OKAY;
 }
 
+int HyperrowcolGraph::getNEdges()
+{
+   return nconss+nvars;
+}
 
+
+int HyperrowcolGraph::getNNodes()
+{
+   return nnonzeroes;
+}
+
+class function {
+   int diff;
+public:
+   function(int i):diff(i) {}
+   int operator()(int i) { return i-diff;}
+};
+
+
+std::vector<int> HyperrowcolGraph::getNeighbors(
+   int i
+)
+{
+   assert(i >= 0);
+   assert( i < nnonzeroes);
+   function f(nconss+nvars);
+   std::vector<int>::iterator it;
+   std::set<int> neighbors;
+   std::vector<int> immediateneighbors = Graph::getNeighbors(i+nconss+nvars);
+   for( size_t j = 0; j < immediateneighbors.size(); ++j)
+   {
+      std::vector<int> alternateneighbor = Graph::getNeighbors(immediateneighbors[j]);
+      neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
+   }
+   std::vector<int> r(neighbors.size(), 0);
+   std::transform(neighbors.begin(), neighbors.end(), r.begin(), f);
+   it = std::remove(r.begin(), r.end(), i);
+
+   return std::vector<int>(r.begin(), it);
+}
+
+std::vector<int> HyperrowcolGraph::getHyperedgeNodes(
+   int i
+)
+{
+   function f(nconss+nvars);
+   assert(i >= 0);
+   assert( i < nconss+nvars );
+
+   std::vector<int> neighbors = Graph::getNeighbors(i);
+   std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
+   return neighbors;
+}
 } /* namespace gcg */

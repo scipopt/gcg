@@ -36,7 +36,7 @@
 #include "test.h"
 #include "graphtest.h"
 #include <fstream>
-
+#include <algorithm>
 class HyperrowcolTest : public GraphTest {
 
 };
@@ -89,7 +89,6 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
 
 
 TEST_F(HyperrowcolTest, ReadPartitionTest) {
-
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -119,4 +118,76 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
    }
 
    remove("partition.part");
+}
+
+TEST_F(HyperrowcolTest, GetHyperedgeNodesTest) {
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[continous] <x4>: obj=1.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x4>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::HyperrowcolGraph graph(scip, weights );
+   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+
+   int array[7][7] = {
+      {0,3,6,0,0,0,0},
+      {1,4,0,0,0,0,0},
+      {5,7,0,0,0,0,0},
+      {2,0,0,0,0,0,0},
+      {0,1,2,0,0,0,0},
+      {3,4,5,0,0,0,0},
+      {6,7,0,0,0,0,0} };
+
+   ASSERT_EQ(7, graph.getNEdges());
+   ASSERT_EQ(8, graph.getNNodes());
+   for( int i = 0; i < graph.getNEdges(); ++i )
+   {
+      std::vector<int> nodes = graph.getHyperedgeNodes(i);
+      std::sort(nodes.begin(), nodes.end());
+      for( size_t j = 0; j < nodes.size(); ++j)
+      {
+         ASSERT_EQ(array[i][j], nodes[j]);
+      }
+   }
+}
+
+TEST_F(HyperrowcolTest, GetNeighborTest) {
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[continous] <x4>: obj=1.0, original bounds=[0,3]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x4>[I] <= 2") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
+   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
+   gcg::HyperrowcolGraph graph(scip, weights );
+   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+
+   int array[8][8] = {
+      {1,2,3,6,0,0,0,0},
+      {0,2,4,0,0,0,0,0},
+      {0,1,0,0,0,0,0,0},
+      {0,4,5,6,0,0,0,0},
+      {1,3,5,0,0,0,0,0},
+      {3,4,7,0,0,0,0,0},
+      {0,3,7,0,0,0,0,0},
+      {5,6,0,0,0,0,0,0},
+   };
+
+   ASSERT_EQ(7, graph.getNEdges());
+   ASSERT_EQ(8, graph.getNNodes());
+   for( int i = 0; i < graph.getNNodes(); ++i )
+   {
+      std::vector<int> nodes = graph.getNeighbors(i);
+      std::sort(nodes.begin(), nodes.end());
+      for( size_t j = 0; j < nodes.size(); ++j)
+      {
+         ASSERT_EQ(array[i][j], nodes[j]);
+      }
+   }
 }

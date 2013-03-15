@@ -61,6 +61,16 @@ public:
       const char* filename
    );
 
+   virtual int getNNodes();
+   virtual int getNEdges();
+
+
+   std::vector<int> getNeighbors(
+         int i
+      );
+   std::vector<int> getHyperedgeNodes(
+         int i
+      );
 };
 
 } /* namespace gcg */

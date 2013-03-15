@@ -95,15 +95,15 @@ SCIP_RETCODE Graph::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   nnodes = getNNodes();
-   nedges = getNEdges();
+   nnodes = Graph::getNNodes();
+   nedges = Graph::getNEdges();
 
    SCIPinfoMessage(scip_, file, "%d %d\n", nnodes, nedges/2);
 
    for( int i = 0; i < nnodes; ++i )
    {
-      int nneighbors = getNNeighbors(i);
-      std::vector<int> neighbors = getNeighbors(i);
+      int nneighbors = Graph::getNNeighbors(i);
+      std::vector<int> neighbors = Graph::getNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
          SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
@@ -124,8 +124,8 @@ SCIP_RETCODE Graph::readPartition(
       SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
       return SCIP_READERROR;
    }
-   partition.resize(getNNodes(), -1);
-   for( int i = 0; i < getNNodes(); ++i )
+   partition.resize(Graph::getNNodes(), -1);
+   for( int i = 0; i < Graph::getNNodes(); ++i )
    {
       int part = 0;
       if( !(input >> part) )
