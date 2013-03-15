@@ -156,16 +156,11 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
       const char* filename
     )
 {
-   int nnodes;
-   int nedges;
    FILE* file;
    assert(filename != NULL);
    file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
-
-   nnodes = getNNodes();
-   nedges = getNEdges();
 
    SCIPinfoMessage(scip_, file, "%d %d\n", nnonzeroes, nvars+nconss);
 
@@ -174,7 +169,7 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
       int nneighbors = getNNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", getNeighbours(i)[j]+1-nvars-nconss);
+         SCIPinfoMessage(scip_, file, "%d ", getNeighbors(i)[j]+1-nvars-nconss);
       }
       SCIPinfoMessage(scip_, file, "\n");
    }
@@ -196,8 +191,7 @@ SCIP_RETCODE HyperrowcolGraph::readPartition(
       SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
       return SCIP_READERROR;
    }
-   assert(partition == NULL);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &partition, nnonzeroes) );
+   partition.resize(nnonzeroes);
    for( int i = 0; i < nnonzeroes; ++i )
    {
       int part = 0;

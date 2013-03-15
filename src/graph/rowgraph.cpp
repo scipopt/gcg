@@ -57,7 +57,7 @@ SCIP_RETCODE RowGraph::writeToFile(
 {
    int nedges;
    int* nrealneighbors;
-   int** neighbors;
+   int** realneighbors;
 
    SCIP_Bool* handled;
    FILE* file;
@@ -70,7 +70,7 @@ SCIP_RETCODE RowGraph::writeToFile(
    nedges = 0;
 
    SCIP_CALL( SCIPallocMemoryArray(scip_, &handled, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &neighbors, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors, nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip_, &nrealneighbors, nconss) );
 
    SCIPdebug(tcliquePrintGraph(tgraph));
@@ -80,26 +80,28 @@ SCIP_RETCODE RowGraph::writeToFile(
       handled[i] = TRUE;
       nrealneighbors[i] = 0;
 
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &neighbors[i], nconss) );
+      SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors[i], nconss) );
       int nneighbors = getNNeighbors(nvars+i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i+nvars, nneighbors);
 
+      std::vector<int> neighbors = getNeighbors(i+nvars);
       for( int j = 0; j < nneighbors; ++j )
       {
-         int neighbor = getNeighbours(i+nvars)[j];
+         int neighbor = neighbors[j];
          int nneighborneighbors = getNNeighbors(neighbor);
 
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
+         std::vector<int> neighborneighbors = getNeighbors(neighbor);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
-            int neighborneighbor = getNeighbours(neighbor)[k];
+            int neighborneighbor = neighborneighbors[k];
 
             SCIPdebugMessage("\t\t%d->%d->%d (", i+nvars, neighbor, neighborneighbor);
             if( !handled[neighborneighbor-nvars] )
             {
                SCIPdebugPrintf("x)\n");
-               neighbors[i][nrealneighbors[i]] = neighborneighbor-nvars;
+               realneighbors[i][nrealneighbors[i]] = neighborneighbor-nvars;
                ++(nrealneighbors[i]);
 
                handled[neighborneighbor-nvars] = TRUE;
@@ -119,14 +121,14 @@ SCIP_RETCODE RowGraph::writeToFile(
    {
       for( int j = 0; j < nrealneighbors[i]; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", neighbors[i][j]+1);
+         SCIPinfoMessage(scip_, file, "%d ", realneighbors[i][j]+1);
       }
       SCIPinfoMessage(scip_, file, "\n");
-      SCIPfreeMemoryArray(scip_, &neighbors[i]);
+      SCIPfreeMemoryArray(scip_, &realneighbors[i]);
    }
 
    SCIPfreeMemoryArray(scip_, &handled);
-   SCIPfreeMemoryArray(scip_, &neighbors);
+   SCIPfreeMemoryArray(scip_, &realneighbors);
    SCIPfreeMemoryArray(scip_, &nrealneighbors);
 
    return SCIP_OKAY;

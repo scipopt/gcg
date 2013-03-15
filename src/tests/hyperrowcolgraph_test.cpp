@@ -111,8 +111,8 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
    out.close();
    SCIP_CALL_EXPECT( graph.readPartition("partition.part") );
 
-   int* partition = graph.getPartition();
-   ASSERT_TRUE( NULL != partition);
+   std::vector<int> partition = graph.getPartition();
+
    for( int i = 0; i < graph.getNNonzeroes(); ++i )
    {
       ASSERT_EQ(i, partition[i]);

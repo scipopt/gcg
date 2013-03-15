@@ -77,7 +77,7 @@ $(TESTOBJDIR):	$(OBJDIR)
 		@-mkdir -p $(TESTOBJDIR)
 
 .PHONY: tests
-tests: 		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
+tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
 
 $(TESTSHORTLINK):	$(TESTFILE)
 		@rm -f $@

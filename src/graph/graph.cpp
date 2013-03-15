@@ -41,6 +41,48 @@ using std::ifstream;
 
 namespace gcg {
 
+Graph::Graph(
+   SCIP*                 scip,              /**< SCIP data structure */
+   Weights               &w                 /**< weights for the given graph */
+) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),weights(w)
+{
+  TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
+}
+
+/** Destruktor */
+Graph::~Graph()
+{
+   if(tgraph != NULL)
+   {
+      tcliqueFree(&tgraph);
+      tgraph = NULL;
+   }
+}
+
+int Graph::getNNodes() {
+   return tcliqueGetNNodes(tgraph);
+}
+
+int Graph::getNEdges() {
+   return tcliqueGetNEdges(tgraph);
+}
+
+int Graph::getNNeighbors(int i) {
+   assert( i >= 0);
+   return tcliqueGetLastAdjedge(tgraph,i)-tcliqueGetFirstAdjedge(tgraph, i)+1;
+}
+
+std::vector<int> Graph::getNeighbors(int i) {
+   assert(i >= 0);
+   std::vector<int> part(tcliqueGetFirstAdjedge(tgraph, i), tcliqueGetLastAdjedge(tgraph,i)+1);
+   return part;
+}
+
+std::vector<int> Graph::getPartition()
+{
+   return partition;
+}
+
 SCIP_RETCODE Graph::writeToFile(
       const char* filename
     )
@@ -61,9 +103,10 @@ SCIP_RETCODE Graph::writeToFile(
    for( int i = 0; i < nnodes; ++i )
    {
       int nneighbors = getNNeighbors(i);
+      std::vector<int> neighbors = getNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", getNeighbours(i)[j]+1);
+         SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
       }
       SCIPinfoMessage(scip_, file, "\n");
    }
@@ -81,8 +124,7 @@ SCIP_RETCODE Graph::readPartition(
       SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
       return SCIP_READERROR;
    }
-   assert(partition == NULL);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &partition, getNNodes()) );
+   partition.resize(getNNodes(), -1);
    for( int i = 0; i < getNNodes(); ++i )
    {
       int part = 0;

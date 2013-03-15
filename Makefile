@@ -25,7 +25,7 @@ SCIPDIR         =   lib/scip
 
 
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(addprefix $(LIBOBJDIR)/,$(LIBOBJSUBDIRS))
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -156,7 +156,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-LIBOBJSUBDIRS	= $(LIBOBJDIR)/graph
+LIBOBJSUBDIRS  = graph
 
 GCGLIBSHORTNAME =	gcg
 GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
@@ -166,6 +166,7 @@ GCGLIB		=	$(GCGLIBNAME).$(BASE)
 GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
 GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
+GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard */*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
 GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
 GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
@@ -267,17 +268,35 @@ eval:
 		cd check; \
 		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
 
-.PHONY: clean
-clean:
+
+.PHONY: cleanbin
+cleanbin:       $(BINDIR)
+		@echo "-> remove binary $(MAINFILE)"
+		@-rm -f $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+
+.PHONY: cleanlib
+cleanlib:       $(LIBDIR)
+		@echo "-> remove library $(GCGLIBFILE)"
+		@-rm -f $(GCGLIBFILE) $(GCGLIBLINK) $(GCGLIBSHORTLINK)
+
+.PHONY: cleantest
+cleantest:
 ifneq ($(OBJDIR),)
-		-(cd ./$(LIBOBJDIR) && rm -f *.o)
-		-rmdir $(LIBOBJDIR)
-		-(cd ./$(TESTOBJDIR) && rm -f *.o)
-		-rmdir $(TESTOBJDIR)
-		-(cd ./$(OBJDIR) && rm -f *.o)
-		-rmdir $(OBJDIR)
+		@-(rm -f $(OBJDIR)/tests/*.o)
+		@-(cd $(OBJDIR) && rmdir tests);
 endif
-		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE) $(TESTFILE) $(TESTSHORTLINK)
+.PHONY: clean
+clean:          cleantest cleanlib cleanbin  $(LIBOBJDIR) $(LIBOBJSUBDIRS) $(OBJDIR)
+ifneq ($(LIBOBJDIR),)
+		@-(rm -f $(LIBOBJDIR)/*.o)
+		@-(cd $(LIBOBJDIR) && rm -f */*.o && rmdir $(LIBOBJSUBDIRS));
+		@-rmdir $(LIBOBJDIR);
+endif
+ifneq ($(OBJDIR),)
+		@-(rm -f $(OBJDIR)/*.o);
+		@-(rmdir $(OBJDIR));
+endif
+
 
 .PHONY: tags
 tags:
@@ -300,6 +319,8 @@ gcglibdepend:
 .PHONY: testdepend
 testdepend:: # do not remove double colon
 
+tests:: #do not remove double colon
+
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
@@ -318,6 +339,8 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
+$(LIBOBJSUBDIRS):	$(LIBOBJDIR)
+		@-mkdir -p $(LIBOBJDIR)/$@
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"

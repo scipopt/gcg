@@ -31,65 +31,14 @@
  */
 
 #include "graph/bipartitegraph.h"
-#include "gtest/gtest.h"
-#include "test.h"
+#include "graphtest.h"
 #include <fstream>
 #include <iostream>
-
-namespace gcg {
-
-} /* namespace gcg */
+#include <algorithm>
 
 
-class BipartiteTest : public ::testing::Test {
- protected:
-  static SCIP *scip;
-
-  static void SetUpTestCase() {
-  }
-
-  static void TearDownTestCase() {
-
-  }
-
-   virtual void SetUp() {
-     SCIP_CALL_ABORT( SCIPcreate(&scip) );
-     SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
-     SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
-     SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
-     SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
-   }
-
-   virtual void TearDown() {
-     SCIP_CALL_ABORT( SCIPfree(&scip) );
-   }
-
-   SCIP_RETCODE createVar(const char * str) {
-      SCIP_VAR* var;
-      SCIP_Bool success;
-      SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &success) );
-      assert(success);
-      SCIP_CALL( SCIPaddVar(scip, var) );
-      SCIP_CALL( SCIPreleaseVar(scip, &var) );
-      return SCIP_OKAY;
-   }
-
-   SCIP_RETCODE createCons(const char * str) {
-      SCIP_CONS* cons;
-      SCIP_Bool success;
-      SCIP_CALL( SCIPparseCons(scip, &cons, str, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
-      assert(success);
-      SCIP_CALL( SCIPaddCons(scip, cons) );
-      SCIP_CALL( SCIPreleaseCons(scip, &cons) );
-      return SCIP_OKAY;
-   }
+class BipartiteTest : public GraphTest {
 };
-
-SCIP* BipartiteTest::scip = NULL;
 
 TEST_F(BipartiteTest, EmptyTest) {
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
@@ -124,14 +73,20 @@ TEST_F(BipartiteTest, CreateTest) {
          {4,0,0,0,0,0,0},
          {0,1,3,0,0,0,0},
          {0,1,2,0,0,0,0},
-         {0,3,0,0,0,0,0} };
+         {0,2,0,0,0,0,0} };
+   std::vector<int> neighbors;
 
    for( int i = 0; i < graph.getNNodes(); ++i )
    {
+      neighbors = graph.getNeighbors(i);;
+      std::sort(neighbors.begin(), neighbors.end());
       ASSERT_EQ(neighbours[i], graph.getNNeighbors(i));
-      for( int j; j < graph.getNNeighbors(i); ++j )
+      ASSERT_EQ((size_t)neighbours[i], neighbors.size());
+      for( size_t j = 0; j < neighbors.size(); ++j )
       {
-         ASSERT_EQ(array[i][j], graph.getNeighbours(i)[j]);
+         assert(array[i][j] == neighbors[j]);
+
+         ASSERT_EQ(array[i][j], neighbors[j]);
       }
    }
 }
@@ -152,8 +107,13 @@ TEST_F(BipartiteTest, WriteFileTest) {
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("graph.g") );
 
    ASSERT_TRUE( SCIPfileExists("graph.g") );
+   int tmp[] = {7,8,5,6,7,5,6,6,7,5,1,2,4,1,2,3,1,3};
+   std::vector<int> array(&tmp[0], &tmp[0]+18);
    if( SCIPfileExists("graph.g") )
+   {
+      parseFile("graph.g", array);
       remove("graph.g");
+   }
 }
 
 TEST_F(BipartiteTest, ReadPartitionTest) {
@@ -179,8 +139,7 @@ TEST_F(BipartiteTest, ReadPartitionTest) {
    out.close();
    SCIP_CALL_EXPECT( graph.readPartition("partition.part") );
 
-   int* partition = graph.getPartition();
-   ASSERT_TRUE( NULL != partition);
+   std::vector<int> partition = graph.getPartition();
    for( int i = 0; i < graph.getNNodes(); ++i )
    {
       ASSERT_EQ(i, partition[i]);

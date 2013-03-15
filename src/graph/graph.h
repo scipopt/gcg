@@ -40,6 +40,7 @@
 #include "tclique/tclique.h"
 #include "weights.h"
 #include <exception>
+#include <vector>
 
 #define TCLIQUE_CALL_EXC(x)   do                                                                              \
                        {                                                                                      \
@@ -75,52 +76,36 @@ protected:
    int nvars;
    int nnonzeroes;
    Weights weights;
-   int* partition;
+   std::vector<int> partition;
 
 public:
-/** Constructor */
+   /** Constructor */
    Graph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               &w                 /**< weights for the given graph */
-   ) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),weights(w),partition(NULL)
-   {
-     TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
-   }
+   );
 
    /** Destruktor */
-   virtual ~Graph()
-   {
-      if(tgraph != NULL)
-      {
-         tcliqueFree(&tgraph);
-         tgraph = NULL;
-      }
+   virtual ~Graph();
 
-      SCIPfreeMemoryArrayNull(scip_, &partition);
-   }
+   /** return the number of nodes */
+   virtual int getNNodes();
 
-   int getNNodes() {
-      return tcliqueGetNNodes(tgraph);
-   }
+   /** return the number of edges (or hyperedges) */
+   virtual int getNEdges();
 
-   int getNEdges() {
-      return tcliqueGetNEdges(tgraph);
-   }
+   /** return the number of neighbor nodes of given node */
+   virtual int getNNeighbors(
+      int                i                   /**< the given node */
+      );
 
-   int getNNeighbors(int i) {
-      assert( i >= 0);
-      return tcliqueGetLastAdjedge(tgraph,i)-tcliqueGetFirstAdjedge(tgraph, i)+1;
-   }
+   /** return the neighboring nodes of a given node */
+   virtual std::vector<int> getNeighbors(
+      int                i                   /**< the given node */
+      );
 
-   int* getNeighbours(int i) {
-      assert(i >= 0);
-      return tcliqueGetFirstAdjedge(tgraph, i);
-   }
-
-   int* getPartition()
-   {
-      return partition;
-   }
+   /** return a partition of the nodes */
+   std::vector<int> getPartition();
 
    /** create graph from the matrix, to be overriden by the implementation*/
    virtual SCIP_RETCODE createFromMatrix(

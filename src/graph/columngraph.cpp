@@ -59,7 +59,7 @@ SCIP_RETCODE ColumnGraph::writeToFile(
 {
    int nedges;
    int* nrealneighbors;
-   int** neighbors;
+   int** realneighbors;
 
    SCIP_Bool* handled;
    FILE* file;
@@ -72,7 +72,7 @@ SCIP_RETCODE ColumnGraph::writeToFile(
    nedges = 0;
 
    SCIP_CALL( SCIPallocMemoryArray(scip_, &handled, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &neighbors, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors, nvars) );
    SCIP_CALL( SCIPallocMemoryArray(scip_, &nrealneighbors, nvars) );
 
    SCIPdebug(tcliquePrintGraph(tgraph));
@@ -82,26 +82,27 @@ SCIP_RETCODE ColumnGraph::writeToFile(
       handled[i] = TRUE;
       nrealneighbors[i] = 0;
 
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &neighbors[i], nvars) );
+      SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors[i], nvars) );
       int nneighbors = getNNeighbors(i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i, nneighbors);
 
+      std::vector<int> neighbors = getNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
-         int neighbor = getNeighbours(i)[j];
+         int neighbor = neighbors[j];
          int nneighborneighbors = getNNeighbors(neighbor);
-
+         std::vector<int> neighborneighbors = getNeighbors(neighbor);
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
-            int neighborneighbor = getNeighbours(neighbor)[k];
+            int neighborneighbor = neighborneighbors[k];
 
             SCIPdebugMessage("\t\t%d->%d->%d (", i, neighbor, neighborneighbor);
             if( !handled[neighborneighbor] )
             {
                SCIPdebugPrintf("x)\n");
-               neighbors[i][nrealneighbors[i]] = neighborneighbor;
+               realneighbors[i][nrealneighbors[i]] = neighborneighbor;
                ++(nrealneighbors[i]);
 
                handled[neighborneighbor] = TRUE;
@@ -121,14 +122,14 @@ SCIP_RETCODE ColumnGraph::writeToFile(
    {
       for( int j = 0; j < nrealneighbors[i]; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", neighbors[i][j]+1);
+         SCIPinfoMessage(scip_, file, "%d ", realneighbors[i][j]+1);
       }
       SCIPinfoMessage(scip_, file, "\n");
-      SCIPfreeMemoryArray(scip_, &neighbors[i]);
+      SCIPfreeMemoryArray(scip_, &realneighbors[i]);
    }
 
    SCIPfreeMemoryArray(scip_, &handled);
-   SCIPfreeMemoryArray(scip_, &neighbors);
+   SCIPfreeMemoryArray(scip_, &realneighbors);
    SCIPfreeMemoryArray(scip_, &nrealneighbors);
 
    return SCIP_OKAY;

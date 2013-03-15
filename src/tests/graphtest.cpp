@@ -84,12 +84,11 @@ void GraphTest::parseFile(
 
    int input;
 
-   for( int i = 0; i < array.size(); ++i )
+   for( size_t i = 0; i < array.size(); ++i )
    {
       ASSERT_FALSE(stream.eof());
       ASSERT_TRUE(stream >> input);
       ASSERT_EQ(array[i], input);
    }
    stream.close();
-
 }
