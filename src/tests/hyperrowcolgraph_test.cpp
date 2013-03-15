@@ -73,7 +73,7 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g") );
 
-   ASSERT_EQ( TRUE, SCIPfileExists("hypergraph.g") );
+   ASSERT_TRUE( SCIPfileExists("hypergraph.g") );
 
    int tmp[] = {8, 7, 1, 4, 7, 2, 5, 6, 8, 3, 1, 2, 3, 4, 5, 6, 7, 8};
 
@@ -82,7 +82,7 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
    if( SCIPfileExists("hypergraph.g") )
    {
       parseFile("hypergraph.g", array);
-      unlink("hypergraph.g");
+      remove("hypergraph.g");
    }
 
 }
@@ -118,5 +118,5 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
       ASSERT_EQ(i, partition[i]);
    }
 
-   unlink("partition.part");
+   remove("partition.part");
 }

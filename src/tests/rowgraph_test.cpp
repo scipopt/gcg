@@ -54,9 +54,9 @@ TEST_F(RowTest, WriteFileTest) {
    gcg::RowGraph graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
 
-   ASSERT_EQ( TRUE, SCIPfileExists("rowgraph.g") );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
+   ASSERT_TRUE( SCIPfileExists("rowgraph.g") );
 
    int tmp[] = {4, 8, 2, 4, 3, 1, 4, 1, 1, 2};
 
@@ -65,6 +65,6 @@ TEST_F(RowTest, WriteFileTest) {
    if( SCIPfileExists("rowgraph.g") )
    {
       parseFile("rowgraph.g", array);
-      unlink("rowgraph.g");
+      remove("rowgraph.g");
    }
 }

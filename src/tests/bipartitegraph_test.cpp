@@ -151,9 +151,9 @@ TEST_F(BipartiteTest, WriteFileTest) {
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("graph.g") );
 
-   ASSERT_EQ( TRUE, SCIPfileExists("graph.g") );
+   ASSERT_TRUE( SCIPfileExists("graph.g") );
    if( SCIPfileExists("graph.g") )
-      unlink("graph.g");
+      remove("graph.g");
 }
 
 TEST_F(BipartiteTest, ReadPartitionTest) {
@@ -186,5 +186,5 @@ TEST_F(BipartiteTest, ReadPartitionTest) {
       ASSERT_EQ(i, partition[i]);
    }
 
-   unlink("partition.part");
+   remove("partition.part");
 }

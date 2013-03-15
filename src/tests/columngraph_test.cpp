@@ -54,7 +54,7 @@ TEST_F(ColumnTest, WriteFileTest) {
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("columngraph.g") );
 
-   ASSERT_EQ( TRUE, SCIPfileExists("columngraph.g") );
+   ASSERT_TRUE( SCIPfileExists("columngraph.g") );
    int tmp[] = {3, 4, 3, 2, 1, 1};
 
    std::vector<int> array(&tmp[0], &tmp[0]+6);
@@ -62,6 +62,6 @@ TEST_F(ColumnTest, WriteFileTest) {
    if( SCIPfileExists("columngraph.g") )
    {
       parseFile("columngraph.g", array);
-      unlink("columngraph.g");
+      remove("columngraph.g");
    }
 }

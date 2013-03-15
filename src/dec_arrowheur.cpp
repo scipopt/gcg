@@ -33,10 +33,9 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <cassert>
+#include <cstring>
+#include <cerrno>
 
 #include "dec_arrowheur.h"
 
@@ -680,7 +679,7 @@ SCIP_RETCODE callMetis(
    /* if desired delete the temoprary metis file */
    if( detectordata->tidy )
    {
-      status = unlink( metisout );
+      status = remove( metisout );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis output file: %s\n", strerror( errno ));
@@ -1129,7 +1128,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
    if( detectordata->tidy )
    {
-      status = unlink( detectordata->tempfile );
+      status = remove( detectordata->tempfile );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));
