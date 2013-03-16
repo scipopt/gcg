@@ -34,8 +34,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_DEBUG
-
 #include <assert.h>
 #include <string.h>
 
@@ -50,7 +48,7 @@
 #define HEUR_DESC             "objective feasibility pump 2.0"
 #define HEUR_DISPCHAR         'F'
 #define HEUR_PRIORITY         -1000000
-#define HEUR_FREQ             -1
+#define HEUR_FREQ             20
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE
@@ -121,11 +119,12 @@ SCIP_RETCODE setupDivingSCIP(
    )
 {
    SCIP_VAR** subvars;
+   SCIP_VAR** tmpsubvars;
    int nsubvars;
 
    int i;
 
-   /* initializing the subproblem */
+   /* initialize the subproblem */
    SCIP_CALL( SCIPcreate(divingscip) );
 
    /* create the variable mapping hash map */
@@ -142,14 +141,15 @@ SCIP_RETCODE setupDivingSCIP(
    }
 
    /* change all variable types to 'continuous' */
-   SCIP_CALL( SCIPgetVarsData(*divingscip, &subvars, &nsubvars, NULL, NULL, NULL, NULL) );
-   SCIPdebugMessage("Number of variables: %d/%d/%d", SCIPgetNBinVars(*divingscip), SCIPgetNIntVars(*divingscip), nsubvars);
+   SCIP_CALL( SCIPgetVarsData(*divingscip, &tmpsubvars, &nsubvars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPduplicateBufferArray(*divingscip, &subvars, tmpsubvars, nsubvars) );
    for( i = 0; i < nsubvars; ++i )
    {
       SCIP_Bool infeasible;
       SCIP_CALL( SCIPchgVarType(*divingscip, subvars[i], SCIP_VARTYPE_CONTINUOUS, &infeasible) );
       assert(!infeasible);
    }
+   SCIPfreeBufferArray(*divingscip, &subvars);
 
    /* do not abort subproblem on CTRL-C */
    SCIP_CALL( SCIPsetBoolParam(*divingscip, "misc/catchctrlc", FALSE) );
@@ -173,9 +173,7 @@ SCIP_RETCODE setupDivingSCIP(
    }
 
    /* set the node limit to 1 (this is an LP, so we do not branch) */
-   SCIP_CALL( SCIPsetLongintParam(*divingscip, "limits/nodes", 100LL) );
-
-   SCIPdebugMessage("Number of variables: %d/%d/%d", SCIPgetNBinVars(*divingscip), SCIPgetNIntVars(*divingscip), SCIPgetNVars(*divingscip));
+   SCIP_CALL( SCIPsetLongintParam(*divingscip, "limits/nodes", 1LL) );
 
    return SCIP_OKAY;
 }
@@ -328,6 +326,8 @@ void insertFlipCand(
 static
 SCIP_RETCODE handle1Cycle(
    SCIP*                 scip,               /**< SCIP data structure  */
+   SCIP*                 divingscip,         /**< diving SCIP data structure  */
+   SCIP_HASHMAP*         varmapfw,           /**< mapping of SCIP variables to sub-SCIP variables */
    SCIP_HEURDATA*        heurdata,           /**< data of this special heuristic */
    SCIP_VAR**            mostfracvars,       /**< sorted array of the currently most fractional variables */
    int                   nflipcands,         /**< number of variables to flip */
@@ -335,6 +335,7 @@ SCIP_RETCODE handle1Cycle(
    )
 {
    SCIP_VAR* var;
+   SCIP_VAR* divingvar;
    SCIP_Real solval;
    SCIP_Real frac;
    SCIP_Real newobjcoeff;
@@ -361,7 +362,8 @@ SCIP_RETCODE handle1Cycle(
       }
       /* updating the rounded solution and the objective */
       SCIP_CALL( SCIPsetSolVal(scip, heurdata->roundedsol, var, solval) );
-      SCIP_CALL( SCIPchgVarObjDive(scip, var, newobjcoeff) );
+      divingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, var);
+      SCIP_CALL( SCIPchgVarObj(divingscip, divingvar, newobjcoeff) );
    }
    return SCIP_OKAY;
 }
@@ -372,6 +374,8 @@ SCIP_RETCODE handle1Cycle(
 static
 SCIP_RETCODE handleCycle(
    SCIP*                 scip,               /**< SCIP data structure  */
+   SCIP*                 divingscip,         /**< diving SCIP data structure  */
+   SCIP_HASHMAP*         varmapfw,           /**< mapping of SCIP variables to sub-SCIP variables */
    SCIP_HEURDATA*        heurdata,           /**< data of this special heuristic */
    SCIP_VAR**            vars,               /**< array of all variables */
    int                   nbinandintvars,     /**< number of general integer and 0-1 variables */
@@ -379,6 +383,7 @@ SCIP_RETCODE handleCycle(
    )
 {
    SCIP_VAR* var;
+   SCIP_VAR* divingvar;
    SCIP_Real solval;
    SCIP_Real frac;
    SCIP_Real newobjcoeff;
@@ -410,7 +415,8 @@ SCIP_RETCODE handleCycle(
             solval = SCIPfeasCeil(scip, solval);
          }
          SCIP_CALL( SCIPsetSolVal(scip, heurdata->roundedsol, var, solval) );
-         SCIP_CALL( SCIPchgVarObjDive(scip, var, newobjcoeff) );
+         divingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, var);
+         SCIP_CALL( SCIPchgVarObj(divingscip, divingvar, newobjcoeff) );
       }
    }
 
@@ -1027,7 +1033,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          /* change one coefficient of the objective */
          divingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmapfwdive, var);
          SCIP_CALL( SCIPchgVarObj(divingscip, divingvar, newobjcoeff) );
-
       }
       
       if( heurdata->usefp20 )
@@ -1070,7 +1075,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       if( nloops % heurdata->perturbfreq == 0 || (heurdata->pertsolfound && SCIPgetNBestSolsFound(scip) > nbestsolsfound) )
       {
          SCIPdebugMessage(" -> random perturbation\n");
-         SCIP_CALL( handleCycle(scip, heurdata, vars, nintvars+nbinvars, alpha) );
+         SCIP_CALL( handleCycle(scip, divingscip, varmapfwdive, heurdata, vars, nintvars+nbinvars, alpha) );
          nbestsolsfound = SCIPgetNBestSolsFound(scip);
       }
       else
@@ -1086,12 +1091,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
                if( j == 0 )
                {
                   SCIPdebugMessage(" -> avoiding 1-cycle: flipping %d candidates\n", nflipcands);
-                  SCIP_CALL( handle1Cycle(scip, heurdata, mostfracvars, nflipcands, alpha) );
+                  SCIP_CALL( handle1Cycle(scip, divingscip, varmapfwdive, heurdata, mostfracvars, nflipcands, alpha) );
                }
                else
                {
                   SCIPdebugMessage(" -> avoiding %d-cycle by random flip\n", j+1);
-                  SCIP_CALL( handleCycle(scip, heurdata, vars, nintvars+nbinvars, alpha) );
+                  SCIP_CALL( handleCycle(scip, divingscip, varmapfwdive, heurdata, vars, nintvars+nbinvars, alpha) );
                }
                break;
             }
@@ -1131,12 +1136,17 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          heurdata->nlpiterations, adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops), lperror, lpsolstat);
 #endif
 
-      /* check whether LP was solved optimal */
-      if( SCIPgetStage(divingscip) != SCIP_STAGE_SOLVED || SCIPgetBestSol(divingscip) != 0 )
+      /* check whether LP was solved to optimality */
+      if( SCIPgetStage(divingscip) != SCIP_STAGE_SOLVED || SCIPgetBestSol(divingscip) == NULL )
       {
          SCIPdebugMessage("  -> solstat is %d\n", SCIPgetStatus(divingscip));
          SCIPdebugMessage("  -> diving LP was not solved to optimality --> abort heuristic\n");
          break;
+      }
+
+      for( i = 0; i < SCIPgetNSols(divingscip); ++i )
+      {
+         SCIP_CALL( SCIPprintSol(divingscip, SCIPgetSols(divingscip)[i], NULL, FALSE) );
       }
 
       /* get diving LP solution */
