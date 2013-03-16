@@ -85,6 +85,27 @@ public:
       Weights               &w                 /**< weights for the given graph */
    );
 
+   void swap(Graph & other) // the swap member function (should never fail!)
+   {
+      // swap all the members (and base subobject, if applicable) with other
+      std::swap(partition, other.partition);
+      std::swap(scip_ , other.scip_);
+      std::swap(tgraph , other.tgraph);
+      std::swap(nconss , other.nconss);
+      std::swap(nvars , other.nvars);
+      std::swap(nnonzeroes , other.nnonzeroes);
+      std::swap(weights , other.weights);
+
+   }
+
+   Graph& operator=(Graph other) // note: argument passed by value!
+   {
+      // swap this with other
+      swap(other);
+
+      return *this;
+   }
+
    /** Destruktor */
    virtual ~Graph();
 
@@ -113,7 +134,7 @@ public:
       SCIP_VAR**         vars,               /**< variables for which graph should be created */
       int                nconss_,            /**< number of constraints */
       int                nvars_              /**< number of variables */
-   ) = 0;
+   ) { return SCIP_ERROR; };
 
    /** writes the graph to the given file.
     *  The format is graph dependent

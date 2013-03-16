@@ -91,7 +91,7 @@ SCIP_RETCODE Graph::writeToFile(
    int nedges;
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fopen(filename, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

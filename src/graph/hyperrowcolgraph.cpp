@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define SCIP_DEBUG
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
 #include <fstream>
@@ -92,9 +92,16 @@ SCIP_RETCODE HyperrowcolGraph::createFromMatrix(
 
       /* note that the first nvars nodes correspond to variables */
       if( i < nvars )
+      {
          weight = weights.calculate(vars[i]);
+         SCIPdebugMessage("Weight for var <%s> is %d\n", SCIPvarGetName(vars[i]), weight);
+      }
+
       else
+      {
          weight = weights.calculate(conss[i-nvars]);
+         SCIPdebugMessage("Weight for cons <%s> is %d\n", SCIPconsGetName(conss[i-nvars]), weight);
+      }
 
       TCLIQUE_CALL( tcliqueAddNode(tgraph, i, weight) );
    }
@@ -139,6 +146,7 @@ SCIP_RETCODE HyperrowcolGraph::createFromMatrix(
          assert(varIndex >= 0);
          assert(varIndex < nvars);
 
+         SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(conss[i]), i, SCIPvarGetName(var), varIndex, nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;
          TCLIQUE_CALL( tcliqueAddNode(tgraph, nvars+nconss+nnonzeroes, 0) );
          TCLIQUE_CALL( tcliqueAddEdge(tgraph, varIndex, nvars+nconss+nnonzeroes) );
@@ -160,7 +168,7 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
 {
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fopen(filename, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
@@ -234,7 +242,7 @@ std::vector<int> HyperrowcolGraph::getNeighbors(
 )
 {
    assert(i >= 0);
-   assert( i < nnonzeroes);
+   assert(i < nnonzeroes);
    function f(nconss+nvars);
    std::vector<int>::iterator it;
    std::set<int> neighbors;
@@ -257,7 +265,33 @@ std::vector<int> HyperrowcolGraph::getHyperedgeNodes(
 {
    function f(nconss+nvars);
    assert(i >= 0);
-   assert( i < nconss+nvars );
+   assert(i < nconss+nvars);
+
+   std::vector<int> neighbors = Graph::getNeighbors(i);
+   std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
+   return neighbors;
+}
+
+std::vector<int> HyperrowcolGraph::getConsNonzeroNodes(
+   int i
+)
+{
+   function f(nconss+nvars);
+   assert(i >= 0);
+   assert(i < nconss);
+
+   std::vector<int> neighbors = Graph::getNeighbors(i+nvars);
+   std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
+   return neighbors;
+}
+
+std::vector<int> HyperrowcolGraph::getVarNonzeroNodes(
+   int i
+)
+{
+   function f(nconss+nvars);
+   assert(i >= 0);
+   assert(i < nvars);
 
    std::vector<int> neighbors = Graph::getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);

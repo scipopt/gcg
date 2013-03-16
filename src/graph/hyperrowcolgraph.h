@@ -71,6 +71,14 @@ public:
    std::vector<int> getHyperedgeNodes(
          int i
       );
+
+   std::vector<int> getConsNonzeroNodes(
+         int i
+   );
+
+   std::vector<int> getVarNonzeroNodes(
+         int i
+   );
 };
 
 } /* namespace gcg */

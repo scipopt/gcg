@@ -64,7 +64,7 @@ SCIP_RETCODE ColumnGraph::writeToFile(
    SCIP_Bool* handled;
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fopen(filename, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
