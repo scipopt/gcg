@@ -34,6 +34,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #define SCIP_STATISTIC
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -465,20 +466,6 @@ SCIP_RETCODE createNewSol(
  * Callback methods of primal heuristic
  */
 
-/** copy method for primal heuristic plugins (called when SCIP copies plugins) */
-static
-SCIP_DECL_HEURCOPY(heurCopyGcgdins)
-{  /*lint --e{715}*/
-   assert(scip != NULL);
-   assert(heur != NULL);
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   /* call inclusion method of primal heuristic */
-   SCIP_CALL( SCIPincludeHeurGcgdins(scip) );
-
-   return SCIP_OKAY;
-}
-
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
 static
 SCIP_DECL_HEURFREE(heurFreeGcgdins)
@@ -564,6 +551,10 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgdins)
    {
       SCIPfreeBlockMemoryArray(scip, &(heurdata->delta), heurdata->deltalength);
    }
+
+   /* free root relaxation solution */
+   if( heurdata->rootsol != NULL )
+      SCIPfreeSol(scip, &heurdata->rootsol);
 
 #ifdef SCIP_STATISTIC
    ncalls = SCIPheurGetNCalls(heur);
@@ -1066,7 +1057,6 @@ SCIP_RETCODE SCIPincludeHeurGcgdins(
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurCopy(scip, heur, heurCopyGcgdins) );
    SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgdins) );
    SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolGcgdins) );
    SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolGcgdins) );
