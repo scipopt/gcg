@@ -159,6 +159,7 @@
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
 #include "heur_gcgdins.h"
+#include "heur_gcgfeaspump.h"
 #include "heur_gcgfracdiving.h"
 #include "heur_gcgguideddiving.h"
 #include "heur_gcglinesdiving.h"
@@ -303,6 +304,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( GCGincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgdins(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );

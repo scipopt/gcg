@@ -88,6 +88,7 @@ LIBOBJ		=	reader_blk.o \
 			cons_integralorig.o \
 			heur_gcgcoefdiving.o \
 			heur_gcgdins.o \
+			heur_gcgfeaspump.o \
 			heur_gcgfracdiving.o \
 			heur_gcgguideddiving.o \
 			heur_gcglinesdiving.o \
