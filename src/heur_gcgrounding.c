@@ -63,6 +63,9 @@ struct SCIP_HeurData
    int                   successfactor;      /**< number of calls per found solution that are considered as standard success,
                                               * a higher factor causes the heuristic to be called more often
                                               */
+#ifdef SCIP_STATISTIC
+   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic            */
+#endif
 };
 
 
@@ -491,13 +494,33 @@ SCIP_DECL_HEURINITSOL(heurInitsolGcgrounding)
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    heurdata->lastlp = -1;
+#ifdef SCIP_STATISTIC
+   heurdata->bestprimalbd = SCIPinfinity(scip);
+#endif
 
    return SCIP_OKAY;
 }
 
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
+#ifdef SCIP_STATISTIC
+static
+SCIP_DECL_HEUREXITSOL(heurExitsolGcgrounding)
+{
+   SCIP_HEURDATA* heurdata;
+
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   SCIPstatisticPrintf("Rounding statistics -- "HEUR_NAME" : bestprimalbd = %13.6e\n", heurdata->bestprimalbd);
+
+   return SCIP_OKAY;
+}
+#else
 #define heurExitsolGcgrounding NULL
+#endif
 
 
 /** execution method of primal heuristic */
@@ -734,6 +757,10 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
 #ifdef SCIP_DEBUG
          SCIPdebugMessage("found feasible rounded solution:\n");
          SCIPprintSol(scip, sol, NULL, FALSE);
+#endif
+#ifdef SCIP_STATISTIC
+         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
+            heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
 #endif
          *result = SCIP_FOUNDSOL;
       }

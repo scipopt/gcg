@@ -57,6 +57,9 @@ struct SCIP_HeurData
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
    int                   nroundablevars;     /**< number of variables that can be rounded (-1 if not yet calculated) */
+#ifdef SCIP_STATISTIC
+   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic            */
+#endif
 };
 
 
@@ -123,13 +126,33 @@ SCIP_DECL_HEURINITSOL(heurInitsolGcgsimplerounding)
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    heurdata->lastlp = -1;
+#ifdef SCIP_STATISTIC
+   heurdata->bestprimalbd = SCIPinfinity(scip);
+#endif
 
    return SCIP_OKAY;
 }
 
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
+#ifdef SCIP_STATISTIC
+static
+SCIP_DECL_HEUREXITSOL(heurExitsolGcgsimplerounding)
+{
+   SCIP_HEURDATA* heurdata;
+
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   SCIPstatisticPrintf("Rounding statistics -- "HEUR_NAME" : bestprimalbd = %13.6e\n", heurdata->bestprimalbd);
+
+   return SCIP_OKAY;
+}
+#else
 #define heurExitsolGcgsimplerounding NULL
+#endif
 
 
 /** execution method of primal heuristic */
@@ -276,6 +299,10 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
 #ifdef SCIP_DEBUG
          SCIPdebugMessage("found feasible rounded solution:\n");
          SCIPprintSol(scip, sol, NULL, FALSE);
+#endif
+#ifdef SCIP_STATISTIC
+         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
+            heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
 #endif
          *result = SCIP_FOUNDSOL;
       }
