@@ -75,6 +75,7 @@ protected:
    int nconss;
    int nvars;
    int nnonzeroes;
+   int dummynodes;
    Weights weights;
    std::vector<int> partition;
 
@@ -95,6 +96,7 @@ public:
       std::swap(nvars , other.nvars);
       std::swap(nnonzeroes , other.nnonzeroes);
       std::swap(weights , other.weights);
+      std::swap(dummynodes, other.dummynodes);
 
    }
 
@@ -161,6 +163,11 @@ public:
    virtual int getWeight(
       int                i                   /**< the given node */
       );
+
+   void setDummynodes(int dummynodes_)
+   {
+      dummynodes = dummynodes_;
+   };
 };
 }
 

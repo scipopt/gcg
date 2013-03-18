@@ -129,6 +129,11 @@ SCIP_RETCODE ColumnGraph::writeToFile(
       SCIPfreeMemoryArray(scip_, &realneighbors[i]);
    }
 
+   for( int i = 0; i < dummynodes; ++i )
+   {
+      SCIPinfoMessage(scip_, file, "\n");
+   }
+
    SCIPfreeMemoryArray(scip_, &handled);
    SCIPfreeMemoryArray(scip_, &realneighbors);
    SCIPfreeMemoryArray(scip_, &nrealneighbors);

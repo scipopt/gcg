@@ -73,7 +73,7 @@ SCIP_RETCODE HyperrowGraph::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%d %d %d\n", getNEdges(), getNNodes(), edgeweights ? 1 :0);
+   SCIPinfoMessage(scip_, file, "%d %d %d\n", getNEdges(), getNNodes()+dummynodes, edgeweights ? 1 :0);
 
    for( int i = 0; i < getNEdges(); ++i )
    {

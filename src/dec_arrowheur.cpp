@@ -357,7 +357,15 @@ SCIP_RETCODE createMetisFile(
    DEC_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
+   int nvertices;
+   int ndummyvertices;
    char* filename;
+
+   nvertices = detectordata->graph->getNNodes();
+   /*lint --e{524}*/
+   ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
+   detectordata->graph->setDummynodes(ndummyvertices);
+
    if( !detectordata->realname )
    {
       (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
@@ -432,6 +440,10 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       }
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n",  *ndecdecomps);
+
+   delete detectordata->graph;
+   detectordata->graph = NULL;
+
    for( i = *ndecdecomps; i < ndecs; ++i )
    {
       SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[i])) );

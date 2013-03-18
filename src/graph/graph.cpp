@@ -44,7 +44,7 @@ namespace gcg {
 Graph::Graph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               &w                 /**< weights for the given graph */
-) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),weights(w)
+) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
 {
   TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
 }
@@ -99,7 +99,7 @@ SCIP_RETCODE Graph::writeToFile(
    nnodes = Graph::getNNodes();
    nedges = Graph::getNEdges();
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes, nedges/2);
+   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes+dummynodes, nedges/2);
 
    for( int i = 0; i < nnodes; ++i )
    {
@@ -114,6 +114,11 @@ SCIP_RETCODE Graph::writeToFile(
       {
          SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
       }
+      SCIPinfoMessage(scip_, file, "\n");
+   }
+
+   for( int i = 0; i < dummynodes; ++i )
+   {
       SCIPinfoMessage(scip_, file, "\n");
    }
 
