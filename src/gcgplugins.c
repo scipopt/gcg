@@ -145,6 +145,7 @@
 #include "dialog_gcg.h"
 #include "branch_relpsprob.h"
 #include "reader_ref.h"
+#include "event_bestsol.h"
 
 /* Martin's detection stuff */
 #include "reader_gp.h"
@@ -284,6 +285,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
 
    /* martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );

@@ -122,6 +122,7 @@
 #include "disp_master.h"
 #include "solver_knapsack.h"
 #include "solver_mip.h"
+#include "event_bestsol.h"
 #include "event_solvingstats.h"
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
@@ -237,6 +238,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
 
+   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
    SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
 
    return SCIP_OKAY;
