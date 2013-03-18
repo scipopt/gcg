@@ -47,8 +47,7 @@
 #define HEUR_DESC             "relaxation induced neighborhood search by Danna, Rothberg, and Le Pape"
 #define HEUR_DISPCHAR         'N'
 #define HEUR_PRIORITY         -1101000
-//#define HEUR_FREQ             -1
-#define HEUR_FREQ             20
+#define HEUR_FREQ             5
 #define HEUR_FREQOFS          5
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
@@ -258,10 +257,10 @@ SCIP_RETCODE createNewSol(
    SCIP_Real* subsolvals;                    /* solution values of the subproblem               */
    SCIP_SOL*  newsol;                        /* solution to be created for the original problem */
 
-   assert( scip != NULL );
-   assert( subscip != NULL );
-   assert( subvars != NULL );
-   assert( subsol != NULL );
+   assert(scip != NULL);
+   assert(subscip != NULL);
+   assert(subvars != NULL);
+   assert(subsol != NULL);
 
 #ifdef SCIP_STATISTIC
    /* get heuristic data */
@@ -313,12 +312,12 @@ SCIP_DECL_HEURFREE(heurFreeGcgrins)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* free heuristic data */
    SCIPfreeMemory(scip, &heurdata);
@@ -334,12 +333,12 @@ SCIP_DECL_HEURINIT(heurInitGcgrins)
 {  /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
 
-   /* get heuristic's data */
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    /* initialize data */
    heurdata->usednodes = 0;
@@ -440,17 +439,17 @@ SCIP_DECL_HEUREXEC(heurExecGcgrins)
    SCIP_Bool success;
    SCIP_RETCODE retcode;
 
-   assert( heur != NULL );
-   assert( scip != NULL );
-   assert( result != NULL );
+   assert(heur != NULL);
+   assert(scip != NULL);
+   assert(result != NULL);
 
    /* get master problem */
    masterprob = GCGrelaxGetMasterprob(scip);
-   assert( masterprob != NULL);
+   assert(masterprob != NULL);
 
-   /* get heuristic's data */
+   /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
-   assert( heurdata != NULL );
+   assert(heurdata != NULL);
 
    *result = SCIP_DELAYED;
 
