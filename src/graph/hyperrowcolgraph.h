@@ -54,21 +54,26 @@ public:
       int                   nvars               /**< number of variables */
       );
 
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
    virtual SCIP_RETCODE writeToFile(
-      const char* filename
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights         /**< whether to write weights */
     );
+
    SCIP_RETCODE readPartition(
       const char* filename
-   );
+      );
 
    virtual int getNNodes();
    virtual int getNEdges();
 
-
-   std::vector<int> getNeighbors(
+   virtual std::vector<int> getNeighbors(
          int i
       );
-   std::vector<int> getHyperedgeNodes(
+
+   virtual std::vector<int> getHyperedgeNodes(
          int i
       );
 

@@ -84,7 +84,8 @@ std::vector<int> Graph::getPartition()
 }
 
 SCIP_RETCODE Graph::writeToFile(
-      const char* filename
+      const char* filename,
+      SCIP_Bool writeweights
     )
 {
    int nnodes;
@@ -104,6 +105,11 @@ SCIP_RETCODE Graph::writeToFile(
    {
       int nneighbors = Graph::getNNeighbors(i);
       std::vector<int> neighbors = Graph::getNeighbors(i);
+
+      if( writeweights )
+      {
+         SCIPinfoMessage(scip_, file, "%d ", Graph::getWeight(i));
+      }
       for( int j = 0; j < nneighbors; ++j )
       {
          SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
@@ -124,8 +130,8 @@ SCIP_RETCODE Graph::readPartition(
       SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
       return SCIP_READERROR;
    }
-   partition.resize(Graph::getNNodes(), -1);
-   for( int i = 0; i < Graph::getNNodes(); ++i )
+   partition.resize(getNNodes(), -1);
+   for( int i = 0; i < getNNodes(); ++i )
    {
       int part = 0;
       if( !(input >> part) )
@@ -138,6 +144,14 @@ SCIP_RETCODE Graph::readPartition(
 
    input.close();
    return SCIP_OKAY;
+}
+
+/** return the weight of given node */
+int Graph::getWeight(
+   int                i                   /**< the given node */
+   )
+{
+   return tcliqueGetWeights(tgraph)[i];
 }
 
 }

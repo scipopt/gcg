@@ -52,7 +52,8 @@ RowGraph::~RowGraph()
 
 /** writes row graph to file */
 SCIP_RETCODE RowGraph::writeToFile(
-      const char* filename
+   const char*        filename,           /**< filename where the graph should be written to */
+   SCIP_Bool          writeweights         /**< whether to write weights */
    )
 {
    int nedges;

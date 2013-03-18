@@ -88,7 +88,7 @@ using gcg::Weights;
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   HyperrowcolGraph graph;                   /**< the graph of the matrix */
+   HyperrowcolGraph* graph;                   /**< the graph of the matrix */
    char           tempfile[SCIP_MAXSTRLEN];  /**< filename for the metis input file */
 
    /* weight parameters */
@@ -251,7 +251,7 @@ SCIP_RETCODE callMetis(
    }
 
    (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", detectordata->tempfile, detectordata->blocks);
-   SCIP_CALL( detectordata->graph.readPartition(metisout) );
+   SCIP_CALL( detectordata->graph->readPartition(metisout) );
 
    /* if desired delete the temoprary metis file */
    if( detectordata->tidy )
@@ -303,13 +303,13 @@ static SCIP_RETCODE buildTransformedProblem(
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   partition = detectordata->graph.getPartition();
+   partition = detectordata->graph->getPartition();
 
    /* assign constraints to partition */
    for( i = 0; i < nconss; i++ )
    {
       std::set<int> blocks;
-      std::vector<int> nonzeros = detectordata->graph.getConsNonzeroNodes(i);
+      std::vector<int> nonzeros = detectordata->graph->getConsNonzeroNodes(i);
       for( size_t k = 0; k < nonzeros.size(); ++k )
       {
          blocks.insert(partition[nonzeros[k]]);
@@ -369,7 +369,7 @@ SCIP_RETCODE createMetisFile(
 
    filename = mktemp(detectordata->tempfile);
 
-   SCIP_CALL( detectordata->graph.writeToFile(filename) );
+   SCIP_CALL( detectordata->graph->writeToFile(filename, TRUE) );
    return SCIP_OKAY;
 }
 
@@ -403,8 +403,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    }
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = HyperrowcolGraph(scip, w);
-   SCIP_CALL( detectordata->graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
+   detectordata->graph = new HyperrowcolGraph(scip, w);
+   SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");

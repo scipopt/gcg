@@ -25,33 +25,54 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph.h
- * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
+/**@file   hyperrowgraph.h
+ * @brief  Column hypergraph
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_ROWGRAPH_H_
-#define GCG_ROWGRAPH_H_
+
+#ifndef GCG_HYPERROWGRAPH_H_
+#define GCG_HYPERROWGRAPH_H_
 
 #include "bipartitegraph.h"
 
-namespace gcg {
+namespace gcg
+{
 
-class RowGraph: public gcg::BipartiteGraph
+class HyperrowGraph: public gcg::BipartiteGraph
 {
 public:
-   RowGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
-         Weights               &w                 /**< weights for the given graph */
-      );
-   virtual ~RowGraph();
-   virtual SCIP_RETCODE writeToFile(
+   HyperrowGraph(
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               &w                 /**< weights for the given graph */
+   );
+
+   virtual ~HyperrowGraph();
+
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
+   SCIP_RETCODE writeToFile(
       const char*        filename,           /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      SCIP_Bool          edgeweights         /**< whether to write edgeweights */
+    );
+
+   /** return the number of nodes */
+   virtual int getNNodes();
+
+   /** return the number of edges (or hyperedges) */
+   virtual int getNEdges();
+
+   virtual std::vector<int> getNeighbors(
+         int i
+      );
+
+   virtual std::vector<int> getHyperedgeNodes(
+         int i
       );
 };
 
 } /* namespace gcg */
-#endif /* GCG_ROWGRAPH_H_ */
+#endif /* GCG_HYPERROWGRAPH_H_ */

@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
 #include <fstream>
@@ -43,17 +43,16 @@ using std::ifstream;
 namespace gcg {
 
 HyperrowcolGraph::HyperrowcolGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
-      Weights               &w                 /**< weights for the given graph */
-   ): Graph(scip, w)
+   SCIP*                 scip,              /**< SCIP data structure */
+   Weights               &w                 /**< weights for the given graph */
+): Graph(scip, w)
 {
-   // TODO Auto-generated constructor stub
 
 }
 
 HyperrowcolGraph::~HyperrowcolGraph()
 {
-   // TODO Auto-generated destructor stub
+
 }
 
 
@@ -162,9 +161,13 @@ SCIP_RETCODE HyperrowcolGraph::createFromMatrix(
    return SCIP_OKAY;
 }
 
+/** writes the graph to the given file.
+ *  The format is graph dependent
+ */
 SCIP_RETCODE HyperrowcolGraph::writeToFile(
-      const char* filename
-    )
+   const char*        filename,           /**< filename where the graph should be written to */
+   SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
+ )
 {
    FILE* file;
    assert(filename != NULL);
@@ -172,12 +175,16 @@ SCIP_RETCODE HyperrowcolGraph::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nnonzeroes, nvars+nconss);
+   SCIPinfoMessage(scip_, file, "%d %d %d\n", nvars+nconss, nnonzeroes, edgeweights ? 1 :0);
 
    for( int i = 0; i < nvars+nconss; ++i )
    {
       std::vector<int> neighbors = Graph::getNeighbors(i);
       int nneighbors = Graph::getNNeighbors(i);
+      if( edgeweights )
+      {
+         SCIPinfoMessage(scip_, file, "%d ", Graph::getWeight(i));
+      }
       for( int j = 0; j < nneighbors; ++j )
       {
          SCIPinfoMessage(scip_, file, "%d ",neighbors[j]+1-nvars-nconss);

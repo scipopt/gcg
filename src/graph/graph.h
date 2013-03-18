@@ -140,7 +140,8 @@ public:
     *  The format is graph dependent
     */
    virtual SCIP_RETCODE writeToFile(
-      const char*        filename            /**< filename where the graph should be written to */
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
     );
 
    /**
@@ -155,6 +156,11 @@ public:
    {
       return nnonzeroes;
    }
+
+   /** return the weight of given node */
+   virtual int getWeight(
+      int                i                   /**< the given node */
+      );
 };
 }
 

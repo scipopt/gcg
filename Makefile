@@ -134,6 +134,8 @@ LIBOBJ		=	reader_blk.o \
 			graph/graph.o \
 			graph/bipartitegraph.o \
 			graph/hyperrowcolgraph.o \
+			graph/hypercolgraph.o \
+			graph/hyperrowgraph.o \
 			graph/rowgraph.o \
 			graph/columngraph.o \
 			graph/weights.o \

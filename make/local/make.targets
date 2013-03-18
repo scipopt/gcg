@@ -49,6 +49,8 @@ TESTOBJ		=	tests/test.o \
 				tests/graphtest.o \
 				tests/bipartitegraph_test.o \
 				tests/hyperrowcolgraph_test.o \
+				tests/hypercolgraph_test.o \
+				tests/hyperrowgraph_test.o \
 				tests/weights_test.o \
 				tests/aggregation_test.o \
 				tests/statistic_test.o \

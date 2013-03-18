@@ -25,115 +25,121 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   columngraph.cpp
- * @brief  A row graph where each column is a node and columns are adjacent if they appear in one row
+/**@file   hypercolgraph.cpp
+ * @brief  Column hypergraph
  * @author Martin Bergner
+ *
+ * A hypergraph structure with a node for every constraint and a hyperedge for every variable.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "columngraph.h"
+#include "hypercolgraph.h"
+#include <set>
+#include <fstream>
+#include <algorithm>
 
-namespace gcg {
+using std::ifstream;
+namespace gcg
+{
 
-ColumnGraph::ColumnGraph(
+HypercolGraph::HypercolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               &w                 /**< weights for the given graph */
-   ) : BipartiteGraph(scip, w)
+):  BipartiteGraph(scip, w)
 {
-   // TODO Auto-generated constructor stub
 
 }
 
-
-ColumnGraph::~ColumnGraph()
+HypercolGraph::~HypercolGraph()
 {
    // TODO Auto-generated destructor stub
 }
 
 
-/** writes column graph to file */
-SCIP_RETCODE ColumnGraph::writeToFile(
+/** writes the graph to the given file.
+ *  The format is graph dependent
+ */
+SCIP_RETCODE HypercolGraph::writeToFile(
    const char*        filename,           /**< filename where the graph should be written to */
-   SCIP_Bool          writeweights         /**< whether to write weights */
-   )
+   SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
+ )
 {
-   int nedges;
-   int* nrealneighbors;
-   int** realneighbors;
-
-   SCIP_Bool* handled;
+   function f(nvars);
    FILE* file;
    assert(filename != NULL);
    file = fopen(filename, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   nrealneighbors = 0;
-   nedges = 0;
+   SCIPinfoMessage(scip_, file, "%d %d %d\n", getNEdges(), getNNodes(), edgeweights ? 1 :0);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &handled, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &nrealneighbors, nvars) );
-
-   SCIPdebug(tcliquePrintGraph(tgraph));
-   for( int i = 0; i < nvars; ++i )
+   for( int i = 0; i < getNEdges(); ++i )
    {
-      BMSclearMemoryArray(handled, nvars);
-      handled[i] = TRUE;
-      nrealneighbors[i] = 0;
-
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors[i], nvars) );
-      int nneighbors = getNNeighbors(i);
-
-      SCIPdebugMessage("%d has %d neighbors\n", i, nneighbors);
-
-      std::vector<int> neighbors = getNeighbors(i);
+      std::vector<int> neighbors = getHyperedgeNodes(i);
+      int nneighbors = Graph::getNNeighbors(i);
+      if( edgeweights )
+      {
+         SCIPinfoMessage(scip_, file, "%d ", Graph::getWeight(i));
+      }
       for( int j = 0; j < nneighbors; ++j )
       {
-         int neighbor = neighbors[j];
-         int nneighborneighbors = getNNeighbors(neighbor);
-         std::vector<int> neighborneighbors = getNeighbors(neighbor);
-         SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         for( int k = 0; k < nneighborneighbors; ++k )
-         {
-            int neighborneighbor = neighborneighbors[k];
-
-            SCIPdebugMessage("\t\t%d->%d->%d (", i, neighbor, neighborneighbor);
-            if( !handled[neighborneighbor] )
-            {
-               SCIPdebugPrintf("x)\n");
-               realneighbors[i][nrealneighbors[i]] = neighborneighbor;
-               ++(nrealneighbors[i]);
-
-               handled[neighborneighbor] = TRUE;
-               ++nedges;
-            }
-            else
-            {
-               SCIPdebugPrintf("-)\n");
-            }
-         }
-      }
-   }
-
-   SCIPinfoMessage(scip_, file, "%d %d\n", nvars, nedges);
-
-   for( int i = 0; i < nvars; ++i)
-   {
-      for( int j = 0; j < nrealneighbors[i]; ++j )
-      {
-         SCIPinfoMessage(scip_, file, "%d ", realneighbors[i][j]+1);
+         SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
       }
       SCIPinfoMessage(scip_, file, "\n");
-      SCIPfreeMemoryArray(scip_, &realneighbors[i]);
    }
 
-   SCIPfreeMemoryArray(scip_, &handled);
-   SCIPfreeMemoryArray(scip_, &realneighbors);
-   SCIPfreeMemoryArray(scip_, &nrealneighbors);
+   if( !fclose(file) )
+      return SCIP_OKAY;
+   else
+      return SCIP_WRITEERROR;
+}
 
-   return SCIP_OKAY;
+int HypercolGraph::getNEdges()
+{
+   return nvars;
+}
+
+
+int HypercolGraph::getNNodes()
+{
+   return nconss;
+}
+
+
+std::vector<int> HypercolGraph::getNeighbors(
+   int i
+)
+{
+   assert(i >= 0);
+   assert(i < nconss);
+   function f(nvars);
+   std::vector<int>::iterator it;
+   std::set<int> neighbors;
+   std::vector<int> immediateneighbors = Graph::getNeighbors(i+nvars);
+   for( size_t j = 0; j < immediateneighbors.size(); ++j)
+   {
+      std::vector<int> alternateneighbor = Graph::getNeighbors(immediateneighbors[j]);
+      neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
+   }
+   std::vector<int> r(neighbors.size(), 0);
+   std::transform(neighbors.begin(), neighbors.end(), r.begin(), f);
+   it = std::remove(r.begin(), r.end(), i);
+
+   return std::vector<int>(r.begin(), it);
+}
+
+std::vector<int> HypercolGraph::getHyperedgeNodes(
+   int i
+)
+{
+   function f(nvars);
+   assert(i >= 0);
+   assert(i < nvars);
+
+   std::vector<int> neighbors = Graph::getNeighbors(i);
+   std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
+   return neighbors;
 }
 
 } /* namespace gcg */
