@@ -1144,11 +1144,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          break;
       }
 
-      for( i = 0; i < SCIPgetNSols(divingscip); ++i )
-      {
-         SCIP_CALL( SCIPprintSol(divingscip, SCIPgetSols(divingscip)[i], NULL, FALSE) );
-      }
-
       /* get diving LP solution */
       SCIP_CALL( getDivingLPSol(scip, divingscip, varmapfwdive, heurdata->sol) );
 
