@@ -139,9 +139,6 @@ SCIP_RETCODE createSubproblem(
    bestsol = SCIPgetBestSol(scip);
    assert(bestsol != NULL);
 
-   fixingcounter = 0;
-   zerocounter = 0;
-
    /* create the rebounded general integer variables of the subproblem */
    for( i = nbinvars; i < nbinvars + nintvars; i++ )
    {
@@ -733,7 +730,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    }
    else
    {
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "dins", TRUE, FALSE, TRUE, &success) );
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgdins", TRUE, FALSE, TRUE, &success) );
 
       if( heurdata->copycuts )
       {
