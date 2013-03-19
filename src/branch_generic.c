@@ -2275,10 +2275,19 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          //SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) );
          SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL ) );
       }
-      SCIPfreeMemoryArray(origscip, &sequencesizes);
+      if( sequencesizes != NULL )
+      {
+         assert(Csize > 0);
+         SCIPfreeMemoryArray(origscip, &sequencesizes);
+      }
       for( i=0; i<Csize; ++i )
-         SCIPfreeMemoryArray(origscip, &(C[i]));
-      SCIPfreeMemoryArray(origscip, &C);
+         if( C[i] != NULL )
+            SCIPfreeMemoryArray(origscip, &(C[i]));
+      if( C != NULL )
+      {
+         assert( Csize > 0);
+         SCIPfreeMemoryArray(origscip, &C);
+      }
    }
    else
    {
