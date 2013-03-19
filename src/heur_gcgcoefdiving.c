@@ -55,13 +55,13 @@
  * Default diving rule specific parameter settings
  */
 
-#define DEFAULT_MASTERLOCKS       FALSE      /**< calculate the number of locks w.r.t. the master LP? */
+#define DEFAULT_USEMASTERLOCKS    FALSE      /**< calculate the number of locks w.r.t. the master LP? */
 
 
 /* locally defined diving heuristic data */
 struct GCG_DivingData
 {
-   SCIP_Bool             masterlocks;        /**< calculate the number of locks w.r.t. the master LP? */
+   SCIP_Bool             usemasterlocks;     /**< calculate the number of locks w.r.t. the master LP? */
 };
 
 
@@ -331,7 +331,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
 
       var = lpcands[c];
       frac = lpcandsfrac[c];
-      if( divingdata->masterlocks )
+      if( divingdata->usemasterlocks )
       {
          SCIP_CALL( getNLocksDown(scip, var, &nlocksdown) );
          SCIP_CALL( getNLocksUp(scip, var, &nlocksup) );
@@ -455,9 +455,9 @@ SCIP_RETCODE GCGincludeHeurGcgcoefdiving(
    assert(heur != NULL);
 
    /* add gcgcoefdiving specific parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/masterlocks",
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterlocks",
          "calculate the number of locks w.r.t. the master LP?",
-         &divingdata->masterlocks, TRUE, DEFAULT_MASTERLOCKS, NULL, NULL) );
+         &divingdata->usemasterlocks, TRUE, DEFAULT_USEMASTERLOCKS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

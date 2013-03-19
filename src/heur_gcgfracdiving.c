@@ -55,13 +55,13 @@
  * Default diving rule specific parameter settings
  */
 
-#define DEFAULT_MASTERFRACS       FALSE      /**< calculate the fractionalities w.r.t. the master LP? */
+#define DEFAULT_USEMASTERFRACS    FALSE      /**< calculate the fractionalities w.r.t. the master LP? */
 
 
 /* locally defined diving heuristic data */
 struct GCG_DivingData
 {
-   SCIP_Bool             masterfracs;        /**< calculate the fractionalities w.r.t. the master LP? */
+   SCIP_Bool             usemasterfracs;     /**< calculate the fractionalities w.r.t. the master LP? */
 };
 
 
@@ -366,7 +366,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
              *   the current fractional solution
              */
             if( mayrounddown && mayroundup )
-               roundup = divingdata->masterfracs ? (upfrac < downfrac) : (origfrac > 0.5);
+               roundup = divingdata->usemasterfracs ? (upfrac < downfrac) : (origfrac > 0.5);
             else
                roundup = mayrounddown;
 
@@ -378,7 +378,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
             else
                objgain = -origfrac*obj;
 
-            if( divingdata->masterfracs )
+            if( divingdata->usemasterfracs )
                frac = MIN(downfrac, upfrac);
             else
                frac = origfrac;
@@ -406,7 +406,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
       else
       {
          /* the candidate may not be rounded */
-         if( divingdata->masterfracs )
+         if( divingdata->usemasterfracs )
          {
             if( downfrac < upfrac )
             {
@@ -484,9 +484,9 @@ SCIP_RETCODE GCGincludeHeurGcgfracdiving(
    assert(heur != NULL);
 
    /* add gcgfracdiving specific parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/masterfracs",
+   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterfracs",
          "calculate the fractionalities w.r.t. the master LP?",
-         &divingdata->masterfracs, TRUE, DEFAULT_MASTERFRACS, NULL, NULL) );
+         &divingdata->usemasterfracs, TRUE, DEFAULT_USEMASTERFRACS, NULL, NULL) );
 
    return SCIP_OKAY;
 }
