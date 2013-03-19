@@ -55,7 +55,7 @@
  * Default diving rule specific parameter settings
  */
 
-#define DEFAULT_USEMASTERPSCOSTS  FALSE      /**< shall pseudocosts be calculated w.r.t. the master problem? */
+#define DEFAULT_USEMASTERPSCOSTS  TRUE       /**< shall pseudocosts be calculated w.r.t. the master problem? */
 
 
 /* locally defined diving heuristic data */
