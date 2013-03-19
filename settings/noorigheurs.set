@@ -100,32 +100,56 @@ heuristics/zirounding/freq = -1
 # [type: int, range: [-1,2147483647], default: 1]
 heuristics/simplerounding/freq = -1
 
-# flag to indicate whether detector <borderheur> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/borderheur/enabled = FALSE
-
-# flag to indicate whether detector <arrowheur> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/arrowheur/enabled = FALSE
-
 # frequency for calling primal heuristic <gcgcoefdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 10]
 heuristics/gcgcoefdiving/freq = -1
+
+# frequency offset for calling primal heuristic <gcgcoefdiving>
+# [type: int, range: [0,2147483647], default: 1]
+heuristics/gcgcoefdiving/freqofs = 0
 
 # frequency for calling primal heuristic <gcgfracdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 10]
 heuristics/gcgfracdiving/freq = -1
 
+# frequency offset for calling primal heuristic <gcgfracdiving>
+# [type: int, range: [0,2147483647], default: 3]
+heuristics/gcgfracdiving/freqofs = 0
+
+# frequency for calling primal heuristic <gcgguideddiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgguideddiving/freq = -1
+
+# frequency for calling primal heuristic <gcglinesdiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcglinesdiving/freq = -1
+
 # frequency for calling primal heuristic <gcgpscostdiving> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 10]
 heuristics/gcgpscostdiving/freq = -1
+
+# frequency for calling primal heuristic <gcgveclendiving> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 10]
+heuristics/gcgveclendiving/freq = -1
+
+# frequency offset for calling primal heuristic <gcgveclendiving>
+# [type: int, range: [0,2147483647], default: 4]
+heuristics/gcgveclendiving/freqofs = 0
+
+# frequency for calling primal heuristic <gcgdins> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 5]
+heuristics/gcgdins/freq = -1
+
+# frequency for calling primal heuristic <gcgfeaspump> (-1: never, 0: only at depth freqofs)
+# [type: int, range: [-1,2147483647], default: 20]
+heuristics/gcgfeaspump/freq = -1
 
 # frequency for calling primal heuristic <gcgrens> (-1: never, 0: only at depth freqofs)
 # [type: int, range: [-1,2147483647], default: 0]
 heuristics/gcgrens/freq = -1
 
 # frequency for calling primal heuristic <gcgrins> (-1: never, 0: only at depth freqofs)
-# [type: int, range: [-1,2147483647], default: 20]
+# [type: int, range: [-1,2147483647], default: 5]
 heuristics/gcgrins/freq = -1
 
 # frequency for calling primal heuristic <gcgrounding> (-1: never, 0: only at depth freqofs)
