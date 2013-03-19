@@ -395,14 +395,11 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    if( SCIPgetLastDivenode(masterprob) == SCIPgetNNodes(masterprob) && SCIPgetDepth(masterprob) > 0 )
       return SCIP_OKAY;
 
-   /** @todo for some reason, the heuristic is sometimes called with an invalid relaxation solution;
-    *       in that case, don't execute it */
+   /* do not execute the heuristic on invalid relaxation solutions
+    * (which is the case if the node has been cut off)
+    */
    if( !SCIPisRelaxSolValid(scip) )
-   {
-      SCIPdebugMessage("not executing %s: invalid relaxation solution (should not happen!)\n",
-         SCIPheurGetName(heur));
       return SCIP_OKAY;
-   }
 
    *result = SCIP_DIDNOTRUN;
 
