@@ -1839,31 +1839,52 @@ SCIP_RETCODE createChildNodesGeneric(
       else
       {
          //calculate mu
-         for( k=0;k<=p;++k )
+         ncopymastervars = nmastervars2;
+         for( i=0; i<ncopymastervars; ++i )
          {
-            ncopymastervars = nmastervars2;
-            for( i=0; i<ncopymastervars; ++i )
+            SCIP_VAR* swap;
+            SCIP_VAR** pricingvars;
+            SCIP_Real generator_i;
+            SCIP_Bool blockfound;
+            int u;
+
+            blockfound = TRUE;
+            pricingvars = NULL;
+            u = 0;
+
+            if( GCGvarGetBlock(mastervars2[i]) == -1 )
             {
-               SCIP_VAR* swap;
-               SCIP_Real generator_i;
+               assert( GCGvarIsLinking(mastervars2[i]) );
+               blockfound = FALSE;
 
-               if( GCGvarGetBlock(mastervars2[i]) == blocknr )
+               pricingvars = GCGlinkingVarGetPricingVars(mastervars2[i]);
+               assert(pricingvars != NULL );
+
+               for( u=0; u<GCGlinkingVarGetNBlocks(mastervars2[i]); ++u )
                {
-                  generator_i = getGeneratorEntry(scip, mastervars2[i], S[k].component);
+                  if( pricingvars[u] != NULL )
+                  {
+                     if( GCGvarGetBlock(pricingvars[u]) == blocknr )
+                     {
+                        blockfound = TRUE;
+                        break;
+                     }
+                  }
+               }
+            }
+            else
+            {
+               blockfound = GCGvarGetBlock(mastervars2[i]) == blocknr;
+            }
 
-                  if( (S[k].sense == GCG_COMPSENSE_GE && SCIPisGE(scip, generator_i, S[k].bound) && k == p) ||
-                      (S[k].sense == GCG_COMPSENSE_LT && SCIPisLT(scip, generator_i, S[k].bound) && k == p) )
-                  {
-                     mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
-                  }
-                  else if( ncopymastervars > 0 )
-                  {
-                     swap = mastervars2[i];
-                     mastervars2[i] = mastervars2[ncopymastervars-1];
-                     mastervars2[ncopymastervars-1] = swap;
-                     --ncopymastervars;
-                     --i;
-                  }
+            if( blockfound )
+            {
+               generator_i = getGeneratorEntry(scip, mastervars2[i], S[p].component);
+
+               if( (S[p].sense == GCG_COMPSENSE_GE && SCIPisGE(scip, generator_i, S[p].bound)) ||
+                  (S[p].sense == GCG_COMPSENSE_LT && SCIPisLT(scip, generator_i, S[p].bound) ) )
+               {
+                  mu += SCIPgetSolVal(masterscip, NULL, mastervars2[i]);
                }
                else if( ncopymastervars > 0 )
                {
@@ -1874,8 +1895,17 @@ SCIP_RETCODE createChildNodesGeneric(
                   --i;
                }
             }
-            nmastervars2 = ncopymastervars;
+            else if( ncopymastervars > 0 )
+            {
+               swap = mastervars2[i];
+               mastervars2[i] = mastervars2[ncopymastervars-1];
+               mastervars2[ncopymastervars-1] = swap;
+               --ncopymastervars;
+               --i;
+            }
          }
+         nmastervars2 = ncopymastervars;
+
          if( p == Ssize-1 )
             L = SCIPceil(scip, mu);
          else
@@ -1883,19 +1913,20 @@ SCIP_RETCODE createChildNodesGeneric(
             L = mu;
          }
          lhs = pL-L+1;
-        // SCIPdebugMessage("pL-L+1 = %g \n", pL-L+1);
+         // SCIPdebugMessage("pL-L+1 = %g \n", pL-L+1);
       }
+      SCIPdebugMessage("pL = %g \n", pL);
       pL = L;
 
       branchchilddata->lhs = lhs;
-      //SCIPdebugMessage("L = %g \n", L);
+      SCIPdebugMessage("L = %g, \n", L);
       SCIPdebugMessage("lhs set to %g \n", lhs);
 
       /* define names for origbranch constraints */
       (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %f) last comp=%s, sense %d, bound %g", p+1, blocknr, lhs,
-            SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
-            branchchilddata->consS[branchchilddata->consSsize-1].sense,
-            branchchilddata->consS[branchchilddata->consSsize-1].bound);
+         SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
+         branchchilddata->consS[branchchilddata->consSsize-1].sense,
+         branchchilddata->consS[branchchilddata->consSsize-1].bound);
 
       if( masterbranchcons == NULL || !pruneChildNodeByDominanceGeneric(scip, lhs, branchchilddata->consS, branchchilddata->consSsize, masterbranchcons, blocknr) )
       {
