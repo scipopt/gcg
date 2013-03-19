@@ -58,10 +58,10 @@
 #define DEFAULT_MAXNODES      1000LL        /**< maximum number of nodes to regard in the subproblem                 */
 #define DEFAULT_MINIMPROVE    0.01          /**< factor by which crossover should at least improve the incumbent     */
 #define DEFAULT_MINNODES      200LL         /**< minimum number of nodes to regard in the subproblem                 */
-#define DEFAULT_MINFIXINGRATE 0.5           /**< minimum percentage of integer variables that have to be fixed       */
+#define DEFAULT_MINFIXINGRATE 0.4           /**< minimum percentage of integer variables that have to be fixed       */
 #define DEFAULT_NODESOFS      200LL         /**< number of nodes added to the contingent of the total nodes          */
 #define DEFAULT_NODESQUOT     0.1           /**< subproblem nodes in relation to nodes of the original problem       */
-#define DEFAULT_NUSEDPTS      2             /**< number of extreme pts per block that will be taken into account     */
+#define DEFAULT_NUSEDPTS      4             /**< number of extreme pts per block that will be taken into account     */
 #define DEFAULT_NWAITINGNODES 200LL         /**< number of nodes without incumbent change heuristic should wait      */
 #define DEFAULT_RANDOMIZATION FALSE         /**< should the choice which sols to take be randomized?                 */
 #define DEFAULT_DONTWAITATROOT FALSE        /**< should the nwaitingnodes parameter be ignored at the root node?     */
