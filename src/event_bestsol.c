@@ -194,7 +194,12 @@ SCIP_DECL_EVENTEXEC(eventExecBestsol)
 
    /* search the heuristic that found the solution */
    for( i = 0; i < nheurs && eventhdlrdata->heurs[i] != solheur; ++i ) ;
-   assert(i < nheurs);
+
+   /* if the heuristic was not found in the problem, then the solution comes
+    * from another problem; in that case, no statistics are collected here
+    */
+   if( i < nheurs )
+      return SCIP_OKAY;
 
    /* update the best objective value for that heuristic */
    if( obj < eventhdlrdata->bestprimalbd[i] )
