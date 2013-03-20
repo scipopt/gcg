@@ -128,6 +128,7 @@ static
 SCIP_DECL_EVENTEXITSOL(eventExitsolBestsol)
 {  /*lint --e{715}*/
    SCIP_EVENTHDLRDATA* eventhdlrdata;
+   const char* probname;
    int nheurs;
    int i;
 
@@ -140,10 +141,13 @@ SCIP_DECL_EVENTEXITSOL(eventExitsolBestsol)
 
    nheurs = SCIPgetNHeurs(scip);
 
+   probname = SCIPgetProbName(scip);
+
    /* output statistics */
    for( i = 0; i < nheurs; ++i )
    {
-      SCIPstatisticPrintf("Heuristic statistics -- %s : bestprimalbound = %13.6e\n",
+      SCIPstatisticPrintf("Heuristic statistics (%s) -- %s : bestprimalbound = %13.6e\n",
+         strncmp(probname, "master", 6) == 0 ? "master" : "original",
          SCIPheurGetName(eventhdlrdata->heurs[i]), eventhdlrdata->bestprimalbd[i]);
    }
 
