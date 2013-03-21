@@ -132,8 +132,11 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
+   if( SCIPgetNBinVars(pricingprob) < npricingprobvars )
+   {
+      *result = SCIP_STATUS_UNKNOWN;
+      return SCIP_OKAY;
+   }
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
@@ -173,6 +176,9 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
          return SCIP_OKAY;
       }
    }
+
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
@@ -328,6 +334,12 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
+   if( SCIPgetNBinVars(pricingprob) < npricingprobvars )
+   {
+      *result = SCIP_STATUS_UNKNOWN;
+      return SCIP_OKAY;
+   }
+
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
    {
@@ -366,6 +378,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
          return SCIP_OKAY;
       }
    }
+
+
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, npricingprobvars) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, npricingprobvars) );
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
