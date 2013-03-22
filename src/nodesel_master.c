@@ -163,6 +163,10 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                         SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
                         SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
                         SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)) );
+
+                  SCIPdebugMessage( "Master node depth is %d corresponding orig node depth is %d \n",
+                        SCIPnodeGetDepth(*selnode),
+                        SCIPnodeGetDepth(GCGconsOrigbranchGetNode(origcons)));
                   break;
                }
             }

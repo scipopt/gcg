@@ -39,7 +39,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
@@ -3336,6 +3336,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          for( i = 0; i < norigvars; i++ )
             if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
+               if( SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])) )
+               {
+                  SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i]));
+                  SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(origvars[i]), SCIPvarGetType(origvars[i]), SCIPgetRelaxSolVal(scip, origvars[i]));
+               }
                assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
 
                SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,

@@ -182,7 +182,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          }
 
 
-         SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
+        // SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
 
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {
