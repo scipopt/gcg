@@ -188,7 +188,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          {
             SCIP_Real generatorentry;
 
-            generatorentry = getGeneratorEntry(scip, mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
+            generatorentry = getGeneratorEntry(mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
 
             if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
             {
