@@ -271,85 +271,6 @@ SCIP_RETCODE callMetis(
    return SCIP_OKAY;
 }
 
-/** builds the transformed problem in the new scip instance */
-static SCIP_RETCODE buildTransformedProblem(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
-   DEC_DECOMP*           decdecomp,          /**< decdecomp data structure */
-   int                   nblocks,            /**< number of blocks for this decomposition */
-   SCIP_RESULT*          result              /**< result pointer */
-   )
-{
-   SCIP_HASHMAP* constoblock;
-
-   std::vector<int> partition;
-   int *nsubscipconss;
-   int i;
-   SCIP_CONS **conss;
-   int nconss;
-   SCIP_VAR **vars;
-   int nvars;
-   SCIP_Bool emptyblocks = FALSE;
-
-   assert(scip != NULL);
-   assert(detectordata != NULL);
-
-   nconss = SCIPgetNConss( scip );
-   nvars = SCIPgetNVars( scip );
-
-   conss = SCIPgetConss( scip );
-   vars = SCIPgetVars( scip );
-   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
-   BMSclearMemoryArray(nsubscipconss, nblocks);
-
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
-   partition = detectordata->graph->getPartition();
-
-   /* assign constraints to partition */
-   for( i = 0; i < nconss; i++ )
-   {
-      std::set<int> blocks;
-      std::vector<int> nonzeros = detectordata->graph->getConsNonzeroNodes(i);
-      for( size_t k = 0; k < nonzeros.size(); ++k )
-      {
-         blocks.insert(partition[nonzeros[k]]);
-      }
-      if( blocks.size() > 1 )
-      {
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
-      }
-      else
-      {
-         int block = *(blocks.begin());
-         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
-         ++(nsubscipconss[block]);
-      }
-   }
-
-   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
-   for( i = 0; i < detectordata->blocks; ++i )
-   {
-      if( nsubscipconss[i] == 0 )
-      {
-         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
-         emptyblocks = TRUE;
-      }
-   }
-
-   if( !emptyblocks )
-   {
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, constoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
-   }
-   else {
-      SCIPhashmapFree(&constoblock);
-   }
-
-   SCIPfreeBufferArray(scip, &nsubscipconss);
-
-   *result = emptyblocks? SCIP_DIDNOTFIND:SCIP_SUCCESS;
-   return SCIP_OKAY;
-}
-
 /** creates the temporary metis input file */
 static
 SCIP_RETCODE createMetisFile(
@@ -405,11 +326,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
    /* build the hypergraph structure from the original problem */
 
-   for( i = 0; i < ndecs; ++i )
-   {
-      SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[i]) );
-   }
-
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
    detectordata->graph = new HyperrowcolGraph(scip, w);
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
@@ -432,8 +348,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
          detectordata->found = TRUE;
       }
 
-      SCIP_CALL( buildTransformedProblem(scip, detectordata, (*decdecomps)[j], i, result) );
-      if( *result == SCIP_SUCCESS )
+      SCIP_CALL( detectordata->graph->createDecompFromPartition(&(*decdecomps)[j]) );
+      if( (*decdecomps)[j] != NULL )
       {
          *ndecdecomps += 1;
          ++j;
@@ -443,11 +359,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
    delete detectordata->graph;
    detectordata->graph = NULL;
-
-   for( i = *ndecdecomps; i < ndecs; ++i )
-   {
-      SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[i])) );
-   }
 
    SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 

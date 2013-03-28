@@ -321,7 +321,8 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/graphtest.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/graphtest.h \
  src/tests/test.h lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -458,7 +459,8 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -596,7 +598,8 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -734,7 +737,8 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -1280,7 +1284,8 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -1418,7 +1423,8 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- lib/scip/src/tclique/tclique.h src/graph/weights.h src/tests/test.h \
+ lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
+ src/type_decomp.h src/type_detector.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \

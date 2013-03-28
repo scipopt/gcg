@@ -140,4 +140,70 @@ std::vector<int> HyperrowGraph::getHyperedgeNodes(
    return neighbors;
 }
 
+SCIP_RETCODE HyperrowGraph::createDecompFromPartition(
+   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+)
+{
+   int nblocks;
+      SCIP_HASHMAP* constoblock;
+
+      int *nsubscipconss;
+      int i;
+      SCIP_CONS **conss;
+      SCIP_VAR **vars;
+      SCIP_Bool emptyblocks = FALSE;
+
+      conss = SCIPgetConss(scip_);
+      vars = SCIPgetVars(scip_);
+      nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+
+      SCIP_CALL( SCIPallocBufferArray(scip_, &nsubscipconss, nblocks) );
+      BMSclearMemoryArray(nsubscipconss, nblocks);
+
+      SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip_), nconss) );
+
+      /* assign constraints to partition */
+      for( i = 0; i < nconss; i++ )
+      {
+         std::set<int> blocks;
+         std::vector<int> neighbors = getHyperedgeNodes(i);
+         for( size_t k = 0; k < neighbors.size(); ++k )
+         {
+            blocks.insert(partition[neighbors[k]]);
+         }
+         if( blocks.size() > 1 )
+         {
+            SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
+         }
+         else
+         {
+            int block = *(blocks.begin());
+            SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+            ++(nsubscipconss[block]);
+         }
+      }
+
+      /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+      for( i = 0; i < nblocks; ++i )
+      {
+         if( nsubscipconss[i] == 0 )
+         {
+            SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+            emptyblocks = TRUE;
+         }
+      }
+
+      if( !emptyblocks )
+      {
+         SCIP_CALL( DECdecompCreate(scip_, decomp) );
+         SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip_, *decomp, constoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
+      }
+      else {
+         SCIPhashmapFree(&constoblock);
+         *decomp = NULL;
+      }
+
+      SCIPfreeBufferArray(scip_, &nsubscipconss);
+      return SCIP_OKAY;
+}
 } /* namespace gcg */

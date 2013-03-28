@@ -72,6 +72,10 @@ public:
    virtual std::vector<int> getHyperedgeNodes(
          int i
       );
+
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
 };
 
 } /* namespace gcg */

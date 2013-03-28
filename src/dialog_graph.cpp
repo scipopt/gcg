@@ -41,6 +41,8 @@
 #include "graph/columngraph.h"
 #include "graph/rowgraph.h"
 #include "scip_misc.h"
+#include "cons_decomp.h"
+
 namespace gcg
 {
 
@@ -156,11 +158,14 @@ SCIP_DECL_DIALOGEXEC(DialogReadGraphs<G>::scip_exec)
       Graph* graph = new G(scip, Weights());
       char* extension;
       extension = filename;
+      DEC_DECOMP* decomp;
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
       SCIP_CALL( graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
       SCIP_CALL( graph->readPartition(extension) );
-      //SCIP_CALL( graph->createDecompFromPartition(scip, &decomp) );
+      SCIP_CALL( graph->createDecompFromPartition(&decomp) );
       delete graph;
+
+      SCIP_CALL( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
       SCIPdialogMessage(scip, NULL, "decomposition read from <%s>\n", extension);
    }
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);

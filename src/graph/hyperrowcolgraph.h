@@ -66,6 +66,10 @@ public:
       const char* filename
       );
 
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
    virtual int getNNodes();
    virtual int getNEdges();
 

@@ -39,6 +39,8 @@
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
+#include "pub_decomp.h"
+
 #include <exception>
 #include <vector>
 #include <string>
@@ -166,10 +168,17 @@ public:
       int                i                   /**< the given node */
       );
 
+   /** set the number of dummy nodes */
    void setDummynodes(int dummynodes_)
    {
       dummynodes = dummynodes_;
    };
+
+   /** create decomposition based on the read in partition */
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      ) { return SCIP_ERROR;};
+
 };
 
 }

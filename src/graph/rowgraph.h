@@ -51,6 +51,10 @@ public:
       const char*        filename,           /**< filename where the graph should be written to */
       SCIP_Bool          writeweights = FALSE /**< whether to write weights */
       );
+
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
 };
 
 } /* namespace gcg */

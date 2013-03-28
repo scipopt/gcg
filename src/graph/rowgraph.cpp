@@ -33,7 +33,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 // #define SCIP_DEBUG
 #include "rowgraph.h"
-
+#include <algorithm>
 namespace gcg {
 
 RowGraph::RowGraph(
@@ -136,6 +136,60 @@ SCIP_RETCODE RowGraph::writeToFile(
    SCIPfreeMemoryArray(scip_, &realneighbors);
    SCIPfreeMemoryArray(scip_, &nrealneighbors);
 
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE RowGraph::createDecompFromPartition(
+   DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+)
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_CONS **conss;
+   SCIP_VAR **vars;
+   SCIP_Bool emptyblocks = FALSE;
+
+   conss = SCIPgetConss(scip_);
+   vars = SCIPgetVars(scip_);
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+
+   SCIP_CALL( SCIPallocBufferArray(scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip_), nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < nconss; i++ )
+   {
+      int block = partition[i];
+      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+      ++(nsubscipconss[block]);
+   }
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      SCIP_CALL( DECdecompCreate(scip_, decomp) );
+      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip_, *decomp, constoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      *decomp = NULL;
+   }
+
+   SCIPfreeBufferArray(scip_, &nsubscipconss);
    return SCIP_OKAY;
 }
 
