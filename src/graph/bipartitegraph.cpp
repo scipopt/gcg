@@ -38,13 +38,14 @@
 
 namespace gcg {
 
+
 BipartiteGraph::BipartiteGraph(
       SCIP*                 scip,              /**< SCIP data structure */
-      Weights               &w                 /**< weights for the given graph */
+      Weights               w                 /**< weights for the given graph */
    ): Graph(scip, w)
 {
    // TODO Auto-generated constructor stub
-
+   name = std::string("bipartite");
 }
 
 BipartiteGraph::~BipartiteGraph()

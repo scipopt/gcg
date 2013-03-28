@@ -38,11 +38,10 @@ namespace gcg {
 
 ColumnGraph::ColumnGraph(
    SCIP*                 scip,              /**< SCIP data structure */
-   Weights               &w                 /**< weights for the given graph */
+   Weights               w                  /**< weights for the given graph */
    ) : BipartiteGraph(scip, w)
 {
-   // TODO Auto-generated constructor stub
-
+   name = std::string("columngraph");
 }
 
 
@@ -65,7 +64,7 @@ SCIP_RETCODE ColumnGraph::writeToFile(
    SCIP_Bool* handled;
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "wx");
+   file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

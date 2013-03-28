@@ -41,10 +41,11 @@ using std::ifstream;
 
 namespace gcg {
 
+
 Graph::Graph(
    SCIP*                 scip,              /**< SCIP data structure */
-   Weights               &w                 /**< weights for the given graph */
-) : scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
+   Weights               w                  /**< weights for the given graph */
+) : name("graph"),scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
 {
   TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
 }
@@ -92,7 +93,7 @@ SCIP_RETCODE Graph::writeToFile(
    int nedges;
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "wx");
+   file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

@@ -41,10 +41,11 @@ namespace gcg {
 
 class BipartiteGraph : public Graph
 {
+
 public:
    BipartiteGraph(
          SCIP*                 scip,              /**< SCIP data structure */
-         Weights               &w                 /**< weights for the given graph */
+         Weights               w                  /**< weights for the given graph */
       );
    virtual ~BipartiteGraph();
    virtual SCIP_RETCODE createFromMatrix(

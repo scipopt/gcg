@@ -45,10 +45,10 @@ namespace gcg
 
 HypercolGraph::HypercolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
-   Weights               &w                 /**< weights for the given graph */
+   Weights               w                  /**< weights for the given graph */
 ):  BipartiteGraph(scip, w)
 {
-
+   name = std::string("hypercol");
 }
 
 HypercolGraph::~HypercolGraph()
@@ -68,7 +68,7 @@ SCIP_RETCODE HypercolGraph::writeToFile(
    function f(nvars);
    FILE* file;
    assert(filename != NULL);
-   file = fopen(filename, "wx");
+   file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

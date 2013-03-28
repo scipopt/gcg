@@ -44,7 +44,7 @@ class ColumnGraph: public gcg::BipartiteGraph
 public:
    ColumnGraph(
       SCIP*                 scip,              /**< SCIP data structure */
-      Weights               &w                 /**< weights for the given graph */
+      Weights               w                  /**< weights for the given graph */
    );
    virtual ~ColumnGraph();
    virtual SCIP_RETCODE writeToFile(

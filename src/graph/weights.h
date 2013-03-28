@@ -57,6 +57,8 @@ public:
       int vimplint_,
       int consweight_
    );
+   Weights();
+
    virtual ~Weights();
    int calculate(SCIP_CONS* cons);
    int calculate(SCIP_VAR* var);

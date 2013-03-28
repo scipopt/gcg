@@ -44,10 +44,10 @@ namespace gcg {
 
 HyperrowcolGraph::HyperrowcolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
-   Weights               &w                 /**< weights for the given graph */
+   Weights               w                  /**< weights for the given graph */
 ): Graph(scip, w)
 {
-
+   name = std::string("hyperrowcol");
 }
 
 HyperrowcolGraph::~HyperrowcolGraph()

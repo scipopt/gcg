@@ -41,6 +41,7 @@
 #include "weights.h"
 #include <exception>
 #include <vector>
+#include <string>
 
 #define TCLIQUE_CALL_EXC(x)   do                                                                              \
                        {                                                                                      \
@@ -68,7 +69,8 @@
 namespace gcg {
 
 class Graph {
-
+public:
+   std::string name;
 protected:
    SCIP* scip_;
    TCLIQUE_GRAPH* tgraph;
@@ -83,7 +85,7 @@ public:
    /** Constructor */
    Graph(
       SCIP*                 scip,              /**< SCIP data structure */
-      Weights               &w                 /**< weights for the given graph */
+      Weights               w                  /**< weights for the given graph */
    );
 
    void swap(Graph & other) // the swap member function (should never fail!)
@@ -169,6 +171,7 @@ public:
       dummynodes = dummynodes_;
    };
 };
+
 }
 
 #endif

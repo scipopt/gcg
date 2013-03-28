@@ -46,7 +46,7 @@ class HyperrowGraph: public gcg::BipartiteGraph
 public:
    HyperrowGraph(
       SCIP*                 scip,              /**< SCIP data structure */
-      Weights               &w                 /**< weights for the given graph */
+      Weights               w                  /**< weights for the given graph */
    );
 
    virtual ~HyperrowGraph();

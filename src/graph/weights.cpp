@@ -54,6 +54,17 @@ Weights::Weights(
 
 }
 
+Weights::Weights()
+: varweight(1),
+  vbinary(1),
+  vcontinous(1),
+  vinteger(1),
+  vimplint(1),
+  consweight(1)
+{
+
+}
+
 Weights::~Weights()
 {
    // TODO Auto-generated destructor stub

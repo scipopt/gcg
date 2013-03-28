@@ -174,7 +174,7 @@
 
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
-
+#include "scip_misc.h"
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -314,7 +314,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
-
+   SCIP_CALL( GCGincludeDialogsGraph(scip) );
 
    return SCIP_OKAY;
 }

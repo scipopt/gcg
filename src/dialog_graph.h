@@ -25,33 +25,81 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph.h
- * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
+/**@file   dialog_graph.h
+ * @brief  A dialog to write graph representations of the matrix and read partitions as decompositions.
  * @author Martin Bergner
+ * @ingroup DIALOGS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_ROWGRAPH_H_
-#define GCG_ROWGRAPH_H_
 
-#include "bipartitegraph.h"
+#ifndef DIALOG_GRAPH_H_
+#define DIALOG_GRAPH_H_
 
-namespace gcg {
+#include "objdialog.h"
+#include "graph/graph.h"
 
-class RowGraph: public gcg::BipartiteGraph
+namespace gcg
+{
+
+class DialogGraph: public ObjDialog
 {
 public:
-   RowGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
-         Weights               w                  /**< weights for the given graph */
-      );
-   virtual ~RowGraph();
-   virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
-      );
+   DialogGraph(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogGraph() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
+class DialogWriteGraph: public ObjDialog
+{
+public:
+   DialogWriteGraph(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogWriteGraph() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+
+class DialogReadPartition: public ObjDialog
+{
+public:
+   DialogReadPartition(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogReadPartition() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+
+template<class G>
+class DialogReadGraphs: public ObjDialog
+{
+private:
+   typedef G GRAPH_TYPE;
+public:
+   DialogReadGraphs(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogReadGraphs() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+
+template<class G>
+class DialogWriteGraphs: public ObjDialog
+{
+private:
+   typedef G GRAPH_TYPE;
+public:
+   DialogWriteGraphs(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogWriteGraphs() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
 } /* namespace gcg */
-#endif /* GCG_ROWGRAPH_H_ */
+
+
+
+#endif /* DIALOG_GRAPH_H_ */

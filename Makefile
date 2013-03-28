@@ -137,7 +137,9 @@ LIBOBJ		=	reader_blk.o \
 			graph/rowgraph.o \
 			graph/columngraph.o \
 			graph/weights.o \
-			stat.o
+			stat.o \
+			objdialog.o \
+			dialog_graph.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o
