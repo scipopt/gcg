@@ -25,32 +25,37 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   rowgraph.h
+ * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef GCG_ROWGRAPH_H_
+#define GCG_ROWGRAPH_H_
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#include "bipartitegraph.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace gcg {
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
-   );
+class RowGraph: public gcg::BipartiteGraph
+{
+public:
+   RowGraph(
+         SCIP*                 scip,              /**< SCIP data structure */
+         Weights               w                  /**< weights for the given graph */
+      );
+   virtual ~RowGraph();
+   virtual SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      );
 
-#ifdef __cplusplus
-}
-#endif
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+};
 
-#endif
+} /* namespace gcg */
+#endif /* GCG_ROWGRAPH_H_ */

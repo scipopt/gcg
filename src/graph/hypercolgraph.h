@@ -25,32 +25,62 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   hypercolgraph.h
+ * @brief  Column hypergraph
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#ifndef GCG_HYPERCOLGRAPH_H_
+#define GCG_HYPERCOLGRAPH_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "bipartitegraph.h"
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+namespace gcg
+{
+
+class HypercolGraph: public gcg::BipartiteGraph
+{
+protected:
+   class function {
+      int diff;
+   public:
+      function(int i):diff(i) {}
+      int operator()(int i) { return i-diff;}
+   };
+
+public:
+   HypercolGraph(
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               w                  /**< weights for the given graph */
    );
 
-#ifdef __cplusplus
-}
-#endif
+   virtual ~HypercolGraph();
 
-#endif
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
+   SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          edgeweights         /**< whether to write edgeweights */
+    );
+
+   /** return the number of nodes */
+   virtual int getNNodes();
+
+   /** return the number of edges (or hyperedges) */
+   virtual int getNEdges();
+
+   virtual std::vector<int> getNeighbors(
+         int i
+      );
+
+   virtual std::vector<int> getHyperedgeNodes(
+         int i
+      );
+};
+
+} /* namespace gcg */
+#endif /* GCG_HYPERCOLGRAPH_H_ */

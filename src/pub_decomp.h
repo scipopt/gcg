@@ -48,6 +48,16 @@
 extern "C" {
 #endif
 
+/** score data structure **/
+struct Dec_Scores
+{
+   SCIP_Real             borderscore;        /**< score of the border */
+   SCIP_Real             densityscore;       /**< score of block densities */
+   SCIP_Real             linkingscore;       /**< score related to interlinking blocks */
+   SCIP_Real             totalscore;         /**< accumulated score */
+};
+typedef struct Dec_Scores DEC_SCORES;
+
 /** converts the DEC_DECTYPE enum to a string */
 const char *DECgetStrType(
    DEC_DECTYPE           type                /**< decomposition type */
@@ -380,6 +390,18 @@ SCIP_RETCODE DECgetVarLockData(
    int*                  masterlocksdown,    /**< pointer to array to store the down locks for the master */
    int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    );
+
+
+/** computes the score of the given decomposition based on the border, the average density score and the ratio of
+ * linking variables
+ */
+extern
+SCIP_RETCODE DECevaluateDecomposition(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp,          /**< decomposition data structure */
+   DEC_SCORES*           score               /**< returns the score of the decomposition */
+   );
+
 
 #ifdef __cplusplus
 }

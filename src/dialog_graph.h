@@ -25,32 +25,81 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   dialog_graph.h
+ * @brief  A dialog to write graph representations of the matrix and read partitions as decompositions.
  * @author Martin Bergner
- * @ingroup DETECTORS
+ * @ingroup DIALOGS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#ifndef DIALOG_GRAPH_H_
+#define DIALOG_GRAPH_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "objdialog.h"
+#include "graph/graph.h"
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+namespace gcg
+{
+
+class DialogGraph: public ObjDialog
+{
+public:
+   DialogGraph(
+      SCIP*              scip                /**< SCIP data structure */
    );
+   virtual ~DialogGraph() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
 
-#ifdef __cplusplus
-}
-#endif
+class DialogWriteGraph: public ObjDialog
+{
+public:
+   DialogWriteGraph(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogWriteGraph() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
 
-#endif
+class DialogReadPartition: public ObjDialog
+{
+public:
+   DialogReadPartition(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogReadPartition() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+
+template<class G>
+class DialogReadGraphs: public ObjDialog
+{
+private:
+   typedef G GRAPH_TYPE;
+public:
+   DialogReadGraphs(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogReadGraphs() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+
+template<class G>
+class DialogWriteGraphs: public ObjDialog
+{
+private:
+   typedef G GRAPH_TYPE;
+public:
+   DialogWriteGraphs(
+      SCIP*              scip                /**< SCIP data structure */
+   );
+   virtual ~DialogWriteGraphs() {};
+   virtual SCIP_DECL_DIALOGEXEC(scip_exec);
+};
+} /* namespace gcg */
+
+
+
+#endif /* DIALOG_GRAPH_H_ */

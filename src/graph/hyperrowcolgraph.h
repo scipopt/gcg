@@ -25,32 +25,70 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
- * @author Martin Bergner
- * @ingroup DETECTORS
+/**@file   hyperrowcolgraph.h
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef GCG_HYPERROWCOLGRAPH_H_
+#define GCG_HYPERROWCOLGRAPH_H_
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#include "graph.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace gcg {
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+class HyperrowcolGraph: public Graph
+{
+public:
+   HyperrowcolGraph(
+         SCIP*                 scip,              /**< SCIP data structure */
+         Weights               w                  /**< weights for the given graph */
+      );
+   virtual ~HyperrowcolGraph();
+   SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss,             /**< number of constraints */
+      int                   nvars               /**< number of variables */
+      );
+
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
+   virtual SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights         /**< whether to write weights */
+    );
+
+   SCIP_RETCODE readPartition(
+      const char* filename
+      );
+
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
+   virtual int getNNodes();
+   virtual int getNEdges();
+
+   virtual std::vector<int> getNeighbors(
+         int i
+      );
+
+   virtual std::vector<int> getHyperedgeNodes(
+         int i
+      );
+
+   std::vector<int> getConsNonzeroNodes(
+         int i
    );
 
-#ifdef __cplusplus
-}
-#endif
+   std::vector<int> getVarNonzeroNodes(
+         int i
+   );
+};
 
-#endif
+} /* namespace gcg */
+#endif /* GCG_HYPERROWCOLGRAPH_H_ */

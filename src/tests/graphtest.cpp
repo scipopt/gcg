@@ -25,32 +25,70 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
- * @author Martin Bergner
- * @ingroup DETECTORS
+/**@file   graphtest.cpp
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#include "graphtest.h"
+#include <fstream>
+#include <cerrno>
+#include <cstdio>
 
-#include "scip/scip.h"
-#include "type_decomp.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
-   );
-
-#ifdef __cplusplus
+void GraphTest::SetUp() {
+  SCIP_CALL_ABORT( SCIPcreate(&scip) );
+  SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+  SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/random/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/staircase/enabled", FALSE) );
+  SCIP_CALL_ABORT( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+  SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
 }
-#endif
 
-#endif
+void GraphTest::TearDown() {
+  SCIP_CALL_ABORT( SCIPfree(&scip) );
+}
+
+SCIP_RETCODE GraphTest::createVar(const char * str) {
+   SCIP_VAR* var;
+   SCIP_Bool success;
+   SCIP_CALL( SCIPparseVar(scip, &var, str, TRUE, FALSE, NULL, NULL, NULL, NULL, NULL, &success) );
+   assert(success);
+   SCIP_CALL( SCIPaddVar(scip, var) );
+   SCIP_CALL( SCIPreleaseVar(scip, &var) );
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GraphTest::createCons(const char * str) {
+   SCIP_CONS* cons;
+   SCIP_Bool success;
+   SCIP_CALL( SCIPparseCons(scip, &cons, str, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, &success) );
+   assert(success);
+   SCIP_CALL( SCIPaddCons(scip, cons) );
+   SCIP_CALL( SCIPreleaseCons(scip, &cons) );
+   return SCIP_OKAY;
+}
+
+void GraphTest::parseFile(
+   const char *str,
+   std::vector<int> &array)
+{
+   std::ifstream stream(str);
+   stream.exceptions( std::ios::failbit );
+
+   ASSERT_TRUE(stream.good());
+
+   int input;
+
+   for( size_t i = 0; i < array.size(); ++i )
+   {
+      ASSERT_FALSE(stream.eof());
+      ASSERT_TRUE(stream >> input);
+      ASSERT_EQ(array[i], input);
+   }
+   stream.close();
+}

@@ -25,32 +25,80 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
- * @author Martin Bergner
- * @ingroup DETECTORS
+/**@file   Weights.cpp
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#include "weights.h"
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+namespace gcg {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+Weights::Weights(
+      int varweight_,
+      int vbinary_,
+      int vcontinous_,
+      int vinteger_,
+      int vimplint_,
+      int consweight_
+   ): varweight(varweight_),
+      vbinary(vbinary_),
+      vcontinous(vcontinous_),
+      vinteger(vinteger_),
+      vimplint(vimplint_),
+      consweight(consweight_)
+{
+   // TODO Auto-generated constructor stub
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
-   );
-
-#ifdef __cplusplus
 }
-#endif
 
-#endif
+Weights::Weights()
+: varweight(1),
+  vbinary(1),
+  vcontinous(1),
+  vinteger(1),
+  vimplint(1),
+  consweight(1)
+{
+
+}
+
+Weights::~Weights()
+{
+   // TODO Auto-generated destructor stub
+}
+
+int Weights::calculate(SCIP_CONS* cons)
+{
+   return consweight;
+}
+int Weights::calculate(SCIP_VAR* var)
+
+{
+   int weight;
+
+   assert(var != NULL);
+
+   switch ( SCIPvarGetType(var) ) {
+   case SCIP_VARTYPE_CONTINUOUS:
+      weight = vcontinous;
+      break;
+   case SCIP_VARTYPE_INTEGER:
+      weight = vinteger;
+      break;
+   case SCIP_VARTYPE_IMPLINT:
+      weight = vimplint;
+      break;
+   case SCIP_VARTYPE_BINARY:
+      weight = vbinary;
+      break;
+   default:
+      weight = varweight;
+      break;
+   }
+
+   return weight;
+}
+} /* namespace gcg */

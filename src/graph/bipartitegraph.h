@@ -25,32 +25,36 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   graph.h
+ * @brief  miscellaneous graph methods for structure detection
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef GCG_BIPARTITEGRAPH_H_
+#define GCG_BIPARTITEGRAPH_H_
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#include "graph.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace gcg {
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+class BipartiteGraph : public Graph
+{
+
+public:
+   BipartiteGraph(
+         SCIP*                 scip,              /**< SCIP data structure */
+         Weights               w                  /**< weights for the given graph */
+      );
+   virtual ~BipartiteGraph();
+   virtual SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss_,             /**< number of constraints */
+      int                   nvars_               /**< number of variables */
    );
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+} /* namespace gcg */
+#endif /* GCG_BIPARTITEGRAPH_H_ */

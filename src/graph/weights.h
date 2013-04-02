@@ -25,32 +25,44 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
- * @author Martin Bergner
- * @ingroup DETECTORS
+/**@file   weights.h
+ * @brief  Description
+ * @author bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef WEIGHTS_H_
+#define WEIGHTS_H_
+#include "objscip/objscip.h"
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+namespace gcg {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class Weights
+{
+protected:
+   int varweight;                      /**< weight of a variable vertex */
+   int vbinary;                        /**< weight of a binary variable vertex */
+   int vcontinous;                     /**< weight of a continuous variable vertex */
+   int vinteger;                       /**< weight of an integer variable vertex */
+   int vimplint;                       /**< weight of an implicit integer variable vertex */
+   int consweight;                     /**< weight of a constraint vertex */
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+public:
+   Weights(
+      int varweight_,
+      int vbinary_,
+      int vcontinous_,
+      int vinteger_,
+      int vimplint_,
+      int consweight_
    );
+   Weights();
 
-#ifdef __cplusplus
-}
-#endif
+   virtual ~Weights();
+   int calculate(SCIP_CONS* cons);
+   int calculate(SCIP_VAR* var);
+};
 
-#endif
+} /* namespace gcg */
+#endif /* WEIGHTS_H_ */

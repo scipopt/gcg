@@ -25,32 +25,21 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   test.h
+ * @brief  Description
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#ifndef GCG_TEST_H_
+#define GCG_TEST_H_
+#include "objscip/objscip.h"
+#include "objscip/objscipdefplugins.h"
+#include "gcgplugins.h"
+#include "gtest/gtest.h"
+#define SCIP_CALL_EXPECT(x) do { EXPECT_EQ(SCIP_OKAY, (x)); } while(FALSE)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
-   );
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif /* GCG_TEST_H_ */

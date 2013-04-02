@@ -25,32 +25,33 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+/**@file   columngraph.h
+ * @brief  A row graph where each column is a node and columns are adjacent if they appear in a row
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_DEC_ARROWHEUR_H__
-#define GCG_DEC_ARROWHEUR_H__
+#ifndef GCG_COLUMNGRAPH_H_
+#define GCG_COLUMNGRAPH_H_
 
-#include "scip/scip.h"
-#include "type_decomp.h"
+#include "bipartitegraph.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace gcg {
 
-/** creates the arrowheur presolver and includes it in SCIP */
-extern
-SCIP_RETCODE SCIPincludeDetectionArrowheur(
-   SCIP* scip                 /**< SCIP data structure */
+class ColumnGraph: public gcg::BipartiteGraph
+{
+public:
+   ColumnGraph(
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               w                  /**< weights for the given graph */
    );
+   virtual ~ColumnGraph();
+   virtual SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      );
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+} /* namespace gcg */
+#endif /* GCG_COLUMNGRAPH_H_ */
