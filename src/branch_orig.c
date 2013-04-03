@@ -44,22 +44,9 @@
 #include "type_branchgcg.h"
 #include "pub_gcgvar.h"
 
-#include "scip/nodesel_estimate.h"
-#include "scip/nodesel_hybridestim.h"
-#include "scip/nodesel_restartdfs.h"
-#include "scip/branch_allfullstrong.h"
-#include "scip/branch_fullstrong.h"
-#include "scip/branch_inference.h"
-#include "scip/branch_mostinf.h"
-#include "scip/branch_leastinf.h"
-#include "scip/branch_pscost.h"
-#include "scip/branch_random.h"
-#include "scip/branch_relpscost.h"
-
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
-#include "scip/nodesel_bfs.h"
-#include "scip/nodesel_dfs.h"
+
 
 
 #define BRANCHRULE_NAME          "orig"
@@ -458,30 +445,6 @@ SCIP_RETCODE branchExtern(
    return SCIP_OKAY;
 }
 
-/* copy default SCIP branching rules to allow solving restrictions of the original problem as a subSCIP without
- * Dantzig-Wolfe decomposition
- */
-static
-SCIP_RETCODE GCGincludeOriginalCopyPlugins(
-   SCIP* scip
-   )
-{
-   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
-   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
-
-   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
-   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
-   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
-   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
-   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
-   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
-   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
-   return SCIP_OKAY;
-}
 
 /*
  * Callback methods for enforcing branching constraints
@@ -786,7 +749,6 @@ SCIP_DECL_BRANCHCOPY(branchCopyOrig)
    assert(branchrule != NULL);
 
    SCIPdebugMessage("orig copy called.\n");
-   SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
 
    return SCIP_OKAY;
 }

@@ -116,9 +116,9 @@
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "sepa_master.h"
-/* #include "branch_ryanfoster.h" */
-/* #include "branch_orig.h" */
-/* #include "branch_relpsprob.h" */
+#include "branch_ryanfoster.h"
+#include "branch_orig.h"
+#include "branch_relpsprob.h"
 #include "branch_generic.h"
 #include "cons_origbranch.h"
 #include "scip/debug.h"
@@ -127,6 +127,7 @@
 #include "solver_knapsack.h"
 #include "solver_mip.h"
 #include "event_solvingstats.h"
+
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
 #include "heur_relaxcolsel.h"
@@ -167,9 +168,9 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
-   /* SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) ); */
-   /* SCIP_CALL( SCIPincludeBranchruleOrig(scip) ); */
-   /* SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) ); */
+   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
+   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
 
 #if USEHEURS

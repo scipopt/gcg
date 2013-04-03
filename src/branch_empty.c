@@ -39,11 +39,6 @@
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
-#include "scip/nodesel_bfs.h"
-#include "scip/nodesel_dfs.h"
-#include "scip/nodesel_estimate.h"
-#include "scip/nodesel_hybridestim.h"
-#include "scip/nodesel_restartdfs.h"
 #include "scip/branch_allfullstrong.h"
 #include "scip/branch_fullstrong.h"
 #include "scip/branch_inference.h"
@@ -76,9 +71,6 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP* scip
    )
 {
-   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
-   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
-   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
    SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleInference(scip) );

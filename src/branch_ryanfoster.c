@@ -81,27 +81,6 @@ struct GCG_BranchData
  */
 
 
-/* from branch_master */
-static
-SCIP_RETCODE GCGincludeMasterCopyPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_CALL( SCIPincludeNodeselBfs(scip) );
-   SCIP_CALL( SCIPincludeNodeselDfs(scip) );
-   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
-   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
-   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
-   SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleInference(scip) );
-   SCIP_CALL( SCIPincludeBranchruleMostinf(scip) );
-   SCIP_CALL( SCIPincludeBranchruleLeastinf(scip) );
-   SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
-   return SCIP_OKAY;
-}
 /** copy method for master branching rule */
 static
 SCIP_DECL_BRANCHCOPY(branchCopyRyanfoster)
@@ -109,7 +88,7 @@ SCIP_DECL_BRANCHCOPY(branchCopyRyanfoster)
    assert(branchrule != NULL);
    assert(scip != NULL);
    SCIPdebugMessage("pricer copy called.\n");
-   SCIP_CALL( GCGincludeMasterCopyPlugins(scip) );
+
    return SCIP_OKAY;
 }
 

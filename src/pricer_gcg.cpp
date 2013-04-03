@@ -2139,6 +2139,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
 
    pricer->createPricingTypes();
+   //pricer->createStabilization();
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
