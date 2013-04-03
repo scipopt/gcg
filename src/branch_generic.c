@@ -1050,37 +1050,6 @@ SCIP_RETCODE Separate(
    SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Fsize) );
    j = 0;
 
-   //binary ? then only one part
-   //if( max == 1 )
-   /*
-   if( (Flower <= Fupper && Flower > 0) || Fupper == 0 )
-   {
-      for( k=0; k<Fsize; ++k )
-      {
-         if( SCIPisLT(scip, getGeneratorEntry(scip, F[k], origvar), median) )
-         {
-            copyF[j] = F[k];
-            ++j;
-         }
-      }
-      Fsize = Flower;
-   }
-   else
-   {
-      upperLowerS[Ssize].sense = GCG_COMPSENSE_LT;
-
-      for( k=0; k<Fsize; ++k )
-      {
-         if( SCIPisGE(scip, getGeneratorEntry(scip, F[k], origvar), median) )/* F[k]->generator[i], median) ) */
-         {
-            copyF[j] = F[k];
-            ++j;
-         }
-      }
-      Fsize = Fupper;
-   }
-   */
-
    if( Flower > 0 )
    {
       j = 0;
@@ -1125,8 +1094,6 @@ SCIP_RETCODE Separate(
       }
       Separate( scip, copyF, Fupper, J, Jsize, upperS, Ssize+1, record );
    }
-
-   //Separate( scip, copyF, Fsize, J, Jsize, upperLowerS, Ssize+1, record );
 
    SCIPfreeMemoryArray(scip, &copyF);
 
@@ -1200,7 +1167,7 @@ SCIP_RETCODE ChoseS(
 
    assert(S!=NULL);
    assert(*S!=NULL);
-     /* free record */
+   /* free record */
    for( i=0; i< (*record)->recordsize; ++i )
    {
       SCIPfreeMemoryArray(scip, &((*record)->record[i]) );
@@ -1567,70 +1534,6 @@ SCIP_RETCODE Explore(
    if( SCIPisEQ(scip, alpha_i, muF) && Flower != 0 )
       Fupper = INT_MAX;
 
-   /** @todo mb: one can easily merge these two branches as they are similar */
-   /* choose smallest partition */
-   if( ((Fupper <= Flower && Fupper > 0 ) || Flower <= 0) && Fupper != INT_MAX )
-   {
-      /* SCIPdebugMessage("chose upper bound Fupper = %d, Cupper = %d\n", Fupper, Cupper); */
-
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Fupper) );
-      for( j = 0, k = 0; k < Fsize; ++k )
-      {
-         if( SCIPisGE(scip, getGeneratorEntry(scip, F[k], origvar), median) )
-         {
-            copyF[j] = F[k];
-            ++j;
-         }
-      }
-      Fsize = Fupper;
-
-      /* new C */
-      if( Cupper > 0 )
-      {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Cupper) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Cupper) );
-         k = computeNewSequence(Csize, p, origvar, sequencesizes, C, CopyC, newsequencesizes, GCG_COMPSENSE_GE);
-      }
-      else
-      {
-         CopyC = NULL;
-         k = 0;
-      }
-      Csize = Cupper;
-   }
-   else
-   {
-     /*  SCIPdebugMessage("chose lower bound Flower = %d Clower = %d\n", Flower, Clower); */
-      (*S)[*Ssize-1].sense = GCG_COMPSENSE_LT;
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
-      j = 0;
-      for( k=0; k<Fsize; ++k )
-      {
-         if( SCIPisLT(scip, getGeneratorEntry(scip, F[k], origvar), median) )
-         {
-            copyF[j] = F[k];
-            ++j;
-         }
-      }
-      Fsize = Flower;
-
-      /* new C */
-      if( Clower > 0 )
-      {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Clower) );
-         SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Clower) );
-         k = computeNewSequence(Csize, p, origvar, sequencesizes, C, CopyC, newsequencesizes, GCG_COMPSENSE_LT);
-      }
-      else
-      {
-         CopyC = NULL;
-         k = 0;
-      }
-      Csize = Clower;
-   }
-   assert( k <= Csize+1 );
-   */
-
    if(  Fupper > 0  && Fupper != INT_MAX )
    {
       SCIPdebugMessage("chose upper bound Fupper = %d, Cupper = %d\n", Fupper, Cupper);
@@ -1644,9 +1547,9 @@ SCIP_RETCODE Explore(
             ++j;
          }
       }
-      //Fsize = Fupper;
+      /* Fsize = Fupper; */
 
-      //new C
+      /* new C */
       if( Fupper > 0 )
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Cupper) );
@@ -1681,9 +1584,9 @@ SCIP_RETCODE Explore(
             ++j;
          }
       }
-      //Fsize = Flower;
+      /* Fsize = Flower; */
 
-      //new C
+      /* new C */
       if( Flower > 0 )
       {
          if( CopyC != NULL )
@@ -1712,13 +1615,9 @@ SCIP_RETCODE Explore(
          CopyC = NULL;
          k = 0;
       }
-      //Csize = Clower;
+      /* Csize = Clower; */
       Explore( scip, CopyC, Clower, newsequencesizes, p+1, copyF, Flower, IndexSet, IndexSetSize, &lowerS, &lowerSsize, record );
    }
-
-
-
-   //Explore( scip, CopyC, Csize, newsequencesizes, p+1, copyF, Fsize, IndexSet, IndexSetSize, S, Ssize, record );
 
    SCIPfreeMemoryArray(scip, &copyF);
    if( lowerS != NULL )
