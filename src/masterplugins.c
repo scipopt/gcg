@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -116,7 +116,11 @@
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "sepa_master.h"
-#include "branch_master.h"
+//#include "branch_ryanfoster.h"
+//#include "branch_orig.h"
+//#include "branch_relpsprob.h"
+#include "branch_generic.h"
+#include "cons_origbranch.h"
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
@@ -163,7 +167,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleMaster(scip) );
+   //SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
+   //SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
+   //SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
+   SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );

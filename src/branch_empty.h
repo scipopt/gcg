@@ -25,16 +25,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   branch_orig.h
- * @brief  branching rule for original problem in GCG
- * @author Gerald Gamrath
+/**@file   branch_empty.h
+ * @brief  branching rule for original problem in GCG while real branching is in the master
+ * @author Marcel Schmickerath
  * @ingroup BRANCHINGRULES
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BRANCH_ORIG_H__
-#define GCG_BRANCH_ORIG_H__
+#ifndef GCG_BRANCH_EMPTY_H__
+#define GCG_BRANCH_EMPTY_H__
 
 
 #include "scip/scip.h"
@@ -43,17 +43,18 @@
 extern "C" {
 #endif
 
-/** creates the branching on original variable branching rule and includes it in SCIP */
+/** creates the empty LP branching rule and includes it in SCIP */
 extern
-SCIP_RETCODE SCIPincludeBranchruleOrig(
+SCIP_RETCODE SCIPincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** updates extern branching candidates before branching */
+/** creates the origbranchnode for the given masterbranchnode */
 extern
-SCIP_RETCODE updateExternBranchcandsForMasterbranch(
-   SCIP*                 scip               /**< SCIP data structure */
-);
+SCIP_RETCODE GCGcreateConsOrigbranchNode(
+   SCIP*                 scip,                 /**< SCIP data structure */
+   SCIP_CONS*            masterbranchchildcons /**< corresponding masterbranchcons */
+   );
 
 #ifdef __cplusplus
 }

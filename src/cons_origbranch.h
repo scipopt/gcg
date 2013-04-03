@@ -40,6 +40,14 @@
 extern "C" {
 #endif
 
+extern
+/** initializes array of cons */
+SCIP_RETCODE SCIPinitOrigconsArray(
+   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP_CONS***           cons,
+   int                   ncons
+   );
+
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 extern
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
@@ -74,6 +82,13 @@ void GCGconsOrigbranchGetStack(
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
+/** set the branching data for a given origbranch constraint */
+extern
+void GCGconsOrigbranchSetBranchdata(
+   SCIP_CONS*            cons,                /**< origbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata
+   );
+
 /** returns the branching data for a given origbranch constraint */
 extern
 GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
@@ -100,21 +115,23 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
                                               *   the father node is requested */
    );
 
-/** returns the origbranch constraint of the first child of the node at which the
+/** returns the number of origbranch constraints of the childarray of the node at which the
     given origbranch constraint is sticking */
 extern
-SCIP_CONS* GCGconsOrigbranchGetChild1cons(
-   SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
-                                              *   the first child node is requested */
+int GCGconsOrigbranchGetNChildcons(
+   SCIP_CONS*            cons                /**< constraint pointer */
    );
 
-/** returns the origbranch constraint of the second child of the node at which the
-    given origbranch constraint is sticking */
+/** returns the origbranch constraint of the child of the node at which the
+    given masterbranch constraint is sticking */
 extern
-SCIP_CONS* GCGconsOrigbranchGetChild2cons(
-   SCIP_CONS*            cons                /**< origbranch constraint for which the origbranch constraint of
-                                              *   the second child node is requested */
+SCIP_CONS* GCGconsOrigbranchGetChildcons(
+   SCIP_CONS*            cons,                /**< constraint pointer */
+   int                   childnr
    );
+
+/** returns the origbranch constraint of the first child of the node at which the
+    given origbranch constraint is sticking */
 
 /** sets the masterbranch constraint of the node in the master program corresponding to the node
     at which the given origbranchbranch constraint is sticking */

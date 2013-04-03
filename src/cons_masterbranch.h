@@ -40,6 +40,108 @@
 extern "C" {
 #endif
 
+extern
+/** the function initializes the consdata data structure */
+SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
+   SCIP*                 scip,               /**< SCIP data structure*/
+   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
+   char*                 name,
+   SCIP_BRANCHRULE*      branchrule,
+   GCG_BRANCHDATA*       branchdata,
+   SCIP_CONS**           origcons,
+   int                   norigcons,
+   SCIP_Bool             chgVarUbNode,
+   SCIP_Bool             chgVarLbNode,
+   SCIP_Bool             addPropBoundChg,
+   SCIP_VAR*             chgVarNodeVar,
+   SCIP_Real             chgVarNodeBound,
+   SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
+   SCIP_Real             addPropBoundChgBound
+   );
+
+/** checks branchrule of current masterbranchcons for "generic"
+ * if it is, we only use the "generic" branchule
+ * @return brancrule == "generic" */
+extern
+SCIP_Bool GCGnodeisVanderbeck(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_RESULT*         result              /**< RESULT data structure */
+   );
+
+extern
+/** the function returns the name of the constraint in the origconsdata data structure */
+char* GCGconsMasterbranchGetOrigbranchConsName(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_VAR* GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_BOUNDTYPE GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if upperbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if lowerbound for branchvar should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns if PropBoundChg should be enforced of the constraint in the origconsdata data structure */
+SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchrule of the constraint in the masterbranchconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetbranchrule(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchrule of the constraint in the origconsdata data structure */
+SCIP_BRANCHRULE* GCGconsMasterbranchGetOrigbranchrule(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the branchdata of the constraint in the origconsdata data structure */
+GCG_BRANCHDATA* GCGconsMasterbranchGetOrigbranchdata(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the array of origcons of the constraint in the origconsdata data structure */
+SCIP_CONS** GCGconsMasterbranchGetOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
+extern
+/** the function returns the size of the array of origcons of the constraint in the origconsdata data structure */
+int GCGconsMasterbranchGetNOrigbranchCons(
+   SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
+   );
+
 /** returns the masterbranch constraint of the current node */
 extern
 SCIP_CONS* GCGconsMasterbranchGetActiveCons(
@@ -95,19 +197,40 @@ SCIP_CONS* GCGconsMasterbranchGetParentcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
-/** returns the masterbranch constraint of the first child of the node at which the
+/** returns the number of origbranch constraints of the childarray of the node at which the
     given masterbranch constraint is sticking */
 extern
-SCIP_CONS* GCGconsMasterbranchGetChild1cons(
+int GCGconsMasterbranchGetNChildcons(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
-/** returns the masterbranch constraint of the second child of the node at which the
+/** returns the masterbranch constraint of the child of the node at which the
     given masterbranch constraint is sticking */
 extern
-SCIP_CONS* GCGconsMasterbranchGetChild2cons(
-   SCIP_CONS*            cons                /**< constraint pointer */
+SCIP_CONS* GCGconsMasterbranchGetChildcons(
+   SCIP_CONS*            cons,                /**< constraint pointer */
+   int                   childnr
    );
+
+/** returns the masterbranch constraint of the first child of the node at which the
+    given masterbranch constraint is sticking */
+/*
+extern
+SCIP_CONS* GCGconsMasterbranchGetChild1cons(
+   SCIP*                 scip,
+   SCIP_CONS*            cons                // constraint pointer
+   );
+*/
+
+/** returns the masterbranch constraint of the second child of the node at which the
+    given masterbranch constraint is sticking */
+/*
+extern
+SCIP_CONS* GCGconsMasterbranchGetChild2cons(
+   SCIP*                 scip,
+   SCIP_CONS*            cons                // constraint pointer
+   );
+*/
 
 /** returns the origbranch constraint of the node in the original program corresponding to the node
     at which the given masterbranch constraint is sticking */

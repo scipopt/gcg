@@ -29,10 +29,11 @@
  * @ingroup CONSHDLRS
  * @brief  constraint handler for enforcing integrality of the transferred master solution in the original problem
  * @author Gerald Gamrath
+ *         Marcel Schmickerath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+//#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 
@@ -40,6 +41,9 @@
 #include "pricer_gcg.h"
 #include "cons_masterbranch.h"
 #include "pub_gcgvar.h"
+#include "scip/struct_branch.h"
+
+#include "branch_orig.h"
 
 #define CONSHDLR_NAME          "integralorig"
 #define CONSHDLR_DESC          "integrality constraint"
@@ -56,6 +60,86 @@
 #define CONSHDLR_DELAYPRESOL      FALSE /**< should presolving method be delayed, if other presolvers found reductions? */
 #define CONSHDLR_NEEDSCONS        FALSE /**< should the constraint handler be skipped, if no constraints are available? */
 
+
+/** constraint handler data */
+struct SCIP_ConshdlrData
+{
+   SCIP_BRANCHRULE**           branchrules;              /**< stack for storing active branchrules */
+   int                         nbranchrules;             /**< number of active branchrules */
+};
+
+/** insert branchrule in constraint handler data */
+SCIP_RETCODE GCGcreateBranchruleConsOrig(
+   SCIP*                 scip,
+   SCIP_BRANCHRULE*      branchrule
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   if( conshdlrdata->nbranchrules <= 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->branchrules), 1) );
+      conshdlrdata->nbranchrules = 1;
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->branchrules), conshdlrdata->nbranchrules+1) );
+      ++conshdlrdata->nbranchrules;
+   }
+
+   assert(conshdlrdata->nbranchrules > 0);
+
+   conshdlrdata->branchrules[conshdlrdata->nbranchrules-1] = branchrule;
+
+   return SCIP_OKAY;
+}
+
+/** sort branchrules with respect to priority */
+static
+void sortBranchrules(
+   SCIP_BRANCHRULE**      branchrules,
+   int                    nbranchrules
+   )
+{
+   SCIP_BRANCHRULE* tmp;
+   int pos;
+   int i;
+   int maxi;
+
+   tmp = NULL;
+   pos = 0;
+   i = 0;
+   maxi = 0;
+
+   assert(nbranchrules >= 0);
+   assert(branchrules != NULL);
+
+   for( pos=0; pos<nbranchrules; ++pos)
+   {
+      maxi = pos;
+      for( i=pos+1; i<nbranchrules; ++i )
+      {
+         if( branchrules[i]->priority > branchrules[maxi]->priority )
+         {
+            maxi = i;
+         }
+      }
+      if( maxi != pos )
+      {
+         tmp = branchrules[pos];
+         branchrules[pos] = branchrules[maxi];
+         branchrules[maxi] = tmp;
+      }
+   }
+}
+
 /*
  * Callback methods
  */
@@ -65,17 +149,9 @@ static
 SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
-   SCIP_VAR** origvars;
-   int norigvars;
-   SCIP_Real solval;
    SCIP_Bool discretization;
-   int v;
    int i;
-
-   SCIP_NODE* child1;
-   SCIP_NODE* child2;
-   SCIP_CONS* cons1;
-   SCIP_CONS* cons2;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -89,6 +165,8 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
 
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
    SCIPdebugMessage("LP solution enforcing method of integralorig constraint\n");
 
@@ -102,51 +180,23 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
       return SCIP_OKAY;
    }
 
-   origvars = SCIPgetOrigVars(origprob);
-   norigvars = SCIPgetNOrigVars(origprob);
+   sortBranchrules(conshdlrdata->branchrules, conshdlrdata->nbranchrules);
 
-   /* check for each integral original variable whether it has a fractional value */
-   for( v = 0; v < norigvars; v++ )
+   i = 0;
+
+   while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
    {
-      SCIP_Real* mastervals;
-      SCIP_VAR** mastervars;
-      int nmastervars;
+      assert(conshdlrdata->branchrules[i] != NULL);
 
-      if( SCIPvarGetType(origvars[v]) == SCIP_VARTYPE_CONTINUOUS )
+      if(conshdlrdata->branchrules[i]->branchexeclp == NULL)
+      {
+         ++i;
          continue;
-
-      solval = 0;
-      assert(GCGvarIsOriginal(origvars[v]));
-
-      mastervals = GCGoriginalVarGetMastervals(origvars[v]);
-      mastervars = GCGoriginalVarGetMastervars(origvars[v]);
-      nmastervars = GCGoriginalVarGetNMastervars(origvars[v]);
-
-      for( i = 0; i < nmastervars; i++ )
-      {
-         solval += mastervals[i] * SCIPgetSolVal(scip, NULL, mastervars[i]);
       }
-      /* create two children if a variable with fractional value is found */
-      if( !SCIPisFeasIntegral(scip, solval) )
-      {
-         /* create the b&b-tree child-nodes of the current node */
-         SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-         SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
 
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-         SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
-
-         SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-         SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-
-         /* release constraints */
-         SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-         SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-
-         *result = SCIP_BRANCHED;
-
-         return SCIP_OKAY;
-      }
+      /** todo handle bool allowaddcons; here default TRUE */
+      conshdlrdata->branchrules[i]->branchexeclp(scip, conshdlrdata->branchrules[i], TRUE, result);
+      ++i;
    }
 
    return SCIP_OKAY;
@@ -160,11 +210,8 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 {  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_Bool discretization;
-
-   SCIP_NODE* child1;
-   SCIP_NODE* child2;
-   SCIP_CONS* cons1;
-   SCIP_CONS* cons2;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -175,8 +222,11 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 
    origprob = GCGpricerGetOrigprob(scip);
    assert(origprob != NULL);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
 
    *result = SCIP_FEASIBLE;
+   i = 0;
 
    /* if we use the discretization approach, we do not have to check for integrality of the solution in the
     * original variable space, we obtain it by enforcing integrality of the master solution*/
@@ -188,21 +238,21 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
 
    assert(SCIPgetNPseudoBranchCands(origprob) > 0);
 
-   /* create the b&b-tree child-nodes of the current node */
-   SCIP_CALL( SCIPcreateChild(scip, &child1, 0.0, SCIPgetLocalTransEstimate(scip)) );
-   SCIP_CALL( SCIPcreateChild(scip, &child2, 0.0, SCIPgetLocalTransEstimate(scip)) );
+   sortBranchrules(conshdlrdata->branchrules, conshdlrdata->nbranchrules);
 
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons1, child1, GCGconsMasterbranchGetActiveCons(scip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(scip, &cons2, child2, GCGconsMasterbranchGetActiveCons(scip)) );
+   while( *result != SCIP_BRANCHED && i < conshdlrdata->nbranchrules )
+   {
+      assert(conshdlrdata->branchrules[i] != NULL);
 
-   SCIP_CALL( SCIPaddConsNode(scip, child1, cons1, NULL) );
-   SCIP_CALL( SCIPaddConsNode(scip, child2, cons2, NULL) );
-
-   /* release constraints */
-   SCIP_CALL( SCIPreleaseCons(scip, &cons1) );
-   SCIP_CALL( SCIPreleaseCons(scip, &cons2) );
-
-   *result = SCIP_BRANCHED;
+      if(conshdlrdata->branchrules[i]->branchexecps == NULL)
+      {
+         ++i;
+         continue;
+      }
+      /** todo handle bool allowaddcons; here default TRUE */
+      conshdlrdata->branchrules[i]->branchexecps(scip, conshdlrdata->branchrules[i], TRUE, result);
+      ++i;
+   }
 
    return SCIP_OKAY;
 }
@@ -286,9 +336,38 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
    return SCIP_OKAY;
 }
 
+/** destructor of constraint handler to free constraint handler data (called when SCIP is exiting) */
+static
+SCIP_DECL_CONSFREE(consFreeIntegralOrig)
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+   assert(conshdlr != NULL);
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   SCIPdebugMessage("freeing integralorig constraint handler\n");
+
+   if(conshdlrdata->nbranchrules > 0)
+   {
+      assert(conshdlrdata->branchrules != NULL);
+      SCIPfreeMemoryArray(scip, &(conshdlrdata->branchrules) );
+      conshdlrdata->branchrules = NULL;
+      conshdlrdata->nbranchrules = 0;
+   }
+
+   /* free constraint handler storage */
+   assert(conshdlrdata->branchrules == NULL);
+   SCIPfreeMemory(scip, &conshdlrdata);
+
+   return SCIP_OKAY;
+}
+
 /* define not used callback as NULL */
 #define conshdlrCopyIntegralOrig NULL
-#define consFreeIntegralOrig NULL
 #define consInitIntegralOrig NULL
 #define consExitIntegralOrig NULL
 #define consInitpreIntegralOrig NULL
@@ -314,7 +393,6 @@ SCIP_DECL_CONSLOCK(consLockIntegralOrig)
 #define consGetVarsIntegralOrig NULL
 #define consGetNVarsIntegralOrig NULL
 
-
 /*
  * constraint specific interface methods
  */
@@ -328,6 +406,9 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
 
    /* create integral constraint handler data */
    conshdlrdata = NULL;
+   SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
+   conshdlrdata->branchrules = NULL;
+   conshdlrdata->nbranchrules = 0;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlr(scip, CONSHDLR_NAME, CONSHDLR_DESC,
