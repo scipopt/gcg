@@ -32,7 +32,6 @@
  */
 
 /* #define CHECKCONSISTENCY */
-#define SCIP_DEBUG
 #include <assert.h>
 #include <string.h>
 #include "cons_origbranch.h"
