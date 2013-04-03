@@ -24,7 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
- //#define SCIP_DEBUG
+ /* #define SCIP_DEBUG */
 /**@file   solver_mip.c
  * @brief  pricing solver solving the pricing problem as a sub-MIP, using SCIP
  * @author Gerald Gamrath
@@ -291,7 +291,7 @@ SCIP_RETCODE inferFiniteSolution(
          SCIP_VAR* newvar;
          SCIP_VAR* origvar;
          origvar = SCIPgetOrigVars(pricingprob)[i];
-         newvar = SCIPhashmapGetImage(varmap, origvar); //SCIPfindVar(newscip, SCIPvarGetName(origvar));
+         newvar = SCIPhashmapGetImage(varmap, origvar); /* SCIPfindVar(newscip, SCIPvarGetName(origvar)); */
          solvals[i] = SCIPgetSolVal(newscip, SCIPgetBestSol(newscip), newvar);
       }
       SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, SCIPgetNOrigVars(pricingprob), SCIPgetOrigVars(pricingprob), solvals) );
@@ -406,7 +406,7 @@ SCIP_Bool problemHasUnboundedSolution(
    SCIP_SOL* sol;
    sol = SCIPgetBestSol(pricingprob);
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-   //assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol)));
+   /* assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol))); */
 
    for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {

@@ -211,7 +211,7 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
    assert(conshdlrdata != NULL);
    assert(conshdlrdata->nstack <= 1);
    SCIPdebugMessage("exiting solution process branch orig constraint handler (nconss = %d)\n", SCIPconshdlrGetNConss(conshdlr));
-      //check for root
+      /* check for root */
       if( conshdlrdata->rootcons != NULL )
       {
          branchdata = GCGconsOrigbranchGetBranchdata(conshdlrdata->rootcons);

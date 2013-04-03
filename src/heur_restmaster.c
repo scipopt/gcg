@@ -406,7 +406,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* check whether we have enough nodes left to call subproblem solving */
    if( nstallnodes < heurdata->minnodes )
    {
-//      SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
+/*       SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes); */
       return SCIP_OKAY;
    }
 

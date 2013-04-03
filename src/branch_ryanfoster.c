@@ -81,7 +81,7 @@ struct GCG_BranchData
  */
 
 
-//from branch_master
+/* from branch_master */
 static
 SCIP_RETCODE GCGincludeMasterCopyPlugins(
    SCIP*                 scip                /**< SCIP data structure */
@@ -370,9 +370,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
    SCIPdebugMessage("Ryanfoster branching rule: branch on original variables %s and %s!\n",
       SCIPvarGetName(ovar1), SCIPvarGetName(ovar2));
 
-   //for cons_masterbranch
+   /* for cons_masterbranch */
 
-   // create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints
+   /*  create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
    SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
    SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, child1, GCGconsMasterbranchGetActiveCons(masterscip)) );
@@ -450,7 +450,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata,
          origbranchcons2, norigvars1, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
 
-   // release constraints
+   /*  release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons2) );
    return SCIP_OKAY;

@@ -48,7 +48,7 @@
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
 
-//#define BRANCHRULE_VANDERBECK        0
+/* #define BRANCHRULE_VANDERBECK        0 */
 
 
 /** node selector data */
@@ -149,8 +149,8 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          parentmastercons = GCGconsOrigbranchGetMastercons(parentorigcons);
          assert(parentmastercons != NULL);
 
-         //if( BRANCHRULE_VANDERBECK == 1 )
-         //{
+         /* if( BRANCHRULE_VANDERBECK == 1 ) */
+         /* { */
             nchildvanderbeck = GCGconsOrigbranchGetNChildcons( parentorigcons );
             for( i=0; i<nchildvanderbeck; ++i )
             {
@@ -171,15 +171,16 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                }
             }
             assert( i < nchildvanderbeck );
-         //}
-         //else
-         //{
-            /*
+#if 0
+         }
+         else
+         {
+
             assert( (GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons)
                != (GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons));
 
-            // the original cons is the left child of its parentcons,
-            // select the left child of the corresponding parentcons in the master
+            /*  the original cons is the left child of its parentcons, */
+            /*  select the left child of the corresponding parentcons in the master */
             if( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
             {
                assert(GCGconsMasterbranchGetChild1cons(parentmastercons) != NULL);
@@ -192,8 +193,8 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                   SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
             }
 
-            // the original cons is the right child of its parentcons,
-            // select the right child of the corresponding parentcons in the master
+            /*  the original cons is the right child of its parentcons, */
+            /*  select the right child of the corresponding parentcons in the master */
             else
             {
                assert(GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons);
@@ -205,8 +206,9 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
                   SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
                   SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
                   SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
-            }*/
-         //}
+            }
+          }
+#endif
 
       }
 

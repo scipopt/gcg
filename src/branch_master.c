@@ -52,7 +52,7 @@
 
 #define BRANCHRULE_NAME          "master"
 #define BRANCHRULE_DESC          "branching for generic column generation master"
-#define BRANCHRULE_PRIORITY      0//1000000
+#define BRANCHRULE_PRIORITY      0/* 1000000 */
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 
@@ -127,7 +127,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpMaster)
    SCIPdebugMessage("Execlp method of master branching\n");
    if( BRANCHRULE_VANDERBECK == 1 )
    {
-      //return SCIP_OKAY;
+      /* return SCIP_OKAY; */
       nchildnodes = GCGbranchGenericGetNChildnodes(scip, FALSE);
       SCIPdebugMessage("creating %d nodes\n", nchildnodes);
       if( nchildnodes == 0 )

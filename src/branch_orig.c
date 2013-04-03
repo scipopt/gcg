@@ -166,9 +166,9 @@ SCIP_RETCODE branchVar(
    origbranchcons2 = NULL;
    norigbranchcons = 0;
 
-   //for cons_masterbranch
+   /* for cons_masterbranch */
 
-   // create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints
+   /*  create two child-nodes of the current node in the b&b-tree and add the masterbranch constraints */
    SCIP_CALL( SCIPcreateChild(masterscip, &child1, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
    SCIP_CALL( SCIPcreateChild(masterscip, &child2, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
    SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &cons1, child1, GCGconsMasterbranchGetActiveCons(masterscip)) );
@@ -686,7 +686,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(result != NULL);
 
    origscip = GCGpricerGetOrigprob(scip);
-   //masterscip = scip;
+   /* masterscip = scip; */
    assert(origscip != NULL);
 
    if( GCGnodeisVanderbeck(scip, result) )

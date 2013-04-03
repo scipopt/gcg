@@ -34,7 +34,6 @@ typedef enum {
 
 struct ComponentBoundSequence
 {
-   //int component;
    SCIP_VAR* component;
    GCG_COMPSENSE sense;
    SCIP_Real bound;

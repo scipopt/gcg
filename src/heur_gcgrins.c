@@ -47,7 +47,7 @@
 #define HEUR_DESC             "relaxation induced neighborhood search by Danna, Rothberg, and Le Pape"
 #define HEUR_DISPCHAR         'N'
 #define HEUR_PRIORITY         -1101000
-//#define HEUR_FREQ             -1
+/* #define HEUR_FREQ             -1 */
 #define HEUR_FREQ             20
 #define HEUR_FREQOFS          5
 #define HEUR_MAXDEPTH         -1

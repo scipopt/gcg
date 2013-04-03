@@ -115,7 +115,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   //SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
+   /* SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
    assert(masterbranchcons != NULL);
@@ -182,7 +182,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          }
 
 
-        // SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
+        /*  SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata)); */
 
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {
