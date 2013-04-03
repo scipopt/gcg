@@ -45,6 +45,8 @@ class GcgAggregationTest : public ::testing::Test {
    virtual void SetUp() {
      SCIP_CALL_ABORT( SCIPcreate(&scip) );
      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+     SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+     SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "propagating/maxrounds", 0) );
      SCIP_CALL_ABORT( SCIPsetIntParam(scip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/arrowheur/enabled", FALSE) );
      SCIP_CALL_ABORT( SCIPsetBoolParam(scip, "detectors/borderheur/enabled", FALSE) );
@@ -85,6 +87,7 @@ SCIP* GcgAggregationTest::scip = NULL;
 TEST_F(GcgAggregationTest, AggregateTest) {
    DEC_DECOMP* decomp;
    SCIP_CONS* mastercons;
+
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
