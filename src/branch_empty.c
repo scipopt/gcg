@@ -300,23 +300,30 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    SCIPdebugMessage("Execeps method of empty branching\n");
 
    masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
+      assert(masterscip != NULL);
 
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   assert(masterbranchcons != NULL);
+      masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+      assert(masterbranchcons != NULL);
 
-   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+      nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+      if( nchildnodes <= 0 )
+      {
+         SCIPdebugMessage("node cut off, since there is no successor node\n");
 
-   for( i=0; i<nchildnodes; ++i )
-   {
-      masterbranchchildcons = GCGconsOrigbranchGetChildcons(masterbranchcons, i);
-      assert(masterbranchchildcons != NULL);
+         *result = SCIP_CUTOFF;
+         return SCIP_OKAY;
+      }
 
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
-   }
+      for( i=0; i<nchildnodes; ++i )
+      {
+         masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
+         assert(masterbranchchildcons != NULL);
 
-   *result = SCIP_BRANCHED;
-   return SCIP_OKAY;
+         SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+      }
+
+      *result = SCIP_BRANCHED;
+      return SCIP_OKAY;
 }
 
 /*

@@ -409,6 +409,8 @@ int ILOcomp(
    GCG_COMPSEQUENCE** CopyC;
    SCIP_VAR* origvar;
    int* newsequencesizes;
+   GCG_STRIP* strip1;
+   GCG_STRIP* strip2;
 
    j = 0;
    k = 0;
@@ -417,10 +419,33 @@ int ILOcomp(
    Nlower = 0;
    origvar = NULL;
    newsequencesizes = NULL;
+   strip1 = NULL;
+   strip2 = NULL;
 
    /* lexicographic Order? */
    if( C == NULL || NBoundsequences <= 1 )
-      return (*ptrcomp)( mastervar1, mastervar2);
+   {
+      SCIP_CALL( SCIPallocBuffer(scip, &strip1) );
+      SCIP_CALL( SCIPallocBuffer(scip, &strip2) );
+
+      strip1->scip = scip;
+      strip2->scip = scip;
+      strip1->C = NULL;
+      strip2->C = NULL;
+      strip1->Csize = 0;
+      strip2->Csize = 0;
+      strip1->sequencesizes = NULL;
+      strip2->sequencesizes = NULL;
+      strip1->mastervar = mastervar1;
+      strip2->mastervar = mastervar2;
+
+      returnvalue = (*ptrcomp)( strip1, strip2);
+
+      SCIPfreeBuffer(scip, &strip1);
+      SCIPfreeBuffer(scip, &strip2);
+
+      return returnvalue;
+   }
 
    assert(C != NULL);
    assert(NBoundsequences > 0);
@@ -1743,6 +1768,7 @@ SCIP_RETCODE ChooseSeparateMethod(
    GCG_STRIP** strips;
    int nstrips;
    int nmastervars;
+   SCIP_Bool integer;
 
    assert(Fsize > 0);
    assert(F != NULL);
@@ -1766,12 +1792,7 @@ SCIP_RETCODE ChooseSeparateMethod(
    assert(IndexSetSize > 0);
    assert(IndexSet != NULL);
 
-//   #ifdef SCIP_DEBUG
-//   for( i=0; i<Csize; ++i )
-//   {
-//      SCIPdebugMessage("Compsizes[%d] = %d\n", i, CompSizes[i]);
-//   }
-//   #endif
+   integer = FALSE;
 
    //rootnode?
    if( Csize<=0 )
@@ -1859,6 +1880,7 @@ SCIP_RETCODE ChooseSeparateMethod(
          strips = NULL;
       }
 
+      assert(integer);
       //return SCIP_OKAY;
    }
 
