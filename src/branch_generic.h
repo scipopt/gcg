@@ -57,7 +57,6 @@ SCIP_RETCODE GCGbranchGenericCreateBranchdata(
 /** computes the generator of mastervar for the entry in origvar */
 extern
 SCIP_Real getGeneratorEntry(
-   SCIP*                scip,               /**< SCIP data structure */
    SCIP_VAR*            mastervar,          /**< current mastervariable */
    SCIP_VAR*            origvar             /**< corresponding origvar */
    );
