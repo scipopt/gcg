@@ -83,6 +83,8 @@ using namespace scip;
                                                      */
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
 #define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
+#define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
+
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
 
@@ -153,6 +155,7 @@ struct SCIP_PricerData
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
+   int                   eagerfreq;          /**< frequency at which all pricingproblems should be solved */
 
    /** statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -170,6 +173,8 @@ struct SCIP_PricerData
    double                rootnodedegeneracy; /**< degeneracy of the root node */
    double                avgrootnodedegeneracy; /**< average degeneray of all nodes */
    int                   ndegeneracycalcs;   /**< number of observations */
+
+   int                   eagerage;           /**< iterations since last eager iteration */
 };
 
 
@@ -1435,6 +1440,11 @@ SCIP_Bool ObjPricerGcg::abortPricing(
    SCIP_Bool             optimal             /**< optimal or heuristic pricing */
 )
 {
+   if( pricerdata->eagerage == pricerdata->eagerfreq )
+   {
+      printf("Perfoming pricing with all pricingproblems\n");
+      return FALSE;
+   }
    if( optimal )
       return pricetype->canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, pricerdata->successfulmipsrel, pricerdata->npricingprobsnotnull);
    else
@@ -1856,6 +1866,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip_) + bestredcost, bestredcost);
 
       *lowerbound = SCIPgetLPObjval(scip_) + bestredcost;
+
+      pricerdata->eagerage = 0;
    }
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
@@ -1964,7 +1976,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
    pricerdata->currnodenr = -1;
-
+   pricerdata->eagerage = 0;
+   
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
 
@@ -2171,6 +2184,9 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    *result = SCIP_SUCCESS;
 
    /* perform pricing */
+   if( pricerdata->eagerfreq > 0 )
+      pricerdata->eagerage++;
+
    SCIP_CALL( reducedcostpricing->startClock() );
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
    SCIP_CALL( reducedcostpricing->startClock() );
@@ -2312,6 +2328,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/enablelpcutoff",
          "should the cutoffbound be applied in master LP solving?",
          &pricerdata->enablelpcutoff, FALSE, DEFAULT_ENABLELPCUTOFF, paramChgdEnablelpcutoff, NULL) );
+         
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
+            "frequency at which all pricingproblems should be solved (0 to disable)",
+            &pricerdata->eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
