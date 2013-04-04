@@ -1707,6 +1707,11 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       /* terminate early, if applicable */
       if( canPricingBeAborted() )
       {
+         if( isRootNode(scip_) )
+         {
+            SCIP_CALL( SCIPsetIntParam(scip_, "display/verblevel", 0) );
+         }
+
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }

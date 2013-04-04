@@ -2276,9 +2276,9 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
-
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
+   SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",
