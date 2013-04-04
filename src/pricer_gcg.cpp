@@ -24,7 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-//#define SCIP_DEBUG
+
 /**@file   pricer_gcg.cpp
  * @brief  pricer for generic column generation
  * @author Gerald Gamrath
@@ -880,6 +880,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
        * lambda variables get coef -1 in linking constraints --> add dualsol
        */
       SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
+      assert(SCIPvarGetProbindex(pricingvar) >= 0 && SCIPvarGetProbindex(pricingvar) < SCIPgetNVars(pricerdata->pricingprobs[block]));
       pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] +=  pricetype->consGetDual(scip_, linkcons);
      // SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons));
    }
@@ -1548,7 +1549,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    do
    {
-      stabilized = optimal && stabilization->isStabilized();
+      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization;
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype) );
@@ -2045,6 +2046,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->ndegeneracycalcs = 0;
 
    SCIP_CALL( solversInitsol() );
+
+   SCIP_CALL( stabilization->setNLinkingconss(GCGrelaxGetNLinkingconss(origprob)) );
 
    return SCIP_OKAY;
 }
