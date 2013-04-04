@@ -129,6 +129,7 @@ LIBOBJ		=	reader_blk.o \
 			misc.o \
 			gcgvar.o \
 			class_pricingtype.o \
+			class_stabilization.o \
 			graph/graph.o \
 			graph/bipartitegraph.o \
 			graph/hyperrowcolgraph.o \

@@ -105,6 +105,7 @@ struct SCIP_RelaxData
    SCIP_CONS**           linearmasterconss;  /**< array of linear constraints equivalent to the cons in
                                               * the original problem that belong to the master problem */
    SCIP_CONS**           varlinkconss;       /**< array of constraints ensuring linking vars equality */
+   int*                  varlinkconsblock;   /**< array of constraints ensuring linking vars equality */
    int                   maxmasterconss;     /**< length of the array mastercons */
    int                   nmasterconss;       /**< number of constraints saved in mastercons */
 
@@ -321,7 +322,7 @@ SCIP_RETCODE convertStructToGCG(
             assert(SCIPvarGetData(origvar) != NULL);
 
             SCIP_CALL( setOriginalVarBlockNr(scip, relaxdata, origvar, i) );
-            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]),subscipvars[i][j],i );
+            SCIPdebugMessage("\t\tVar %s (%p) in block %d\n", SCIPvarGetName(subscipvars[i][j]), (void*) subscipvars[i][j],i );
          }
          else
          {
@@ -1038,7 +1039,10 @@ SCIP_RETCODE createLinkingPricingVars(
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
       SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss+1) );
+
       relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
+      relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
       relaxdata->nvarlinkconss++;
 
 
@@ -1120,7 +1124,7 @@ SCIP_RETCODE createPricingVariables(
          }
       }
 
-      SCIPdebugMessage("Creating map for (%p, %p) var %s:", vars[v], probvar, SCIPvarGetName(probvar));
+      SCIPdebugMessage("Creating map for (%p, %p) var %s:", (void*)(vars[v]), (void*)(probvar), SCIPvarGetName(probvar));
       assert( !SCIPhashmapExists(relaxdata->hashorig2origvar, probvar) );
       SCIP_CALL( SCIPhashmapInsert(relaxdata->hashorig2origvar, (void*)(probvar), (void*)(probvar)) );
 
@@ -1135,7 +1139,7 @@ SCIP_RETCODE createPricingVariables(
          assert(hashorig2pricingvar != NULL);
          assert(hashorig2pricingvar[blocknr] != NULL);
 
-         SCIPdebugPrintf("-> %p\n", GCGoriginalVarGetPricingVar(probvar));
+         SCIPdebugPrintf("-> %p\n", (void*) GCGoriginalVarGetPricingVar(probvar));
 
          assert(!SCIPhashmapExists(hashorig2pricingvar[blocknr], probvar));
          SCIP_CALL( SCIPhashmapInsert(hashorig2pricingvar[blocknr], (void*)(probvar),
@@ -1913,6 +1917,7 @@ void initRelaxdata(
    relaxdata->nlinkingvars = 0;
    relaxdata->nvarlinkconss = 0;
    relaxdata->varlinkconss = NULL;
+   relaxdata->varlinkconsblock = NULL;
    relaxdata->pricingprobsmemused = 0.0;
 
    relaxdata->relaxisinitialized = FALSE;
@@ -2033,6 +2038,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       SCIP_CALL( SCIPreleaseCons(relaxdata->masterprob, &relaxdata->varlinkconss[i]) );
    }
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconss));
+   SCIPfreeMemoryArrayNull(scip, &(relaxdata->varlinkconsblock));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->masterconss));
@@ -2205,7 +2211,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
          }
       }
 
-      SCIPdebugMessage("Update lower bound (value = %"SCIP_REAL_FORMAT").\n", *lowerbound);
+      SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
    }
 
    /* transform the current solution of the master problem to the original space and save it */
@@ -3307,7 +3313,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
-         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", mastersol);
+         SCIPdebugMessage("Masterproblem solved, mastersol = %pd\n", (void*) mastersol);
       }
       else
       {
@@ -3522,4 +3528,61 @@ SCIP_Real GCGgetDegeneracy(
          degeneracy = SCIPinfinity(scip);
    }
    return degeneracy;
+}
+
+/** return linking constraints for variables */
+SCIP_CONS** GCGrelaxGetLinkingconss(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->varlinkconss;
+}
+
+/** return blocks of linking constraints for variables */
+int* GCGrelaxGetLinkingconssBlock(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->varlinkconsblock;
+}
+
+/** return number of linking constraints for variables */
+int GCGrelaxGetNLinkingconss(
+   SCIP*                 scip                /**< SCIP data structure */
+  )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->nvarlinkconss;
 }
