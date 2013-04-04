@@ -43,7 +43,7 @@
 
 #define HEUR_NAME             "restmaster"
 #define HEUR_DESC             "LNS heuristic for the master problem that fixes some master variables to zero"
-#define HEUR_DISPCHAR         'P'
+#define HEUR_DISPCHAR         'm'
 #define HEUR_PRIORITY         100
 #define HEUR_FREQ             30
 #define HEUR_FREQOFS          0
@@ -405,10 +405,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
    /* check whether we have enough nodes left to call subproblem solving */
    if( nstallnodes < heurdata->minnodes )
-   {
-//      SCIPdebugMessage("skipping Restricted Master Heuristic: nstallnodes=%"SCIP_LONGINT_FORMAT", minnodes=%"SCIP_LONGINT_FORMAT"\n", nstallnodes, heurdata->minnodes);
       return SCIP_OKAY;
-   }
 
    /* check whether there is enough time and memory left */
    SCIP_CALL( SCIPgetRealParam(origprob, "limits/time", &timelimit) );

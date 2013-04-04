@@ -74,6 +74,7 @@
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
+#include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_rins.h"
@@ -249,6 +250,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
+   SCIP_CALL( SCIPincludeHeurProximity(scip) );
    SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurRens(scip) );
    SCIP_CALL( SCIPincludeHeurRins(scip) );
