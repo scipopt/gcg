@@ -41,6 +41,16 @@ struct ComponentBoundSequence
 
 typedef struct ComponentBoundSequence GCG_COMPSEQUENCE;
 
+struct GCG_Strip
+{
+   SCIP*                scip;
+   SCIP_VAR*            mastervar;
+   GCG_COMPSEQUENCE**   C;             /**< current set of comp bound sequences */
+   int                  Csize;
+   int*                 sequencesizes;
+};
+typedef struct GCG_Strip GCG_STRIP;
+
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
@@ -80,6 +90,20 @@ extern
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
    GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
    );
+
+/** prepares informations for using the generic branching scheme
+ * @return SCIP_RETCODE */
+extern
+SCIP_RETCODE GCGbranchGenericInitbranch(
+   SCIP*                masterscip,         /**< */
+   SCIP_BRANCHRULE*     branchrule,
+   SCIP_RESULT*         result,
+   int*                 checkedblocks,
+   int                  ncheckedblocks,
+   GCG_STRIP***         checkedblockssortstrips,
+   int*                 checkedblocksnsortstrips
+   );
+
 #ifdef __cplusplus
 }
 #endif

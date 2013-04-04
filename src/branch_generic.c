@@ -73,17 +73,6 @@ struct GCG_Record
 };
 typedef struct GCG_Record GCG_RECORD;
 
-/** an abstract strip, only for compare in ILO needed */
-struct GCG_Strip
-{
-   SCIP*                scip;
-   SCIP_VAR*            mastervar;
-   GCG_COMPSEQUENCE**   C;             /**< current set of comp bound sequences */
-   int                  Csize;
-   int*                 sequencesizes;
-};
-typedef struct GCG_Strip GCG_STRIP;
-
 /*
  * Callback methods
  */
@@ -1030,8 +1019,8 @@ SCIP_RETCODE Separate(
 
    upperLowerS[Ssize].component = origvar;/* i; */
    upperS[Ssize].component = origvar;
-   upperLowerS[Ssize].sense = GCG_COMPSENSE_LT; //GE?
-   upperS[Ssize].sense = GCG_COMPSENSE_GE; //LT?
+   upperLowerS[Ssize].sense = GCG_COMPSENSE_LT;
+   upperS[Ssize].sense = GCG_COMPSENSE_GE;
    upperLowerS[Ssize].bound = median;
    upperS[Ssize].bound = median;
 
@@ -1062,7 +1051,7 @@ SCIP_RETCODE Separate(
             ++j;
          }
       }
-      //Fsize = Flower;
+      /*Fsize = Flower;*/
       assert(j < Fsize+1);
       if( Jsize == 0 && J != NULL )
       {
@@ -1074,7 +1063,7 @@ SCIP_RETCODE Separate(
 
    if( Fupper > 0)
    {
-      upperLowerS[Ssize].sense = GCG_COMPSENSE_GE; //LT?
+      upperLowerS[Ssize].sense = GCG_COMPSENSE_GE;
       j = 0;
 
       for( k=0; k<Fsize; ++k )
@@ -1085,7 +1074,7 @@ SCIP_RETCODE Separate(
             ++j;
          }
       }
-      //Fsize = Fupper;
+      /*Fsize = Fupper;*/
       assert(j < Fsize+1);
       if( Jsize == 0 && J != NULL )
       {
@@ -1566,14 +1555,14 @@ SCIP_RETCODE Explore(
          CopyC = NULL;
          k = 0;
       }
-      //Csize = Cupper;
+      /*Csize = Cupper;*/
       Explore( scip, CopyC, Cupper, newsequencesizes, p+1, copyF, Fupper, IndexSet, IndexSetSize, S, Ssize, record );
    }
 
    if( Flower > 0 && Flower != INT_MIN )
    {
       SCIPdebugMessage("chose lower bound Flower = %d Clower = %d\n", Flower, Clower);
-      //(*S)[*Ssize-1].sense = GCG_COMPSENSE_LT;
+      /*(*S)[*Ssize-1].sense = GCG_COMPSENSE_LT;*/
       SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
       j = 0;
       for( k=0; k<Fsize; ++k )
@@ -1650,7 +1639,13 @@ SCIP_RETCODE ChooseSeparateMethod(
    GCG_COMPSEQUENCE**   C,                  /**< */
    int                  Csize,              /**< */
    int*                 CompSizes,           /**< */
-   int                  blocknr
+   int                  blocknr,
+   SCIP_BRANCHRULE*      branchrule,
+   SCIP_RESULT*         result,
+   int*                 checkedblocks,
+   int                  ncheckedblocks,
+   GCG_STRIP***         checkedblockssortstrips,
+   int*                 checkedblocksnsortstrips
    )
 {
    SCIP* masterscip;
@@ -1708,6 +1703,24 @@ SCIP_RETCODE ChooseSeparateMethod(
       assert(masterscip != NULL);
       SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
+      ++ncheckedblocks;
+      assert(ncheckedblocks <= GCGrelaxGetNPricingprobs(scip)+1);
+
+      if( ncheckedblocks == 1)
+      {
+         SCIP_CALL(SCIPallocBufferArray(scip, &checkedblocks, ncheckedblocks));
+         SCIP_CALL(SCIPallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks));
+         SCIP_CALL(SCIPallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks));
+      }
+      else
+      {
+         SCIP_CALL(SCIPreallocBufferArray(scip, &checkedblocks, ncheckedblocks));
+         SCIP_CALL(SCIPreallocBufferArray(scip, &checkedblockssortstrips, ncheckedblocks));
+         SCIP_CALL(SCIPreallocBufferArray(scip, &checkedblocksnsortstrips, ncheckedblocks));
+      }
+
+      checkedblocks[ncheckedblocks-1] = blocknr;
+
       for( i=0; i<nmastervars; ++i )
       {
          SCIP_Bool blockfound;
@@ -1763,6 +1776,18 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       InducedLexicographicSort(scip, strips, nstrips, C, Csize, CompSizes);
 
+      checkedblocksnsortstrips[ncheckedblocks-1] = nstrips;
+
+      SCIP_CALL( SCIPallocBufferArray(scip, &(checkedblockssortstrips[ncheckedblocks-1]), nstrips));
+
+      /* sort the direct copied origvars at the end */
+
+      for( i=0; i<nstrips; ++i)
+      {
+         SCIP_CALL( SCIPallocBuffer(scip, &(checkedblockssortstrips[ncheckedblocks-1][i])));
+         checkedblockssortstrips[ncheckedblocks-1][i] = strips[i];
+      }
+
       for( i=0; i<nstrips; ++i)
       {
          SCIPfreeBuffer(scip, &(strips[i]));
@@ -1775,8 +1800,43 @@ SCIP_RETCODE ChooseSeparateMethod(
          strips = NULL;
       }
 
-      assert(integer);
-      //return SCIP_OKAY;
+     /* if(ncheckedblocks < GCGrelaxGetNPricingprobs(scip))
+      {*/
+         /*choose new block */
+         SCIP_CALL(GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips));
+      /*}
+      else
+      {*/
+         /* map soted current sol to origsol */
+         assert(integer);
+      /*}*/
+      /*return SCIP_OKAY;*/
+   }
+   else
+   {
+      if(ncheckedblocks > 0)
+      {
+         SCIPfreeBufferArray(scip, &checkedblocks);
+
+         for( i=0; i< ncheckedblocks; ++i )
+         {
+            int j;
+
+            j = 0;
+
+            for( j=0; j< checkedblocksnsortstrips[i]; ++j )
+            {
+               SCIPfreeBuffer(scip, &(checkedblockssortstrips[i][j]) );
+            }
+
+            SCIPfreeBufferArray(scip, &(checkedblockssortstrips[i]) );
+         }
+
+         SCIPfreeBufferArray(scip, &checkedblockssortstrips);
+         SCIPfreeBufferArray(scip, &checkedblocksnsortstrips);
+
+         ncheckedblocks = 0;
+      }
    }
 
 
@@ -2123,9 +2183,8 @@ SCIP_RETCODE createChildNodesGeneric(
             if(i >= nmastervars2)
                break;
 
-            if( GCGvarGetBlock(mastervars2[i]) == -1 )
+            if( GCGvarGetBlock(mastervars2[i]) == -1 && GCGvarIsLinking(mastervars2[i]) )
             {
-               assert( GCGvarIsLinking(mastervars2[i]) );
                blockfound = FALSE;
 
                pricingvars = GCGlinkingVarGetPricingVars(mastervars2[i]);
@@ -2201,11 +2260,6 @@ SCIP_RETCODE createChildNodesGeneric(
       assert(SCIPisFeasIntegral(scip, lhs));/* SCIPisEQ(scip, lhs - SCIPceil(scip, lhs), 0) && lhs != 0); */
       lhsSum += lhs;
 
-      /* define names for origbranch constraints */
-      (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %f) last comp=%s, sense %d, bound %g", p+1, blocknr, lhs,
-         SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
-         branchchilddata->consS[branchchilddata->consSsize-1].sense,
-         branchchilddata->consS[branchchilddata->consSsize-1].bound);
 
       if( masterbranchcons == NULL || !pruneChildNodeByDominanceGeneric(scip, lhs, branchchilddata->consS, branchchilddata->consSsize, masterbranchcons, blocknr) )
       {
@@ -2223,7 +2277,14 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) );
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
+            /* define names for origbranch constraints */
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) last comp=%s, sense %d, bound %g", SCIPnodeGetNumber(child), blocknr, p+1,
+               SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
+               branchchilddata->consS[branchchilddata->consSsize-1].sense,
+               branchchilddata->consS[branchchilddata->consSsize-1].bound);
+
             assert(branchchilddata != NULL);
+
             SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
                NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );
 
@@ -2381,21 +2442,374 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    return SCIP_OKAY;
 }
 
-/** prepares informations for using the generic branching scheme
+
+/** creates (integer) origsol with respect to the oder of the checkedblocks
  * @return SCIP_RETCODE */
 static
+SCIP_RETCODE createSortedOrigsol(
+   SCIP*               scip,
+   SCIP_VAR**          nonsortmastervars,
+   int                 nnonsortmastervars,
+   GCG_STRIP***        checkedblockssortstrips,
+   int*                checkedblocksnsortstrips,
+   int                 ncheckedblocks,
+   SCIP_SOL**          origsol
+)
+{
+SCIP* masterprob;
+int npricingprobs;
+int* blocknrs;
+SCIP_RELAX* relax;
+SCIP_RELAXDATA* relaxdata;
+SCIP_Real* blockvalue;
+SCIP_Real increaseval;
+SCIP_VAR** sortmastervars;
+/*SCIP_VAR** origvars;*/
+SCIP_Real* mastervals;
+SCIP_SOL* mastersol;
+/*int norigvars;*/
+SCIP_VAR** vars;
+int nvars;
+SCIP_Real feastol;
+int i;
+int j;
+int nsortmastervars;
+
+assert(scip != NULL);
+assert(origsol != NULL);
+
+relax = SCIPfindRelax(scip, "gcg");
+assert(relax != NULL);
+
+relaxdata = SCIPrelaxGetData(relax);
+assert(relaxdata != NULL);
+
+/*origvars = SCIPgetVars(scip);
+norigvars = SCIPgetNVars(scip);
+assert(origvars != NULL);*/
+
+masterprob = GCGrelaxGetMasterprob(scip);
+
+mastersol = SCIPgetBestSol(masterprob);
+
+npricingprobs = GCGrelaxGetNPricingprobs(scip);
+
+assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
+
+SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
+
+SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
+SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
+
+/* get variables of the master problem and their solution values */
+/*SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );*/
+/*SCIP_CALL( SCIPallocBufferArray(scip, &sortmastervars, nmastervars) );*/
+
+nsortmastervars = 0;
+
+for(i=0;i<ncheckedblocks; ++i)
+{
+   for(j=0; j<checkedblocksnsortstrips[i]; ++j)
+   {
+      ++nsortmastervars;
+      if(nsortmastervars ==1 )
+      {
+         SCIP_CALL(SCIPallocBufferArray(scip, &sortmastervars, nsortmastervars));
+      }
+      else
+      {
+         SCIP_CALL(SCIPreallocBufferArray(scip, &sortmastervars, nsortmastervars));
+      }
+      sortmastervars[nsortmastervars -1] = checkedblockssortstrips[i][j]->mastervar;
+      mastervals[nsortmastervars -1] = SCIPgetSolVal(masterprob, NULL, checkedblockssortstrips[i][j]->mastervar);
+   }
+}
+
+for(i=0; i<nnonsortmastervars; ++i)
+{
+   ++nsortmastervars;
+   if(nsortmastervars ==1 )
+   {
+      SCIP_CALL(SCIPallocBufferArray(scip, &sortmastervars, nsortmastervars));
+   }
+   else
+   {
+      SCIP_CALL(SCIPreallocBufferArray(scip, &sortmastervars, nsortmastervars));
+   }
+   sortmastervars[nsortmastervars -1] = nonsortmastervars[i];
+   mastervals[nsortmastervars -1] = SCIPgetSolVal(masterprob, NULL, nonsortmastervars[i]);
+
+}
+
+
+/* initialize the block values for the pricing problems */
+for( i = 0; i < npricingprobs; i++ )
+{
+   blockvalue[i] = 0.0;
+   blocknrs[i] = 0;
+}
+
+/* loop over all given master variables */
+for( i = 0; i < nsortmastervars; i++ )
+{
+   SCIP_VAR** origvars;
+   int norigvars;
+   SCIP_Real* origvals;
+   SCIP_Bool isray;
+   int blocknr;
+
+   origvars = GCGmasterVarGetOrigvars(sortmastervars[i]);
+   norigvars = GCGmasterVarGetNOrigvars(sortmastervars[i]);
+   origvals = GCGmasterVarGetOrigvals(sortmastervars[i]);
+   blocknr = GCGvarGetBlock(sortmastervars[i]);
+   isray = GCGmasterVarIsRay(sortmastervars[i]);
+
+   assert(GCGvarIsMaster(sortmastervars[i]));
+   assert(!SCIPisFeasNegative(scip, mastervals[i]));
+
+   /** @todo handle infinite master solution values */
+   assert(!SCIPisInfinity(scip, mastervals[i]));
+
+   /* first of all, handle variables representing rays */
+   if( isray )
+   {
+      assert(blocknr >= 0);
+      /* we also want to take into account variables representing rays, that have a small value (between normal and feas eps),
+       * so we do no feas comparison here */
+      if( SCIPisPositive(scip, mastervals[i]) )
+      {
+         /* loop over all original variables contained in the current master variable */
+         for( j = 0; j < norigvars; j++ )
+         {
+            if( SCIPisZero(scip, origvals[j]) )
+               break;
+
+            assert(!SCIPisZero(scip, origvals[j]));
+
+            /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
+            if( GCGvarIsLinking(origvars[j]) )
+               continue;
+
+            SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[j]), origvals[j] * mastervals[i], SCIPvarGetName(sortmastervars[i]));
+            /* increase the corresponding value */
+            SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[j], origvals[j] * mastervals[i]) );
+         }
+      }
+      mastervals[i] = 0.0;
+      continue;
+   }
+
+   /* handle the variables with value >= 1 to get integral values in original solution */
+   while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
+   {
+      /* variable was directly transferred to the master problem (only in linking conss or linking variable) */
+      /** @todo this may be the wrong place for this case, handle it before the while loop
+       * and remove the similar case in the next while loop */
+      if( blocknr == -1 )
+      {
+         assert(norigvars == 1);
+         assert(origvals[0] == 1.0);
+
+         /* increase the corresponding value */
+         SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i],  SCIPvarGetName(sortmastervars[i]));
+         SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
+         mastervals[i] = 0.0;
+      }
+      else
+      {
+         assert(blocknr >= 0);
+         /* loop over all original variables contained in the current master variable */
+         for( j = 0; j < norigvars; j++ )
+         {
+            SCIP_VAR* pricingvar;
+            int norigpricingvars;
+            SCIP_VAR** origpricingvars;
+            if( SCIPisZero(scip, origvals[j]) )
+               break;
+            assert(!SCIPisZero(scip, origvals[j]));
+
+            /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
+            if( GCGvarIsLinking(origvars[j]) )
+               continue;
+
+            pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);
+            assert(GCGvarIsPricing(pricingvar));
+
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+            /* just in case a variable has a value higher than the number of blocks, it represents */
+            if( norigpricingvars <= blocknrs[blocknr] )
+            {
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), mastervals[i] * origvals[j], SCIPvarGetName(sortmastervars[i]));
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], mastervals[i] * origvals[j]) );
+               mastervals[i] = 1.0;
+            }
+            /* this should be default */
+            else
+            {
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j], SCIPvarGetName(sortmastervars[i]) );
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j]) );
+            }
+         }
+         mastervals[i] = mastervals[i] - 1.0;
+         blocknrs[blocknr]++;
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &sortmastervars);
+
+   return SCIP_OKAY;
+}
+
+/* loop over all given master variables */
+for( i = 0; i < nsortmastervars; i++ )
+{
+   SCIP_VAR** origvars;
+   int norigvars;
+   SCIP_Real* origvals;
+   int blocknr;
+
+   origvars = GCGmasterVarGetOrigvars(sortmastervars[i]);
+   norigvars = GCGmasterVarGetNOrigvars(sortmastervars[i]);
+   origvals = GCGmasterVarGetOrigvals(sortmastervars[i]);
+   blocknr = GCGvarGetBlock(sortmastervars[i]);
+
+   if( SCIPisFeasZero(scip, mastervals[i]) )
+   {
+      continue;
+   }
+   assert(SCIPisFeasGE(scip, mastervals[i], 0.0) && SCIPisFeasLT(scip, mastervals[i], 1.0));
+
+   while( SCIPisFeasPositive(scip, mastervals[i]) )
+   {
+      assert(GCGvarIsMaster(sortmastervars[i]));
+      assert(!GCGmasterVarIsRay(sortmastervars[i]));
+
+      if( blocknr == -1 )
+      {
+         assert(norigvars == 1);
+         assert(origvals[0] == 1.0);
+
+         SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origvars[0]), origvals[0] * mastervals[i], SCIPvarGetName(sortmastervars[i]) );
+         /* increase the corresponding value */
+         SCIP_CALL( SCIPincSolVal(scip, *origsol, origvars[0], origvals[0] * mastervals[i]) );
+         mastervals[i] = 0.0;
+      }
+      else
+      {
+         increaseval = MIN(mastervals[i], 1.0 - blockvalue[blocknr]);
+         /* loop over all original variables contained in the current master variable */
+         for( j = 0; j < norigvars; j++ )
+         {
+            SCIP_VAR* pricingvar;
+            int norigpricingvars;
+            SCIP_VAR** origpricingvars;
+
+            if( SCIPisZero(scip, origvals[j]) )
+               continue;
+
+            /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done above) */
+            if( GCGvarIsLinking(origvars[j]) )
+               continue;
+
+            pricingvar = GCGoriginalVarGetPricingVar(origvars[j]);
+            assert(GCGvarIsPricing(pricingvar));
+
+            norigpricingvars = GCGpricingVarGetNOrigvars(pricingvar);
+            origpricingvars = GCGpricingVarGetOrigvars(pricingvar);
+
+            if( norigpricingvars <= blocknrs[blocknr] )
+            {
+               increaseval = mastervals[i];
+
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[norigpricingvars-1]), origvals[j] * increaseval, SCIPvarGetName(sortmastervars[i]) );
+               /* increase the corresponding value */
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[norigpricingvars-1], origvals[j] * increaseval) );
+            }
+            else
+            {
+               /* increase the corresponding value */
+               SCIPdebugMessage("Increasing value of %s by %f because of %s\n", SCIPvarGetName(origpricingvars[blocknrs[blocknr]]), origvals[j] * increaseval, SCIPvarGetName(sortmastervars[i]) );
+               SCIP_CALL( SCIPincSolVal(scip, *origsol, origpricingvars[blocknrs[blocknr]], origvals[j] * increaseval) );
+            }
+         }
+
+         mastervals[i] = mastervals[i] - increaseval;
+         if( SCIPisFeasZero(scip, mastervals[i]) )
+         {
+            mastervals[i] = 0.0;
+         }
+         blockvalue[blocknr] += increaseval;
+
+         /* if the value assigned to the block is equal to 1, this block is full and we take the next block */
+         if( SCIPisFeasGE(scip, blockvalue[blocknr], 1.0) )
+         {
+            blockvalue[blocknr] = 0.0;
+            blocknrs[blocknr]++;
+         }
+      }
+   }
+}
+
+SCIPfreeBufferArray(scip, &mastervals);
+SCIPfreeBufferArray(scip, &blocknrs);
+SCIPfreeBufferArray(scip, &blockvalue);
+
+/* if the solution violates one of its bounds by more than feastol
+ * and less than 10*feastol, round it and print a warning
+ */
+SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
+SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
+for( i = 0; i < nvars; ++i )
+{
+   SCIP_Real solval;
+   SCIP_Real lb;
+   SCIP_Real ub;
+
+   solval = SCIPgetSolVal(scip, *origsol, vars[i]);
+   lb = SCIPvarGetLbLocal(vars[i]);
+   ub = SCIPvarGetUbLocal(vars[i]);
+
+   if( SCIPisFeasGT(scip, solval, ub) && EPSEQ(solval, ub, 10 * feastol) )
+   {
+      SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], ub) );
+      SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPvarGetName(vars[i]), solval, ub);
+   }
+   else if( SCIPisFeasLT(scip, solval, lb) && EPSEQ(solval, lb, 10 * feastol) )
+   {
+      SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], lb) );
+      SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPvarGetName(vars[i]), solval, lb);
+   }
+}
+return SCIP_OKAY;
+}
+
+
+/** prepares informations for using the generic branching scheme
+ * @return SCIP_RETCODE */
 SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                masterscip,         /**< */
    SCIP_BRANCHRULE*     branchrule,
-   SCIP_RESULT*         result
+   SCIP_RESULT*         result,
+   int*                 checkedblocks,
+   int                  ncheckedblocks,
+   GCG_STRIP***         checkedblockssortstrips,
+   int*                 checkedblocksnsortstrips
    )
 {
    SCIP* origscip;
    SCIP_Bool feasible;
    SCIP_Bool SinC;
+   SCIP_Bool foundblocknr;
    SCIP_VAR** branchcands;
    SCIP_VAR** allorigvars;
    SCIP_VAR** mastervars;
+   SCIP_VAR** nonsortmastervars;
    int nmastervars;
    SCIP_CONS* masterbranchcons;
    SCIP_CONS* parentcons;
@@ -2405,16 +2819,19 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_Real mastervarValue;
    GCG_COMPSEQUENCE* S;
    GCG_COMPSEQUENCE** C;
+   SCIP_SOL* origsol;
    SCIP_VAR** F;
    SCIP_VAR** pricingvars;
    int Ssize;
    int Csize;
    int Fsize;
+   int nnonsortmastervars;
    int* sequencesizes;
    int blocknr;
    int pricingblocknr;
    int nidenticalpricing;
    int i;
+   int j;
    int c;
    int allnorigvars;
 
@@ -2422,12 +2839,15 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    Ssize = 0;
    Csize = 0;
    Fsize = 0;
+   nnonsortmastervars = 0;
    pricingblocknr = -2;
    nidenticalpricing = 0;
    i = 0;
+   j = 0;
    c = 0;
    feasible = TRUE;
    SinC = TRUE;
+   foundblocknr = FALSE;
    S = NULL;
    F = NULL;
    branchdata = NULL;
@@ -2436,6 +2856,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    F = NULL;
    sequencesizes = NULL;
    pricingvars = NULL;
+   nonsortmastervars = NULL;
 
    assert(masterscip != NULL);
 
@@ -2451,65 +2872,172 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    assert(nbranchcands > 0);
 
-   for( i=0; i<nbranchcands; ++i )
-   {
-      mastervar = branchcands[i];
-      assert(GCGvarIsMaster(mastervar));
-      blocknr = GCGvarGetBlock(mastervar);
-      if( blocknr >= -1 )
-         break;
-   }
-   if( blocknr < -1 )
-   {
-      feasible = TRUE;
-      SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
 
-      return -1;
-   }
-   else
-      feasible = FALSE;
-
-   /* a special case; branch on copy of an origvar directly:- here say blocknr = -3 */
-   if( blocknr == -1 && !GCGvarIsLinking(mastervar) )
-      blocknr = -3;
-
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   SCIPdebugMessage("branching in block %d \n", blocknr);
-
-   if(blocknr == -1)
-   {
-     assert( GCGvarIsLinking(mastervar) );
-
-      pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-      assert(pricingvars != NULL );
-
-      for( i=0; i<GCGlinkingVarGetNBlocks(mastervar); ++i )
+      for( i=0; i<nbranchcands; ++i )
       {
-         if(pricingvars[i] != NULL)
+         mastervar = branchcands[i];
+         assert(GCGvarIsMaster(mastervar));
+         blocknr = GCGvarGetBlock(mastervar);
+
+         if( blocknr == -1 )
          {
-            if(pricingblocknr == -2 )
+            if( GCGvarIsLinking(mastervar) )
             {
-               pricingblocknr = GCGvarGetBlock(pricingvars[i]);
-               nidenticalpricing = GCGrelaxGetNIdenticalBlocks(origscip, pricingblocknr);
+
+               pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+               assert(pricingvars != NULL );
+
+               for( i=0; i<GCGlinkingVarGetNBlocks(mastervar); ++i )
+               {
+                  if(pricingvars[i] != NULL)
+                  {
+                     blocknr = GCGvarGetBlock(pricingvars[i]);
+
+                     foundblocknr = TRUE;
+
+                     for( j=0; j<ncheckedblocks; ++j)
+                     {
+                        if( checkedblocks[j] == blocknr )
+                           foundblocknr = FALSE;
+                     }
+                     if( foundblocknr)
+                     {
+                        break;
+                     }
+                  }
+               }
+               if(blocknr > -1)
+                  break;
             }
             else
+               break;
+         }
+
+         if(blocknr > -1)
+         {
+            foundblocknr = TRUE;
+            for( j=0; j<ncheckedblocks; ++j)
             {
-               assert( nidenticalpricing == GCGrelaxGetNIdenticalBlocks(origscip, GCGvarGetBlock(pricingvars[i])));
+               if( checkedblocks[j] == blocknr )
+               {
+                  foundblocknr = FALSE;
+                  break;
+               }
             }
+            if( foundblocknr)
+               break;
          }
       }
-      assert(pricingblocknr > -1);
 
-      blocknr = pricingblocknr;
-   }
+      assert( i <= nbranchcands ); /* else all blocks has been checked and we can observe an integer solution */
+      if( i > nbranchcands)
+      {
+         /* keep up the sort of non checked blocks */
 
-   if( blocknr == -3 )
-   {
-      /* direct branch on copied origvar */
-      SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
+         SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+         /* if the block was note checked, you cannot change the order in it */
+         nnonsortmastervars = 0;
 
-      return SCIP_OKAY;
-   }
+         /* todo handle linking variables, may be multiple in ckeckedblocksstrips */
+         for( i=0; i<nmastervars; ++i)
+         {
+            /*SCIP_VAR* mastervar;*/
+            /*int blocknr;*/
+            SCIP_Bool blockchecked;
+
+            mastervar = mastervars[i];
+            blocknr = GCGvarGetBlock(mastervar);
+            blockchecked = FALSE;
+
+            for( j=0; j<ncheckedblocks; ++j)
+            {
+               if( checkedblocks[j] == blocknr )
+               {
+                  blockchecked = TRUE;
+                  break;
+               }
+            }
+
+            if(!blockchecked)
+            {
+               ++nnonsortmastervars;
+               if(nnonsortmastervars == 1)
+               {
+                  SCIP_CALL(SCIPallocBufferArray(origscip, &nonsortmastervars, nnonsortmastervars));
+               }
+               else
+               {
+                  SCIP_CALL(SCIPreallocBufferArray(origscip, &nonsortmastervars, nnonsortmastervars));
+               }
+               nonsortmastervars[nnonsortmastervars-1] = mastervar;
+            }
+         }
+
+         SCIP_CALL(createSortedOrigsol(origscip, nonsortmastervars, nnonsortmastervars, checkedblockssortstrips, checkedblocksnsortstrips, ncheckedblocks, &origsol));
+
+         /* try new solution to original problem and free it immediately */
+      #ifdef SCIP_DEBUG
+         SCIP_CALL( SCIPtrySolFree(origscip, &origsol, TRUE, TRUE, TRUE, TRUE, &feasible) );
+      #else
+         SCIP_CALL( SCIPtrySolFree(origscip, &origsol, FALSE, TRUE, TRUE, TRUE, &feasible) );
+      #endif
+
+         /* free memory */
+         if(ncheckedblocks > 0)
+         {
+            SCIPfreeBufferArray(origscip, &checkedblocks);
+
+            for( i=0; i< ncheckedblocks; ++i )
+            {
+               j = 0;
+
+               for( j=0; j< checkedblocksnsortstrips[i]; ++j )
+               {
+                  SCIPfreeBuffer(origscip, &(checkedblockssortstrips[i][j]) );
+               }
+
+               SCIPfreeBufferArray(origscip, &(checkedblockssortstrips[i]) );
+            }
+
+            if(nnonsortmastervars > 0)
+               SCIPfreeBufferArray(origscip, &nonsortmastervars);
+
+            SCIPfreeBufferArray(origscip, &checkedblockssortstrips);
+            SCIPfreeBufferArray(origscip, &checkedblocksnsortstrips);
+
+            ncheckedblocks = 0;
+         }
+
+         assert(feasible); /*handle linking vars*/
+
+         *result = SCIP_CUTOFF;
+         return SCIP_OKAY;
+      }
+
+      if( blocknr < -1 )
+      {
+         feasible = TRUE;
+         SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
+
+         return -1;
+      }
+      else
+         feasible = FALSE;
+
+      /* a special case; branch on copy of an origvar directly:- here say blocknr = -3 */
+      if( blocknr == -1 && !GCGvarIsLinking(mastervar) )
+         blocknr = -3;
+
+      masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+      SCIPdebugMessage("branching in block %d \n", blocknr);
+
+      if( blocknr == -3 )
+      {
+         /* direct branch on copied origvar */
+         SCIP_CALL( branchDirectlyOnMastervar(origscip, mastervar, branchrule) );
+
+         return SCIP_OKAY;
+      }
 
    /* calculate F and the strips */
    for( i=0; i<nbranchcands; ++i )
@@ -2523,9 +3051,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
       blockfound = TRUE;
 
-      if( GCGvarGetBlock(mastervar) == -1 )
+      if( GCGvarGetBlock(mastervar) == -1 && GCGvarIsLinking(mastervar))
       {
-         assert( GCGvarIsLinking(mastervar) );
          blockfound = FALSE;
 
          pricingvars = GCGlinkingVarGetPricingVars(mastervar);
@@ -2665,13 +3192,19 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          }
 
          /* SCIP_CALL( InducedLexicographicSort(scip, F, Fsize, C, Csize, sequencesizes) ); */
-         SCIP_CALL( ChooseSeparateMethod(origscip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes, blocknr) );
+         SCIP_CALL( ChooseSeparateMethod(origscip, F, Fsize, &S, &Ssize, C, Csize, sequencesizes, blocknr, branchrule, result, checkedblocks,
+            ncheckedblocks,
+            checkedblockssortstrips,
+            checkedblocksnsortstrips) );
       }
       else
       {
          SCIPdebugMessage("C == NULL\n");
          /* SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) ); */
-         SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL, blocknr ) );
+         SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL, blocknr, branchrule, result, checkedblocks,
+            ncheckedblocks,
+            checkedblockssortstrips,
+            checkedblocksnsortstrips) );
       }
       if( sequencesizes != NULL )
       {
@@ -2691,9 +3224,12 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    {
       SCIPdebugMessage("root node\n");
       /* SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) ); */
-      SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL, blocknr ) );
+      SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL, blocknr, branchrule, result, checkedblocks,
+         ncheckedblocks,
+         checkedblockssortstrips,
+         checkedblocksnsortstrips) );
    }
-   assert(S!=NULL);
+   /*assert(S!=NULL);*/
 
    if( feasible )
    {
@@ -2702,7 +3238,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    }
 
    /* create the |S|+1 child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesGeneric(origscip, branchrule, S, Ssize, blocknr, masterbranchcons, result) );
+   if( S != NULL && Ssize > 0 )
+      SCIP_CALL( createChildNodesGeneric(origscip, branchrule, S, Ssize, blocknr, masterbranchcons, result) );
 
    SCIPdebugMessage("free F\n");
    SCIPfreeMemoryArray(origscip, &F);
@@ -3035,7 +3572,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 
    *result = SCIP_BRANCHED;
 
-   GCGbranchGenericInitbranch(scip, branchrule, result);
+   GCGbranchGenericInitbranch(scip, branchrule, result, NULL, 0, NULL, NULL);
 
    return SCIP_OKAY;
 }
