@@ -1442,9 +1442,9 @@ SCIP_Bool ObjPricerGcg::abortPricing(
 {
    if( pricerdata->eagerage == pricerdata->eagerfreq )
    {
-      printf("Perfoming pricing with all pricingproblems\n");
       return FALSE;
    }
+
    if( optimal )
       return pricetype->canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, pricerdata->successfulmipsrel, pricerdata->npricingprobsnotnull);
    else
