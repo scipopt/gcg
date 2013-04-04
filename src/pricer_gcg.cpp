@@ -81,7 +81,7 @@ using namespace scip;
                                                      *    2 :   according to reliability from previous round)
                                                      */
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
-
+#define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
 #define EVENTHDLR_NAME         "probdatavardeleted"
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
 
@@ -150,7 +150,7 @@ struct SCIP_PricerData
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed*/
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
-
+   SCIP_Bool             stabilization;      /**< should stabilization be used */
 
    /** statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -819,7 +819,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    masterconss = GCGrelaxGetMasterConss(origprob);
    origconss = GCGrelaxGetLinearOrigMasterConss(origprob);
 
-   stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST);
+   stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST) && pricerdata->stabilization;
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -880,7 +880,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
        * lambda variables get coef -1 in linking constraints --> add dualsol
        */
       SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
-      pricerdata->realdualvalues[block][j] +=  pricetype->consGetDual(scip_, linkcons);
+      pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] +=  pricetype->consGetDual(scip_, linkcons);
      // SCIPdebugMessage("pricingobj var <%s> %f, realdualvalues %f\n", SCIPvarGetName(pricingvar), dualsol, pricetype->consGetDual(scip_, linkcons));
    }
 
@@ -1644,26 +1644,28 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
+      if( pricerdata->stabilization )
       {
-         if( *nfoundvars == 0 )
+         if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
          {
-            if( optimal )
+            if( *nfoundvars == 0 )
             {
-               stabilization->updateAlphaMisprice();
+               if( optimal )
+               {
+                  stabilization->updateAlphaMisprice();
+               }
+            }
+            else if( *bestredcostvalid )
+            {
+               stabilization->updateAlpha();
             }
          }
-         else if( *bestredcostvalid )
+
+         if( *bestredcostvalid )
          {
-            stabilization->updateAlpha();
+            SCIP_CALL( stabilization->updateStabilityCenter( SCIPgetLPObjval(scip_) + *bestredcost) );
          }
       }
-
-      if( *bestredcostvalid )
-      {
-         SCIP_CALL( stabilization->updateStabilityCenter( SCIPgetLPObjval(scip_) + *bestredcost) );
-      }
-
       SCIPdebugMessage("nfoundvars: %d\n", *nfoundvars);
    }
    while( stabilized && *nfoundvars == 0 );
@@ -2281,6 +2283,9 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "how many threads should be used to concurrently solve the pricing problem (0 to guess threads by OpenMP)",
          &ObjPricerGcg::threads, FALSE, DEFAULT_THREADS, 0, 4096, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization",
+         "should stabilization be performed?",
+         &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
    return SCIP_OKAY;
 }
 
@@ -2721,7 +2726,6 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP_PRICERDATA* pricerdata;
    int i;
    SCIP* origprob;
    SCIP_VAR** vars;
@@ -2733,9 +2737,6 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
 
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
-
-   pricerdata = pricer->getPricerdata();
-   assert(pricerdata != NULL);
 
    origprob = pricer->getOrigprob();
    assert(origprob != NULL);
