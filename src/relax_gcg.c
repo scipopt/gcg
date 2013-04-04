@@ -1274,22 +1274,8 @@ SCIP_RETCODE createMasterProblem(
    SCIP_CALL( SCIPcreateProb(masterscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPactivatePricer(masterscip, SCIPfindPricer(masterscip, "gcg")) );
 
-   /* disable display output in the master problem */
-   SCIP_CALL( SCIPsetIntParam(masterscip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-
-   /* set parameters */
-   SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvars", INT_MAX) );
-   SCIP_CALL( SCIPsetIntParam(masterscip, "pricing/maxvarsroot", INT_MAX) );
+   /* set clocktype */
    SCIP_CALL( SCIPsetIntParam(masterscip, "timing/clocktype", clocktype) );
-   SCIP_CALL( SCIPsetRealParam(masterscip, "pricing/abortfac", 1.0) );
-
-#ifdef DELVARS
-   /* set paramteters to allow deletion of variables */
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvars", TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "pricing/delvarsroot", TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcols", TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "lp/cleanupcolsroot", TRUE) );
-#endif
 
    return SCIP_OKAY;
 }
@@ -2285,6 +2271,22 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
+
+   /* disable display output in the master problem */
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+
+   /* set parameters in master problem */
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
+   SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1.0) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/disablecutoff", TRUE) );
+#ifdef DELVARS
+   /* set paramteters to allow deletion of variables */
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvars", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvarsroot", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcols", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/cleanupcolsroot", TRUE) );
+#endif
 
    /* add GCG relaxator parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/discretization",

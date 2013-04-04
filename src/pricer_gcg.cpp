@@ -74,7 +74,8 @@ using namespace scip;
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
 #define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
-#define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
+#define DEFAULT_DISPINFOS                FALSE      /**< should the cutoffbound be applied in master LP solving? */
+#define DEFAULT_ENABLELPCUTOFF           TRUE       /**< should additional information be displayed */
 #define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
                                                      *    0 :   order of pricing problems
                                                      *    1 :   according to dual solution of convexity constraint
@@ -86,7 +87,7 @@ using namespace scip;
 #define EVENTHDLR_DESC         "event handler for variable deleted event"
 
 /** small macro to simplify printing pricer information */
-#define GCGpricerPrintInfo(scip,pricerdata, ...) do { \
+#define GCGpricerPrintInfo(scip, pricerdata, ...) do { \
    if( pricerdata->dispinfos ) { \
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,__VA_ARGS__);\
    } else {\
@@ -145,9 +146,10 @@ struct SCIP_PricerData
    int                   maxsolsprob;        /**< maximal number of solutions per pricing problem */
    int                   nroundsredcost;     /**< number of reduced cost rounds */
    int                   sorting;            /**< how should pricing problems be sorted */
-   SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used */
-   SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions */
-   SCIP_Bool             dispinfos;          /**< should pricing information be displayed*/
+   SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
+   SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
+   SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
+   SCIP_Bool             enablelpcutoff;     /**< should the cutoffbound be applied in master LP solving? */
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
@@ -169,6 +171,22 @@ struct SCIP_PricerData
    double                avgrootnodedegeneracy; /**< average degeneray of all nodes */
    int                   ndegeneracycalcs;   /**< number of observations */
 };
+
+
+/** information method for a parameter change of enablelpcutoff */
+static
+SCIP_DECL_PARAMCHGD(paramChgdEnablelpcutoff)
+{  /*lint --e{715}*/
+   SCIP* masterprob;
+   SCIP_Bool newval;
+
+   masterprob = GCGrelaxGetMasterprob(scip);
+   newval = SCIPparamGetBool(param);
+
+   SCIP_CALL( SCIPsetBoolParam(masterprob, "lp/disablecutoff", newval == FALSE) );
+
+   return SCIP_OKAY;
+}
 
 
 /*
@@ -2289,6 +2307,12 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization",
          "should stabilization be performed?",
          &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
+
+   SCIP_CALL( SCIPsetBoolParam(scip, "lp/disablecutoff", DEFAULT_ENABLELPCUTOFF == FALSE) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/enablelpcutoff",
+         "should the cutoffbound be applied in master LP solving?",
+         &pricerdata->enablelpcutoff, FALSE, DEFAULT_ENABLELPCUTOFF, paramChgdEnablelpcutoff, NULL) );
+
    return SCIP_OKAY;
 }
 
