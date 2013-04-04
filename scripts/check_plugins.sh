@@ -18,6 +18,19 @@ SCIPINCLUDE=lib/scip-git/src/scip/scipdefplugins.c
 EXCLUDE="
 SCIPincludeConshdlrNonlinear
 SCIPincludeConshdlrQuadratic
+SCIPincludeDispDefault
+SCIPincludeHeurNlpdiving
+SCIPincludeHeurTrivial
+SCIPincludeHeurTrysol
+SCIPincludeHeurUndercover
+SCIPincludeNodeselBfs
+SCIPincludeNodeselDfs
+SCIPincludeNodeselEstimate
+SCIPincludeNodeselHybridestim
+SCIPincludeNodeselRestartdfs
+SCIPincludePresolComponents
+SCIPincludePresolConvertinttobin
+SCIPincludePropObbt
 "
 
 
