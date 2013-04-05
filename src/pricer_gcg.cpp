@@ -1436,7 +1436,7 @@ SCIP_Bool ObjPricerGcg::abortPricing(
    PricingType*          pricetype,          /**< type of pricing*/
    int                   nfoundvars,         /**< number of variables found so far */
    int                   solvedmips,         /**< number of MIPS solved so far */
-   int                   successfulmips,     /**< number of sucessful mips solved so far */
+   int                   successfulmips,     /**< number of successful mips solved so far */
    SCIP_Bool             optimal             /**< optimal or heuristic pricing */
 )
 {

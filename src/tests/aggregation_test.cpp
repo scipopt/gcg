@@ -235,7 +235,7 @@ TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
    ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
 }
 
-TEST_F(GcgAggregationTest, DISABLED_NonSetppcMasterTest) {
+TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
    DEC_DECOMP* decomp;
    SCIP_CONS* mastercons[2];
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,4]") );
@@ -258,8 +258,8 @@ TEST_F(GcgAggregationTest, DISABLED_NonSetppcMasterTest) {
    ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
    ASSERT_EQ(2, GCGrelaxGetNIdenticalBlocks(scip, 0));
    ASSERT_EQ(0, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 1));
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {

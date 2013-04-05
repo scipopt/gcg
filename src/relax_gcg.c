@@ -773,7 +773,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    checkIdentical(scip, relaxdata, probnr1, probnr2, varmap, identical, scip1, scip2);
 #else
    SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(scip), SCIPgetNConss(scip1)+1) );
-   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, &result, varmap, consmap) );
+   SCIP_CALL( cmpGraphPair(scip, scip1, scip2, probnr1, probnr2, &result, varmap, consmap) );
 
    *identical = (result == SCIP_SUCCESS);
 
@@ -820,7 +820,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    if( !relaxdata->discretization || !relaxdata->aggregation )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
-      return SCIP_OKAY;
+       /* return SCIP_OKAY; */
    }
 
 
@@ -828,7 +828,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
    {
       SCIPdebugMessage("Master is no setcover and no set partitioning.\n");
-      return SCIP_OKAY;
+      /* return SCIP_OKAY; */
    }
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )

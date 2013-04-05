@@ -39,23 +39,26 @@
 #include "scip_misc.h"
 #include "scip/scip.h"
 #include "pub_gcgvar.h"
+#include "relax_gcg.h"
+#include "scip/cons_linear.h"
+
 #include <cstring>
 
 
-typedef struct struct_cons AUT_CONS;
-typedef struct struct_var AUT_VAR;
-typedef struct struct_coef AUT_COEF;
+typedef struct Aut_Cons AUT_CONS;
+typedef struct Aut_Var AUT_VAR;
+typedef struct Aut_Coef AUT_COEF;
 typedef struct struct_hook AUT_HOOK;
 typedef struct struct_colorinformation AUT_COLOR;
 
 /** saves a constraint with its corresponding scip */
-struct struct_cons
+struct Aut_Cons
 {
    SCIP* scip;                              /**< SCIP data structure */
    SCIP_CONS* cons;                         /**< pointer to SCIP constraint */
 
    /** constructor for the constraint struct */
-   struct_cons( SCIP* scip, SCIP_CONS* scons );
+   Aut_Cons( SCIP* scip, SCIP_CONS* scons );
 
    /** getter for the SCIP constraint */
    SCIP_CONS* getCons();
@@ -65,13 +68,13 @@ struct struct_cons
 };
 
 /** saves a variable with its corresponding scip */
-struct struct_var
+struct Aut_Var
 {
    SCIP* scip;                              /**< SCIP data structure */
    SCIP_VAR* var;                           /**< pointer to SCIP variable */
 
    /** constructor for the variable struct */
-   struct_var( SCIP* scip, SCIP_VAR* svar );
+   Aut_Var( SCIP* scip, SCIP_VAR* svar );
 
    /** getter for the SCIP variable */
    SCIP_VAR* getVar();
@@ -81,13 +84,13 @@ struct struct_var
 };
 
 /** saves a coefficient with its corresponding scip */
-struct struct_coef
+struct Aut_Coef
 {
    SCIP* scip;                              /**< SCIP data structure */
    SCIP_Real val;                           /**< SCIP Real value */
 
    /** constructor for the coefficient struct */
-   struct_coef( SCIP* scip, SCIP_Real val );
+   Aut_Coef( SCIP* scip, SCIP_Real val );
 
    /** getter for the SCIP Real value */
    SCIP_Real getVal();
@@ -106,6 +109,9 @@ struct struct_colorinformation
    void**               ptrarraycoefs;      /**< array of pointers to coefficient */
    void**               ptrarrayvars;       /**< array of pointers to variables */
    void**               ptrarrayconss;      /**< array of pointers to constraints */
+
+   /** default constructor */
+   struct_colorinformation();
 
    /** constructor for the  colorinformation struct */
    struct_colorinformation(
@@ -177,32 +183,32 @@ struct struct_hook
    SCIP** getScips();
 };
 
-SCIP_CONS* struct_cons::getCons()
+SCIP_CONS* Aut_Cons::getCons()
 {
    return this->cons;
 }
 
-SCIP* struct_cons::getScip()
+SCIP* Aut_Cons::getScip()
 {
    return this->scip;
 }
 
-SCIP_VAR* struct_var::getVar()
+SCIP_VAR* Aut_Var::getVar()
 {
    return this->var;
 }
 
-SCIP* struct_var::getScip()
+SCIP* Aut_Var::getScip()
 {
    return this->scip;
 }
 
-SCIP* struct_coef::getScip()
+SCIP* Aut_Coef::getScip()
 {
    return this->scip;
 }
 
-SCIP_Real struct_coef::getVal()
+SCIP_Real Aut_Coef::getVal()
 {
    return this->val;
 }
@@ -336,7 +342,7 @@ int struct_colorinformation::get(
 }
 
 /** constructor of the variable struct */
-struct_var::struct_var(
+Aut_Var::Aut_Var(
    SCIP* scip_,                             /**< SCIP data structure */
    SCIP_VAR* svar                           /**< SCIP variable */
    )
@@ -346,7 +352,7 @@ struct_var::struct_var(
 }
 
 /** constructor of the constraint struct */
-struct_cons::struct_cons(
+Aut_Cons::Aut_Cons(
    SCIP* scip_,                             /**< SCIP data structure */
    SCIP_CONS* scons                         /**< SCIP constraint */
    )
@@ -356,7 +362,7 @@ struct_cons::struct_cons(
 }
 
 /** constructor of the coefficient struct */
-struct_coef::struct_coef(
+Aut_Coef::Aut_Coef(
    SCIP* scip_,                             /**< SCIP data structure */
    SCIP_Real val_                           /**< SCIP value */
    )
@@ -365,6 +371,12 @@ struct_coef::struct_coef(
    val = val_;
 }
 
+struct_colorinformation::struct_colorinformation()
+ : color(0), lenconssarray(0), lenvarsarray(0), lencoefsarray(0),
+ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
+{
+
+}
 /** constructor of the color struct */
 struct_colorinformation::struct_colorinformation(
    int color_,                              /**< color of the nodes of the graph */
@@ -372,14 +384,10 @@ struct_colorinformation::struct_colorinformation(
    int lenconss,                            /**< length of ptrconsarray */
    int lencoefs                             /**< length of ptrcoefsarray */
    )
+: color(color_), lenconssarray(lenconss), lenvarsarray(lenvars), lencoefsarray(lencoefs),
+ptrarraycoefs(NULL),  ptrarrayvars(NULL), ptrarrayconss(NULL)
 {
-   color = color_;
-   lenvarsarray = lenvars;
-   lenconssarray = lenconss;
-   lencoefsarray = lencoefs;
-   ptrarraycoefs = NULL;
-   ptrarrayconss = NULL;
-   ptrarrayvars = NULL;
+
 }
 
 /** constructor of the hook struct */
@@ -417,18 +425,18 @@ int comp(
 /** compare two constraints of two scips */
 static
 int comp(
-   Scip* scip,                              /**< SCIP data structure */
+   SCIP* scip,                              /**< SCIP data structure */
    AUT_CONS* cons1,                         /**< constraint 1 to compare */
    AUT_CONS* cons2                          /**< constraint 2 to compare */
 )
 {
-   if(comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())) != 0)
-      return comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())));
+   if(comp(scip, SCIPgetRhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetRhsXXX(cons2->getScip(), cons2->getCons())) != 0)
+      return comp(scip, SCIPgetRhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetRhsXXX(cons2->getScip(), cons2->getCons()));
+   assert(SCIPisEQ(scip, SCIPgetRhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetRhsXXX(cons2->getScip(), cons2->getCons())));
 
-   if(comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())) != 0)
-      return comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())));
+   if(comp(scip, SCIPgetLhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetLhsXXX(cons2->getScip(), cons2->getCons())) != 0)
+      return comp(scip, SCIPgetLhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetLhsXXX(cons2->getScip(), cons2->getCons()));
+   assert(SCIPisEQ(scip, SCIPgetLhsXXX(cons1->getScip(), cons1->getCons()), SCIPgetLhsXXX(cons2->getScip(), cons2->getCons())));
 
    return strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons1->getCons())), SCIPconshdlrGetName(SCIPconsGetHdlr(cons2->getCons())));
 }
@@ -436,7 +444,7 @@ int comp(
 /** compare two variables of two scips */
 static
 int comp(
-   Scip* scip,                              /**< SCIP data structure */
+   SCIP* scip,                              /**< SCIP data structure */
    AUT_VAR* var1,                           /**< variable 1 to compare */
    AUT_VAR* var2                            /**< variable 2 to compare */
 )
@@ -486,11 +494,13 @@ SCIP_DECL_SORTPTRCOMP(sortptrval)
 
 /** hook function to save the permutation of the graph */
 static
-void hook(void* user_param,                 /**< data structure to save hashmaps with permutation */
+void hook(
+   void* user_param,                 /**< data structure to save hashmaps with permutation */
    unsigned int N,                          /**< number of permutations */
    const unsigned int *aut                  /**< array of permutations */
    )
 {
+
    int i;
    int j;
    int n;
@@ -508,19 +518,26 @@ void hook(void* user_param,                 /**< data structure to save hashmaps
    if(hook->getBool())
       return;
 
+   SCIPdebugMessage("Looking for a permutation from [0,%d] bijective to [%d:%d]\n", n/2-1, n/2, n-1);
    for( i = 0; i < n / 2; i++ )
    {
       assert(aut[i] < INT_MAX);
       if( (int) (aut[i]) >= n / 2 )
+      {
+         SCIPdebugMessage("%d -> %d\n", i, aut[i]);
          j++;
+      }
       else
          break;
    }
    if( j == n / 2 )
    {
-      SCIPdebugMessage("j = %d\n", n/2);
       hook->setBool(TRUE);
    }
+
+   SCIPdebugMessage("Permutation %s found.\n", hook->getBool() ? "":"not");
+   SCIPdebugMessage("j = %d\n", j);
+
    if( !hook->getBool() )
       return;
 
@@ -749,8 +766,45 @@ SCIP_RETCODE setuparrays(
          nvars = 0;
       }
       //reallocate memory with size of ptrarray[bounds, vars, coefs] + max of scip[i+1]
-      reallocMemory(origscip, colorinfo, nconss, nvars);
+      SCIP_CALL( reallocMemory(origscip, colorinfo, nconss, nvars) );
    }
+
+   /* add color information for master constraints */
+   SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origscip);
+   int nmasterconss = GCGrelaxGetNMasterConss(origscip);
+
+   SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
+
+   for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
+   {
+      SCIP_CONS* mastercons = origmasterconss[i];
+      SCIP_Real* curvals = SCIPgetValsLinear(origscip, mastercons);
+      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+
+      /* add right color for master constraint */
+      scons = new AUT_CONS(origscip, mastercons);
+      colorinfo->insert( scons, &added );
+
+      /* if it hasn't been added, it is already present */
+      if(!added)
+         delete scons;
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         scoef = new AUT_COEF(origscip, curvals[j] );
+
+         added = FALSE;
+
+         if( !SCIPisEQ(origscip, scoef->getVal(), 0) )
+         {
+            colorinfo->insert( scoef, &added );
+         }
+
+         if( !added )
+            delete scoef;
+      }
+   }
+
    return SCIP_OKAY;
 }
 /** create a graph out of an array of scips */
@@ -759,8 +813,10 @@ SCIP_RETCODE createGraph(
    SCIP*                origscip,           /**< SCIP data structure */
    SCIP**               scips,              /**< SCIPs to compare */
    int                  nscips,             /**< number of SCIPs */
+   int*                 pricingindices,     /**< indices of the given pricing problems */
    AUT_COLOR            colorinfo,          /**< result pointer to indicate success or failure */
    bliss::Graph*        graph,              /**< graph needed for discovering isomorphism */
+   int*                 pricingnodes,             /**< number of pricing nodes without master  */
    SCIP_RESULT*         result              /**< result pointer to indicate success or failure */
    )
 {
@@ -772,22 +828,34 @@ SCIP_RETCODE createGraph(
    int nconss;
    int ncurvars;
    int curvar;
-   int nnodesoffset[nscips];
+   int* nnodesoffset;
    int color;
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_VAR** curvars;
    SCIP_Real* curvals;
-   AUT_COEF *scoef;
-   AUT_VAR *svar;
-   AUT_CONS *scons;
+
    unsigned int nnodes;
    nnodes = 0;
    //building the graph out of the arrays
+   bliss::Graph* h = graph;
+
+   int* pricingnonzeros;
+   int* mastercoefindex;
+   SCIP_CALL( SCIPallocMemoryArray(origscip, &pricingnonzeros, nscips) );
+   SCIP_CALL( SCIPallocMemoryArray(origscip, &nnodesoffset, nscips) );
+   SCIP_CALL( SCIPallocMemoryArray(origscip, &mastercoefindex, nscips) );
+   BMSclearMemoryArray(pricingnonzeros, nscips);
+   BMSclearMemoryArray(nnodesoffset, nscips);
+   BMSclearMemoryArray(mastercoefindex, nscips);
+
+   SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origscip);
+   int nmasterconss = GCGrelaxGetNMasterConss(origscip);
+
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)
    {
+      SCIPdebugMessage("Pricing problem %d\n", pricingindices[s]);
       SCIP *scip = scips[s];
-      bliss::Graph* h = graph;
       nnodesoffset[s] = nnodes;
       nconss = SCIPgetNConss(scip);
       nvars = SCIPgetNVars(scip);
@@ -801,8 +869,8 @@ SCIP_RETCODE createGraph(
          if( ncurvars == 0 )
             continue;
 
-         scons = new AUT_CONS(scip, conss[i]);
-         color = colorinfo.get( *scons );
+         color = colorinfo.get( AUT_CONS(scip, conss[i]) );
+
          if(color == -1) {
             *result = SCIP_DIDNOTFIND;
             break;
@@ -815,8 +883,8 @@ SCIP_RETCODE createGraph(
       //add a node for every variable
       for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
       {
-         svar = new AUT_VAR(scip, vars[i]);
-         color = colorinfo.get( *svar );
+         color = colorinfo.get( AUT_VAR(scip, vars[i]) );
+
          if(color == -1) {
             *result = SCIP_DIDNOTFIND;
             break;
@@ -829,7 +897,7 @@ SCIP_RETCODE createGraph(
       //it is necessary, since only nodes have colors
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
-         scons = new AUT_CONS(scip, conss[i]);
+         int conscolor = colorinfo.get(AUT_CONS(scip, conss[i]));
          ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
          if( ncurvars == 0 )
             continue;
@@ -839,38 +907,156 @@ SCIP_RETCODE createGraph(
          SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
          for( j = 0; j < ncurvars; j++ )
          {
-            scoef = new AUT_COEF(scip, curvals[j] );
-            color = colorinfo.get( *scoef );
+            int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] ) ) + colorinfo.getLenCons();
+            color = colorinfo.get( AUT_COEF(scip, curvals[j] ) );
             if( color == -1 )
             {
                *result = SCIP_DIDNOTFIND;
                break;
             }
+            color += colorinfo.getLenCons() + colorinfo.getLenVar();
             curvar = SCIPvarGetProbindex(curvars[j]);
-            h->add_vertex(colorinfo.getLenCons() + colorinfo.getLenVar() + color);
+            h->add_vertex(color);
             nnodes++;
             h->add_edge(nnodesoffset[s] + i, nnodesoffset[s] + nconss + nvars + z);
             h->add_edge(nnodesoffset[s] + nconss + nvars + z, nnodesoffset[s]+nconss + curvar);
-            SCIPdebugMessage("nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
+            SCIPdebugMessage("nz: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: %f, color: %d) -> var <%s> (id: %d, color: %d) \n",
                               SCIPconsGetName(conss[i]),
                               nnodesoffset[s] + i,
-                              colorinfo.get( *scons ),
+                              conscolor,
                               nnodesoffset[s] + nconss + nvars + z,
-                              scoef->getVal(),
+                              curvals[j],
                               color+colorinfo.getLenCons() + colorinfo.getLenVar(),
                               SCIPvarGetName(curvars[j]),
                               nnodesoffset[s] + nconss + curvar,
-                              colorinfo.get( *svar)+colorinfo.getLenCons());
+                              varcolor);
             z++;
          }
          SCIPfreeMemoryArray(origscip, &curvals);
          SCIPfreeMemoryArray(origscip, &curvars);
       }
+      pricingnonzeros[s] = z;
+
+      /* add coefficient nodes for nonzeros in the master */
+      for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
+      {
+         SCIP_CONS* mastercons = origmasterconss[i];
+         curvars = SCIPgetVarsLinear(origscip, mastercons);
+         curvals = SCIPgetValsLinear(origscip, mastercons);
+         ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+         for( j = 0; j < ncurvars; ++j )
+         {
+            if( GCGvarIsLinking(curvars[j]) )
+            {
+               SCIPdebugMessage("Var <%s> is linking, abort detection.\n", SCIPvarGetName(curvars[j]));
+               *result = SCIP_DIDNOTFIND;
+               return SCIP_OKAY;
+            }
+            int block = GCGvarGetBlock(curvars[j]);
+
+            /* ignore if the variable belongs to a different block */
+            if( block != pricingindices[s] )
+            {
+               SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
+               continue;
+            }
+
+            color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
+            assert(color != -1);
+            color += colorinfo.getLenCons() + colorinfo.getLenVar();
+
+            /* add coefficent node for current coeff */
+            h->add_vertex(color);
+            nnodes++;
+         }
+      }
       SCIPdebugMessage("Iteration %d: nnodes = %d\n", s, nnodes);
       assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
    }
+   /* connect the created graphs with nodes for the master problem */
+
+   SCIPdebugMessage( "handling %d masterconss\n", nmasterconss);
+   *pricingnodes = nnodes;
+
+   for( i = 0; i < nmasterconss && *result == SCIP_SUCCESS; ++i )
+   {
+      SCIP_CONS* mastercons = origmasterconss[i];
+      curvars = SCIPgetVarsLinear(origscip, mastercons);
+      curvals = SCIPgetValsLinear(origscip, mastercons);
+      ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
+
+      SCIPdebugMessage("Handling cons <%s>\n", SCIPconsGetName(mastercons));
+
+      /* create node for masterconss and get right color */
+      int conscolor = colorinfo.get(AUT_CONS(origscip, mastercons));
+      assert(conscolor != -1);
+      h->add_vertex(conscolor);
+      int masterconsnode = nnodes;
+      nnodes++;
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         SCIP* pricingscip = NULL;
+         if( GCGvarIsLinking(curvars[j]) )
+         {
+            SCIPdebugMessage("Var <%s> is linking, abort detection.\n", SCIPvarGetName(curvars[j]));
+            *result = SCIP_DIDNOTFIND;
+            return SCIP_OKAY;
+         }
+         int block = GCGvarGetBlock(curvars[j]);
+         int index = -1;
+         SCIPdebugMessage("Var <%s> is in block %d\n", SCIPvarGetName(curvars[j]), block);
+         for( s = 0; s < nscips; ++s )
+         {
+            if( block == pricingindices[s])
+            {
+               index = s;
+               pricingscip = scips[s];
+               break;
+            }
+         }
+
+         /* ignore if the variable belongs to a different block */
+         if( pricingscip == NULL )
+         {
+            SCIPdebugMessage("Var <%s> belongs to a different block (%d)\n", SCIPvarGetName(curvars[j]), block);
+            continue;
+         }
+
+         color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
+         assert(color != -1);
+         color += colorinfo.getLenCons() + colorinfo.getLenVar();
+         SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(curvars[j]);
+
+         /* get coefficient node for current coefficient */
+         int coefnodeindex = nnodesoffset[index] + SCIPgetNVars(pricingscip) + SCIPgetNConss(pricingscip) + pricingnonzeros[index] + mastercoefindex[index];
+         ++(mastercoefindex[index]);
+
+         int varcolor = colorinfo.get(AUT_VAR(pricingscip, pricingvar));
+         assert(varcolor != -1);
+         varcolor += colorinfo.getLenCons();
+
+         assert( (uint) masterconsnode < h->get_nof_vertices());
+         assert( (uint) coefnodeindex < h->get_nof_vertices());
+         /* master constraint and coefficient */
+         h->add_edge(masterconsnode, coefnodeindex);
+         SCIPdebugMessage("ma: c <%s> (id: %d, color: %d) -> nz (id: %d) (value: <%.6f> , color: %d) -> pricingvar <%s> (id: %d, color: %d)\n",
+            SCIPconsGetName(mastercons),
+            masterconsnode, conscolor, coefnodeindex, curvals[j], color, SCIPvarGetName(pricingvar),
+            nnodesoffset[index] + SCIPgetNConss(pricingscip) + SCIPvarGetProbindex(pricingvar), varcolor);
+
+         /* get node index for pricing variable and connect masterconss, coeff and pricingvar nodes */
+         h->add_edge(coefnodeindex, nnodesoffset[index] + SCIPgetNConss(pricingscip) + SCIPvarGetProbindex(pricingvar));
+      }
+   }
+
+
    //free all allocated memory
-   freeMemory(origscip, &colorinfo);
+   SCIP_CALL( freeMemory(origscip, &colorinfo) );
+   SCIPfreeMemoryArray(origscip, &mastercoefindex);
+   SCIPfreeMemoryArray(origscip, &nnodesoffset);
+   SCIPfreeMemoryArray(origscip, &pricingnonzeros);
+
    return SCIP_OKAY;
 }
 
@@ -880,6 +1066,8 @@ SCIP_RETCODE cmpGraphPair(
    SCIP*                 origscip,            /**< SCIP data structure */
    SCIP*                 scip1,               /**< first SCIP data structure to compare */
    SCIP*                 scip2,               /**< second SCIP data structure to compare */
+   int                   prob1,               /**< index of first pricing prob */
+   int                   prob2,               /**< index of second pricing prob */
    SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*         varmap,              /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*         consmap              /**< hashmap to save permutation of constraints */
@@ -888,29 +1076,34 @@ SCIP_RETCODE cmpGraphPair(
    bliss::Graph graph;
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
-   AUT_COLOR *colorinfo;
+   AUT_COLOR colorinfo;
    int nscips;
    SCIP* scips[2];
-
-   colorinfo = new AUT_COLOR(0, 0, 0, 0 );
+   int pricingindices[2];
+   int pricingnodes = 0;
    scips[0] = scip1;
    scips[1] = scip2;
+   pricingindices[0] = prob1;
+   pricingindices[1] = prob2;
    nscips = 2;
    *result = SCIP_SUCCESS;
 
    SCIP_CALL( testScipVars(scips[0], scips[1], result) );
    SCIP_CALL( testScipCons(scips[0], scips[1], result) );
 
-   SCIP_CALL( setuparrays(origscip, scips, nscips, colorinfo, result) );
-   SCIP_CALL( createGraph(origscip, scips, nscips, *colorinfo, &graph, result) );
+   SCIP_CALL( setuparrays(origscip, scips, nscips, &colorinfo, result) );
+   SCIP_CALL( createGraph(origscip, scips, nscips, pricingindices, colorinfo, &graph,  &pricingnodes, result) );
 
-   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, graph.get_nof_vertices(), scips);
+   ptrhook = new AUT_HOOK(varmap, consmap, FALSE, pricingnodes, scips);
    graph.find_automorphisms(bstats, hook, ptrhook);
 
    varmap = ptrhook->getVarHash();
    consmap = ptrhook->getConsHash();
+
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
+
+   delete ptrhook;
    return SCIP_OKAY;
 }
 
