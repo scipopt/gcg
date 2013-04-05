@@ -99,7 +99,7 @@ SCIP_RETCODE Stabilization::updateStabcentercuts()
 
    BMSclearMemoryArray(&stabcentercuts[nstabcentercuts], ncuts-nstabcentercuts);
 
-   nstabcenterconss = ncuts;
+   nstabcentercuts = ncuts;
 
    return SCIP_OKAY;
 }
