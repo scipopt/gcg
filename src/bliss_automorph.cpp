@@ -371,12 +371,14 @@ Aut_Coef::Aut_Coef(
    val = val_;
 }
 
+/** default constructor */
 struct_colorinformation::struct_colorinformation()
  : color(0), lenconssarray(0), lenvarsarray(0), lencoefsarray(0),
 ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
 {
 
 }
+
 /** constructor of the color struct */
 struct_colorinformation::struct_colorinformation(
    int color_,                              /**< color of the nodes of the graph */
@@ -1109,7 +1111,7 @@ SCIP_RETCODE cmpGraphPair(
 
 /** returns bliss version */
 extern
-const char* getBlissVersion(void)
+const char* GCGgetBlissVersion(void)
 {
    return bliss::version;
 }

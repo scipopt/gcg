@@ -55,7 +55,7 @@ SCIP_RETCODE cmpGraphPair(
    );
 
 /** returns bliss version */
-const char* getBlissVersion(void);
+const char* GCGgetBlissVersion(void);
 
 #ifdef __cplusplus
 }
