@@ -1,4 +1,3 @@
-#include "gtest/gtest.h"
 
 #include "relax_gcg.h"
 #include "pricer_gcg.h"

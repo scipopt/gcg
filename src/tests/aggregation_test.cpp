@@ -258,8 +258,8 @@ TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
    ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
    ASSERT_EQ(2, GCGrelaxGetNIdenticalBlocks(scip, 0));
    ASSERT_EQ(0, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 1));
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
