@@ -1577,7 +1577,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    do
    {
-      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization;
+      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype) );
@@ -1677,9 +1677,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          if( pricetype->getType() == GCG_PRICETYPE_REDCOST )
          {
+            SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, bestredcostvalid = %d\n", stabilized, *nfoundvars, optimal, *bestredcostvalid);
             if( *nfoundvars == 0 )
             {
-               if( optimal )
+               if( optimal && stabilized )
                {
                   stabilization->updateAlphaMisprice();
                }

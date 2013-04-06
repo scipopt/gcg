@@ -820,7 +820,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    if( !relaxdata->discretization || !relaxdata->aggregation )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
-       /* return SCIP_OKAY; */
+       return SCIP_OKAY;
    }
 
 
@@ -828,7 +828,7 @@ SCIP_RETCODE checkIdenticalBlocks(
    if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
    {
       SCIPdebugMessage("Master is no setcover and no set partitioning.\n");
-      /* return SCIP_OKAY; */
+      return SCIP_OKAY;
    }
 
    for( i = 0; i < relaxdata->npricingprobs; i++ )
