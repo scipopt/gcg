@@ -369,6 +369,24 @@ SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+/** return linking constraints for variables */
+extern
+SCIP_CONS** GCGrelaxGetLinkingconss(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return blocks of linking constraints for variables */
+extern
+int* GCGrelaxGetLinkingconssBlock(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
+/** return number of linking constraints for variables */
+extern
+int GCGrelaxGetNLinkingconss(
+   SCIP*                 scip                /**< SCIP data structure */
+  );
+
 #ifdef __cplusplus
 }
 #endif

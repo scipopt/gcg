@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2012 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,39 +25,90 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.h
- * @brief   automorphism recognition of SCIPs
- * @author  Daniel Peters
- *
+/**@file   class_stabilization.h
+ * @brief  Description
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#include "scip/type_scip.h"
-#include "scip/type_result.h"
-#include "scip/type_misc.h"
 
-#ifndef BLISS_AUTOMORPH_H_
-#define BLISS_AUTOMORPH_H_
+#ifndef CLASS_STABILIZATION_H_
+#define CLASS_STABILIZATION_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "objscip/objscip.h"
+#include "class_pricingtype.h"
 
-SCIP_RETCODE cmpGraphPair(
-   SCIP*                 origscip,            /**< SCIP data structure */
-   SCIP*                 scip1,               /**< first SCIP data structure to compare */
-   SCIP*                 scip2,               /**< second SCIP data structure to compare */
-   int                   prob1,               /**< index of first pricing prob */
-   int                   prob2,               /**< index of second pricing prob */
-   SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap              /**< hashmap to save permutation of constraints */
+namespace gcg {
+
+class Stabilization
+{
+private:
+   SCIP* scip_;
+   SCIP_Real* stabcenterconss;
+   int stabcenterconsssize;
+   int nstabcenterconss;
+   SCIP_Real* stabcentercuts;
+   int stabcentercutssize;
+   int nstabcentercuts;
+   SCIP_Real* stabcenterlinkingconss;
+   int nstabcenterlinkingconss;
+   PricingType* pricingtype;
+   SCIP_Real alpha;
+   SCIP_NODE* node;
+   int k;
+   SCIP_Bool hasstabilitycenter;
+
+public:
+   Stabilization(
+      SCIP* scip,
+      PricingType* pricingtype
+      );
+   virtual ~Stabilization();
+
+   SCIP_RETCODE consGetDual(
+      int i,
+      SCIP_Real* dual
+      );
+
+   SCIP_RETCODE rowGetDual(
+      int i,
+      SCIP_Real* dual
+      );
+
+   SCIP_RETCODE updateStabilityCenter(
+         SCIP_Real lowerbound
+         );
+   void updateAlphaMisprice();
+   void updateAlpha();
+   SCIP_Bool isStabilized();
+
+   SCIP_RETCODE setLinkingConss(
+      SCIP_CONS** linkingconss,
+      int* linkingconsblock,
+      int nlinkingconss
    );
 
-/** returns bliss version */
-const char* GCGgetBlissVersion(void);
+   SCIP_RETCODE setNLinkingconss(
+      int nlinkingconssnew
+   );
 
-#ifdef __cplusplus
-}
-#endif
-#endif /* BLISS_AUTOMORPH_H_ */
+   SCIP_RETCODE linkingconsGetDual(
+      int i,
+      SCIP_Real* dual
+      );
+
+private:
+   void updateIterationCount();
+   SCIP_RETCODE updateStabcenterconss();
+   SCIP_RETCODE updateStabcentercuts();
+   void increaseAlpha();
+   void decreaseAlpha();
+   SCIP_Real calculateSubgradient();
+   SCIP_Real computeDual(
+      SCIP_Real center,
+      SCIP_Real current
+      );
+};
+
+} /* namespace gcg */
+#endif /* CLASS_STABILIZATION_H_ */

@@ -38,6 +38,8 @@
 #include "objscip/objscip.h"
 #include "objscip/objscipdefplugins.h"
 #include "gcgplugins.h"
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
 #include "gtest/gtest.h"
 #define SCIP_CALL_EXPECT(x) do { EXPECT_EQ(SCIP_OKAY, (x)); } while(FALSE)
 

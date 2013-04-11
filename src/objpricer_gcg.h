@@ -36,17 +36,19 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
+#include "class_stabilization.h"
 
-#ifndef __SCIP_OBJPRICER_GCG__
-#define __SCIP_OBJPRICER_GCG__
+#ifndef GCG_OBJPRICER_GCG__
+#define GCG_OBJPRICER_GCG__
 
+using gcg::Stabilization;
 
 class ObjPricerGcg : public scip::ObjPricer
 {
 public:
    /*lint --e{1540}*/
 
-   SCIP*                 origprob;           /**< the original program */
+   SCIP*              origprob;           /**< the original program */
    SCIP_PRICERDATA *pricerdata;
    static int threads;
 
@@ -136,11 +138,12 @@ public:
    }
 
    void createPricingTypes();
+   void createStabilization();
 
 private:
    static ReducedCostPricing *reducedcostpricing;
    static FarkasPricing *farkaspricing;
-
+   static Stabilization *stabilization;
    /** free pricing problems */
    SCIP_RETCODE freePricingProblems();
 
@@ -273,4 +276,5 @@ private:
 int ObjPricerGcg::threads;
 ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
 FarkasPricing* ObjPricerGcg::farkaspricing;
+Stabilization* ObjPricerGcg::stabilization;
 #endif
