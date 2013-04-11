@@ -48,7 +48,7 @@
 
 #define BRANCHRULE_NAME          "generic"
 #define BRANCHRULE_DESC          "generic branching rule by Vanderbeck"
-#define BRANCHRULE_PRIORITY      99999
+#define BRANCHRULE_PRIORITY      99
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
 

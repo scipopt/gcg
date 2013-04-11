@@ -642,7 +642,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
-      GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
+     GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
 
    /* set the pointer in the parent node to NULL */
    if( (*consdata)->parentcons != NULL )

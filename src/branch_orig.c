@@ -179,6 +179,7 @@ SCIP_RETCODE branchVar(
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
    branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
+   branchupdata->cons = cons1;
 
    branchdowndata->origvar = branchvar;
    branchdowndata->oldvalue = solval;
@@ -186,6 +187,7 @@ SCIP_RETCODE branchVar(
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
+   branchdowndata->cons = cons2;
 
 
    (void) SCIPsnprintf(upname, SCIP_MAXSTRLEN, "%s %s %f", SCIPvarGetName(branchupdata->origvar),

@@ -123,14 +123,21 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    parentcons = masterbranchcons;
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
 
-   if( GCGvarIsMaster(mastervar) )
+   if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ))
    {
-      while( parentcons != NULL && branchdata != NULL && ( strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0 || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
+
+      while( parentcons != NULL && branchdata != NULL
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
          SCIP_Bool blockfound;
          SCIP_VAR** pricingvars;
          int k;
+
+         if(GCGconsMasterbranchGetbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0)
+            break;
+
+         if(GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
+            break;
 
          assert(branchdata != NULL);
 

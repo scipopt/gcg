@@ -1,200 +1,111 @@
-$(OBJDIR)/main.o: src/main.c /home/schmickerath/gcg/lib/scip-git/src/scip/scip.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/def.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_retcode.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_message.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_message.h \
- /home/schmickerath/gcg/lib/scip-git/src/blockmemshell/memory.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_result.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_clock.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_misc.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_timing.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_scip.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_paramset.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_event.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_lp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_nlp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_var.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_prob.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_tree.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_branch.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_conflict.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_cons.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_sol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_dialog.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_disp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_heur.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_history.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_nodesel.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_presol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_pricer.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_reader.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_relax.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_sepa.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_prop.h \
- /home/schmickerath/gcg/lib/scip-git/src/nlpi/type_nlpi.h \
- /home/schmickerath/gcg/lib/scip-git/src/nlpi/type_expr.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_branch.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_conflict.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_cons.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_cutpool.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_cutpool.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_dialog.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_disp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_event.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_fileio.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_heur.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_history.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_implics.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_implics.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_lp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_set.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_stat.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/type_lpi.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_nlp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_misc.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_nodesel.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_paramset.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_presol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_pricer.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_reader.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_relax.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_sepa.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_prop.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_sol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_tree.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/pub_var.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/lpi.h \
- /home/schmickerath/gcg/lib/scip-git/src/nlpi/pub_expr.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/intervalarith.h \
- /home/schmickerath/gcg/lib/scip-git/src/nlpi/type_exprinterpret.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/scipdefplugins.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_allfullstrong.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_cloud.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_fullstrong.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_inference.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_leastinf.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_mostinf.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_pscost.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_random.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/branch_relpscost.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_abspower.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_and.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_bivariate.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_bounddisjunction.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_conjunction.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_countsols.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_cumulative.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_disjunction.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_indicator.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_integral.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_knapsack.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_linear.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_linking.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_logicor.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_nonlinear.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_or.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_orbitope.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_pseudoboolean.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_quadratic.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_setppc.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_soc.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_sos1.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_sos2.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_superindicator.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_varbound.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/cons_xor.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/disp_default.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_actconsdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_clique.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_coefdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_crossover.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_dins.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_feaspump.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_fixandinfer.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_fracdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_guideddiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_zeroobj.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_intdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_intshifting.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_linesearchdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_localbranching.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_mutation.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_nlpdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_objpscostdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_octane.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_oneopt.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_pscostdiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_proximity.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_rens.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_rins.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_rootsoldiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_rounding.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_shiftandpropagate.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_shifting.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_simplerounding.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_subnlp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_trivial.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_trysol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_twoopt.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_undercover.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_vbounds.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_veclendiving.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/heur_zirounding.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/nodesel_bfs.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/nodesel_dfs.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/nodesel_estimate.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/nodesel_hybridestim.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/nodesel_restartdfs.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_boundshift.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_components.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_convertinttobin.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_domcol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_dualinfer.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_gateextraction.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_implics.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_inttobinary.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/presol_trivial.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_dualfix.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_genvbounds.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_obbt.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_probing.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_pseudoobj.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_redcost.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_rootredcost.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/prop_vbounds.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_bnd.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_ccg.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_cip.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_cnf.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_fix.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_fzn.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_gms.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_lp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_mps.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_opb.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_osil.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_pip.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_ppm.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_pbm.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_rlp.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_sol.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_wbo.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/reader_zpl.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_cgmip.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_clique.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_closecuts.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_cmir.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_flowcover.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_gomory.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_impliedbounds.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_intobj.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_mcf.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_oddcycle.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_rapidlearning.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_strongcg.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/sepa_zerohalf.h \
- /home/schmickerath/gcg/lib/scip-git/src/scip/scipshell.h \
- /home/schmickerath/gcg/lib/scip-git/src/nlpi/nlpi_ipopt.h \
+$(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
+ lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
+ lib/scip/src/scip/type_message.h lib/scip/src/blockmemshell/memory.h \
+ lib/scip/src/scip/type_result.h lib/scip/src/scip/type_clock.h \
+ lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
+ lib/scip/src/scip/type_scip.h lib/scip/src/scip/type_paramset.h \
+ lib/scip/src/scip/type_event.h lib/scip/src/scip/type_lp.h \
+ lib/scip/src/scip/type_nlp.h lib/scip/src/scip/type_var.h \
+ lib/scip/src/scip/type_prob.h lib/scip/src/scip/type_tree.h \
+ lib/scip/src/scip/type_branch.h lib/scip/src/scip/type_conflict.h \
+ lib/scip/src/scip/type_cons.h lib/scip/src/scip/type_sol.h \
+ lib/scip/src/scip/type_dialog.h lib/scip/src/scip/type_disp.h \
+ lib/scip/src/scip/type_heur.h lib/scip/src/scip/type_history.h \
+ lib/scip/src/scip/type_nodesel.h lib/scip/src/scip/type_presol.h \
+ lib/scip/src/scip/type_pricer.h lib/scip/src/scip/type_reader.h \
+ lib/scip/src/scip/type_relax.h lib/scip/src/scip/type_sepa.h \
+ lib/scip/src/scip/type_prop.h lib/scip/src/nlpi/type_nlpi.h \
+ lib/scip/src/nlpi/type_expr.h lib/scip/src/scip/pub_branch.h \
+ lib/scip/src/scip/pub_conflict.h lib/scip/src/scip/pub_cons.h \
+ lib/scip/src/scip/pub_cutpool.h lib/scip/src/scip/type_cutpool.h \
+ lib/scip/src/scip/pub_dialog.h lib/scip/src/scip/pub_disp.h \
+ lib/scip/src/scip/pub_event.h lib/scip/src/scip/pub_fileio.h \
+ lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
+ lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
+ lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
+ lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
+ lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
+ lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
+ lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
+ lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
+ lib/scip/src/nlpi/type_exprinterpret.h \
+ lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/branch_allfullstrong.h \
+ lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
+ lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
+ lib/scip/src/scip/branch_mostinf.h lib/scip/src/scip/branch_pscost.h \
+ lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
+ lib/scip/src/scip/cons_abspower.h lib/scip/src/scip/cons_and.h \
+ lib/scip/src/scip/cons_bivariate.h \
+ lib/scip/src/scip/cons_bounddisjunction.h \
+ lib/scip/src/scip/cons_conjunction.h lib/scip/src/scip/cons_countsols.h \
+ lib/scip/src/scip/cons_cumulative.h lib/scip/src/scip/cons_disjunction.h \
+ lib/scip/src/scip/cons_indicator.h lib/scip/src/scip/cons_integral.h \
+ lib/scip/src/scip/cons_knapsack.h lib/scip/src/scip/cons_linear.h \
+ lib/scip/src/scip/cons_linking.h lib/scip/src/scip/cons_logicor.h \
+ lib/scip/src/scip/cons_nonlinear.h lib/scip/src/scip/cons_or.h \
+ lib/scip/src/scip/cons_orbitope.h lib/scip/src/scip/cons_pseudoboolean.h \
+ lib/scip/src/scip/cons_quadratic.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/cons_soc.h lib/scip/src/scip/cons_sos1.h \
+ lib/scip/src/scip/cons_sos2.h lib/scip/src/scip/cons_superindicator.h \
+ lib/scip/src/scip/cons_varbound.h lib/scip/src/scip/cons_xor.h \
+ lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
+ lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
+ lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
+ lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
+ lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
+ lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
+ lib/scip/src/scip/heur_linesearchdiving.h \
+ lib/scip/src/scip/heur_localbranching.h \
+ lib/scip/src/scip/heur_mutation.h lib/scip/src/scip/heur_nlpdiving.h \
+ lib/scip/src/scip/heur_objpscostdiving.h lib/scip/src/scip/heur_octane.h \
+ lib/scip/src/scip/heur_oneopt.h lib/scip/src/scip/heur_pscostdiving.h \
+ lib/scip/src/scip/heur_proximity.h lib/scip/src/scip/heur_rens.h \
+ lib/scip/src/scip/heur_rins.h lib/scip/src/scip/heur_rootsoldiving.h \
+ lib/scip/src/scip/heur_rounding.h \
+ lib/scip/src/scip/heur_shiftandpropagate.h \
+ lib/scip/src/scip/heur_shifting.h \
+ lib/scip/src/scip/heur_simplerounding.h lib/scip/src/scip/heur_subnlp.h \
+ lib/scip/src/scip/heur_trivial.h lib/scip/src/scip/heur_trysol.h \
+ lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
+ lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
+ lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
+ lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_hybridestim.h \
+ lib/scip/src/scip/nodesel_restartdfs.h \
+ lib/scip/src/scip/presol_boundshift.h \
+ lib/scip/src/scip/presol_components.h \
+ lib/scip/src/scip/presol_convertinttobin.h \
+ lib/scip/src/scip/presol_domcol.h lib/scip/src/scip/presol_dualinfer.h \
+ lib/scip/src/scip/presol_gateextraction.h \
+ lib/scip/src/scip/presol_implics.h \
+ lib/scip/src/scip/presol_inttobinary.h \
+ lib/scip/src/scip/presol_trivial.h lib/scip/src/scip/prop_dualfix.h \
+ lib/scip/src/scip/prop_genvbounds.h lib/scip/src/scip/prop_obbt.h \
+ lib/scip/src/scip/prop_probing.h lib/scip/src/scip/prop_pseudoobj.h \
+ lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_rootredcost.h \
+ lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/reader_bnd.h \
+ lib/scip/src/scip/reader_ccg.h lib/scip/src/scip/reader_cip.h \
+ lib/scip/src/scip/reader_cnf.h lib/scip/src/scip/reader_fix.h \
+ lib/scip/src/scip/reader_fzn.h lib/scip/src/scip/reader_gms.h \
+ lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
+ lib/scip/src/scip/reader_opb.h lib/scip/src/scip/reader_osil.h \
+ lib/scip/src/scip/reader_pip.h lib/scip/src/scip/reader_ppm.h \
+ lib/scip/src/scip/reader_pbm.h lib/scip/src/scip/reader_rlp.h \
+ lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_wbo.h \
+ lib/scip/src/scip/reader_zpl.h lib/scip/src/scip/sepa_cgmip.h \
+ lib/scip/src/scip/sepa_clique.h lib/scip/src/scip/sepa_closecuts.h \
+ lib/scip/src/scip/sepa_cmir.h lib/scip/src/scip/sepa_flowcover.h \
+ lib/scip/src/scip/sepa_gomory.h lib/scip/src/scip/sepa_impliedbounds.h \
+ lib/scip/src/scip/sepa_intobj.h lib/scip/src/scip/sepa_mcf.h \
+ lib/scip/src/scip/sepa_oddcycle.h lib/scip/src/scip/sepa_rapidlearning.h \
+ lib/scip/src/scip/sepa_strongcg.h lib/scip/src/scip/sepa_zerohalf.h \
+ lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/gcggithash.h src/relax_gcg.h src/type_branchgcg.h src/pricer_gcg.h \
  src/type_solver.h
