@@ -24,7 +24,6 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /**@file   cons_masterbranch.c
  * @ingroup CONSHDLRS
  * @brief  constraint handler for storing the branching decisions at each node of the tree
@@ -624,85 +623,6 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
 }
 
 
-/** frees specific constraint data */
-static
-SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
-{
-   SCIP_CONSDATA* consdata2;
-   int i;
-
-   assert(scip != NULL);
-   assert(conshdlr != NULL);
-   assert(cons != NULL);
-   assert(consdata != NULL);
-   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
-   assert(*consdata != NULL);
-
-   SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
-
-   /* set the mastercons pointer of the corresponding origcons to NULL */
-   if( (*consdata)->origcons != NULL )
-     GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
-
-   /* set the pointer in the parent node to NULL */
-   if( (*consdata)->parentcons != NULL )
-   {
-      consdata2 = SCIPconsGetData((*consdata)->parentcons);
-
-      if( SCIPinProbing(scip) )
-      {
-         consdata2->probingtmpcons = NULL;
-      }
-      else
-      {
-         for( i=0; i<consdata2->nchildcons; ++i )
-         {
-            if( consdata2->childcons[i] == cons )
-            {
-               consdata2->childcons[i] = NULL;
-
-               break;
-            }
-         }
-      }
-   }
-   /* the node should not have children anymore */
-   assert(i != consdata2->nchildcons || consdata2->nchildcons == 0);
-
-   /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
-    * corresponding origbranch constraint */
-   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
-   {
-      SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
-   }
-
-   /* delete array with bound changes */
-   if( (*consdata)->nboundchanges > 0 )
-   {
-      SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
-      SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
-   }
-
-   if( (*consdata)->nboundchangestreated != NULL )
-   {
-      SCIPfreeMemoryArray(scip, &(*consdata)->nboundchangestreated);
-   }
-
-   if( (*consdata)->childcons != NULL )
-      SCIPfreeMemoryArray(scip, &(*consdata)->childcons);
-
-   /* free constraint data */
-   if( (*consdata)->name != NULL )
-   {
-      BMSfreeBlockMemoryArray(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
-   }
-   SCIPfreeBlockMemory(scip, consdata);
-
-   return SCIP_OKAY;
-}
-
 /** constraint activation notification method of constraint handler */
 static
 SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
@@ -978,6 +898,117 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    return SCIP_OKAY;
 }
 
+
+/** frees specific constraint data */
+static
+SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
+{
+   SCIP_CONSDATA* consdata2;
+   SCIP_CONSDATA** childconsdatas;
+   SCIP_CONS** childcons;
+   int i;
+
+   assert(scip != NULL);
+   assert(conshdlr != NULL);
+   assert(cons != NULL);
+   assert(consdata != NULL);
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+   assert(*consdata != NULL);
+
+   SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
+
+
+   if((*consdata)->nchildcons > 0)
+   {
+      SCIP_CALL(SCIPallocMemoryArray(scip, &childconsdatas, (*consdata)->nchildcons));
+      SCIP_CALL(SCIPallocMemoryArray(scip, &childcons, (*consdata)->nchildcons));
+   }
+   for( i=0; i< (*consdata)->nchildcons; ++i )
+   {
+      childconsdatas[i] = SCIPconsGetData((*consdata)->childcons[i]);
+      childcons[i] = (*consdata)->childcons[i];
+   }
+
+   /*delete childnodes */
+   for( i=0; i< (*consdata)->nchildcons; ++i )
+   {
+      SCIP_CONSHDLRDATA* conshdlrdata;
+
+      SCIPdebugMessage("Deleting %d childnodes\n", (*consdata)->nchildcons);
+      consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]);
+      SCIPreleaseCons(scip, &childcons[i]);
+   }
+   if((*consdata)->nchildcons > 0)
+   {
+      SCIPfreeMemoryArray(scip, &childconsdatas);
+      SCIPfreeMemoryArray(scip, &childcons);
+   }
+
+   /* set the mastercons pointer of the corresponding origcons to NULL */
+   if( (*consdata)->origcons != NULL )
+     GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
+
+   /* set the pointer in the parent node to NULL */
+   if( (*consdata)->parentcons != NULL )
+   {
+      consdata2 = SCIPconsGetData((*consdata)->parentcons);
+
+      if( SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip) || SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip)) )
+      {
+         consdata2->probingtmpcons = NULL;
+      }
+      else
+      {
+         for( i=0; i<consdata2->nchildcons; ++i )
+         {
+            if( consdata2->childcons[i] == cons )
+            {
+               consdata2->childcons[i] = consdata2->childcons[consdata2->nchildcons-1];/*NULL;*/
+
+               consdata2->childcons[consdata2->nchildcons-1] = NULL;
+
+               break;
+            }
+         }
+      }
+   }
+   /* the node should not have children anymore */
+   /*assert(i != consdata2->nchildcons || consdata2->nchildcons == 0);*/
+
+
+   /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
+    * corresponding origbranch constraint */
+   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
+   {
+      SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
+   }
+
+   /* delete array with bound changes */
+   if( (*consdata)->nboundchanges > 0 )
+   {
+      SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
+      SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
+      SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
+      SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
+   }
+
+   if( (*consdata)->nboundchangestreated != NULL )
+   {
+      SCIPfreeMemoryArray(scip, &(*consdata)->nboundchangestreated);
+   }
+
+   if( (*consdata)->childcons != NULL )
+      SCIPfreeMemoryArray(scip, &(*consdata)->childcons);
+
+   /* free constraint data */
+   if( (*consdata)->name != NULL )
+   {
+      BMSfreeBlockMemoryArray(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
+   }
+   SCIPfreeBlockMemory(scip, consdata);
+
+   return SCIP_OKAY;
+}
 
 
 /** domain propagation method of constraint handler */
@@ -1777,7 +1808,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       parentdata = SCIPconsGetData(parentcons);
       assert(parentdata != NULL);
 
-      if( SCIPinProbing(scip) )
+      if( SCIPinProbing(scip) || SCIPinProbing(GCGpricerGetOrigprob(scip)))
       {
          parentdata->probingtmpcons = *cons;
       }
@@ -1824,7 +1855,7 @@ SCIP_Bool GCGnodeisVanderbeck(
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
 
-   if( masterbranchcons == NULL )
+   if( masterbranchcons == NULL || SCIPnodeGetDepth(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(scip))) == 0 )
       return FALSE;
 
    branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
