@@ -718,14 +718,6 @@ SCIP_RETCODE addToRecord(
 
    record->recordsize++;
 
-/*    SCIPdebugMessage("add to record with ");
-      for( i=0; i<Ssize; ++i)
-      {
-         SCIPdebugPrintf(" S[%d].component =%s", i, SCIPvarGetName(record->record[record->recordsize-1][i].component) );
-         SCIPdebugPrintf(" S[%d].sense =%d", i, record->record[record->recordsize-1][i].sense );
-         SCIPdebugPrintf(" S[%d].bound =%g\n", i, record->record[record->recordsize-1][i].bound );
-      } */
-
    return SCIP_OKAY;
 }
 
@@ -857,19 +849,13 @@ SCIP_RETCODE Separate(
             alphacontrol += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
             mucontrol += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
          }
-/*          if( !SCIPisEQ(scip, generatorentry, 0) && !SCIPisEQ(scip, SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]), 0) ) */
-/*          { */
-/*              SCIPdebugMessage("generatorentry(%s) = %g\n", SCIPvarGetName(origvar), generatorentry); */
-/*              SCIPdebugMessage("mastervarvalue = %g\n", SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j])); */
-/*          } */
       }
       if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
       {
          ++Jsize;
-/*           SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]); */
       }
-      if( !SCIPisFeasIntegral(scip, alpha[k]) || !SCIPisFeasIntegral(scip, alphacontrol) /* SCIPisGT(scip, alpha[k] - SCIPfloor(scip, alpha[k]), 0) || SCIPisGT(scip, alphacontrol - SCIPfloor(scip, alphacontrol), 0) */
-            || !SCIPisFeasIntegral(scip, mucontrol) )/*   || SCIPisGT(scip, mucontrol - SCIPfloor(scip, mucontrol), 0)) */
+      if( !SCIPisFeasIntegral(scip, alpha[k]) || !SCIPisFeasIntegral(scip, alphacontrol)
+            || !SCIPisFeasIntegral(scip, mucontrol) )
       {
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
          SCIPdebugMessage("alphacontrol = %g\n", alphacontrol);
@@ -885,9 +871,6 @@ SCIP_RETCODE Separate(
          for( l=0; l < Ssize; ++l )
          {
             copyS[l] = S[l];
-            /*  SCIPdebugMessage("copyS[%d].component =%s\n", l, SCIPvarGetName(copyS[l].component) ); */
-            /* SCIPdebugMessage("copyS[%d].sense =%d\n", l, copyS[l].sense ); */
-            /* SCIPdebugMessage("copyS[%d].bound =%g\n", l, copyS[l].bound ); */
          }
 
          /* create temporary array to compute median */
@@ -1224,12 +1207,6 @@ double computeAlpha(
            (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, generatorentry, ivalue)) )
       {
          alpha_i += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
-         if ( !SCIPisEQ(scip, SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]), 0)
-            && !SCIPisEQ(scip, generatorentry, 0) )
-         {
-/*             SCIPdebugMessage("generator(%s) = %g\n", SCIPvarGetName(origvar), generatorentry); */
-/*             SCIPdebugMessage("mastervarvalue = %g\n", SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j])); */
-         }
       }
    }
 
@@ -1383,17 +1360,7 @@ SCIP_RETCODE Explore(
       alpha_i = computeAlpha(scip, Fsize, isense, ivalue, origvar, F);
    }
 
-/*    SCIP_CALL( SCIPallocBufferArray(scip, &compvalues, Fsize) ); */
-/*    for( l=0; l<Fsize; ++l ) */
-/*    { */
-/*       compvalues[l] = getGeneratorEntry(scip, F[l], origvar); */
-/*       if( SCIPisLT(scip, compvalues[l], min) ) */
-/*          min = compvalues[l]; */
-/*    } */
-
-   median = ivalue;/* GetMedian(scip, compvalues, Fsize, min); */
-/*    SCIPfreeBufferArray(scip, &compvalues); */
-/*    compvalues = NULL; */
+   median = ivalue;
 
    for( j = 0; j < Fsize; ++j )
    {
@@ -1413,8 +1380,8 @@ SCIP_RETCODE Explore(
    /* ******************************************* *
     * if f > 0, add pair to record                *
     * ******************************************* */
-   if( !SCIPisFeasIntegral(scip, alpha_i) || !SCIPisFeasIntegral(scip, alphacontrol) /* SCIPisGT(scip, alpha_i - SCIPfloor(scip, alpha_i), 0)|| SCIPisGT(scip, alphacontrol - SCIPfloor(scip, alphacontrol), 0) */
-      || !SCIPisFeasIntegral(scip, mucontrol) )/* SCIPisGT(scip, mucontrol - SCIPfloor(scip, mucontrol), 0) ) */
+   if( !SCIPisFeasIntegral(scip, alpha_i) || !SCIPisFeasIntegral(scip, alphacontrol)
+      || !SCIPisFeasIntegral(scip, mucontrol) )
    {
       found = TRUE;
       /* SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
@@ -1800,17 +1767,9 @@ SCIP_RETCODE ChooseSeparateMethod(
          strips = NULL;
       }
 
-     /* if(ncheckedblocks < GCGrelaxGetNPricingprobs(scip))
-      {*/
          /*choose new block */
          SCIP_CALL(GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips));
-      /*}
-      else
-      {*/
-         /* map soted current sol to origsol */
-         assert(integer);
-      /*}*/
-      /*return SCIP_OKAY;*/
+
    }
    else
    {
@@ -1838,7 +1797,6 @@ SCIP_RETCODE ChooseSeparateMethod(
          ncheckedblocks = 0;
       }
    }
-
 
    assert(record->recordsize > 0);
 
@@ -2246,10 +2204,9 @@ SCIP_RETCODE createChildNodesGeneric(
          {
             L = mu;
             SCIPdebugMessage("mu = %g should be integer, \n", mu);
-            assert(SCIPisFeasIntegral(scip,mu)); /* SCIPisEQ(scip, mu - SCIPceil(scip, mu), 0)); */
+            assert(SCIPisFeasIntegral(scip,mu));
          }
          lhs = pL-L+1;
-         /*  SCIPdebugMessage("pL-L+1 = %g \n", pL-L+1); */
       }
       SCIPdebugMessage("pL = %g \n", pL);
       pL = L;
@@ -2257,7 +2214,7 @@ SCIP_RETCODE createChildNodesGeneric(
       branchchilddata->lhs = lhs;
       SCIPdebugMessage("L = %g, \n", L);
       SCIPdebugMessage("lhs set to %g \n", lhs);
-      assert(SCIPisFeasIntegral(scip, lhs));/* SCIPisEQ(scip, lhs - SCIPceil(scip, lhs), 0) && lhs != 0); */
+      assert(SCIPisFeasIntegral(scip, lhs));
       lhsSum += lhs;
 
 
@@ -2266,13 +2223,14 @@ SCIP_RETCODE createChildNodesGeneric(
          if( masterbranchcons != NULL )
          {
             ++nchildnodes;
-            for( i=0; i<branchchilddata->consSsize; ++i )
-            {
-               /* SCIPdebugMessage("setting consS[%d].component = %s\n", i, SCIPvarGetName(branchchilddata->consS[i].component) ); */
-               /* SCIPdebugMessage("setting consS[%d].sense = %d\n", i, branchchilddata->consS[i].sense); */
-               /* SCIPdebugMessage("setting consS[%d].bound = %g\n", i, branchchilddata->consS[i].bound); */
 
-            }
+            /*for( i=0; i<branchchilddata->consSsize; ++i )
+            {
+                SCIPdebugMessage("setting consS[%d].component = %s\n", i, SCIPvarGetName(branchchilddata->consS[i].component) );
+                SCIPdebugMessage("setting consS[%d].sense = %d\n", i, branchchilddata->consS[i].sense);
+                SCIPdebugMessage("setting consS[%d].bound = %g\n", i, branchchilddata->consS[i].bound);
+
+            }*/
             SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
             SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &childcons, child, GCGconsMasterbranchGetActiveCons(masterscip)) );
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
@@ -2484,10 +2442,6 @@ assert(relax != NULL);
 relaxdata = SCIPrelaxGetData(relax);
 assert(relaxdata != NULL);
 
-/*origvars = SCIPgetVars(scip);
-norigvars = SCIPgetNVars(scip);
-assert(origvars != NULL);*/
-
 masterprob = GCGrelaxGetMasterprob(scip);
 
 mastersol = SCIPgetBestSol(masterprob);
@@ -2500,10 +2454,6 @@ SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
 SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
 SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
-
-/* get variables of the master problem and their solution values */
-/*SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );*/
-/*SCIP_CALL( SCIPallocBufferArray(scip, &sortmastervars, nmastervars) );*/
 
 nsortmastervars = 0;
 
@@ -2540,7 +2490,6 @@ for(i=0; i<nnonsortmastervars; ++i)
    mastervals[nsortmastervars -1] = SCIPgetSolVal(masterprob, NULL, nonsortmastervars[i]);
 
 }
-
 
 /* initialize the block values for the pricing problems */
 for( i = 0; i < npricingprobs; i++ )
@@ -2941,8 +2890,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          /* todo handle linking variables, may be multiple in ckeckedblocksstrips */
          for( i=0; i<nmastervars; ++i)
          {
-            /*SCIP_VAR* mastervar;*/
-            /*int blocknr;*/
             SCIP_Bool blockchecked;
 
             mastervar = mastervars[i];
@@ -3099,7 +3046,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    if( masterbranchcons != NULL && GCGconsMasterbranchGetBranchdata(masterbranchcons) != NULL )
    {
       /* calculate C */
-      /* SCIPdebugMessage("calculating C\n"); */
       parentcons = masterbranchcons;
       Csize = 0;
       while( parentcons != NULL && GCGconsMasterbranchGetbranchrule(parentcons) != NULL
@@ -3229,7 +3175,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          checkedblockssortstrips,
          checkedblocksnsortstrips) );
    }
-   /*assert(S!=NULL);*/
 
    if( feasible )
    {

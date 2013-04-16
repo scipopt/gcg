@@ -439,7 +439,10 @@ SCIP_RETCODE branchExtern(
    }
 
    assert(branchvar != NULL);
-
+   if( strcmp(SCIPvarGetName(branchvar), "t_x#2#19") == 0)
+   {
+      printf("gefunden");
+   }
    SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
 
    *result = SCIP_BRANCHED;
