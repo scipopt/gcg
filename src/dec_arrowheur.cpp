@@ -47,6 +47,7 @@
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
 #include "graph/hyperrowcolgraph.h"
+#include "graph/graph_tclique.h"
 #include "graph/weights.h"
 
 #include <set>
@@ -88,7 +89,7 @@ using gcg::Weights;
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   HyperrowcolGraph* graph;                   /**< the graph of the matrix */
+   HyperrowcolGraph<gcg::GraphTclique>* graph;                   /**< the graph of the matrix */
    char           tempfile[SCIP_MAXSTRLEN];  /**< filename for the metis input file */
 
    /* weight parameters */
@@ -327,7 +328,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowcolGraph(scip, w);
+   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 

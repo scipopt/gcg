@@ -1152,10 +1152,6 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
             assert(consblock == varblock);
             SCIPdebugMessage(" var <%s> is handled and in same block as cons (%d == %d).\n", SCIPvarGetName(probvar), consblock, varblock);
          }
-
-         DECdecompSetVartoblock(decdecomp, vartoblock);
-
-         DECdecompSetConstoblock(decdecomp, constoblock);
       }
 
       SCIPfreeBufferArray(scip, &curvars);

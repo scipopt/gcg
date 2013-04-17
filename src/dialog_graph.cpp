@@ -42,6 +42,7 @@
 #include "graph/rowgraph.h"
 #include "scip_misc.h"
 #include "cons_decomp.h"
+#include "graph/graph_tclique.h"
 
 namespace gcg
 {
@@ -82,16 +83,17 @@ SCIP_DECL_DIALOGEXEC(DialogReadPartition::scip_exec) {
    return SCIP_OKAY;
 }
 
-template<class G>
-DialogWriteGraphs<G>::DialogWriteGraphs(
+template<class T, template <class T> class G>
+DialogWriteGraphs<T,G>::DialogWriteGraphs(
    SCIP*              scip                /**< SCIP data structure */
-):  ObjDialog(scip, G(scip, Weights()).name.c_str(), "writes graph of given type", FALSE)
+):  ObjDialog(scip, G<T>(scip, Weights()).name.c_str(), "writes graph of given type", FALSE)
 {
-   (void)static_cast<Graph*>((G*)0); /* assure we only get descendants of type Graph */
+   (void)static_cast<Graph<T>*>((G<T>*)0); /* assure we only get descendants of type Graph */
 }
 
-template<class G>
-SCIP_DECL_DIALOGEXEC(DialogWriteGraphs<G>::scip_exec)
+
+template<class T,template <class T> class G>
+SCIP_RETCODE DialogWriteGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, SCIP_DIALOGHDLR* dialoghdlr, SCIP_DIALOG** nextdialog)
 {
 
    if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
@@ -112,7 +114,7 @@ SCIP_DECL_DIALOGEXEC(DialogWriteGraphs<G>::scip_exec)
    }
    if( filename[0] != '\0' )
    {
-      Graph* graph = new G(scip, Weights());
+      Graph<T>* graph = new G<T>(scip, Weights());
       char* extension;
       extension = filename;
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
@@ -125,16 +127,16 @@ SCIP_DECL_DIALOGEXEC(DialogWriteGraphs<G>::scip_exec)
    return SCIP_OKAY;
 }
 
-template<class G>
-DialogReadGraphs<G>::DialogReadGraphs(
+template<class T, template <class T> class G>
+DialogReadGraphs<T,G>::DialogReadGraphs(
    SCIP*              scip               /**< SCIP data structure */
-): ObjDialog(scip, G(scip, Weights()).name.c_str(), "reads graph of given type", FALSE)
+): ObjDialog(scip, G<T>(scip, Weights()).name.c_str(), "reads graph of given type", FALSE)
 {
-   (void)static_cast<Graph*>((G*)0); /* assure we only get descendants of type Graph */
+   (void)static_cast<Graph<T>*>((G<T>*)0); /* assure we only get descendants of type Graph */
 }
 
-template<class G>
-SCIP_DECL_DIALOGEXEC(DialogReadGraphs<G>::scip_exec)
+template<class T, template <class T> class G>
+SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, SCIP_DIALOGHDLR* dialoghdlr, SCIP_DIALOG** nextdialog)
 {
 
    if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
@@ -155,7 +157,7 @@ SCIP_DECL_DIALOGEXEC(DialogReadGraphs<G>::scip_exec)
    }
    if( filename[0] != '\0' )
    {
-      Graph* graph = new G(scip, Weights());
+      Graph<T>* graph = new G<T>(scip, Weights());
       char* extension;
       extension = filename;
       DEC_DECOMP* decomp;
@@ -175,7 +177,7 @@ SCIP_DECL_DIALOGEXEC(DialogReadGraphs<G>::scip_exec)
 } /* namespace gcg */
 
 /** include the graph entries for both writing the graph and reading in the partition */
-template<class G>
+template<class T, template <class T> class G>
 SCIP_RETCODE GCGincludeGraphEntries(
    SCIP*              scip                /**< SCIP data structure */
 )
@@ -183,18 +185,18 @@ SCIP_RETCODE GCGincludeGraphEntries(
    SCIP_DIALOG* graphdialog;
    SCIP_DIALOG* subdialog;
 
-   (void)static_cast<gcg::Graph*>((G*)0); /* assure we only get descendants of type Graph */
+   (void)static_cast<gcg::Graph<T>*>((G<T>*)0); /* assure we only get descendants of type Graph */
 
    SCIPdialogFindEntry(SCIPgetRootDialog(scip), "graph", &graphdialog);
    assert(graphdialog != NULL);
 
    SCIPdialogFindEntry(graphdialog, "write", &subdialog);
    assert(subdialog != NULL);
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraphs<G>(scip), true) );
+   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraphs<T,G>(scip), true) );
 
    SCIPdialogFindEntry(graphdialog, "read", &subdialog);
    assert(subdialog != NULL);
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadGraphs<G>(scip), true) );
+   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadGraphs<T,G >(scip), true) );
 
    return SCIP_OKAY;
 }
@@ -213,11 +215,11 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraph(scip), TRUE) );
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadPartition(scip), TRUE) );
 
-   SCIP_CALL( GCGincludeGraphEntries<gcg::BipartiteGraph>(scip) );
-   SCIP_CALL( GCGincludeGraphEntries<gcg::RowGraph>(scip) );
-   SCIP_CALL( GCGincludeGraphEntries<gcg::ColumnGraph>(scip) );
-   SCIP_CALL( GCGincludeGraphEntries<gcg::HyperrowcolGraph>(scip) );
-   SCIP_CALL( GCGincludeGraphEntries<gcg::HyperrowGraph>(scip) );
-   SCIP_CALL( GCGincludeGraphEntries<gcg::HypercolGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::BipartiteGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::RowGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::ColumnGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::HyperrowcolGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::HyperrowGraph>(scip) );
+   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::HypercolGraph>(scip) );
    return SCIP_OKAY;
 }

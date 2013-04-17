@@ -40,8 +40,8 @@
 
 namespace gcg
 {
-
-class HypercolGraph: public gcg::BipartiteGraph
+template <class T>
+class HypercolGraph: public gcg::BipartiteGraph<T>
 {
 protected:
    class function {

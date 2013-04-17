@@ -39,7 +39,8 @@
 
 namespace gcg {
 
-class BipartiteGraph : public Graph
+template <class T>
+class BipartiteGraph : public Graph<T>
 {
 
 public:

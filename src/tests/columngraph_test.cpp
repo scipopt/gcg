@@ -49,7 +49,7 @@ TEST_F(ColumnTest, WriteFileTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x2>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x2>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::ColumnGraph graph(scip, weights );
+   gcg::ColumnGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("columngraph.g") );

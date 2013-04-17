@@ -28,6 +28,7 @@
 /**@file   hypercolgraph.cpp
  * @brief  Column hypergraph
  * @author Martin Bergner
+ * @author Annika Thome
  *
  * A hypergraph structure with a node for every constraint and a hyperedge for every variable.
  */
@@ -42,16 +43,17 @@
 using std::ifstream;
 namespace gcg
 {
-
-HypercolGraph::HypercolGraph(
+template <class T>
+HypercolGraph<T>::HypercolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-):  BipartiteGraph(scip, w)
+):  BipartiteGraph<T>(scip, w)
 {
-   name = std::string("hypercol");
+   this->name = std::string("hypercol");
 }
 
-HypercolGraph::~HypercolGraph()
+template <class T>
+HypercolGraph<T>::~HypercolGraph()
 {
    // TODO Auto-generated destructor stub
 }
@@ -60,33 +62,34 @@ HypercolGraph::~HypercolGraph()
 /** writes the graph to the given file.
  *  The format is graph dependent
  */
-SCIP_RETCODE HypercolGraph::writeToFile(
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::writeToFile(
    const char*        filename,           /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
  )
 {
-   function f(nvars);
+   function f(this->nvars);
    FILE* file;
    assert(filename != NULL);
    file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%d %d %d\n", getNEdges(), getNNodes()+dummynodes, edgeweights ? 1 :0);
+   SCIPinfoMessage(this->scip_, file, "%d %d %d\n", getNEdges(), getNNodes()+this->dummynodes, edgeweights ? 1 :0);
 
    for( int i = 0; i < getNEdges(); ++i )
    {
       std::vector<int> neighbors = getHyperedgeNodes(i);
-      int nneighbors = Graph::getNNeighbors(i);
+      int nneighbors = Graph<T>::getNNeighbors(i);
       if( edgeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", Graph::getWeight(i));
+         SCIPinfoMessage(this->scip_, file, "%d ", Graph<T>::getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
+         SCIPinfoMessage(this->scip_, file, "%d ", neighbors[j]+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(this->scip_, file, "\n");
    }
 
    if( !fclose(file) )
@@ -95,31 +98,32 @@ SCIP_RETCODE HypercolGraph::writeToFile(
       return SCIP_WRITEERROR;
 }
 
-int HypercolGraph::getNEdges()
+template <class T>
+int HypercolGraph<T>::getNEdges()
 {
-   return nvars;
+   return this->nvars;
 }
 
-
-int HypercolGraph::getNNodes()
+template <class T>
+int HypercolGraph<T>::getNNodes()
 {
-   return nconss;
+   return this->nconss;
 }
 
-
-std::vector<int> HypercolGraph::getNeighbors(
+template <class T>
+std::vector<int> HypercolGraph<T>::getNeighbors(
    int i
 )
 {
    assert(i >= 0);
-   assert(i < nconss);
-   function f(nvars);
+   assert(i < this->nconss);
+   function f(this->nvars);
    std::vector<int>::iterator it;
    std::set<int> neighbors;
-   std::vector<int> immediateneighbors = Graph::getNeighbors(i+nvars);
+   std::vector<int> immediateneighbors = Graph<T>::getNeighbors(i+this->nvars);
    for( size_t j = 0; j < immediateneighbors.size(); ++j)
    {
-      std::vector<int> alternateneighbor = Graph::getNeighbors(immediateneighbors[j]);
+      std::vector<int> alternateneighbor = Graph<T>::getNeighbors(immediateneighbors[j]);
       neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
    }
    std::vector<int> r(neighbors.size(), 0);
@@ -129,15 +133,16 @@ std::vector<int> HypercolGraph::getNeighbors(
    return std::vector<int>(r.begin(), it);
 }
 
-std::vector<int> HypercolGraph::getHyperedgeNodes(
+template <class T>
+std::vector<int> HypercolGraph<T>::getHyperedgeNodes(
    int i
 )
 {
-   function f(nvars);
+   function f(this->nvars);
    assert(i >= 0);
-   assert(i < nvars);
+   assert(i < this->nvars);
 
-   std::vector<int> neighbors = Graph::getNeighbors(i);
+   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }

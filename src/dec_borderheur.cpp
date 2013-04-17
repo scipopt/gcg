@@ -45,6 +45,7 @@
 #include "scip_misc.h"
 #include "scip/pub_misc.h"
 #include "graph/hyperrowgraph.h"
+#include "graph/graph_tclique.h"
 #include <set>
 
 using gcg::HyperrowGraph;
@@ -78,7 +79,7 @@ using gcg::Weights;
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   gcg::HyperrowGraph* graph;         /**< graph for metis */
+   gcg::HyperrowGraph<gcg::GraphTclique>* graph;         /**< graph for metis */
    char       tempfile[SCIP_MAXSTRLEN];   /**< filename for metis input file */
 
    /* general parameters */
@@ -308,7 +309,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildBordered)
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
 
    Weights w(0, 0, 0, 0, 0, detectordata->consWeight);
-   detectordata->graph = new HyperrowGraph(scip, w);
+   detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 

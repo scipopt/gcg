@@ -28,6 +28,7 @@
 /**@file   graph.h
  * @brief  miscellaneous graph methods for structure detection
  * @author Martin Bergner
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -40,6 +41,7 @@
 #include "tclique/tclique.h"
 #include "weights.h"
 #include "pub_decomp.h"
+#include "bridge.h"
 
 #include <exception>
 #include <vector>
@@ -70,12 +72,13 @@
 
 namespace gcg {
 
+template <class T>
 class Graph {
 public:
    std::string name;
 protected:
+   Bridge* graph;
    SCIP* scip_;
-   TCLIQUE_GRAPH* tgraph;
    int nconss;
    int nvars;
    int nnonzeroes;
@@ -95,7 +98,7 @@ public:
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
       std::swap(scip_ , other.scip_);
-      std::swap(tgraph , other.tgraph);
+      //std::swap(tgraph , other.tgraph);
       std::swap(nconss , other.nconss);
       std::swap(nvars , other.nvars);
       std::swap(nnonzeroes , other.nnonzeroes);
@@ -121,6 +124,9 @@ public:
    /** return the number of edges (or hyperedges) */
    virtual int getNEdges();
 
+   /** returns whether there is an edge between nodes i and j */
+   virtual int edge(int i, int j);
+
    /** return the number of neighbor nodes of given node */
    virtual int getNNeighbors(
       int                i                   /**< the given node */
@@ -133,6 +139,9 @@ public:
 
    /** return a partition of the nodes */
    std::vector<int> getPartition();
+
+   /** assigns partition to a given node*/
+   virtual void setPartition(int i, int ID);
 
    /** create graph from the matrix, to be overriden by the implementation*/
    virtual SCIP_RETCODE createFromMatrix(

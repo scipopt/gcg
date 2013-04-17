@@ -28,6 +28,7 @@
 /**@file   hyperrowgraph.h
  * @brief  Column hypergraph
  * @author Martin Bergner
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -40,8 +41,8 @@
 
 namespace gcg
 {
-
-class HyperrowGraph: public gcg::BipartiteGraph
+template <class T>
+class HyperrowGraph: public gcg::BipartiteGraph<T>
 {
 public:
    HyperrowGraph(
@@ -64,6 +65,11 @@ public:
 
    /** return the number of edges (or hyperedges) */
    virtual int getNEdges();
+
+   /** return node degree */
+   virtual int getNNeighbors(
+      int i
+      );
 
    virtual std::vector<int> getNeighbors(
          int i

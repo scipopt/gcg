@@ -42,7 +42,7 @@ class BipartiteTest : public GraphTest {
 
 TEST_F(BipartiteTest, EmptyTest) {
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::BipartiteGraph graph(scip, weights );
+   gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(0, graph.getNEdges());
    ASSERT_EQ(0, graph.getNNodes());
@@ -58,7 +58,7 @@ TEST_F(BipartiteTest, CreateTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::BipartiteGraph graph(scip, weights );
+   gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ(7, graph.getNNodes());
@@ -101,7 +101,7 @@ TEST_F(BipartiteTest, WriteFileTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::BipartiteGraph graph(scip, weights );
+   gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("graph.g") );
@@ -127,7 +127,7 @@ TEST_F(BipartiteTest, ReadPartitionTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::BipartiteGraph graph(scip, weights );
+   gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
    std::ofstream out;

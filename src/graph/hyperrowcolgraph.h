@@ -38,8 +38,8 @@
 #include "graph.h"
 
 namespace gcg {
-
-class HyperrowcolGraph: public Graph
+template <class T>
+class HyperrowcolGraph: public Graph<T>
 {
 public:
    HyperrowcolGraph(

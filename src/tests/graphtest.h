@@ -35,6 +35,7 @@
 #ifndef GCG_GRAPHTEST_H_
 #define GCG_GRAPHTEST_H_
 #include "test.h"
+#include "graph/graph_tclique.h"
 #include <vector>
 class GraphTest : public ::testing::Test {
  protected:

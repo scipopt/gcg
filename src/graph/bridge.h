@@ -25,46 +25,46 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph_test.cpp
- * @brief  unit tests for row graph
- * @author Martin Bergner
+/**@file   bridge.h
+ * @brief  bridge
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "graph/rowgraph.h"
-#include "test.h"
-#include "graphtest.h"
+#ifndef BRIDGE_H
+#define BRIDGE_H
+#include "objscip/objscip.h"
+#include <vector>
 
-class RowTest : public GraphTest
+namespace gcg
 {
+
+class Bridge
+{
+
+
+public:
+   virtual ~Bridge() {};
+   virtual int getNNodes() = 0;
+   virtual int getNEdges() = 0;
+   virtual SCIP_Bool isEdge(int i, int j);
+   virtual int getNNeighbors(int i) = 0;
+   virtual std::vector<int> getNeighbors(int i);
+   virtual SCIP_RETCODE addNode(int i,int weight);
+   virtual SCIP_RETCODE deleteNode(int i);
+   virtual SCIP_RETCODE addEdge(int i, int j);
+   virtual SCIP_RETCODE deleteEdge(int i, int j);
+   virtual int* graphGetFirstAdjedge(int i);
+   virtual int* graphGetLastAdjedge(int i);
+   virtual int graphGetWeights(int i);
+
+
+   virtual SCIP_RETCODE graphFlush();
 
 };
 
-TEST_F(RowTest, WriteFileTest) {
-   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
-   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=1.0, original bounds=[0,3]") );
 
-   SCIP_CALL_EXPECT( createCons("[linear] <c1>: 1<x1>[I] +1<x2>[I] +1<x3>[I]<= 2") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] <= 5") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x3>[I] == 1") );
-   SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x2>[I] == 1") );
-   gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::RowGraph<gcg::GraphTclique> graph(scip, weights );
-
-   SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
-   ASSERT_TRUE( SCIPfileExists("rowgraph.g") );
-
-   int tmp[] = {4, 8, 2, 4, 3, 1, 4, 1, 1, 2};
-
-   std::vector<int> array(&tmp[0], &tmp[0]+10);
-
-   if( SCIPfileExists("rowgraph.g") )
-   {
-      parseFile("rowgraph.g", array);
-      remove("rowgraph.g");
-   }
 }
+
+#endif
