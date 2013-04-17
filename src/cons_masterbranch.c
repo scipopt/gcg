@@ -910,6 +910,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
+
+//   if(consdata == NULL && cons == NULL)
+//      return SCIP_OKAY;
+
    assert(cons != NULL);
    assert(consdata != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -925,8 +929,16 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
    for( i=0; i< (*consdata)->nchildcons; ++i )
    {
-      childconsdatas[i] = SCIPconsGetData((*consdata)->childcons[i]);
-      childcons[i] = (*consdata)->childcons[i];
+      if((*consdata)->childcons != NULL && (*consdata)->childcons[i] != NULL)
+      {
+         childconsdatas[i] = SCIPconsGetData((*consdata)->childcons[i]);
+         childcons[i] = (*consdata)->childcons[i];
+      }
+      else
+      {
+         childconsdatas[i] = NULL;
+         childcons[i] = NULL;
+      }
    }
 
    /*delete childnodes */
@@ -935,14 +947,22 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIP_CONSHDLRDATA* conshdlrdata;
 
       SCIPdebugMessage("Deleting %d childnodes\n", (*consdata)->nchildcons);
-      consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]);
-      SCIPreleaseCons(scip, &childcons[i]);
+
+      if(childcons[i] != NULL)
+      {
+         consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]);
+         SCIPreleaseCons(scip, &childcons[i]);
+      }
+      else if(childconsdatas[i] != NULL)
+         SCIPfreeBlockMemory(scip, &childconsdatas[i]);
    }
    if((*consdata)->nchildcons > 0)
    {
       SCIPfreeMemoryArray(scip, &childconsdatas);
       SCIPfreeMemoryArray(scip, &childcons);
    }
+
+   (*consdata)->nchildcons--;
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
@@ -953,7 +973,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    {
       consdata2 = SCIPconsGetData((*consdata)->parentcons);
 
-      if( SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip) || SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip)) )
+      if( (SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip)) || (SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip))) )
       {
          consdata2->probingtmpcons = NULL;
       }
@@ -986,10 +1006,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* delete array with bound changes */
    if( (*consdata)->nboundchanges > 0 )
    {
-      SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
-      SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
-      SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
+      if((*consdata)->oldbounds != NULL)
+         SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
+      if((*consdata)->newbounds != NULL)
+         SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
+      if((*consdata)->boundtypes != NULL)
+         SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
+      if((*consdata)->boundchgvars != NULL)
+         SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
    }
 
    if( (*consdata)->nboundchangestreated != NULL )
@@ -1750,6 +1774,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
+   SCIP_CONSHDLRDATA* conshdlrData;
+
 
    assert(scip != NULL);
    assert(node != NULL || parentcons == NULL);
@@ -1796,6 +1822,14 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", parentcons);
+
+
+
+//   conshdlrData = SCIPconshdlrGetData(conshdlr);
+//   assert(conshdlrData != NULL);
+//   SCIP_CALL(createConsData(scip, consdata, conshdlrData, cons));
+
+
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, "masterbranch", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
@@ -2323,7 +2357,7 @@ void GCGconsMasterbranchCheckConsistency(
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
 
-      assert((consdata->parentcons == NULL) == ((consdata->node == NULL) || (SCIPnodeGetDepth(consdata->node) == 0)));
+ //     assert((consdata->parentcons == NULL) == ((consdata->node == NULL) || (SCIPnodeGetDepth(consdata->node) == 0)));
 
       assert(consdata->origcons == NULL || consdata->created);
 
