@@ -170,8 +170,8 @@ SCIP_RETCODE branchVar(
 
    /** @todo use block memory here */
    /* create the branch data for the childs and assign the values */
-   SCIP_CALL( SCIPallocMemory(scip, &(branchupdata)) );
-   SCIP_CALL( SCIPallocMemory(scip, &(branchdowndata)) );
+   SCIP_CALL( SCIPallocMemory(scip, &branchupdata) );
+   SCIP_CALL( SCIPallocMemory(scip, &branchdowndata) );
 
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
@@ -439,10 +439,7 @@ SCIP_RETCODE branchExtern(
    }
 
    assert(branchvar != NULL);
-   if( strcmp(SCIPvarGetName(branchvar), "t_x#2#19") == 0)
-   {
-      printf("gefunden");
-   }
+
    SCIP_CALL( branchVar(scip, branchrule, branchvar, solval) );
 
    *result = SCIP_BRANCHED;
@@ -533,7 +530,8 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       SCIP_CALL( SCIPreleaseCons(scip, &(*branchdata)->cons) );
    }
 
-   SCIPfreeMemory(scip, branchdata);
+   if(*branchdata != NULL)
+      SCIPfreeMemory(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;

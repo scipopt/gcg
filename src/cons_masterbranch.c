@@ -905,14 +905,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
    SCIP_CONSDATA* consdata2;
    SCIP_CONSDATA** childconsdatas;
+   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONS** childcons;
    int i;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
-
-//   if(consdata == NULL && cons == NULL)
-//      return SCIP_OKAY;
 
    assert(cons != NULL);
    assert(consdata != NULL);
@@ -920,7 +918,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    assert(*consdata != NULL);
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
-
 
    if((*consdata)->nchildcons > 0)
    {
@@ -951,10 +948,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       if(childcons[i] != NULL)
       {
          consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]);
-         SCIPreleaseCons(scip, &childcons[i]);
       }
-      else if(childconsdatas[i] != NULL)
-         SCIPfreeBlockMemory(scip, &childconsdatas[i]);
    }
    if((*consdata)->nchildcons > 0)
    {
@@ -1022,14 +1016,47 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
 
    if( (*consdata)->childcons != NULL )
+   {
       SCIPfreeMemoryArray(scip, &(*consdata)->childcons);
+      (*consdata)->childcons = NULL;
+   }
 
    /* free constraint data */
    if( (*consdata)->name != NULL )
    {
       BMSfreeBlockMemoryArray(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
+      (*consdata)->name = NULL;
    }
+
+
+
+
+   if( (*consdata)->origbranchconsname != NULL )
+   {
+      SCIPfreeMemoryArray(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchconsname);
+      (*consdata)->origbranchconsname = NULL;
+   }
+
+/*   if( (*consdata)->origbranchdata != NULL )
+   {
+      SCIPfreeMemory(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
+      (*consdata)->origbranchdata = NULL;
+   }*/
+
+   if( (*consdata)->origbranchcons != NULL )
+   {
+      SCIPfreeMemoryArray(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
+      (*consdata)->origbranchcons = NULL;
+   }
+
+/*   if(cons != NULL)
+   {
+     SCIPreleaseCons(scip, &cons);
+   }*/
+
+
    SCIPfreeBlockMemory(scip, consdata);
+   *consdata = NULL;
 
    return SCIP_OKAY;
 }
@@ -1819,6 +1846,24 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->nboundchangestreated = NULL;
    consdata->nboundchanges = 0;
    consdata->nactivated = 0;
+
+
+
+   consdata->nbranchingchanges = 0;
+
+   consdata->origbranchconsname = NULL;
+   consdata->origbranchrule = NULL;
+   consdata->origbranchdata = NULL;
+   consdata->origbranchcons = NULL;
+   consdata->norigbranchcons = NULL;
+   consdata->chgVarUbNode = 0;
+   consdata->chgVarLbNode = 0;
+   consdata->addPropBoundChg = 0;
+   consdata->chgVarNodeVar = NULL;
+   consdata->chgVarNodeBound = 0;
+   consdata->addPropBoundChgBoundtype = 0;
+   consdata->addPropBoundChgBound = 0;
+
 
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", parentcons);
