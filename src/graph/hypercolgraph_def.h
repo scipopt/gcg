@@ -35,6 +35,9 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_HYPERCOLGRAPH_DEF_H_
+#define GCG_HYPERCOLGRAPH_DEF_H_
+
 #include "hypercolgraph.h"
 #include <set>
 #include <fstream>
@@ -148,3 +151,5 @@ std::vector<int> HypercolGraph<T>::getHyperedgeNodes(
 }
 
 } /* namespace gcg */
+
+#endif

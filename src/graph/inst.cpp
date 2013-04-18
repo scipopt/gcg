@@ -25,39 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph.h
- * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
+/**@file   inst.cpp
+ * @brief  Explicit instanciations for templates
  * @author Martin Bergner
- * @author Annika Thome
  */
 
-/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_ROWGRAPH_H_
-#define GCG_ROWGRAPH_H_
 
-#include "graph.h"
-#include "bipartitegraph.h"
+#include "bipartitegraph_def.h"
+#include "columngraph_def.h"
+#include "rowgraph_def.h"
+#include "hypercolgraph_def.h"
+#include "hyperrowgraph_def.h"
+#include "hyperrowcolgraph_def.h"
+#include "graph_def.h"
+#include "graph_tclique.h"
 
 namespace gcg {
-template <class T>
-class RowGraph: public gcg::BipartiteGraph<T>
-{
-public:
-   RowGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
-         Weights               w                  /**< weights for the given graph */
-      );
-   virtual ~RowGraph();
-   virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
-      );
 
-   virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-      );
-};
+/* graph instanciations for graphs using TCLIQUE graphs */
+template class BipartiteGraph<GraphTclique>;
+template class ColumnGraph<GraphTclique>;
+template class RowGraph<GraphTclique>;
+template class HypercolGraph<GraphTclique>;
+template class HyperrowGraph<GraphTclique>;
+template class HyperrowcolGraph<GraphTclique>;
+template class Graph<GraphTclique>;
 
-} /* namespace gcg */
-#endif /* GCG_ROWGRAPH_H_ */
+}

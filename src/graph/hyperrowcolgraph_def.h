@@ -25,13 +25,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hyperrowcolgraph.cpp
+/**@file   hyperrowcolgraph_def.h
  * @brief  Description
  * @author bergner
  * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+#ifndef GCG_HYPERROWCOLGRAPH_DEF_H_
+#define GCG_HYPERROWCOLGRAPH_DEF_H_
 
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
@@ -380,4 +383,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);
    return SCIP_OKAY;
 }
+
 } /* namespace gcg */
+#endif

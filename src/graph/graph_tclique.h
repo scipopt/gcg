@@ -30,8 +30,6 @@ public:
    virtual SCIP_RETCODE deleteNode(int i);
    virtual SCIP_RETCODE addEdge(int i, int j);
    virtual SCIP_RETCODE deleteEdge(int i, int j);
-   virtual int* graphGetFirstAdjedge(int i);
-   virtual int* graphGetLastAdjedge(int i);
    virtual int graphGetWeights(int i);
 
    virtual SCIP_RETCODE graphFlush();

@@ -33,9 +33,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 // #define SCIP_DEBUG
+
+#ifndef GCG_ROWGRAPH_DEF_H_
+#define GCG_ROWGRAPH_DEF_H_
+
 #include "rowgraph.h"
 #include <algorithm>
+
 namespace gcg {
+
 template <class T>
 RowGraph<T>::RowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
@@ -84,11 +90,11 @@ SCIP_RETCODE RowGraph<T>::writeToFile(
       nrealneighbors[i] = 0;
 
       SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nconss) );
-      int nneighbors = getNNeighbors(this->nvars+i);
+      int nneighbors = this->getNNeighbors(this->nvars+i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i+this->nvars, nneighbors);
 
-      std::vector<int> neighbors = getNeighbors(i+this->nvars);
+      std::vector<int> neighbors = this->getNeighbors(i+this->nvars);
       for( int j = 0; j < nneighbors; ++j )
       {
          int neighbor = neighbors[j];
@@ -198,3 +204,4 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 }
 
 } /* namespace gcg */
+#endif

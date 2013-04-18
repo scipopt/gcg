@@ -83,20 +83,6 @@ SCIP_RETCODE GraphTclique::deleteEdge(int i, int j)
    return SCIP_ERROR;
 }
 
-int* GraphTclique::graphGetFirstAdjedge(int i)
-{
-   return tcliqueGetFirstAdjedge(graph,i);
-}
-
-int* GraphTclique::graphGetLastAdjedge(int i)
-{
-   return tcliqueGetLastAdjedge(graph,i);
-}
-
-int GraphTclique::graphGetWeights(int i)
-{
-   return tcliqueGetWeights(graph)[i];
-}
 
 SCIP_RETCODE GraphTclique::graphFlush()
 {
@@ -106,4 +92,12 @@ SCIP_RETCODE GraphTclique::graphFlush()
       return SCIP_ERROR;
 }
 
+int GraphTclique::graphGetWeights(int i)
+{
+   assert( i >= 0);
+   assert( i <= getNNodes());
+   const TCLIQUE_WEIGHT* weights;
+   weights = tcliqueGetWeights(graph);
+   return weights[i];
+}
 } /* namespace gcg */

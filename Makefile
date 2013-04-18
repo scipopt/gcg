@@ -149,17 +149,19 @@ LIBOBJ		=	reader_blk.o \
 			gcgvar.o \
 			class_pricingtype.o \
 			class_stabilization.o \
-			graph/graph.o \
+			graph/weights.o \
+			graph/inst.o \
+			graph/graph_tclique.o \
+			stat.o \
+			objdialog.o \
+			dialog_graph.o
+#			graph/graph.o \
 			graph/bipartitegraph.o \
 			graph/hyperrowcolgraph.o \
 			graph/hypercolgraph.o \
 			graph/hyperrowgraph.o \
 			graph/rowgraph.o \
 			graph/columngraph.o \
-			graph/weights.o \
-			stat.o \
-			objdialog.o \
-			dialog_graph.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o

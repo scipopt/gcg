@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef BRIDGE_H
-#define BRIDGE_H
+#ifndef GCG_BRIDGE_H
+#define GCG_BRIDGE_H
 #include "objscip/objscip.h"
 #include <vector>
 
@@ -42,29 +42,43 @@ namespace gcg
 
 class Bridge
 {
-
-
 public:
+   Bridge() {};
    virtual ~Bridge() {};
+   /** get number of nodes in the graph */
    virtual int getNNodes() = 0;
+
+   /** get number of edges in the graph */
    virtual int getNEdges() = 0;
-   virtual SCIP_Bool isEdge(int i, int j);
+
+   /** return whether a given pair of vertices is connected by an edge */
+   virtual SCIP_Bool isEdge(int i, int j) = 0;
+
+   /** get number of neighbors of a given node */
    virtual int getNNeighbors(int i) = 0;
-   virtual std::vector<int> getNeighbors(int i);
-   virtual SCIP_RETCODE addNode(int i,int weight);
-   virtual SCIP_RETCODE deleteNode(int i);
-   virtual SCIP_RETCODE addEdge(int i, int j);
-   virtual SCIP_RETCODE deleteEdge(int i, int j);
-   virtual int* graphGetFirstAdjedge(int i);
-   virtual int* graphGetLastAdjedge(int i);
-   virtual int graphGetWeights(int i);
 
+   /** get a vector of all neighbors of a given node */
+   virtual std::vector<int> getNeighbors(int i) = 0;
 
-   virtual SCIP_RETCODE graphFlush();
+   /** adds the node with the given weight to the graph */
+   virtual SCIP_RETCODE addNode(int i,int weight) = 0;
+
+   /** deletes the given node from the graph */
+   virtual SCIP_RETCODE deleteNode(int i) = 0;
+
+   /** adds the edge to the graph */
+   virtual SCIP_RETCODE addEdge(int i, int j) = 0;
+
+   /** deletes the edge from the graph */
+   virtual SCIP_RETCODE deleteEdge(int i, int j) = 0;
+
+   /** return the weight of a node */
+   virtual int graphGetWeights(int i) = 0;
+   virtual SCIP_RETCODE graphFlush() = 0;
 
 };
 
 
-}
+} /* namespace gcg*/
 
 #endif

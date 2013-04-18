@@ -35,6 +35,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 //#define SCIP_DEBUG
+
+#ifndef GCG_HYPERROWGRAPH_DEF_H_
+#define GCG_HYPERROWGRAPH_DEF_H_
+
 #include "hyperrowgraph.h"
 #include "scip_misc.h"
 #include <set>
@@ -226,4 +230,7 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
       SCIPfreeBufferArray(this->scip_, &nsubscipconss);
       return SCIP_OKAY;
 }
+
 } /* namespace gcg */
+
+#endif

@@ -33,6 +33,9 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_COLUMNGRAPH_DEF_H_
+#define GCG_COLUMNGRAPH_DEF_H_
+
 #include "columngraph.h"
 
 namespace gcg {
@@ -144,3 +147,5 @@ SCIP_RETCODE ColumnGraph<T>::writeToFile(
 }
 
 } /* namespace gcg */
+
+#endif

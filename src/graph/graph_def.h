@@ -32,9 +32,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_GRAPH_DEF_H_
+#define GCG_GRAPH_DEF_H_
+
 #include "scip/scip.h"
 #include "graph.h"
-#include "tclique/tclique.h"
 #include <fstream>
 
 using std::ifstream;
@@ -50,7 +52,6 @@ Graph<T>::Graph(
    graph = new T();
 }
 
-/** Destruktor */
 template <class T>
 Graph<T>::~Graph()
 {
@@ -117,6 +118,7 @@ void Graph<T>::setPartition(int i, int ID) {
    partition[i] = ID;
 }
 
+/** write the graph to a file */
 template <class T>
 SCIP_RETCODE Graph<T>::writeToFile(
       const char* filename,
@@ -160,6 +162,7 @@ SCIP_RETCODE Graph<T>::writeToFile(
    return SCIP_OKAY;
 }
 
+/** read in the partition from a file */
 template <class T>
 SCIP_RETCODE Graph<T>::readPartition(
    const char* filename
@@ -193,7 +196,9 @@ int Graph<T>::getWeight(
    int                i                   /**< the given node */
    )
 {
-   return getWeight(i);
+   return graph->graphGetWeights(i);
 }
 
-}
+} /* namespace gcg */
+
+#endif
