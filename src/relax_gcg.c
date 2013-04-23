@@ -1045,7 +1045,6 @@ SCIP_RETCODE createLinkingPricingVars(
       relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
       relaxdata->nvarlinkconss++;
 
-
       /* because the variable was added to the problem,
        * it is captured by SCIP and we can safely release it right now
        */
