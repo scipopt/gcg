@@ -47,13 +47,15 @@ SCIP_RETCODE cmpGraphPair(
    SCIP*                 origscip,            /**< SCIP data structure */
    SCIP*                 scip1,               /**< first SCIP data structure to compare */
    SCIP*                 scip2,               /**< second SCIP data structure to compare */
+   int                   prob1,               /**< index of first pricing prob */
+   int                   prob2,               /**< index of second pricing prob */
    SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP* 	 varmap,              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP* 	 consmap              /**< hashmap to save permutation of constraints */
+   SCIP_HASHMAP*         varmap,              /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*         consmap              /**< hashmap to save permutation of constraints */
    );
 
 /** returns bliss version */
-const char* getBlissVersion(void);
+const char* GCGgetBlissVersion(void);
 
 #ifdef __cplusplus
 }

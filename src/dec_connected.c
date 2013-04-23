@@ -210,7 +210,7 @@ SCIP_RETCODE findConnectedComponents(
       if( pricingisempty )
       {
          *result = SCIP_DIDNOTFIND;
-         SCIPfreeMemoryArrayNull(scip, conss);
+         SCIPfreeMemoryArrayNull(scip, &conss);
          return SCIP_OKAY;
       }
    }

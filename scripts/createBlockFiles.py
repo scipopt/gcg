@@ -19,7 +19,10 @@ if len(sys.argv) == 2:
         else:
             mpsinstance = instance
         os.system('bin/gcg -c "read check/%s detect write problem check/%s.ref quit"' %(mpsinstance, mpsinstance))
-        os.system('scripts/ref2block.sh check/%s.ref > check/%s.block' %(mpsinstance, mpsinstance))
+        blockfilename = mpsinstance.replace(".mps", ".block")
+        os.system('scripts/ref2block.sh check/%s.ref > check/%s' %(mpsinstance, blockfilename))
         os.system('rm -f check/%s.ref' %(mpsinstance))
+        os.system('gzip check/%s' %(mpsinstance))
+        os.system('gzip check/%s' %(blockfilename))
 else:
     print "usage: createBlockFiles.py <testset>"

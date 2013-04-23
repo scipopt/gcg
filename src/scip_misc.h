@@ -121,6 +121,11 @@ SCIP_Bool isRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+extern
+SCIP_RETCODE GCGincludeDialogsGraph(
+   SCIP* scip
+   );
+
 #ifdef __cplusplus
 }
 #endif

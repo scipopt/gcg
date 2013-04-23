@@ -25,7 +25,7 @@ SCIPDIR         =   lib/scip
 
 
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR)
+DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(addprefix $(LIBOBJDIR)/,$(LIBOBJSUBDIRS))
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -66,7 +66,7 @@ FLAGS		+=	-I$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LPIINSTMSG	+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libcplex.a\"\n"
+LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libbliss.a\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -139,7 +139,18 @@ LIBOBJ		=	reader_blk.o \
 			misc.o \
 			gcgvar.o \
 			class_pricingtype.o \
-			stat.o
+			class_stabilization.o \
+			graph/graph.o \
+			graph/bipartitegraph.o \
+			graph/hyperrowcolgraph.o \
+			graph/hypercolgraph.o \
+			graph/hyperrowgraph.o \
+			graph/rowgraph.o \
+			graph/columngraph.o \
+			graph/weights.o \
+			stat.o \
+			objdialog.o \
+			dialog_graph.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o
@@ -158,7 +169,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-LIBOBJSUBDIRS	=
+LIBOBJSUBDIRS  = graph
 
 GCGLIBSHORTNAME =	gcg
 GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
@@ -168,12 +179,17 @@ GCGLIB		=	$(GCGLIBNAME).$(BASE)
 GCGLIBFILE	=	$(LIBDIR)/lib$(GCGLIB).$(LIBEXT)
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
 GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
+GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard */*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
 GCGLIBLINK	=	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(BASE).$(LIBEXT)
 GCGLIBSHORTLINK = 	$(LIBDIR)/lib$(GCGLIBSHORTNAME).$(LIBEXT)
 
 ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
 LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)
+SPLINT		=       splint
+#SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -preproc -formatcode +skip-sys-headers -weak +relaxtypes
+SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
+			-redef +export-header +export-local +decl-undef +relaxtypes
 
 #-----------------------------------------------------------------------------
 # Rules
@@ -225,6 +241,15 @@ scip:
 scip_clean:
 		@$(MAKE) -C $(SCIPDIR) $^ clean
 
+.PHONY: splint
+splint:		$(ALLSRC)
+		-rm -f splint.out
+ifeq ($(FILES),)
+		$(SHELL) -c '$(SPLINT) -I$(SRCDIR) -I/usr/include/linux $(FLAGS) $(SPLINTFLAGS)  $(filter %.c %.h,$^) &>> splint.out;'
+else
+		$(SHELL) -c '$(SPLINT) -I$(SRCDIR) -I/usr/include/linux $(FLAGS) $(SPLINTFLAGS) $(FILES %.c %.h,$^) &>> splint.out;'
+endif
+
 
 .PHONY: doc
 doc:
@@ -249,24 +274,42 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
+		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(MASTERSETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
 
 .PHONY: eval
 eval:
 		cd check; \
-		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/gcg.$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
+		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
 
-.PHONY: clean
-clean:
+
+.PHONY: cleanbin
+cleanbin:       $(BINDIR)
+		@echo "-> remove binary $(MAINFILE)"
+		@-rm -f $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+
+.PHONY: cleanlib
+cleanlib:       $(LIBDIR)
+		@echo "-> remove library $(GCGLIBFILE)"
+		@-rm -f $(GCGLIBFILE) $(GCGLIBLINK) $(GCGLIBSHORTLINK)
+
+.PHONY: cleantest
+cleantest:
 ifneq ($(OBJDIR),)
-		-(cd ./$(LIBOBJDIR) && rm -f *.o)
-		-rmdir $(LIBOBJDIR)
-		-(cd ./$(TESTOBJDIR) && rm -f *.o)
-		-rmdir $(TESTOBJDIR)
-		-(cd ./$(OBJDIR) && rm -f *.o)
-		-rmdir $(OBJDIR)
+		@-(rm -f $(OBJDIR)/tests/*.o)
+		@-(cd $(OBJDIR) && rmdir tests);
 endif
-		-rm -f $(MAINFILE) $(MAINSHORTLINK) $(GCGLIBSHORTLINK) $(GCGLIBFILE) $(TESTFILE) $(TESTSHORTLINK)
+.PHONY: clean
+clean:          cleantest cleanlib cleanbin  $(LIBOBJDIR) $(LIBOBJSUBDIRS) $(OBJDIR)
+ifneq ($(LIBOBJDIR),)
+		@-(rm -f $(LIBOBJDIR)/*.o)
+		@-(cd $(LIBOBJDIR) && rm -f */*.o && rmdir $(LIBOBJSUBDIRS));
+		@-rmdir $(LIBOBJDIR);
+endif
+ifneq ($(OBJDIR),)
+		@-(rm -f $(OBJDIR)/*.o);
+		@-(rmdir $(OBJDIR));
+endif
+
 
 .PHONY: tags
 tags:
@@ -289,6 +332,8 @@ gcglibdepend:
 .PHONY: testdepend
 testdepend:: # do not remove double colon
 
+tests:: #do not remove double colon
+
 $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
@@ -307,6 +352,8 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
+$(LIBOBJSUBDIRS):	$(LIBOBJDIR)
+		@-mkdir -p $(LIBOBJDIR)/$@
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"

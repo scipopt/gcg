@@ -74,6 +74,7 @@
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
+#include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_rins.h"
@@ -95,8 +96,10 @@
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
+#include "scip/nodesel_estimate.h"
+#include "scip/nodesel_hybridestim.h"
+#include "scip/nodesel_restartdfs.h"
 
-#include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
@@ -107,6 +110,7 @@
 #include "scip/presol_convertinttobin.h"
 
 #if USEPROP
+#include "scip/prop_dualfix.h"
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
@@ -129,6 +133,7 @@
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
 #include "scip/sepa_mcf.h"
+#include "scip/sepa_oddcycle.h"
 #include "scip/sepa_strongcg.h"
 #include "scip/sepa_zerohalf.h"
 #endif
@@ -178,7 +183,7 @@
 
 /* Friedrike's detection stuff */
 #include "dec_cutpacking.h"
-
+#include "scip_misc.h"
 
 
 /** includes default plugins for generic column generation into SCIP */
@@ -204,7 +209,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderMps(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
-   SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
@@ -215,7 +219,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
    SCIP_CALL( SCIPincludeNodeselDfs(scip) );
+   SCIP_CALL( SCIPincludeNodeselEstimate(scip) );
+   SCIP_CALL( SCIPincludeNodeselHybridestim(scip) );
+   SCIP_CALL( SCIPincludeNodeselRestartdfs(scip) );
+
 #if USEPROP
+   SCIP_CALL( SCIPincludePropDualfix(scip) );
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
    SCIP_CALL( SCIPincludePropGenvbounds(scip) );
@@ -246,6 +255,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
+   SCIP_CALL( SCIPincludeHeurProximity(scip) );
    SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurRens(scip) );
    SCIP_CALL( SCIPincludeHeurRins(scip) );
@@ -273,6 +283,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
+   SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
@@ -322,7 +333,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
-
+   SCIP_CALL( GCGincludeDialogsGraph(scip) );
 
    return SCIP_OKAY;
 }

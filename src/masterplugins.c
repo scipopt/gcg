@@ -68,6 +68,7 @@
 #include "scip/heur_objpscostdiving.h"
 #include "scip/heur_octane.h"
 #include "scip/heur_oneopt.h"
+#include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_rins.h"
@@ -79,20 +80,23 @@
 #include "scip/heur_twoopt.h"
 #include "scip/heur_vbounds.h"
 #include "scip/heur_veclendiving.h"
+#include "scip/heur_zeroobj.h"
 #include "scip/heur_zirounding.h"
 #endif
 
-#include "scip/presol_dualfix.h"
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_trivial.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
+#include "scip/prop_dualfix.h"
+#include "scip/prop_genvbounds.h"
 #include "scip/prop_probing.h"
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
 #include "scip/prop_redcost.h"
+#include "scip/prop_vbounds.h"
 #endif
 
 #if USESEPA
@@ -103,6 +107,7 @@
 #include "scip/sepa_impliedbounds.h"
 #include "scip/sepa_intobj.h"
 #include "scip/sepa_mcf.h"
+#include "scip/sepa_oddcycle.h"
 #include "scip/sepa_strongcg.h"
 #endif
 
@@ -155,17 +160,18 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeReaderLp(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
-   SCIP_CALL( SCIPincludePresolDualfix(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
 
 #if USEPROP
+   SCIP_CALL( SCIPincludePropDualfix(scip) );
+   SCIP_CALL( SCIPincludePropGenvbounds(scip) );
    SCIP_CALL( SCIPincludePropProbing(scip) );
-   /* TODO: I added the include of the following propagators, was there a reason to not add them? (Gerald) */
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
    SCIP_CALL( SCIPincludePropRedcost(scip) );
+   SCIP_CALL( SCIPincludePropVbounds(scip) );
 #endif
 
    SCIP_CALL( SCIPincludeNodeselMaster(scip) );
@@ -190,6 +196,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurOctane(scip) );
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
+   SCIP_CALL( SCIPincludeHeurProximity(scip) );
    SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
    SCIP_CALL( SCIPincludeHeurRens(scip) );
    SCIP_CALL( SCIPincludeHeurRins(scip) );
@@ -200,6 +207,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurTwoopt(scip) );
    SCIP_CALL( SCIPincludeHeurVbounds(scip) );
    SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
+   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
    SCIP_CALL( SCIPincludeHeurZirounding(scip) );
 
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
@@ -223,6 +231,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
    SCIP_CALL( SCIPincludeSepaIntobj(scip) );
    SCIP_CALL( SCIPincludeSepaMcf(scip) );
+   SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaStrongcg(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );

@@ -58,6 +58,23 @@
 	Student assistant, documentation
       </td>
     </tr>
+    <tr>
+      <td width="180px">
+	Daniel Peters
+      </td>
+      <td>
+	Student assistant, detection of similar pricing problems
+      </td>
+    </tr>
+    <tr>
+      <td width="180px">
+        Marcel Schmickerath
+      </td>
+      <td>
+	Student assistant, generic branching
+      </td>
+    </tr>
+
   </table>
 </div>
 
