@@ -340,7 +340,6 @@ SCIP_RETCODE DECdecompFree(
    {
       for( i = 0; i < decomp->nlinkingvars; ++i )
       {
-
          if( decomp->linkingvars[i] != NULL )
          {
             if( decomp->linkingvars[i] != NULL )
@@ -1258,6 +1257,7 @@ SCIP_RETCODE DECdecompTransform(
 
          /* the probvar can also be fixed, in which case we do not need it in the block; furthermore, multiple variables
           * can resolve to the same active problem variable, so we check whether we already handled the variable
+          * @todo: why do we ignore fixed variables? They could still be present in constraints?
           */
          if( SCIPvarIsActive(newvar) && !SCIPhashmapExists(newvartoblock, newvar) )
          {
@@ -1310,8 +1310,10 @@ SCIP_RETCODE DECdecompTransform(
          newvar = decdecomp->linkingvars[v];
       assert(newvar != NULL);
       assert(SCIPvarIsTransformed(newvar));
+      SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->linkingvars[v])) );
 
       decdecomp->linkingvars[v] = newvar;
+      SCIP_CALL( SCIPcaptureVar(scip, decdecomp->linkingvars[v]) );
       SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->linkingvars[v], (void*) (size_t) (decdecomp->nblocks+1) ) );
       SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
          (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
@@ -2256,7 +2258,7 @@ SCIP_RETCODE DECgetVarLockData(
             assert(probindex >= 0);
             assert(probindex < nvars);
 
-            assert(SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), var) > 0);
+            assert((size_t)SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), var) > 0);
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
