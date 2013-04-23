@@ -795,26 +795,26 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 
          /* free environment */
          CHECK_ZERO( CPXcloseCPLEX(&solverdata->cpxenv[i]) );
-      }
 
-      if( solverdata->nbasicpricingconss[i] > 0 )
-      {
-         /* release stored constraints */
-         for( j = 0; j < solverdata->nbasicpricingconss[i]; ++j )
+         if( solverdata->nbasicpricingconss[i] > 0 )
          {
-            SCIP_CALL( SCIPreleaseCons(solverdata->pricingprobs[i], &solverdata->pricingconss[i][j]) );
+            /* release stored constraints */
+            for( j = 0; j < solverdata->nbasicpricingconss[i]; ++j )
+            {
+               SCIP_CALL( SCIPreleaseCons(solverdata->pricingprobs[i], &solverdata->pricingconss[i][j]) );
+            }
+            SCIPfreeMemoryArray(scip, &(solverdata->pricingconss[i]));
          }
-         SCIPfreeMemoryArray(scip, &(solverdata->pricingconss[i]));
-      }
 
-      if( solverdata->npricingvars[i] > 0 )
-      {
-         /* release stored constraints */
-         for( j = 0; j < solverdata->npricingvars[i]; ++j )
+         if( solverdata->npricingvars[i] > 0 )
          {
-            SCIP_CALL( SCIPreleaseVar(solverdata->pricingprobs[i], &solverdata->pricingvars[i][j]) );
+            /* release stored constraints */
+            for( j = 0; j < solverdata->npricingvars[i]; ++j )
+            {
+               SCIP_CALL( SCIPreleaseVar(solverdata->pricingprobs[i], &solverdata->pricingvars[i][j]) );
+            }
+            SCIPfreeMemoryArray(scip, &(solverdata->pricingvars[i]));
          }
-         SCIPfreeMemoryArray(scip, &(solverdata->pricingvars[i]));
       }
    }
 
