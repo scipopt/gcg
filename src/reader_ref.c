@@ -685,7 +685,7 @@ SCIP_RETCODE writeREFFile(
       assert(ind <= nconss);
       cons = SCIPfindCons(scip, SCIPconsGetName(conss[i]));
 
-      SCIPdebugMessage("cons added: %d\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
+      SCIPdebugMessage("cons added: %d\t%p\t%s\n", ind, (void*)cons, SCIPconsGetName(cons));
       SCIP_CALL( SCIPhashmapInsert(cons2origindex, cons, (void*)(size_t)(ind)) ); /* shift by 1 to enable error checking */
    }
 
@@ -711,7 +711,7 @@ SCIP_RETCODE writeREFFile(
 
          cons = SCIPfindCons(scip, SCIPconsGetName(subscipconss[i][j]));
          ind = (int)(size_t) SCIPhashmapGetImage(cons2origindex, cons); /*lint !e507*/
-         SCIPdebugMessage("cons retrieve (o): %d\t%p\t%s\n", ind, cons, SCIPconsGetName(cons));
+         SCIPdebugMessage("cons retrieve (o): %d\t%p\t%s\n", ind, (void*)cons, SCIPconsGetName(cons));
 
          assert(ind > 0); /* shift by 1 */
          assert(ind <= nconss); /* shift by 1 */

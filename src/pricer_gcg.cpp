@@ -1520,24 +1520,26 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store whether the reduced cost returned is valid */
    )
 {
-   int i;
-   int j;
-   int oldnfoundvars;
-   int solvedmips;
-   int successfulmips;
-   int nfoundvarsprob;
-   SCIP_Bool added;
-
-   SCIP_Real pricinglowerbound;
-
    SCIP_SOL*** sols;
    int* nsols;
    SCIP_Bool** solisray;
-   int maxsols;
+   SCIP_Real pricinglowerbound;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
    SCIP_Bool pricinghaserror;
    SCIP_Bool stabilized;
+   SCIP_Bool added;
+   int solvedmips;
+   int successfulmips;
+   int nfoundvarsprob;
+   int maxsols;
+   int i;
+   int j;
+
+#ifndef NDEBUG
+   int oldnfoundvars;
+#endif
+
    assert(pricetype->getType() == GCG_PRICETYPE_FARKAS || result != NULL);
 
    assert(nfoundvars != NULL);
@@ -1725,7 +1727,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    }
    while( stabilized && *nfoundvars == 0 );
 
+#ifndef NDEBUG
    oldnfoundvars = *nfoundvars;
+#endif
 
 #ifdef _OPENMP
    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());

@@ -1244,7 +1244,7 @@ SCIP_RETCODE DECdecompTransform(
          assert(decdecomp->subscipvars[b][v] != NULL);
 
          SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]),
-            decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
+            (void*)decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
 
          /* make sure that newvar is a transformed variable */
          SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->subscipvars[b][v], &newvar) );
@@ -1264,7 +1264,7 @@ SCIP_RETCODE DECdecompTransform(
             decdecomp->subscipvars[b][idx] = newvar;
             SCIP_CALL( SCIPcaptureVar(scip, newvar) );
             SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][idx]),
-               decdecomp->subscipvars[b][idx], SCIPvarIsTransformed(decdecomp->subscipvars[b][idx])?"t":"o" );
+               (void*)decdecomp->subscipvars[b][idx], SCIPvarIsTransformed(decdecomp->subscipvars[b][idx])?"t":"o" );
 
             assert(decdecomp->subscipvars[b][idx] != NULL);
             assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][idx]));
@@ -1297,7 +1297,8 @@ SCIP_RETCODE DECdecompTransform(
    /* transform all linking variables */
    for( v = 0; v < decdecomp->nlinkingvars; ++v )
    {
-      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
+         (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
       assert(decdecomp->linkingvars[v] != NULL);
 
       if( !SCIPvarIsTransformed(decdecomp->linkingvars[v]) )
@@ -1312,7 +1313,8 @@ SCIP_RETCODE DECdecompTransform(
 
       decdecomp->linkingvars[v] = newvar;
       SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->linkingvars[v], (void*) (size_t) (decdecomp->nblocks+1) ) );
-      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]), decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o" );
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
+         (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
       assert(decdecomp->linkingvars[v] != NULL);
    }
 
@@ -1586,11 +1588,9 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
    SCIP_VAR** curvars;
    int ncurvars;
    SCIP_CONS* cons;
-   int nvars;
 
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
-   nvars = SCIPgetNVars(scip);
 
    /* go through the all constraints */
    for (i = 0; i < nconss; ++i)
@@ -1614,7 +1614,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
       }
       assert(ncurvars >= 0);
-      assert(ncurvars <= nvars);
+      assert(ncurvars <= SCIPgetNVars(scip));
       assert(curvars != NULL || ncurvars == 0);
 
       assert(SCIPhashmapGetImage(constoblock, cons) == NULL);
@@ -1638,7 +1638,7 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
 
          varindex = SCIPvarGetProbindex(probvar);
          assert(varindex >= 0);
-         assert(varindex < nvars);
+         assert(varindex < SCIPgetNVars(scip));
 
          /** @todo what about deleted variables? */
          /* get block of variable */
@@ -2193,7 +2193,6 @@ SCIP_RETCODE DECgetVarLockData(
 {
    int nlinkingconss;
    SCIP_CONS** curconss;
-   SCIP_HASHMAP* vartoblock;
    SCIP_VAR** curvars;
    SCIP_Real* curvals;
    int ncurvars;
@@ -2227,8 +2226,6 @@ SCIP_RETCODE DECgetVarLockData(
       BMSclearMemoryArray(subsciplocksup[i], nvars);
    }
 
-   vartoblock = DECdecompGetVartoblock(decomp);
-
    for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
    {
       curconss = DECdecompGetSubscipconss(decomp)[i];
@@ -2252,7 +2249,6 @@ SCIP_RETCODE DECgetVarLockData(
          for( v = 0; v < ncurvars; ++v )
          {
             SCIP_VAR* var;
-            int block;
             int probindex;
             var = curvars[v];
             var = SCIPvarGetProbvar(var);
@@ -2260,8 +2256,7 @@ SCIP_RETCODE DECgetVarLockData(
             assert(probindex >= 0);
             assert(probindex < nvars);
 
-            block = (int) (size_t) SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
-            assert(block > 0);
+            assert(SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), var) > 0);
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 

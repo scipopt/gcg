@@ -119,7 +119,7 @@ SCIP_Real SCIPgetRhsXXX(
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
       switch ( SCIPgetTypeSetppc(scip, cons) ) {
-      case SCIP_SETPPCTYPE_PARTITIONING: // fall through desired
+      case SCIP_SETPPCTYPE_PARTITIONING: /* fall through desired */
       case SCIP_SETPPCTYPE_PACKING:
          return 1.0;
       case SCIP_SETPPCTYPE_COVERING:
@@ -175,13 +175,12 @@ SCIP_Real SCIPgetLhsXXX(
    else if( strcmp(conshdlrname, "setppc") == 0 )
    {
       switch ( SCIPgetTypeSetppc(scip, cons) ) {
-      case SCIP_SETPPCTYPE_PARTITIONING: // fall through desired
+      case SCIP_SETPPCTYPE_PARTITIONING: /* fall through desired */
       case SCIP_SETPPCTYPE_COVERING:
          return 1.0;
       case SCIP_SETPPCTYPE_PACKING:
          return -SCIPinfinity(scip);
-      }
-   }
+      }}
    else if( strcmp(conshdlrname, "logicor") == 0 )
    {
       return 1.0;
