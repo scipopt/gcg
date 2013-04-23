@@ -136,17 +136,17 @@ SCIP_RETCODE createGraph(
          {
             int pos;
 
-            SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), curvars2[v]);
+            SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), (void*)curvars2[v]);
             if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
-               SCIPdebugPrintf(" found (%d: %p)\n", pos, curvars1[pos]);
+               SCIPdebugPrintf(" found (%d: %p)\n", pos, (void*)curvars1[pos]);
                assert(curvars1[pos] == curvars2[v]);
                TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
             }
             else
             {
-               SCIPdebugPrintf(" not found (%d: %p)\n", pos, curvars1[pos]);
+               SCIPdebugPrintf(" not found (%d: %p)\n", pos, (void*)curvars1[pos]);
             }
          }
          SCIPfreeBufferArray(scip, &curvars2);
@@ -286,6 +286,8 @@ SCIP_RETCODE findMaximalPath(
    assert(end != NULL);
 
    max = -1;
+   *start = -1;
+   *end = -1;
 
    for( i = 0; i < tcliqueGetNNodes(detectordata->graph); ++i )
    {
@@ -299,6 +301,9 @@ SCIP_RETCODE findMaximalPath(
          }
       }
    }
+   assert(*start >= 0);
+   assert(*end >= 0);
+
    SCIPdebugMessage("Path from %d to %d is longest %d.\n", *start, *end, max);
    detectordata->nblocks = max+1;
 

@@ -1733,7 +1733,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->nactivated = 0;
 
 
-   SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", parentcons);
+   SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*)parentcons);
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, "masterbranch", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,

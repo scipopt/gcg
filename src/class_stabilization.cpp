@@ -140,7 +140,9 @@ SCIP_RETCODE Stabilization::consGetDual(
    )
 {
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
+#ifndef NDEBUG
    int nconss =  GCGrelaxGetNMasterConss(origprob);
+#endif
    assert(i < nconss);
    assert(dual != NULL);
 
@@ -162,7 +164,9 @@ SCIP_RETCODE Stabilization::rowGetDual(
    SCIP_Real* dual
    )
 {
+#ifndef NDEBUG
    int nrows = GCGsepaGetNMastercuts(scip_);
+#endif
    assert(i < nrows);
    assert(dual != NULL);
 

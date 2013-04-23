@@ -47,11 +47,8 @@
 #define SOLVER_DESC          "knapsack solver for pricing problems"
 #define SOLVER_PRIORITY      -100
 
-/** knapsack pricing solverdata */
-struct GCG_SolverData
-{
-   SCIP*                 origprob;           /**< original problem */
-};
+/** knapsack pricing solver needs no solverdata */
+/* struct GCG_SolverData {}; */
 
 
 /*
@@ -73,7 +70,6 @@ SCIP_RETCODE solveKnapsack(
    SCIP_STATUS*          result
    )
 {
-   GCG_SOLVERDATA* solverdata;
    SCIP_CONS* cons;
    SCIP_VAR** consvars;
    int nconsvars;
@@ -109,9 +105,6 @@ SCIP_RETCODE solveKnapsack(
    assert(solisray != NULL);
    assert(nsols != NULL);
    assert(result != NULL);
-
-   solverdata = GCGsolverGetSolverdata(solver);
-   assert(solverdata != NULL);
 
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
@@ -325,25 +318,7 @@ SCIP_RETCODE solveKnapsack(
  * Callback methods for pricing problem solver
  */
 
-/** free method of knapsack solver */
-static
-GCG_DECL_SOLVERFREE(solverFreeKnapsack)
-{
-   GCG_SOLVERDATA* solverdata;
-
-   assert(scip != NULL);
-   assert(solver != NULL);
-
-   solverdata = GCGsolverGetSolverdata(solver);
-   assert(solverdata != NULL);
-
-   SCIPfreeMemory(scip, &solverdata);
-
-   GCGsolverSetSolverdata(solver, NULL);
-
-   return SCIP_OKAY;
-}
-
+#define solverFreeKnapsack NULL
 #define solverInitsolKnapsack NULL
 #define solverExitsolKnapsack NULL
 #define solverInitKnapsack NULL
@@ -378,14 +353,9 @@ SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   GCG_SOLVERDATA* data;
-
-   SCIP_CALL( SCIPallocMemory( scip, &data) );
-   data->origprob = GCGpricerGetOrigprob(scip);
-
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, solverSolveKnapsack,
          solverSolveHeurKnapsack, solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,
-         solverInitsolKnapsack, solverExitsolKnapsack, data) );
+         solverInitsolKnapsack, solverExitsolKnapsack, NULL) );
 
    return SCIP_OKAY;
 }
