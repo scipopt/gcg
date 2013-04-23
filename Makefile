@@ -306,8 +306,12 @@ cleanlib:       $(LIBDIR)
 .PHONY: cleantest
 cleantest:
 ifneq ($(OBJDIR),)
-		@-(rm -f $(OBJDIR)/tests/*.o)
-		@-(cd $(OBJDIR) && rmdir tests);
+		@$(SHELL) -ec 'if test -d $(OBJDIR)/tests/; \
+			then \
+				echo "-> remove $(OBJDIR)/tests/"; \
+				rm -f -f $(OBJDIR)/tests/*.o ; \
+				cd $(OBJDIR) && rmdir tests ; \
+			fi'
 endif
 
 .PHONY: clean
