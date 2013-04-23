@@ -102,6 +102,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - pricingprob     : the pricing problem that should be solved
  *  - solver          : the solver itself
  *  - probnr          : number of the pricing problem
+ *  - dualsolconv     : dual solution of the corresponding convexity constraint
  *  - lowerbound      : pointer to store lower bound of pricing problem
  *  - sols            : array to store returned solutions
  *  - maxsols         : indicates the maximum size of the sols array
@@ -112,7 +113,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVE(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver, int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 /** solving method for pricing solver using heuristic pricing only
  *
@@ -121,6 +122,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - pricingprob     : the pricing problem that should be solved
  *  - solver          : the solver itself
  *  - probnr          : number of the pricing problem
+ *  - dualsolconv     : dual solution of the corresponding convexity constraint
  *  - lowerbound      : pointer to store lower bound of pricing problem
  *  - sols            : array to store returned solutions
  *  - maxsols         : indicates the maximum size of the sols array
@@ -132,7 +134,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *                      - SCIP_STATUS_UNBOUNDED if the problem is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */
-#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver,  int probnr, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
+#define GCG_DECL_SOLVERSOLVEHEUR(x) SCIP_RETCODE x (SCIP* pricingprob, GCG_SOLVER* solver,  int probnr, SCIP_Real dualsolconv, SCIP_Real* lowerbound, SCIP_SOL** sols, SCIP_Bool* solisray, int maxsols, int* nsols, SCIP_STATUS* result)
 
 
 #ifdef __cplusplus

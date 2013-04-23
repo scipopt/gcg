@@ -26,6 +26,7 @@ SCIPDIR         =   lib/scip
 
 LIBDIR          =	lib
 DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(addprefix $(LIBOBJDIR)/,$(LIBOBJSUBDIRS))
+SOFTLINKS	=
 MAKESOFTLINKS	=	true
 
 SHELL		= 	bash
@@ -39,7 +40,8 @@ VALGRIND	=	false
 MODE		=	readdec
 GTEST		=	true
 PARASCIP	= 	true
-BLISS       =   true
+BLISS       	=   	true
+CPLEXSOLVER	=	true
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -50,8 +52,8 @@ BLISS       =   true
 #-----------------------------------------------------------------------------
 
 SOFTLINKS	+=	$(LIBDIR)/scip
-LPIINSTMSG	=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.scip
+LINKMSG		=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CPLEXSOLVER)
 
 #-----------------------------------------------------------------------------
 # BLISS
@@ -64,8 +66,25 @@ LDFLAGS		+= 	-lbliss
 FLAGS		+=	-I$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
-LPIINSTMSG	+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LPIINSTMSG	+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libbliss.a\"\n"
+LINKMSG		+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
+LINKMSG		+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libbliss.a\"\n"
+endif
+
+#-----------------------------------------------------------------------------
+# CPLEX pricing solver
+#-----------------------------------------------------------------------------
+
+ifeq ($(CPLEXSOLVER),false)
+FLAGS		+=	-DNCPLEXSOLVER
+else
+LPSLDFLAGS	+=	$(LINKCC_l)cplex.$(OSTYPE).$(ARCH).$(COMP)$(LINKLIBSUFFIX) \
+                        $(LINKCC_l)pthread$(LINKLIBSUFFIX)
+FLAGS		+=	-I$(LIBDIR)/cpxinc
+SOFTLINKS	+=	$(LIBDIR)/cpxinc
+SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(STATICLIBEXT)
+SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)
+LINKMSG		=	"  -> \"cpxinc\" is the path to the CPLEX \"include\" directory, e.g., \"<CPLEX-path>/include/ilcplex\".\n"
+LINKMSG		+=	" -> \"libcplex.*\" is the path to the CPLEX library, e.g., \"<CPLEX-path>/lib/x86_rhel4.0_3.4/static_pic/libcplex.a\""
 endif
 
 #-----------------------------------------------------------------------------
@@ -145,14 +164,16 @@ LIBOBJ		=	reader_blk.o \
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o
 endif
-
+ifeq ($(CPLEXSOLVER),true)
+LIBOBJ		+=	solver_cplex.o
+endif
 
 MAINOBJ		=	main.o
 
 MAINSRC		=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(MAINOBJ:.o=.cpp)))
 MAINDEP		=	$(SRCDIR)/depend.cmain.$(OPT)
 
-MAIN		=	$(MAINNAME).$(BASE).$(LPS)$(EXEEXTENSION)
+MAIN		=	$(MAINNAME)-$(VERSION).$(BASE).$(LPS)$(EXEEXTENSION)
 MAINFILE	=	$(BINDIR)/$(MAIN)
 MAINSHORTLINK	=	$(BINDIR)/$(MAINNAME)
 MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
@@ -199,10 +220,10 @@ LDFLAGS+=-fopenmp
 CXXFLAGS+=-fopenmp
 endif
 
-$(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
+#$(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
 .PHONY: libs
-libs:		$(GCGLIBFILE) $(GCGLIBSHORTLINK)
+libs:		$(LINKSMARKERFILE) $(GCGLIBFILE) $(GCGLIBSHORTLINK)
 
 .PHONY: lint
 lint:		$(ALLSRC)
@@ -264,12 +285,12 @@ githash::   # do not remove the double-colon
 .PHONY: test
 test:
 		cd check; \
-		$(SHELL) ./check.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
+		$(SHELL) ./check.sh $(TEST) $(MAINFILE) $(SETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND) $(MODE);
 
 .PHONY: eval
 eval:
 		cd check; \
-		$(SHELL) ./eval.sh $(TEST) $(BINDIR)/gcg.$(BASE).$(LPS) $(SETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
+		$(SHELL) ./eval.sh $(TEST) $(MAINFILE) $(SETTINGS) $(notdir $(BINDIR)/$(GCGLIBNAME).$(BASE).$(LPS)).$(HOSTNAME) $(TIME) $(NODES) $(MEM) $(THREADS) $(FEASTOL) $(DISPFREQ) $(CONTINUE) $(LOCK) $(VERSION) $(LPS) $(VALGRIND);
 
 
 .PHONY: cleanbin
@@ -288,6 +309,7 @@ ifneq ($(OBJDIR),)
 		@-(rm -f $(OBJDIR)/tests/*.o)
 		@-(cd $(OBJDIR) && rmdir tests);
 endif
+
 .PHONY: clean
 clean:          cleantest cleanlib cleanbin  $(LIBOBJDIR) $(LIBOBJSUBDIRS) $(OBJDIR)
 ifneq ($(LIBOBJDIR),)
@@ -366,8 +388,8 @@ $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(LINKSMARKERFILE): links
-#		@$(MAKE) links
+$(LINKSMARKERFILE):
+		@$(MAKE) links
 
 .PHONY: links
 links:		$(LIBDIR) $(SOFTLINKS)
@@ -391,7 +413,7 @@ ifeq ($(MAKESOFTLINKS), true)
 		                echo "* The link will be installed in the 'lib' directory." ; \
 		                echo "* For more information and if you experience problems see the INSTALL file." ; \
 		                echo ; \
-		                echo -e $(LPIINSTMSG) ; \
+		                echo -e $(LINKMSG) ; \
 				echo "> Enter soft-link target file or directory for \"$@\" (return if not needed): " ; \
 				echo -n "> " ; \
 				cd $$DIRNAME ; \

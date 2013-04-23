@@ -303,7 +303,6 @@ SCIP_RETCODE solveKnapsack(
 
    SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
    SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
-   solisray[0] = 2;
 
    SCIPfreeBufferArray(pricingprob, &nonsolitems);
    SCIPfreeBufferArray(pricingprob, &solitems);

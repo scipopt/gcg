@@ -161,7 +161,8 @@ private:
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars,           /**< number of variables in array solvars */
       SCIP_Bool             solisray,           /**< is the solution a ray? */
-      int                   prob               /**< number of the pricing problem the solution belongs to */
+      int                   prob,               /**< number of the pricing problem the solution belongs to */
+      SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
       );
 
    int countPricedVariables(

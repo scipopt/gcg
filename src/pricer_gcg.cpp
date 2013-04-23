@@ -91,7 +91,7 @@ using namespace scip;
 /** small macro to simplify printing pricer information */
 #define GCGpricerPrintInfo(scip, pricerdata, ...) do { \
    if( pricerdata->dispinfos ) { \
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,__VA_ARGS__);\
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, __VA_ARGS__);\
    } else {\
       SCIPdebugMessage(__VA_ARGS__); \
    }\
@@ -764,9 +764,10 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
          SCIP_CALL_ABORT( SCIPstartClock(scip_, clock) );
       }
 
-      SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, lowerbound, sols, solisray, maxsols, nsols, status) );
+      SCIP_CALL( solversolve(pricerdata->pricingprobs[prob], solver, prob, pricerdata->dualsolconv[prob],
+            lowerbound, sols, solisray, maxsols, nsols, status) );
 
-      if(optimal)
+      if( optimal )
       {
          #pragma omp atomic
          pricerdata->solvedsubmipsoptimal++;
@@ -1215,7 +1216,8 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
    int                   nsolvars,           /**< number of variables in array solvars */
    SCIP_Bool             solisray,           /**< is the solution a ray? */
-   int                   prob                /**< number of the pricing problem the solution belongs to */
+   int                   prob,               /**< number of the pricing problem the solution belongs to */
+   SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    )
 {
    SCIP_Real objvalue;
@@ -1224,6 +1226,9 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    /* compute the objective function value of the solution */
    for( int i = 0; i < nsolvars; i++ )
       objvalue += solvals[i] * pricerdata->realdualvalues[prob][SCIPvarGetProbindex(solvars[i])];
+
+   if( objvalptr != NULL )
+      *objvalptr = objvalue;
 
    /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
    return (solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
@@ -1266,20 +1271,20 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( !force )
    {
       /* compute the objective function value of the solution */
-      redcost = computeRedCost(solvars, solvals, nsolvars, solisray == TRUE, prob);
+      redcost = computeRedCost(solvars, solvals, nsolvars, solisray, prob, &objvalue);
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
-         SCIPdebugMessage("var with redcost %g (objvalue = %g, dualsol =%g) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
+         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%d) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
          *added = FALSE;
 
          return SCIP_OKAY;
       }
-      SCIPdebugMessage("found var with redcost %g (objvalue = %g, dualsol =%g)\n", redcost, objvalue, pricerdata->dualsolconv[prob]);
+      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%d)\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
    }
    else
    {
-      SCIPdebugMessage("force var (objvalue = %g, dualsol =%g)\n",  objvalue, pricerdata->dualsolconv[prob]);
+      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%d)\n",  objvalue, pricerdata->dualsolconv[prob], solisray);
    }
 
    *added = TRUE;
@@ -1303,7 +1308,6 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
          /* add quota of original variable's objcoef to the master variable's coef */
          objcoeff += solvals[i] * SCIPvarGetObj(origvar);
       }
-
    }
 
    if( SCIPisInfinity(scip, objcoeff) )
@@ -1312,7 +1316,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       objcoeff = SCIPinfinity(scip) / 2;
    }
 
-   if( solisray == 1 )
+   if( solisray )
    {
       (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "r_%d_%d", prob, pricerdata->nraysprob[prob]);
       pricerdata->nraysprob[prob]++;
@@ -1324,7 +1328,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, solisray == 1, prob, nsolvars, solvals, solvars));
+         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -1347,7 +1351,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP_CALL( addVariableToMastercuts(scip, newvar, prob, solvars, solvals, nsolvars) );
 
    /* add variable to convexity constraint */
-   if( !(solisray == 1))
+   if( !solisray )
    {
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
    }
@@ -1408,7 +1412,7 @@ void ObjPricerGcg::sortPricingProblemsByScore()
 {
    int i;
    assert(pricerdata != NULL);
-    /** @todo sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
+   /** @todo sort w.r.t. other measures? Don't sort in Farkas pricing? Randomized? */
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
       pricerdata->permu[i] = i;
@@ -1480,8 +1484,11 @@ int ObjPricerGcg::countPricedVariables(
 {
    SCIP_VAR** solvars;
    SCIP_Real* solvals;
+   SCIP_Real redcost;
    int nsolvars;
    int nfoundvars;
+
+   SCIPdebugMessage("checking %d solution of pricing problem %d\n", nsols, prob);
 
    nfoundvars = 0;
    solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
@@ -1489,13 +1496,15 @@ int ObjPricerGcg::countPricedVariables(
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip_, &solvals, nsolvars));
    for( int j = 0; j < nsols; ++j )
    {
-      SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, (void*) (sols[j]));
       SCIP_CALL_ABORT( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[j], nsolvars, solvars, solvals) );
-      if ( SCIPisNegative(scip_, computeRedCost(solvars, solvals, nsolvars, solisray[j], prob)) )
+      redcost = computeRedCost(solvars, solvals, nsolvars, solisray[j], prob, NULL);
+      SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (sols[j]), redcost);
+      if( SCIPisNegative(scip_, redcost) )
       {
          nfoundvars += 1;
       }
    }
+
    SCIPfreeMemoryArray(scip_, &solvals);
 
    return nfoundvars;
@@ -1513,7 +1522,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 {
    int i;
    int j;
-
+   int oldnfoundvars;
    int solvedmips;
    int successfulmips;
    int nfoundvarsprob;
@@ -1552,6 +1561,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_CALL( SCIPallocMemoryArray(scip_, &nsols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip_, &sols, pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocMemoryArray(scip_, &solisray, pricerdata->npricingprobs) );
+   BMSclearMemoryArray(nsols, pricerdata->npricingprobs);
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -1567,7 +1577,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    #pragma omp parallel for private(j)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-
+      /* @todo Martin: can't we use BMSclearMemoryArray here? */
       for( j = 0; j < maxsols; ++j )
       {
          solisray[i][j] = FALSE;
@@ -1618,7 +1628,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                *nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
             }
 
-            if(nvarsfound < *nfoundvars)
+            if( nvarsfound < *nfoundvars )
             {
                #pragma omp atomic
                successfulmips += 1;
@@ -1697,8 +1707,25 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
       SCIPdebugMessage("nfoundvars: %d\n", *nfoundvars);
+
+      /* free solutions if none of them has negative reduced cost */
+      if( *nfoundvars == 0 )
+      {
+         for( i = 0; i < pricerdata->npricingprobs; ++i )
+         {
+            for( j = 0; j < nsols[i]; ++j )
+            {
+               SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[i], &sols[i][j]) );
+               SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, i);
+            }
+            nsols[i] = 0;
+         }
+      }
+
    }
    while( stabilized && *nfoundvars == 0 );
+
+   oldnfoundvars = *nfoundvars;
 
 #ifdef _OPENMP
    SCIPdebugMessage("We are here with currently %d threads.\n", omp_get_num_threads());
@@ -1715,9 +1742,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( pricerdata->pricingprobs[prob] == NULL )
          continue;
 
-      if( SCIPgetStage(pricerdata->pricingprobs[prob]) <= SCIP_STAGE_PROBLEM )
-         continue;
-
       nfoundvarsprob = 0;
 
       for( j = 0; j < nsols[prob]; ++j )
@@ -1730,12 +1754,12 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
              (pricetype->getType() == GCG_PRICETYPE_REDCOST || *nfoundvars < pricetype->getMaxvarsround()) &&
              (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((*nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
-             (*nfoundvars <reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
+             (*nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
          {
             solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
             nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
             SCIP_CALL( SCIPallocMemoryArray(scip, &solvals, nsolvars) );
-            SCIPdebugMessage("Solution %d of prob %d (%p)\n", j, prob, (void*) (sols[prob][j]));
+            SCIPdebugMessage("Solution %d/%d of prob %d (%p)\n", j, nsols[prob], prob, (void*) (sols[prob][j]));
             SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
 
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
@@ -1749,22 +1773,24 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
             SCIPfreeMemoryArray(scip, &solvals);
          }
-
-         if( solisray[prob][j] )
-         {
-            SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[prob][j]) );
-            SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, prob);
-         }
       }
 
       if( nfoundvarsprob > 0 )
          successfulmips++;
-
    }
+
+   assert(oldnfoundvars >= *nfoundvars);
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
       SCIPdebugMessage("Freeing information for pricing %d.\n", i);
+
+      for( j = 0; j < nsols[i]; ++j )
+      {
+         SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[i], &sols[i][j]) );
+         SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, i);
+      }
+
       SCIPfreeMemoryArray(scip, &(sols[i]));
       SCIPfreeMemoryArray(scip, &(solisray[i]));
    }
@@ -2827,7 +2853,6 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
          for( i = 0; i < ncoefs; i++ )
          {
             assert(!SCIPisZero(scip, coefs[i]));
-            /*            SCIP_CALL( SCIPgetTransformedCons(scip, linkconss[i], &linkcons) );*/
 
             SCIP_CALL( SCIPaddCoefLinear(scip, linkconss[i], newvar, coefs[i]) );
          }
