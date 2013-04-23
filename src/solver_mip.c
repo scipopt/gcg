@@ -24,7 +24,7 @@
 /* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
- //#define SCIP_DEBUG
+
 /**@file   solver_mip.c
  * @brief  pricing solver solving the pricing problem as a sub-MIP, using SCIP
  * @author Gerald Gamrath
@@ -58,8 +58,6 @@
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
-   SCIP*                 origprob;           /**< original SCIP data structure */
-
    SCIP_Bool             checksols;          /**< should solutions be checked extensively */
 };
 
@@ -291,7 +289,7 @@ SCIP_RETCODE inferFiniteSolution(
          SCIP_VAR* newvar;
          SCIP_VAR* origvar;
          origvar = SCIPgetOrigVars(pricingprob)[i];
-         newvar = SCIPhashmapGetImage(varmap, origvar); //SCIPfindVar(newscip, SCIPvarGetName(origvar));
+         newvar = SCIPhashmapGetImage(varmap, origvar);
          solvals[i] = SCIPgetSolVal(newscip, SCIPgetBestSol(newscip), newvar);
       }
       SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, SCIPgetNOrigVars(pricingprob), SCIPgetOrigVars(pricingprob), solvals) );
@@ -396,7 +394,7 @@ SCIP_Bool problemIsFeasible(
    return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL;
 }
 
-/** returns whether the solution process was aborted */
+/** returns whether the solution has an infinite value for at least one variable */
 static
 SCIP_Bool problemHasUnboundedSolution(
    SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
@@ -406,7 +404,7 @@ SCIP_Bool problemHasUnboundedSolution(
    SCIP_SOL* sol;
    sol = SCIPgetBestSol(pricingprob);
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-   //assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol)));
+   /*assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol)));*/
 
    for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {
@@ -494,8 +492,8 @@ SCIP_RETCODE solveProblem(
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNBOUNDED
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT
-      || SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN);
+      || SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT);
+   /* @todo: can UNKNOWN happen, too? */
 
    /* the pricing problem was declared to be (infeasible or) unbounded and we should have a primal ray at hand,
     * so copy the primal ray into the solution structure and mark it to be a primal ray
@@ -578,7 +576,7 @@ SCIP_RETCODE solveProblem(
          }
 
          solisray[*nsols] = FALSE;
-         sols[*nsols] = probsols[s];
+         SCIP_CALL( SCIPcreateSolCopy(pricingprob, &sols[*nsols], probsols[s]) );
          *nsols = *nsols + 1;
       }
 
@@ -660,7 +658,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    assert(solverdata != NULL);
 
    *lowerbound = -SCIPinfinity(pricingprob);
-   SCIPdebugMessage("solving pricing %d=%p\n", probnr, pricingprob);
+   SCIPdebugMessage("solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
    SCIP_CALL( solveProblem(pricingprob, probnr, solverdata, sols, solisray, maxsols, nsols, lowerbound, result) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
@@ -713,14 +711,13 @@ SCIP_RETCODE GCGincludeSolverMip(
 {
    GCG_SOLVERDATA* data;
 
-   SCIP_CALL( SCIPallocMemory( scip, &data) );
-   data->origprob = GCGpricerGetOrigprob(scip);
+   SCIP_CALL( SCIPallocMemory(scip, &data) );
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, data) );
 
-   SCIP_CALL( SCIPaddBoolParam(data->origprob, "pricingsolver/mip/checksols",
+   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 

@@ -139,6 +139,10 @@
 #include "heur_relaxcolsel.h"
 #include "heur_restmaster.h"
 
+#ifndef NCPLEXSOLVER
+#include "solver_cplex.h"
+#endif
+
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
@@ -243,6 +247,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
+
+#ifndef NCPLEXSOLVER
+   SCIP_CALL( GCGincludeSolverCplex(scip) );
+#endif
 
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
