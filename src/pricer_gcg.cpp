@@ -430,17 +430,17 @@ SCIP_RETCODE ObjPricerGcg::solversFree()
       if( pricerdata->solvers[i]->solverfree != NULL )
       {
          SCIP_CALL( pricerdata->solvers[i]->solverfree(scip_, pricerdata->solvers[i]) );
-
-         BMSfreeMemoryArray(&pricerdata->solvers[i]->name);
-         BMSfreeMemoryArray(&pricerdata->solvers[i]->description);
-
-         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optfarkasclock)) );
-         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optredcostclock)) );
-         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurfarkasclock)) );
-         SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurredcostclock)) );
-
-         SCIPfreeMemory(scip, &(pricerdata->solvers[i]));
       }
+
+      BMSfreeMemoryArray(&pricerdata->solvers[i]->name);
+      BMSfreeMemoryArray(&pricerdata->solvers[i]->description);
+
+      SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optfarkasclock)) );
+      SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->optredcostclock)) );
+      SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurfarkasclock)) );
+      SCIP_CALL( SCIPfreeClock(scip_, &(pricerdata->solvers[i]->heurredcostclock)) );
+
+      SCIPfreeMemory(scip, &(pricerdata->solvers[i]));
    }
 
    return SCIP_OKAY;
@@ -513,6 +513,9 @@ SCIP_RETCODE ObjPricerGcg::solversExitsol()
 
    assert((pricerdata->solvers == NULL) == (pricerdata->nsolvers == 0));
    assert(pricerdata->nsolvers > 0);
+
+   if( pricerdata->npricingprobs == 0 )
+      return SCIP_OKAY;
 
    for( i = 0; i < pricerdata->nsolvers; i++ )
    {
@@ -2124,6 +2127,8 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    assert(pricer != NULL);
    assert(pricerdata != NULL);
 
+   SCIP_CALL( solversExitsol() );
+
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 
    SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
@@ -2165,8 +2170,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
       SCIPfreeMemoryArrayNull(scip, &(pricerdata->realdualvalues[i]));
    }
    SCIPfreeMemoryArrayNull(scip, &pricerdata->realdualvalues);
-
-   SCIP_CALL( solversExitsol() );
 
    return SCIP_OKAY;
 }
@@ -2877,7 +2880,6 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
          }
 
          SCIP_CALL( SCIPreleaseVar(scip, &newvar) );
-
       }
    }
    return SCIP_OKAY;
