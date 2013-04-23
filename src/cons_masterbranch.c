@@ -40,6 +40,7 @@
 #include "cons_masterbranch.h"
 #include "branch_generic.h"
 #include "scip/cons_linear.h"
+#include "scip/struct_cons.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
@@ -905,7 +906,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
    SCIP_CONSDATA* consdata2;
    SCIP_CONSDATA** childconsdatas;
-   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONS** childcons;
    int i;
 
@@ -941,8 +941,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /*delete childnodes */
    for( i=0; i< (*consdata)->nchildcons; ++i )
    {
-      SCIP_CONSHDLRDATA* conshdlrdata;
-
       SCIPdebugMessage("Deleting %d childnodes\n", (*consdata)->nchildcons);
 
       if(childcons[i] != NULL)
@@ -952,8 +950,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
    if((*consdata)->nchildcons > 0)
    {
-      SCIPfreeMemoryArray(scip, &childconsdatas);
-      SCIPfreeMemoryArray(scip, &childcons);
+      SCIPfreeMemoryArrayNull(scip, &childconsdatas);
+      SCIPfreeMemoryArrayNull(scip, &childcons);
    }
 
    (*consdata)->nchildcons--;
@@ -1000,60 +998,32 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* delete array with bound changes */
    if( (*consdata)->nboundchanges > 0 )
    {
-      if((*consdata)->oldbounds != NULL)
-         SCIPfreeMemoryArray(scip, &(*consdata)->oldbounds);
-      if((*consdata)->newbounds != NULL)
-         SCIPfreeMemoryArray(scip, &(*consdata)->newbounds);
-      if((*consdata)->boundtypes != NULL)
-         SCIPfreeMemoryArray(scip, &(*consdata)->boundtypes);
-      if((*consdata)->boundchgvars != NULL)
-         SCIPfreeMemoryArray(scip, &(*consdata)->boundchgvars);
+      SCIPfreeMemoryArrayNull(scip, &(*consdata)->oldbounds);
+      SCIPfreeMemoryArrayNull(scip, &(*consdata)->newbounds);
+      SCIPfreeMemoryArrayNull(scip, &(*consdata)->boundtypes);
+      SCIPfreeMemoryArrayNull(scip, &(*consdata)->boundchgvars);
    }
 
-   if( (*consdata)->nboundchangestreated != NULL )
-   {
-      SCIPfreeMemoryArray(scip, &(*consdata)->nboundchangestreated);
-   }
+   SCIPfreeMemoryArrayNull(scip, &(*consdata)->nboundchangestreated);
+   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
 
-   if( (*consdata)->childcons != NULL )
-   {
-      SCIPfreeMemoryArray(scip, &(*consdata)->childcons);
-      (*consdata)->childcons = NULL;
-   }
+   BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
 
-   /* free constraint data */
-   if( (*consdata)->name != NULL )
-   {
-      BMSfreeBlockMemoryArray(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
-      (*consdata)->name = NULL;
-   }
+   SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchconsname);
 
-
-
-
-   if( (*consdata)->origbranchconsname != NULL )
-   {
-      SCIPfreeMemoryArray(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchconsname);
-      (*consdata)->origbranchconsname = NULL;
-   }
-
-/*   if( (*consdata)->origbranchdata != NULL )
+   /*   if( (*consdata)->origbranchdata != NULL )
    {
       SCIPfreeMemory(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
       (*consdata)->origbranchdata = NULL;
    }*/
 
-   if( (*consdata)->origbranchcons != NULL )
-   {
-      SCIPfreeMemoryArray(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
-      (*consdata)->origbranchcons = NULL;
-   }
+   SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
 
-/*   if(cons != NULL)
+   if(cons != NULL && cons->nuses >= 1)
    {
      SCIPreleaseCons(scip, &cons);
-   }*/
-
+     cons = NULL;
+   }
 
    SCIPfreeBlockMemory(scip, consdata);
    *consdata = NULL;
@@ -1801,8 +1771,6 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
-   SCIP_CONSHDLRDATA* conshdlrData;
-
 
    assert(scip != NULL);
    assert(node != NULL || parentcons == NULL);
@@ -1855,7 +1823,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origbranchrule = NULL;
    consdata->origbranchdata = NULL;
    consdata->origbranchcons = NULL;
-   consdata->norigbranchcons = NULL;
+   consdata->norigbranchcons = 0;
    consdata->chgVarUbNode = 0;
    consdata->chgVarLbNode = 0;
    consdata->addPropBoundChg = 0;
@@ -1866,15 +1834,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
 
 
-   SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", parentcons);
-
-
-
-//   conshdlrData = SCIPconshdlrGetData(conshdlr);
-//   assert(conshdlrData != NULL);
-//   SCIP_CALL(createConsData(scip, consdata, conshdlrData, cons));
-
-
+   SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
 
    /* create constraint */
    SCIP_CALL( SCIPcreateCons(scip, cons, "masterbranch", conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, TRUE,
@@ -2401,8 +2361,6 @@ void GCGconsMasterbranchCheckConsistency(
 
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
-
- //     assert((consdata->parentcons == NULL) == ((consdata->node == NULL) || (SCIPnodeGetDepth(consdata->node) == 0)));
 
       assert(consdata->origcons == NULL || consdata->created);
 

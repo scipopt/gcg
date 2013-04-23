@@ -530,8 +530,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       SCIP_CALL( SCIPreleaseCons(scip, &(*branchdata)->cons) );
    }
 
-   if(*branchdata != NULL)
-      SCIPfreeMemory(scip, branchdata);
+   SCIPfreeMemoryNull(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;

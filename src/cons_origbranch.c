@@ -214,8 +214,8 @@ SCIP_DECL_CONSEXITSOL(consExitsolOrigbranch)
       if( conshdlrdata->rootcons != NULL )
       {
          branchdata = GCGconsOrigbranchGetBranchdata(conshdlrdata->rootcons);
-         if( branchdata != NULL )
-            SCIPfreeMemory(scip, &branchdata );
+
+         SCIPfreeMemoryNull(scip, &branchdata );
       }
 
    if( conshdlrdata->rootcons != NULL )
@@ -310,13 +310,12 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    /* free propagation domain changes arrays */
    if( (*consdata)->maxpropbounds > 0 )
    {
-      SCIPfreeMemoryArray(scip, &((*consdata)->propvars));
-      SCIPfreeMemoryArray(scip, &((*consdata)->propboundtypes));
-      SCIPfreeMemoryArray(scip, &((*consdata)->propbounds));
+      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propvars));
+      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propboundtypes));
+      SCIPfreeMemoryArrayNull(scip, &((*consdata)->propbounds));
    }
 
-   if( (*consdata)->childcons != NULL )
-         SCIPfreeMemoryArray(scip, &(*consdata)->childcons);
+   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);

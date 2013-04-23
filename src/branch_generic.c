@@ -932,8 +932,8 @@ SCIP_RETCODE Separate(
 
    if( found )
    {
-      if(alpha != NULL)
-         SCIPfreeBufferArray(scip, &alpha);
+      //if(alpha != NULL)
+      SCIPfreeBufferArrayNull(scip, &alpha);
 
       SCIPdebugMessage("one S found with size %d\n", record->sequencesizes[record->recordsize-1]);
 
@@ -1069,13 +1069,13 @@ SCIP_RETCODE Separate(
 
    SCIPfreeMemoryArray(scip, &copyF);
 
-   if(upperLowerS != NULL)
-      SCIPfreeMemoryArray(scip, &upperLowerS);
-   if(upperS != NULL)
-         SCIPfreeMemoryArray(scip, &upperS);
+   //if(upperLowerS != NULL)
+   SCIPfreeMemoryArrayNull(scip, &upperLowerS);
+   //if(upperS != NULL)
+   SCIPfreeMemoryArrayNull(scip, &upperS);
    SCIPfreeMemoryArray(scip, &priority);
-   if( J != NULL )
-      SCIPfreeMemoryArray(scip, &J);
+   //if( J != NULL )
+   SCIPfreeMemoryArrayNull(scip, &J);
    SCIPfreeBufferArray(scip, &alpha);
 
    return SCIP_OKAY;
@@ -1545,17 +1545,17 @@ SCIP_RETCODE Explore(
       /* new C */
       if( Flower > 0 )
       {
-         if( CopyC != NULL )
-         {
-            SCIPfreeMemoryArray(scip, &CopyC);
-            CopyC = NULL;
-         }
+//         if( CopyC != NULL )
+//         {
+         SCIPfreeMemoryArrayNull(scip, &CopyC);
+//            CopyC = NULL;
+//         }
 
-         if( newsequencesizes != NULL )
-         {
-            SCIPfreeMemoryArray(scip, &newsequencesizes);
-            newsequencesizes = NULL;
-         }
+//         if( newsequencesizes != NULL )
+//         {
+         SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
+//            newsequencesizes = NULL;
+//         }
 
          SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Clower) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Clower) );
@@ -1576,13 +1576,13 @@ SCIP_RETCODE Explore(
    }
 
    SCIPfreeMemoryArray(scip, &copyF);
-   if( lowerS != NULL )
-         SCIPfreeMemoryArray(scip, &lowerS);
-   if( CopyC != NULL )
-      SCIPfreeMemoryArray(scip, &CopyC);
+   //if( lowerS != NULL )
+   SCIPfreeMemoryArrayNull(scip, &lowerS);
+   //if( CopyC != NULL )
+   SCIPfreeMemoryArrayNull(scip, &CopyC);
 
-   if( newsequencesizes != NULL )
-      SCIPfreeMemoryArray(scip, &newsequencesizes);
+   //if( newsequencesizes != NULL )
+   SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
 
    if( S != NULL && *Ssize > 0 && *S != NULL )
    {
@@ -1658,8 +1658,8 @@ SCIP_RETCODE ChooseSeparateMethod(
    {
       assert( C!=NULL );
       Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, record);
-      if( exploreS != NULL )
-         SCIPfreeMemoryArray(scip, &exploreS);
+      //if( exploreS != NULL )
+      SCIPfreeMemoryArrayNull(scip, &exploreS);
    }
 
    assert(record != NULL);
@@ -1761,11 +1761,11 @@ SCIP_RETCODE ChooseSeparateMethod(
          strips[i] = NULL;
       }
 
-      if( strips != NULL )
-      {
-         SCIPfreeBufferArray(scip, &strips);
-         strips = NULL;
-      }
+//      if( strips != NULL )
+//      {
+      SCIPfreeBufferArrayNull(scip, &strips);
+//         strips = NULL;
+//      }
 
          /*choose new block */
          SCIP_CALL(GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips));
@@ -3158,8 +3158,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          SCIPfreeMemoryArray(origscip, &sequencesizes);
       }
       for( i=0; i<Csize; ++i )
-         if( C[i] != NULL )
-            SCIPfreeMemoryArray(origscip, &(C[i]));
+      {
+         //if( C[i] != NULL )
+         SCIPfreeMemoryArrayNull(origscip, &(C[i]));
+      }
       if( C != NULL )
       {
          assert( Csize > 0);
@@ -3419,8 +3421,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    SCIPdebugMessage("%d vars added with lhs= %g\n", nvarsadded, branchdata->lhs);
    assert(nvarsadded > 0);
 
-   if(copymastervars != NULL)
-      SCIPfreeMemoryArray(origscip, &copymastervars);
+   //if(copymastervars != NULL)
+   SCIPfreeMemoryArrayNull(origscip, &copymastervars);
 
    return SCIP_OKAY;
 }

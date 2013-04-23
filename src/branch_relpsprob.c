@@ -498,9 +498,6 @@ SCIP_RETCODE applyProbing(
    SCIP_NODE* probingnode;
    SCIP_CONS* probingcons;
 
-   /* SCIP_NODE* probingnodemaster; // ? */
-   /* SCIP_CONS* probingconsmaster; // ? */
-
 /*    SCIP_Real varsol; */
    SCIP_Real leftlbprobing;
    SCIP_Real leftubprobing;
@@ -549,19 +546,9 @@ SCIP_RETCODE applyProbing(
       SCIPvarGetNCliques(probingvar, FALSE), SCIPvarGetNCliques(probingvar, TRUE));
 
    /* start probing mode */
-
-   /* SCIP_CALL( SCIPstartProbing(masterscip) );    // ? */
-   /* SCIP_CALL( SCIPnewProbingNode(masterscip) );  // ? */
-
    SCIP_CALL( SCIPstartProbing(scip) );
    SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
    SCIP_CALL( SCIPnewProbingNode(scip) );
-
-   /* probingnodemaster = SCIPgetCurrentNode(masterscip);  // ? */
-   /* SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &probingconsmaster, "probingconsmaster", probingnodemaster, */
-   /*            GCGconsMasterbranchGetActiveCons(masterscip), NULL, NULL) );   // ? */
-   /* SCIP_CALL( SCIPaddConsNode(masterscip, probingnodemaster, probingconsmaster, NULL) );  // ? */
-   /* SCIP_CALL( SCIPreleaseCons(masterscip, &probingconsmaster) );   // ? */
 
    probingnode = SCIPgetCurrentNode(scip);
    SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
@@ -612,8 +599,6 @@ SCIP_RETCODE applyProbing(
    /* exit probing mode */
    SCIP_CALL( SCIPendProbing(scip) );
    SCIP_CALL( GCGrelaxEndProbing(scip) );
-
-   /* SCIP_CALL( SCIPendProbing(masterscip) );   // ? */
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
       *cutoff?"cutoff":"no cutoff", *lpsolved?"lpsolved":"lp not solved", *lpobjvalue);
@@ -1441,7 +1426,6 @@ SCIP_DECL_BRANCHCOPY(branchCopyRelpsprob)
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
 
    /* call inclusion method of branching rule  */
-   /* SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) ); //masterscip   // ??? */
 
 /*
    SCIP_CALL( SCIPincludeNodeselBfs(scip) );
