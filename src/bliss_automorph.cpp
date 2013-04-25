@@ -554,24 +554,34 @@ void hook(
    conss1 = SCIPgetConss(hook->getScips()[0]);
    conss2 = SCIPgetConss(hook->getScips()[1]);
 
-   for(i = 0; i < nvars+nconss; i++)
+   for( i = 0; i < nvars+nconss; i++ )
    {
-      if( i < nvars )
+      /* Assuming the following layout:
+       *  0 ... nconss-1 = vertex ids for constraints
+       *  nconss ... nconss+nvars-1 = vertex ids for variables
+       *  nconss+nvars ... n-1 = nonzero entries (not relevant)
+       */
+      if( i < nconss )
       {
-         assert( aut[i] < INT_MAX);
-         assert( (int) (aut[i]-n/2) < nvars);
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), vars1[i], vars2[aut[i]-n/2]) );
-         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[aut[i]-n/2]));
+         int consindex = i;
+         int consindex2 = aut[i]-n/2;
+         assert( consindex2 >= 0);
+         assert( consindex2 < nconss);
+         SCIP_CONS* cons1 = conss1[consindex];
+         SCIP_CONS* cons2 = conss2[consindex2];
+         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), cons1, cons2) );
+         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(cons1), SCIPconsGetName(cons2));
       }
-      else if (i < nvars+nconss)
+      else if( i < nvars+nconss )
       {
-         assert( i-nvars >= 0);
-         assert( aut[i] < INT_MAX);
-         assert( (int) (aut[i]-nvars-n/2) < nconss);
-
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), conss1[i-nvars], conss2[aut[i]-nvars-n/2]) );
-         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(conss1[i-nvars]), SCIPconsGetName(conss2[aut[i]-nvars-n/2]));
-
+         int varindex = i-nconss;
+         int varindex2 = aut[i]-nconss-n/2;
+         assert( varindex2 >= 0);
+         assert( varindex2 < nvars);
+         SCIP_VAR* var1 = vars1[varindex];
+         SCIP_VAR* var2 = vars2[varindex2];
+         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), var1, var2) );
+         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(var1), SCIPvarGetName(var2));
       }
    }
 }
@@ -963,12 +973,14 @@ SCIP_RETCODE createGraph(
                continue;
             }
 
+
             color = colorinfo.get(AUT_COEF(origscip, curvals[j]));
             assert(color != -1);
             color += colorinfo.getLenCons() + colorinfo.getLenVar();
 
             /* add coefficent node for current coeff */
             h->add_vertex(color);
+            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[i], color);
             nnodes++;
          }
       }
