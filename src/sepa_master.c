@@ -277,7 +277,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
-      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE) );
+      SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
       sepadata->nmastercuts++;
 
