@@ -948,7 +948,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
       if(childcons[i] != NULL)
       {
-         //SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );
+         /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
          SCIP_CALL( SCIPreleaseCons(scip, &childcons[i]) );
          childcons[i] = NULL;
       }
@@ -998,7 +998,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* the node should not have children anymore */
    /*assert(i != consdata2->nchildcons || consdata2->nchildcons == 0);*/
 
-
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
     * corresponding origbranch constraint */
    if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
@@ -1014,6 +1013,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->origbranchrule, &(*consdata)->origbranchdata) );
          (*consdata)->origbranchdata = NULL;
          (*consdata)->branchdata = NULL;
+         if((*consdata)->origcons != NULL)
+            GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
       }
    }
 
@@ -1032,32 +1033,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
 
    SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchconsname);
-
-   //BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->origbranchconsname, strlen((*consdata)->origbranchconsname)+1);
-
-   /*   if( (*consdata)->origbranchdata != NULL )
-   {
-      SCIPfreeMemory(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
-      (*consdata)->origbranchdata = NULL;
-   }*/
-
-
-   //SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
-
-
-//   if((*consdata)->origbranchdata != NULL)
-//   {
-//      SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->origbranchrule, &(*consdata)->origbranchdata) );
-//      (*consdata)->origbranchdata = NULL;
-//   }
-
-  // SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
-
-//   if(cons != NULL && cons->nuses >= 1)
-//   {
-//     SCIPreleaseCons(scip, &cons);
-//     cons = NULL;
-//   }
 
    SCIPfreeBlockMemoryNull(scip, consdata);
    *consdata = NULL;

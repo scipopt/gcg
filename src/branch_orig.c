@@ -536,7 +536,6 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
 
    SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), branchdata);
    *branchdata = NULL;
-   //branchdata = NULL;
 
    return SCIP_OKAY;
 }

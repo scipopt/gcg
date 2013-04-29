@@ -932,7 +932,6 @@ SCIP_RETCODE Separate(
 
    if( found )
    {
-      //if(alpha != NULL)
       SCIPfreeBufferArrayNull(scip, &alpha);
 
       SCIPdebugMessage("one S found with size %d\n", record->sequencesizes[record->recordsize-1]);
@@ -1067,14 +1066,11 @@ SCIP_RETCODE Separate(
       Separate( scip, copyF, Fupper, J, Jsize, upperS, Ssize+1, record );
    }
 
-   SCIPfreeMemoryArray(scip, &copyF);
 
-   //if(upperLowerS != NULL)
+   SCIPfreeMemoryArrayNull(scip, &copyF);
    SCIPfreeMemoryArrayNull(scip, &upperLowerS);
-   //if(upperS != NULL)
    SCIPfreeMemoryArrayNull(scip, &upperS);
    SCIPfreeMemoryArray(scip, &priority);
-   //if( J != NULL )
    SCIPfreeMemoryArrayNull(scip, &J);
    SCIPfreeBufferArray(scip, &alpha);
 
@@ -1524,13 +1520,18 @@ SCIP_RETCODE Explore(
       }
       /*Csize = Cupper;*/
       Explore( scip, CopyC, Cupper, newsequencesizes, p+1, copyF, Fupper, IndexSet, IndexSetSize, S, Ssize, record );
+      SCIPfreeMemoryArrayNull(scip, &copyF);
+      copyF = NULL;
    }
 
    if( Flower > 0 && Flower != INT_MIN )
    {
       SCIPdebugMessage("chose lower bound Flower = %d Clower = %d\n", Flower, Clower);
       /*(*S)[*Ssize-1].sense = GCG_COMPSENSE_LT;*/
-      SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
+      if(copyF != NULL)
+      {
+         SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
+      }
       j = 0;
       for( k=0; k<Fsize; ++k )
       {
@@ -1545,17 +1546,8 @@ SCIP_RETCODE Explore(
       /* new C */
       if( Flower > 0 )
       {
-//         if( CopyC != NULL )
-//         {
          SCIPfreeMemoryArrayNull(scip, &CopyC);
-//            CopyC = NULL;
-//         }
-
-//         if( newsequencesizes != NULL )
-//         {
          SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
-//            newsequencesizes = NULL;
-//         }
 
          SCIP_CALL( SCIPallocMemoryArray(scip, &CopyC, Clower) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &newsequencesizes, Clower) );
@@ -1575,13 +1567,12 @@ SCIP_RETCODE Explore(
       Explore( scip, CopyC, Clower, newsequencesizes, p+1, copyF, Flower, IndexSet, IndexSetSize, &lowerS, &lowerSsize, record );
    }
 
-   SCIPfreeMemoryArray(scip, &copyF);
-   //if( lowerS != NULL )
+   SCIPfreeMemoryArrayNull(scip, &copyF);
+
    SCIPfreeMemoryArrayNull(scip, &lowerS);
-   //if( CopyC != NULL )
+
    SCIPfreeMemoryArrayNull(scip, &CopyC);
 
-   //if( newsequencesizes != NULL )
    SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
 
    if( S != NULL && *Ssize > 0 && *S != NULL )
@@ -1658,7 +1649,7 @@ SCIP_RETCODE ChooseSeparateMethod(
    {
       assert( C!=NULL );
       Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, record);
-      //if( exploreS != NULL )
+
       SCIPfreeMemoryArrayNull(scip, &exploreS);
    }
 
@@ -1761,14 +1752,9 @@ SCIP_RETCODE ChooseSeparateMethod(
          strips[i] = NULL;
       }
 
-//      if( strips != NULL )
-//      {
       SCIPfreeBufferArrayNull(scip, &strips);
-//         strips = NULL;
-//      }
-
-         /*choose new block */
-         SCIP_CALL(GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips));
+      /*choose new block */
+      SCIP_CALL(GCGbranchGenericInitbranch(scip, branchrule, result, checkedblocks, ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips));
 
    }
    else
@@ -1812,8 +1798,12 @@ SCIP_RETCODE ChooseSeparateMethod(
    }
    #endif
    SCIPfreeMemoryArray(scip, &IndexSet);
-   SCIPfreeBuffer(scip, &record);
-
+   if(record != NULL)
+   {
+      SCIPfreeMemoryArrayNull(scip, &record->record);
+      SCIPfreeMemoryArrayNull(scip, &record->sequencesizes);
+      SCIPfreeBuffer(scip, &record);
+   }
    return SCIP_OKAY;
 }
 
@@ -3159,13 +3149,12 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       }
       for( i=0; i<Csize; ++i )
       {
-         //if( C[i] != NULL )
          SCIPfreeMemoryArrayNull(origscip, &(C[i]));
       }
       if( C != NULL )
       {
          assert( Csize > 0);
-         SCIPfreeMemoryArray(origscip, &C);
+         SCIPfreeMemoryArrayNull(origscip, &C);
       }
    }
    else
@@ -3421,7 +3410,6 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    SCIPdebugMessage("%d vars added with lhs= %g\n", nvarsadded, branchdata->lhs);
    assert(nvarsadded > 0);
 
-   //if(copymastervars != NULL)
    SCIPfreeMemoryArrayNull(origscip, &copymastervars);
 
    return SCIP_OKAY;
