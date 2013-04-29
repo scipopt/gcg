@@ -2499,7 +2499,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
          {
             if( *branchdata != NULL )
             {
-               SCIPfreeMemory(scip, branchdata);
+               SCIPfreeMemory(GCGrelaxGetMasterprob(scip), branchdata);
             }
          }
          break;

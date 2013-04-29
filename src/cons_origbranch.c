@@ -254,6 +254,7 @@ static
 SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSDATA* parentdata;
+   SCIP_Bool childdeleted;
    int i;
 
    i = 0;
@@ -282,17 +283,19 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       }
       else
       {
+         childdeleted = FALSE;
          for( i=0; i < parentdata->nchildcons; ++i )
          {
             if( parentdata->childcons[i] == cons )
             {
                parentdata->childcons[i] = NULL;
+               childdeleted = TRUE;
                break;
             }
          }
+         assert(childdeleted);
       }
    }
-   assert(i != parentdata->nchildcons);
    /* no child nodes may exist */
    for( i=0; i<(*consdata)->nchildcons; ++i )
          assert((*consdata)->childcons[i] == NULL);
@@ -301,9 +304,10 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
     * otherwise, the mastercons deletes the branchdata when it is deleted itself */
    if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL )
    {
-      if( (*consdata)->branchrule != NULL )
+      if( (*consdata)->branchrule != NULL && (*consdata)->branchdata != NULL )
       {
          SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+         (*consdata)->branchdata = NULL;
       }
    }
 

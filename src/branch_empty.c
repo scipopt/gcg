@@ -153,8 +153,9 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    if( norigbranchcons > 0 )
       SCIPfreeMemoryArrayNull(GCGrelaxGetMasterprob(scip), &origbranchcons);
 
-/*   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL, NULL,
-      GCGconsMasterbranchGetOrigbranchdata(masterbranchchildcons), NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );*/
+  /* SCIP_CALL( GCGconsMasterbranchSetOrigConsData(GCGrelaxGetMasterprob(scip), masterbranchchildcons, NULL,// GCGconsMasterbranchGetOrigbranchConsName(masterbranchchildcons),
+      GCGconsMasterbranchGetOrigbranchrule(masterbranchchildcons),
+      NULL, NULL, 0, FALSE, FALSE, FALSE, NULL, 0, NULL, 0) );*/
 
 
    if(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))))

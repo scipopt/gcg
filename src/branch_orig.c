@@ -238,10 +238,10 @@ SCIP_RETCODE branchVar(
       addPropBoundChg = TRUE;
    }
 
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, upname, branchrule,
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons1, upname, branchrule,
          branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
          branchvar, solval, &(branchupdata->boundtype), branchupdata->newbound) );
-   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, downname, branchrule,
+   SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons2, downname, branchrule,
          branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
          branchvar, solval, &(branchdowndata->boundtype), branchdowndata->newbound) );
 
@@ -521,6 +521,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if(*branchdata == NULL)
+      return SCIP_OKAY;
+
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
       ( (*branchdata)->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
 
@@ -528,10 +531,12 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    if( (*branchdata)->cons != NULL )
    {
       SCIP_CALL( SCIPreleaseCons(scip, &(*branchdata)->cons) );
+      (*branchdata)->cons = NULL;
    }
 
-   SCIPfreeMemoryNull(scip, branchdata);
+   SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), branchdata);
    *branchdata = NULL;
+   //branchdata = NULL;
 
    return SCIP_OKAY;
 }

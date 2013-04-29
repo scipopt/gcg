@@ -907,6 +907,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    SCIP_CONSDATA* consdata2;
    SCIP_CONSDATA** childconsdatas;
    SCIP_CONS** childcons;
+   SCIP_Bool childdeleted;
+   int nchildcons;
    int i;
 
    assert(scip != NULL);
@@ -937,24 +939,28 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          childcons[i] = NULL;
       }
    }
+   nchildcons = (*consdata)->nchildcons;
 
    /*delete childnodes */
-   for( i=0; i< (*consdata)->nchildcons; ++i )
+   for( i=0; i < nchildcons; ++i )
    {
-      SCIPdebugMessage("Deleting %d childnodes\n", (*consdata)->nchildcons);
+      SCIPdebugMessage("Deleting %d childnodes\n", nchildcons);
 
       if(childcons[i] != NULL)
       {
-         consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]);
+         //SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );
+         SCIP_CALL( SCIPreleaseCons(scip, &childcons[i]) );
+         childcons[i] = NULL;
       }
    }
-   if((*consdata)->nchildcons > 0)
+   if( nchildcons > 0 )
    {
       SCIPfreeMemoryArrayNull(scip, &childconsdatas);
       SCIPfreeMemoryArrayNull(scip, &childcons);
    }
 
-   (*consdata)->nchildcons--;
+   nchildcons = 0;
+   assert((*consdata)->nchildcons == 0);
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
@@ -971,6 +977,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       }
       else
       {
+         childdeleted = FALSE;
          for( i=0; i<consdata2->nchildcons; ++i )
          {
             if( consdata2->childcons[i] == cons )
@@ -978,10 +985,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
                consdata2->childcons[i] = consdata2->childcons[consdata2->nchildcons-1];/*NULL;*/
 
                consdata2->childcons[consdata2->nchildcons-1] = NULL;
+               consdata2->nchildcons--;
+
+               childdeleted = TRUE;
 
                break;
             }
          }
+         assert( childdeleted);//i < consdata2->nchildcons);
       }
    }
    /* the node should not have children anymore */
@@ -993,6 +1004,17 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
+      (*consdata)->branchdata = NULL;
+      (*consdata)->origbranchdata = NULL;
+   }
+   else
+   {
+      if((*consdata)->origbranchdata != NULL)
+      {
+         SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->origbranchrule, &(*consdata)->origbranchdata) );
+         (*consdata)->origbranchdata = NULL;
+         (*consdata)->branchdata = NULL;
+      }
    }
 
    /* delete array with bound changes */
@@ -1011,21 +1033,33 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchconsname);
 
+   //BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->origbranchconsname, strlen((*consdata)->origbranchconsname)+1);
+
    /*   if( (*consdata)->origbranchdata != NULL )
    {
       SCIPfreeMemory(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
       (*consdata)->origbranchdata = NULL;
    }*/
 
-   SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
 
-   if(cons != NULL && cons->nuses >= 1)
-   {
-     SCIPreleaseCons(scip, &cons);
-     cons = NULL;
-   }
+   //SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchdata);
 
-   SCIPfreeBlockMemory(scip, consdata);
+
+//   if((*consdata)->origbranchdata != NULL)
+//   {
+//      SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->origbranchrule, &(*consdata)->origbranchdata) );
+//      (*consdata)->origbranchdata = NULL;
+//   }
+
+  // SCIPfreeMemoryArrayNull(GCGpricerGetOrigprob(scip), &(*consdata)->origbranchcons);
+
+//   if(cons != NULL && cons->nuses >= 1)
+//   {
+//     SCIPreleaseCons(scip, &cons);
+//     cons = NULL;
+//   }
+
+   SCIPfreeBlockMemoryNull(scip, consdata);
    *consdata = NULL;
 
    return SCIP_OKAY;
@@ -1955,7 +1989,14 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    }
 
    consdata->origbranchrule = branchrule;
+
+
+   if(branchdata == NULL)
+      SCIPfreeMemoryNull(scip, &(consdata->origbranchdata));
    consdata->origbranchdata = branchdata;
+
+   if(origcons == NULL)
+      SCIPfreeMemoryArrayNull(scip, &(consdata->origcons));
    consdata->origbranchcons = origcons;
    consdata->norigbranchcons = norigcons;
 
