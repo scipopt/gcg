@@ -926,7 +926,8 @@ SCIP_RETCODE Separate(
          /* ********************************** *
           *  end adding to record              *
           * ********************************** */
-
+         SCIPfreeMemoryArrayNull(scip, &copyS);
+         copyS = NULL;
       }
    }
 
@@ -1421,6 +1422,7 @@ SCIP_RETCODE Explore(
    if( found )
    {
       SCIPdebugMessage("found fractional alpha\n");
+      SCIPfreeMemoryArrayNull(scip, &copyS);
       return SCIP_OKAY;
    }
 
@@ -1528,7 +1530,7 @@ SCIP_RETCODE Explore(
    {
       SCIPdebugMessage("chose lower bound Flower = %d Clower = %d\n", Flower, Clower);
       /*(*S)[*Ssize-1].sense = GCG_COMPSENSE_LT;*/
-      if(copyF != NULL)
+      if(copyF == NULL)
       {
          SCIP_CALL( SCIPallocMemoryArray(scip, &copyF, Flower) );
       }
@@ -1568,11 +1570,9 @@ SCIP_RETCODE Explore(
    }
 
    SCIPfreeMemoryArrayNull(scip, &copyF);
-
+   SCIPfreeMemoryArrayNull(scip, &copyS);
    SCIPfreeMemoryArrayNull(scip, &lowerS);
-
    SCIPfreeMemoryArrayNull(scip, &CopyC);
-
    SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
 
    if( S != NULL && *Ssize > 0 && *S != NULL )
@@ -1617,7 +1617,6 @@ SCIP_RETCODE ChooseSeparateMethod(
    GCG_STRIP** strips;
    int nstrips;
    int nmastervars;
-   SCIP_Bool integer;
 
    assert(Fsize > 0);
    assert(F != NULL);
@@ -1642,7 +1641,6 @@ SCIP_RETCODE ChooseSeparateMethod(
    assert(IndexSet != NULL);
 
    /* rootnode? */
-   integer = FALSE;
    if( Csize<=0 )
       Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
    else
@@ -1844,9 +1842,10 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
    {
       SCIPfreeMemoryArray(scip, &((*branchdata)->consS));
       (*branchdata)->consS = NULL;
+      (*branchdata)->consSsize = 0;
    }
 
-   SCIPfreeMemory(scip, branchdata);
+   SCIPfreeMemoryNull(scip, branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -2242,7 +2241,10 @@ SCIP_RETCODE createChildNodesGeneric(
          }
       }
       else
-         SCIPfreeMemory(scip, &branchchilddata);
+      {
+         SCIPfreeMemoryArrayNull(scip, &(branchchilddata->consS));
+         SCIPfreeMemoryNull(scip, &branchchilddata);
+      }
    }
    SCIPdebugMessage("lhsSum = %g\n", lhsSum);
 
@@ -3179,6 +3181,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    SCIPdebugMessage("free F\n");
    SCIPfreeMemoryArray(origscip, &F);
+   SCIPfreeMemoryArrayNull(origscip, &S);
 
    return SCIP_OKAY;
 }

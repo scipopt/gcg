@@ -964,7 +964,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
+   {
+      if(GCGconsOrigbranchGetMastercons((*consdata)->origcons) != cons)
+      {
+         printf("mastercons %p should be mastercons %p\n", GCGconsOrigbranchGetMastercons((*consdata)->origcons), cons);
+      }
+      assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
      GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
+   }
 
    /* set the pointer in the parent node to NULL */
    if( (*consdata)->parentcons != NULL )
@@ -992,7 +999,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
                break;
             }
          }
-         assert( childdeleted);//i < consdata2->nchildcons);
+         assert( childdeleted);
       }
    }
    /* the node should not have children anymore */
@@ -1014,7 +1021,19 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          (*consdata)->origbranchdata = NULL;
          (*consdata)->branchdata = NULL;
          if((*consdata)->origcons != NULL)
+         {
             GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
+         }
+      }
+      if((*consdata)->branchdata != NULL)
+      {
+         SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
+         (*consdata)->origbranchdata = NULL;
+         (*consdata)->branchdata = NULL;
+         if((*consdata)->origcons != NULL)
+         {
+            GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
+         }
       }
    }
 

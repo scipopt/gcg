@@ -306,7 +306,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    {
       if( (*consdata)->branchrule != NULL && (*consdata)->branchdata != NULL )
       {
-         SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+         /*SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) ); // masterbranch is deleted first*/
          (*consdata)->branchdata = NULL;
       }
    }
@@ -658,8 +658,6 @@ void GCGconsOrigbranchSetBranchdata(
 
    consdata->branchdata = branchdata;
 
-   assert(GCGconsOrigbranchGetBranchdata(cons) != NULL);
-
    if( GCGconsOrigbranchGetMastercons(cons) != NULL )
       printf("root-orig has mastercons\n");
     /*  GCGconsOrigbranchGetMastercons(cons)
@@ -783,7 +781,7 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert(consdata->mastercons != NULL);
+   /*assert(consdata->mastercons != NULL);*/
 
    return consdata->mastercons;
 }
