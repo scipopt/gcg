@@ -30,7 +30,7 @@
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  */
-
+/*#define SCIP_DEBUG*/
 /* #define CHECKCONSISTENCY */
 #include <assert.h>
 #include <string.h>
@@ -270,7 +270,11 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
    /* set the origcons pointer of the corresponding mastercons to NULL */
    if( (*consdata)->mastercons != NULL )
+   {
+      assert(GCGconsMasterbranchGetOrigcons((*consdata)->mastercons) == cons);
+      SCIP_CALL(SCIPcutoffNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode((*consdata)->mastercons)));
       GCGconsMasterbranchSetOrigcons((*consdata)->mastercons, NULL);
+   }
 
    /* set the pointer in the parent constraint to NULL */
    if( (*consdata)->parentcons != NULL )
@@ -288,8 +292,12 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
          {
             if( parentdata->childcons[i] == cons )
             {
-               parentdata->childcons[i] = NULL;
+
+               parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
+               parentdata->childcons[parentdata->nchildcons-1] = NULL;
+               /*parentdata->childcons[i] = NULL;*/
                childdeleted = TRUE;
+               parentdata->nchildcons--;
                break;
             }
          }
@@ -320,6 +328,8 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    }
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
+   (*consdata)->childcons = NULL;
+   (*consdata)->nchildcons = 0;
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
@@ -574,15 +584,14 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
       {
          ++parentdata->nchildcons;
          if( parentdata->nchildcons == 1 )
-            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-         else if( !SCIPinProbing(scip) )
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-         /* store the last child in case we are in probing and have to overwrite it */
-         if( SCIPinProbing(scip) && parentdata->nchildcons > 1 )
          {
-            assert(parentdata->probingtmpcons == NULL);
-            --parentdata->nchildcons;
-            parentdata->probingtmpcons = parentdata->childcons[parentdata->nchildcons-1];
+            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
+            parentdata->childcons[0] = NULL;
+         }
+         else /*if( !SCIPinProbing(scip) )*/
+         {
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
+            parentdata->childcons[parentdata->nchildcons - 1] = NULL;
          }
          parentdata->childcons[parentdata->nchildcons-1] = *cons;
       }

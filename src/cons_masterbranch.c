@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -191,9 +191,16 @@ SCIP_RETCODE createConsData(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
-   consdata->origcons = origcons;
+   /*consdata->origcons = origcons;*/
    consdata->branchrule = GCGconsOrigbranchGetBranchrule(origcons);
    consdata->branchdata = GCGconsOrigbranchGetBranchdata(origcons);
+
+   if(consdata->origcons != origcons) /*rootnode?*/
+   {
+      printf("set root origcons\n");
+      consdata->origcons = origcons;
+      GCGconsOrigbranchSetMastercons(origcons, cons);
+   }
 
    if( GCGconsOrigbranchGetNChildcons(origcons) == 0 )
    {
@@ -201,7 +208,7 @@ SCIP_RETCODE createConsData(
       consdata->childcons = NULL;
    }
 
-   GCGconsOrigbranchSetMastercons(origcons, cons);
+   /*GCGconsOrigbranchSetMastercons(origcons, cons);*/
 
    SCIP_ALLOC( BMSduplicateBlockMemoryArray(SCIPblkmem(scip), &consdata->name, SCIPconsGetName(consdata->origcons),
          strlen(SCIPconsGetName(consdata->origcons))+1) );
@@ -967,10 +974,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    {
       if(GCGconsOrigbranchGetMastercons((*consdata)->origcons) != cons)
       {
-         printf("mastercons %p should be mastercons %p\n", GCGconsOrigbranchGetMastercons((*consdata)->origcons), cons);
+         printf("mastercons %p should be mastercons %p\n", (void *) GCGconsOrigbranchGetMastercons((*consdata)->origcons), (void *) cons);
       }
       assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
-     GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
+      GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    }
 
    /* set the pointer in the parent node to NULL */
@@ -2321,6 +2328,7 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
    assert(consdata->childcons != NULL);
+
    assert(consdata->nchildcons > childnr);
 
    return consdata->childcons[childnr];
@@ -2397,10 +2405,10 @@ void GCGconsMasterbranchCheckConsistency(
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
 
-      assert(consdata->origcons == NULL || consdata->created);
 
       /** todo case for general */
 #if 0
+      assert(consdata->origcons == NULL || consdata->created);
       /* if( BRANCHRULE_VANDERBECK != 1 ) */
          assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
             || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]

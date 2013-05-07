@@ -46,8 +46,6 @@
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
 
-/* #define BRANCHRULE_VANDERBECK        0 */
-
 
 /** node selector data */
 struct SCIP_NodeselData
@@ -105,8 +103,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    SCIP_CONS* parentmastercons;
    SCIP* origscip;
    int nnodes;
-   int i;
-   int nchildvanderbeck;
    SCIP_Longint orignodenumber;
 
    assert(nodesel != NULL);
@@ -120,8 +116,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    origscip = GCGpricerGetOrigprob(scip);
 
    *selnode = NULL;
-   i = 0;
-   nchildvanderbeck = 0;
 
    orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
 
@@ -147,32 +141,20 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          parentmastercons = GCGconsOrigbranchGetMastercons(parentorigcons);
          assert(parentmastercons != NULL);
 
-         /* if( BRANCHRULE_VANDERBECK == 1 ) */
-         /* { */
-         nchildvanderbeck = GCGconsOrigbranchGetNChildcons( parentorigcons );
-         for( i=0; i<nchildvanderbeck; ++i )
-         {
-            if( GCGconsOrigbranchGetChildcons( parentorigcons, i) == origcons )
-            {
-               assert(GCGconsMasterbranchGetChildcons( parentmastercons, i) != NULL);
-               assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildcons( parentmastercons, i)) != NULL);
-               *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChildcons( parentmastercons, i));
-               SCIPdebugMessage( "Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
-                  SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
-                  SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
-                  SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)) );
+         *selnode = GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons));
 
-               SCIPdebugMessage( "Master node depth is %d corresponding orig node depth is %d \n",
-                  SCIPnodeGetDepth(*selnode),
-                  SCIPnodeGetDepth(GCGconsOrigbranchGetNode(origcons)));
-               break;
-            }
-         }
-         assert( i < nchildvanderbeck );
+         assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)) == SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
+         assert( *selnode != NULL );
+
 #if 0
       }
       else
       {
+         if( GCGconsOrigbranchGetNChildcons(parentorigcons) != GCGconsMasterbranchGetNChildcons(parentmastercons))
+         {
+            printf("%d nmasterchildcons, %d norigchildcons \n", GCGconsMasterbranchGetNChildcons(parentmastercons), GCGconsOrigbranchGetNChildcons(parentorigcons));
+            printf("depth in master %d, depth in orig %d\n", SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)), SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
+         }
 
          assert( (GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons)
             != (GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons));

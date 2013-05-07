@@ -119,7 +119,6 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 
    SCIP_CALL( SCIPaddConsNode(scip, child, origbranch, NULL) );
 
-
    norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
    origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
 
@@ -148,6 +147,10 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
             GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(masterbranchchildcons),
             GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(masterbranchchildcons)) );
    }
+
+   GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
+   GCGconsMasterbranchSetOrigcons(masterbranchchildcons, origbranch);
+
    SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
 
    if( norigbranchcons > 0 )
