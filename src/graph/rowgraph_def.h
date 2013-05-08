@@ -46,7 +46,7 @@ template <class T>
 RowGraph<T>::RowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : BipartiteGraph<T>(scip, w)
+   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
 {
    this->name = std::string("rowgraph");
 }
@@ -90,18 +90,18 @@ SCIP_RETCODE RowGraph<T>::writeToFile(
       nrealneighbors[i] = 0;
 
       SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nconss) );
-      int nneighbors = this->getNNeighbors(this->nvars+i);
+      int nneighbors = graph.getNNeighbors(this->nvars+i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i+this->nvars, nneighbors);
 
-      std::vector<int> neighbors = this->getNeighbors(i+this->nvars);
+      std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
       for( int j = 0; j < nneighbors; ++j )
       {
          int neighbor = neighbors[j];
-         int nneighborneighbors = Graph<T>::getNNeighbors(neighbor);
+         int nneighborneighbors = graph.getNNeighbors(neighbor);
 
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         std::vector<int> neighborneighbors = Graph<T>::getNeighbors(neighbor);
+         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
             int neighborneighbor = neighborneighbors[k];
@@ -136,7 +136,7 @@ SCIP_RETCODE RowGraph<T>::writeToFile(
       SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
    }
 
-   for( int i = 0; i < this->dummynodes; ++i )
+   for( int i = 0; i < graph.getDummynodes(); ++i )
    {
       SCIPinfoMessage(this->scip_, file, "\n");
    }
@@ -200,6 +200,20 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    }
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE RowGraph<T>::createFromMatrix(
+   SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+   SCIP_VAR**            vars,               /**< variables for which graph should be created */
+   int                   nconss_,             /**< number of constraints */
+   int                   nvars_               /**< number of variables */
+   )
+{
+   this->nvars = nvars_;
+   this->nconss = nconss_;
+   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
    return SCIP_OKAY;
 }
 

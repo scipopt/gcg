@@ -38,11 +38,17 @@
 
 #include "graph.h"
 #include "bipartitegraph.h"
+#include "matrixgraph.h"
 
 namespace gcg {
 template <class T>
-class RowGraph: public gcg::BipartiteGraph<T>
+class RowGraph : public gcg::MatrixGraph<T>
 {
+private:
+   gcg::BipartiteGraph<T> graph;
+   int nconss;
+   int nvars;
+   int nnonzeroes;
 public:
    RowGraph(
          SCIP*                 scip,              /**< SCIP data structure */
@@ -56,6 +62,13 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
+   virtual SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss_,             /**< number of constraints */
+      int                   nvars_               /**< number of variables */
       );
 };
 

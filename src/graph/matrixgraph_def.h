@@ -25,34 +25,39 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   inst.cpp
- * @brief  Explicit instanciations for templates
+/**@file   matrixgraph.cpp
+ * @brief  miscellaneous matrixgraph methods for structure detection
  * @author Martin Bergner
  */
 
-/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_MATRIXGRAPH_DEF_H_
+#define GCG_MATRIXGRAPH_DEF_H_
 
-#include "bipartitegraph_def.h"
-#include "columngraph_def.h"
-#include "rowgraph_def.h"
-#include "hypercolgraph_def.h"
-#include "hyperrowgraph_def.h"
-#include "hyperrowcolgraph_def.h"
-#include "graph_def.h"
-#include "graph_tclique.h"
-#include "matrixgraph_def.h"
+#include "scip/scip.h"
+#include "matrixgraph.h"
+#include <fstream>
+
+using std::ifstream;
 
 namespace gcg {
 
-/* graph instanciations for graphs using TCLIQUE graphs */
-template class BipartiteGraph<GraphTclique>;
-template class ColumnGraph<GraphTclique>;
-template class RowGraph<GraphTclique>;
-template class HypercolGraph<GraphTclique>;
-template class HyperrowGraph<GraphTclique>;
-template class HyperrowcolGraph<GraphTclique>;
-template class Graph<GraphTclique>;
-template class MatrixGraph<GraphTclique>;
+template <class T>
+MatrixGraph<T>::MatrixGraph(
+   SCIP*                 scip               /**< SCIP data structure */
+) : name("graph"),scip_(scip),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0)
+{
 
 }
+
+template <class T>
+MatrixGraph<T>::~MatrixGraph()
+{
+
+}
+
+
+} /* namespace gcg */
+
+#endif

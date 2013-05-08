@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graph.h
- * @brief  miscellaneous graph methods for structure detection
+/**@file   matrixgraph.h
+ * @brief  miscellaneous matrixgraph methods for structure detection
  * @author Martin Bergner
  * @author Annika Thome
  */
@@ -35,8 +35,8 @@
 
 
 
-#ifndef GCG_GRAPH_H_
-#define GCG_GRAPH_H_
+#ifndef GCG_MATRIXGRAPH_H_
+#define GCG_MATRIXGRAPH_H_
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
@@ -73,27 +73,24 @@
 namespace gcg {
 
 template <class T>
-class Graph {
+class MatrixGraph {
 public:
    std::string name;
 protected:
    SCIP* scip_;
-   Bridge* graph;
    int nconss;
    int nvars;
    int nnonzeroes;
    int dummynodes;
-   Weights weights;
    std::vector<int> partition;
 
 public:
    /** Constructor */
-   Graph(
-      SCIP*                 scip,              /**< SCIP data structure */
-      Weights               w                  /**< weights for the given graph */
+   MatrixGraph(
+      SCIP*                 scip               /**< SCIP data structure */
    );
 
-   void swap(Graph & other) // the swap member function (should never fail!)
+   void swap(MatrixGraph & other) // the swap member function (should never fail!)
    {
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
@@ -102,12 +99,11 @@ public:
       std::swap(nconss , other.nconss);
       std::swap(nvars , other.nvars);
       std::swap(nnonzeroes , other.nnonzeroes);
-      std::swap(weights , other.weights);
       std::swap(dummynodes, other.dummynodes);
 
    }
 
-   Graph& operator=(Graph other) // note: argument passed by value!
+   MatrixGraph& operator=(MatrixGraph other) // note: argument passed by value!
    {
       // swap this with other
       swap(other);
@@ -116,40 +112,7 @@ public:
    }
 
    /** Destruktor */
-   virtual ~Graph();
-
-   /** return the number of nodes */
-   virtual int getNNodes();
-
-   /** return the number of edges (or hyperedges) */
-   virtual int getNEdges();
-
-   /** returns whether there is an edge between nodes i and j */
-   virtual int edge(int i, int j);
-
-   /** return the number of neighbor nodes of given node */
-   virtual int getNNeighbors(
-      int                i                   /**< the given node */
-      );
-
-   /** return the neighboring nodes of a given node */
-   virtual std::vector<int> getNeighbors(
-      int                i                   /**< the given node */
-      );
-
-   /** return a partition of the nodes */
-   std::vector<int> getPartition();
-
-   /** assigns partition to a given node*/
-   virtual void setPartition(int i, int ID);
-
-   /** create graph from the matrix, to be overriden by the implementation*/
-   virtual SCIP_RETCODE createFromMatrix(
-      SCIP_CONS**        conss,              /**< constraints for which graph should be created */
-      SCIP_VAR**         vars,               /**< variables for which graph should be created */
-      int                nconss_,            /**< number of constraints */
-      int                nvars_              /**< number of variables */
-   ) { return SCIP_ERROR; };
+   virtual ~MatrixGraph();
 
    /** writes the graph to the given file.
     *  The format is graph dependent
@@ -157,25 +120,18 @@ public:
    virtual SCIP_RETCODE writeToFile(
       const char*        filename,           /**< filename where the graph should be written to */
       SCIP_Bool          writeweights = FALSE /**< whether to write weights */
-    );
+      ) { return SCIP_ERROR; };
 
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      ) { return SCIP_ERROR; };
    /**
     * reads the partition from the given file.
     * The format is graph dependent. The default is a file with one line for each node a
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   );
-
-   int getNNonzeroes() const
-   {
-      return nnonzeroes;
-   }
-
-   /** return the weight of given node */
-   virtual int getWeight(
-      int                i                   /**< the given node */
-      );
+   ) { return SCIP_ERROR; };
 
    /** set the number of dummy nodes */
    void setDummynodes(int dummynodes_)
@@ -183,20 +139,19 @@ public:
       dummynodes = dummynodes_;
    };
 
-   /** create decomposition based on the read in partition */
-   virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-   )
-   {
-      return SCIP_ERROR;
-   }
-
    int getDummynodes() const
    {
       return dummynodes;
    }
 
-   ;
+
+   virtual SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss_,             /**< number of constraints */
+      int                   nvars_               /**< number of variables */
+      ) { return SCIP_ERROR; };
+
 
 };
 

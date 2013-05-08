@@ -1315,7 +1315,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
  src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- src/graph/bipartitegraph.h src/tests/test.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/tests/test.h \
  lib/scip/src/objscip/objscipdefplugins.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \

@@ -3823,8 +3823,8 @@ $(LIBOBJDIR)/dialog_graph.o: src/dialog_graph.cpp src/dialog_graph.h src/objdial
  lib/scip/src/scip/dialog_default.h src/graph/bipartitegraph.h \
  src/graph/graph.h src/graph/hyperrowcolgraph.h src/graph/hyperrowgraph.h \
  src/graph/bipartitegraph.h src/graph/hypercolgraph.h \
- src/graph/columngraph.h src/graph/rowgraph.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/cons_decomp.h \
+ src/graph/columngraph.h src/graph/rowgraph.h src/graph/matrixgraph.h \
+ src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/cons_decomp.h \
  src/graph/graph_tclique.h
 $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
  lib/blissinc/kstack.hh lib/blissinc/defs.hh lib/blissinc/kqueue.hh \
@@ -4011,10 +4011,11 @@ $(LIBOBJDIR)/graph/inst.o: src/graph/inst.cpp src/graph/bipartitegraph_def.h \
  src/type_decomp.h src/type_detector.h src/graph/bridge.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/graph/columngraph_def.h \
  src/graph/columngraph.h src/graph/rowgraph_def.h src/graph/rowgraph.h \
- src/graph/hypercolgraph_def.h src/graph/hypercolgraph.h \
- src/graph/hyperrowgraph_def.h src/graph/hyperrowgraph.h \
- src/graph/hyperrowcolgraph_def.h src/graph/hyperrowcolgraph.h \
- src/graph/graph_def.h src/graph/graph_tclique.h
+ src/graph/matrixgraph.h src/graph/hypercolgraph_def.h \
+ src/graph/hypercolgraph.h src/graph/hyperrowgraph_def.h \
+ src/graph/hyperrowgraph.h src/graph/hyperrowcolgraph_def.h \
+ src/graph/hyperrowcolgraph.h src/graph/graph_def.h \
+ src/graph/graph_tclique.h src/graph/matrixgraph_def.h
 $(LIBOBJDIR)/graph/graph_tclique.o: src/graph/graph_tclique.cpp src/graph/graph_tclique.h \
  src/graph/bridge.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \
