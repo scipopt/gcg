@@ -37,6 +37,7 @@
 #define GCG_COLUMNGRAPH_DEF_H_
 
 #include "columngraph.h"
+#include <algorithm>
 
 namespace gcg {
 
@@ -44,7 +45,7 @@ template <class T>
 ColumnGraph<T>::ColumnGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : BipartiteGraph<T>(scip, w)
+   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
 {
    this->name = std::string("columngraph");
 }
@@ -89,16 +90,16 @@ SCIP_RETCODE ColumnGraph<T>::writeToFile(
       nrealneighbors[i] = 0;
 
       SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nvars) );
-      int nneighbors = this->getNNeighbors(i);
+      int nneighbors = graph.getNNeighbors(i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i, nneighbors);
 
-      std::vector<int> neighbors = this->getNeighbors(i);
+      std::vector<int> neighbors = graph.getNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
          int neighbor = neighbors[j];
-         int nneighborneighbors = this->getNNeighbors(neighbor);
-         std::vector<int> neighborneighbors = this->getNeighbors(neighbor);
+         int nneighborneighbors = graph.getNNeighbors(neighbor);
+         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
@@ -143,6 +144,75 @@ SCIP_RETCODE ColumnGraph<T>::writeToFile(
    SCIPfreeMemoryArray(this->scip_, &realneighbors);
    SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
 
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
+   DEC_DECOMP**         decomp
+)
+{
+   int nblocks;
+   SCIP_HASHMAP* constoblock;
+
+   int *nsubscipconss;
+   int i;
+   SCIP_CONS **conss;
+   SCIP_VAR **vars;
+   SCIP_Bool emptyblocks = FALSE;
+
+   conss = SCIPgetConss(this->scip_);
+   vars = SCIPgetVars(this->scip_);
+   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+      int block = this->partition[i];
+      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+      ++(nsubscipconss[block]);
+   }
+
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      *decomp = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
+   SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+   SCIP_VAR**            vars,               /**< variables for which graph should be created */
+   int                   nconss_,             /**< number of constraints */
+   int                   nvars_               /**< number of variables */
+   )
+{
+   this->nvars = nvars_;
+   this->nconss = nconss_;
+   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
    return SCIP_OKAY;
 }
 
