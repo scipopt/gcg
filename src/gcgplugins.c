@@ -291,7 +291,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
 
-   /* martin's decomp stuff */
+   /* Martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
@@ -302,17 +302,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
 
    /* Christian's heuristics */
-/*    SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) ); */
-/*    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) ); */
-/*    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) ); */
-/*    SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) ); */
-/*    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) ); */
+/*   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );*/
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-/*    SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) ); */
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );

@@ -197,7 +197,7 @@ SCIP_RETCODE createConsData(
 
    if(consdata->origcons != origcons) /*rootnode?*/
    {
-      printf("set root origcons\n");
+      SCIPdebugMessage("set root origcons\n");
       consdata->origcons = origcons;
       GCGconsOrigbranchSetMastercons(origcons, cons);
    }
@@ -1009,8 +1009,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          assert( childdeleted);
       }
    }
-   /* the node should not have children anymore */
-   /*assert(i != consdata2->nchildcons || consdata2->nchildcons == 0);*/
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
     * corresponding origbranch constraint */

@@ -145,51 +145,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
          assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)) == SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
          assert( *selnode != NULL );
-
-#if 0
-      }
-      else
-      {
-         if( GCGconsOrigbranchGetNChildcons(parentorigcons) != GCGconsMasterbranchGetNChildcons(parentmastercons))
-         {
-            printf("%d nmasterchildcons, %d norigchildcons \n", GCGconsMasterbranchGetNChildcons(parentmastercons), GCGconsOrigbranchGetNChildcons(parentorigcons));
-            printf("depth in master %d, depth in orig %d\n", SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)), SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
-         }
-
-         assert( (GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons)
-            != (GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons));
-
-         /*  the original cons is the left child of its parentcons, */
-         /*  select the left child of the corresponding parentcons in the master */
-         if( GCGconsOrigbranchGetChild1cons(parentorigcons) == origcons )
-         {
-            assert(GCGconsMasterbranchGetChild1cons(parentmastercons) != NULL);
-            assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild1cons(parentmastercons)) != NULL);
-
-            *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild1cons(parentmastercons));
-            SCIPdebugMessage("Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
-               SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
-               SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
-               SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
-         }
-
-         /*  the original cons is the right child of its parentcons, */
-         /*  select the right child of the corresponding parentcons in the master */
-         else
-         {
-            assert(GCGconsOrigbranchGetChild2cons(parentorigcons) == origcons);
-            assert(GCGconsMasterbranchGetChild2cons(parentmastercons) != NULL);
-            assert(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild2cons(parentmastercons)) != NULL);
-
-            *selnode = GCGconsMasterbranchGetNode(GCGconsMasterbranchGetChild2cons(parentmastercons));
-            SCIPdebugMessage("Master nodeselector selected node %"SCIP_LONGINT_FORMAT" corresponding to node %"SCIP_LONGINT_FORMAT" in the original program, since the parents (%"SCIP_LONGINT_FORMAT"/o, %"SCIP_LONGINT_FORMAT"/m) are linked\n",
-               SCIPnodeGetNumber(*selnode), SCIPnodeGetNumber(GCGconsOrigbranchGetNode(origcons)),
-               SCIPnodeGetNumber(GCGconsOrigbranchGetNode(parentorigcons)),
-               SCIPnodeGetNumber(GCGconsMasterbranchGetNode(parentmastercons)));
-         }
-      }
-#endif
-
    }
 
    if( *selnode == NULL )

@@ -272,7 +272,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    if( (*consdata)->mastercons != NULL )
    {
       assert(GCGconsMasterbranchGetOrigcons((*consdata)->mastercons) == cons);
-      SCIP_CALL(SCIPcutoffNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode((*consdata)->mastercons)));
+      //SCIP_CALL(SCIPcutoffNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode((*consdata)->mastercons))); //only in solving stage
       GCGconsMasterbranchSetOrigcons((*consdata)->mastercons, NULL);
    }
 
@@ -295,7 +295,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
                parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
                parentdata->childcons[parentdata->nchildcons-1] = NULL;
-               /*parentdata->childcons[i] = NULL;*/
                childdeleted = TRUE;
                parentdata->nchildcons--;
                break;
@@ -588,7 +587,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
             SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
             parentdata->childcons[0] = NULL;
          }
-         else /*if( !SCIPinProbing(scip) )*/
+         else
          {
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
             parentdata->childcons[parentdata->nchildcons - 1] = NULL;
@@ -669,9 +668,6 @@ void GCGconsOrigbranchSetBranchdata(
 
    if( GCGconsOrigbranchGetMastercons(cons) != NULL )
       printf("root-orig has mastercons\n");
-    /*  GCGconsOrigbranchGetMastercons(cons)
-    */
-
 }
 
 /** returns the branching data for a given origbranch constraint */
@@ -790,7 +786,6 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   /*assert(consdata->mastercons != NULL);*/
 
    return consdata->mastercons;
 }
