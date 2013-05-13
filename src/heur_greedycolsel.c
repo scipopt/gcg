@@ -159,7 +159,7 @@ SCIP_RETCODE getBestMastervar(
    int block;
 
    int i;
-//   int j;
+/*    int j; */
    int tmpviolchange;
    SCIP_Real tmpobj;
    SCIP_Real curobj;
@@ -451,7 +451,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    int* blocknr;                             /* for each pricing problem, block we are currently working in          */
    SCIP_Bool* ignored;                       /* for each master variable, store whether it has to be ignored         */
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
-//   SCIP_Bool discretization;
+/*    SCIP_Bool discretization; */
    SCIP_Bool masterfeas;
    SCIP_Bool success;
    int block;
@@ -482,10 +482,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    *result = SCIP_DIDNOTRUN;
 
-//   /* this heuristic works only for the discretization approach */
-//   SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
-//   if( !discretization )
-//      return SCIP_OKAY;
+   /* this heuristic works only for the discretization approach */
+/*    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) ); */
+/*    if( !discretization ) */
+/*       return SCIP_OKAY; */
 
    *result = SCIP_DELAYED;
 
@@ -728,10 +728,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
       /* if the solution is feasible, ensure that all columns are in the master problem -
        * necessary if the solution contains a zero column that has not been added before */
-//      if( success )
-//      {
-//         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(origprob, origsol) );
-//      }
+/*       if( success ) */
+/*       { */
+/*          SCIP_CALL( GCGpricerTransOrigSolToMasterVars(origprob, origsol) ); */
+/*       } */
 
       /* check if all blocks are full */
       allblocksfull = TRUE;
@@ -787,10 +787,10 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       SCIP_CALL( updateActivities(scip, activities, mastervars[index]) );
    }
 
-//#ifdef SCIP_DEBUG
-//   SCIPdebugMessage("generated solution:\n");
-//   SCIPprintSol(origprob, origsol, NULL, FALSE);
-//#endif
+/* #ifdef SCIP_DEBUG */
+/*    SCIPdebugMessage("generated solution:\n"); */
+/*    SCIPprintSol(origprob, origsol, NULL, FALSE); */
+/* #endif */
 
    if( success )
    {

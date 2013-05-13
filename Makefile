@@ -101,6 +101,8 @@ LIBOBJ		=	reader_blk.o \
 			pricer_gcg.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
+			branch_generic.o \
+			event_genericbranchvaradd.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralorig.o \
@@ -121,7 +123,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_restmaster.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
-			branch_master.o \
+			branch_empty.o \
 			branch_relpsprob.o \
 			masterplugins.o \
 			nodesel_master.o \

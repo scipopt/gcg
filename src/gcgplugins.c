@@ -143,12 +143,11 @@
 #include "reader_dec.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
-#include "branch_orig.h"
-#include "branch_ryanfoster.h"
+#include "branch_empty.h"
+
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
-#include "branch_relpsprob.h"
 #include "reader_ref.h"
 
 /* Martin's detection stuff */
@@ -288,12 +287,11 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
-   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
+   SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
+
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
 
-   /* martin's decomp stuff */
+   /* Martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
@@ -304,17 +302,17 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
+/*   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgguideddiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcglinesdiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgpscostdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );*/
    SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
    SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgveclendiving(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );

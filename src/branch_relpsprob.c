@@ -48,6 +48,26 @@
 #include "branch_relpsprob.h"
 #include "relax_gcg.h"
 #include "cons_origbranch.h"
+#include "cons_masterbranch.h"
+#include "cons_integralorig.h"
+#include "pricer_gcg.h"
+
+
+#include "scip/nodesel_estimate.h"
+#include "scip/nodesel_hybridestim.h"
+#include "scip/nodesel_restartdfs.h"
+#include "scip/branch_allfullstrong.h"
+#include "scip/branch_fullstrong.h"
+#include "scip/branch_inference.h"
+#include "scip/branch_mostinf.h"
+#include "scip/branch_leastinf.h"
+#include "scip/branch_pscost.h"
+#include "scip/branch_random.h"
+#include "scip/branch_relpscost.h"
+#include "scip/nodesel_bfs.h"
+#include "scip/nodesel_dfs.h"
+
+
 
 
 #define BRANCHRULE_NAME          "relpsprob"
@@ -116,8 +136,6 @@ struct BdchgData
    int                   nvars;              /**< number of variables that are considered so far */
 };
 typedef struct BdchgData BDCHGDATA;
-
-
 
 
 /*
@@ -358,7 +376,7 @@ SCIP_Real calcScore(
    SCIP_Real score;
 
    assert(branchruledata != NULL);
-   assert(0.0 < frac && frac < 1.0);
+   /*    assert(0.0 < frac && frac < 1.0); */
 
    score = branchruledata->conflictweight * (1.0 - 1.0/(1.0+conflictscore/avgconflictscore))
       + branchruledata->conflengthweight * (1.0 - 1.0/(1.0+conflengthscore/avgconflengthscore))
@@ -526,6 +544,7 @@ SCIP_RETCODE applyProbing(
 
    /* start probing mode */
    SCIP_CALL( SCIPstartProbing(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
    SCIP_CALL( SCIPnewProbingNode(scip) );
 
    probingnode = SCIPgetCurrentNode(scip);
@@ -576,6 +595,7 @@ SCIP_RETCODE applyProbing(
 
    /* exit probing mode */
    SCIP_CALL( SCIPendProbing(scip) );
+   SCIP_CALL( GCGrelaxEndProbing(scip) );
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
       *cutoff?"cutoff":"no cutoff", *lpsolved?"lpsolved":"lp not solved", *lpobjvalue);
@@ -987,6 +1007,8 @@ SCIP_RETCODE execRelpsprob(
 
    *result = SCIP_DIDNOTRUN;
 
+   SCIPdebugMessage("execrelpsprob method called\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n");
+
    /* get SCIP pointer of master problem */
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
@@ -1360,7 +1382,6 @@ SCIP_DECL_BRANCHCOPY(branchCopyRelpsprob)
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
 
    /* call inclusion method of branching rule  */
-   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
 
    return SCIP_OKAY;
 }
@@ -1453,8 +1474,6 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolRelpsprob)
 #define branchExecpsRelpsprob NULL
 
 
-
-
 /*
  * branching specific interface methods
  */
@@ -1464,7 +1483,15 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+   SCIP* origscip;
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_BRANCHRULE* branchrule;
+
+   SCIPdebugMessage("include method of branchrelpsprob called.\n");
+
+   assert(scip != NULL);
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
 
    /* create relpsprob branching rule data */
    SCIP_CALL( SCIPallocMemory(scip, &branchruledata) );
@@ -1477,66 +1504,71 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
          branchruledata) );
 
    /* relpsprob branching rule parameters */
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/conflictweight",
          "weight in score calculations for conflict score",
          &branchruledata->conflictweight, TRUE, DEFAULT_CONFLICTWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/conflictlengthweight",
          "weight in score calculations for conflict length score",
          &branchruledata->conflengthweight, TRUE, DEFAULT_CONFLENGTHWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/inferenceweight",
          "weight in score calculations for inference score",
          &branchruledata->inferenceweight, TRUE, DEFAULT_INFERENCEWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/cutoffweight",
          "weight in score calculations for cutoff score",
          &branchruledata->cutoffweight, TRUE, DEFAULT_CUTOFFWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/pscostweight",
          "weight in score calculations for pseudo cost score",
          &branchruledata->pscostweight, TRUE, DEFAULT_PSCOSTWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/minreliable",
          "minimal value for minimum pseudo cost size to regard pseudo cost value as reliable",
          &branchruledata->minreliable, TRUE, DEFAULT_MINRELIABLE, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/maxreliable",
          "maximal value for minimum pseudo cost size to regard pseudo cost value as reliable",
          &branchruledata->maxreliable, TRUE, DEFAULT_MAXRELIABLE, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/iterquot",
          "maximal fraction of branching LP iterations compared to node relaxation LP iterations",
          &branchruledata->iterquot, FALSE, DEFAULT_ITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origscip,
          "branching/relpsprob/iterofs",
          "additional number of allowed LP iterations",
          &branchruledata->iterofs, FALSE, DEFAULT_ITEROFS, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origscip,
          "branching/relpsprob/maxlookahead",
          "maximal number of further variables evaluated without better score",
          &branchruledata->maxlookahead, TRUE, DEFAULT_MAXLOOKAHEAD, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origscip,
          "branching/relpsprob/initcand",
          "maximal number of candidates initialized with strong branching per node",
          &branchruledata->initcand, FALSE, DEFAULT_INITCAND, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origscip,
          "branching/relpsprob/maxbdchgs",
          "maximal number of bound tightenings before the node is immediately reevaluated (-1: unlimited)",
          &branchruledata->maxbdchgs, TRUE, DEFAULT_MAXBDCHGS, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origscip,
          "branching/relpsprob/minbdchgs",
          "minimal number of bound tightenings before bound changes are applied",
          &branchruledata->minbdchgs, TRUE, DEFAULT_MINBDCHGS, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origscip,
          "branching/relpsprob/uselp",
          "shall the LP be solved during probing? (TRUE)",
          &branchruledata->uselp, FALSE, DEFAULT_USELP, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origscip,
          "branching/relpsprob/reliability",
          "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
+
+   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+   assert(branchrule != NULL);
+
+   GCGcreateBranchruleConsOrig(scip, branchrule);
 
    return SCIP_OKAY;
 }
@@ -1554,6 +1586,7 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    )
 {
    SCIP_BRANCHRULE* branchrule;
+   SCIP* origscip;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -1561,9 +1594,11 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    /* find branching rule */
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
 
    /* execute branching rule */
-   SCIP_CALL( execRelpsprob(scip, branchrule, branchcands, branchcandssol, branchcandsfrac, nbranchcands, nvars, result, branchvar) );
+   SCIP_CALL( execRelpsprob(origscip, branchrule, branchcands, branchcandssol, branchcandsfrac, nbranchcands, nvars, result, branchvar) );
 
    return SCIP_OKAY;
 }

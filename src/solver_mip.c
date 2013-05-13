@@ -404,7 +404,7 @@ SCIP_Bool problemHasUnboundedSolution(
    SCIP_SOL* sol;
    sol = SCIPgetBestSol(pricingprob);
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-   /*assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol)));*/
+   /* assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol))); */
 
    for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {

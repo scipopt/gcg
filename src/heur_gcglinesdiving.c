@@ -46,7 +46,7 @@
 #define HEUR_DESC             "LP diving heuristic that chooses fixings following the line from root solution to current solution"
 #define HEUR_DISPCHAR         'l'
 #define HEUR_PRIORITY         -1006000
-//#define HEUR_FREQ             10
+/* #define HEUR_FREQ             10 */
 #define HEUR_FREQ             -1
 #define HEUR_FREQOFS          6
 #define HEUR_MAXDEPTH         -1
@@ -64,8 +64,6 @@
 #define DEFAULT_MAXRELDEPTH         1.0 /**< maximal relative depth to start diving */
 #define DEFAULT_MAXLPITERQUOT      0.05 /**< maximal fraction of diving LP iterations compared to node LP iterations */
 #define DEFAULT_MAXLPITEROFS       1000 /**< additional number of allowed LP iterations */
-//#define DEFAULT_MAXPRICEQUOT       0.05 /**< maximal fraction of pricing rounds compared to node pricing rounds */
-//#define DEFAULT_MAXPRICEOFS          10 /**< additional number of allowed pricing rounds (-1: no limit) */
 #define DEFAULT_MAXPRICEQUOT       0.00 /**< maximal fraction of pricing rounds compared to node pricing rounds */
 #define DEFAULT_MAXPRICEOFS           0 /**< additional number of allowed pricing rounds (-1: no limit) */
 #define DEFAULT_MAXDIVEUBQUOT       0.8 /**< maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound)
@@ -491,7 +489,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
          if( SCIPgetSolOrigObj(scip, heurdata->sol) <= searchbound )
          {
             /* try to add solution to SCIP */
-//               SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+/*                SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) ); */
 #ifdef SCIP_DEBUG
             SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
 #else
@@ -607,7 +605,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
 
             /* get LP solution status, objective value, and fractional variables, that should be integral */
             lpsolstat = SCIPgetLPSolstat(masterprob);
-//            cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
+/*             cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE); */
          }
 
          /* perform backtracking if a cutoff was detected */
@@ -660,7 +658,7 @@ SCIP_DECL_HEUREXEC(heurExecGcglinesdiving)
       SCIPdebugMessage("GCG linesearchdiving found primal solution: obj=%g\n", SCIPgetSolOrigObj(scip, heurdata->sol));
 
       /* try to add solution to SCIP */
-//      SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) );
+/*       SCIP_CALL( SCIPtrySol(scip, heurdata->sol, FALSE, FALSE, FALSE, FALSE, &success) ); */
 #ifdef SCIP_DEBUG
       SCIP_CALL( SCIPtrySol(scip, heurdata->sol, TRUE, TRUE, TRUE, TRUE, &success) );
 #else

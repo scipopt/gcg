@@ -188,8 +188,8 @@ SCIP_RETCODE selectExtremePoints(
          continue;
 
       /* ignore "empty" master variables, i.e. variables representing the zero vector */
-//      if( norigvars == 0 )
-//         continue;
+/*       if( norigvars == 0 ) */
+/*          continue; */
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
@@ -204,11 +204,11 @@ SCIP_RETCODE selectExtremePoints(
           * or there are < nusedpts, insert it */
          if( selection[j] == -1 || SCIPisGT(scip, value, selvalue[j]) )
          {
-//            SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n",
-//                  block+1, i, value, j % nusedpts);
+/*             SCIPdebugMessage("insert new point: block %d, mastervar %d, value %g, pos %d\n", */
+/*                   block+1, i, value, j % nusedpts); */
             for( k = (block + 1) * nusedpts - 1; k > j; --k )
             {
-//               SCIPdebugMessage("  shift point %d from pos %d to pos %d\n", selection[k-1], (k-1) % nusedpts, k % nusedpts);
+/*                SCIPdebugMessage("  shift point %d from pos %d to pos %d\n", selection[k-1], (k-1) % nusedpts, k % nusedpts); */
                selection[k] = selection[k-1];
                selvalue[k] = selvalue[k-1];
             }
@@ -1259,10 +1259,10 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
          int nbinvars;
          int nintvars;
          SCIP_CALL( SCIPgetVarsData(scip, NULL, NULL, &nbinvars, &nintvars, NULL, NULL) );
-//            for( i = 0; i < nbinvars + nintvars; i++ )
-//            {
-//               SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-//            }
+/*             for( i = 0; i < nbinvars + nintvars; i++ ) */
+/*             { */
+/*                SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) ); */
+/*             } */
          SCIP_CALL( SCIPfreeTransform(subscip) );
       }
 
@@ -1342,10 +1342,10 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
 
    /* free subproblem */
    SCIP_CALL( SCIPfreeTransform(subscip) );
-   //      for( i = 0; i < nvars; i++ )
-   //      {
-   //         SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-   //      }
+   /*       for( i = 0; i < nvars; i++ ) */
+   /*       { */
+   /*          SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) ); */
+   /*       } */
    SCIP_CALL( SCIPfree(&subscip) );
 
    /* free memory */

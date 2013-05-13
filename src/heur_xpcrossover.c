@@ -320,8 +320,8 @@ SCIP_RETCODE selectExtremePoints(
          continue;
 
       /* ignore "empty" master variables, i.e. variables representing the zero vector */
-//      if( norigvars == 0 )
-//         continue;
+/*       if( norigvars == 0 ) */
+/*          continue; */
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
@@ -386,8 +386,8 @@ SCIP_RETCODE selectExtremePoints(
          continue;
 
       /* ignore "empty" master variables, i.e. variables representing the zero vector */
-//      if( norigvars == 0 )
-//         continue;
+/*       if( norigvars == 0 ) */
+/*          continue; */
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
@@ -1070,8 +1070,8 @@ static SCIP_RETCODE fixVariables(
       if( fixable[i] && (lb > fixvals[i] || fixvals[i] > ub) )
          fixable[i] = FALSE;
 
-//      SCIPdebugMessage("Trying to fix variable %s: block=%d, fixval=%g, ptcounter=%d, fixable=%d\n",
-//                  SCIPvarGetName(var), block+1, fixvals[i], ptcounter[i], fixable[i]);
+/*       SCIPdebugMessage("Trying to fix variable %s: block=%d, fixval=%g, ptcounter=%d, fixable=%d\n", */
+/*                   SCIPvarGetName(var), block+1, fixvals[i], ptcounter[i], fixable[i]); */
 
       /* the variable can be fixed if it has not been marked unfixable and
        *  - it was directly transferred to the master problem and has integer value or
@@ -1499,10 +1499,10 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
          int nbinvars;
          int nintvars;
          SCIP_CALL( SCIPgetVarsData(scip, NULL, NULL, &nbinvars, &nintvars, NULL, NULL) );
-//            for( i = 0; i < nbinvars + nintvars; i++ )
-//            {
-//               SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-//            }
+/*             for( i = 0; i < nbinvars + nintvars; i++ ) */
+/*             { */
+/*                SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) ); */
+/*             } */
          SCIP_CALL( SCIPfreeTransform(subscip) );
       }
 
@@ -1581,10 +1581,10 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
 
    /* free subproblem */
    SCIP_CALL( SCIPfreeTransform(subscip) );
-   //      for( i = 0; i < nvars; i++ )
-   //      {
-   //         SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) );
-   //      }
+   /*       for( i = 0; i < nvars; i++ ) */
+   /*       { */
+   /*          SCIP_CALL( SCIPreleaseVar(subscip, &subvars[i]) ); */
+   /*       } */
    SCIP_CALL( SCIPfree(&subscip) );
 
    /* free memory */

@@ -34,7 +34,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+//#define SCIP_DEBUG
 #include <cassert>
 #include <cstring>
 
@@ -54,7 +54,6 @@
 #include "objpricer_gcg.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-
 #include "scip/scip.h"
 
 using gcg::Stabilization;
@@ -1838,7 +1837,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 {
    int nfoundvars;
    double degeneracy;
-
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
 
@@ -2015,7 +2013,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    pricerdata->currnodenr = -1;
    pricerdata->eagerage = 0;
-   
+
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
 
@@ -2366,7 +2364,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/enablelpcutoff",
          "should the cutoffbound be applied in master LP solving?",
          &pricerdata->enablelpcutoff, FALSE, DEFAULT_ENABLELPCUTOFF, paramChgdEnablelpcutoff, NULL) );
-         
+
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
             "frequency at which all pricingproblems should be solved (0 to disable)",
             &pricerdata->eagerfreq, FALSE, DEFAULT_EAGERFREQ, 0, INT_MAX, NULL, NULL) );
