@@ -138,25 +138,25 @@ BEGIN {
 #
 # solution
 #
-/^Status=/ {
-   status = $2;
+/^ Status        =/ {
+   status = $3;
 
-   if ( status == 0 ) {
+   if ( status == "Optimal" ) {
       opti = 1;
       timeout  = 0;
       aborted = 0;
    }
-   else if( status == 1 ) {
-      opti = 0;
-      timeout  = 1;
-      aborted = 0;
-   }
-   else if ( status == 5) {
-      opti = 1;
-      timeout  = 0;
-      aborted = 0;
-      feasible = 0;
-   }
+#   else if( status == 1 ) {
+#      opti = 0;
+#      timeout  = 1;
+#      aborted = 0;
+#   }
+#   else if ( status == 5) {
+#      opti = 1;
+#      timeout  = 0;
+#      aborted = 0;
+#      feasible = 0;
+#   }
 
    db = $4;
    pb = $6;
@@ -165,6 +165,24 @@ BEGIN {
    tottime = 1.0*tottime;
    iters = 0;
 }
+
+/^ BestLB        =/ {
+   db = $3;
+}
+
+/^ BestUB        =/ {
+   pb = $3;
+}
+
+/^ Nodes         =/ {
+   bbnodes = $3;
+}
+
+/^ SolveCPU      =/ {
+   tottime = $3;
+   tottime = 1.0*tottime;
+}
+
 
 #
 # evaluation

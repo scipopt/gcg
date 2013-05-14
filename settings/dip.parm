@@ -45,12 +45,12 @@ Settings for ALPS framework.
 Settings for MILPBlock application.
   section=MILPBlock
 #############################################################################
-[MILPBlock]
+[MILP]
 # Log level for messages from application.
 LogLevel       = 0
 
 # Path to instance data.
-DataDir        = .
+DataDir        = /$GCGPATH
 
 # {Pair,List}: Block file format. See README.txt.
 BlockFileFormat = List
