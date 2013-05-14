@@ -3079,12 +3079,12 @@ SCIP_RETCODE performProbing(
       /* LP iterations are unlimited when probing LP is solved with pricing */
       assert(maxlpiterations == -1);
       SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE/* pretendroot */, TRUE /*displayinfo*/,
-            maxpricerounds, lperror) );
+            maxpricerounds, lperror, NULL) );
    }
    else
    {
       assert(maxpricerounds == 0);
-      SCIP_CALL( SCIPsolveProbingLP(masterscip, maxlpiterations, lperror) );
+      SCIP_CALL( SCIPsolveProbingLP(masterscip, maxlpiterations, lperror, NULL) );
    }
    lpsolstat = SCIPgetLPSolstat(masterscip);
 
