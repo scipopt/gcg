@@ -181,7 +181,11 @@ SCIP_RETCODE buildProblem(
 
    /* set objective sense */
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
+#if CPX_VERSION_VERSION >= 12 && CPX_VERSION_RELEASE >= 5
    CHECK_ZERO( CPXchgobjsen(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPX_MIN) );
+#else
+   CPXchgobjsen(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPX_MIN);
+#endif
 
    conss = SCIPgetConss(pricingprob);
    nconss = SCIPgetNConss(pricingprob);
