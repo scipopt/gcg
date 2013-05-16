@@ -212,7 +212,7 @@ do
             if test $MODE = "detect"
             then
                 echo write prob images\/$base.gp   >> $TMPFILE
-                echo presolve                      >> $TMPFILE
+                #echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo write prob images\/$base-dec.gp >> $TMPFILE
                 echo write prob decs\/$base.dec    >> $TMPFILE

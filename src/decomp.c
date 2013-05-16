@@ -359,6 +359,7 @@ SCIP_RETCODE DECdecompCreate(
    (*decomp)->stairlinkingvars = NULL;
    (*decomp)->nstairlinkingvars = NULL;
    (*decomp)->nblocks = 0;
+   (*decomp)->presolved = (SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING);
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
 
