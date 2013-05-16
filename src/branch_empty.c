@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -283,49 +283,57 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 
    *result = SCIP_DIDNOTRUN;
 
+   /*
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+    */
+
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
    /* check whether the current original solution is integral */
+/*
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
 #else
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
 #endif
+*/
 
-   if( feasible )
+  /* if( feasible )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
 
       *result = SCIP_CUTOFF;
       return SCIP_OKAY;
-   }
+   }*/
 
    SCIPdebugMessage("Execeps method of empty branching\n");
 
-   masterscip = GCGrelaxGetMasterprob(scip);
-      assert(masterscip != NULL);
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+   assert(masterbranchcons != NULL);
 
-      masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-      assert(masterbranchcons != NULL);
+   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+   if( nchildnodes <= 0 )
+   {
+      SCIPdebugMessage("node cut off, since there is no successor node\n");
 
-      nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
-      if( nchildnodes <= 0 )
-      {
-         SCIPdebugMessage("node cut off, since there is no successor node\n");
-
-         *result = SCIP_CUTOFF;
-         return SCIP_OKAY;
-      }
-
-      for( i=0; i<nchildnodes; ++i )
-      {
-         masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
-         assert(masterbranchchildcons != NULL);
-
-         SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
-      }
-
-      *result = SCIP_BRANCHED;
+      *result = SCIP_CUTOFF;
       return SCIP_OKAY;
+   }
+
+   for( i=0; i<nchildnodes; ++i )
+   {
+      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
+      assert(masterbranchchildcons != NULL);
+
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+   }
+   assert(nchildnodes > 0);
+
+   *result = SCIP_BRANCHED;
+   return SCIP_OKAY;
 }
 
 /*

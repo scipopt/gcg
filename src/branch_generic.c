@@ -15,7 +15,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -1983,6 +1983,7 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_Real L;
    SCIP_Real lhs;
    SCIP_Real lhsSum;
+   SCIP_Real identicalcontrol;
    int nmastervars;
    int nmastervars2;
    int ncopymastervars;
@@ -2001,6 +2002,7 @@ SCIP_RETCODE createChildNodesGeneric(
    lhs = 0;
    lhsSum = 0;
    nchildnodes = 0;
+   identicalcontrol = 0;
    p = 0;
    k = 0;
    i = 0;
@@ -2715,7 +2717,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int nnonsortmastervars;
    int* sequencesizes;
    int blocknr;
-   int pricingblocknr;
    int i;
    int j;
    int c;
@@ -2726,7 +2727,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    Csize = 0;
    Fsize = 0;
    nnonsortmastervars = 0;
-   pricingblocknr = -2;
    i = 0;
    j = 0;
    c = 0;

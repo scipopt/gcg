@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -203,6 +203,8 @@ SCIP_RETCODE branchVar(
       SCIP_CONS* consdown;
 
       norigbranchcons = 1;
+
+      SCIPdebugMessage("enforced by cons\n");
 
       SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons1, norigbranchcons) );
       SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons2, norigbranchcons) );
@@ -682,7 +684,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];

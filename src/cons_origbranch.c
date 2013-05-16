@@ -272,7 +272,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    if( (*consdata)->mastercons != NULL )
    {
       assert(GCGconsMasterbranchGetOrigcons((*consdata)->mastercons) == cons);
-      //SCIP_CALL(SCIPcutoffNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode((*consdata)->mastercons))); //only in solving stage
       GCGconsMasterbranchSetOrigcons((*consdata)->mastercons, NULL);
    }
 
