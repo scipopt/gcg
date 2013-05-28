@@ -58,7 +58,7 @@
 #define DEFAULT_ENFORCEBYCONS FALSE
 #define DEFAULT_MOSTFRAC      FALSE
 #define DEFAULT_USEPSEUDO     TRUE
-#define DEFAULT_USEPSSTRONG   FALSE
+#define DEFAULT_USEPSSTRONG   FALSE//TRUE//FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData
@@ -242,10 +242,10 @@ SCIP_RETCODE branchVar(
 
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons1, upname, branchrule,
          branchupdata, origbranchcons1, norigbranchcons, chgVarUbNodeup, chgVarLbNodeup, addPropBoundChg,
-         branchvar, solval, &(branchupdata->boundtype), branchupdata->newbound) );
+         branchvar, solval, branchupdata->boundtype, branchupdata->newbound) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(scip, cons2, downname, branchrule,
          branchdowndata, origbranchcons2, norigbranchcons, chgVarUbNodedown, chgVarLbNodedown, addPropBoundChg,
-         branchvar, solval, &(branchdowndata->boundtype), branchdowndata->newbound) );
+         branchvar, solval, branchdowndata->boundtype, branchdowndata->newbound) );
 
    return SCIP_OKAY;
 }

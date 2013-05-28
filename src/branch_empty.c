@@ -128,24 +128,24 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
       SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
    }
 
-   if( GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(masterbranchchildcons) )
+   if( GCGmasterbranchGetChgVarUb(masterbranchchildcons) )
    {
       SCIP_CALL( SCIPchgVarUbNode(scip, child,
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
    }
-   if( GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(masterbranchchildcons) )
+   if( GCGmasterbranchGetChgVarLb(masterbranchchildcons) )
    {
-      SCIP_CALL( SCIPchgVarUbNode(scip, child,
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+      SCIP_CALL( SCIPchgVarLbNode(scip, child,
+         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
    }
-   if( GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(masterbranchchildcons) )
+   if( GCGmasterbranchGetPropBoundChg(masterbranchchildcons) )
    {
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
-            GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(masterbranchchildcons)) );
+            GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+            GCGmasterbranchGetProbBoundType(masterbranchchildcons),
+            GCGmasterbranchGetProbBound(masterbranchchildcons)) );
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
@@ -292,22 +292,20 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    assert(masterscip != NULL);
 
    /* check whether the current original solution is integral */
-/*
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
 #else
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
 #endif
-*/
 
-  /* if( feasible )
+   if( feasible )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
          SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
 
       *result = SCIP_CUTOFF;
       return SCIP_OKAY;
-   }*/
+   }
 
    SCIPdebugMessage("Execeps method of empty branching\n");
 

@@ -116,7 +116,7 @@ struct SCIP_ConsData
    SCIP_Bool             addPropBoundChg;
    SCIP_VAR*             chgVarNodeVar;
    SCIP_Real             chgVarNodeBound;
-   SCIP_BOUNDTYPE*       addPropBoundChgBoundtype;
+   SCIP_BOUNDTYPE        addPropBoundChgBoundtype;
    SCIP_Real             addPropBoundChgBound;
 
 };
@@ -456,6 +456,8 @@ SCIP_RETCODE tightenPricingVarBound(
    /* upper bound was changed */
    else
    {
+      assert(consdata->boundtypes[i] == SCIP_BOUNDTYPE_UPPER);
+
       consdata->oldbounds[i] = SCIPvarGetUbLocal(pricingvar);
 
       if( SCIPisLT(scip, consdata->newbounds[i], consdata->oldbounds[i]) )
@@ -1956,7 +1958,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_Bool             addPropBoundChg,
    SCIP_VAR*             chgVarNodeVar,
    SCIP_Real             chgVarNodeBound,
-   SCIP_BOUNDTYPE*       addPropBoundChgBoundtype,
+   SCIP_BOUNDTYPE        addPropBoundChgBoundtype,
    SCIP_Real             addPropBoundChgBound
    )
 {
@@ -2002,6 +2004,8 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    consdata->addPropBoundChgBoundtype = addPropBoundChgBoundtype;
    consdata->addPropBoundChgBound = addPropBoundChgBound;
 
+   SCIPdebugMessage("Setting origconsdata bound for variable <%s> to %f with boundtype %d\n", chgVarNodeVar == NULL? "NULL":SCIPvarGetName(chgVarNodeVar), addPropBoundChgBound, addPropBoundChgBoundtype);
+
    return SCIP_OKAY;
 }
 
@@ -2019,7 +2023,7 @@ char* GCGconsMasterbranchGetOrigbranchConsName(
    return consdata->origbranchconsname;
 }
 
-SCIP_VAR* GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(
+SCIP_VAR* GCGmasterbranchGetBoundChgVar(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2032,7 +2036,7 @@ SCIP_VAR* GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(
    return consdata->chgVarNodeVar;
 }
 
-SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
+SCIP_Real GCGmasterbranchGetBoundChg(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2045,7 +2049,7 @@ SCIP_Real GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(
    return consdata->chgVarNodeBound;
 }
 
-SCIP_BOUNDTYPE GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
+SCIP_BOUNDTYPE GCGmasterbranchGetProbBoundType(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2055,10 +2059,10 @@ SCIP_BOUNDTYPE GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(
 
    assert(consdata != NULL);
 
-   return *(consdata->addPropBoundChgBoundtype);
+   return consdata->addPropBoundChgBoundtype;
 }
 
-SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(
+SCIP_Real GCGmasterbranchGetProbBound(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2072,7 +2076,7 @@ SCIP_Real GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(
 }
 
 /** the function returns if upperbound for branchvar should be enforced of the constraint in the origconsdata data structure */
-SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(
+SCIP_Bool GCGmasterbranchGetChgVarUb(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2086,7 +2090,7 @@ SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(
 }
 
 /** the function returns if lowerbound for branchvar should be enforced of the constraint in the origconsdata data structure */
-SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
+SCIP_Bool GCGmasterbranchGetChgVarLb(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2100,7 +2104,7 @@ SCIP_Bool GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(
 }
 
 /** the function returns if PropBoundChg should be enforced of the constraint in the origconsdata data structure */
-SCIP_Bool GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(
+SCIP_Bool GCGmasterbranchGetPropBoundChg(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
