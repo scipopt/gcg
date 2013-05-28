@@ -41,7 +41,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -51,7 +51,6 @@
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "pricer_gcg.h"
-
 
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"
@@ -66,8 +65,6 @@
 #include "scip/branch_relpscost.h"
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
-
-
 
 
 #define BRANCHRULE_NAME          "relpsprob"

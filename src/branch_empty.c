@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 #include <assert.h>
 #include <string.h>
 
@@ -128,24 +128,24 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
       SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
    }
 
-   if( GCGconsMasterbranchGetOrigbranchConsChgVarUbNode(masterbranchchildcons) )
+   if( GCGmasterbranchGetChgVarUb(masterbranchchildcons) )
    {
       SCIP_CALL( SCIPchgVarUbNode(scip, child,
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
    }
-   if( GCGconsMasterbranchGetOrigbranchConsChgVarLbNode(masterbranchchildcons) )
+   if( GCGmasterbranchGetChgVarLb(masterbranchchildcons) )
    {
-      SCIP_CALL( SCIPchgVarUbNode(scip, child,
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-         GCGconsMasterbranchGetOrigbranchConsChgVarNodeBound(masterbranchchildcons)) );
+      SCIP_CALL( SCIPchgVarLbNode(scip, child,
+         GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+         GCGmasterbranchGetBoundChg(masterbranchchildcons)) );
    }
-   if( GCGconsMasterbranchGetOrigbranchConsAddPropBoundChg(masterbranchchildcons) )
+   if( GCGmasterbranchGetPropBoundChg(masterbranchchildcons) )
    {
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
-            GCGconsMasterbranchGetOrigbranchConsChgVarNodeVar(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBoundtype(masterbranchchildcons),
-            GCGconsMasterbranchGetOrigbranchConsAddPropBoundChgBound(masterbranchchildcons)) );
+            GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
+            GCGmasterbranchGetProbBoundType(masterbranchchildcons),
+            GCGmasterbranchGetProbBound(masterbranchchildcons)) );
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
@@ -283,6 +283,14 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 
    *result = SCIP_DIDNOTRUN;
 
+   /*
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+    */
+
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
    /* check whether the current original solution is integral */
 #ifdef SCIP_DEBUG
    SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
@@ -301,31 +309,29 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 
    SCIPdebugMessage("Execeps method of empty branching\n");
 
-   masterscip = GCGrelaxGetMasterprob(scip);
-      assert(masterscip != NULL);
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+   assert(masterbranchcons != NULL);
 
-      masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-      assert(masterbranchcons != NULL);
+   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+   if( nchildnodes <= 0 )
+   {
+      SCIPdebugMessage("node cut off, since there is no successor node\n");
 
-      nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
-      if( nchildnodes <= 0 )
-      {
-         SCIPdebugMessage("node cut off, since there is no successor node\n");
-
-         *result = SCIP_CUTOFF;
-         return SCIP_OKAY;
-      }
-
-      for( i=0; i<nchildnodes; ++i )
-      {
-         masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
-         assert(masterbranchchildcons != NULL);
-
-         SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
-      }
-
-      *result = SCIP_BRANCHED;
+      *result = SCIP_CUTOFF;
       return SCIP_OKAY;
+   }
+
+   for( i=0; i<nchildnodes; ++i )
+   {
+      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
+      assert(masterbranchchildcons != NULL);
+
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+   }
+   assert(nchildnodes > 0);
+
+   *result = SCIP_BRANCHED;
+   return SCIP_OKAY;
 }
 
 /*
