@@ -601,6 +601,7 @@ SCIP_RETCODE DECdetectStructure(
             SCIPdebugMessage("Calling initDetection of %s\n", detector->name);
             SCIP_CALL( (*detector->initDetection)(scip, detector) );
          }
+         decdecomps = NULL;
 
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
          SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  result) );
@@ -616,13 +617,13 @@ SCIP_RETCODE DECdetectStructure(
             }
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
             BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
-            SCIPfreeMemoryArray(scip, &decdecomps);
             conshdlrdata->ndecomps += ndecdecomps;
          }
          else
          {
             SCIPdebugPrintf("Failure!\n");
          }
+         SCIPfreeMemoryArrayNull(scip, &decdecomps);
       }
    }
    else
