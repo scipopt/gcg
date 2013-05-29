@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -58,7 +58,7 @@
 #define DEFAULT_ENFORCEBYCONS FALSE
 #define DEFAULT_MOSTFRAC      FALSE
 #define DEFAULT_USEPSEUDO     TRUE
-#define DEFAULT_USEPSSTRONG   FALSE//TRUE//FALSE
+#define DEFAULT_USEPSSTRONG   FALSE
 
 /** branching data for branching decisions */
 struct GCG_BranchData

@@ -162,6 +162,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
    assert(scip != NULL);
    assert(var != NULL);
    assert(newblock >= 0);
+
    assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
    assert(relaxdata != NULL);
 
@@ -3078,8 +3079,7 @@ SCIP_RETCODE performProbing(
    {
       /* LP iterations are unlimited when probing LP is solved with pricing */
       assert(maxlpiterations == -1);
-      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE/* pretendroot */, TRUE /*displayinfo*/,
-            maxpricerounds, lperror, NULL) );
+      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE, TRUE, maxpricerounds, lperror, NULL) );
    }
    else
    {
