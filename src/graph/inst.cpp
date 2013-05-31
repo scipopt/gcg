@@ -31,7 +31,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/*#define SCIP_DEBUG*/
 
 #include "bipartitegraph_def.h"
 #include "columngraph_def.h"
@@ -40,6 +40,7 @@
 #include "hyperrowgraph_def.h"
 #include "hyperrowcolgraph_def.h"
 #include "graph_def.h"
+#include "hypergraph_def.h"
 #include "graph_tclique.h"
 #include "matrixgraph_def.h"
 
@@ -53,6 +54,7 @@ template class HypercolGraph<GraphTclique>;
 template class HyperrowGraph<GraphTclique>;
 template class HyperrowcolGraph<GraphTclique>;
 template class Graph<GraphTclique>;
+template class Hypergraph<GraphTclique>;
 template class MatrixGraph<GraphTclique>;
 
 }

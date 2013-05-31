@@ -45,7 +45,7 @@ template <class T>
 ColumnGraph<T>::ColumnGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
+   ) : MatrixGraph<T>(scip, w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
 {
    this->name = std::string("columngraph");
 }
@@ -82,7 +82,6 @@ SCIP_RETCODE ColumnGraph<T>::writeToFile(
    SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nvars) );
    SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nvars) );
 
-   SCIPdebug(tcliquePrintGraph(tgraph));
    for( int i = 0; i < this->nvars; ++i )
    {
       BMSclearMemoryArray(handled, this->nvars);

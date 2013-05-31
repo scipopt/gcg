@@ -131,7 +131,7 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
 
    std::ofstream out;
    out.open("partition.part");
-   for( int i = 0; i < graph.getNNonzeroes(); ++i )
+   for( int i = 0; i < 8; ++i )
    {
       out << i << std::endl;
    }
@@ -140,7 +140,7 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
 
    std::vector<int> partition = graph.getPartition();
 
-   for( int i = 0; i < graph.getNNonzeroes(); ++i )
+   for( int i = 0; i < 8; ++i )
    {
       ASSERT_EQ(i, partition[i]);
    }

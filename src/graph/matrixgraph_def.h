@@ -45,8 +45,9 @@ namespace gcg {
 
 template <class T>
 MatrixGraph<T>::MatrixGraph(
-   SCIP*                 scip               /**< SCIP data structure */
-) : name("graph"),scip_(scip),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0)
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               w                 /**< weights for the given graph */
+) : name("graph"),scip_(scip),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
 {
 
 }

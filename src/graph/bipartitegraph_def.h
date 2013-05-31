@@ -44,7 +44,7 @@ template <class T>
 BipartiteGraph<T>::BipartiteGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                 /**< weights for the given graph */
-   ): Graph<T>(scip, w)
+   ): MatrixGraph<T>(scip,w), graph(scip)
 {
    // TODO Auto-generated constructor stub
    this->name = std::string("bipartite");
@@ -94,7 +94,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
       else
          weight = this->weights.calculate(conss[i-this->nvars]);
 
-      this->graph->addNode(i, weight);
+      this->graph.addNode(i, weight);
    }
 
    /* go through all constraints */
@@ -137,14 +137,14 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
          assert(varIndex >= 0);
          assert(varIndex < this->nvars);
 
-         SCIP_CALL( this->graph->addEdge(varIndex, this->nvars+i) );
+         SCIP_CALL( this->graph.addEdge(varIndex, this->nvars+i) );
       }
       SCIPfreeBufferArray(this->scip_, &curvars);
    }
 
-   this->graph->graphFlush();
+   this->graph.flush();
 
-   this->nnonzeroes = this->graph->getNEdges();
+   this->nnonzeroes = this->graph.getNEdges();
 
    return SCIP_OKAY;
 }

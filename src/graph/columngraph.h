@@ -44,7 +44,7 @@ template <class T>
 class ColumnGraph: public gcg::MatrixGraph<T>
 {
 private:
-   gcg::BipartiteGraph<T> graph;
+   gcg::Graph<T> graph;
    int nconss;
    int nvars;
    int nnonzeroes;

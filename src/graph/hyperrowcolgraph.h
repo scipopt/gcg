@@ -35,12 +35,15 @@
 #ifndef GCG_HYPERROWCOLGRAPH_H_
 #define GCG_HYPERROWCOLGRAPH_H_
 
-#include "graph.h"
+#include "matrixgraph.h"
+#include "hypergraph.h"
 
 namespace gcg {
 template <class T>
-class HyperrowcolGraph: public Graph<T>
+class HyperrowcolGraph: public MatrixGraph<T>
 {
+private:
+   Graph<T> graph;
 public:
    HyperrowcolGraph(
          SCIP*                 scip,              /**< SCIP data structure */

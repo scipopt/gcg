@@ -37,13 +37,16 @@
 #ifndef GCG_HYPERROWGRAPH_H_
 #define GCG_HYPERROWGRAPH_H_
 
-#include "bipartitegraph.h"
+#include "matrixgraph.h"
+#include "hypergraph.h"
 
 namespace gcg
 {
 template <class T>
-class HyperrowGraph: public gcg::BipartiteGraph<T>
+class HyperrowGraph: public gcg::MatrixGraph<T>
 {
+private:
+   Hypergraph<T> graph;
 public:
    HyperrowGraph(
       SCIP*                 scip,              /**< SCIP data structure */

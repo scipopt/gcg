@@ -74,7 +74,8 @@ public:
 
    /** return the weight of a node */
    virtual int graphGetWeights(int i) = 0;
-   virtual SCIP_RETCODE graphFlush() = 0;
+
+   virtual SCIP_RETCODE flush() = 0;
 
 };
 

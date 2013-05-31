@@ -53,7 +53,7 @@ template <class T>
 HyperrowGraph<T>::HyperrowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-): BipartiteGraph<T>(scip, w)
+): MatrixGraph<T>(scip, w), graph(scip)
 {
    this->name = std::string("hyperrow");
 }
@@ -87,7 +87,7 @@ SCIP_RETCODE HyperrowGraph<T>::writeToFile(
       std::vector<int> neighbors = getHyperedgeNodes(i);
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", Graph<T>::getWeight(i+this->nvars));
+         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i+this->nvars));
       }
       for( size_t j = 0; j < neighbors.size(); ++j )
       {
@@ -122,7 +122,7 @@ int HyperrowGraph<T>::getNNeighbors(
    assert(i >= 0);
    assert(i < getNNodes());
 
-   return Graph<T>::getNNeighbors(i);
+   return graph.getNNeighbors(i);
 }
 
 template <class T>
@@ -136,10 +136,10 @@ std::vector<int> HyperrowGraph<T>::getNeighbors(
    std::vector<int>::iterator it;
    std::set<int> neighbors;
 
-   std::vector<int> immediateneighbors = Graph<T>::getNeighbors(i);
+   std::vector<int> immediateneighbors = graph.getNeighbors(i);
    for( size_t j = 0; j < immediateneighbors.size(); ++j)
    {
-      std::vector<int> alternateneighbor = Graph<T>::getNeighbors(immediateneighbors[j]);
+      std::vector<int> alternateneighbor = graph.getNeighbors(immediateneighbors[j]);
       neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
    }
 
@@ -157,7 +157,7 @@ std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
    assert(i >= 0);
    assert(i < getNEdges());
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i+this->nvars);
+   std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
    return neighbors;
 }
 

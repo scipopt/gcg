@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graph.h
- * @brief  miscellaneous graph methods for structure detection
+/**@file   hypergraph.h
+ * @brief  miscellaneous hypergraph methods for structure detection
  * @author Martin Bergner
  * @author Annika Thome
  */
@@ -35,13 +35,13 @@
 
 
 
-#ifndef GCG_GRAPH_H_
-#define GCG_GRAPH_H_
+#ifndef GCG_HYPERGRAPH_H_
+#define GCG_HYPERGRAPH_H_
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
 #include "weights.h"
 #include "pub_decomp.h"
-#include "bridge.h"
+#include "graph.h"
 
 #include <exception>
 #include <vector>
@@ -50,37 +50,38 @@
 namespace gcg {
 
 template <class T>
-class Graph {
+class Hypergraph {
 public:
    std::string name;
 protected:
    SCIP* scip_;
-   Bridge* graph;
-   int nconss;
-   int nvars;
-   int nnonzeroes;
+   Graph<T>* graph;
+   std::vector<int> nodes;
+   std::vector<int> hedges;
+   std::vector<int> mapping;
+   int lastnode;
    int dummynodes;
    std::vector<int> partition;
 
 public:
    /** Constructor */
-   Graph(
-      SCIP*                 scip               /**< SCIP data structure */
+   Hypergraph(
+      SCIP*                 scip
    );
 
-   void swap(Graph & other) // the swap member function (should never fail!)
+   void swap(Hypergraph & other) // the swap member function (should never fail!)
    {
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
       std::swap(scip_ , other.scip_);
-      //std::swap(tgraph , other.tgraph);
-      std::swap(nconss , other.nconss);
-      std::swap(nvars , other.nvars);
-      std::swap(nnonzeroes , other.nnonzeroes);
+      //std::swap(thypergraph , other.tgraph);
+      std::swap(hedges , other.hedges);
+      std::swap(nodes , other.nodes);
       std::swap(dummynodes, other.dummynodes);
+
    }
 
-   Graph& operator=(Graph other) // note: argument passed by value!
+   Hypergraph& operator=(Hypergraph other) // note: argument passed by value!
    {
       // swap this with other
       swap(other);
@@ -89,70 +90,67 @@ public:
    }
 
    /** Destruktor */
-   virtual ~Graph();
+   ~Hypergraph();
 
    /** adds the node with the given weight to the graph */
    SCIP_RETCODE addNode(int i,int weight);
 
    /** adds the edge to the graph */
-   SCIP_RETCODE addEdge(int i, int j);
+   SCIP_RETCODE addHyperedge(std::vector<int> &edge);
+
+   /** adds the edge to the graph */
+   SCIP_RETCODE addNodeToHyperedge(int node, int hedge);
 
    /** return the number of nodes */
    int getNNodes();
 
    /** return the number of edges (or hyperedges) */
-   int getNEdges();
-
-   /** returns whether there is an edge between nodes i and j */
-   virtual int edge(int i, int j);
+   int getNHyperedges();
 
    /** return the number of neighbor nodes of given node */
-   virtual int getNNeighbors(
+   int getNNeighbors(
       int                i                   /**< the given node */
       );
 
    /** return the neighboring nodes of a given node */
-   virtual std::vector<int> getNeighbors(
+   std::vector<int> getNeighbors(
       int                i                   /**< the given node */
+      );
+
+   /** return the nodes spanned by hyperedge */
+   std::vector<int> getHyperedgeNodes(
+      int i
+      );
+
+   /** return the number of nodes spanned by hyperedge */
+   int getNHyperedgeNodes(
+      int i
       );
 
    /** return a partition of the nodes */
    std::vector<int> getPartition();
 
    /** assigns partition to a given node*/
-   virtual void setPartition(int i, int ID);
+   void setPartition(int i, int ID);
 
-   /** create graph from the matrix, to be overriden by the implementation*/
-   virtual SCIP_RETCODE createFromMatrix(
-      SCIP_CONS**        conss,              /**< constraints for which graph should be created */
-      SCIP_VAR**         vars,               /**< variables for which graph should be created */
-      int                nconss_,            /**< number of constraints */
-      int                nvars_              /**< number of variables */
-   ) { return SCIP_ERROR; };
-
-   /** writes the graph to the given file.
-    *  The format is graph dependent
+   /** writes the hypergraph to the given file.
+    *  The format is hypergraph dependent
     */
-   virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
+   SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the hypergraph should be written to */
       SCIP_Bool          writeweights = FALSE /**< whether to write weights */
     );
 
    /**
     * reads the partition from the given file.
-    * The format is graph dependent. The default is a file with one line for each node a
+    * The format is hypergraph dependent. The default is a file with one line for each node a
     */
-   virtual SCIP_RETCODE readPartition(
+   SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
    );
 
-   int getNNonzeroes() const
-   {
-      return nnonzeroes;
-   }
-
    /** return the weight of given node */
-   virtual int getWeight(
+   int getWeight(
       int                i                   /**< the given node */
       );
 
@@ -162,13 +160,6 @@ public:
       dummynodes = dummynodes_;
    };
 
-   /** create decomposition based on the read in partition */
-   virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-   )
-   {
-      return SCIP_ERROR;
-   }
 
    int getDummynodes() const
    {
@@ -176,7 +167,8 @@ public:
    }
 
    SCIP_RETCODE flush();
-
+private:
+   int computeNodeId(int i);
 };
 
 }

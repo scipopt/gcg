@@ -46,7 +46,7 @@ template <class T>
 RowGraph<T>::RowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
+   ) : MatrixGraph<T>(scip,w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
 {
    this->name = std::string("rowgraph");
 }
@@ -82,7 +82,6 @@ SCIP_RETCODE RowGraph<T>::writeToFile(
    SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nconss) );
    SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nconss) );
 
-   SCIPdebug(tcliquePrintGraph(tgraph));
    for( int i = 0; i < this->nconss; ++i )
    {
       BMSclearMemoryArray(handled, this->nconss);

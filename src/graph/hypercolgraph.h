@@ -35,13 +35,17 @@
 #ifndef GCG_HYPERCOLGRAPH_H_
 #define GCG_HYPERCOLGRAPH_H_
 
-#include "bipartitegraph.h"
+#include "matrixgraph.h"
+#include "hypergraph.h"
 
 namespace gcg
 {
 template <class T>
-class HypercolGraph: public gcg::BipartiteGraph<T>
+class HypercolGraph: public gcg::MatrixGraph<T>
 {
+
+private:
+   Hypergraph<T> graph;
 protected:
    class function {
       int diff;

@@ -44,8 +44,9 @@ TEST_F(BipartiteTest, EmptyTest) {
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
-   ASSERT_EQ(0, graph.getNEdges());
-   ASSERT_EQ(0, graph.getNNodes());
+//   ASSERT_EQ(0, graph.getNEdges());
+//   ASSERT_EQ(0, graph.getNNodes());
+   ASSERT_FALSE(true);
 }
 
 TEST_F(BipartiteTest, CreateTest) {
@@ -61,34 +62,12 @@ TEST_F(BipartiteTest, CreateTest) {
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ(7, graph.getNNodes());
-   ASSERT_EQ(16, graph.getNEdges());
+//   ASSERT_EQ(7, graph.getNNodes());
+//   ASSERT_EQ(16, graph.getNEdges());
 
    /* the first nodes are the variables */
-   int neighbours[] = {3,2,2,1,3,3,2};
-   int array[7][7] = {
-         {4,5,6,0,0,0,0},
-         {4,5,0,0,0,0,0},
-         {5,6,0,0,0,0,0},
-         {4,0,0,0,0,0,0},
-         {0,1,3,0,0,0,0},
-         {0,1,2,0,0,0,0},
-         {0,2,0,0,0,0,0} };
-   std::vector<int> neighbors;
 
-   for( int i = 0; i < graph.getNNodes(); ++i )
-   {
-      neighbors = graph.getNeighbors(i);;
-      std::sort(neighbors.begin(), neighbors.end());
-      ASSERT_EQ(neighbours[i], graph.getNNeighbors(i));
-      ASSERT_EQ((size_t)neighbours[i], neighbors.size());
-      for( size_t j = 0; j < neighbors.size(); ++j )
-      {
-         assert(array[i][j] == neighbors[j]);
-
-         ASSERT_EQ(array[i][j], neighbors[j]);
-      }
-   }
+   ASSERT_FALSE(true);
 }
 
 TEST_F(BipartiteTest, WriteFileTest) {
@@ -140,7 +119,7 @@ TEST_F(BipartiteTest, ReadPartitionTest) {
    SCIP_CALL_EXPECT( graph.readPartition("partition.part") );
 
    std::vector<int> partition = graph.getPartition();
-   for( int i = 0; i < graph.getNNodes(); ++i )
+   for( int i = 0; i < SCIPgetNVars(scip) + SCIPgetNConss(scip); ++i )
    {
       ASSERT_EQ(i, partition[i]);
    }

@@ -35,14 +35,16 @@
 #ifndef GCG_BIPARTITEGRAPH_H_
 #define GCG_BIPARTITEGRAPH_H_
 
+#include "matrixgraph.h"
 #include "graph.h"
 
 namespace gcg {
 
 template <class T>
-class BipartiteGraph : public Graph<T>
+class BipartiteGraph : public MatrixGraph<T>
 {
-
+private:
+   Graph<T> graph;
 public:
    BipartiteGraph(
          SCIP*                 scip,              /**< SCIP data structure */

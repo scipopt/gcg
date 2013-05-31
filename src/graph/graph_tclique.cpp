@@ -8,6 +8,30 @@
 #include <cassert>
 #include "graph_tclique.h"
 
+#define TCLIQUE_CALL_EXC(x)   do                                                                              \
+                       {                                                                                      \
+                          SCIP_Bool _restat_;                                                                 \
+                          if( (_restat_ = (x)) != TRUE )                                                      \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
+                             throw std::exception();                          \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
+
+#define TCLIQUE_CALL(x)   do                                                                                  \
+                       {                                                                                      \
+                          SCIP_Bool _restat_;                                                                 \
+                          if( (_restat_ = (x)) != TRUE )                                                      \
+                          {                                                                                   \
+                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
+                             return SCIP_ERROR;                                                               \
+                           }                                                                                  \
+                       }                                                                                      \
+                       while( FALSE )
+
+
+
 namespace gcg {
 
 GraphTclique::GraphTclique()
@@ -84,7 +108,7 @@ SCIP_RETCODE GraphTclique::deleteEdge(int i, int j)
 }
 
 
-SCIP_RETCODE GraphTclique::graphFlush()
+SCIP_RETCODE GraphTclique::flush()
 {
    if(tcliqueFlush(graph))
       return SCIP_OKAY;

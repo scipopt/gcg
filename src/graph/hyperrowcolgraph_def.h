@@ -49,7 +49,7 @@ template <class T>
 HyperrowcolGraph<T>::HyperrowcolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-): Graph<T>(scip, w)
+): MatrixGraph<T>(scip, w),graph(scip)
 {
    this->name = std::string("hyperrowcol");
 }
@@ -108,7 +108,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
          SCIPdebugMessage("Weight for cons <%s> is %d\n", SCIPconsGetName(conss[i-this->nvars]), weight);
       }
 
-      SCIP_CALL( this->graph->addNode(i, weight) );
+      SCIP_CALL( this->graph.addNode(i, weight) );
    }
 
    /* go through all constraints */
@@ -153,16 +153,16 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
 
          SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(conss[i]), i, SCIPvarGetName(var), varIndex, this->nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;
-         SCIP_CALL( this->graph->addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
-         SCIP_CALL( this->graph->addEdge(varIndex, this->nvars+this->nconss+this->nnonzeroes) );
-         SCIP_CALL( this->graph->addEdge(this->nvars+i, this->nvars+this->nconss+this->nnonzeroes) );
+         SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
+         SCIP_CALL( this->graph.addEdge(varIndex, this->nvars+this->nconss+this->nnonzeroes) );
+         SCIP_CALL( this->graph.addEdge(this->nvars+i, this->nvars+this->nconss+this->nnonzeroes) );
 
          this->nnonzeroes++;
       }
       SCIPfreeBufferArray(this->scip_, &curvars);
    }
 
-   SCIP_CALL( this->graph->graphFlush() );
+   SCIP_CALL( this->graph.flush() );
 
    return SCIP_OKAY;
 }
@@ -186,11 +186,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
 
    for( int i = 0; i < this->nvars+this->nconss; ++i )
    {
-      std::vector<int> neighbors = Graph<T>::getNeighbors(i);
-      int nneighbors = Graph<T>::getNNeighbors(i);
+      std::vector<int> neighbors = graph.getNeighbors(i);
+      int nneighbors = graph.getNNeighbors(i);
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", Graph<T>::getWeight(i));
+         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
@@ -261,10 +261,10 @@ std::vector<int> HyperrowcolGraph<T>::getNeighbors(
    function f(this->nconss+this->nvars);
    std::vector<int>::iterator it;
    std::set<int> neighbors;
-   std::vector<int> immediateneighbors = Graph<T>::getNeighbors(i+this->nconss+this->nvars);
+   std::vector<int> immediateneighbors = this->graph.getNeighbors(i+this->nconss+this->nvars);
    for( size_t j = 0; j < immediateneighbors.size(); ++j)
    {
-      std::vector<int> alternateneighbor = Graph<T>::getNeighbors(immediateneighbors[j]);
+      std::vector<int> alternateneighbor = this->graph.getNeighbors(immediateneighbors[j]);
       neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
    }
    std::vector<int> r(neighbors.size(), 0);
@@ -283,7 +283,7 @@ std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
    assert(i >= 0);
    assert(i < this->nconss+this->nvars);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
+   std::vector<int> neighbors = this->graph.getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }
@@ -297,7 +297,7 @@ std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
    assert(i >= 0);
    assert(i < this->nconss);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i+this->nvars);
+   std::vector<int> neighbors = this->graph.getNeighbors(i+this->nvars);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }
@@ -311,7 +311,7 @@ std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
    assert(i >= 0);
    assert(i < this->nvars);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
+   std::vector<int> neighbors = this->graph.getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }

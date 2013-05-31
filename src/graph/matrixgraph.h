@@ -34,7 +34,6 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-
 #ifndef GCG_MATRIXGRAPH_H_
 #define GCG_MATRIXGRAPH_H_
 #include "objscip/objscip.h"
@@ -46,29 +45,6 @@
 #include <exception>
 #include <vector>
 #include <string>
-
-#define TCLIQUE_CALL_EXC(x)   do                                                                              \
-                       {                                                                                      \
-                          SCIP_Bool _restat_;                                                                 \
-                          if( (_restat_ = (x)) != TRUE )                                                      \
-                          {                                                                                   \
-                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
-                             throw std::exception();                          \
-                           }                                                                                  \
-                       }                                                                                      \
-                       while( FALSE )
-
-#define TCLIQUE_CALL(x)   do                                                                                  \
-                       {                                                                                      \
-                          SCIP_Bool _restat_;                                                                 \
-                          if( (_restat_ = (x)) != TRUE )                                                      \
-                          {                                                                                   \
-                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
-                             return SCIP_ERROR;                                                               \
-                           }                                                                                  \
-                       }                                                                                      \
-                       while( FALSE )
-
 
 namespace gcg {
 
@@ -83,33 +59,13 @@ protected:
    int nnonzeroes;
    int dummynodes;
    std::vector<int> partition;
-
+   Weights weights;
 public:
    /** Constructor */
    MatrixGraph(
-      SCIP*                 scip               /**< SCIP data structure */
+      SCIP*                 scip,              /**< SCIP data structure */
+      Weights               w                 /**< weights for the given graph */
    );
-
-   void swap(MatrixGraph & other) // the swap member function (should never fail!)
-   {
-      // swap all the members (and base subobject, if applicable) with other
-      std::swap(partition, other.partition);
-      std::swap(scip_ , other.scip_);
-      //std::swap(tgraph , other.tgraph);
-      std::swap(nconss , other.nconss);
-      std::swap(nvars , other.nvars);
-      std::swap(nnonzeroes , other.nnonzeroes);
-      std::swap(dummynodes, other.dummynodes);
-
-   }
-
-   MatrixGraph& operator=(MatrixGraph other) // note: argument passed by value!
-   {
-      // swap this with other
-      swap(other);
-
-      return *this;
-   }
 
    /** Destruktor */
    virtual ~MatrixGraph();
@@ -144,6 +100,11 @@ public:
       return dummynodes;
    }
 
+   /** return a partition of the nodes */
+   virtual std::vector<int> getPartition()
+   {
+      return partition;
+   }
 
    virtual SCIP_RETCODE createFromMatrix(
       SCIP_CONS**           conss,              /**< constraints for which graph should be created */

@@ -32,7 +32,7 @@ public:
    virtual SCIP_RETCODE deleteEdge(int i, int j);
    virtual int graphGetWeights(int i);
 
-   virtual SCIP_RETCODE graphFlush();
+   virtual SCIP_RETCODE flush();
 };
 
 
