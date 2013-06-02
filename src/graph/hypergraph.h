@@ -42,6 +42,7 @@
 #include "weights.h"
 #include "pub_decomp.h"
 #include "graph.h"
+#include "graph_interface.h"
 
 #include <exception>
 #include <vector>
@@ -50,7 +51,7 @@
 namespace gcg {
 
 template <class T>
-class Hypergraph {
+class Hypergraph : public GraphInterface {
 public:
    std::string name;
 protected:

@@ -47,6 +47,7 @@ ColumnGraph<T>::ColumnGraph(
    Weights               w                  /**< weights for the given graph */
    ) : MatrixGraph<T>(scip, w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
 {
+   this->graphiface = &graph;
    this->name = std::string("columngraph");
 }
 
@@ -159,10 +160,10 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
    SCIP_CONS **conss;
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
-
+   std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    vars = SCIPgetVars(this->scip_);
-   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
@@ -172,7 +173,7 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
    {
-      int block = this->partition[i];
+      int block = partition[i];
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
       ++(nsubscipconss[block]);
    }

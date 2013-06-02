@@ -170,9 +170,7 @@ TEST_F(HyperrowcolTest, GetHyperedgeNodesTest) {
       {3,4,5,0,0,0,0},
       {6,7,0,0,0,0,0} };
 
-   ASSERT_EQ(7, graph.getNEdges());
-   ASSERT_EQ(8, graph.getNNodes());
-   for( int i = 0; i < graph.getNEdges(); ++i )
+   for( int i = 0; i < SCIPgetNVars(scip)+SCIPgetNConss(scip); ++i )
    {
       std::vector<int> nodes = graph.getHyperedgeNodes(i);
       std::sort(nodes.begin(), nodes.end());
@@ -207,9 +205,7 @@ TEST_F(HyperrowcolTest, GetNeighborTest) {
       {5,6,0,0,0,0,0,0},
    };
 
-   ASSERT_EQ(7, graph.getNEdges());
-   ASSERT_EQ(8, graph.getNNodes());
-   for( int i = 0; i < graph.getNNodes(); ++i )
+   for( int i = 0; i < graph.getNNonzeroes(); ++i )
    {
       std::vector<int> nodes = graph.getNeighbors(i);
       std::sort(nodes.begin(), nodes.end());

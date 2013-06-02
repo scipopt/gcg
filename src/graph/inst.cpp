@@ -43,6 +43,7 @@
 #include "hypergraph_def.h"
 #include "graph_tclique.h"
 #include "matrixgraph_def.h"
+#include "graph_interface.h"
 
 namespace gcg {
 

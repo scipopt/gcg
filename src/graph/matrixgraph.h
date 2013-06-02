@@ -41,7 +41,7 @@
 #include "weights.h"
 #include "pub_decomp.h"
 #include "bridge.h"
-
+#include "graph_interface.h"
 #include <exception>
 #include <vector>
 #include <string>
@@ -56,15 +56,15 @@ protected:
    SCIP* scip_;
    int nconss;
    int nvars;
-   int nnonzeroes;
    int dummynodes;
-   std::vector<int> partition;
    Weights weights;
+   GraphInterface *graphiface;
+
 public:
    /** Constructor */
    MatrixGraph(
       SCIP*                 scip,              /**< SCIP data structure */
-      Weights               w                 /**< weights for the given graph */
+      Weights               w                  /**< weights for the given graph */
    );
 
    /** Destruktor */
@@ -76,7 +76,11 @@ public:
    virtual SCIP_RETCODE writeToFile(
       const char*        filename,           /**< filename where the graph should be written to */
       SCIP_Bool          writeweights = FALSE /**< whether to write weights */
-      ) { return SCIP_ERROR; };
+      )
+   {
+      SCIP_CALL(graphiface->writeToFile(filename, writeweights) );
+      return SCIP_OKAY;
+   };
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
@@ -87,7 +91,11 @@ public:
     */
    virtual SCIP_RETCODE readPartition(
       const char*        filename            /**< filename where the partition is stored */
-   ) { return SCIP_ERROR; };
+   )
+   {
+      SCIP_CALL( graphiface->readPartition(filename) );
+      return SCIP_OKAY;
+   }
 
    /** set the number of dummy nodes */
    void setDummynodes(int dummynodes_)
@@ -103,7 +111,7 @@ public:
    /** return a partition of the nodes */
    virtual std::vector<int> getPartition()
    {
-      return partition;
+      return graphiface->getPartition();
    }
 
    virtual SCIP_RETCODE createFromMatrix(

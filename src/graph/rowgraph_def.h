@@ -48,6 +48,7 @@ RowGraph<T>::RowGraph(
    Weights               w                  /**< weights for the given graph */
    ) : MatrixGraph<T>(scip,w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
 {
+   this->graphiface = &graph;
    this->name = std::string("rowgraph");
 }
 
@@ -55,96 +56,6 @@ template <class T>
 RowGraph<T>::~RowGraph()
 {
    // TODO Auto-generated destructor stub
-}
-
-/** writes row graph to file */
-template <class T>
-SCIP_RETCODE RowGraph<T>::writeToFile(
-   const char*        filename,           /**< filename where the graph should be written to */
-   SCIP_Bool          writeweights         /**< whether to write weights */
-   )
-{
-   int nedges;
-   int* nrealneighbors;
-   int** realneighbors;
-
-   SCIP_Bool* handled;
-   FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
-   if( file == NULL )
-      return SCIP_FILECREATEERROR;
-
-   nrealneighbors = 0;
-   nedges = 0;
-
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &handled, this->nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nconss) );
-
-   for( int i = 0; i < this->nconss; ++i )
-   {
-      BMSclearMemoryArray(handled, this->nconss);
-      handled[i] = TRUE;
-      nrealneighbors[i] = 0;
-
-      SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nconss) );
-      int nneighbors = graph.getNNeighbors(this->nvars+i);
-
-      SCIPdebugMessage("%d has %d neighbors\n", i+this->nvars, nneighbors);
-
-      std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
-      for( int j = 0; j < nneighbors; ++j )
-      {
-         int neighbor = neighbors[j];
-         int nneighborneighbors = graph.getNNeighbors(neighbor);
-
-         SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
-         for( int k = 0; k < nneighborneighbors; ++k )
-         {
-            int neighborneighbor = neighborneighbors[k];
-
-            SCIPdebugMessage("\t\t%d->%d->%d (", i+this->nvars, neighbor, neighborneighbor);
-            if( !handled[neighborneighbor-this->nvars] )
-            {
-               SCIPdebugPrintf("x)\n");
-               realneighbors[i][nrealneighbors[i]] = neighborneighbor-this->nvars;
-               ++(nrealneighbors[i]);
-
-               handled[neighborneighbor-this->nvars] = TRUE;
-               ++nedges;
-            }
-            else
-            {
-               SCIPdebugPrintf("-)\n");
-            }
-         }
-      }
-   }
-
-   SCIPinfoMessage(this->scip_, file, "%d %d\n", this->nconss, nedges);
-
-   for( int i = 0; i < this->nconss; ++i)
-   {
-      for( int j = 0; j < nrealneighbors[i]; ++j )
-      {
-         SCIPinfoMessage(this->scip_, file, "%d ", realneighbors[i][j]+1);
-      }
-      SCIPinfoMessage(this->scip_, file, "\n");
-      SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
-   }
-
-   for( int i = 0; i < graph.getDummynodes(); ++i )
-   {
-      SCIPinfoMessage(this->scip_, file, "\n");
-   }
-
-   SCIPfreeMemoryArray(this->scip_, &handled);
-   SCIPfreeMemoryArray(this->scip_, &realneighbors);
-   SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
-
-   return SCIP_OKAY;
 }
 
 template <class T>
@@ -160,10 +71,10 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    SCIP_CONS **conss;
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
-
+   std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    vars = SCIPgetVars(this->scip_);
-   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
@@ -173,7 +84,7 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
    {
-      int block = this->partition[i];
+      int block = partition[i];
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
       ++(nsubscipconss[block]);
    }

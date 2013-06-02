@@ -52,6 +52,7 @@ HypercolGraph<T>::HypercolGraph(
    Weights               w                  /**< weights for the given graph */
 ):  MatrixGraph<T>(scip, w), graph(scip)
 {
+   this->graphiface = &graph;
    this->name = std::string("hypercol");
 }
 

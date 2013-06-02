@@ -55,6 +55,7 @@ HyperrowGraph<T>::HyperrowGraph(
    Weights               w                  /**< weights for the given graph */
 ): MatrixGraph<T>(scip, w), graph(scip)
 {
+   this->graphiface = &graph;
    this->name = std::string("hyperrow");
 }
 
@@ -174,10 +175,10 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
       SCIP_CONS **conss;
       SCIP_VAR **vars;
       SCIP_Bool emptyblocks = FALSE;
-
+      std::vector<int> partition = graph.getPartition();
       conss = SCIPgetConss(this->scip_);
       vars = SCIPgetVars(this->scip_);
-      nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+      nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
       SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
       BMSclearMemoryArray(nsubscipconss, nblocks);
@@ -192,8 +193,8 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
          std::vector<int> neighbors = getHyperedgeNodes(i);
          for( size_t k = 0; k < neighbors.size(); ++k )
          {
-            if( this->partition[neighbors[k]] >= 0 )
-               blocks.insert(this->partition[neighbors[k]]);
+            if( partition[neighbors[k]] >= 0 )
+               blocks.insert(partition[neighbors[k]]);
          }
          if( blocks.size() > 1 )
          {

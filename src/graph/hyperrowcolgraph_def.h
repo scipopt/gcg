@@ -49,8 +49,9 @@ template <class T>
 HyperrowcolGraph<T>::HyperrowcolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-): MatrixGraph<T>(scip, w),graph(scip)
+): MatrixGraph<T>(scip, w),graph(scip),nnonzeroes(0)
 {
+   this->graphiface = &graph;
    this->name = std::string("hyperrowcol");
 }
 
@@ -205,44 +206,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
       return SCIP_WRITEERROR;
 }
 
-template <class T>
-SCIP_RETCODE HyperrowcolGraph<T>::readPartition(
-   const char* filename
-)
-{
-   ifstream input(filename);
-   if( !input.good() )
-   {
-      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
-      return SCIP_READERROR;
-   }
-   this->partition.resize(this->nnonzeroes);
-   for( int i = 0; i < this->nnonzeroes; ++i )
-   {
-      int part = 0;
-      if( !(input >> part) )
-      {
-         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
-         return SCIP_READERROR;
-      }
-      this->partition[i] = part;
-   }
-
-   input.close();
-   return SCIP_OKAY;
-}
-
-template <class T>
-int HyperrowcolGraph<T>::getNEdges()
-{
-   return this->nconss+this->nvars;
-}
-
-template <class T>
-int HyperrowcolGraph<T>::getNNodes()
-{
-   return this->nnonzeroes;
-}
 
 class function {
    int diff;
@@ -329,11 +292,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    SCIP_CONS **conss;
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
-
+   std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    vars = SCIPgetVars(this->scip_);
 
-   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
@@ -346,7 +309,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
       std::vector<int> nonzeros = getConsNonzeroNodes(i);
       for( size_t k = 0; k < nonzeros.size(); ++k )
       {
-         blocks.insert(this->partition[nonzeros[k]]);
+         blocks.insert(partition[nonzeros[k]]);
       }
       if( blocks.size() > 1 )
       {

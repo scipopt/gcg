@@ -92,7 +92,7 @@ SCIP_RETCODE Hypergraph<T>::addHyperedge(std::vector<int> &edge)
 {
    int edgenodeid = lastnode;
    ++lastnode;
-   SCIPdebugMessage("Adding hyperedge %zu (id=%d)\n", hedges.size(), edgenodeid);
+   SCIPdebugMessage("Adding hyperedge %lu (id=%d)\n", hedges.size(), edgenodeid);
    SCIP_CALL( graph->addNode(edgenodeid, 0) );
    for( size_t i = 0; i < edge.size(); ++i )
    {
@@ -160,7 +160,7 @@ std::vector<int> Hypergraph<T>::getHyperedgeNodes(
    )
 {
    std::vector<int> hnodes =  graph->getNeighbors(hedges[i]);
-   for( int j = 0; j < hnodes.size(); ++j)
+   for( size_t j = 0; j < hnodes.size(); ++j)
    {
       hnodes[j] = computeNodeId(hnodes[j]);
    }

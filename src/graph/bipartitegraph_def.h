@@ -46,14 +46,14 @@ BipartiteGraph<T>::BipartiteGraph(
       Weights               w                 /**< weights for the given graph */
    ): MatrixGraph<T>(scip,w), graph(scip)
 {
-   // TODO Auto-generated constructor stub
+   this->graphiface = &graph;
    this->name = std::string("bipartite");
 }
 
 template <class T>
 BipartiteGraph<T>::~BipartiteGraph()
 {
-   // TODO Auto-generated destructor stub
+
 }
 
 
@@ -143,11 +143,21 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    }
 
    this->graph.flush();
-
-   this->nnonzeroes = this->graph.getNEdges();
-
    return SCIP_OKAY;
 }
+
+template <class T>
+int BipartiteGraph<T>::getNConsNodes()
+{
+   return this->nconss;
+}
+
+template <class T>
+int BipartiteGraph<T>::getNVarNodes()
+{
+   return this->nvars;
+}
+
 
 } /* namespace gcg */
 

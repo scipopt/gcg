@@ -44,6 +44,7 @@ class HyperrowcolGraph: public MatrixGraph<T>
 {
 private:
    Graph<T> graph;
+   int nnonzeroes;
 public:
    HyperrowcolGraph(
          SCIP*                 scip,              /**< SCIP data structure */
@@ -65,16 +66,10 @@ public:
       SCIP_Bool          writeweights         /**< whether to write weights */
     );
 
-   SCIP_RETCODE readPartition(
-      const char* filename
-      );
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
       );
-
-   virtual int getNNodes();
-   virtual int getNEdges();
 
    virtual std::vector<int> getNeighbors(
          int i
@@ -91,6 +86,11 @@ public:
    std::vector<int> getVarNonzeroNodes(
          int i
    );
+
+   int getNNonzeroes() const
+   {
+      return nnonzeroes;
+   }
 };
 
 } /* namespace gcg */

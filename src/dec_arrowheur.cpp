@@ -283,7 +283,7 @@ SCIP_RETCODE createMetisFile(
    int ndummyvertices;
    char* filename;
 
-   nvertices = detectordata->graph->getNNodes();
+   nvertices = detectordata->graph->getNNonzeroes();
    /*lint --e{524}*/
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
    detectordata->graph->setDummynodes(ndummyvertices);

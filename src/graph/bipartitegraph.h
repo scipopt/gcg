@@ -57,6 +57,8 @@ public:
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
    );
+   int getNConsNodes();
+   int getNVarNodes();
 };
 
 } /* namespace gcg */

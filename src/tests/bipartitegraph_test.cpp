@@ -44,9 +44,8 @@ TEST_F(BipartiteTest, EmptyTest) {
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
-//   ASSERT_EQ(0, graph.getNEdges());
-//   ASSERT_EQ(0, graph.getNNodes());
-   ASSERT_FALSE(true);
+   ASSERT_EQ(0, graph.getNConsNodes());
+   ASSERT_EQ(0, graph.getNVarNodes());
 }
 
 TEST_F(BipartiteTest, CreateTest) {
@@ -62,12 +61,8 @@ TEST_F(BipartiteTest, CreateTest) {
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-//   ASSERT_EQ(7, graph.getNNodes());
-//   ASSERT_EQ(16, graph.getNEdges());
-
-   /* the first nodes are the variables */
-
-   ASSERT_FALSE(true);
+   ASSERT_EQ(3, graph.getNConsNodes());
+   ASSERT_EQ(4, graph.getNVarNodes());
 }
 
 TEST_F(BipartiteTest, WriteFileTest) {
