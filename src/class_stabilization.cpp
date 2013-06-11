@@ -266,12 +266,14 @@ void Stabilization::updateAlphaMisprice()
    SCIPdebugMessage("alpha updated to %g (k=%d)\n", alpha, k);
 }
 
-void Stabilization::updateAlpha()
+void Stabilization::updateAlpha(
+   SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+   )
 {
    SCIPdebugMessage("Alpha update after successful pricing\n");
    updateIterationCount();
 
-   if( calculateSubgradient() > 0 )
+   if( calculateSubgradient(pricingsols) > 0 )
    {
       increaseAlpha();
    }
@@ -301,7 +303,9 @@ void Stabilization::decreaseAlpha()
    SCIPdebugMessage("alpha decreased to %g\n", alpha);
 }
 
-SCIP_Real Stabilization::calculateSubgradient()
+SCIP_Real Stabilization::calculateSubgradient(
+   SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+   )
 {
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
    SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origprob);
@@ -356,8 +360,7 @@ SCIP_Real Stabilization::calculateSubgradient()
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
             assert(pricingprob != NULL);
-            assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-            val = SCIPgetSolVal(pricingprob, SCIPgetBestSol(pricingprob), pricingvar);
+            val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
          }
          gradientproduct += dual * vals[j] * val;
       }
@@ -414,8 +417,7 @@ SCIP_Real Stabilization::calculateSubgradient()
             assert(GCGvarIsPricing(pricingvar));
             SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
             assert(pricingprob != NULL);
-            assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-            val = SCIPgetSolVal(pricingprob, SCIPgetBestSol(pricingprob), pricingvar);
+            val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
          }
          gradientproduct += dual * vals[j] * val;
       }
@@ -449,11 +451,10 @@ SCIP_Real Stabilization::calculateSubgradient()
       assert(GCGvarIsPricing(pricingvar));
       SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
       assert(pricingprob != NULL);
-      assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
 
       SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);
       SCIP_Real masterval = SCIPgetSolVal(scip_, NULL, mastervar);
-      SCIP_Real pricingval = SCIPgetSolVal(pricingprob, SCIPgetBestSol(pricingprob), pricingvar);
+      SCIP_Real pricingval = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
       gradientproduct += dual * (masterval - pricingval);
    }
 

@@ -34,7 +34,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/* #define SCIP_DEBUG */
 #include <cassert>
 #include <cstring>
 
@@ -299,7 +299,7 @@ SCIP_Bool  ObjPricerGcg::isPricingOptimal(
    assert(scip != NULL);
    assert(!GCGisMaster(scip) && !GCGisOriginal(scip));
 
-   return SCIPgetStatus(scip) == SCIP_STATUS_OPTIMAL;
+   return status == SCIP_STATUS_OPTIMAL;
 }
 
 /** ensures size of pricedvars array */
@@ -1279,16 +1279,16 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
-         SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%d) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
+    //     SCIPdebugMessage("var with redcost %g (objvalue=%g, dualsol=%g, ray=%d) was not added\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
          *added = FALSE;
 
          return SCIP_OKAY;
       }
-      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%d)\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
+//      SCIPdebugMessage("found var with redcost %g (objvalue=%g, dualsol=%g, ray=%d)\n", redcost, objvalue, pricerdata->dualsolconv[prob], solisray);
    }
    else
    {
-      SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%d)\n",  objvalue, pricerdata->dualsolconv[prob], solisray);
+  //    SCIPdebugMessage("force var (objvalue=%g, dualsol=%g, ray=%d)\n",  objvalue, pricerdata->dualsolconv[prob], solisray);
    }
 
    *added = TRUE;
@@ -1577,6 +1577,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       SCIP_CALL( SCIPallocMemoryArray(scip_, &(solisray[i]), maxsols) );
       SCIP_CALL( SCIPallocMemoryArray(scip_, &(sols[i]), maxsols) );
+      pricingstatus[i] = SCIP_STATUS_UNKNOWN;
    }
 
 #ifdef _OPENMP
@@ -1617,9 +1618,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
 
          #pragma omp flush(infeasible,nfoundvars,successfulmips)
-         if( abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible )
+         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !  pricerdata->stabilization)
+         {
             goto done;
-
+         }
          private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &pricingstatus[prob]);
 
          #pragma omp ordered
@@ -1708,9 +1710,23 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
             else if( *bestredcostvalid )
             {
-               stabilization->updateAlpha();
+               SCIP_SOL** pricingsols = NULL;
+               SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs) );
+               BMSclearMemoryArray(pricingsols, pricerdata->npricingprobs);
+               for( i = 0; i < pricerdata->npricingprobs; ++i )
+               {
+                  if( pricerdata->pricingprobs[i] != NULL )
+                  {
+                     assert(nsols[i] > 0);
+                     pricingsols[i] = sols[i][0];
+                  }
+               }
+
+               stabilization->updateAlpha(pricingsols);
                SCIP_CALL( stabilization->updateStabilityCenter( SCIPgetLPObjval(scip_) + *bestredcost) );
                *bestredcostvalid = FALSE;
+
+               SCIPfreeBlockMemoryArray(scip_, &pricingsols, pricerdata->npricingprobs)
 
             }
          }
