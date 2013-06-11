@@ -32,6 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
 #include <assert.h>
 #include <string.h>
 
@@ -642,7 +643,7 @@ SCIP_RETCODE solveCplex(
       break;
    case CPXMIP_INFEASIBLE: /* 103 */
       assert(nsolscplex == 0);
-      *result = SCIP_STATUS_OPTIMAL;
+      *result = SCIP_STATUS_INFEASIBLE;
       break;
    case CPXMIP_UNBOUNDED:
    case CPXMIP_INForUNBD: /* 119 */
@@ -671,7 +672,7 @@ SCIP_RETCODE solveCplex(
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
    CHECK_ZERO( CPXgetobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], &upperbound) );
 
-   SCIPdebugMessage("pricing problem solved with CPLEX: status=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", status, nsolscplex, *lowerbound, upperbound);
+   SCIPdebugMessage("pricing problem %d solved with CPLEX: status=%d, nsols=%d, lowerbound=%g, upperbound=%g\n", probnr, status, nsolscplex, *lowerbound, upperbound);
 
 #ifndef NDEBUG
    /* in debug mode, we check that the first solution in the solution pool is the incumbent */
@@ -696,24 +697,21 @@ SCIP_RETCODE solveCplex(
    {
       CHECK_ZERO( CPXgetsolnpoolobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, &objective) );
 
-      if( SCIPisNegative(scip, objective - dualsolconv) )
+      CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
+
+      /* check whether the solution is equal to one of the previous solutions */
+      if( !solverdata->checksols || solIsNew(pricingprob, sols, *nsols, solverdata->pricingvars[probnr],
+            cplexsolvals, objective, solverdata->npricingvars[probnr]) )
       {
-         CHECK_ZERO( CPXgetsolnpoolx(solverdata->cpxenv[probnr], solverdata->lp[probnr], s, cplexsolvals, 0, numcols - 1) );
+         SCIP_Bool feasible;
 
-         /* check whether the solution is equal to one of the previous solutions */
-         if( !solverdata->checksols || solIsNew(pricingprob, sols, *nsols, solverdata->pricingvars[probnr],
-               cplexsolvals, objective, solverdata->npricingvars[probnr]) )
-         {
-            SCIP_Bool feasible;
+         SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
+         SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
+         SCIP_CALL( SCIPcheckSolOrig(pricingprob, sols[*nsols], &feasible, FALSE, FALSE) );
+         assert(feasible);
 
-            SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
-            SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
-            SCIP_CALL( SCIPcheckSolOrig(pricingprob, sols[*nsols], &feasible, FALSE, FALSE) );
-            assert(feasible);
-
-            solisray[*nsols] = FALSE;
-            ++(*nsols);
-         }
+         solisray[*nsols] = FALSE;
+         ++(*nsols);
       }
    }
 
@@ -881,7 +879,7 @@ static GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 
    /* solve the pricing problem and evaluate solution */
    solveCplex(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, sols, solisray, maxsols, nsols, result);
-
+   assert(*result != SCIP_STATUS_OPTIMAL || *nsols > 0);
    return SCIP_OKAY;
 }
 

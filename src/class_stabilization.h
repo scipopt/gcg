@@ -76,21 +76,23 @@ public:
       );
 
    SCIP_RETCODE updateStabilityCenter(
-         SCIP_Real lowerbound
-         );
+      SCIP_Real lowerbound
+      );
    void updateAlphaMisprice();
-   void updateAlpha();
+   void updateAlpha(
+      SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+      );
    SCIP_Bool isStabilized();
 
    SCIP_RETCODE setLinkingConss(
       SCIP_CONS** linkingconss,
       int* linkingconsblock,
       int nlinkingconss
-   );
+      );
 
    SCIP_RETCODE setNLinkingconss(
       int nlinkingconssnew
-   );
+      );
 
    SCIP_RETCODE linkingconsGetDual(
       int i,
@@ -103,7 +105,10 @@ private:
    SCIP_RETCODE updateStabcentercuts();
    void increaseAlpha();
    void decreaseAlpha();
-   SCIP_Real calculateSubgradient();
+   SCIP_Real calculateSubgradient(
+      SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
+      );
+
    SCIP_Real computeDual(
       SCIP_Real center,
       SCIP_Real current
