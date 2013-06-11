@@ -163,7 +163,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
    assert(var != NULL);
    assert(newblock >= 0);
 
-   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
+   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE || SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN);
    assert(relaxdata != NULL);
 
    blocknr = GCGvarGetBlock(var);
