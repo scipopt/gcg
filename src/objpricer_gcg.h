@@ -178,7 +178,8 @@ private:
 
    /** return TRUE or FALSE whether pricing problem has been solved to optimality */
    SCIP_Bool  isPricingOptimal(
-      SCIP*                 scip                /**< SCIP data structure */
+      SCIP*                 scip,               /**< SCIP data structure */
+      SCIP_STATUS           status              /**< status of problem */
       );
 
    /** ensures size of pricedvars array */

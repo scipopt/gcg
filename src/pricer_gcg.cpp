@@ -292,7 +292,8 @@ SCIP_Bool ObjPricerGcg::isMasterLPOptimal()
 
 /** return TRUE or FALSE whether pricing problem has been solved to optimality */
 SCIP_Bool  ObjPricerGcg::isPricingOptimal(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_STATUS           status              /**< status of problem */
    )
 {
    assert(scip != NULL);
@@ -1532,6 +1533,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool pricinghaserror;
    SCIP_Bool stabilized;
    SCIP_Bool added;
+   SCIP_STATUS* pricingstatus;
    int solvedmips;
    int successfulmips;
    int nfoundvarsprob;
@@ -1565,9 +1567,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    maxsols = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),reducedcostpricing->getMaxvarsroundroot());
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &nsols, pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &sols, pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &solisray, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &nsols, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &sols, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &solisray, pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricingstatus, pricerdata->npricingprobs) );
    BMSclearMemoryArray(nsols, pricerdata->npricingprobs);
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -1604,11 +1607,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       for( i = 0; i < pricerdata->npricingprobs; i++ )
       {
          int prob;
-         SCIP_STATUS status;
          SCIP_RETCODE private_retcode;
 
          int nvarsfound = nfoundvars;
-         status = SCIP_STATUS_UNKNOWN;
          prob = pricerdata->permu[i];
 
          #pragma omp flush(retcode)
@@ -1619,7 +1620,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible )
             goto done;
 
-         private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &status);
+         private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &pricingstatus[prob]);
 
          #pragma omp ordered
          {
@@ -1627,10 +1628,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             retcode = private_retcode;
 
             #pragma omp atomic
-            infeasible |= (SCIPgetStatus(pricerdata->pricingprobs[prob]) == SCIP_STATUS_INFEASIBLE);
+            infeasible |= ( pricingstatus[prob] == SCIP_STATUS_INFEASIBLE);
 
             #pragma omp atomic
-            pricinghaserror |= (status == SCIP_STATUS_UNKNOWN);
+            pricinghaserror |= (pricingstatus[prob] == SCIP_STATUS_UNKNOWN);
 
             if( !infeasible )
             {
@@ -1647,7 +1648,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( optimal )
          {
-            if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob]) && isMasterLPOptimal() )
+            if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob], pricingstatus[prob]) && isMasterLPOptimal() )
             {
                if( SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]) && !stabilized )
                {
@@ -1686,7 +1687,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          if( pricerdata->pricingprobs[prob] == NULL )
             continue;
 
-         if( !isPricingOptimal(pricerdata->pricingprobs[prob]) )
+         if( !isPricingOptimal(pricerdata->pricingprobs[prob], pricingstatus[prob]) )
          {
             SCIPdebugMessage("Pricing prob %d was not solved to optimality, reduced cost invalid\n", prob);
             *bestredcostvalid = FALSE;
@@ -1800,14 +1801,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 //            SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, i);
       }
 
-      SCIPfreeMemoryArray(scip, &(sols[i]));
-      SCIPfreeMemoryArray(scip, &(solisray[i]));
+      SCIPfreeMemoryArray(scip_, &(sols[i]));
+      SCIPfreeMemoryArray(scip_, &(solisray[i]));
    }
 
 
-   SCIPfreeMemoryArray(scip, &solisray);
-   SCIPfreeMemoryArray(scip, &sols);
-   SCIPfreeMemoryArray(scip, &nsols);
+   SCIPfreeBlockMemoryArray(scip_, &solisray, pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip_, &sols, pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip_, &nsols, pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip_, &pricingstatus, pricerdata->npricingprobs);
 
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );
