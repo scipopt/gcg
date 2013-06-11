@@ -364,6 +364,10 @@ SCIP_RETCODE resetPricingVarBound(
    /* lower bound was changed */
    if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
    {
+
+      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+         return SCIP_OKAY;
+
       assert(SCIPisGE(scip, SCIPvarGetLbLocal(pricingvar), consdata->newbounds[i])
          || SCIPisLE(scip, SCIPvarGetLbLocal(pricingvar), SCIPvarGetLbGlobal(consdata->boundchgvars[i])));
 
@@ -389,6 +393,9 @@ SCIP_RETCODE resetPricingVarBound(
    /* upper bound was changed */
    else
    {
+      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+         return SCIP_OKAY;
+
       assert(SCIPisLE(scip, SCIPvarGetUbLocal(pricingvar), consdata->newbounds[i])
          || SCIPisGE(scip, SCIPvarGetUbLocal(pricingvar), SCIPvarGetUbGlobal(consdata->boundchgvars[i])));
 
@@ -752,29 +759,54 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* apply local bound changes in the original problem to the pricing problems */
    for( i = 0; i < consdata->nboundchanges; i++ )
    {
+      int blocknr;
       assert(GCGvarIsOriginal(consdata->boundchgvars[i]));
-      assert(GCGvarGetBlock(consdata->boundchgvars[i]) < GCGrelaxGetNPricingprobs(origscip));
+      blocknr = GCGvarGetBlock(consdata->boundchgvars[i]);
+      assert(blocknr < GCGrelaxGetNPricingprobs(origscip));
 
       /* if variable belongs to no block, skip it here because the bound changes are treated in the propagation */
-      if( GCGvarGetBlock(consdata->boundchgvars[i]) == -1 )
+      if( blocknr == -1 )
          continue;
 
-      else if( GCGvarGetBlock(consdata->boundchgvars[i]) >= 0 )
+      else if( blocknr >= 0 )
       {
-         SCIPdebugMessage("adjusting bound of pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
+
+         /** @todo Ok, here is a serious problem with aggregation */
+         if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+         {
+            SCIPdebugMessage("Don't know how to handle var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
+            continue;
+         }
+
+         SCIPdebugMessage("adjusting bound of pricing var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
-         SCIP_CALL( tightenPricingVarBound(scip,
-               GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, GCGvarGetBlock(consdata->boundchgvars[i])));
+         SCIP_CALL( tightenPricingVarBound(scip, GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr));
       }
       else if( GCGvarGetBlock(consdata->boundchgvars[i]) == -2 )
       {
          int j;
          int npricingprobs;
          SCIP_VAR** pricingvars;
+         SCIP_Bool aggregate = FALSE;
 
          npricingprobs = GCGrelaxGetNPricingprobs(origscip);
          pricingvars = GCGlinkingVarGetPricingVars(consdata->boundchgvars[i]);
-         SCIPdebugMessage("adjusting bound of linking pricing var %s\n", SCIPvarGetName(consdata->boundchgvars[i]));
+         for( j = 0; j < npricingprobs; ++j )
+         {
+            if( pricingvars[j] == NULL )
+               continue;
+            if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+            {
+               SCIPdebugMessage("Don't know how to handle var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
+               aggregate = TRUE;
+               break;
+            }
+         }
+         if( aggregate )
+            continue;
+
+         SCIPdebugMessage("adjusting bound of linking pricing var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
+
          /* set corresponding bound in the pricing problem */
          for( j = 0; j < npricingprobs; ++j )
          {
