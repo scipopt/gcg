@@ -788,11 +788,16 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
 
    for( b = 0; b < decdecomp->nblocks-1; ++b )
    {
-      assert(nstairlinkingvars[b] > 0);
+      assert(nstairlinkingvars[b] > 0 || stairlinkingvars[b] == NULL);
       decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
-
-      assert(stairlinkingvars[b] != NULL);
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
+      if(stairlinkingvars[b] != NULL)
+      {
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
+      }
+      else
+      {
+         decdecomp->stairlinkingvars[b] = NULL;
+      }
    }
 
    for( b = 0; b < decdecomp->nblocks-1; ++b )
@@ -1060,7 +1065,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( b = 0; b < nblocks; ++b )
    {
-      SCIPfreeMemoryArray(scip, &stairlinkingvars[b]);
+      SCIPfreeMemoryArrayNull(scip, &stairlinkingvars[b]);
    }
    SCIPfreeMemoryArray(scip, &stairlinkingvars);
    SCIPfreeMemoryArray(scip, &nstairlinkingvars);
