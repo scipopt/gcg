@@ -1856,8 +1856,9 @@ SCIP_Bool checkchildconsS(
       childcons = GCGconsMasterbranchGetChildcons(parentcons, i);
       if(childcons == NULL)
          continue;
-      if(GCGconsMasterbranchGetbranchrule(childcons) != NULL)
-         assert(strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(childcons)), "generic") == 0);
+
+      if(GCGconsMasterbranchGetbranchrule(childcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(childcons)), "generic") != 0)
+         continue;
 
       branchdata = GCGconsMasterbranchGetBranchdata(childcons);
       assert(branchdata != NULL || GCGconsMasterbranchGetOrigbranchdata(childcons) != NULL);
