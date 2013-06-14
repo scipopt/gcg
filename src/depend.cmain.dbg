@@ -32,7 +32,7 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
  lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
- lib/scip/src/nlpi/type_exprinterpret.h \
+ lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
