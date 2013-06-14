@@ -3,12 +3,23 @@ GCG Version next
 features
 - GCG can now automatically create a decomposition to solve the LP with
   empty pricing problems. See the cons/decomp/createbasicdecomp parameter
-- GCG can aggregate pricing problems using bliss
-- GCG can solve pricingproblems in parallel
+- GCG can aggregate pricing problems using bliss which enables us to
+  aggregate more pricing problems
+- GCG can solve pricing problems in parallel
+- GCG uses dual variable smoothing to stabilize dual values
+- GCG can branch on integer aggregated problems using Vanderbeck's general
+  branching rule
+- GCG can solve integer knapsack problems as a dynamic program
 
 code cleanup
 - moved some detection methods to a more global scope to make it usable
 - added testing framework to do regression testing (uses google test)
+- Extracted graph methods for reuse
+- Branching is now done in the master problem
+
+bug fixes
+- memory allocation bugs
+- bound change propagation fixes
 
 GCG Version 1.1
 ===============
