@@ -144,6 +144,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_random.o \
+			dec_colors.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
