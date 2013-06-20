@@ -159,6 +159,7 @@
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
+#include "dec_colors.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -300,6 +301,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectionColors(scip) );
 
    /* Christian's heuristics */
 /*   SCIP_CALL( SCIPincludeHeurGcgcoefdiving(scip) );

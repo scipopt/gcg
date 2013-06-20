@@ -43,10 +43,16 @@
 #include "scip_misc.h"
 #include "pub_decomp.h"
 
+#include <set>
+#include <vector>
+#include <bitset>
+#include <iostream>
+#include <algorithm>
+
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "colors"    /**< name of detector */
 #define DEC_DESC                 "Detector for classical and block diagonal problems" /**< description of detector*/
-#define DEC_PRIORITY             0              /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             0              /**< priority of the detector */
 #define DEC_DECCHAR              'C'            /**< display character of detector */
 
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
@@ -59,9 +65,6 @@
 struct DEC_DetectorData
 {
    SCIP_CLOCK* clock;                        /**< clock to measure detection time */
-
-   SCIP_Bool blockdiagonal;                  /**< flag to indicate whether the problem is block diagonal */
-   SCIP_Bool setppcinmaster;                 /**< flag to indicate whether setppc constraints should always be in the master */
 };
 
 
@@ -69,66 +72,109 @@ struct DEC_DetectorData
  * Local methods
  */
 
+struct ConsData {
+   SCIP* scip;
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+   const char* conshdlrname;
+
+   ConsData(SCIP* scip_, SCIP_CONS* cons) {
+      scip = scip_;
+      lhs = SCIPgetLhsXXX(scip, cons);
+      rhs = SCIPgetRhsXXX(scip, cons);
+      conshdlrname = SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
+   }
+
+   void print(void)
+   {
+      SCIPdebugMessage("Data: %s, lhs %.3f, rhs %.3f\n", conshdlrname, lhs, rhs);
+   }
+};
+
+typedef struct ConsData CONSDATA;
+
 /* put your local methods here, and declare them static */
-
-/* returns true if the constraint should be a master constraint and false otherwise */
 static
-SCIP_Bool isConsMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< constraint to check */
-   )
+SCIP_DECL_SORTPTRCOMP(sortCons)
 {
-   SCIP_VAR** vars;
-   SCIP_Real* vals;
-   int i;
-   int nvars;
-   SCIP_Bool relevant = TRUE;
-   assert(scip != NULL);
-   assert(cons != NULL);
+   CONSDATA* dat1 = (CONSDATA*)elem1;
+   CONSDATA* dat2 = (CONSDATA*)elem2;
 
-   SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
-
-   if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+   int result = strncmp(dat1->conshdlrname, dat2->conshdlrname, SCIP_MAXSTRLEN);
+   if( result == 0)
    {
-      SCIPdebugPrintf("setcov, part or logicor.\n");
-      return TRUE;
+         if( SCIPisLT(dat1->scip, dat1->lhs, dat2->lhs) )
+            result = -1;
+         else if (SCIPisGT(dat1->scip, dat1->lhs, dat2->lhs) )
+            result = 1;
    }
-   nvars = SCIPgetNVarsXXX(scip, cons);
-   vars = NULL;
-   vals = NULL;
-   if( nvars > 0 )
+   if( result == 0)
    {
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
-      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
-      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
-      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
+         if( SCIPisLT(dat1->scip, dat1->rhs, dat2->rhs) )
+            result = -1;
+         else if (SCIPisGT(dat1->scip, dat1->rhs, dat2->rhs) )
+            result = 1;
    }
 
-   /* check vars and vals for integrality */
-   for( i = 0; i < nvars && relevant; ++i )
-   {
-      assert(vars != NULL);
-      assert(vals != NULL);
-
-      if( !SCIPvarIsIntegral(vars[i]) && !SCIPvarIsBinary(vars[i]) )
-      {
-         SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[i]) );
-         relevant = FALSE;
-      }
-      if( !SCIPisEQ(scip, vals[i], 1.0) )
-      {
-         SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[i]), vals[i] );
-         relevant = FALSE;
-      }
-   }
-
-   /* free temporary data  */
-   SCIPfreeBufferArrayNull(scip, &vals);
-   SCIPfreeBufferArrayNull(scip, &vars);
-
-   SCIPdebugPrintf("%s master\n", relevant ? "in" : "not in");
-   return relevant;
+   //SCIPdebugMessage("1 %s 2\n", result == 0 ? "=": (result < 0 ? "<" : ">"));
+   return result;
 }
+
+static
+SCIP_RETCODE assignConsColors(
+      SCIP*                 scip,               /**< SCIP data structure */
+      SCIP_CONS**           conss,              /**< constraints to assign */
+      int                   nconss,             /**< number of constraints to assign */
+      int*                  colors,             /**< assignment of constrainst to colors */
+      int*                  ncolors             /**< number of colors */
+)
+{
+
+   CONSDATA** colordata;
+   int pos;
+
+   assert(scip != NULL);
+   assert(conss != NULL);
+   assert(nconss > 0);
+   assert(colors != NULL);
+   assert(ncolors != NULL);
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colordata, nconss) );
+   *ncolors = 0;
+   for( int i = 0; i < nconss; ++i )
+   {
+      SCIP_CONS* cons = conss[i];
+      CONSDATA* data = new CONSDATA(scip, cons);
+
+      if( !SCIPsortedvecFindPtr((void**)colordata, sortCons, data, *ncolors, &pos) )
+      {
+         SCIPsortedvecInsertPtr( (void**) colordata, sortCons, data, ncolors, &pos );
+      }
+      else
+         delete data;
+   }
+
+   for( int i = 0; i < *ncolors; ++i)
+   {
+      colordata[i]->print();
+   }
+
+   for( int i = 0; i < nconss; ++i )
+   {
+      SCIP_CONS* cons = conss[i];
+      CONSDATA* data = new CONSDATA(scip, cons);
+
+      SCIPsortedvecFindPtr( (void**) colordata, sortCons, data, *ncolors, &pos);
+      colors[i] = pos;
+      SCIPdebugMessage("Conss <%s> has color %d\n", SCIPconsGetName(conss[i]), pos);
+      delete data;
+   }
+
+   SCIPfreeMemoryArray(scip, &colordata);
+   SCIPdebugMessage("%d colors found\n", *ncolors);
+   return SCIP_OKAY;
+}
+
 
 /** creates array for constraints in the master */
 static
@@ -136,6 +182,8 @@ SCIP_RETCODE createMasterconssArray(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          masterconss,        /**< pointer to return masterconss array */
    int*                  nmasterconss,       /**< pointer to return number of masterconss */
+   int*                  colors,             /**< array of colors for each constraint */
+   std::set<int>         colorset,              /**< color to put into master */
    SCIP_Bool*            masterisempty,      /**< indicates if the master is empty (all constraints in the subproblem) */
    SCIP_Bool*            pricingisempty      /**< indicates if the pricing is empty (all constraints in the master) */
    )
@@ -154,10 +202,11 @@ SCIP_RETCODE createMasterconssArray(
    nconss = SCIPgetNConss(scip);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, masterconss, nconss) );
+   *nmasterconss = 0;
 
    for (i = 0; i < nconss; ++i)
    {
-      if(isConsMaster(scip, conss[i]) )
+      if( colorset.find(colors[i]) != colorset.end() )
       {
          SCIPdebugMessage("Constraint <%s> to be placed in master.\n", SCIPconsGetName(conss[i]));
          (*masterconss)[*nmasterconss] = conss[i];
@@ -183,52 +232,126 @@ SCIP_RETCODE createMasterconssArray(
    return SCIP_OKAY;
 }
 
+
+bool next_bitmask( std::vector<bool>& bit_mask )
+{
+    std::size_t i = 0 ;
+    for( ; ( i < bit_mask.size() ) && bit_mask[i] ; ++i )
+        bit_mask[i] = false ;
+
+    if( i < bit_mask.size() ) { bit_mask[i] = true ; return true ; }
+    else return false ;
+}
+
+void print_subset( std::vector<bool> bit_mask)
+{
+
+        static int cnt = 0 ;
+        std::cout << ++cnt << ". [ " ;
+        for( std::size_t i = 0 ; i < bit_mask.size() ; ++i )
+            if( bit_mask[i] ) std::cout << i << ' ' ;
+        std::cout << "]\n" ;
+}
+
+static
+std::set<int> getSetFromBits(
+   std::vector<bool> bits,
+   int* colors,
+   int ncolors
+   )
+{
+   std::set<int> set;
+   for( size_t i = 0; i < bits.size(); ++i)
+   {
+      if( bits[i] )
+         set.insert(i);
+   }
+   return set;
+}
+
+static int nChooseK(int n, int k)
+{
+   int result = 1;
+   for (int i = 1; i <= k; i++)
+   {
+       result *= n - (k - i);
+       result /= i;
+   }
+   return result;
+}
 /** looks for colors components in the constraints in detectordata */
 static
 SCIP_RETCODE findColorsComponents(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP**          decomp,             /**< decomposition structure */
-   SCIP_Bool             findextended,       /**< whether the classical structure should be detected */
+   DEC_DECOMP***         decomps,            /**< vector of decomposition structure */
+   int*                  ndecomps,           /**< number of decompositions */
    SCIP_RESULT*          result              /**< result pointer to indicate success oder failure */
    )
 {
-   int nconss = 0;
-   SCIP_CONS** conss = NULL;
 
    SCIP_Bool masterisempty;
    SCIP_Bool pricingisempty;
-
-
+   int* colors = NULL;
+   int ncolors = 0;
+   SCIP_CONS** conss = NULL;
+   int nconss = 0;
    assert(scip != NULL);
-   assert(decomp != NULL);
+   assert(decomps != NULL);
+   assert(ndecomps != NULL);
    assert(result != NULL);
 
-   masterisempty = findextended;
-   if( findextended )
+   *ndecomps = 0;
+   *decomps = 0;
+   *result = SCIP_DIDNOTFIND;
+
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colors, SCIPgetNConss(scip)) );
+
+   SCIP_CALL( assignConsColors(scip, SCIPgetConss(scip), SCIPgetNConss(scip), colors, &ncolors) );
+
+   std::vector<bool> bit_mask(ncolors) ;
+
+   SCIP_CALL( SCIPallocMemoryArray(scip, decomps, 1) );
+
+   int nbits = 2;
+
+   for( int subsetsize = 2; subsetsize <= nbits; ++subsetsize)
    {
-      SCIP_CALL( createMasterconssArray(scip, &conss, &nconss, &masterisempty, &pricingisempty) );
-      if( pricingisempty )
+      int size = nChooseK(ncolors, subsetsize);
+
+      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps  + size) );
+
+      do
       {
-         *result = SCIP_DIDNOTFIND;
-         SCIPfreeMemoryArrayNull(scip, &conss);
-         return SCIP_OKAY;
-      }
+         if( std::count( bit_mask.begin(), bit_mask.end(), true ) != subsetsize )
+            continue;
+
+         std::set<int> colorset = getSetFromBits(bit_mask, colors, ncolors);
+#ifdef SCIP_DEBUG
+         SCIPdebugMessage("Colors:");
+         for( std::set<int>::iterator it = colorset.begin(); it != colorset.end(); ++it)
+         {
+            SCIPdebugPrintf(" %d", *it);
+         }
+         SCIPdebugPrintf("\n");
+         print_subset(bit_mask);
+#endif
+         SCIP_CALL( createMasterconssArray(scip, &conss, &nconss, colors, colorset, &masterisempty, &pricingisempty) );
+
+         SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decomps)[*ndecomps]), conss, nconss) );
+         ++(*ndecomps);
+
+      } while( next_bitmask(bit_mask) ) ;
    }
-
-   SCIP_CALL( DECcreateDecompFromMasterconss(scip, decomp, conss, nconss) );
-
-   if( DECdecompGetNBlocks(*decomp) > 1 )
-      *result = SCIP_SUCCESS;
-   else if( DECdecompGetNBlocks(*decomp) == 1 && !masterisempty && findextended )
-      *result = SCIP_SUCCESS;
-   else
+   if(*ndecomps > 0)
    {
-      SCIP_CALL( DECdecompFree(scip, decomp) );
-      decomp = NULL;
-      *result = SCIP_DIDNOTFIND;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps) );
+      *result = SCIP_SUCCESS;
    }
 
-   SCIPfreeMemoryArrayNull(scip, &conss);
+   SCIPfreeMemoryArrayNull(scip, &colors);
+
+
    return SCIP_OKAY;
 }
 
@@ -272,7 +395,6 @@ DEC_DECL_INITDETECTOR(initColors)
    assert(detectordata != NULL);
 
    detectordata->clock = NULL;
-   detectordata->blockdiagonal = FALSE;
 
    SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
 
@@ -283,50 +405,33 @@ DEC_DECL_INITDETECTOR(initColors)
 static
 DEC_DECL_DETECTSTRUCTURE(detectColors)
 {
-   int runs;
-   int i;
-   SCIP_Bool detectextended;
    *result = SCIP_DIDNOTFIND;
-   runs = detectordata->setppcinmaster ? 2:1;
-   detectextended = FALSE;
 
    *ndecdecomps = 0;
    *decdecomps = NULL;
-   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
 
-   for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting colored structure:");
+
+   SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
+   SCIP_CALL( findColorsComponents(scip, decdecomps, ndecdecomps, result) );
+   SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
+
+   SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
+
+   if( *result == SCIP_SUCCESS )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely block diagonal" );
-
-      SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
-      SCIP_CALL( findColorsComponents(scip, &((*decdecomps)[0]), detectextended, result) );
-
-      SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
-
-      SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
-
-      if( *result == SCIP_SUCCESS )
-      {
-         assert((*decdecomps)[0] != NULL);
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
-         detectordata->blockdiagonal = DECdecompGetType((*decdecomps)[0]) == DEC_DECTYPE_DIAGONAL;
-         *ndecdecomps = 1;
-      }
-      else
-      {
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
-      }
-
-      if( detectordata->setppcinmaster == TRUE && *result != SCIP_SUCCESS )
-      {
-         detectextended = TRUE;
-      }
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d decompositions.\n", *ndecdecomps);
+   }
+   else
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
    }
 
    if( *ndecdecomps == 0 )
    {
       SCIPfreeMemoryArrayNull(scip, decdecomps);
    }
+
    return SCIP_OKAY;
 }
 
@@ -349,12 +454,10 @@ SCIP_RETCODE SCIPincludeDetectionColors(
    assert(detectordata != NULL);
 
    detectordata->clock = NULL;
-   detectordata->blockdiagonal = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectColors, initColors, exitColors) );
 
    /* add colors constraint handler parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/colors/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
 
    return SCIP_OKAY;
 }
