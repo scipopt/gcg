@@ -27,10 +27,11 @@
 
 /**@file   dec_colors.c
  * @ingroup DETECTORS
- * @brief  detector for classical and blockdiagonal problems
+ * @brief  detector assigning color classes to constraints and try combinations of colors in the master
  * @author Martin Bergner
- * @todo allow decompositions with only one pricing problem by just removing generalized covering and
- *       partitioning constraints
+ * @todo   allow to set range of subsets
+ * @todo   add parameters for min/max subsets
+ * @todo   allow for a fine grained control (ignore rhs, lhs and only consider constraint handler?)
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -51,12 +52,12 @@
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "colors"    /**< name of detector */
-#define DEC_DESC                 "Detector for classical and block diagonal problems" /**< description of detector*/
+#define DEC_DESC                 "Detector according to color classes" /**< description of detector*/
 #define DEC_PRIORITY             0              /**< priority of the detector */
-#define DEC_DECCHAR              'C'            /**< display character of detector */
+#define DEC_DECCHAR              'k'            /**< display character of detector */
 
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
-#define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
+#define DEC_ENABLED              FALSE           /**< should the detection be enabled */
+
 /*
  * Data structures
  */
