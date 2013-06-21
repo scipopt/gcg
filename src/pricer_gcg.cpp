@@ -2037,19 +2037,19 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGrelaxGetNPricingprobs(origprob);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nraysprob), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->nraysprob), pricerdata->npricingprobs) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkascallsdist), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkasfoundvars), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->farkasnodetimedist), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->farkascallsdist), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->farkasfoundvars), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->farkasnodetimedist), pricerdata->npricingprobs) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostcallsdist), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostfoundvars), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->redcostnodetimedist), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->redcostcallsdist), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->redcostfoundvars), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->redcostnodetimedist), pricerdata->npricingprobs) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->npricingprobs) );
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->nodetimehist), PRICER_STAT_ARRAYLEN_TIME) ); /*lint !e506*/
    SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->foundvarshist), PRICER_STAT_ARRAYLEN_VARS) ); /*lint !e506*/
@@ -2088,9 +2088,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    }
 
    /* alloc memory for arrays of reduced cost */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->score), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->permu), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->score), pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->permu), pricerdata->npricingprobs) );
 
    /* alloc memory for solution values of variables in pricing problems */
    norigvars = SCIPgetNOrigVars(origprob);
@@ -2151,21 +2151,25 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 
-   SCIPfreeMemoryArray(scip, &(pricerdata->pricingprobs));
-   SCIPfreeMemoryArray(scip, &(pricerdata->dualsolconv));
-   SCIPfreeMemoryArray(scip, &(pricerdata->score));
-   SCIPfreeMemoryArray(scip, &(pricerdata->permu));
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->nraysprob), pricerdata->npricingprobs);
+
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->farkascallsdist), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->farkasfoundvars), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->farkasnodetimedist), pricerdata->npricingprobs);
+
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->redcostcallsdist), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->redcostfoundvars), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->redcostnodetimedist), pricerdata->npricingprobs);
+
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->npricingprobs);
+
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->score), pricerdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->permu), pricerdata->npricingprobs);
+
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
-   SCIPfreeMemoryArray(scip, &(pricerdata->npointsprob));
-   SCIPfreeMemoryArray(scip, &(pricerdata->nraysprob));
-
-   SCIPfreeMemoryArray(scip, &(pricerdata->farkascallsdist));
-   SCIPfreeMemoryArray(scip, &(pricerdata->farkasfoundvars));
-   SCIPfreeMemoryArray(scip, &(pricerdata->farkasnodetimedist));
-
-   SCIPfreeMemoryArray(scip, &(pricerdata->redcostcallsdist));
-   SCIPfreeMemoryArray(scip, &(pricerdata->redcostfoundvars));
-   SCIPfreeMemoryArray(scip, &(pricerdata->redcostnodetimedist));
 
    SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
    SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));

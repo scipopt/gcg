@@ -753,18 +753,18 @@ static GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    solverdata->npricingprobs = GCGrelaxGetNPricingprobs(solverdata->origprob);
    npricingprobs = solverdata->npricingprobs;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->cpxenv), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->lp), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->created), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nupdates), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cpxenv), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->lp), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->created), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->nupdates), npricingprobs) );
    BMSclearMemoryArray(solverdata->created, npricingprobs);
    BMSclearMemoryArray(solverdata->nupdates, npricingprobs);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->pricingprobs), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->pricingvars), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->pricingconss), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->npricingvars), npricingprobs) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(solverdata->nbasicpricingconss), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->pricingprobs), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->pricingvars), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->pricingconss), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->npricingvars), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), npricingprobs) );
    BMSclearMemoryArray(solverdata->npricingvars, npricingprobs);
    BMSclearMemoryArray(solverdata->nbasicpricingconss, npricingprobs);
 
@@ -820,16 +820,16 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
       }
    }
 
-   SCIPfreeMemoryArray(scip, &(solverdata->nbasicpricingconss));
-   SCIPfreeMemoryArray(scip, &(solverdata->npricingvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->pricingconss));
-   SCIPfreeMemoryArray(scip, &(solverdata->pricingvars));
-   SCIPfreeMemoryArray(scip, &(solverdata->pricingprobs));
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->npricingvars), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingconss), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingvars), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingprobs), solverdata->npricingprobs);
 
-   SCIPfreeMemoryArray(scip, &(solverdata->nupdates));
-   SCIPfreeMemoryArray(scip, &(solverdata->created));
-   SCIPfreeMemoryArray(scip, &(solverdata->lp));
-   SCIPfreeMemoryArray(scip, &(solverdata->cpxenv));
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->nupdates), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->created), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->lp), solverdata->npricingprobs);
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->cpxenv), solverdata->npricingprobs);
 
    return SCIP_OKAY;
 }
