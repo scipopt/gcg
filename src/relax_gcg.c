@@ -1245,12 +1245,12 @@ SCIP_RETCODE initRelaxProblemdata(
 
    if( relaxdata->npricingprobs > 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs) );
 
       /* array for saving convexity constraints belonging to one of the pricing problems */
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->convconss), relaxdata->npricingprobs) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->convconss), relaxdata->npricingprobs) );
    }
 
    SCIP_CALL( SCIPhashmapCreate(&(relaxdata->hashorig2origvar), SCIPblkmem(scip), 10*SCIPgetNVars(scip)+1) );
@@ -2027,7 +2027,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->origmasterconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->linearmasterconss));
    SCIPfreeMemoryArrayNull(scip, &(relaxdata->masterconss));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->convconss));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->convconss), relaxdata->npricingprobs);
 
    /* free master problem */
    if( relaxdata->masterprob != NULL )
@@ -2040,9 +2040,9 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
    }
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->pricingprobs));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->blockrepresentative));
-   SCIPfreeMemoryArrayNull(scip, &(relaxdata->nblocksidentical));
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    /* free solutions */
    if( relaxdata->currentorigsol != NULL )
