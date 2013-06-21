@@ -695,7 +695,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 /** set all pricing problem limits */
 SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    int                   prob,               /**< index of the pricing problem */
-   SCIP_Bool             optimal            /**< heuristic or optimal pricing */
+   SCIP_Bool             optimal             /**< heuristic or optimal pricing */
    )
 {
    assert(pricerdata != NULL);
@@ -738,7 +738,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
 
    *status = SCIP_STATUS_UNKNOWN;
 
-   for( i = 0; i < pricerdata->nsolvers; i++ )
+   for( i = 0; i < pricerdata->nsolvers && SCIPgetStage(pricerdata->pricingprobs[prob]) < SCIP_STAGE_SOLVED; i++ )
    {
       SCIP_CLOCK* clock;
       int* calls;
