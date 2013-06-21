@@ -2494,3 +2494,13 @@ SCIP_RETCODE DECevaluateDecomposition(
 
    return SCIP_OKAY;
 }
+
+/** display statistics about the decomposition */
+SCIP_RETCODE GCGprintDecompStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   )
+{
+
+   return SCIP_OKAY;
+}

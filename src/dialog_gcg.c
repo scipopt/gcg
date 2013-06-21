@@ -180,6 +180,9 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
    SCIP_CALL( SCIPprintStatistics(scip, NULL) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
    SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), NULL) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
+   SCIP_CALL( GCGprintDecompStatistics(scip, NULL) );
+
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;

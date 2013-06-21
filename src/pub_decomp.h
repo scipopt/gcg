@@ -402,6 +402,12 @@ SCIP_RETCODE DECevaluateDecomposition(
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    );
 
+/** display statistics about the decomposition */
+extern
+SCIP_RETCODE GCGprintDecompStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   );
 
 #ifdef __cplusplus
 }
