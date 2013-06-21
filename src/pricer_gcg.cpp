@@ -2163,7 +2163,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->redcostfoundvars), pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->redcostnodetimedist), pricerdata->npricingprobs);
 
-   SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->npricingprobs);
 
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->score), pricerdata->npricingprobs);
@@ -2193,7 +2192,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    {
       SCIPfreeMemoryArrayNull(scip, &(pricerdata->realdualvalues[i]));
    }
-   SCIPfreeMemoryArrayNull(scip, &pricerdata->realdualvalues);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->npricingprobs);
 
    return SCIP_OKAY;
 }
