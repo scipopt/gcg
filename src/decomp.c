@@ -2493,6 +2493,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int* nintvars;
    int* nimplvars;
    int* ncontvars;
+
    int nprobs;
    int nlinkvars;
    int nlinkbinvar;
@@ -2505,6 +2506,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    decomp = DECgetBestDecomp(scip);
    assert(decomp != NULL);
    nprobs = DECdecompGetNBlocks(decomp);
+
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nvars, nprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nintvars, nprobs) );
@@ -2512,6 +2514,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nprobs) );
 
    SCIP_CALL( DECevaluateDecomposition(scip, decomp, &scores) );
+
    DECgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, nprobs);
    DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
 
@@ -2520,17 +2523,17 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", DECdetectorGetName(decomp->detector));
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nMaster statistics:\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterconss      : %10lld\n", DECdecompGetNLinkingconss(decomp));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastervars       : %10lld\n", nlinkvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterbinvar     : %10lld\n", nlinkbinvar);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterintvars    : %10lld\n", nlinkintvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterimplvars   : %10lld\n", nlinkimplvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastercontvars   : %10lld\n", nlinkcontvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterconss      : %10d\n", DECdecompGetNLinkingconss(decomp));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastervars       : %10d\n", nlinkvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterbinvar     : %10d\n", nlinkbinvar);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterintvars    : %10d\n", nlinkintvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterimplvars   : %10d\n", nlinkimplvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastercontvars   : %10d\n", nlinkcontvars);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nPricing statistics:      nvars   nbinvars   nintvars  nimplvars  ncontvars\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nPricing statistics:       nvars   nbinvars   nintvars  nimplvars  ncontvars\n");
    for( b = 0; b < nprobs; ++b)
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10lld %10lld %10lld %10lld %10lld %10lld\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b]);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b]);
    }
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Scores             :\n");
