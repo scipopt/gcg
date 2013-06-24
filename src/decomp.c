@@ -2501,6 +2501,12 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int nlinkimplvars;
    int nlinkcontvars;
    int b;
+
+   int* varprobdensity;
+   int* varmasterdensity;
+   int* consprobsensity;
+   int* consmasterdensity;
+
    assert(scip != NULL);
 
    decomp = DECgetBestDecomp(scip);
@@ -2513,33 +2519,40 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nimplvars, nprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nprobs) );
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varprobdensity, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varmasterdensity, SCIPgetNVars(scip)) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consmasterdensity, SCIPgetNConss(scip)) );
+
    SCIP_CALL( DECevaluateDecomposition(scip, decomp, &scores) );
 
    DECgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, nprobs);
    DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
+   SCIP_CALL( DECgetDensityData(scip, decomp, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDecomposition statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", DECdetectorGetName(decomp->detector));
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nMaster statistics:\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterconss      : %10d\n", DECdecompGetNLinkingconss(decomp));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastervars       : %10d\n", nlinkvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterbinvar     : %10d\n", nlinkbinvar);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterintvars    : %10d\n", nlinkintvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterimplvars   : %10d\n", nlinkimplvars);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastercontvars   : %10d\n", nlinkcontvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d\n", nlinkvars, nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp));
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nPricing statistics:       nvars   nbinvars   nintvars  nimplvars  ncontvars\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss\n");
    for( b = 0; b < nprobs; ++b)
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b]);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b], DECdecompGetNSubscipconss(decomp)[b]);
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Scores             :\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp Scores      :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  border area      : %10.3f\n", scores.borderscore);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  avg. density     : %10.3f\n", scores.densityscore);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  linking score    : %10.3f\n", scores.linkingscore);
+
+   SCIPfreeBlockMemoryArray(scip, &varprobdensity, SCIPgetNVars(scip));
+   SCIPfreeBlockMemoryArray(scip, &varmasterdensity, SCIPgetNVars(scip));
+   SCIPfreeBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip));
+   SCIPfreeBlockMemoryArray(scip, &consmasterdensity, SCIPgetNConss(scip));
+
 
    SCIPfreeBlockMemoryArray(scip, &nvars, nprobs);
    SCIPfreeBlockMemoryArray(scip, &nbinvars, nprobs);
