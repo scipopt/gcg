@@ -38,6 +38,10 @@
 #include <cassert>
 #include <cstring>
 
+
+#include "scip/scip.h"
+#include "gcg.h"
+
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
 
@@ -54,7 +58,6 @@
 #include "objpricer_gcg.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-#include "scip/scip.h"
 
 using gcg::Stabilization;
 #ifdef _OPENMP

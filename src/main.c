@@ -43,9 +43,10 @@
 #include "scip/scipshell.h"
 #include "gcgplugins.h"
 #include "cons_decomp.h"
+
 #include "gcggithash.h"
 #include "relax_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg.h"
 
 #if SCIP_VERSION < 300
 #error GCG can only be compiled with SCIP version 3.0.0 or higher
@@ -173,14 +174,9 @@ SCIP_RETCODE fromCommandLine(
     **************/
 
    SCIPinfoMessage(scip, NULL, "\nStatistics\n");
-   SCIPinfoMessage(scip, NULL, "==========\n\n");
+   SCIPinfoMessage(scip, NULL, "==========\n");
 
-   SCIPinfoMessage(scip, NULL, "Master Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), NULL) );
-   SCIPinfoMessage(scip, NULL, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, NULL) );
-   SCIPinfoMessage(scip, NULL, "\n");
-   SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), NULL) );
+   SCIP_CALL( GCGprintStatistics(scip, NULL) );
 
    return SCIP_OKAY;
 }

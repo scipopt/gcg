@@ -34,6 +34,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#include "gcg.h"
 #include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "relax_gcg.h"
@@ -1362,4 +1363,94 @@ void GCGupdateVarStatistics(
    GCGsetGap(origprob, newvar, MIN(SCIPgetGap(origprob), SCIPgetGap(scip))); /*lint !e666*/
    GCGsetRedcost(origprob, newvar, redcost);
 
+}
+
+/**  prints the given variable: name, type (original, master or pricing) block number,
+ * and the list of all variables related to the given variable
+ */
+void GCGprintVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File to write information to, or NULL for stdout */
+   SCIP_VAR*             var                 /**< variable that should be printed */
+   )
+{
+   int i;
+   int blocknr;
+   assert(GCGvarIsOriginal(var) || GCGvarIsMaster(var) || GCGvarIsPricing(var));
+
+   blocknr = GCGvarGetBlock(var);
+
+   if( GCGvarIsOriginal(var) )
+   {
+      SCIP_VAR** mastervars;
+      SCIP_Real* mastervals;
+      int  nmastervars;
+
+      if( GCGvarIsLinking(var) )
+      {
+         SCIP_VAR** pricingvars;
+         int nblocks;
+         int j;
+         pricingvars = GCGlinkingVarGetPricingVars(var);
+         nblocks = GCGlinkingVarGetNBlocks(var);
+         SCIPinfoMessage(scip, file, "Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
+         /*lint --e{440}*/
+         for( i = 0, j = 0; j < nblocks; ++i )
+         {
+            if( pricingvars[i] != NULL )
+            {
+               SCIPinfoMessage(scip, file, "%d ", i);
+               ++j;
+            }
+         }
+         SCIPinfoMessage(scip, file, ")\n");
+      }
+      else
+      {
+         SCIPinfoMessage(scip, file, "Variable %s (original): block %d\n", SCIPvarGetName(var), blocknr);
+      }
+
+      mastervars = GCGoriginalVarGetMastervars(var);
+      mastervals = GCGoriginalVarGetMastervals(var);
+      nmastervars = GCGoriginalVarGetNMastervars(var);
+      SCIPinfoMessage(scip, file, "mastervars:");
+      for( i = 0; i < nmastervars-1; i++ )
+      {
+         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(mastervars[i]), mastervals[i]);
+      }
+      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(mastervars[nmastervars-1]), mastervals[nmastervars-1]);
+   }
+   else if( GCGvarIsPricing(var) )
+   {
+      SCIP_VAR** origvars;
+      int  norigvars;
+
+      origvars = GCGpricingVarGetOrigvars(var);
+      norigvars = GCGpricingVarGetNOrigvars(var);
+
+      SCIPinfoMessage(scip, file, "Variable %s (pricing): block %d\n", SCIPvarGetName(var), blocknr);
+      SCIPinfoMessage(scip, file, "origvars:");
+      for( i = 0; i < norigvars-1; i++ )
+      {
+         SCIPinfoMessage(scip, file, "%s, ", SCIPvarGetName(origvars[i]));
+      }
+      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(origvars[norigvars-1]));
+   }
+   else if( GCGvarIsMaster(var) )
+   {
+      SCIP_VAR** origvars;
+      int  norigvars;
+      SCIP_Real* origvals;
+
+      origvars = GCGmasterVarGetOrigvars(var);
+      norigvars = GCGmasterVarGetNOrigvars(var);
+      origvals = GCGmasterVarGetOrigvals(var);
+      SCIPinfoMessage(scip, file, "Variable %s (master): block %d\n", SCIPvarGetName(var), blocknr);
+      SCIPinfoMessage(scip, file, "origvars:");
+      for( i = 0; i < norigvars-1; i++ )
+      {
+         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
+      }
+      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
+   }
 }

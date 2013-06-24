@@ -248,7 +248,7 @@ SCIP_RETCODE createNewSol(
     * @todo GCG does not recognize that the solution comes from this heuristic */
    SCIP_CALL( SCIPcreateSol(scip, &newmastersol, heur) );
    SCIP_CALL( SCIPsetSolVals(scip, newmastersol, nmastervars, mastervars, restmastervals) );
-   SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, newmastersol, &newsol) );
 
    /* try to add new solution to original problem and free it immediately */
 #ifdef SCIP_DEBUG

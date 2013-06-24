@@ -273,7 +273,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
       /* transform the original variables to master variables and add them to the cut */
-      GCGrelaxTransformOrigvalsToMastervals(GCGpricerGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+      GCGtransformOrigvalsToMastervals(GCGpricerGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */
