@@ -37,7 +37,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "decomp.h"
-#include "pub_decomp.h"
+#include "gcg.h"
+#include "cons_decomp.h"
 #include "scip/scip.h"
 #include "struct_decomp.h"
 #include "scip_misc.h"
@@ -1483,22 +1484,6 @@ SCIP_RETCODE DECdecompCheckConsistency(
    return SCIP_OKAY;
 }
 
-/** returns whether the constraint belongs to GCG or not */
-SCIP_Bool GCGisConsGCGCons(
-   SCIP_CONS*            cons                /**< constraint to check */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   assert(cons != NULL);
-   conshdlr = SCIPconsGetHdlr(cons);
-   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
-      return TRUE;
-
-   return FALSE;
-}
-
 /** creates a decomposition with all constraints in the master */
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
@@ -2501,6 +2486,63 @@ SCIP_RETCODE GCGprintDecompStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
    )
 {
+   DEC_DECOMP* decomp;
+   DEC_SCORES scores;
+   int* nvars;
+   int* nbinvars;
+   int* nintvars;
+   int* nimplvars;
+   int* ncontvars;
+   int nprobs;
+   int nlinkvars;
+   int nlinkbinvar;
+   int nlinkintvars;
+   int nlinkimplvars;
+   int nlinkcontvars;
+   int b;
+   assert(scip != NULL);
+
+   decomp = DECgetBestDecomp(scip);
+   assert(decomp != NULL);
+   nprobs = DECdecompGetNBlocks(decomp);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nvars, nprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nintvars, nprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nimplvars, nprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nprobs) );
+
+   SCIP_CALL( DECevaluateDecomposition(scip, decomp, &scores) );
+   DECgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, nprobs);
+   DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nDecomposition statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", DECdetectorGetName(decomp->detector));
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nMaster statistics:\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterconss      : %10lld\n", DECdecompGetNLinkingconss(decomp));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastervars       : %10lld\n", nlinkvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterbinvar     : %10lld\n", nlinkbinvar);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterintvars    : %10lld\n", nlinkintvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  masterimplvars   : %10lld\n", nlinkimplvars);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  mastercontvars   : %10lld\n", nlinkcontvars);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nPricing statistics:      nvars   nbinvars   nintvars  nimplvars  ncontvars\n");
+   for( b = 0; b < nprobs; ++b)
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10lld %10lld %10lld %10lld %10lld %10lld\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b]);
+   }
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Scores             :\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  border area      : %10.3f\n", scores.borderscore);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  avg. density     : %10.3f\n", scores.densityscore);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  linking score    : %10.3f\n", scores.linkingscore);
+
+   SCIPfreeBlockMemoryArray(scip, &nvars, nprobs);
+   SCIPfreeBlockMemoryArray(scip, &nbinvars, nprobs);
+   SCIPfreeBlockMemoryArray(scip, &nintvars, nprobs);
+   SCIPfreeBlockMemoryArray(scip, &nimplvars, nprobs);
+   SCIPfreeBlockMemoryArray(scip, &ncontvars, nprobs);
 
    return SCIP_OKAY;
 }
