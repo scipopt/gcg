@@ -27,7 +27,6 @@
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "pub_gcgvar.h"
-#include "event_genericbranchvaradd.h"
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
@@ -51,6 +50,11 @@
 #define BRANCHRULE_PRIORITY      99
 #define BRANCHRULE_MAXDEPTH      -1
 #define BRANCHRULE_MAXBOUNDDIST  1.0
+
+
+#define EVENTHDLR_NAME         "genericbranchvaradd"
+#define EVENTHDLR_DESC         "event handler for adding a new generated mastervar into the right branching constraints by using Vanderbecks generic branching scheme"
+
 
 struct GCG_BranchData
 {
@@ -82,6 +86,176 @@ typedef struct GCG_Record GCG_RECORD;
 #define branchExitGeneric NULL
 #define branchInitsolGeneric NULL
 #define branchExitsolGeneric NULL
+
+/** initialization method of event handler (called after problem was transformed) */
+static
+SCIP_DECL_EVENTINIT(eventInitGenericbranchvaradd)
+{  /*lint --e{715}*/
+    assert(scip != NULL);
+    assert(eventhdlr != NULL);
+    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+    /* notify SCIP that your event handler wants to react on the event type */
+    SCIP_CALL( SCIPcatchEvent( scip, SCIP_EVENTTYPE_VARADDED, eventhdlr, NULL, NULL) );
+
+    return SCIP_OKAY;
+}
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+static
+SCIP_DECL_EVENTEXIT(eventExitGenericbranchvaradd)
+{  /*lint --e{715}*/
+    assert(scip != NULL);
+    assert(eventhdlr != NULL);
+    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+    /* notify SCIP that your event handler wants to drop the event type */
+    SCIP_CALL( SCIPdropEvent( scip, SCIP_EVENTTYPE_VARADDED, eventhdlr, NULL, -1) );
+
+    return SCIP_OKAY;
+}
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
+{  /*lint --e{715}*/
+   SCIP* origscip;
+   SCIP_CONS* masterbranchcons;
+   SCIP_CONS* parentcons;
+   SCIP_Bool varinS;
+   SCIP_VAR* mastervar;
+   SCIP_VAR** allorigvars;
+   SCIP_VAR** mastervars;
+   GCG_BRANCHDATA* branchdata;
+   int p;
+   int allnorigvars;
+   int nmastervars;
+
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+   assert(event != NULL);
+   assert(scip != NULL);
+   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_VARADDED);
+
+   varinS = TRUE;
+   p = 0;
+   mastervar = SCIPeventGetVar(event);
+
+   origscip = GCGpricerGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   /* SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
+
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
+   assert(masterbranchcons != NULL);
+   SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+
+   parentcons = masterbranchcons;
+   branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
+   if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ))
+   {
+
+      while( parentcons != NULL && branchdata != NULL
+            && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
+      {
+         SCIP_Bool blockfound;
+         SCIP_VAR** pricingvars;
+         int k;
+
+         if(GCGconsMasterbranchGetbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0)
+            break;
+
+         if(GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
+            break;
+
+         assert(branchdata != NULL);
+
+         varinS = TRUE;
+
+         if( (GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) && GCGvarGetBlock(mastervar) != -1)
+               || (GCGvarGetBlock(mastervar) == -1 && !GCGvarIsLinking(mastervar)) )
+         {
+            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+
+            if(parentcons != NULL)
+               branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
+            continue;
+         }
+
+         blockfound = TRUE;
+
+         if( GCGvarGetBlock(mastervar) == -1 )
+         {
+            assert( GCGvarIsLinking(mastervar) );
+            blockfound = FALSE;
+
+            pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+            assert(pricingvars != NULL );
+
+            for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
+            {
+               if( pricingvars[k] != NULL )
+               {
+                  if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
+                  {
+                     blockfound = TRUE;
+                     break;
+                  }
+               }
+            }
+         }
+         if( !blockfound )
+         {
+            parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+
+            if(parentcons != NULL)
+               branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
+            continue;
+         }
+
+
+        /*  SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata)); */
+
+         for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
+         {
+            SCIP_Real generatorentry;
+
+            generatorentry = getGeneratorEntry(mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
+
+            if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
+            {
+               if( SCIPisLT(scip, generatorentry, GCGbranchGenericBranchdataGetConsS(branchdata)[p].bound) )
+               {
+                  varinS = FALSE;
+                  break;
+               }
+            }
+            else
+            {
+               if( SCIPisGE(scip, generatorentry, GCGbranchGenericBranchdataGetConsS(branchdata)[p].bound) )
+               {
+                  varinS = FALSE;
+                  break;
+               }
+            }
+         }
+         if( varinS )
+         {
+            SCIPdebugMessage("mastervar is added\n");
+            SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
+         }
+
+         parentcons = GCGconsMasterbranchGetParentcons(parentcons);
+         branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+      }
+   }
+
+   return SCIP_OKAY;
+}
 
 /*
  * branching specific interface methods
@@ -1984,7 +2158,6 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_Real L;
    SCIP_Real lhs;
    SCIP_Real lhsSum;
-   SCIP_Real identicalcontrol;
    int nmastervars;
    int nmastervars2;
    int ncopymastervars;
@@ -2003,7 +2176,6 @@ SCIP_RETCODE createChildNodesGeneric(
    lhs = 0;
    lhsSum = 0;
    nchildnodes = 0;
-   identicalcontrol = 0;
    p = 0;
    k = 0;
    i = 0;
@@ -3525,7 +3697,10 @@ SCIP_RETCODE SCIPincludeBranchruleGeneric(
          branchruledata) );
 
    /* include event handler for adding generated mastervars to the branching constraints */
-   SCIP_CALL( SCIPincludeEventHdlrGenericbranchvaradd(scip) );
+   SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
+         NULL, NULL, eventInitGenericbranchvaradd, eventExitGenericbranchvaradd,
+         NULL, NULL, NULL, eventExecGenericbranchvaradd,
+         NULL) );
 
    return SCIP_OKAY;
 }
