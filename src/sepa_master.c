@@ -38,6 +38,7 @@
 #include "scip/scip.h"
 #include "scip/lp.h"
 #include "sepa_master.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 

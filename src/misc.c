@@ -38,6 +38,7 @@
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
 
+#include <string.h>
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */

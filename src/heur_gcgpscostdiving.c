@@ -39,6 +39,7 @@
 #include "heur_gcgpscostdiving.h"
 
 #include "cons_origbranch.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 

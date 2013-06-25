@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "heur_restmaster.h"
+#include "gcg.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 

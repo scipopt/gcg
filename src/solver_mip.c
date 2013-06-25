@@ -40,7 +40,7 @@
 #include "solver_mip.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
-#include "type_solver.h"
+#include "gcg.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "scip/scipdefplugins.h"
