@@ -595,7 +595,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
 /** initializes the pointers to the appropriate structures */
 SCIP_RETCODE ObjPricerGcg::getSolverPointers(
    GCG_SOLVER*           solver,             /**< pricing solver */
-   PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
+   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
    int**                 calls,              /**< calls belonging to this setting */
@@ -695,6 +695,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 /** set all pricing problem limits */
 SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    int                   prob,               /**< index of the pricing problem */
+   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
    SCIP_Bool             optimal             /**< heuristic or optimal pricing */
    )
 {
@@ -702,9 +703,13 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
    assert(prob >= 0 && prob < pricerdata->npricingprobs);
 
    /** @todo set objective limit, such that only solutions with negative reduced costs are accepted? */
-   if( !optimal )
+   if( !optimal && pricetype->getType() == GCG_PRICETYPE_REDCOST )
    {
       SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], pricerdata->dualsolconv[prob]) );
+   }
+   else
+   {
+      SCIP_CALL( SCIPsetObjlimit(pricerdata->pricingprobs[prob], SCIPinfinity(pricerdata->pricingprobs[prob])) );
    }
 
    SCIP_CALL( setPricingProblemTimelimit(pricerdata->pricingprobs[prob]) );
@@ -718,7 +723,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemLimits(
  */
 SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
    int                   prob,               /**< index of pricing problem */
-   PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
+   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
    SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
    SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
    SCIP_SOL**            sols,               /**< pointer to store solutions */
@@ -747,7 +752,7 @@ SCIP_RETCODE ObjPricerGcg::solvePricingProblem(
 
       #pragma omp critical (limits)
       {
-         retcode = setPricingProblemLimits(prob, optimal);
+         retcode = setPricingProblemLimits(prob, pricetype, optimal);
       }
       SCIP_CALL( retcode );
 
@@ -1440,7 +1445,7 @@ void ObjPricerGcg::sortPricingProblemsByScore()
 
 /** returns whether pricing can be aborted */
 SCIP_Bool ObjPricerGcg::abortPricing(
-   PricingType*          pricetype,          /**< type of pricing*/
+   PricingType*          pricetype,          /**< type of pricing */
    int                   nfoundvars,         /**< number of variables found so far */
    int                   solvedmips,         /**< number of MIPS solved so far */
    int                   successfulmips,     /**< number of successful mips solved so far */
@@ -2264,7 +2269,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    assert(pricerdata != NULL);
 
    /** @todo This is just a workaround around SCIP stages! */
-   if(reducedcostpricing->getCalls() == 0  && farkaspricing->getCalls() == 0 )
+   if( reducedcostpricing->getCalls() == 0 && farkaspricing->getCalls() == 0 )
    {
       SCIP_CALL( SCIPconsMasterbranchAddRootCons(scip) );
    }

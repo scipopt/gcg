@@ -241,7 +241,8 @@ private:
    /** set all pricing problem limits */
    SCIP_RETCODE setPricingProblemLimits(
       int                   prob,               /**< index of the pricing problem */
-      SCIP_Bool             optimal            /**< heuristic or optimal pricing */
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      SCIP_Bool             optimal             /**< heuristic or optimal pricing */
       );
 
    /** solves a specific pricing problem
