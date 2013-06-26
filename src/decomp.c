@@ -46,6 +46,76 @@
 #include <assert.h>
 #include <string.h>
 
+typedef struct {
+   SCIP_Real mean;
+   SCIP_Real median;
+   SCIP_Real max;
+   SCIP_Real min;
+} DEC_STATISTIC;
+
+#define ELEM_SWAP(a,b) { register SCIP_Real t=(a);(a)=(b);(b)=t; }
+
+static
+SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
+{
+   unsigned int low, high;
+   unsigned int median;
+   unsigned int middle, ll, hh;
+   low = 0;
+   high = n - 1;
+   median = (low + high) / 2;
+
+   for( ;; )
+   {
+      if( high <= low ) /* One element only */
+         return arr[median];
+
+      if( high == low + 1 ) /* Two elements only */
+      {
+         if( arr[low] > arr[high] )
+            ELEM_SWAP(arr[low], arr[high]);
+         return arr[median];
+      }
+
+      /* Find median of low, middle and high items; swap into position low */
+      middle = (low + high) / 2;
+      if( arr[middle] > arr[high] )
+         ELEM_SWAP(arr[middle], arr[high]);
+      if( arr[low] > arr[high] )
+         ELEM_SWAP(arr[low], arr[high]);
+      if( arr[middle] > arr[low] )
+         ELEM_SWAP(arr[middle], arr[low]);
+      /* Swap low item (now in position middle) into position (low+1) */
+      ELEM_SWAP(arr[middle], arr[low + 1]);
+      /* Nibble from each end towards middle, swapping items when stuck */
+      ll = low + 1;
+      hh = high;
+      for( ;; )
+      {
+         do
+            ll++;
+         while( arr[low] > arr[ll] );
+         do
+            hh--;
+         while( arr[hh] > arr[low] );
+         if( hh < ll )
+            break;
+         ELEM_SWAP(arr[ll], arr[hh]);
+      }
+      /* Swap middle item (in position low) back into correct position */
+      ELEM_SWAP(arr[low], arr[hh]);
+
+      /* Re-set active partition */
+      if( hh <= median )
+         low = ll;
+      if( hh >= median )
+         high = hh - 1;
+   }
+
+   return arr[median];
+}
+
+
 /** fill out subscipvars arrays from the information from vartoblock */
 static
 SCIP_RETCODE fillOutVarsFromVartoblock(
@@ -2480,6 +2550,111 @@ SCIP_RETCODE DECevaluateDecomposition(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE computeVarDensities(
+      SCIP*              scip,               /**< SCIP data structure */
+      DEC_DECOMP*        decomp,             /**< decomposition data structure */
+      int*               varprobdensity,     /**< density information */
+      int*               varmasterdensity,     /**< density information */
+      SCIP_VAR**         vars,               /**< */
+      int                nvars,              /**< */
+      DEC_STATISTIC*     blockvardensities,  /**< */
+      DEC_STATISTIC*     mastervardensity,   /**< */
+      int                nblocks             /**< */
+   )
+{
+   int v;
+   int b;
+   SCIP_Real** vardistribution;
+   int* nvardistribution;
+   SCIP_Real* mastervardistribution;
+   int nmasterdist;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+
+   assert(vars != NULL);
+   assert(nvars > 0);
+   assert(blockvardensities != NULL);
+   assert(mastervardensity != NULL);
+   assert(nblocks >= 0);
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nvardistribution, nblocks) );
+
+   BMSclearMemoryArray(vardistribution, nblocks);
+   BMSclearMemoryArray(nvardistribution, nblocks);
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &mastervardistribution, DECdecompGetNLinkingvars(decomp)) );
+   BMSclearMemoryArray(mastervardistribution, DECdecompGetNLinkingvars(decomp));
+
+   for( b = 0; b < nblocks; ++b)
+   {
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]) );
+      BMSclearMemoryArray(vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
+   }
+
+   for( v = 0; v < nvars; ++v)
+   {
+      int block = GCGvarGetBlock(vars[v]);
+      SCIPdebugMessage("Var <%s>:", SCIPvarGetName(vars[v]));
+
+      if( block < 0 )
+      {
+         mastervardistribution[nmasterdist] = 1.0*varmasterdensity[v]/DECdecompGetNLinkingconss(decomp);
+         SCIPdebugPrintf("master %.3f\n", mastervardistribution[nmasterdist]);
+         ++nmasterdist;
+      }
+      else
+      {
+         vardistribution[block][nvardistribution[block]] = 1.0*varprobdensity[v]/DECdecompGetNSubscipconss(decomp)[block];
+         SCIPdebugPrintf("block %d %.3f\n", block, vardistribution[block][nvardistribution[block]]);
+         ++(nvardistribution[block]);
+      }
+   }
+
+   for( b = 0; b < nblocks; ++b)
+   {
+      SCIP_Real max = 0;
+      SCIP_Real min = 1.0;
+      SCIP_Real median = 0;
+      SCIP_Real mean = 0;
+      int count = DECdecompGetNSubscipvars(decomp)[b];
+
+      SCIPdebugMessage("block %d:", b);
+      for( v = 0; v < count; ++v)
+      {
+
+         SCIPdebugPrintf(" <%s> %.3f", SCIPvarGetName(DECdecompGetSubscipvars(decomp)[b][v]), vardistribution[b][v]);
+         max = MAX(max, vardistribution[b][v]);
+         min = MIN(min, vardistribution[b][v]);
+         mean += 1.0*vardistribution[b][v]/count;
+
+      }
+      median = quick_select_median(vardistribution[b], count);
+      SCIPdebugPrintf("\nmin: %.3f, max: %.3f, median: %.3f, mean: %.3f\n", min, max, median, mean);
+
+      blockvardensities[b].max = max;
+      blockvardensities[b].min = min;
+      blockvardensities[b].median = median;
+      blockvardensities[b].mean = mean;
+   }
+
+
+   for( b = 0; b < nblocks; ++b)
+   {
+      SCIPfreeBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
+   }
+
+   SCIPfreeBlockMemoryArray(scip, &mastervardistribution, DECdecompGetNLinkingvars(decomp));
+
+   SCIPfreeBlockMemoryArray(scip, &nvardistribution, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &vardistribution, nblocks);
+
+   return SCIP_OKAY;
+}
+
+
 /** display statistics about the decomposition */
 SCIP_RETCODE GCGprintDecompStatistics(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -2488,13 +2663,19 @@ SCIP_RETCODE GCGprintDecompStatistics(
 {
    DEC_DECOMP* decomp;
    DEC_SCORES scores;
-   int* nvars;
+   SCIP_VAR** vars;
+   SCIP_CONS** conss;
+
+   int nvars;
+   int nconss;
+
+   int* nallvars;
    int* nbinvars;
    int* nintvars;
    int* nimplvars;
    int* ncontvars;
 
-   int nprobs;
+   int nblocks;
    int nlinkvars;
    int nlinkbinvar;
    int nlinkintvars;
@@ -2507,40 +2688,58 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int* consprobsensity;
    int* consmasterdensity;
 
+   DEC_STATISTIC* blockvardensities;
+   DEC_STATISTIC* blockconsdensities;
+   DEC_STATISTIC mastervardensity;
+   DEC_STATISTIC masterconsdensity;
+
    assert(scip != NULL);
 
    decomp = DECgetBestDecomp(scip);
    assert(decomp != NULL);
-   nprobs = DECdecompGetNBlocks(decomp);
+   nblocks = DECdecompGetNBlocks(decomp);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nvars, nprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nintvars, nprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nimplvars, nprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nprobs) );
+   nvars = SCIPgetNVars(scip);
+   nconss = SCIPgetNConss(scip);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varprobdensity, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varmasterdensity, SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip)) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consmasterdensity, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nallvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nintvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nimplvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nblocks) );
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &blockvardensities, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &blockconsdensities, nblocks) );
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varprobdensity, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varmasterdensity, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conss, nconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consprobsensity, nconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consmasterdensity, nconss) );
 
    SCIP_CALL( DECevaluateDecomposition(scip, decomp, &scores) );
 
-   DECgetSubproblemVarsData(scip, decomp, nvars, nbinvars, nintvars, nimplvars, ncontvars, nprobs);
+   DECgetSubproblemVarsData(scip, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
    DECgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
-   SCIP_CALL( DECgetDensityData(scip, decomp, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
+   SCIP_CALL( DECgetDensityData(scip, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
+
+   SCIP_CALL( computeVarDensities(scip, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", DECdetectorGetName(decomp->detector));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", decomp->detector == NULL? "provided": DECdetectorGetName(decomp->detector));
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d\n", nlinkvars, nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
+         nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars,DECdecompGetNLinkingconss(decomp),
+         mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss\n");
-   for( b = 0; b < nprobs; ++b)
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)\n");
+   for( b = 0; b < nblocks; ++b)
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d\n", b+1, nvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b], DECdecompGetNSubscipconss(decomp)[b]);
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
+            DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean);
    }
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp Scores      :\n");
@@ -2553,12 +2752,14 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPfreeBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip));
    SCIPfreeBlockMemoryArray(scip, &consmasterdensity, SCIPgetNConss(scip));
 
+   SCIPfreeBlockMemoryArray(scip, &blockvardensities, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &blockconsdensities, nblocks);
 
-   SCIPfreeBlockMemoryArray(scip, &nvars, nprobs);
-   SCIPfreeBlockMemoryArray(scip, &nbinvars, nprobs);
-   SCIPfreeBlockMemoryArray(scip, &nintvars, nprobs);
-   SCIPfreeBlockMemoryArray(scip, &nimplvars, nprobs);
-   SCIPfreeBlockMemoryArray(scip, &ncontvars, nprobs);
+   SCIPfreeBlockMemoryArray(scip, &nallvars, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &nbinvars, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &nintvars, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
+   SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
 
    return SCIP_OKAY;
 }

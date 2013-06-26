@@ -74,7 +74,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-
+#define DELVARS
 
 /*
  * Data structures
