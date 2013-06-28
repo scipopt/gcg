@@ -42,6 +42,7 @@
 #include "scip/scip.h"
 #include "struct_decomp.h"
 #include "scip_misc.h"
+#include "relax_gcg.h"
 
 #include <assert.h>
 #include <string.h>
@@ -2162,8 +2163,9 @@ SCIP_RETCODE DECgetDensityData(
       }
    }
 
-   nlinkingconss = DECdecompGetNLinkingvars(decomp);
+   nlinkingconss = DECdecompGetNLinkingconss(decomp);
    curconss = DECdecompGetLinkingconss(decomp);
+
    for( j = 0; j < nlinkingconss; ++j )
    {
       assert(c < nconss); /* This assertion and the logic forbids constraints in more than one block */
@@ -2186,6 +2188,7 @@ SCIP_RETCODE DECgetDensityData(
          assert(probindex < nvars);
          varmasterdensity[probindex] += 1;
          assert(varmasterdensity[probindex] > 0);
+         SCIPdebugMessage("Var <%s> appears in cons <%s>, total count: %d\n", SCIPvarGetName(var), SCIPconsGetName(curconss[j]), varmasterdensity[probindex]);
       }
 
       consmasterdensity[c] = ncurvars;
@@ -2555,7 +2558,7 @@ SCIP_RETCODE computeVarDensities(
       SCIP*              scip,               /**< SCIP data structure */
       DEC_DECOMP*        decomp,             /**< decomposition data structure */
       int*               varprobdensity,     /**< density information */
-      int*               varmasterdensity,     /**< density information */
+      int*               varmasterdensity,   /**< density information */
       SCIP_VAR**         vars,               /**< */
       int                nvars,              /**< */
       DEC_STATISTIC*     blockvardensities,  /**< */
@@ -2568,7 +2571,12 @@ SCIP_RETCODE computeVarDensities(
    SCIP_Real** vardistribution;
    int* nvardistribution;
    SCIP_Real* mastervardistribution;
-   int nmasterdist;
+   int ncurvars;
+
+   SCIP_Real max = 0;
+   SCIP_Real min = 1.0;
+   SCIP_Real median = 0;
+   SCIP_Real mean = 0;
 
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -2585,8 +2593,8 @@ SCIP_RETCODE computeVarDensities(
    BMSclearMemoryArray(vardistribution, nblocks);
    BMSclearMemoryArray(nvardistribution, nblocks);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &mastervardistribution, DECdecompGetNLinkingvars(decomp)) );
-   BMSclearMemoryArray(mastervardistribution, DECdecompGetNLinkingvars(decomp));
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &mastervardistribution, nvars) );
+   BMSclearMemoryArray(mastervardistribution, nvars);
 
    for( b = 0; b < nblocks; ++b)
    {
@@ -2599,39 +2607,42 @@ SCIP_RETCODE computeVarDensities(
       int block = GCGvarGetBlock(vars[v]);
       SCIPdebugMessage("Var <%s>:", SCIPvarGetName(vars[v]));
 
-      if( block < 0 )
-      {
-         mastervardistribution[nmasterdist] = 1.0*varmasterdensity[v]/DECdecompGetNLinkingconss(decomp);
-         SCIPdebugPrintf("master %.3f\n", mastervardistribution[nmasterdist]);
-         ++nmasterdist;
-      }
-      else
+
+      mastervardistribution[v] = 1.0*varmasterdensity[v]/DECdecompGetNLinkingconss(decomp);
+      SCIPdebugPrintf("master %d ", varmasterdensity[v]);
+
+      if( block >= 0 )
       {
          vardistribution[block][nvardistribution[block]] = 1.0*varprobdensity[v]/DECdecompGetNSubscipconss(decomp)[block];
          SCIPdebugPrintf("block %d %.3f\n", block, vardistribution[block][nvardistribution[block]]);
          ++(nvardistribution[block]);
       }
+      else
+      {
+         SCIPdebugPrintf("\n");
+      }
    }
 
    for( b = 0; b < nblocks; ++b)
    {
-      SCIP_Real max = 0;
-      SCIP_Real min = 1.0;
-      SCIP_Real median = 0;
-      SCIP_Real mean = 0;
-      int count = DECdecompGetNSubscipvars(decomp)[b];
+      max = 0;
+      min = 1.0;
+      median = 0;
+      mean = 0;
+
+      ncurvars = DECdecompGetNSubscipvars(decomp)[b];
 
       SCIPdebugMessage("block %d:", b);
-      for( v = 0; v < count; ++v)
+      for( v = 0; v < ncurvars; ++v)
       {
 
          SCIPdebugPrintf(" <%s> %.3f", SCIPvarGetName(DECdecompGetSubscipvars(decomp)[b][v]), vardistribution[b][v]);
          max = MAX(max, vardistribution[b][v]);
          min = MIN(min, vardistribution[b][v]);
-         mean += 1.0*vardistribution[b][v]/count;
+         mean += 1.0*vardistribution[b][v]/ncurvars;
 
       }
-      median = quick_select_median(vardistribution[b], count);
+      median = quick_select_median(vardistribution[b], ncurvars);
       SCIPdebugPrintf("\nmin: %.3f, max: %.3f, median: %.3f, mean: %.3f\n", min, max, median, mean);
 
       blockvardensities[b].max = max;
@@ -2639,14 +2650,36 @@ SCIP_RETCODE computeVarDensities(
       blockvardensities[b].median = median;
       blockvardensities[b].mean = mean;
    }
+   max = 0;
+   min = 1.0;
+   median = 0;
+   mean = 0;
+   SCIPdebugMessage("master:");
 
+   for( v = 0; v < nvars; ++v)
+   {
+
+      SCIPdebugPrintf(" <%s> %.3f", SCIPvarGetName(vars[v]), mastervardistribution[v]);
+      max = MAX(max, mastervardistribution[v]);
+      min = MIN(min, mastervardistribution[v]);
+      mean += 1.0*mastervardistribution[v]/nvars;
+
+   }
+   median = quick_select_median(mastervardistribution, nvars);
+   SCIPdebugPrintf("\nmin: %.3f, max: %.3f, median: %.3f, mean: %.3f\n", min, max, median, mean);
+
+
+   mastervardensity->max = max;
+   mastervardensity->min = min;
+   mastervardensity->median = median;
+   mastervardensity->mean = mean;
 
    for( b = 0; b < nblocks; ++b)
    {
       SCIPfreeBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
    }
 
-   SCIPfreeBlockMemoryArray(scip, &mastervardistribution, DECdecompGetNLinkingvars(decomp));
+   SCIPfreeBlockMemoryArray(scip, &mastervardistribution, nvars);
 
    SCIPfreeBlockMemoryArray(scip, &nvardistribution, nblocks);
    SCIPfreeBlockMemoryArray(scip, &vardistribution, nblocks);
@@ -2676,6 +2709,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int* ncontvars;
 
    int nblocks;
+   int nblocksrelevant;
    int nlinkvars;
    int nlinkbinvar;
    int nlinkintvars;
@@ -2729,10 +2763,19 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", DECgetStrType(DECdecompGetType(decomp)));
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", decomp->detector == NULL? "provided": DECdetectorGetName(decomp->detector));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
+
+   nblocksrelevant = 0;
+   for( b = 0; b < nblocks; ++b)
+   {
+      if( GCGrelaxGetNIdenticalBlocks(scip, b) > 1)
+         nblocksrelevant += 1;
+   }
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f\n", nlinkvars,
-         nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars,DECdecompGetNLinkingconss(decomp),
+         nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, DECdecompGetNLinkingconss(decomp),
          mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)\n");

@@ -2257,7 +2257,7 @@ $(LIBOBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/gcg.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_branchgcg.h src/type_detector.h src/type_solver.h \
  src/pub_gcgvar.h src/pub_decomp.h src/cons_decomp.h src/struct_decomp.h \
- src/scip_misc.h lib/scip/src/scip/cons_setppc.h
+ src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/relax_gcg.h
 $(LIBOBJDIR)/dec_stairheur.o: src/dec_stairheur.c src/dec_stairheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

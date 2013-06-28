@@ -6,6 +6,7 @@
 #include "reader_dec.h"
 #include "pub_decomp.h"
 #include "scip/cons_linear.h"
+#include "gcg.h"
 
 #include "test.h"
 

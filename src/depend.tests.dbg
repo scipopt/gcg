@@ -36,9 +36,9 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/presolve.h src/type_branchgcg.h src/type_decomp.h \
  src/pricer_gcg.h src/type_solver.h src/cons_decomp.h src/type_detector.h \
  src/reader_blk.h src/reader_dec.h src/pub_decomp.h \
- lib/scip/src/scip/cons_linear.h src/tests/test.h \
- lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
- lib/scip/src/objscip/objcloneable.h \
+ lib/scip/src/scip/cons_linear.h src/gcg.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/tests/test.h lib/scip/src/objscip/objscip.h \
+ lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
