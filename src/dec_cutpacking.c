@@ -50,6 +50,7 @@
 #define DEC_PRIORITY          1100           /**< priority of the detector */
 #define DEC_DECCHAR           'c'            /**< display character of detector */
 #define DEC_ENABLED           FALSE          /**< should detector be called by default */
+#define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */
 #define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
@@ -2004,7 +2005,7 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    detectordata->partition = NULL;
    detectordata->nblocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
 
    /* add staircase presolver parameters */
       SCIP_CALL( SCIPaddIntParam(scip, "staircase/algorithm", "should the stoer-wagner algorithm or metis be used for finding a minimal cut", &detectordata->algorithm, FALSE, DEFAULT_ALGORITHM_METIS,  INT_MIN, INT_MAX, NULL, NULL) );

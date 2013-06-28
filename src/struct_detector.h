@@ -49,6 +49,11 @@ struct DEC_Detector {
    const char*           description;        /**< description of the detector */
    int                   priority;           /**< detector priority */
    SCIP_Bool             enabled;            /**< flag to indicate whether detector is enabled */
+   SCIP_Bool             skip;               /**< should detector be skipped if other detectors found decompositions */
+   DEC_DECOMP**          decomps;            /**< decompositions this detector has found */
+   int                   ndecomps;           /**< number of decompositions the detector has found */
+
+   SCIP_CLOCK*           dectime;            /**< time the detector took to find decompositions */
 
    DEC_DECL_INITDETECTOR((*initDetection));  /**< initialization method of detector */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)); /**< structure detection method of detector */

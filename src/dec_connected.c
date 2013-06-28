@@ -51,6 +51,8 @@
 
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
+#define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
+
 /*
  * Data structures
  */
@@ -351,7 +353,7 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
    detectordata->clock = NULL;
    detectordata->blockdiagonal = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectConnected, initConnected, exitConnected) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected) );
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/connected/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );

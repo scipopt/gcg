@@ -50,11 +50,13 @@
 #include <string.h>
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "random"       /**< name of detector */
+#define DEC_DETECTORNAME         "random"    /**< name of detector */
 #define DEC_DESC                 "Random structure detection" /**< description of detector*/
-#define DEC_PRIORITY             -10           /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
+
 #define DEFAULT_MAXBLOCKS        1000        /**< the maximal number of blocks, -1 defaults to number of constraints */
 #define DEFAULT_SEED             -1          /**< random seed for the random number generator, -1 is the current time */
 
@@ -262,7 +264,7 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata->nblocks = 0;
    detectordata->clock = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectRandom, initRandom, exitRandom) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectRandom, initRandom, exitRandom) );
 
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/seed", "random seed for the random number generator, -1 is the current time", &detectordata->seed, FALSE, DEFAULT_SEED, -1, INT_MAX, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/random/maxblocks", "the maximal number of blocks, -1 defaults to min(nvars, nconstraints)", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, -1, INT_MAX, NULL, NULL ) );

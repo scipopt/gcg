@@ -37,6 +37,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
+#include "cons_decomp.h"
 
 #include <string.h>
 /** transforms given solution of the master problem into solution of the original problem
@@ -453,6 +454,8 @@ SCIP_RETCODE GCGprintStatistics(
    SCIP_CALL( SCIPprintStatistics(scip, file) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
    SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
    SCIP_CALL( GCGprintDecompStatistics(scip, file) );
    return SCIP_OKAY;

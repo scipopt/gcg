@@ -56,7 +56,8 @@
 #define DEC_PRIORITY             0              /**< priority of the detector */
 #define DEC_DECCHAR              'k'            /**< display character of detector */
 
-#define DEC_ENABLED              FALSE           /**< should the detection be enabled */
+#define DEC_ENABLED              FALSE          /**< should the detection be enabled */
+#define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
 
 /*
  * Data structures
@@ -456,7 +457,7 @@ SCIP_RETCODE SCIPincludeDetectionColors(
 
    detectordata->clock = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectColors, initColors, exitColors) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors) );
 
    /* add colors constraint handler parameters */
 

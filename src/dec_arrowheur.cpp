@@ -60,6 +60,7 @@ using gcg::Weights;
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
 #define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */
 #define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
@@ -392,7 +393,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildArrowhead, initArrowheur, exitArrowheur) );
 
 
    /* add arrowheur presolver parameters */

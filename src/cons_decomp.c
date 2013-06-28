@@ -123,10 +123,17 @@ static
 SCIP_DECL_CONSINIT(consInitDecomp)
 { /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
    conshdlrdata->hasrun = FALSE;
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      SCIP_CALL( SCIPresetClock(scip, conshdlrdata->detectors[i]->dectime) );
+   }
+
    return SCIP_OKAY;
 }
 
@@ -135,14 +142,16 @@ static
 SCIP_DECL_CONSEXIT(consExitDecomp)
 { /*lint --e{715}*/
    SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+
    assert(conshdlr != NULL);
    assert(scip != NULL);
+
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
    if( conshdlrdata->ndecomps > 0 )
    {
-      int i;
       for( i = 0; i < conshdlrdata->ndecomps; ++i )
       {
          SCIP_CALL( DECdecompFree(scip, &conshdlrdata->decdecomps[i]) );
@@ -152,6 +161,13 @@ SCIP_DECL_CONSEXIT(consExitDecomp)
       conshdlrdata->ndecomps = 0;
    }
    conshdlrdata->hasrun = FALSE;
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      conshdlrdata->detectors[i]->ndecomps = 0;
+      SCIPfreeMemoryArrayNull(scip, &(conshdlrdata->detectors[i]->decomps));
+   }
+
    return SCIP_OKAY;
 }
 
@@ -176,6 +192,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIPdebugMessage("Calling exitDetection of %s\n", detector->name);
          SCIP_CALL( (*detector->exitDetection)(scip, detector) );
       }
+      SCIP_CALL( SCIPfreeClock(scip, &(conshdlrdata->detectors[i]->dectime)) );
    }
 
    if( conshdlrdata->ndecomps > 0 )
@@ -451,6 +468,7 @@ SCIP_RETCODE DECincludeDetector(
    const char*           description,        /**< description of the detector */
    int                   priority,           /**< priority of the detector */
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default */
+   SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure */
    DEC_DETECTORDATA*     detectordata,       /**< the associated detector data (or NULL) */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)*/
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL) */
@@ -501,10 +519,18 @@ SCIP_RETCODE DECincludeDetector(
 
    detector->priority = priority;
    detector->enabled = enabled;
+   detector->skip = skip;
+   detector->ndecomps = 0;
+   detector->decomps = NULL;
+   SCIP_CALL( SCIPcreateWallClock(scip, &(detector->dectime)) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/enabled", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> is enabled", name);
    SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->enabled), FALSE, enabled, NULL, NULL) );
+
+   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/skip", name);
+   (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "flag to indicate whether detector <%s> should be skipped if others found decompositions", name);
+   SCIP_CALL( SCIPaddBoolParam(scip, setstr, descstr, &(detector->skip), FALSE, skip, NULL, NULL) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detectors/%s/priority", name);
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
@@ -520,7 +546,7 @@ SCIP_RETCODE DECincludeDetector(
 
 }
 
-/** returns the remaning time of scip that the decomposition may use */
+/** returns the remaining time of scip that the decomposition may use */
 SCIP_Real DECgetRemainingTime(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -604,7 +630,11 @@ SCIP_RETCODE DECdetectStructure(
          decdecomps = NULL;
 
          SCIPdebugMessage("Calling detectStructure of %s: ", detector->name);
+         SCIP_CALL( SCIPstartClock(scip, detector->dectime) );
          SCIP_CALL( (*detector->detectStructure)(scip, detector->decdata, &decdecomps, &ndecdecomps,  result) );
+         SCIP_CALL( SCIPstopClock(scip, detector->dectime) );
+         SCIPdebugPrintf("(time %.6f) ", SCIPclockGetTime(detector->dectime));
+
          if( *result == SCIP_SUCCESS )
          {
             assert(ndecdecomps >= 0);
@@ -618,6 +648,8 @@ SCIP_RETCODE DECdetectStructure(
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
             BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
             conshdlrdata->ndecomps += ndecdecomps;
+            detector->ndecomps = ndecdecomps;
+            SCIP_CALL( SCIPduplicateMemoryArray(scip, &detector->decomps, decdecomps, detector->ndecomps) );
          }
          else
          {
@@ -815,4 +847,31 @@ char DECdetectorGetChar(
 {
    assert(detector != NULL);
    return detector->decchar;
+}
+
+/** display statistics about detectors */
+SCIP_RETCODE GCGprintDetectorStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   assert(scip != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Detector statistics:       time     number\n");
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  %-10.10s       :   %8.2f %10d\n", conshdlrdata->detectors[i]->name, SCIPclockGetTime(conshdlrdata->detectors[i]->dectime), conshdlrdata->detectors[i]->ndecomps );
+   }
+   return SCIP_OKAY;
 }
