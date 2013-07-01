@@ -160,8 +160,15 @@ do
         NAME=`basename $i .gz`
         NAME=`basename $NAME .mps`
         NAME=`basename $NAME .lp`
-        BLKFILE=$DIR/$NAME.blk
-        DECFILE=$DIR/$NAME.dec
+        EXT=${i##*.}
+        if test "$EXT" = "gz"
+        then
+            BLKFILE=$DIR/$NAME.blk.gz
+            DECFILE=$DIR/$NAME.dec.gz
+        else
+            BLKFILE=$DIR/$NAME.blk
+            DECFILE=$DIR/$NAME.dec
+        fi
         LASTPROB=""
         if test -f $i
         then
