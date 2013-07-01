@@ -155,6 +155,7 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
+#include "dec_isomorph.h"
 #include "dec_arrowheur.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
@@ -231,7 +232,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludePropRedcost(scip) );
    SCIP_CALL( SCIPincludePropVbounds(scip) );
    SCIP_CALL( SCIPincludePropObbt(scip) );
-
 #endif
 
 
@@ -306,6 +306,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
    SCIP_CALL( SCIPincludeDetectionColors(scip) );
 
+   /* Friederike's */
+   SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
+
+   /* Daniel's */
+   SCIP_CALL( SCIPincludeDetectionIsomorphism(scip) );
+
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgcoefdiving(scip) );
@@ -324,9 +330,6 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
    SCIP_CALL( SCIPincludeHeurXprins(scip) );
-
-   /* Friederike's */
-   SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
 
 
    SCIP_CALL( SCIPincludeDispGcg(scip) );

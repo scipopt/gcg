@@ -152,6 +152,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_arrowheur.o \
 			dec_stairheur.o \
 			dec_connected.o \
+			dec_isomorph.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_random.o \
