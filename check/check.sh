@@ -154,7 +154,9 @@ do
         break
     fi
 
-    if test "$LASTPROB" = ""
+    PROB=`echo $i|cut -d";" -f1`
+    DECFILE=`echo $i|cut -d";" -f2`
+    if test "$PROB" == "$DECFILE"
     then
         DIR=`dirname $i`
         NAME=`basename $i .gz`
@@ -162,6 +164,14 @@ do
         NAME=`basename $NAME .lp`
         BLKFILE=$DIR/$NAME.blk
         DECFILE=$DIR/$NAME.dec
+    fi
+
+    if test "$LASTPROB" = ""
+    then
+        DIR=`dirname $i`
+        NAME=`basename $i .gz`
+        NAME=`basename $NAME .mps`
+        NAME=`basename $NAME .lp`
         LASTPROB=""
         if test -f $i
         then
@@ -173,7 +183,7 @@ do
             echo > $TMPFILE
             if test "$SETNAME" != "default"
             then
-                echo set load $SETTINGS            >>  $TMPFILE
+                echo set load $SETTINGS            >> $TMPFILE
             fi
             if test "$FEASTOL" != "default"
             then
@@ -192,14 +202,14 @@ do
                 echo set lp solvefreq -1           >> $TMPFILE # avoid solving LPs in case of LPS=none
             fi
             echo set save $SETFILE                 >> $TMPFILE
-            echo read $i                           >> $TMPFILE
+            echo read $PROB                        >> $TMPFILE
 
 	    if test $MODE = "detect"
             then
-		echo write prob images\/$base.gp  >> $TMPFILE
+		echo write prob images\/$base.gp   >> $TMPFILE
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		echo write prob images\/$base-dec.gp  >> $TMPFILE
+		echo write prob images\/$base-dec.gp >> $TMPFILE
 		echo write prob decs\/$base.dec    >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    elif test $MODE = "bip"
@@ -212,7 +222,7 @@ do
 		echo detect                        >> $TMPFILE
 		echo write all ref                 >> $TMPFILE
 	    else
-		if test $MODE = "readdec"
+		if test $MODE = "readdec" 
 		then
 		    if test -f $DECFILE
 		    then
@@ -229,16 +239,16 @@ do
 $presol
 EOF
 			    then
-				echo presolve          >> $TMPFILE
+				echo presolve      >> $TMPFILE
 			    fi
 			fi
-			echo read $BLKFILE             >> $TMPFILE
+			echo read $BLKFILE         >> $TMPFILE
 		    fi
 		fi
 		echo optimize                      >> $TMPFILE
 		echo display statistics            >> $TMPFILE
 #		echo display additionalstatistics  >> $TMPFILE
-#               echo display solution                  >> $TMPFILE
+#               echo display solution              >> $TMPFILE
 		echo checksol                      >> $TMPFILE
 	    fi
             echo quit                              >> $TMPFILE
