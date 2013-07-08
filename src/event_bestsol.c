@@ -78,28 +78,6 @@ SCIP_DECL_EVENTFREE(eventFreeBestsol)
 static
 SCIP_DECL_EVENTINIT(eventInitBestsol)
 {  /*lint --e{715}*/
-
-   /* notify SCIP that your event handler wants to react on the event types best solution found and node solved */
-   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
-
-   return SCIP_OKAY;
-}
-
-/** deinitialization method of event handler (called before transformed problem is freed) */
-static
-SCIP_DECL_EVENTEXIT(eventExitBestsol)
-{  /*lint --e{715}*/
-
-   /* notify SCIP that your event handler wants to drop the event types best solution found and node solved */
-   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
-
-   return SCIP_OKAY;
-}
-
-/** solving process initialization method of event handler (called when branch and bound process is about to begin) */
-static
-SCIP_DECL_EVENTINITSOL(eventInitsolBestsol)
-{  /*lint --e{715}*/
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    int nheurs;
    int i;
@@ -119,6 +97,32 @@ SCIP_DECL_EVENTINITSOL(eventInitsolBestsol)
 
    for( i = 0; i < nheurs; ++i )
       eventhdlrdata->bestprimalbd[i] = SCIPinfinity(scip);
+
+   /* notify SCIP that your event handler wants to react on the event types best solution found and node solved */
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+static
+SCIP_DECL_EVENTEXIT(eventExitBestsol)
+{  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   /* free memory */
+   SCIPfreeMemoryArray(scip, &eventhdlrdata->heurs);
+   SCIPfreeMemoryArray(scip, &eventhdlrdata->bestprimalbd);
+
+   /* notify SCIP that your event handler wants to drop the event types best solution found and node solved */
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_SOLFOUND, eventhdlr, NULL, -1) );
 
    return SCIP_OKAY;
 }
@@ -140,7 +144,6 @@ SCIP_DECL_EVENTEXITSOL(eventExitsolBestsol)
    assert(eventhdlrdata != NULL);
 
    nheurs = SCIPgetNHeurs(scip);
-
    probname = SCIPgetProbName(scip);
 
    /* output statistics */
@@ -150,10 +153,6 @@ SCIP_DECL_EVENTEXITSOL(eventExitsolBestsol)
          strncmp(probname, "master", 6) == 0 ? "master" : "original",
          SCIPheurGetName(eventhdlrdata->heurs[i]), eventhdlrdata->bestprimalbd[i]);
    }
-
-   /* free memory */
-   SCIPfreeMemoryArray(scip, &eventhdlrdata->heurs);
-   SCIPfreeMemoryArray(scip, &eventhdlrdata->bestprimalbd);
 
    return SCIP_OKAY;
 }
@@ -198,7 +197,7 @@ SCIP_DECL_EVENTEXEC(eventExecBestsol)
    /* if the heuristic was not found in the problem, then the solution comes
     * from another problem; in that case, no statistics are collected here
     */
-   if( i < nheurs )
+   if( i == nheurs )
       return SCIP_OKAY;
 
    /* update the best objective value for that heuristic */
@@ -234,7 +233,6 @@ SCIP_RETCODE SCIPincludeEventHdlrBestsol(
    SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeBestsol) );
    SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitBestsol) );
    SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitBestsol) );
-   SCIP_CALL( SCIPsetEventhdlrInitsol(scip, eventhdlr, eventInitsolBestsol) );
    SCIP_CALL( SCIPsetEventhdlrExitsol(scip, eventhdlr, eventExitsolBestsol) );
 #endif
 
