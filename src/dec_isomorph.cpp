@@ -4,7 +4,7 @@
  *  Created on: Jul 1, 2013
  *      Author: peters
  */
-
+//#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -13,6 +13,7 @@
 #include "cons_decomp.h"
 #include "scip_misc.h"
 #include "pub_decomp.h"
+
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorphism"    /**< name of detector */
@@ -29,15 +30,12 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-//   SCIP_CLOCK* clock;                        /**< clock to measure detection time */
-
    SCIP_Bool             isomorph;            /**< flag to indicate whether the problem is isomorph */
    SCIP_Bool             setppcinmaster;      /**< flag to indicate whether setppc constraints should always be in the master */
    SCIP*                 origscip;            /**< SCIP data structure */
    SCIP*                 scip;                /**< SCIP data structure to compare */
    SCIP_RESULT           result;              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap;              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap;             /**< hashmap to save permutation of constraints */
+   int                   numofsol;   /**< number of solutions */
 };
 
 #include "graph.hh"
@@ -108,6 +106,7 @@ struct struct_colorinformation
    int                  lenconssarray;      /**< size of ptrarrayconss */
    int                  lenvarsarray;       /**< size of ptrarrayvars */
    int                  lencoefsarray;      /**< size of ptrarraycoefs */
+   int                  alloccoefsarray;    /**< allocated size of ptrarraycoefs */
    void**               ptrarraycoefs;      /**< array of pointers to coefficient */
    void**               ptrarrayvars;       /**< array of pointers to variables */
    void**               ptrarrayconss;      /**< array of pointers to constraints */
@@ -150,14 +149,11 @@ struct struct_hook
 {
    SCIP_Bool aut;                           /**< true if there is an automorphism */
    unsigned int n;                          /**< number of permutations */
-   SCIP_HASHMAP* varmap;                    /**< hashmap for permutated variables */
-   SCIP_HASHMAP* consmap;                   /**< hashmap for permutated constraints */
    SCIP* scip;                              /**< scip to search for automorphisms */
+   int* conssperm;                 /**< permutations of conss*/
 
    /** constructor for the hook struct*/
    struct_hook(
-      SCIP_HASHMAP* varmap,                 /**< hashmap for permutated variables */
-      SCIP_HASHMAP* consmap,                /**< hashmap for permutated constraints */
       SCIP_Bool aut,                        /**< true if there is an automorphism */
       unsigned int n,                       /**< number of permutations */
       SCIP*  scip                           /**< scip to search for automorphisms */
@@ -171,12 +167,6 @@ struct struct_hook
 
    /** getter for the number of nodes */
    int getNNodes();
-
-   /** getter for the variables hashmap */
-   SCIP_HASHMAP* getVarHash();
-
-   /** getter for the constraints hashmap */
-   SCIP_HASHMAP* getConsHash();
 
    /** getter for the SCIP */
    SCIP* getScip();
@@ -225,16 +215,6 @@ SCIP_Real struct_coef::getVal()
 //int struct_hook::getNNodes()
 //{
 //   return this->n;
-//}
-//
-//SCIP_HASHMAP* struct_hook::getVarHash()
-//{
-//   return this->varmap;
-//}
-//
-//SCIP_HASHMAP* struct_hook::getConsHash()
-//{
-//   return this->consmap;
 //}
 
 SCIP* struct_hook::getScip()
@@ -290,6 +270,7 @@ void struct_colorinformation::insert(
    )
 {
    int pos;
+   int size;
    if( !SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, scoef, this->lencoefsarray, &pos) )
    {
       SCIPsortedvecInsertPtr(this->ptrarraycoefs, sortptrval, scoef, &this->lencoefsarray, NULL);
@@ -298,6 +279,12 @@ void struct_colorinformation::insert(
    }
    else
       *added = FALSE;
+   size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray);
+   if(this->lencoefsarray%this->alloccoefsarray == 0){
+	   SCIP_CALL_ABORT(SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size));
+	   this->alloccoefsarray = size;
+   }
+
 }
 
 //int struct_colorinformation::getLenVar()
@@ -389,8 +376,6 @@ struct_coef::struct_coef(
 
 /** constructor of the hook struct */
 struct_hook::struct_hook(
-   SCIP_HASHMAP* varmap_,                   /**< hashmap of permutated variables */
-   SCIP_HASHMAP* consmap_,                  /**< hahsmap of permutated constraints */
    SCIP_Bool aut_,                          /**< true if there is an automorphism */
    unsigned int n_,                         /**< number of permutations */
    SCIP* scip_                              /**< array of scips to search for automorphisms */
@@ -398,8 +383,6 @@ struct_hook::struct_hook(
 {
    aut = aut_;
    n = n_;
-   consmap = consmap_;
-   varmap = varmap_;
    scip = scip_;
 }
 
@@ -454,8 +437,8 @@ int comp(
       return comp(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar()));
    assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar())));
 
-   if(comp(scip, SCIPvarGetObj(GCGpricingVarGetOriginalVar(var1->getVar())), SCIPvarGetObj(GCGpricingVarGetOriginalVar(var2->getVar()))) != 0)
-      return comp(scip, SCIPvarGetObj(GCGpricingVarGetOriginalVar(var1->getVar())), SCIPvarGetObj(GCGpricingVarGetOriginalVar(var2->getVar())));
+   if(comp(scip, SCIPvarGetObj((var1->getVar())), SCIPvarGetObj(var2->getVar())) != 0)
+      return comp(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar()));
    assert(SCIPisEQ(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar())));
 
    if( SCIPvarGetType(var1->getVar()) < SCIPvarGetType(var2->getVar()) )
@@ -497,63 +480,34 @@ void hook(void* user_param,                 /**< data structure to save hashmaps
    )
 {
    int i;
-   int j;
-   int n;
-   int nvars;
    int nconss;
-   SCIP_VAR** vars;
    SCIP_CONS** conss;
    AUT_HOOK* hook = (AUT_HOOK*) user_param;
-
-   j = 0;
-   n = hook->getNNodes();
-
-   if(hook->getBool())
-      return;
-
-   for( i = 0; i < n / 2; i++ )
-   {
-      assert(aut[i] < INT_MAX);
-      if( (int) (aut[i]) >= n / 2 )
-         j++;
-      else
-         break;
-   }
-   if( j == n / 2 )
-   {
-      SCIPdebugMessage("j = %d\n", n/2);
-      hook->setBool(TRUE);
-   }
-   if( !hook->getBool() )
-      return;
-
-   nvars = SCIPgetNVars(hook->getScip());
-   assert(nvars == SCIPgetNVars(hook->getScip()));
-   vars = SCIPgetVars(hook->getScip());
 
    nconss = SCIPgetNConss(hook->getScip());
    assert(nconss == SCIPgetNConss(hook->getScip()));
    conss = SCIPgetConss(hook->getScip());
 
-   for(i = 0; i < nvars+nconss; i++)
+   for(i = 0; i < nconss; i++)
    {
-      if( i < nvars )
-      {
-         assert( aut[i] < INT_MAX);
-         assert( (int) (aut[i]-n/2) < nvars);
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getVarHash(), vars[i], vars[aut[i]-n/2]) );
-         SCIPdebugMessage("var <%s> <-> var <%s>\n", SCIPvarGetName(vars[i]), SCIPvarGetName(vars[aut[i]-n/2]));
+      assert( aut[i] < INT_MAX);
+      SCIPdebugMessage("i <%d> <-> aut[i] <%d> \n", i, aut[i]);
+      SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(conss[i]), SCIPconsGetName(conss[aut[i]]));
+      if(SCIPconsGetName(conss[i]) != SCIPconsGetName(conss[aut[i]])){
+    	 hook->setBool(TRUE);
+    	 SCIPdebugMessage("i <%d> <-> aut[i] <%d> \n", i, aut[i]);
+     	 if((unsigned) i < aut[i]){
+            hook->conssperm[i] = i;
+     		hook->conssperm[aut[i]] = i;
+     	 }
+     	 else{
+     		hook->conssperm[i] = aut[i];
+     		hook->conssperm[aut[i]] = aut[i];
+     	 }
       }
-      else if (i < nvars+nconss)
-      {
-         assert( i-nvars >= 0);
-         assert( aut[i] < INT_MAX);
-         assert( (int) (aut[i]-nvars-n/2) < nconss);
-
-         SCIP_CALL_ABORT( SCIPhashmapInsert(hook->getConsHash(), conss[i-nvars], conss[aut[i]-nvars-n/2]) );
-         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(conss[i-nvars]), SCIPconsGetName(conss[aut[i]-nvars-n/2]));
-
-      }
+   }
+   for(i = 0; i < nconss; i++){
+	   SCIPdebugMessage("%d\n", hook->conssperm[i]);
    }
 }
 
@@ -564,24 +518,12 @@ static SCIP_RETCODE allocMemory(
    int nvars                                /**< number of variables */
    )
 {
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, (nconss * nvars)));
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, nvars));
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, nvars));
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, nconss));
+   colorinfo->alloccoefsarray = nvars;
    return SCIP_OKAY;
 }
-
-//static SCIP_RETCODE reallocMemory(
-//   SCIP* scip,                              /**< SCIP data structure */
-//   AUT_COLOR* colorinfo,                    /**< struct to save intermediate information */
-//   int nconss,                              /**< number of constraints */
-//   int nvars                                /**< number of variables */
-//   )
-//{
-//   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarraycoefs, colorinfo->lencoefsarray + (nconss * nvars)));
-//   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayvars, colorinfo->lenvarsarray + nvars));
-//   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayconss, colorinfo->lenconssarray + nconss));
-//   return SCIP_OKAY;
-//}
 
 static
 SCIP_RETCODE freeMemory(
@@ -634,54 +576,38 @@ SCIP_RETCODE setuparrays(
    AUT_CONS* scons;
    SCIP_Bool added;
 
-   added = FALSE;
-
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
    nconss = SCIPgetNConss(scip);
    nvars = SCIPgetNVars(scip);
-   SCIPinfoMessage(scip,FALSE,"nvars %d\n",nvars);
    allocMemory(origscip, colorinfo, nconss, nvars);
 
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
 
-   SCIPinfoMessage(scip,FALSE,"added %s\n",added ? true : false);
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
       svar = new AUT_VAR(scip, vars[i]);
-      SCIPinfoMessage(scip,FALSE,"svar %d\n",svar->getVar());
       //add to pointer array iff it doesn't exist
       colorinfo->insert( svar, &added );
-      SCIPinfoMessage(scip,FALSE,"svar %d\n",svar->getVar());
-//      if( s > 0 && added)
-//      {
-//         *result = SCIP_DIDNOTFIND;
-//         break;
-//      }
+      SCIPdebugMessage("%s color %d %d\n",SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
    //otherwise free allocated memory
-//      SCIPinfoMessage(scip,FALSE,"%s",colorinfo->get(*svar));
-      SCIPinfoMessage(scip,FALSE,"added %s\n",added ? true : false);
    if( !added )
       delete svar;
    }
 
-   return SCIP_OKAY;
    //save the properties of constraints in a struct array and in a sorted pointer array
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       SCIP_Real* curvals;
-      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
+      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
+      SCIPdebugMessage("nconss %d %d\n", nconss, *result);
       colorinfo->insert( scons, &added );
-//    if( s > 0 && added)
-//    {
-//       *result = SCIP_DIDNOTFIND;
-//       break;
-//    }
+      SCIPdebugMessage("%s color %d %d\n",SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
     //otherwise free allocated memory
     if( !added )
        delete scons;
@@ -697,11 +623,7 @@ SCIP_RETCODE setuparrays(
           {
              //add to pointer array iff it doesn't exist
              colorinfo->insert( scoef, &added );
-//             if( s > 0 && added)
-//             {
-//                *result = SCIP_DIDNOTFIND;
-//                break;
-//             }
+             SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
           }
           //otherwise free allocated memory
           if( !added )
@@ -745,6 +667,7 @@ SCIP_RETCODE createGraph(
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
    z = 0;
+
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
@@ -771,6 +694,7 @@ SCIP_RETCODE createGraph(
          *result = SCIP_DIDNOTFIND;
          break;
       }
+      SCIPdebugMessage("vars <%s> color %d\n", SCIPvarGetName(vars[i]), colorinfo.getLenCons() + color);
       h->add_vertex(colorinfo.getLenCons() + color);
       nnodes++;
    }
@@ -796,6 +720,7 @@ SCIP_RETCODE createGraph(
             break;
          }
          curvar = SCIPvarGetProbindex(curvars[j]);
+         SCIPdebugMessage("coef <%f> color %d\n", scoef->getVal(), colorinfo.getLenCons() + colorinfo.getLenVar() + color);
          h->add_vertex(colorinfo.getLenCons() + colorinfo.getLenVar() + color);
          nnodes++;
          h->add_edge(i, nconss + nvars + z);
@@ -809,13 +734,14 @@ SCIP_RETCODE createGraph(
                            color+colorinfo.getLenCons() + colorinfo.getLenVar(),
                            SCIPvarGetName(curvars[j]),
                            nconss + curvar,
-                           colorinfo.get( *svar)+colorinfo.getLenCons());
+                           colorinfo.get( *svar)+colorinfo.getLenCons()
+                           );
          z++;
       }
       SCIPfreeMemoryArray(origscip, &curvals);
       SCIPfreeMemoryArray(origscip, &curvars);
    }
-   SCIPdebugMessage("Iteration 1: nnodes = %d\n", nnodes);
+   SCIPdebugMessage("Iteration 1: nnodes = %d, Cons = %d, Vars = %d\n",nnodes, colorinfo.getLenCons(), colorinfo.getLenVar() );
    assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
    //free all allocated memory
    freeMemory(origscip, &colorinfo);
@@ -843,14 +769,24 @@ DEC_DECL_EXITDETECTOR(exitIsomorphism)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->consmap != NULL )
-      SCIPhashmapFree(&detectordata->consmap);
-   if( detectordata->varmap != NULL )
-      SCIPhashmapFree(&detectordata->varmap);
-
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
+}
+
+static
+int max(int* blocksize, int n)
+{
+	int i;
+	int mx = 0;
+	int r;
+	for(i = 0; i < n; i++){
+		if(blocksize[i] > mx){
+			mx = blocksize[i];
+			r = i;
+		}
+	}
+	return r;
 }
 
 /** detection initialization function of detector (called before solving is about to begin) */
@@ -858,8 +794,6 @@ static
 DEC_DECL_INITDETECTOR(initIsomorphism)
 {  /*lint --e{715}*/
    DEC_DETECTORDATA *detectordata;
-   SCIP_HASHMAP* consmap;
-   SCIP_HASHMAP* varmap;
 
    assert(scip != NULL);
    assert(detector != NULL);
@@ -872,41 +806,132 @@ DEC_DECL_INITDETECTOR(initIsomorphism)
    detectordata->origscip = scip;
    detectordata->scip = scip;
    detectordata->result = SCIP_SUCCESS;
-
-   SCIP_CALL( SCIPhashmapCreate(&consmap, SCIPblkmem(detectordata->scip), SCIPgetNConss(detectordata->scip)+1) );
-   SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(detectordata->scip), SCIPgetNVars(detectordata->scip)+1) );
-
-   detectordata->consmap = consmap;
-   detectordata->varmap = varmap;
+   detectordata->numofsol = 3;
 
    return SCIP_OKAY;
 }
 
 /** detection function of detector */
-static
-DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
-{
-   bliss::Graph graph;
-   bliss::Stats bstats;
-   AUT_HOOK *ptrhook;
-   AUT_COLOR *colorinfo;
+static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism) {
+	bliss::Graph graph;
+	bliss::Stats bstats;
+	AUT_HOOK *ptrhook;
+	AUT_COLOR *colorinfo;
+	*ndecdecomps = 0;
+	*decdecomps = NULL;
+	int nconss = SCIPgetNConss(detectordata->origscip);
+	SCIP_CONS*** conss;
+	int i;
+	int j;
+	int n;
+	int tmp;
+	int x;
+	int* blocksize;
+	colorinfo = new AUT_COLOR(0, 0, 0, 0);
 
-   colorinfo = new AUT_COLOR(0, 0, 0, 0 );
+	SCIP_CALL(
+			setuparrays(detectordata->origscip, detectordata->scip, colorinfo,
+					&detectordata->result));
+	SCIP_CALL(
+			createGraph(detectordata->origscip, detectordata->scip, *colorinfo,
+					&graph, &detectordata->result));
 
-   SCIP_CALL( setuparrays(detectordata->origscip, detectordata->scip, colorinfo, &detectordata->result) );
-/*   SCIP_CALL( createGraph(detectordata->origscip, detectordata->scip, *colorinfo, &graph, &detectordata->result) );
+	ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), detectordata->scip);
+	SCIP_CALL(SCIPallocMemoryArray(scip, &ptrhook->conssperm, nconss));
+	for (i = 0; i < nconss; i++) {
+		ptrhook->conssperm[i] = -1;
+	}
 
-   ptrhook = new AUT_HOOK(detectordata->varmap, detectordata->consmap, FALSE, graph.get_nof_vertices(), detectordata->scip);
-   graph.find_automorphisms(bstats, hook, ptrhook);
+	graph.find_automorphisms(bstats, hook, ptrhook);
 
-   detectordata->varmap = ptrhook->getVarHash();
-   detectordata->consmap = ptrhook->getConsHash();
-   if( !ptrhook->getBool() )
-      detectordata->result = SCIP_DIDNOTFIND;
+	if (!ptrhook->getBool())
+		detectordata->result = SCIP_DIDNOTFIND;
 
-   detectordata->isomorph = (detectordata->result == SCIP_SUCCESS);
-*/
-   return SCIP_OKAY;
+	detectordata->isomorph = (detectordata->result == SCIP_SUCCESS);
+
+	if (detectordata->result == SCIP_SUCCESS) {
+		// assign to a permutation circle only one number
+		for (i = 0; i < nconss; i++) {
+			if (ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] < i) {
+				tmp = ptrhook->conssperm[i];
+				ptrhook->conssperm[i] = ptrhook->conssperm[tmp];
+			}
+		}
+		// renumbering from 0 to number of permutations
+		n = 0;
+		tmp = n;
+		for (i = 0; i < nconss; i++) {
+			if (ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n
+					&& ptrhook->conssperm[i] != tmp) {
+				n++;
+				tmp = ptrhook->conssperm[i];
+				ptrhook->conssperm[i] = n;
+			}
+			if (ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n
+					&& ptrhook->conssperm[i] == tmp) {
+				ptrhook->conssperm[i] = n;
+			}
+			SCIPdebugMessage("%d\n", ptrhook->conssperm[i]);
+		}
+		n++;
+		// create decomposition for every permutation
+		SCIP_CALL(
+				SCIPallocMemoryArray(scip, decdecomps, detectordata->numofsol)); /*lint !e506*/
+		SCIP_CALL(SCIPallocMemoryArray(scip, &blocksize, n));
+		SCIP_CALL(SCIPallocMemoryArray(scip, &conss, n));
+		for (j = 0; j < n; j++) {
+			x = 0;
+			SCIP_CALL(SCIPallocMemoryArray(scip, &conss[j], nconss));
+			for (i = 0; i < nconss; i++) {
+				if (j != ptrhook->conssperm[i]) {
+					conss[j][x] = SCIPgetConss(scip)[i];
+					SCIPdebugMessage("%d\n", x);
+					SCIPdebugMessage("%s\n", SCIPconsGetName(conss[j][x]));
+					x++;
+				}
+			}
+			SCIPdebugMessage("%d\n", x);
+			blocksize[j] = nconss - x;
+
+		}
+
+		// set numofsol biggest Decompositions
+		for (i = 0; i < detectordata->numofsol && i < n; i++) {
+			j = max(blocksize, n);
+			SCIP_CALL(
+					DECcreateDecompFromMasterconss(scip, &((*decdecomps)[i]),
+							conss[j], blocksize[j]));
+			blocksize[j] = 0;
+		}
+		for (i = 0; i < n; i++) {
+			SCIPfreeMemoryArray(scip, &conss[i]);
+		}
+		SCIPfreeMemoryArray(scip, &conss);
+		SCIPfreeMemoryArray(scip, &blocksize);
+		for (i = 0; i < detectordata->numofsol && i < n; i++) {
+			assert((*decdecomps)[i] != NULL);
+			SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,
+					" found with %d blocks.\n",
+					DECdecompGetNBlocks((*decdecomps)[i]));
+			detectordata->isomorph = DECdecompGetType((*decdecomps)[i])
+					== DEC_DECTYPE_ISOMORPH;
+		}
+		if (n < detectordata->numofsol) {
+			*ndecdecomps = n;
+		} else {
+			*ndecdecomps = detectordata->numofsol;
+		}
+	} else {
+		SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
+	}
+
+	if (*ndecdecomps == 0) {
+		SCIPfreeMemoryArrayNull(scip, decdecomps);
+	}
+
+	SCIPfreeMemoryArray(scip, &ptrhook->conssperm);
+	*result = detectordata->result;
+	return SCIP_OKAY;
 }
 
 
@@ -929,12 +954,10 @@ SCIP_RETCODE SCIPincludeDetectionIsomorphism(
 
    detectordata->isomorph = FALSE;
 
-   SCIPinfoMessage(scip,FALSE,"hello");
-
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism) );
 
    /* add connected constraint handler parameters */
-   //SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/setppcinmaster", "Controls whether SETPPC constraints chould be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/setppcinmaster", "Controls whether SETPPC constraints could be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
 
    return SCIP_OKAY;
 }
