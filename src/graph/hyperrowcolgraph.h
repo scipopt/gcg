@@ -71,6 +71,14 @@ public:
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
+   /**
+    * reads the partition from the given file.
+    * The format is graph dependent. The default is a file with one line for each node a
+    */
+   virtual SCIP_RETCODE readPartition(
+      const char*        filename            /**< filename where the partition is stored */
+   );
+
    virtual std::vector<int> getNeighbors(
          int i
       );

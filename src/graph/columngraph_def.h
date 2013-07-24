@@ -59,12 +59,13 @@ ColumnGraph<T>::~ColumnGraph()
 
 
 /** writes column graph to file */
-template <class T>
-SCIP_RETCODE ColumnGraph<T>::writeToFile(
-   const char*        filename,           /**< filename where the graph should be written to */
-   SCIP_Bool          writeweights         /**< whether to write weights */
-   )
-{
+
+//template <class T>
+//SCIP_RETCODE ColumnGraph<T>::writeToFile(
+//   const char*        filename,           /**< filename where the graph should be written to */
+//   SCIP_Bool          writeweights         /**< whether to write weights */
+//   )
+/*{
    int nedges;
    int* nrealneighbors;
    int** realneighbors;
@@ -146,6 +147,7 @@ SCIP_RETCODE ColumnGraph<T>::writeToFile(
 
    return SCIP_OKAY;
 }
+*/
 
 template <class T>
 SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
@@ -210,11 +212,103 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    int                   nvars_               /**< number of variables */
    )
 {
+   int i;
+   int j;
+   int k;
+   SCIP_Bool success;
+
+   assert(conss != NULL);
+   assert(vars != NULL);
+   assert(nvars_ > 0);
+   assert(nconss_ > 0);
+
    this->nvars = nvars_;
    this->nconss = nconss_;
-   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
+
+   /* go through all variables */
+   for( i = 0; i < this->nvars; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(vars[i]);
+
+      this->graph.addNode(i, weight);
+   }
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      SCIP_VAR **curvars;
+
+      int ncurvars;
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      assert(success);
+      if( ncurvars == 0 )
+         continue;
+
+      /*
+       * may work as is, as we are copying the constraint later regardless
+       * if there are variables in it or not
+       */
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      assert(success);
+
+      /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+      /** @todo Do more then one entry per variable actually work? */
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         SCIP_VAR* var1;
+         int varIndex1;
+
+         if( !SCIPisVarRelevant(curvars[j]) )
+            continue;
+
+         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            var1 = SCIPvarGetProbvar(curvars[j]);
+         else
+            var1 = curvars[j];
+
+         assert(var1 != NULL);
+         varIndex1 = SCIPvarGetProbindex(var1);
+         assert(varIndex1 >= 0);
+         assert(varIndex1 < this->nvars);
+
+         for( k = 0; k < j; ++k )
+         {
+            SCIP_VAR* var2;
+            int varIndex2;
+
+            if( !SCIPisVarRelevant(curvars[k]) )
+               continue;
+
+            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               var2 = SCIPvarGetProbvar(curvars[k]);
+            else
+               var2 = curvars[k];
+
+            assert(var2 != NULL);
+            varIndex2 = SCIPvarGetProbindex(var2);
+            assert(varIndex2 >= 0);
+            assert(varIndex2 < this->nvars);
+
+            if(!(this->graph.edge(varIndex1, varIndex2)))
+            {
+               SCIP_CALL( this->graph.addEdge(varIndex1, varIndex2) );
+               this->graph.flush();
+            }
+         }
+      }
+      SCIPfreeBufferArray(this->scip_, &curvars);
+   }
+
+   this->graph.flush();
    return SCIP_OKAY;
 }
+
+
 
 } /* namespace gcg */
 

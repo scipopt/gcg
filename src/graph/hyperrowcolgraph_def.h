@@ -347,5 +347,33 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    return SCIP_OKAY;
 }
 
+template <class T>
+SCIP_RETCODE HyperrowcolGraph<T>::readPartition(
+   const char*        filename            /**< filename where the partition is stored */
+   )
+{
+
+   ifstream input(filename);
+   if( !input.good() )
+   {
+      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
+      return SCIP_READERROR;
+   }
+   for( int i = 0; i < this->nnonzeroes; ++i )
+   {
+      int part = 0;
+      if( !(input >> part) )
+      {
+         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
+         return SCIP_READERROR;
+      }
+      graph.setPartition(i,part);
+   }
+
+   input.close();
+   return SCIP_OKAY;
+
+}
+
 } /* namespace gcg */
 #endif

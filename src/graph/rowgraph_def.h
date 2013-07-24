@@ -121,9 +121,131 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
    int                   nvars_               /**< number of variables */
    )
 {
+   int i;
+   int j;
+   int k;
+   int l;
+   SCIP_Bool success;
+
+   assert(conss != NULL);
+   assert(vars != NULL);
+   assert(nvars_ > 0);
+   assert(nconss_ > 0);
+
    this->nvars = nvars_;
    this->nconss = nconss_;
-   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
+
+   /* go through all variables */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(conss[i]);
+
+      this->graph.addNode(i, weight);
+   }
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      SCIP_VAR **curvars1;
+
+      int ncurvars1;
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+      assert(success);
+      if( ncurvars1 == 0 )
+         continue;
+
+      /*
+       * may work as is, as we are copying the constraint later regardless
+       * if there are variables in it or not
+       */
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+      assert(success);
+
+      /* go through all constraints */
+      for( j = 0; j < i; ++j )
+      {
+         SCIP_VAR **curvars2;
+         SCIP_Bool continueloop;
+         int ncurvars2;
+         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
+         assert(success);
+         if( ncurvars2 == 0 )
+            continue;
+
+         if(this->graph.edge(i, j))
+            continue;
+
+         continueloop = FALSE;
+         /*
+          * may work as is, as we are copying the constraint later regardless
+          * if there are variables in it or not
+          */
+         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[j], curvars2, ncurvars2, &success) );
+         assert(success);
+
+
+         /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+         /** @todo Do more then one entry per variable actually work? */
+
+         for( k = 0; k < ncurvars1; ++k )
+         {
+            SCIP_VAR* var1;
+            int varIndex1;
+
+            if( !SCIPisVarRelevant(curvars1[j]) )
+               continue;
+
+            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               var1 = SCIPvarGetProbvar(curvars1[k]);
+            else
+               var1 = curvars1[k];
+
+            assert(var1 != NULL);
+            varIndex1 = SCIPvarGetProbindex(var1);
+            assert(varIndex1 >= 0);
+            assert(varIndex1 < this->nvars);
+
+            for( l = 0; l < ncurvars2; ++l )
+            {
+               SCIP_VAR* var2;
+               int varIndex2;
+
+               if( !SCIPisVarRelevant(curvars2[l]) )
+                  continue;
+
+               if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+                  var2 = SCIPvarGetProbvar(curvars2[l]);
+               else
+                  var2 = curvars2[l];
+
+               assert(var2 != NULL);
+               varIndex2 = SCIPvarGetProbindex(var2);
+               assert(varIndex2 >= 0);
+               assert(varIndex2 < this->nvars);
+
+               if(varIndex1 == varIndex2)
+               {
+                  SCIP_CALL( this->graph.addEdge(i, j) );
+                  this->graph.flush();
+
+                  continueloop = TRUE;
+                  break;
+               }
+            }
+            if(continueloop)
+               break;
+         }
+         SCIPfreeBufferArray(this->scip_, &curvars2);
+      }
+      SCIPfreeBufferArray(this->scip_, &curvars1);
+   }
+   this->graph.flush();
+
    return SCIP_OKAY;
 }
 
