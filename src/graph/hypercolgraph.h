@@ -78,10 +78,38 @@ public:
 
    virtual std::vector<int> getNeighbors(
          int i
-      );
+      )
+      {
+      return this->graph.getNeighbors(i);
+      }
 
    virtual std::vector<int> getHyperedgeNodes(
          int i
+      );
+
+   /**
+    * reads the partition from the given file.
+    * The format is graph dependent. The default is a file with one line for each node a
+    */
+   virtual SCIP_RETCODE readPartition(
+      const char*        filename            /**< filename where the partition is stored */
+   )
+   {
+      SCIP_CALL( this->graph.readPartition(filename) );
+      return SCIP_OKAY;
+   }
+
+   /** return a partition of the nodes */
+   virtual std::vector<int> getPartition()
+   {
+      return this->graph.getPartition();
+   }
+
+   virtual SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss_,             /**< number of constraints */
+      int                   nvars_               /**< number of variables */
       );
 };
 

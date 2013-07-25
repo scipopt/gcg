@@ -164,7 +164,8 @@ TEST_F(HyperrowTest, GetHyperedgeNodesTest) {
    int array[3][4] = {
       {0,1,3,0},
       {0,1,2,0},
-      {0,2,0,0} };
+      {0,2,0,0}
+   };
 
    ASSERT_EQ(3, graph.getNEdges());
    ASSERT_EQ(4, graph.getNNodes());

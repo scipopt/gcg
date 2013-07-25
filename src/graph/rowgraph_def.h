@@ -197,7 +197,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
             SCIP_VAR* var1;
             int varIndex1;
 
-            if( !SCIPisVarRelevant(curvars1[j]) )
+            if( !SCIPisVarRelevant(curvars1[k]) )
                continue;
 
             if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

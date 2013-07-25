@@ -86,6 +86,7 @@ SCIP_RETCODE HyperrowGraph<T>::writeToFile(
    for( int i = 0; i < getNEdges(); ++i )
    {
       std::vector<int> neighbors = getHyperedgeNodes(i);
+
       if( edgeweights )
       {
          SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i+this->nvars));
@@ -127,30 +128,6 @@ int HyperrowGraph<T>::getNNeighbors(
 }
 
 template <class T>
-std::vector<int> HyperrowGraph<T>::getNeighbors(
-   int i
-)
-{
-   assert(i >= 0);
-   assert(i < getNNodes());
-
-   std::vector<int>::iterator it;
-   std::set<int> neighbors;
-
-   std::vector<int> immediateneighbors = graph.getNeighbors(i);
-   for( size_t j = 0; j < immediateneighbors.size(); ++j)
-   {
-      std::vector<int> alternateneighbor = graph.getNeighbors(immediateneighbors[j]);
-      neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
-   }
-
-   std::vector<int> r(neighbors.begin(), neighbors.end());
-   it = std::remove(r.begin(), r.end(), i);
-
-   return std::vector<int>(r.begin(), it);
-}
-
-template <class T>
 std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
    int i
 )
@@ -158,7 +135,7 @@ std::vector<int> HyperrowGraph<T>::getHyperedgeNodes(
    assert(i >= 0);
    assert(i < getNEdges());
 
-   std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
+   std::vector<int> neighbors = graph.getHyperedgeNodes(i);
    return neighbors;
 }
 
@@ -231,6 +208,91 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
       SCIPfreeBufferArray(this->scip_, &nsubscipconss);
       return SCIP_OKAY;
 }
+
+
+template <class T>
+SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
+   SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+   SCIP_VAR**            vars,               /**< variables for which graph should be created */
+   int                   nconss_,             /**< number of constraints */
+   int                   nvars_               /**< number of variables */
+   )
+{
+   int i;
+   int j;
+   SCIP_Bool success;
+
+   assert(conss != NULL);
+   assert(vars != NULL);
+   assert(nvars_ > 0);
+   assert(nconss_ > 0);
+
+   this->nvars = nvars_;
+   this->nconss = nconss_;
+
+   /* go through all variables */
+   for( i = 0; i < this->nvars; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(vars[i]);
+
+      this->graph.addNode(i, weight);
+   }
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      SCIP_VAR **curvars;
+      std::vector<int> hyperedge;
+
+      int ncurvars;
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      assert(success);
+      if( ncurvars == 0 )
+         continue;
+
+      /*
+       * may work as is, as we are copying the constraint later regardless
+       * if there are variables in it or not
+       */
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      assert(success);
+
+      /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+      /** @todo Do more then one entry per variable actually work? */
+
+      for( j = 0; j < ncurvars; ++j )
+      {
+         SCIP_VAR* var1;
+         int varIndex1;
+
+         if( !SCIPisVarRelevant(curvars[j]) )
+            continue;
+
+         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            var1 = SCIPvarGetProbvar(curvars[j]);
+         else
+            var1 = curvars[j];
+
+         assert(var1 != NULL);
+         varIndex1 = SCIPvarGetProbindex(var1);
+         assert(varIndex1 >= 0);
+         assert(varIndex1 < this->nvars);
+
+         hyperedge.insert(hyperedge.end(), varIndex1);
+      }
+      this->graph.addHyperedge(hyperedge);
+
+      SCIPfreeBufferArray(this->scip_, &curvars);
+   }
+
+   this->graph.flush();
+   return SCIP_OKAY;
+}
+
 
 } /* namespace gcg */
 
