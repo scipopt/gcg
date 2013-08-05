@@ -35,7 +35,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+/* #define SCIP_DEBUG */
 #include "decomp.h"
 #include "pub_decomp.h"
 #include "scip/scip.h"
@@ -525,7 +525,10 @@ SCIP_RETCODE DECdecompSetSubscipvars(
       decdecomp->nsubscipvars[b] = nsubscipvars[b];
 
       if( nsubscipvars[b] < 0 )
+      {
+         SCIPerrorMessage("Number of variables per subproblem must be nonnegative.\n");
          valid = FALSE;
+      }
       else if( nsubscipvars[b] > 0 )
       {
          assert(subscipvars[b] != NULL);
@@ -539,7 +542,10 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    }
 
    if( !valid )
+   {
       return SCIP_INVALIDDATA;
+   }
+
 
    return SCIP_OKAY;
 }
@@ -598,7 +604,10 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    for( b = 0; b < decdecomp->nblocks; ++b )
    {
       if( nsubscipconss[b] <= 0 || subscipconss[b] == NULL )
+      {
+         SCIPerrorMessage("Block %d is empty and thus invalid. Each block needs at least one constraint.\n", b);
          valid = FALSE;
+      }
 
       decdecomp->nsubscipconss[b] = nsubscipconss[b];
 
@@ -670,8 +679,10 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    }
 
    if( (linkingconss == NULL) !=  (nlinkingconss == 0) )
+   {
+      SCIPerrorMessage("Number of linking constraints and linking constraint array are inconsistent.\n");
       return SCIP_INVALIDDATA;
-
+   }
    return SCIP_OKAY;
 }
 
@@ -728,7 +739,10 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    }
 
    if( (linkingvars == NULL) != (nlinkingvars == 0) )
+   {
+      SCIPerrorMessage("Number of linking variables and linking variable array are inconsistent.\n");
       return SCIP_INVALIDDATA;
+   }
 
    return SCIP_OKAY;
 }
@@ -808,8 +822,10 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
       }
    }
    if( !valid )
+   {
+      SCIPerrorMessage("The staircase linking variables are inconsistent.\n");
       return SCIP_INVALIDDATA;
-
+   }
    return SCIP_OKAY;
 }
 
@@ -1058,7 +1074,14 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( b = 0; b < nblocks; ++b )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(stairlinkingvars[b]), nstairlinkingvars[b]) ); /*lint !e866*/
+      if( nstairlinkingvars[b] == 0)
+      {
+         SCIPfreeMemoryArrayNull(scip, &(stairlinkingvars[b]));
+      }
+      else
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &(stairlinkingvars[b]), nstairlinkingvars[b]) ); /*lint !e866*/
+      }
    }
 
    SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
@@ -1350,13 +1373,13 @@ void DECdecompPrintDecomp(
       for( j = 0; j < decdecomp->nsubscipvars[i]; ++j )
       {
          var = decdecomp->subscipvars[i][j];
-         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->vartoblock, (void*) var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPvarGetName(var), (int) (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, (void*) var), (int) (size_t) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
       }
       SCIPinfoMessage(scip, NULL, "Constraints:\n");
       for( j = 0; j < decdecomp->nsubscipconss[i]; ++j )
       {
          cons = decdecomp->subscipconss[i][j];
-         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->constoblock, (void*) cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+         SCIPinfoMessage(scip, NULL, "\t%s (%i, %i)\n", SCIPconsGetName(cons), (int) (size_t) SCIPhashmapGetImage(decdecomp->constoblock, (void*) cons), (int) (size_t) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
       }
       SCIPinfoMessage(scip, NULL, "========================================\n");
    }
@@ -1364,14 +1387,14 @@ void DECdecompPrintDecomp(
    for( j = 0; j < decdecomp->nlinkingvars; ++j )
    {
       var = decdecomp->linkingvars[j];
-      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPvarGetName(var), *(int*) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPvarGetName(var), (int) (size_t) SCIPhashmapGetImage(decdecomp->varindex, (void*) var));
    }
    SCIPinfoMessage(scip, NULL, "========================================\n");
    SCIPinfoMessage(scip, NULL, "Linking constraints #%i (consindex) :\n", decdecomp->nlinkingconss);
    for( j = 0; j < decdecomp->nlinkingconss; ++j )
    {
       cons = decdecomp->linkingconss[j];
-      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPconsGetName(cons), *(int*) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
+      SCIPinfoMessage(scip, NULL, "\t%s (%i)\n", SCIPconsGetName(cons), (int) (size_t) SCIPhashmapGetImage(decdecomp->consindex, (void*) cons));
    }
    SCIPinfoMessage(scip, NULL, "========================================\n");
 }

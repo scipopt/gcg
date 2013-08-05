@@ -1931,15 +1931,12 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    assert(ndecdecomps != NULL);
 
    *ndecdecomps = 1;
-
-   /* assert(strcmp(DECdetectorGetName(cutpacking), DEC_DETECTORNAME) == 0); */
-   SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting cutpacking structure: ");
 
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );
 
    /* build the hypergraph structure from the original problem */
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
-   SCIPdebugMessage("buildGraphstructure successful \n");
 
    SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[0]) );
 
@@ -1975,7 +1972,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 
    /** get subscipvars, copy data to decdecomp */
    SCIP_CALL( GetConsindex(scip, detectordata, (*decdecomps)[0]) );
-   SCIPdebugMessage("buildTransformedProblem successful \n");
 
    if( detectordata->fixedblocks )
    {
@@ -1984,6 +1980,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    }
 
    detectordata->found = TRUE;
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[0]));
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

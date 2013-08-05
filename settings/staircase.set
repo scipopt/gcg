@@ -1,4 +1,4 @@
-# SCIP version 3.0.0
+# SCIP version 3.0.1.4
 
 # frequency for solving LP at the nodes (-1: never; 0: only root LP)
 # [type: int, range: [-1,2147483647], default: 1]
@@ -20,11 +20,15 @@ detectors/borderheur/enabled = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/arrowheur/enabled = FALSE
 
-# flag to indicate whether detector <random> is enabled
+# flag to indicate whether detector <stairheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
+detectors/stairheur/enabled = TRUE
+
+# flag to indicate whether detector <random> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <cutpacking> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
-detectors/staircase/enabled = TRUE
+detectors/cutpacking/enabled = TRUE
 
