@@ -82,7 +82,7 @@ using namespace scip;
                                                      *    2 :   according to reliability from previous round)
                                                      */
 #define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
-#define DEFAULT_STABILIZATION            TRUE       /** should stabilization be used */
+#define DEFAULT_STABILIZATION            FALSE      /** should stabilization be used */
 #define DEFAULT_EAGERFREQ                10         /**< frequency at which all pricingproblems should be solved (0 to disable) */
 
 #define EVENTHDLR_NAME         "probdatavardeleted"
@@ -2342,7 +2342,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
 
    pricer->createPricingTypes();
-   /* pricer->createStabilization(); */
+   pricer->createStabilization();
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
