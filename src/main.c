@@ -43,9 +43,10 @@
 #include "scip/scipshell.h"
 #include "gcgplugins.h"
 #include "cons_decomp.h"
+
 #include "gcggithash.h"
 #include "relax_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg.h"
 
 #if SCIP_VERSION < 300
 #error GCG can only be compiled with SCIP version 3.0.0 or higher
@@ -173,14 +174,9 @@ SCIP_RETCODE fromCommandLine(
     **************/
 
    SCIPinfoMessage(scip, NULL, "\nStatistics\n");
-   SCIPinfoMessage(scip, NULL, "==========\n\n");
+   SCIPinfoMessage(scip, NULL, "==========\n");
 
-   SCIPinfoMessage(scip, NULL, "Master Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), NULL) );
-   SCIPinfoMessage(scip, NULL, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, NULL) );
-   SCIPinfoMessage(scip, NULL, "\n");
-   SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), NULL) );
+   SCIP_CALL( GCGprintStatistics(scip, NULL) );
 
    return SCIP_OKAY;
 }
@@ -400,15 +396,15 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    else
    {
       SCIPinfoMessage(scip, NULL, "\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
-         "  -l <logfile>        : copy output into log file\n"
-         "  -q                  : suppress screen messages\n"
-         "  -s <settings>       : load parameter settings (.set) file\n"
-         "  -m <mastersettings> : load master parameter settings (.set) file\n"
-         "  -f <problem>        : load and solve problem file\n"
+            "  -l <logfile>        : copy output into log file\n"
+            "  -q                  : suppress screen messages\n"
+            "  -s <settings>       : load parameter settings (.set) file\n"
+            "  -m <mastersettings> : load master parameter settings (.set) file\n",
+            argv[0]);
+      SCIPinfoMessage(scip, NULL, "  -f <problem>        : load and solve problem file\n"
          "  -d <decomposition>  : load decomposition file\n"
          "  -b <batchfile>      : load and execute dialog command batch file (can be used multiple times)\n"
-         "  -c \"command\"        : execute single line of dialog commands (can be used multiple times)\n\n",
-         argv[0]);
+         "  -c \"command\"        : execute single line of dialog commands (can be used multiple times)\n\n");
    }
 
    return SCIP_OKAY;

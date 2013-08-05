@@ -39,6 +39,8 @@
 #include <string.h>
 
 #include "disp_gcg.h"
+#include "gcg.h"
+
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 

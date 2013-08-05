@@ -298,12 +298,6 @@ SCIP_RETCODE DECdecompCheckConsistency(
    DEC_DECOMP*           decdecomp           /**< decomposition data structure */
    );
 
-/** returns whether the constraint belongs to GCG or not */
-extern
-SCIP_Bool GCGisConsGCGCons(
-   SCIP_CONS*            cons                /**< constraint to check */
-   );
-
 /** creates a decomposition with all constraints in the master */
 extern
 SCIP_RETCODE DECcreateBasicDecomp(
@@ -402,6 +396,12 @@ SCIP_RETCODE DECevaluateDecomposition(
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    );
 
+/** display statistics about the decomposition */
+extern
+SCIP_RETCODE GCGprintDecompStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   );
 
 #ifdef __cplusplus
 }

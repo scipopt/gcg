@@ -56,6 +56,7 @@ using gcg::Weights;
 #define DEC_PRIORITY             500            /**< priority of the detector */
 #define DEC_DECCHAR              'b'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should detector be called by default */
+#define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */
 #define DEFAULT_CONSWEIGHT       5              /**< weight for constraint hyperedges */
@@ -374,7 +375,7 @@ SCIP_RETCODE SCIPincludeDetectionBorderheur(
    detectordata->found = FALSE;
    detectordata->blocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildBordered, initBorderheur, exitBorderheur) );
 
    /* add borderheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/borderheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );

@@ -49,7 +49,8 @@
 #define DEC_DESC              "detects staircase matrices via matrix reordering" /**< detector description */
 #define DEC_PRIORITY          1200           /**< priority of the detector */
 #define DEC_DECCHAR           's'            /**< display character of detector */
-#define DEC_ENABLED           FALSE         /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
+#define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings*/
 #define DEFAULT_MAXBLOCKS                    20       /**< value for the maximum number of blocks to be considered */
@@ -2463,7 +2464,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 /*    detectordata->decdecomp = NULL; */
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
 
    /* add stairheur presolver parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );

@@ -43,10 +43,11 @@
 #include "scip/type_dialog.h"
 #include "scip/dialog_default.h"
 
+#include "gcg.h"
+
 #include "dialog_gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-#include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "stat.h"
 #include "reader_dec.h"
@@ -174,12 +175,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayStatistics)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\nMaster Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), NULL) );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nOriginal Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(scip, NULL) );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
-   SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), NULL) );
+   SCIP_CALL( GCGprintStatistics(scip, NULL) );
+
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    return SCIP_OKAY;

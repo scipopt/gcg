@@ -42,6 +42,7 @@
 #define DEC_PRIORITY             0           /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              '?'         /**< display character of detector */
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
 
 /*
  * Data structures
@@ -123,7 +124,7 @@ SCIP_RETCODE SCIPincludeDetectionXyz(
    /**@todo create xyz detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectXyz, initXyz, exitXyz) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectXyz, initXyz, exitXyz) );
 
    /**@todo add xyz detector parameters */
 

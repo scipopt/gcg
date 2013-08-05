@@ -411,6 +411,15 @@ void GCGupdateVarStatistics(
     SCIP_Real            redcost             /** reduced cost of the variable */
    );
 
+/** prints the given variable: name, type (original, master or pricing) block number,
+ * and the list of all variables related to the given variable */
+extern
+void GCGprintVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file,               /**< File to write information to, or NULL for stdout */
+   SCIP_VAR*             var                 /**< variable that should be printed */
+   );
+
 #ifdef __cplusplus
 }
 #endif

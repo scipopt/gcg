@@ -33,14 +33,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
+#include "cons_decomp.h"
 
+#include <string.h>
 /** transforms given solution of the master problem into solution of the original problem
  *  @todo think about types of epsilons used in this method
  */
-SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
+SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol,          /**< solution of the master problem, or NULL for current LP solution */
    SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
@@ -327,7 +330,7 @@ SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
 
 
 /** transforms given values of the given original variables into values of the given master variables */
-void GCGrelaxTransformOrigvalsToMastervals(
+void GCGtransformOrigvalsToMastervals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
    SCIP_Real*            origvals,           /**< array with values (coefs) for the given original variables */
@@ -419,97 +422,6 @@ void GCGrelaxTransformOrigvalsToMastervals(
    }
 }
 
-/**  prints the given variable: name, type (original, master or pricing) block number,
- * and the list of all variables related to the given variable
- */
-void GCGrelaxPrintVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File to write information to, or NULL for stdout */
-   SCIP_VAR*             var                 /**< variable that should be printed */
-   )
-{
-   int i;
-   int blocknr;
-   assert(GCGvarIsOriginal(var) || GCGvarIsMaster(var) || GCGvarIsPricing(var));
-
-   blocknr = GCGvarGetBlock(var);
-
-   if( GCGvarIsOriginal(var) )
-   {
-      SCIP_VAR** mastervars;
-      SCIP_Real* mastervals;
-      int  nmastervars;
-
-      if( GCGvarIsLinking(var) )
-      {
-         SCIP_VAR** pricingvars;
-         int nblocks;
-         int j;
-         pricingvars = GCGlinkingVarGetPricingVars(var);
-         nblocks = GCGlinkingVarGetNBlocks(var);
-         SCIPinfoMessage(scip, file, "Variable %s (linking): %d block%s (", SCIPvarGetName(var), nblocks, nblocks == 1 ? "":"s" );
-         /*lint --e{440}*/
-         for( i = 0, j = 0; j < nblocks; ++i )
-         {
-            if( pricingvars[i] != NULL )
-            {
-               SCIPinfoMessage(scip, file, "%d ", i);
-               ++j;
-            }
-         }
-         SCIPinfoMessage(scip, file, ")\n");
-      }
-      else
-      {
-         SCIPinfoMessage(scip, file, "Variable %s (original): block %d\n", SCIPvarGetName(var), blocknr);
-      }
-
-      mastervars = GCGoriginalVarGetMastervars(var);
-      mastervals = GCGoriginalVarGetMastervals(var);
-      nmastervars = GCGoriginalVarGetNMastervars(var);
-      SCIPinfoMessage(scip, file, "mastervars:");
-      for( i = 0; i < nmastervars-1; i++ )
-      {
-         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(mastervars[i]), mastervals[i]);
-      }
-      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(mastervars[nmastervars-1]), mastervals[nmastervars-1]);
-   }
-   else if( GCGvarIsPricing(var) )
-   {
-      SCIP_VAR** origvars;
-      int  norigvars;
-
-      origvars = GCGpricingVarGetOrigvars(var);
-      norigvars = GCGpricingVarGetNOrigvars(var);
-
-      SCIPinfoMessage(scip, file, "Variable %s (pricing): block %d\n", SCIPvarGetName(var), blocknr);
-      SCIPinfoMessage(scip, file, "origvars:");
-      for( i = 0; i < norigvars-1; i++ )
-      {
-         SCIPinfoMessage(scip, file, "%s, ", SCIPvarGetName(origvars[i]));
-      }
-      SCIPinfoMessage(scip, file, "%s\n", SCIPvarGetName(origvars[norigvars-1]));
-   }
-   else if( GCGvarIsMaster(var) )
-   {
-      SCIP_VAR** origvars;
-      int  norigvars;
-      SCIP_Real* origvals;
-
-      origvars = GCGmasterVarGetOrigvars(var);
-      norigvars = GCGmasterVarGetNOrigvars(var);
-      origvals = GCGmasterVarGetOrigvals(var);
-      SCIPinfoMessage(scip, file, "Variable %s (master): block %d\n", SCIPvarGetName(var), blocknr);
-      SCIPinfoMessage(scip, file, "origvars:");
-      for( i = 0; i < norigvars-1; i++ )
-      {
-         SCIPinfoMessage(scip, file, "%s (%g), ", SCIPvarGetName(origvars[i]), origvals[i]);
-      }
-      SCIPinfoMessage(scip, file, "%s (%g)\n", SCIPvarGetName(origvars[norigvars-1]), origvals[norigvars-1]);
-   }
-}
-
-
 /** returns whether the scip is the original scip instance */
 SCIP_Bool GCGisOriginal(
    SCIP*                 scip                /**< SCIP data structure */
@@ -526,4 +438,41 @@ SCIP_Bool GCGisMaster(
 {
    assert(scip != NULL);
    return SCIPfindPricer(scip, "gcg") != NULL;
+}
+
+/** print out GCG statistics */
+SCIP_RETCODE GCGprintStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+)
+{
+   assert(scip != NULL);
+
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\nMaster Program statistics:\n");
+   SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
+   SCIP_CALL( SCIPprintStatistics(scip, file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   SCIP_CALL( GCGprintDecompStatistics(scip, file) );
+   return SCIP_OKAY;
+}
+
+/** returns whether the constraint belongs to GCG or not */
+SCIP_Bool GCGisConsGCGCons(
+   SCIP_CONS*            cons                /**< constraint to check */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   assert(cons != NULL);
+   conshdlr = SCIPconsGetHdlr(cons);
+   if( strcmp("origbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+   else if( strcmp("masterbranch", SCIPconshdlrGetName(conshdlr)) == 0 )
+      return TRUE;
+
+   return FALSE;
 }
