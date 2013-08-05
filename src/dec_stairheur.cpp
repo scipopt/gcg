@@ -2212,10 +2212,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 
    /* allocate space for output data */
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
-   for( i = 0; i < ndecs; ++i )
-   {
-      SCIP_CALL_ABORT( DECdecompCreate(scip, &(*decdecomps)[i]) );
-   }
+
    /* remove empty constraints */
    SCIP_CALL( findRelevantConss(scip, detectordata) );
 
@@ -2298,6 +2295,8 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    SCIPlistDeleteData(scip, detectordata->rowsWithConstrictions);
    SCIPlistDeleteNested(scip, rowindices);
    SCIPlistDeleteNested(scip, columnindices);
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, decdecomps, *ndecdecomps) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
