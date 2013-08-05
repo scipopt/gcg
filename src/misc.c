@@ -453,11 +453,17 @@ SCIP_RETCODE GCGprintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, file) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
-   SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
+   {
+      SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   }
    SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
-   SCIP_CALL( GCGprintDecompStatistics(scip, file) );
+   if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+      SCIP_CALL( GCGprintDecompStatistics(scip, file) );
+   }
    return SCIP_OKAY;
 }
 
