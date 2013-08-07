@@ -1594,6 +1594,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->indexmap = NULL;
    detectordata->rowsWithConstrictions = NULL;
    detectordata->blockedAfterrow = NULL;
+   detectordata->relevantConss = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
 
