@@ -2257,7 +2257,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
-
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );

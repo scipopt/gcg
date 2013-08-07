@@ -103,6 +103,14 @@ SCIP_RETCODE writeAllDecompositions(
    SCIP_Bool endoffile;
    SCIP_RETCODE retcode;
 
+   if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
+   {
+      SCIPdialogMessage(scip, NULL, "No decomposition to write, please read or detect one first.\n");
+      SCIPdialoghdlrClearBuffer(dialoghdlr);
+      *nextdialog = NULL;
+      return SCIP_OKAY;
+   }
+
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
    if( endoffile )
    {

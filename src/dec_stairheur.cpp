@@ -503,7 +503,7 @@ SCIP_RETCODE createRowindexList(
       /* fill the array with the indices of the variables of the current constraint */
       for( j = 0; j < nvars; ++j )
       {
-         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, vars[j]);
+         probindices[j] = *(int*) SCIPhashmapGetImage(varindex, SCIPvarGetProbvar(vars[j]));
       }
       /* sort the elements of probindices ('<') */
       std::sort(probindices, probindices+nvars);
@@ -1429,21 +1429,29 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
       indexmapFree(scip, &detectordata->indexmap);
    }
 
-   SCIPfreeMemoryArray(scip, &detectordata->relevantConss);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->relevantConss);
 
-   SCIPfreeMemoryArray(scip, &detectordata->ibegin);
-   SCIPfreeMemoryArray(scip, &detectordata->iend);
-   SCIPfreeMemoryArray(scip, &detectordata->jbegin);
-   SCIPfreeMemoryArray(scip, &detectordata->jend);
-   SCIPfreeMemoryArray(scip, &detectordata->jmin);
-   SCIPfreeMemoryArray(scip, &detectordata->jmax);
-   SCIPfreeMemoryArray(scip, &detectordata->minV);
-   SCIPfreeMemoryArray(scip, &detectordata->width);
-   SCIPfreeMemoryArray(scip, &detectordata->hashmapindices);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->ibegin);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->iend);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->jbegin);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->jend);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->jmin);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->jmax);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->minV);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->width);
+   SCIPfreeMemoryArrayNull(scip, &detectordata->hashmapindices);
    /* delete vectors */
    /* data had to be deleted before because of SCIP memory management */
-   delete detectordata->rowsWithConstrictions;
-   delete detectordata->blockedAfterrow;
+   if(detectordata->rowsWithConstrictions != NULL)
+   {
+      delete detectordata->rowsWithConstrictions;
+      detectordata->rowsWithConstrictions = NULL;
+   }
+   if( detectordata->blockedAfterrow )
+   {
+      delete detectordata->blockedAfterrow;
+      detectordata->blockedAfterrow = NULL;
+   }
 
    SCIPfreeMemory(scip, &detectordata);
    return SCIP_OKAY;
@@ -1574,6 +1582,18 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
 
    assert(detectordata != NULL);
    detectordata->constoblock = NULL;
+   detectordata->ibegin = NULL;
+   detectordata->iend = NULL;
+   detectordata->jbegin = NULL;
+   detectordata->jend = NULL;
+   detectordata->jmin = NULL;
+   detectordata->jmax = NULL;
+   detectordata->minV = NULL;
+   detectordata->width = NULL;
+   detectordata->hashmapindices = NULL;
+   detectordata->indexmap = NULL;
+   detectordata->rowsWithConstrictions = NULL;
+   detectordata->blockedAfterrow = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
 
