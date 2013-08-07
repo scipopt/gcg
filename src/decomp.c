@@ -259,7 +259,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP_CALL( SCIPallocBufferArray(scip, &subscipconss, nblocks) );
 
    *haslinking = FALSE;
-
+   retcode = SCIP_OKAY;
    for( i = 0; i < nblocks; ++i )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &subscipconss[i], nconss) ); /*lint !e866*/
@@ -1093,14 +1093,14 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* try to deduce staircase map */
    for( b = 0; b < nblocks; ++b )
    {
-      cumindex += nsubscipvars[b];
       SCIPdebugMessage("block %d (%d vars):\n", b, nsubscipvars[b]);
       linkindex = 0;
+      idx = 0;
+
       for( i = 0; i < nsubscipconss[b]; ++i )
       {
          SCIP_CONS* cons;
          cons = subscipconss[b][i];
-
          SCIP_CALL( SCIPhashmapInsert(consindex, cons, (void*)(size_t)(cindex+1)) );
          ++cindex;
          SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
@@ -1121,8 +1121,9 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
                /* if it has not been already assigned, it links to the next block */
                if( !SCIPhashmapExists(varindex, probvar) )
                {
-                  SCIPdebugMessage("assigning link var <%s> to index <%d>\n", SCIPvarGetName(probvar), cumindex+linkindex+1);
-                  SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(cumindex+linkindex+1)) );
+                  int vindex = cumindex+nsubscipvars[b]+linkindex+1;
+                  SCIPdebugMessage("assigning link var <%s> to index <%d>\n", SCIPvarGetName(probvar), vindex);
+                  SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(vindex)) );
                   stairlinkingvars[b][nstairlinkingvars[b]] = probvar;
                   ++(nstairlinkingvars[b]);
                   linkindex++;
@@ -1130,15 +1131,23 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
             }
             else
             {
-               assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);  /*lint !e507*/
-               SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(idx+1)) );
-               ++idx;
+               if( !SCIPhashmapExists(varindex, probvar) )
+               {
+                  int vindex = cumindex+idx+1;
+                  assert(((int) (size_t) SCIPhashmapGetImage(vartoblock, probvar)) -1 == b);  /*lint !e507*/
+                  SCIPdebugMessage("assigning block var <%s> to index <%d>\n", SCIPvarGetName(probvar), vindex);
+                  SCIP_CALL( SCIPhashmapInsert(varindex, probvar, (void*)(size_t)(vindex)) );
+                  ++idx;
+               }
             }
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
-      idx += linkindex;
-      cumindex += linkindex;
+      if(b < nblocks-1)
+      {
+         cumindex += nsubscipvars[b] + nstairlinkingvars[b];
+      }
+      idx += cumindex;
    }
    DECdecompSetVarindex(decdecomp, varindex);
    DECdecompSetConsindex(decdecomp, consindex);

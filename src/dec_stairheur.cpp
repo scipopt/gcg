@@ -60,8 +60,8 @@
 #define DEFAULT_PRIORITY                     DEC_PRIORITY
 #define DEFAULT_DESIREDBLOCKS                0       /**< value for the desired number of blocks (for all blocking types). Set to zero for self determination of block number */
 #define DEFAULT_DYNAMICBLOCKING              TRUE     /**< Enable blocking type 'dynamic' */
-#define DEFAULT_STATICBLOCKING               TRUE     /**< Enable blocking type 'static' */
-#define DEFAULT_BLOCKINGASSOONASPOSSIBLE     FALSE    /**< Enable blocking type 'as soon as possible' */
+#define DEFAULT_STATICBLOCKING               FALSE     /**< Enable blocking type 'static' */
+#define DEFAULT_BLOCKINGASSOONASPOSSIBLE     TRUE    /**< Enable blocking type 'as soon as possible' */
 #define DEFAULT_MULTIPLEDECOMPS              TRUE     /**< Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks' */
 #define DEFAULT_MAXITERATIONSROC             1000000  /**< The maximum of iterations of the ROC-algorithm. -1 for no iteration limit */
 
