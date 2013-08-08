@@ -2674,7 +2674,9 @@ SCIP_RETCODE computeVarDensities(
          mean += 1.0*vardistribution[b][v]/ncurvars;
 
       }
-      median = quick_select_median(vardistribution[b], ncurvars);
+      if( ncurvars > 0 )
+         median = quick_select_median(vardistribution[b], ncurvars);
+
       SCIPdebugPrintf("\nmin: %.3f, max: %.3f, median: %.3f, mean: %.3f\n", min, max, median, mean);
 
       blockvardensities[b].max = max;
