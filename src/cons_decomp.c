@@ -698,22 +698,22 @@ SCIP_RETCODE DECdetectStructure(
    return SCIP_OKAY;
 }
 
-/** write out all known decompositions */
+/** write out all detected or provided decompositions */
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
    char*                 extension           /**< extension for decompositions */
    )
 {
    int i;
+   int j;
    char name[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
    char *pname;
-   char decchar;
 
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
-   DEC_DECOMP *tmp;
    DEC_DETECTOR *detector;
+   DEC_DECOMP *decomp;
 
    assert(scip != NULL);
    assert(extension != NULL);
@@ -733,25 +733,35 @@ SCIP_RETCODE DECwriteAllDecomps(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
-   /** @todo This is a giant hack, but it works quite well */
-   tmp = conshdlrdata->decdecomps[0];
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      detector =  conshdlrdata->detectors[i];
+      assert(detector != NULL);
 
+      for( j = 0; j < detector->ndecomps; ++j)
+      {
+         decomp = detector->decomps[j];
+         assert(decomp != NULL);
+
+         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
+
+         SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
+      }
+   }
+
+   /** further, get all read in decompositions */
    for( i = 0; i < conshdlrdata->ndecomps; ++i )
    {
+      decomp = conshdlrdata->decdecomps[i];
+      detector =  DECdecompGetDetector(decomp);
 
-      conshdlrdata->decdecomps[0] = conshdlrdata->decdecomps[i];
+      if( detector != NULL )
+         continue;
 
-      detector = DECdecompGetDetector(conshdlrdata->decdecomps[i]);
-      if( detector == NULL )
-         decchar = '?';
-      else
-         decchar = detector->decchar;
-
-      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d.%s", pname, decchar, DECdecompGetNBlocks(conshdlrdata->decdecomps[i]), extension);
+      (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecompGetNBlocks(decomp), extension);
 
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
-   conshdlrdata->decdecomps[0] = tmp;
 
    return SCIP_OKAY;
 }
