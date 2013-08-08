@@ -210,7 +210,7 @@ do
 		echo detect                        >> $TMPFILE
 		echo write prob images\/$base-dec.gp >> $TMPFILE
 		echo write prob decs\/$base.dec    >> $TMPFILE
-		echo write all ref                 >> $TMPFILE
+		echo write all dec                 >> $TMPFILE
 	    elif test $MODE = "bip"
             then
 		echo presolve                      >> $TMPFILE
@@ -219,7 +219,7 @@ do
 	    elif test $MODE = "detectall"
             then
 		echo detect                        >> $TMPFILE
-		echo write all ref                 >> $TMPFILE
+		echo write all dec                 >> $TMPFILE
 	    else
 		if test $MODE = "readdec" 
 		then
@@ -264,6 +264,10 @@ EOF
             echo -----------------------------
             echo
             echo =ready=
+	    if test $MODE = "detectall"
+	    then
+		mv *_*.dec decs\/
+	    fi
         else
             echo @02 FILE NOT FOUND: $i ===========
             echo @02 FILE NOT FOUND: $i =========== >>$ERRFILE

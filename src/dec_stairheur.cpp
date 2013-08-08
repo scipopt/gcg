@@ -99,8 +99,6 @@ struct DEC_DetectorData
    int blocks;
    int maxblocks;
    int minblocks;
-   SCIP_CONS** relevantConss; /* array with all non-empty constraints */
-   int nRelevantConss;        /* number of relevants constraints */
    INDEXMAP* indexmap;
    int* ibegin; /* array, ibegin[i]: index of first nonzero entry in row i */
    int* iend;   /* array, iend[i]: index of last nonzero entry in row i */
@@ -421,38 +419,6 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
 
 #endif
 
-/** scans all constraints of the constraint array of the scip object,
- * and stores pointers to all constraints that have at least one variable in detectordata->relevantConss.
- * Thus it removes all empty constraints.
- */
-static
-SCIP_RETCODE findRelevantConss(SCIP* scip, DEC_DETECTORDATA* detectordata)
-{
-   SCIP_CONS** cons_array;
-   vector<int> relevantConssIndices;
-   int i;
-
-   cons_array = SCIPgetConss(scip);
-   for( i = 0; i < SCIPgetNConss(scip); ++i )
-   {
-      if( SCIPgetNVarsXXX(scip, cons_array[i]) > 0 )
-      {
-         relevantConssIndices.push_back(i);
-      }
-   }
-   /* debug */
-/*    SCIPlistPrint(relevantConssIndices, printint); */
-   /* allocate memory for detectordata->relevantConss and store pointers of relevant conss */
-   detectordata->nRelevantConss = relevantConssIndices.size();
-   SCIPdebugMessage("nRelevantConss: %i \n", detectordata->nRelevantConss);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->relevantConss, detectordata->nRelevantConss) );
-   for( i = 0; i < detectordata->nRelevantConss; ++i)
-   {
-      detectordata->relevantConss[i] = cons_array[relevantConssIndices[i]];
-   }
-
-   return SCIP_OKAY;
-}
 
 /** creates a nested vector with the indices of the nonzero entries of each row.
  *
@@ -483,15 +449,15 @@ SCIP_RETCODE createRowindexList(
    int i;
    int j;
    vector<int> rowindices_row;
-   int ncons; /* number of constraints of the problem */
+   int nconss; /* number of constraints of the problem */
    int nvars; /* number of variables in a constraint */
    int* probindices;
    int* hashmapindex;
    SCIP_CONS* cons; /* one constraint of the problem */
    SCIP_VAR** vars; /* array of variables that occur in a constraint (unequal zero) */
 
-   ncons = detectordata->nRelevantConss;
-   for( i = 0; i < ncons; ++i )
+   nconss = SCIPgetNConss(scip);
+   for( i = 0; i < nconss; ++i )
    {
       hashmapindex = &detectordata->hashmapindices[i+1];
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
@@ -691,7 +657,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    assert(scip != NULL);
    assert(detectordata != NULL);
    nvars = SCIPgetNVars(scip);
-   ncons = detectordata->nRelevantConss;
+   ncons = SCIPgetNConss(scip);
 
    /* create the vectors containing the positions of nonzero entries; row and column ordering */
    SCIP_CALL( createRowindexList(scip, detectordata, inputmap->indexcons, inputmap->varindex, rowindices) );
@@ -747,7 +713,7 @@ int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iter
 {
    int i;
    int nvars;
-   int ncons;
+   int nconss;
    INDEXMAP* indexmap_permuted;
    vector<vector<int> > rowindices;
    vector<vector<int> > columnindices;
@@ -765,14 +731,14 @@ int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iter
    else
    {
       nvars = SCIPgetNVars(scip);
-      ncons = detectordata->nRelevantConss;
+      nconss = SCIPgetNConss(scip);
 
-      indexmapCreate(scip, &indexmap_permuted, ncons, nvars);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &ibegin_permuted, ncons) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &iend_permuted, ncons) );
+      indexmapCreate(scip, &indexmap_permuted, nconss, nvars);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &ibegin_permuted, nconss) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &iend_permuted, nconss) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &jbegin_permuted, nvars) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &jend_permuted, nvars) );
-      SCIP_CALL( indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, detectordata->relevantConss, ncons, detectordata->hashmapindices) );
+      SCIP_CALL( indexmapInit(indexmap_permuted, SCIPgetVars(scip), nvars, SCIPgetConss(scip), nconss, detectordata->hashmapindices) );
       i = 0;
       do
       {
@@ -802,8 +768,8 @@ int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iter
          swap(detectordata->indexmap, indexmap_permuted);
       }
       /* while Index Arrays change */
-      while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, ncons )
-             && arraysAreEqual(detectordata->iend, iend_permuted, ncons)
+      while( ! (arraysAreEqual(detectordata->ibegin, ibegin_permuted, nconss )
+             && arraysAreEqual(detectordata->iend, iend_permuted, nconss)
              && arraysAreEqual(detectordata->jbegin, jbegin_permuted, nvars)
              && arraysAreEqual(detectordata->jend, jend_permuted, nvars)));
 
@@ -822,7 +788,7 @@ SCIP_RETCODE rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
 {
    /* if blocking is performed after row i+1; local minima */
    int i;
-   for( i = 1; i < detectordata->nRelevantConss - 2; ++i )
+   for( i = 1; i < SCIPgetNConss(scip) - 2; ++i )
    {
       /* is minV[i] a local minimum?    < or <=   ? What does make more sense? */
       if( detectordata->minV[i] < detectordata->minV[i-1] && detectordata->minV[i] < detectordata->minV[i+1] )
@@ -1057,7 +1023,7 @@ SCIP_RETCODE blockingDynamic(
    prev_block_last_row = 0;
    max_col_index_im1 = 0;
    min_col_index_ip1 = 1;
-   min_block_size = round( (float) detectordata->nRelevantConss / (2 * tau ));
+   min_block_size = round( (SCIPgetNConss(scip)*1.0) / (2 * tau ));
    it1 = detectordata->rowsWithConstrictions->begin();
 
    for( it1 = nextRowToBlockAt(detectordata, it1, detectordata->rowsWithConstrictions, min_block_size, prev_block_first_row, prev_block_last_row);
@@ -1079,7 +1045,7 @@ SCIP_RETCODE blockingDynamic(
    /* assign the remaining (< M/2tau) cons and vars to the last block; no new linking vars are added */
    /* debug */
    SCIPdebugMessage("last time: vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, nvars, nvars+1, nvars);
-   SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss) );
+   SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, SCIPgetNConss(scip)) );
    detectordata->blockedAfterrow->pop_back();
 
    detectordata->blocks = block;
@@ -1133,7 +1099,7 @@ SCIP_RETCODE blockingStatic(
    /* blocks 1 to (desired_blocks-1) */
    for( block = 1; block < desired_blocks; ++block )
    {
-      current_row += rowsInConstantBlock(block, desired_blocks, detectordata->nRelevantConss);
+      current_row += rowsInConstantBlock(block, desired_blocks, SCIPgetNConss(scip));
 
       assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
       /* update variables in the while loop */
@@ -1142,9 +1108,9 @@ SCIP_RETCODE blockingStatic(
    /* last block */
    /* assign the remaining cons and vars to the last block; no new linking vars are added */
 
-   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, detectordata->nRelevantConss);
+   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, SCIPgetNConss(scip));
 
-   SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, detectordata->nRelevantConss) );
+   SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, SCIPgetNConss(scip)) );
    detectordata->blockedAfterrow->pop_back();
 
    detectordata->blocks = block;
@@ -1429,8 +1395,6 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
       indexmapFree(scip, &detectordata->indexmap);
    }
 
-   SCIPfreeMemoryArrayNull(scip, &detectordata->relevantConss);
-
    SCIPfreeMemoryArrayNull(scip, &detectordata->ibegin);
    SCIPfreeMemoryArrayNull(scip, &detectordata->iend);
    SCIPfreeMemoryArrayNull(scip, &detectordata->jbegin);
@@ -1461,11 +1425,11 @@ static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 {
    int i;
-   int ncons; /* number of constraints in the problem */
+   int nconss; /* number of constraints in the problem */
    int nvars; /* number of variables in the problem */
    int ndecs;
-   SCIP_VAR** vars_array;
-   SCIP_CONS** cons_array;
+   SCIP_VAR** vars;
+   SCIP_CONS** conss;
    vector<vector<int> > rowindices;
    vector<vector<int> > columnindices;
 #ifdef WRITEALLOUTPUT
@@ -1488,16 +1452,13 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    /* allocate space for output data */
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, ndecs) );
 
-   /* remove empty constraints */
-   SCIP_CALL( findRelevantConss(scip, detectordata) );
-
    nvars = SCIPgetNVars(scip);
-   vars_array = SCIPgetVars(scip);
-   ncons = detectordata->nRelevantConss;
-   cons_array = detectordata->relevantConss;
+   vars = SCIPgetVars(scip);
+   nconss = SCIPgetNConss(scip);
+   conss = SCIPgetConss(scip);
 
    /* initialize hash maps for keeping track of variables and constraints and their corresponding indices after being permuted by the ROC2-algorithm */
-   SCIP_CALL( indexmapInit(detectordata->indexmap, vars_array, nvars, cons_array, ncons, detectordata->hashmapindices) );
+   SCIP_CALL( indexmapInit(detectordata->indexmap, vars, nvars, conss, nconss, detectordata->hashmapindices) );
 
 #ifdef WRITEALLOUTPUT
    {
@@ -1541,7 +1502,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    detectordata->jmin[0] = detectordata->ibegin[0];
    detectordata->jmax[0] = detectordata->iend[0];
    detectordata->width[0] = detectordata->iend[0] - detectordata->ibegin[0];
-   for( i = 1; i < ncons; ++i )
+   for( i = 1; i < nconss; ++i )
    {
       detectordata->width[i] = detectordata->iend[i] - detectordata->ibegin[i];
       detectordata->jmin[i] = detectordata->ibegin[i];
@@ -1552,7 +1513,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    /* =====BLOCKING======= */
    /* ==================== */
 
-   SCIP_CALL( blocking(scip, detectordata, decdecomps, ndecdecomps, nvars, ncons, result) );
+   SCIP_CALL( blocking(scip, detectordata, decdecomps, ndecdecomps, nvars, nconss, result) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d decompositions.\n", *ndecdecomps);
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " \tBlocks:", *ndecdecomps);
 
@@ -1594,7 +1555,6 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    detectordata->indexmap = NULL;
    detectordata->rowsWithConstrictions = NULL;
    detectordata->blockedAfterrow = NULL;
-   detectordata->relevantConss = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
 

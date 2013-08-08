@@ -714,6 +714,7 @@ SCIP_RETCODE DECwriteAllDecomps(
    SCIP_CONSHDLRDATA* conshdlrdata;
    DEC_DETECTOR *detector;
    DEC_DECOMP *decomp;
+   DEC_DECOMP *tmp;
 
    assert(scip != NULL);
    assert(extension != NULL);
@@ -733,6 +734,8 @@ SCIP_RETCODE DECwriteAllDecomps(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
+   tmp = conshdlrdata->decdecomps[0];
+
    for( i = 0; i < conshdlrdata->ndetectors; ++i )
    {
       detector =  conshdlrdata->detectors[i];
@@ -745,6 +748,7 @@ SCIP_RETCODE DECwriteAllDecomps(
 
          (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
 
+         conshdlrdata->decdecomps[0] = decomp;
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
       }
    }
@@ -760,8 +764,11 @@ SCIP_RETCODE DECwriteAllDecomps(
 
       (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%d.%s", pname, DECdecompGetNBlocks(decomp), extension);
 
+      conshdlrdata->decdecomps[0] = decomp;
       SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
    }
+
+   conshdlrdata->decdecomps[0] = tmp;
 
    return SCIP_OKAY;
 }
