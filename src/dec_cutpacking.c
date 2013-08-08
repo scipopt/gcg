@@ -195,6 +195,11 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
    for( i = 0; i < nconss; ++i )
    {
       assert(conss[i] != NULL);
+      if( !SCIPconsIsActive(conss[i]) )
+      {
+         continue;
+      }
+
       nvars = SCIPgetNVarsXXX(scip, conss[i]);
       if( nvars > 0 )
       {
@@ -1059,12 +1064,11 @@ SCIP_RETCODE GetConsindex(
    SCIP_VAR*** stairlinkingvars;
    int* nstairlinkingvars;
    SCIP_VAR** linkingvars;
-   int nlinkingvars;
+
 
    newblock = 0;
    oldblock = 0;
    linkingblock = 0;
-   nlinkingvars = 0;
 
    subscipconss = detectordata->subscipconss;
 
