@@ -361,6 +361,114 @@ TEST_F(GcgDecTest, MasterSpecificationTest) {
    SCIPfreeMemoryArray(scip, &conss);
 }
 
+TEST_F(GcgDecTest, EqualDecTest) {
+   SCIP_CONS** conss = NULL;
+   DEC_DECOMP* decomp1 = NULL;
+   DEC_DECOMP* decomp2 = NULL;
+   DEC_DECOMP* decomp3 = NULL;
+   DEC_DECOMP* decomp4 = NULL;
+
+   int i = 0;
+   char name[SCIP_MAXSTRLEN];
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+
+   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
+
+   for( i = 0; i < 50; ++i )
+   {
+      SCIP_CONS* cons;
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Allocate_%d", i+1);
+      cons = SCIPfindCons(scip, name);
+      ASSERT_TRUE(cons != NULL);
+      conss[i] = cons;
+   }
+
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
+
+   for( i = 0; i < 24; ++i )
+   {
+      SCIP_CONS* cons;
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Capacity_%d", i+1);
+      cons = SCIPfindCons(scip, name);
+      ASSERT_TRUE(cons != NULL);
+      conss[i] = cons;
+   }
+
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
+
+   ASSERT_TRUE(DECdecompositionsAreEqual(scip, decomp1, decomp1));
+   ASSERT_TRUE(DECdecompositionsAreEqual(scip, decomp2, decomp2));
+   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp2, decomp1));
+   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp1, decomp2));
+   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp3, decomp4));
+   ASSERT_FALSE(DECdecompositionsAreEqual(scip, decomp1, decomp3));
+
+   SCIPfreeMemoryArray(scip, &conss);
+
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp1) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp2) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp3) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp4) );
+}
+
+TEST_F(GcgDecTest, FilterDecTest) {
+   SCIP_CONS** conss = NULL;
+   DEC_DECOMP* decomp1 = NULL;
+   DEC_DECOMP* decomp2 = NULL;
+   DEC_DECOMP* decomp3 = NULL;
+   DEC_DECOMP* decomp4 = NULL;
+
+   int i = 0;
+   char name[SCIP_MAXSTRLEN];
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+
+   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
+
+   for( i = 0; i < 50; ++i )
+   {
+      SCIP_CONS* cons;
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Allocate_%d", i+1);
+      cons = SCIPfindCons(scip, name);
+      ASSERT_TRUE(cons != NULL);
+      conss[i] = cons;
+   }
+
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp1, conss, 50) );
+
+   for( i = 0; i < 24; ++i )
+   {
+      SCIP_CONS* cons;
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Capacity_%d", i+1);
+      cons = SCIPfindCons(scip, name);
+      ASSERT_TRUE(cons != NULL);
+      conss[i] = cons;
+   }
+
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp2, conss, 24) );
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp3, &conss[1], 1) );
+   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp4, &conss[0], 1) );
+
+   DEC_DECOMP* decomps[5] = {decomp1, decomp2, decomp1, decomp3, decomp4};
+
+   ASSERT_EQ(1, DECfilterSimilarDecompositions(scip, decomps, 1) );
+   ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 2) );
+   ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 3) );
+   ASSERT_EQ(3, DECfilterSimilarDecompositions(scip, decomps, 4) );
+   ASSERT_EQ(4, DECfilterSimilarDecompositions(scip, decomps, 5) );
+   SCIPfreeMemoryArray(scip, &conss);
+
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp1) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp2) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp3) );
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp4) );
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

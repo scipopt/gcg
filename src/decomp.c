@@ -2844,3 +2844,88 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    return SCIP_OKAY;
 }
+
+/** returns whether both structures lead to the same decomposition */
+SCIP_Bool DECdecompositionsAreEqual(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp1,            /**< first decomp data structure */
+   DEC_DECOMP*           decomp2             /**< second decomp data structure */
+)
+{
+   SCIP_HASHMAP* constoblock1;
+   SCIP_HASHMAP* constoblock2;
+
+   SCIP_CONS** conss;
+   int nconss;
+
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+
+   assert(scip != NULL);
+   assert(decomp1 != NULL);
+   assert(decomp2 != NULL);
+
+   if( DECdecompGetNBlocks(decomp1) != DECdecompGetNBlocks(decomp2) )
+   {
+      return FALSE;
+   }
+
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+
+   constoblock1 = DECdecompGetConstoblock(decomp1);
+   constoblock2 = DECdecompGetConstoblock(decomp2);
+
+   for( i = 0; i < nconss; ++i )
+   {
+      if( SCIPhashmapGetImage(constoblock1, conss[i]) != SCIPhashmapGetImage(constoblock2, conss[i]) )
+         return FALSE;
+   }
+
+   for( i = 0; i < nconss; ++i )
+   {
+      if( SCIPhashmapGetImage(constoblock1, vars[i]) != SCIPhashmapGetImage(constoblock2, vars[2]) )
+         return FALSE;
+   }
+
+   return TRUE;
+}
+
+/** filters similar decompositions from a given list and moves them to the end
+ * @return the number of unique decompositions
+ */
+int DECfilterSimilarDecompositions(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP**          decs,               /**< array of decompositions */
+   int                   ndecs               /**< number of decompositions */
+)
+{
+   int i;
+   int j;
+   int nunique;
+   assert(scip != NULL);
+   assert(decs != NULL);
+   assert(ndecs > 0);
+
+   nunique = ndecs;
+   for( i = 0; i < nunique; ++i )
+   {
+      for( j = i+1; j < nunique; ++j)
+      {
+         DEC_DECOMP* tmp;
+         if( DECdecompositionsAreEqual(scip, decs[i], decs[j]) )
+         {
+            tmp = decs[nunique-1];
+            decs[nunique-1] = decs[j];
+            decs[j] = tmp;
+            --nunique;
+            --j;
+         }
+      }
+   }
+   return nunique;
+}

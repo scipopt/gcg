@@ -403,6 +403,25 @@ SCIP_RETCODE GCGprintDecompStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
+/** returns whether both structures lead to the same decomposition */
+extern
+SCIP_Bool DECdecompositionsAreEqual(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp1,            /**< first decomp data structure */
+   DEC_DECOMP*           decomp2             /**< second decomp data structure */
+);
+
+
+/** filters similar decompositions from a given list and moves them to the end
+ * @return the number of unique decompositions
+ */
+extern
+int DECfilterSimilarDecompositions(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP**          decs,               /**< array of decompositions */
+   int                   ndecs               /**< number of decompositions */
+);
+
 #ifdef __cplusplus
 }
 #endif
