@@ -203,53 +203,53 @@ do
             echo set save $SETFILE                 >> $TMPFILE
             echo read $PROB                        >> $TMPFILE
 
-	    if test $MODE = "detect"
+            if test $MODE = "detect"
             then
-		echo write prob images\/$base.gp   >> $TMPFILE
-		echo presolve                      >> $TMPFILE
-		echo detect                        >> $TMPFILE
-		echo write prob images\/$base-dec.gp >> $TMPFILE
-		echo write prob decs\/$base.dec    >> $TMPFILE
-		echo write all dec                 >> $TMPFILE
-	    elif test $MODE = "bip"
+                echo write prob images\/$base.gp   >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+                echo write prob images\/$base-dec.gp >> $TMPFILE
+                echo write prob decs\/$base.dec    >> $TMPFILE
+                echo write all dec                 >> $TMPFILE
+            elif test $MODE = "bip"
             then
-		echo presolve                      >> $TMPFILE
-		echo write prob bip\/$base-dec.bip >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-	    elif test $MODE = "detectall"
+                echo presolve                      >> $TMPFILE
+                echo write prob bip\/$base-dec.bip >> $TMPFILE
+                echo display statistics            >> $TMPFILE
+            elif test $MODE = "detectall"
             then
-		echo detect                        >> $TMPFILE
-		echo write all dec                 >> $TMPFILE
-	    else
-		if test $MODE = "readdec" 
-		then
-		    if test -f $DECFILE
-		    then
-			BLKFILE=$DECFILE
-		    fi
-		    if test -f $BLKFILE
-		    then
-			presol=`grep -A1 PRESOLVE $BLKFILE`
-		    # if we find a presolving file
-			if test $? = 0
-			then
+                echo detect                        >> $TMPFILE
+                echo write all dec                 >> $TMPFILE
+            else
+                if test $MODE = "readdec"
+                then
+                    if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        presol=`grep -A1 PRESOLVE $BLKFILE`
+                    # if we find a presolving file
+                        if test $? = 0
+                        then
                         # look if its in there
-			    if grep -xq 1 - <<EOF
+                            if grep -xq 1 - <<EOF
 $presol
 EOF
-			    then
-				echo presolve      >> $TMPFILE
-			    fi
-			fi
-			echo read $BLKFILE         >> $TMPFILE
-		    fi
-		fi
-		echo optimize                      >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-#		echo display additionalstatistics  >> $TMPFILE
+                            then
+                                echo presolve      >> $TMPFILE
+                            fi
+                        fi
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
+                fi
+                echo optimize                      >> $TMPFILE
+                echo display statistics            >> $TMPFILE
+#               echo display additionalstatistics  >> $TMPFILE
 #               echo display solution              >> $TMPFILE
-		echo checksol                      >> $TMPFILE
-	    fi
+                echo checksol                      >> $TMPFILE
+            fi
             echo quit                              >> $TMPFILE
             echo -----------------------------
             date
@@ -264,10 +264,10 @@ EOF
             echo -----------------------------
             echo
             echo =ready=
-	    if test $MODE = "detectall"
-	    then
-		mv *_*.dec decs\/
-	    fi
+            if test $MODE = "detectall"
+            then
+                mv *_*.dec decs\/
+            fi
         else
             echo @02 FILE NOT FOUND: $i ===========
             echo @02 FILE NOT FOUND: $i =========== >>$ERRFILE
