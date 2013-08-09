@@ -386,10 +386,23 @@ BEGIN {
 /^GCG                : Performing Dantzig-Wolfe with [0-9]+ blocks./ {
    blocks = $6;
 }
-/^  mip              :/ {
-   npriceprobs = $4 + $6;
+
+/^  blocks           :/ {
+   blocks = $3;
 }
 
+/^  aggr\. blocks     :/ {
+   rel = $4;
+}
+
+/^  master           :/ {
+   linkconss = $8;
+   linkvars = $3;
+}
+
+/^  detector         :/ {
+   detector = $3
+}
 #
 # count number of linear constraints 
 #
@@ -546,9 +559,9 @@ BEGIN {
       }
       
       #print header of table when this regular expression is matched for the first time
-      tablehead1 = "-----------+----+--- Original --+-- Presolved --+------+------+------+--------------+--------------+------+------------ Pricing ----------+-------+--------+-------+-------+";
-      tablehead2 = "Name       |Type| Conss |  Vars | Conss |  Vars |Blocks| Rel  |MConss|  Dual Bound  | Primal Bound | Gap%% | Calls | Probs |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
-      tablehead3 = "-----------+----+-------+-------+-------+-------+------+------+------+--------------+--------------+------+-------+-------+-------+-------+-------+--------+-------+-------+";
+      tablehead1 = "------------+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
+      tablehead2 = "Name        |Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| Rel. | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
+      tablehead3 = "------------+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
       
       if( printsoltimes == 1 ) {  
          tablehead1 = tablehead1"----------+---------+";
@@ -937,9 +950,9 @@ BEGIN {
                printf(" & %7.1f & %7.1f", timetofirst, timetobest) > TEXFILE;
             printf("\\\\\n") > TEXFILE;
          }
-         printf("%-12s %-3s %7d %7d %7d %7d %6d %6d %6d %14.9g %14.9g %6s %7d %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
-                shortprob, probtype, origcons, origvars, cons, vars, blocks, rel, mcons, db, pb, gapstr, 
-                pricecall, npriceprobs, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
+         printf("%-12s %-4s %7d %7d %7d %7d %-10s %6d %6d %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
+                shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr, 
+                pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);
          printf("%s\n", status);
