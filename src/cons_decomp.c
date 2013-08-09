@@ -639,12 +639,15 @@ SCIP_RETCODE DECdetectStructure(
          {
             assert(ndecdecomps >= 0);
             assert(decdecomps != NULL || ndecdecomps == 0);
-            SCIPdebugPrintf("we have %d decompositions!\n", ndecdecomps);
+            SCIPdebugMessage("We originally have %d decompositions, ", ndecdecomps);
             for( j = 0; j < ndecdecomps; ++j )
             {
                assert(decdecomps != NULL);
                DECdecompSetDetector(decdecomps[j], detector);
             }
+            ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+            SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
+
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
             BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
             conshdlrdata->ndecomps += ndecdecomps;

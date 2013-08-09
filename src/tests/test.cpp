@@ -457,10 +457,19 @@ TEST_F(GcgDecTest, FilterDecTest) {
    DEC_DECOMP* decomps[5] = {decomp1, decomp2, decomp1, decomp3, decomp4};
 
    ASSERT_EQ(1, DECfilterSimilarDecompositions(scip, decomps, 1) );
+   ASSERT_EQ(decomp1, decomps[0]);
    ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 2) );
+   ASSERT_EQ(decomp2, decomps[1]);
    ASSERT_EQ(2, DECfilterSimilarDecompositions(scip, decomps, 3) );
+   ASSERT_EQ(decomp1, decomps[2]);
    ASSERT_EQ(3, DECfilterSimilarDecompositions(scip, decomps, 4) );
+   ASSERT_EQ(decomp3, decomps[2]);
+   ASSERT_EQ(decomp1, decomps[3]);
    ASSERT_EQ(4, DECfilterSimilarDecompositions(scip, decomps, 5) );
+   ASSERT_EQ(decomp3, decomps[2]);
+   ASSERT_EQ(decomp4, decomps[3]);
+   ASSERT_EQ(decomp1, decomps[4]);
+
    SCIPfreeMemoryArray(scip, &conss);
 
    SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp1) );
