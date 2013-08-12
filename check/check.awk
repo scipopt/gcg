@@ -126,7 +126,7 @@ BEGIN {
    conftottime = 0.0;
    overheadtottime = 0.0;
    timelimit = 0.0;
-   
+
    #initialize paver input file
    if( PAVFILE != "" ) {
       printf("* Trace Record Definition\n") > PAVFILE;
@@ -144,7 +144,7 @@ BEGIN {
 #
 # problem name
 #
-/^@01/ { 
+/^@01/ {
    filename = $2;
 
    n  = split ($2, a, "/");
@@ -216,6 +216,15 @@ BEGIN {
    valgrinderror = 0;
    valgrindleaks = 0;
    bestsolfeas = 1;
+   blocks = 0
+   rel = 0
+   detector = "--"
+   linkvars = 0
+   linkconss = 0
+   pricetime = 0.0
+   pricevars = 0
+   priceall = 0
+   pricecall = 0
 }
 
 /@03/ { starttime = $2; }
@@ -224,8 +233,8 @@ BEGIN {
 /^GCG version/ {
    # get GCG version
    gcgversion = $3;
-   
-      # get git hash 
+
+      # get git hash
    if( $(NF-1) == "[GitHash:" ) {
       split($NF, v, "]");
       gcggithash = v[1];
@@ -233,8 +242,8 @@ BEGIN {
 }
 
 /^SCIP version/ {
-   # get SCIP version 
-   scipversion = $3; 
+   # get SCIP version
+   scipversion = $3;
 
    # get name of LP solver
    if( $13 == "SoPlex" )
@@ -256,13 +265,13 @@ BEGIN {
 #   else if( $13 == "???" )
 #      lpsname = "xprs";
 
-    # get LP solver version 
+    # get LP solver version
    if( NF >= 14 ) {
       split($14, v, "]");
       lpsversion = v[1];
    }
 
-   # get git hash 
+   # get git hash
    if( $(NF-1) == "[GitHash:" ) {
       split($NF, v, "]");
       githash = v[1];
@@ -404,7 +413,7 @@ BEGIN {
    detector = $3
 }
 #
-# count number of linear constraints 
+# count number of linear constraints
 #
 /^Constraints        :/ {
    incons = 1;
@@ -422,19 +431,19 @@ BEGIN {
       lincons += a[1];
    }
 }
-/^  linear           :/ { 
+/^  linear           :/ {
    if( incons  == 1 ) {
       n  = split ($3, a, "+");
       lincons += a[1];
    }
 }
-/^  logicor          :/ { 
+/^  logicor          :/ {
    if( incons == 1 ) {
       n  = split ($3, a, "+");
       lincons += a[1];
    }
 }
-/^  varbound         :/ { 
+/^  varbound         :/ {
    if( incons == 1 ) {
       n  = split ($3, a, "+");
       lincons += a[1];
@@ -477,8 +486,8 @@ BEGIN {
       timetobest = $11;
    }
 }
-/^Dual Bound         :/ { 
-   if( $4 != "-" ) 
+/^Dual Bound         :/ {
+   if( $4 != "-" )
       db = $4;
 }
 /^  Root Dual Bound  :/ {
@@ -501,7 +510,7 @@ BEGIN {
 # time
 #
 /^Solving Time       :/ { tottime = $4 } # for older scip version ( < 2.0.1.3 )
-/^  solving          :/ { tottime = $3 } 
+/^  solving          :/ { tottime = $3 }
 #
 # valgrind check
 #
@@ -510,13 +519,13 @@ BEGIN {
 /^==[0-9]*==    indirectly lost:/  { valgrindleaks += $4 }
 /^==[0-9]*==    possibly lost:/    { valgrindleaks += $4 }
 #
-# solver status overview (in order of priority): 
+# solver status overview (in order of priority):
 # 1) solver broke before returning solution => abort
 # 2) solver cut off the optimal solution (solu-file-value is not between primal and dual bound) => fail
 #    (especially if problem is claimed to be solved but solution is not the optimal solution)
 # 3) solver solved problem with the value in solu-file (if existing) => ok
 # 4) solver solved problem which has no (optimal) value in solu-file => solved
-#    (since we here don't detect the direction of optimization, it is possible 
+#    (since we here don't detect the direction of optimization, it is possible
 #     that a solver claims an optimal solution which contradicts a known feasible solution)
 # 5) solver found solution better than known best solution (or no solution was known so far) => better
 # 7) solver reached gaplimit or limit of number of solutions => gaplimit, sollimit
@@ -557,22 +566,22 @@ BEGIN {
             printf("rr") > TEXFILE;
          printf("@{}}\n") > TEXFILE;
       }
-      
+
       #print header of table when this regular expression is matched for the first time
       tablehead1 = "------------+----+--- Original --+-- Presolved --+----------+------- Decomposition -------+--------------+--------------+------+-------- Pricing ------+---- Master ----+-------+-------+";
       tablehead2 = "Name        |Type| Conss |  Vars | Conss |  Vars | Detector |Blocks| Rel. | MConss| MVars |  Dual Bound  | Primal Bound | Gap%% | Calls |  Vars |  Time |LP-Time|  Iters | Nodes |  Time |";
       tablehead3 = "------------+----+-------+-------+-------+-------+----------+------+------+-------+-------+--------------+--------------+------+-------+-------+-------+-------+--------+-------+-------+";
-      
-      if( printsoltimes == 1 ) {  
+
+      if( printsoltimes == 1 ) {
          tablehead1 = tablehead1"----------+---------+";
          tablehead2 = tablehead2" To First | To Best |";
          tablehead3 = tablehead3"----------+---------+";
-      } 
-      
+      }
+
       tablehead1 = tablehead1"--------\n";
       tablehead2 = tablehead2"       \n";
       tablehead3 = tablehead3"--------\n";
-   
+
       printf(tablehead1);
       printf(tablehead2);
       printf(tablehead3);
@@ -590,7 +599,7 @@ BEGIN {
       db = 1.0*temp;
       temp = rootdb;
       rootdb = 1.0*temp;
-      
+
       # if objsense could not be determined so far (output is maybe too old)
       if ( objsense == 0 )
       {
@@ -609,7 +618,7 @@ BEGIN {
 	 else
 	    objsense = -1;  # maximize
       }
-      
+
       # modify primal bound for maximization problems without primal solution
       if ( objsense == -1 && pb >= +infty )
 	 pb = -1.0 * pb;
@@ -645,7 +654,7 @@ BEGIN {
          gapstr = sprintf("%6.1f", gap);
       else
          gapstr = " Large";
-      
+
       if( vars == 0 )
          probtype = "--";
       else if( lincons < cons )
@@ -759,7 +768,7 @@ BEGIN {
             fail++;
          }
          else {
-            if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached ) 
+            if( timeout || gapreached || sollimitreached || memlimitreached || nodelimitreached )
 	    {
                if( timeout )
                   status = "timeout";
@@ -951,7 +960,7 @@ BEGIN {
             printf("\\\\\n") > TEXFILE;
          }
          printf("%-12s %-4s %7d %7d %7d %7d %-10s %6d %6d %7d %7d %14.9g %14.9g %6s %7d %7d %7.1f %7.1f %8d %7d %7.1f ",
-                shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr, 
+                shortprob, probtype, origcons, origvars, cons, vars, detector, blocks, rel, linkconss, linkvars, db, pb, gapstr,
                 pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);
@@ -1024,7 +1033,7 @@ END {
          printf(" & %8.1f & %8.1f", timetofirstgeom, timetobestgeom) > TEXFILE;
       printf("\\\\\n") > TEXFILE;
       printf("%-13s    &        &        &                  &                  &        & %7d & %7d & %7d &%8.1f &%8.1f &  %9d & %8.1f ",
-             "Shifted Geom.", shiftedpricecallsgeom, shiftedpriceprobsgeom, shiftedpricevarsgeom, shiftedpricegeom, 
+             "Shifted Geom.", shiftedpricecallsgeom, shiftedpriceprobsgeom, shiftedpricevarsgeom, shiftedpricegeom,
 	     shiftedlpgeom, shiftednodegeom, shiftedtimegeom) >TEXFILE;
       if( printsoltimes )
          printf(" & %8.1f & %8.1f", shiftedtimetofirstgeom, shiftedtimetobestgeom) > TEXFILE;
@@ -1036,30 +1045,30 @@ END {
    tablebottom1 = "------------------------------[Nodes]---------------[Time]----------[Pricing-Time]--------[LP-Time]-------[Pricing-Probs]--";
    tablebottom2 = "  Cnt  Pass  Time  Fail  total(k)     geom.     total     geom.     total     geom.     total     geom.    total     geom. ";
    tablebottom3 = "---------------------------------------------------------------------------------------------------------------------------";
-   
+
    if( printsoltimes ) {
       tablebottom1 = tablebottom1"--------[ToFirst]-----------[ToLast]-----";
       tablebottom2 = tablebottom2"     total     geom.     total     geom.";
       tablebottom3 = tablebottom3"-----------------------------------------";
    }
-   
+
    tablebottom1 = tablebottom1"\n";
    tablebottom2 = tablebottom2"\n";
    tablebottom3 = tablebottom3"\n";
-   
+
    printf(tablebottom1);
    printf(tablebottom2);
    printf(tablebottom3);
-   
+
    printf("%5d %5d %5d %5d %9d %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9.1f %9d %9.1f ",
-	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom, 
+	  nprobs, pass, timeouts, fail, sbab / 1000, nodegeom, stottime, timegeom, spricetime, pricegeom,
 	  slptime, lpgeom, spriceprobs, priceprobsgeom);
    if( printsoltimes )
       printf("%9.1f %9.1f %9.1f %9.1f", stimetofirst, timetofirstgeom, stimetobest, timetobestgeom);
-   
+
    printf("\n");
    printf(" shifted geom. [%4d/%4.1f/%3.1f/%3.1f]%9.1f           %9.1f           %9.1f           %9.1f           %9.1f ",
-	  nodegeomshift, timegeomshift, pricegeomshift, lpgeomshift, shiftednodegeom, shiftedtimegeom, 
+	  nodegeomshift, timegeomshift, pricegeomshift, lpgeomshift, shiftednodegeom, shiftedtimegeom,
 	  shiftedpricegeom, shiftedlpgeom, shiftedpriceprobsgeom);
 
    if( printsoltimes )
