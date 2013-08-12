@@ -55,24 +55,22 @@
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings*/
+#define DEFAULT_NCONSSPERBLOCK                32       /**< number of constraints per block (static blocking only) */
 #define DEFAULT_MAXBLOCKS                    20       /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                    2        /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_PRIORITY                     DEC_PRIORITY
-#define DEFAULT_DESIREDBLOCKS                0       /**< value for the desired number of blocks (for all blocking types). Set to zero for self determination of block number */
-#define DEFAULT_DYNAMICBLOCKING              TRUE     /**< Enable blocking type 'dynamic' */
-#define DEFAULT_STATICBLOCKING               FALSE     /**< Enable blocking type 'static' */
-#define DEFAULT_BLOCKINGASSOONASPOSSIBLE     TRUE    /**< Enable blocking type 'as soon as possible' */
+#define DEFAULT_DESIREDBLOCKS                0        /**< value for the desired number of blocks (for all blocking types). Set to zero for self determination of block number */
+#define DEFAULT_DYNAMICBLOCKING              FALSE    /**< Enable blocking type 'dynamic' */
+#define DEFAULT_STATICBLOCKING               TRUE     /**< Enable blocking type 'static' */
+#define DEFAULT_BLOCKINGASSOONASPOSSIBLE     FALSE    /**< Enable blocking type 'as soon as possible' */
 #define DEFAULT_MULTIPLEDECOMPS              TRUE     /**< Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks' */
 #define DEFAULT_MAXITERATIONSROC             1000000  /**< The maximum of iterations of the ROC-algorithm. -1 for no iteration limit */
-
-#define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
-
-#define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
 
 using std::find;
 using std::vector;
 using std::swap;
 
+#define DWSOLVER_REFNAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_ref.txt", (name), (blocks), (cons), (dummy)
+#define GP_NAME(name, blocks, cons, dummy) "%s_%d_%d_%.1f_%d.gp", (name), (blocks), (cons), (dummy)
 
 /*
  * Data structures
@@ -97,6 +95,7 @@ struct DEC_DetectorData
 {
    SCIP_HASHMAP* constoblock;
    int blocks;
+   int nconssperblock;  /**< constraints per block (static blocking only) */
    int maxblocks;
    int minblocks;
    INDEXMAP* indexmap;
@@ -288,10 +287,10 @@ static const char* getProbNameWithoutPath(SCIP* scip)
 }
 
 
-static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars)
+static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nvars, int nconss)
 {
    int i;
-   for( i = 0; i < detectordata->nRelevantConss - 1; ++i )
+   for( i = 0; i < nconss - 1; ++i )
    {
       assert(detectordata->ibegin[i] <= detectordata->ibegin[i+1]);
    }
@@ -322,6 +321,9 @@ SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char
    SCIP_VAR** vars;
    int nvars;
    SCIP_CONS* cons;
+   int nconss;
+
+   nconss = SCIPgetNConss(scip);
    /* filenames */
    sprintf(datafile, "%s.dat", filename);
    sprintf(gpfile, "%s.gp", filename);
@@ -333,9 +335,9 @@ SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char
    }
    else
    {
-      for( i = 0; i < detectordata->nRelevantConss; ++i )
+      for( i = 0; i < nconss; ++i )
       {
-         cons = detectordata->relevantConss[i];
+         cons = SCIPgetConss(scip)[i];
          consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
          assert(consindex != NULL);
          /* Get array of variables from constraint */
@@ -356,7 +358,7 @@ SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char
 
    /* write Gnuplot file */
    output = fopen(gpfile, "w");
-   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot '%s' lt 0 pt 5 notitle", pdffile, SCIPgetNVars(scip), detectordata->nRelevantConss, datafile);
+   fprintf(output, "set terminal pdf\nset output \"%s\"\nunset xtics\nunset ytics\nunset border\nset pointsize 0.05\nset xrange [0:%i]\nset yrange[%i:0]\nplot '%s' lt 0 pt 5 notitle", pdffile, SCIPgetNVars(scip), nconss, datafile);
    fclose(output);
    return SCIP_OKAY;
 }
@@ -373,7 +375,11 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    char gpfile[256];
    char pdffile[256];
    int i;
+   int nconss;
    vector<int>::iterator it1;
+
+   nconss = SCIPgetNConss(scip);
+
    /* filenames */
    sprintf(datafile, "%s.dat", filename);
    sprintf(blockingfile, "%s_blocked_at.dat", filename);
@@ -389,7 +395,7 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
    else
    {
       /* write data to datafile */
-      for( i = 0; i < detectordata->nRelevantConss -1; ++i )
+      for( i = 0; i < nconss -1; ++i )
       {
          fprintf(output, "%i\n", detectordata->minV[i]);
       }
@@ -1083,37 +1089,45 @@ int rowsInConstantBlock(int block, int desired_blocks, int nrows)
 static
 SCIP_RETCODE blockingStatic(
       SCIP* scip,                      /**< scip object */
-      DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
-      int desired_blocks,              /**< desired number of blocks */
-      int nvars                        /**< number of variables in the problem*/
+      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
       )
 {
+   int nblocks;
    int block;
    int prev_block_last_row;
    int current_row;
+   int nconss;
    /* notation: i=current block; im1=i-1=previous block; ip1=i+1=next block */
 
+   assert(scip != NULL);
+   assert(detectordata != NULL);
+   nconss = SCIPgetNConss(scip);
+   nblocks = nconss/detectordata->nconssperblock;
    block = 1;
    prev_block_last_row = 0;
    current_row = 0;
-   /* blocks 1 to (desired_blocks-1) */
-   for( block = 1; block < desired_blocks; ++block )
-   {
-      current_row += rowsInConstantBlock(block, desired_blocks, SCIPgetNConss(scip));
 
+   /* blocks 1 to (desired_blocks-1) */
+   for( block = 1; block <= nblocks; ++block )
+   {
+      current_row += detectordata->nconssperblock;
+      SCIPdebugMessage("Blocking from %d to %d in block %d",prev_block_last_row + 1,  current_row, block);
       assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, current_row);
-      /* update variables in the while loop */
+
+
       prev_block_last_row = current_row;
    }
    /* last block */
    /* assign the remaining cons and vars to the last block; no new linking vars are added */
+   if( prev_block_last_row + 1 <= nconss)
+   {
+      SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, SCIPgetNConss(scip));
 
-   SCIPdebugMessage("last time: assignVarsToBlock: block, from_row, to_row: %i, %i, %i\n", block, prev_block_last_row + 1, SCIPgetNConss(scip));
-
-   SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, SCIPgetNConss(scip)) );
-   detectordata->blockedAfterrow->pop_back();
-
-   detectordata->blocks = block;
+      SCIP_CALL( assignConsToBlock(scip, detectordata, block, prev_block_last_row + 1, nconss) );
+      detectordata->blockedAfterrow->pop_back();
+      ++block;
+   }
+   detectordata->blocks = block-1;
 
 #ifdef WRITEALLOUTPUT
    {
@@ -1261,38 +1275,18 @@ SCIP_RETCODE blocking(
 
    if( detectordata->staticblocking )
    {
-      if( detectordata->multipledecomps )
+      SCIPdebugMessage("nconssperblock = %i, dec = %i\n", detectordata->nconssperblock, *ndecdecomps);
+
+      SCIP_CALL( resetDetectordata(scip, detectordata) );
+      SCIP_CALL( blockingStatic(scip, detectordata) );
+
+      if( detectordata->blocks > 1 )
       {
-         for( tau = detectordata->minblocks; tau <= detectordata->maxblocks; ++tau )
-         {
-            SCIPdebugMessage("tau = %i, dec = %i\n", tau, *ndecdecomps);
-            SCIP_CALL( resetDetectordata(scip, detectordata) );
+         SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
+         SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+         detectordata->constoblock = NULL;
 
-            SCIP_CALL( blockingStatic(scip, detectordata, tau, nvars) );
-            if( detectordata->blocks <= 1 )
-               continue;
-
-            SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
-            detectordata->constoblock = NULL;
-
-            (*ndecdecomps) += 1;
-         }
-      }
-      else
-      {
-         SCIPdebugMessage("tau = %i, dec = %i\n", tau, *ndecdecomps);
-         SCIP_CALL( resetDetectordata(scip, detectordata) );
-
-         SCIP_CALL( blockingStatic(scip, detectordata, tau, nvars) );
-         if( detectordata->blocks > 1 )
-         {
-            SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
-            detectordata->constoblock = NULL;
-
-            (*ndecdecomps) += 1;
-         }
+         (*ndecdecomps) += 1;
       }
    }
 
@@ -1492,7 +1486,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
    /* check conditions for arrays ibegin and jbegin: ibegin[i]<=ibegin[i+k] for all positive k */
    if( ROC_iterations < detectordata->maxiterationsROC || detectordata->maxiterationsROC  == -1 )
    {
-      checkConsistencyOfIndexarrays(detectordata, nvars);
+      checkConsistencyOfIndexarrays(detectordata, nvars, nconss);
    }
 #else
    (void) rankOrderClustering(scip, detectordata, detectordata->maxiterationsROC);
@@ -1559,6 +1553,7 @@ SCIP_RETCODE SCIPincludeDetectionStairheur(
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildStair, initStairheur, exitStairheur) );
 
    /* add stairheur presolver parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/nconssperblock", "The number of constraints per block (static blocking only)", &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/maxblocks", "The maximal number of blocks", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/minblocks", "The minimal number of blocks", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detectors/stairheur/desiredblocks", "The desired number of blocks. 0 means automatic determination of the number of blocks.", &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
