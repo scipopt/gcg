@@ -32,6 +32,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+
 #ifndef GCG_HYPERGRAPH_DEF_H_
 #define GCG_HYPERGRAPH_DEF_H_
 
@@ -94,6 +95,7 @@ SCIP_RETCODE Hypergraph<T>::addHyperedge(std::vector<int> &edge, int weight)
    ++lastnode;
    SCIPdebugMessage("Adding hyperedge %lu (id=%d)\n", hedges.size(), edgenodeid);
    SCIP_CALL( graph->addNode(edgenodeid, weight) );
+
    for( size_t i = 0; i < edge.size(); ++i )
    {
       SCIP_CALL( graph->addEdge(edgenodeid, computeNodeId(edge[i])) );

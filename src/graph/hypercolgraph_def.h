@@ -87,7 +87,7 @@ SCIP_RETCODE HypercolGraph<T>::writeToFile(
 
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i+this->nvars));
+         SCIPinfoMessage(this->scip_, file, "%d ", graph.getHyperedgeWeight(i));
       }
       for( size_t j = 0; j < neighbors.size(); ++j )
       {
