@@ -88,12 +88,12 @@ SCIP_RETCODE  Hypergraph<T>::addNode(int i,int weight)
 
 /** adds the edge to the graph */
 template <class T>
-SCIP_RETCODE Hypergraph<T>::addHyperedge(std::vector<int> &edge)
+SCIP_RETCODE Hypergraph<T>::addHyperedge(std::vector<int> &edge, int weight)
 {
    int edgenodeid = lastnode;
    ++lastnode;
    SCIPdebugMessage("Adding hyperedge %lu (id=%d)\n", hedges.size(), edgenodeid);
-   SCIP_CALL( graph->addNode(edgenodeid, 0) );
+   SCIP_CALL( graph->addNode(edgenodeid, weight) );
    for( size_t i = 0; i < edge.size(); ++i )
    {
       SCIP_CALL( graph->addEdge(edgenodeid, computeNodeId(edge[i])) );
@@ -256,6 +256,17 @@ int Hypergraph<T>::getWeight(
    )
 {
    return graph->getWeight(i);
+}
+
+/** return the weight of given hyperedge */
+template <class T>
+int Hypergraph<T>::getHyperedgeWeight(
+   int                i                   /**< the given hyperedge */
+   )
+{
+   int edgenodeid = hedges[i];
+
+   return graph->getWeight(edgenodeid);
 }
 
 template <class T>

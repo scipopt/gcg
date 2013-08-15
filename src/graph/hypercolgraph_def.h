@@ -209,7 +209,12 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
    /* go through all variables */
    for( i = 0; i < this->nvars; ++i )
    {
-      this->graph.addHyperedge(hyperedges[i]);
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(vars[i]);
+
+      this->graph.addHyperedge(hyperedges[i], weight);
    }
    this->graph.flush();
 

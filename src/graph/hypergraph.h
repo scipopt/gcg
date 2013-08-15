@@ -97,7 +97,7 @@ public:
    SCIP_RETCODE addNode(int i,int weight);
 
    /** adds the edge to the graph */
-   SCIP_RETCODE addHyperedge(std::vector<int> &edge);
+   SCIP_RETCODE addHyperedge(std::vector<int> &edge, int weight);
 
    /** adds the edge to the graph */
    SCIP_RETCODE addNodeToHyperedge(int node, int hedge);
@@ -153,6 +153,11 @@ public:
    /** return the weight of given node */
    int getWeight(
       int                i                   /**< the given node */
+      );
+
+   /** return the weight of given hyperedge */
+   int getHyperedgeWeight(
+      int                i                   /**< the given hyperedge */
       );
 
    /** set the number of dummy nodes */

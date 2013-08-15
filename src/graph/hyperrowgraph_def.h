@@ -246,6 +246,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
    {
       SCIP_VAR **curvars;
       std::vector<int> hyperedge;
+      TCLIQUE_WEIGHT weight;
 
       int ncurvars;
       SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
@@ -284,10 +285,15 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
          hyperedge.insert(hyperedge.end(), varIndex1);
       }
-      this->graph.addHyperedge(hyperedge);
+      /* calculate weight of hyperedge */
+      weight = this->weights.calculate(conss[i]);
+
+      this->graph.addHyperedge(hyperedge, weight);
 
       SCIPfreeBufferArray(this->scip_, &curvars);
    }
+
+
 
    this->graph.flush();
    return SCIP_OKAY;
