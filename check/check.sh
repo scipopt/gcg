@@ -156,8 +156,8 @@ do
 
     PROB=`echo $i|cut -d";" -f1`
     DECFILE=`echo $i|cut -d";" -f2`
-    DIR=`dirname $i`
-    NAME=`basename $i .gz`
+    DIR=`dirname $NAME`
+    NAME=`basename $NAME .gz`
     NAME=`basename $NAME .mps`
     NAME=`basename $NAME .lp`
 
