@@ -55,7 +55,7 @@
  * Default diving rule specific parameter settings
  */
 
-#define DEFAULT_USEMASTERLOCKS    TRUE       /**< calculate the number of locks w.r.t. the master LP? */
+#define DEFAULT_USEMASTERLOCKS    FALSE      /**< calculate the number of locks w.r.t. the master LP? */
 
 
 /* locally defined diving heuristic data */

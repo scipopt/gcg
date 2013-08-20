@@ -55,7 +55,7 @@
  * Default diving rule specific parameter settings
  */
 
-#define DEFAULT_USEMASTERFRACS    TRUE       /**< calculate the fractionalities w.r.t. the master LP? */
+#define DEFAULT_USEMASTERFRACS    FALSE      /**< calculate the fractionalities w.r.t. the master LP? */
 
 
 /* locally defined diving heuristic data */
