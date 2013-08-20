@@ -290,35 +290,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
                                               *   primal feasible*/
    );
 
-/** transforms given values of the given original variables into values of the given master variables */
-extern
-void GCGrelaxTransformOrigvalsToMastervals(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR**            origvars,           /**< array with (subset of the) original variables */
-   SCIP_Real*            origvals,           /**< array with values for the given original variables */
-   int                   norigvars,          /**< number of given original variables */
-   SCIP_VAR**            mastervars,         /**< array of (all present) master variables */
-   SCIP_Real*            mastervals,         /**< array to store the values of the master variables */
-   int                   nmastervars         /**< number of master variables */
-   );
-
-/** transforms given solution of the master problem into solution of the original problem */
-extern
-SCIP_RETCODE GCGrelaxTransformMastersolToOrigsol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             mastersol,          /**< solution of the master problem */
-   SCIP_SOL**            origsol             /**< pointer to store the new created original problem's solution */
-   );
-
-/** prints the given variable: name, type (original, master or pricing) block number,
- * and the list of all variables related to the given variable */
-extern
-void GCGrelaxPrintVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   FILE*                 file,               /**< File to write information to, or NULL for stdout */
-   SCIP_VAR*             var                 /**< variable that should be printed */
-   );
-
 /** returns the stored primal solution of the original problem  */
 extern
 SCIP_SOL* GCGrelaxGetOrigPrimalSol(
@@ -344,28 +315,9 @@ DEC_DECOMP* GCGgetStructDecdecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** gets the total memory used after problem creation stage for all pricingproblems */
-extern
-SCIP_Real GCGgetPricingprobsMemUsed(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** prints out the degeneracy of the problem */
-extern
-void GCGprintDegeneracy(
-   SCIP*                 scip,               /**< SCIP data structure */
-   double                degeneracy          /**< degeneracy to print*/
-   );
-
 /** returns whether the relaxator has been initialized */
 extern
 SCIP_Bool GCGrelaxIsInitialized(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the average degeneracy */
-extern
-SCIP_Real GCGgetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

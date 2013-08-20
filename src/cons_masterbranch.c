@@ -795,7 +795,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          {
             if( pricingvars[j] == NULL )
                continue;
-            if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+            if( GCGrelaxGetNIdenticalBlocks(origscip, j) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, j) == 0  )
             {
                SCIPdebugMessage("Don't know how to handle var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
                aggregate = TRUE;

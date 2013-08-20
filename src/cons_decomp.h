@@ -100,6 +100,7 @@ SCIP_RETCODE DECincludeDetector(
    const char*           description,        /**< description of the detector                                        */
    int                   priority,           /**< priority of the detector                                           */
    SCIP_Bool             enabled,            /**< whether the detector should be enabled by default                  */
+   SCIP_Bool             skip,               /**< whether the detector should be skipped if others found structure   */
    DEC_DETECTORDATA      *detectordata,      /**< the associated detector data (or NULL)                             */
    DEC_DECL_DETECTSTRUCTURE((*detectStructure)), /**< the method that will detect the structure (must not be NULL)   */
    DEC_DECL_INITDETECTOR((*initDetector)),   /**< initialization method of detector (or NULL)                        */
@@ -153,6 +154,12 @@ SCIP_Bool DEChasDetectionRun(
 char DECdetectorGetChar(
    DEC_DETECTOR*         detector            /**< pointer to detector */
 );
+
+/** display statistics about detectors */
+SCIP_RETCODE GCGprintDetectorStatistics(
+   SCIP*                 scip,               /**< SCIP data structure */
+   FILE*                 file                /**< output file or NULL for standard output */
+   );
 
 #ifdef __cplusplus
 }

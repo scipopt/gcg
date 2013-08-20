@@ -156,13 +156,16 @@ do
         break
     fi
 
-    if test "$LASTPROB" = ""
+    PROB=`echo $i|cut -d";" -f1`
+    DECFILE=`echo $i|cut -d";" -f2`
+    DIR=`dirname $NAME`
+    NAME=`basename $NAME .gz`
+    NAME=`basename $NAME .mps`
+    NAME=`basename $NAME .lp`
+
+    if test "$PROB" == "$DECFILE"
     then
-        DIR=`dirname $i`
-        NAME=`basename $i .gz`
-        NAME=`basename $NAME .mps`
-        NAME=`basename $NAME .lp`
-        EXT=${i##*.}
+        EXT=${PROB##*.}
         if test "$EXT" = "gz"
         then
             BLKFILE=$DIR/$NAME.blk.gz
@@ -171,18 +174,17 @@ do
             BLKFILE=$DIR/$NAME.blk
             DECFILE=$DIR/$NAME.dec
         fi
-        LASTPROB=""
-        if test -f $i
+    fi
+    if test "$LASTPROB" = ""
+    then
+        if test -f $PROB
         then
-            echo @01 $i ===========
-	    NAME=`basename $i`
-	    base=${NAME%%.*}
-#	    echo $base
-            echo @01 $i ===========                >> $ERRFILE
+            echo @01 $PROB ===========
+            echo @01 $PROB ===========             >> $ERRFILE
             echo > $TMPFILE
             if test "$SETNAME" != "default"
             then
-                echo set load $SETTINGS            >>  $TMPFILE
+                echo set load $SETTINGS            >> $TMPFILE
             fi
             if test "$MSETNAME" != "default"
             then
@@ -205,55 +207,56 @@ do
                 echo set lp solvefreq -1           >> $TMPFILE # avoid solving LPs in case of LPS=none
             fi
             echo set save $SETFILE                 >> $TMPFILE
-            echo read $i                           >> $TMPFILE
+            echo read $PROB                        >> $TMPFILE
 
-	    if test $MODE = "detect"
+            if test $MODE = "detect"
             then
-		echo write prob images\/$base.gp  >> $TMPFILE
-		echo presolve                      >> $TMPFILE
-		echo detect                        >> $TMPFILE
-		echo write prob images\/$base-dec.gp  >> $TMPFILE
-		echo write prob decs\/$base.dec    >> $TMPFILE
-		echo write all ref                 >> $TMPFILE
-	    elif test $MODE = "bip"
+                echo write prob images\/$base.gp   >> $TMPFILE
+                echo presolve                      >> $TMPFILE
+                echo detect                        >> $TMPFILE
+                echo write prob images\/$base-dec.gp >> $TMPFILE
+                echo write prob decs\/$base.dec    >> $TMPFILE
+                echo write all dec                 >> $TMPFILE
+            elif test $MODE = "bip"
             then
-		echo presolve                      >> $TMPFILE
-		echo write prob bip\/$base-dec.bip >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-	    elif test $MODE = "detectall"
+                echo presolve                      >> $TMPFILE
+                echo write prob bip\/$base-dec.bip >> $TMPFILE
+                echo display statistics            >> $TMPFILE
+            elif test $MODE = "detectall"
             then
-		echo detect                        >> $TMPFILE
-		echo write all ref                 >> $TMPFILE
-	    else
-		if test $MODE = "readdec"
-		then
-		    if test -f $DECFILE
-		    then
-			BLKFILE=$DECFILE
-		    fi
-		    if test -f $BLKFILE
-		    then
-			presol=`grep -A1 PRESOLVE $BLKFILE`
-		    # if we find a presolving file
-			if test $? = 0
-			then
+                echo detect                        >> $TMPFILE
+                echo write all dec                 >> $TMPFILE
+		echo write all gp                  >> $TMPFILE
+            else
+                if test $MODE = "readdec"
+                then
+                    if test -f $DECFILE
+                    then
+                        BLKFILE=$DECFILE
+                    fi
+                    if test -f $BLKFILE
+                    then
+                        presol=`grep -A1 PRESOLVE $BLKFILE`
+                    # if we find a presolving file
+                        if test $? = 0
+                        then
                         # look if its in there
-			    if grep -xq 1 - <<EOF
+                            if grep -xq 1 - <<EOF
 $presol
 EOF
-			    then
-				echo presolve          >> $TMPFILE
-			    fi
-			fi
-			echo read $BLKFILE             >> $TMPFILE
-		    fi
-		fi
-		echo optimize                      >> $TMPFILE
-		echo display statistics            >> $TMPFILE
-#		echo display additionalstatistics  >> $TMPFILE
-#               echo display solution                  >> $TMPFILE
-		echo checksol                      >> $TMPFILE
-	    fi
+                            then
+                                echo presolve      >> $TMPFILE
+                            fi
+                        fi
+                        echo read $BLKFILE         >> $TMPFILE
+                    fi
+                fi
+                echo optimize                      >> $TMPFILE
+                echo display statistics            >> $TMPFILE
+#               echo display additionalstatistics  >> $TMPFILE
+#               echo display solution              >> $TMPFILE
+                echo checksol                      >> $TMPFILE
+            fi
             echo quit                              >> $TMPFILE
             echo -----------------------------
             date
@@ -268,6 +271,10 @@ EOF
             echo -----------------------------
             echo
             echo =ready=
+            if test $MODE = "detectall"
+            then
+                mv *_*.dec decs\/
+            fi
         else
             echo @02 FILE NOT FOUND: $i ===========
             echo @02 FILE NOT FOUND: $i =========== >>$ERRFILE

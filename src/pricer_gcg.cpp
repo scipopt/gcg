@@ -38,6 +38,10 @@
 #include <cassert>
 #include <cstring>
 
+
+#include "scip/scip.h"
+#include "gcg.h"
+
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
 
@@ -54,7 +58,6 @@
 #include "objpricer_gcg.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-#include "scip/scip.h"
 
 using gcg::Stabilization;
 #ifdef _OPENMP
@@ -2975,9 +2978,24 @@ SCIP_RETCODE GCGpricerPrintSimplexIters(
    assert(pricerdata != NULL);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Simplex iterations :       iter\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", SCIPgetNLPIterations(scip));
+   if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", SCIPgetNLPIterations(scip));
+   }
+   else
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Master LP        : %10lld\n", 0);
+   }
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Pricing LP       : %10lld\n", pricerdata->pricingiters);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", SCIPgetNLPIterations(pricer->getOrigprob()));
+
+   if( SCIPgetStage(pricer->getOrigprob()) >= SCIP_STAGE_SOLVING )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", SCIPgetNLPIterations(pricer->getOrigprob()));
+   }
+   else
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Original LP      : %10lld\n", 0);
+   }
 
    return SCIP_OKAY;
 }

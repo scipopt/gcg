@@ -57,10 +57,10 @@
 #include "pricer_gcg.h"
 #include "masterplugins.h"
 #include "nodesel_master.h"
-#include "pub_gcgvar.h"
-#include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
+
+#include "gcg.h"
 
 #ifndef NBLISS
 #include "bliss_automorph.h"
@@ -74,7 +74,7 @@
 #define DEFAULT_DISCRETIZATION TRUE
 #define DEFAULT_AGGREGATION TRUE
 #define DEFAULT_DISPINFOS FALSE
-
+#define DELVARS
 
 /*
  * Data structures
@@ -2257,7 +2257,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* Disable restarts */
    SCIP_CALL( SCIPsetIntParam(scip, "presolving/maxrestarts", 0) );
-
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
    /* initialize the scip data structure for the master problem */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
    SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
@@ -3196,7 +3196,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
       relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
-      SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
 
       SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, TRUE, TRUE, TRUE, &stored) );
       if( !stored )
@@ -3317,7 +3317,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
       {
          /* transform the master solution to the original variable space */
-         SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
          /* store the solution as relaxation solution */
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->currentorigsol) );
@@ -3361,7 +3361,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
-      SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol) );
 #ifdef SCIP_DEBUG
       SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, &stored) );
 #else

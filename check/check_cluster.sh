@@ -276,8 +276,11 @@ do
         # increase the index for the inctance tried to solve, even if the filename does not exist
 	COUNT=`expr $COUNT + 1`
 
+	PROB=$GCGPATH/`echo $i|cut -d";" -f1`
+	DECFILE=$GCGPATH/`echo $i|cut -d";" -f2`
+
         # check if problem instance exists
-	if test -f $GCGPATH/$i
+	if test -f $PROB
 	then
 
             # the cluster queue has an upper bound of 2000 jobs; if this limit is
@@ -293,7 +296,26 @@ do
 		./waitcluster.sh 1600 $QUEUE 200
 	    fi
 
-	    SHORTPROBNAME=`basename $i .gz`
+	    DIR=`dirname $NAME`
+	    NAME=`basename $NAME .gz`
+	    NAME=`basename $NAME .mps`
+	    NAME=`basename $NAME .lp`
+
+	    if test "$PROB" == "$DECFILE"
+	    then
+		EXT=${PROB##*.}
+		if test "$EXT" = "gz"
+		then
+		    BLKFILE=$DIR/$NAME.blk.gz
+		    DECFILE=$DIR/$NAME.dec.gz
+		else
+		    BLKFILE=$DIR/$NAME.blk
+		    DECFILE=$DIR/$NAME.dec
+		fi
+	    fi
+
+
+	    SHORTPROBNAME=`basename $NAME .gz`
 	    SHORTPROBNAME=`basename $SHORTPROBNAME .mps`
 	    SHORTPROBNAME=`basename $SHORTPROBNAME .lp`
 	    SHORTPROBNAME=`basename $SHORTPROBNAME .opb`
@@ -307,10 +329,6 @@ do
 	    fi
 
 	    BASENAME=$GCGPATH/results/$FILENAME
-
-	    DIRNAME=`dirname $i`
-	    DECFILE=$GCGPATH/$DIRNAME/$SHORTPROBNAME.dec.gz
-	    BLKFILE=$GCGPATH/$DIRNAME/$SHORTPROBNAME.blk.gz
 
 	    TMPFILE=$BASENAME.tmp
 	    SETFILE=$BASENAME.set

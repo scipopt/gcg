@@ -97,8 +97,12 @@ SCIP_RETCODE getRootRelaxSol(
    for( i = 0; i < nmastervars; i++ )
       SCIP_CALL( SCIPsetSolVal(masterprob, masterrootsol, mastervars[i], SCIPvarGetRootSol(mastervars[i])) );
 
+<<<<<<< HEAD
    /* calculate original root LP solution */
    SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, masterrootsol, rootsol) );
+=======
+   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol) );
+>>>>>>> master
 
    /* free memory */
    SCIP_CALL( SCIPfreeSol(masterprob, &masterrootsol) );

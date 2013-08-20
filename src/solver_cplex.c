@@ -178,6 +178,8 @@ SCIP_RETCODE buildProblem(
    /* set parameters */
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPAGAP, 0.0) );
+   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPRHS, SCIPfeastol(pricingprob)) );
+   CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPINT, SCIPfeastol(pricingprob)) );
    CHECK_ZERO( CPXsetintparam(solverdata->cpxenv[probnr], CPX_PARAM_THREADS, solverdata->threads) );
 
    /* set objective sense */
@@ -708,10 +710,22 @@ SCIP_RETCODE solveCplex(
          SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
          SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
          SCIP_CALL( SCIPcheckSolOrig(pricingprob, sols[*nsols], &feasible, FALSE, FALSE) );
-         assert(feasible);
-
          solisray[*nsols] = FALSE;
-         ++(*nsols);
+
+         if( !feasible )
+         {
+            SCIP_CALL( SCIPfreeSol(pricingprob, &sols[*nsols]) );
+
+            /* the optimal solution is not feasible, we return SCIP_UNKNOWN as result */
+            if( s == 0 )
+            {
+               *result = SCIP_STATUS_UNKNOWN;
+            }
+         }
+         else
+         {
+            ++(*nsols);
+         }
       }
    }
 

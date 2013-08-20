@@ -648,6 +648,12 @@ SCIP_RETCODE readBlock(
          break;
       }
 
+      if( !SCIPconsIsActive(cons) )
+      {
+         assert( !SCIPhashmapExists(readerdata->constoblock, cons));
+         continue;
+      }
+
       conshasvar = FALSE;
       /* get all vars for the specific constraint */
       nvars = SCIPgetNVarsXXX(scip, cons);

@@ -358,38 +358,38 @@ BEGIN {
       validline = 1;
    }
 
-   if( $21 in statuses ) # GCG
+   if( $22 in statuses ) # GCG
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
       conss[nsolver,nprobs[nsolver]] = $5;
       vars[nsolver,nprobs[nsolver]] = $6;
-      dualbound[nsolver,nprobs[nsolver]] = max(min($10, +infinity), -infinity);
-      primalbound[nsolver,nprobs[nsolver]] = max(min($11, +infinity), -infinity);
-      gap[nsolver,nprobs[nsolver]] = $12;
-      iters[nsolver,nprobs[nsolver]] = $18;
-      nodes[nsolver,nprobs[nsolver]] = max($19,1);
-      time[nsolver,nprobs[nsolver]] = fracceil(max($20,mintime),0.1);
-      status[nsolver,nprobs[nsolver]] = $21;
+      dualbound[nsolver,nprobs[nsolver]] = max(min($12, +infinity), -infinity);
+      primalbound[nsolver,nprobs[nsolver]] = max(min($13, +infinity), -infinity);
+      gap[nsolver,nprobs[nsolver]] = $14;
+      iters[nsolver,nprobs[nsolver]] = $19;
+      nodes[nsolver,nprobs[nsolver]] = max($20,1);
+      time[nsolver,nprobs[nsolver]] = fracceil(max($21,mintime),0.1);
+      status[nsolver,nprobs[nsolver]] = $22;
       printsoltimes = 0; # additional output is only available for SCIP-.res files
       validline = 1;
    }
 
-   if( $23 in statuses ) # GCG with solution times to first/last
+   if( $24 in statuses ) # GCG with solution times to first/last
    {
       # collect data (line with problem type, original and presolved problem size and simplex iterations)
       type[nsolver,nprobs[nsolver]] = $2;
       conss[nsolver,nprobs[nsolver]] = $5;
       vars[nsolver,nprobs[nsolver]] = $6;
-      dualbound[nsolver,nprobs[nsolver]] = max(min($10, +infinity), -infinity);
-      primalbound[nsolver,nprobs[nsolver]] = max(min($11, +infinity), -infinity);
-      gap[nsolver,nprobs[nsolver]] = $12;
-      iters[nsolver,nprobs[nsolver]] = $18;
-      nodes[nsolver,nprobs[nsolver]] = max($19,1);
-      time[nsolver,nprobs[nsolver]] = fracceil(max($20,mintime),0.1);
-      timetofirst[nsolver,nprobs[nsolver]] = fracceil(max($21,mintime),0.1);
-      timetobest[nsolver, nprobs[nsolver]] = fracceil(max($22, mintime), 0.1);
-      status[nsolver,nprobs[nsolver]] = $23;
+      dualbound[nsolver,nprobs[nsolver]] = max(min($12, +infinity), -infinity);
+      primalbound[nsolver,nprobs[nsolver]] = max(min($13, +infinity), -infinity);
+      gap[nsolver,nprobs[nsolver]] = $14;
+      iters[nsolver,nprobs[nsolver]] = $19;
+      nodes[nsolver,nprobs[nsolver]] = max($20,1);
+      time[nsolver,nprobs[nsolver]] = fracceil(max($21,mintime),0.1);
+      timetofirst[nsolver,nprobs[nsolver]] = fracceil(max($22,mintime),0.1);
+      timetobest[nsolver, nprobs[nsolver]] = fracceil(max($23, mintime), 0.1);
+      status[nsolver,nprobs[nsolver]] = $24;
       validline = 1;
    }
 

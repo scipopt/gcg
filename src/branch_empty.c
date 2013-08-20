@@ -348,12 +348,20 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
 
-   /* check whether the current original solution is integral */
+   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
+   {
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+
+   }
+   else
+   {
+      /* check whether the current original solution is integral */
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
 #else
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
 #endif
+   }
 
    if( feasible )
    {

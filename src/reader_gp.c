@@ -179,8 +179,7 @@ SCIP_RETCODE writeData(
    varindexmap = NULL;
    consindexmap = NULL;
 
-   SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
-   SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
 
    if( decdecomp != NULL )
    {
@@ -193,6 +192,9 @@ SCIP_RETCODE writeData(
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
+         SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
+         SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
          SCIPdebugMessage("Block information:\n");
          varindex = 1;
          consindex = 1;
