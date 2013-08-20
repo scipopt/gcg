@@ -32,23 +32,26 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_BIPARTITEGRAPH_DEF_H_
+#define GCG_BIPARTITEGRAPH_DEF_H_
 
 #include "bipartitegraph.h"
 #include "scip_misc.h"
 
 namespace gcg {
 
-
-BipartiteGraph::BipartiteGraph(
+template <class T>
+BipartiteGraph<T>::BipartiteGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                 /**< weights for the given graph */
-   ): Graph(scip, w)
+   ): Graph<T>(scip, w)
 {
    // TODO Auto-generated constructor stub
-   name = std::string("bipartite");
+   this->name = std::string("bipartite");
 }
 
-BipartiteGraph::~BipartiteGraph()
+template <class T>
+BipartiteGraph<T>::~BipartiteGraph()
 {
    // TODO Auto-generated destructor stub
 }
@@ -62,7 +65,8 @@ BipartiteGraph::~BipartiteGraph()
  *
  * @todo The nonzeroness is not checked, all variables in the variable array are considered
  */
-SCIP_RETCODE BipartiteGraph::createFromMatrix(
+template <class T>
+SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    SCIP_CONS**           conss,              /**< constraints for which graph should be created */
    SCIP_VAR**            vars,               /**< variables for which graph should be created */
    int                   nconss_,             /**< number of constraints */
@@ -77,29 +81,29 @@ SCIP_RETCODE BipartiteGraph::createFromMatrix(
    assert(vars != NULL);
    assert(nvars_ > 0);
    assert(nconss_ > 0);
-   nvars = nvars_;
-   nconss = nconss_;
+   this->nvars = nvars_;
+   this->nconss = nconss_;
 
-   for( i = 0; i < nvars + nconss; ++i )
+   for( i = 0; i < this->nvars + this->nconss; ++i )
    {
       TCLIQUE_WEIGHT weight;
 
       /* note that the first nvars nodes correspond to variables */
-      if( i < nvars )
-         weight = weights.calculate(vars[i]);
+      if( i < this->nvars )
+         weight = this->weights.calculate(vars[i]);
       else
-         weight = weights.calculate(conss[i-nvars]);
+         weight = this->weights.calculate(conss[i-this->nvars]);
 
-      TCLIQUE_CALL( tcliqueAddNode(tgraph, i, weight) );
+      this->graph->addNode(i, weight);
    }
 
    /* go through all constraints */
-   for( i = 0; i < nconss; ++i )
+   for( i = 0; i < this->nconss; ++i )
    {
       SCIP_VAR **curvars;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -108,8 +112,8 @@ SCIP_RETCODE BipartiteGraph::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -123,7 +127,7 @@ SCIP_RETCODE BipartiteGraph::createFromMatrix(
          if( !SCIPisVarRelevant(curvars[j]) )
             continue;
 
-         if( SCIPgetStage(scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
             var = SCIPvarGetProbvar(curvars[j]);
          else
             var = curvars[j];
@@ -131,18 +135,20 @@ SCIP_RETCODE BipartiteGraph::createFromMatrix(
          assert(var != NULL);
          varIndex = SCIPvarGetProbindex(var);
          assert(varIndex >= 0);
-         assert(varIndex < nvars);
+         assert(varIndex < this->nvars);
 
-         TCLIQUE_CALL( tcliqueAddEdge(tgraph, varIndex, nvars+i) );
+         SCIP_CALL( this->graph->addEdge(varIndex, this->nvars+i) );
       }
-      SCIPfreeBufferArray(scip_, &curvars);
+      SCIPfreeBufferArray(this->scip_, &curvars);
    }
 
-   TCLIQUE_CALL( tcliqueFlush(tgraph) );
+   this->graph->graphFlush();
 
-   nnonzeroes = tcliqueGetNEdges(tgraph);
+   this->nnonzeroes = this->graph->getNEdges();
 
    return SCIP_OKAY;
 }
 
 } /* namespace gcg */
+
+#endif

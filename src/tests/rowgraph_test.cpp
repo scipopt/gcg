@@ -51,7 +51,7 @@ TEST_F(RowTest, WriteFileTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x3>[I] == 1") );
    SCIP_CALL_EXPECT( createCons("[linear] <c4>: 1<x1>[I] +1<x2>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::RowGraph graph(scip, weights );
+   gcg::RowGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 

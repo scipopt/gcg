@@ -28,29 +28,38 @@
 /**@file   rowgraph.cpp
  * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
  * @author Martin Bergner
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 // #define SCIP_DEBUG
+
+#ifndef GCG_ROWGRAPH_DEF_H_
+#define GCG_ROWGRAPH_DEF_H_
+
 #include "rowgraph.h"
 #include <algorithm>
+
 namespace gcg {
 
-RowGraph::RowGraph(
+template <class T>
+RowGraph<T>::RowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : BipartiteGraph(scip, w)
+   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
 {
-   name = std::string("rowgraph");
+   this->name = std::string("rowgraph");
 }
 
-RowGraph::~RowGraph()
+template <class T>
+RowGraph<T>::~RowGraph()
 {
    // TODO Auto-generated destructor stub
 }
 
 /** writes row graph to file */
-SCIP_RETCODE RowGraph::writeToFile(
+template <class T>
+SCIP_RETCODE RowGraph<T>::writeToFile(
    const char*        filename,           /**< filename where the graph should be written to */
    SCIP_Bool          writeweights         /**< whether to write weights */
    )
@@ -69,42 +78,42 @@ SCIP_RETCODE RowGraph::writeToFile(
    nrealneighbors = 0;
    nedges = 0;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &handled, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &nrealneighbors, nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &handled, this->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nconss) );
 
    SCIPdebug(tcliquePrintGraph(tgraph));
-   for( int i = 0; i < nconss; ++i )
+   for( int i = 0; i < this->nconss; ++i )
    {
-      BMSclearMemoryArray(handled, nconss);
+      BMSclearMemoryArray(handled, this->nconss);
       handled[i] = TRUE;
       nrealneighbors[i] = 0;
 
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors[i], nconss) );
-      int nneighbors = getNNeighbors(nvars+i);
+      SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nconss) );
+      int nneighbors = graph.getNNeighbors(this->nvars+i);
 
-      SCIPdebugMessage("%d has %d neighbors\n", i+nvars, nneighbors);
+      SCIPdebugMessage("%d has %d neighbors\n", i+this->nvars, nneighbors);
 
-      std::vector<int> neighbors = getNeighbors(i+nvars);
+      std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
       for( int j = 0; j < nneighbors; ++j )
       {
          int neighbor = neighbors[j];
-         int nneighborneighbors = getNNeighbors(neighbor);
+         int nneighborneighbors = graph.getNNeighbors(neighbor);
 
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         std::vector<int> neighborneighbors = getNeighbors(neighbor);
+         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
             int neighborneighbor = neighborneighbors[k];
 
-            SCIPdebugMessage("\t\t%d->%d->%d (", i+nvars, neighbor, neighborneighbor);
-            if( !handled[neighborneighbor-nvars] )
+            SCIPdebugMessage("\t\t%d->%d->%d (", i+this->nvars, neighbor, neighborneighbor);
+            if( !handled[neighborneighbor-this->nvars] )
             {
                SCIPdebugPrintf("x)\n");
-               realneighbors[i][nrealneighbors[i]] = neighborneighbor-nvars;
+               realneighbors[i][nrealneighbors[i]] = neighborneighbor-this->nvars;
                ++(nrealneighbors[i]);
 
-               handled[neighborneighbor-nvars] = TRUE;
+               handled[neighborneighbor-this->nvars] = TRUE;
                ++nedges;
             }
             else
@@ -115,31 +124,32 @@ SCIP_RETCODE RowGraph::writeToFile(
       }
    }
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nconss, nedges);
+   SCIPinfoMessage(this->scip_, file, "%d %d\n", this->nconss, nedges);
 
-   for( int i = 0; i < nconss; ++i)
+   for( int i = 0; i < this->nconss; ++i)
    {
       for( int j = 0; j < nrealneighbors[i]; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", realneighbors[i][j]+1);
+         SCIPinfoMessage(this->scip_, file, "%d ", realneighbors[i][j]+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
-      SCIPfreeMemoryArray(scip_, &realneighbors[i]);
+      SCIPinfoMessage(this->scip_, file, "\n");
+      SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
    }
 
-   for( int i = 0; i < dummynodes; ++i )
+   for( int i = 0; i < graph.getDummynodes(); ++i )
    {
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(this->scip_, file, "\n");
    }
 
-   SCIPfreeMemoryArray(scip_, &handled);
-   SCIPfreeMemoryArray(scip_, &realneighbors);
-   SCIPfreeMemoryArray(scip_, &nrealneighbors);
+   SCIPfreeMemoryArray(this->scip_, &handled);
+   SCIPfreeMemoryArray(this->scip_, &realneighbors);
+   SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
 
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE RowGraph::createDecompFromPartition(
+template <class T>
+SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    DEC_DECOMP**       decomp              /**< decomposition structure to generate */
 )
 {
@@ -152,19 +162,19 @@ SCIP_RETCODE RowGraph::createDecompFromPartition(
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
 
-   conss = SCIPgetConss(scip_);
-   vars = SCIPgetVars(scip_);
-   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+   conss = SCIPgetConss(this->scip_);
+   vars = SCIPgetVars(this->scip_);
+   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip_), nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
    /* assign constraints to partition */
-   for( i = 0; i < nconss; i++ )
+   for( i = 0; i < this->nconss; i++ )
    {
-      int block = partition[i];
+      int block = this->partition[i];
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
       ++(nsubscipconss[block]);
    }
@@ -181,16 +191,31 @@ SCIP_RETCODE RowGraph::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( DECdecompCreate(scip_, decomp) );
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip_, *decomp, constoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
+      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(scip_, &nsubscipconss);
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE RowGraph<T>::createFromMatrix(
+   SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+   SCIP_VAR**            vars,               /**< variables for which graph should be created */
+   int                   nconss_,             /**< number of constraints */
+   int                   nvars_               /**< number of variables */
+   )
+{
+   this->nvars = nvars_;
+   this->nconss = nconss_;
+   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
    return SCIP_OKAY;
 }
 
 } /* namespace gcg */
+#endif

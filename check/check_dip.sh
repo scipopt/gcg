@@ -76,6 +76,8 @@ then
     mkdir settings
 fi
 
+GCGPATH=`pwd`
+
 OUTFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.out
 ERRFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.err
 RESFILE=results/check.$TSTNAME.$BINNAME.$SETNAME.res
@@ -158,6 +160,9 @@ do
 
 	    # change the time limit in the param file
 	    sed -i "s,\$TIMELIMIT,$TIMELIMIT," $TMPFILE
+
+	    # change the time limit in the param file
+	    sed -i "s,\$GCGPATH,$GCGPATH," $TMPFILE
 
 	    # change the instance in the param file
 	    sed -i "s,\$INSTANCE,$i," $TMPFILE

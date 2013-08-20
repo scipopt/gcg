@@ -73,11 +73,11 @@ public:
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
-template<class G>
+template<class T, template <class T> class G>
 class DialogReadGraphs: public ObjDialog
 {
 private:
-   typedef G GRAPH_TYPE;
+   typedef G<T> GRAPH_TYPE;
 public:
    DialogReadGraphs(
       SCIP*              scip                /**< SCIP data structure */
@@ -86,11 +86,11 @@ public:
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
-template<class G>
+template<class T, template <class T> class G>
 class DialogWriteGraphs: public ObjDialog
 {
 private:
-   typedef G GRAPH_TYPE;
+   typedef G<T> GRAPH_TYPE;
 public:
    DialogWriteGraphs(
       SCIP*              scip                /**< SCIP data structure */

@@ -32,59 +32,95 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_GRAPH_DEF_H_
+#define GCG_GRAPH_DEF_H_
+
 #include "scip/scip.h"
 #include "graph.h"
-#include "tclique/tclique.h"
 #include <fstream>
 
 using std::ifstream;
 
 namespace gcg {
 
-
-Graph::Graph(
+template <class T>
+Graph<T>::Graph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-) : name("graph"),scip_(scip),tgraph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
+) : name("graph"),scip_(scip),graph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0),weights(w)
 {
-  TCLIQUE_CALL_EXC( tcliqueCreate(&tgraph) );
+   graph = new T();
 }
 
-/** Destruktor */
-Graph::~Graph()
+template <class T>
+Graph<T>::~Graph()
 {
-   if(tgraph != NULL)
+   if(graph != NULL)
+      delete graph;
+
+}
+template <class T>
+int Graph<T>::getNNodes() {
+   return graph->getNNodes();
+}
+
+template <class T>
+int Graph<T>::getNEdges() {
+   return graph->getNEdges();
+}
+
+template <class T>
+int Graph<T>::edge(int i, int j) {
+   assert( i>= 0);
+   assert(j >= 0);
+
+   //int edge_ij=0;
+
+   //return tcliqueIsEdge(tgraph,i,j);
+
+   int edge_ij=0;
+   std::vector<int> Neighbors;
+
+   Neighbors = getNeighbors(i);
+   for(int k=0; k<(int)Neighbors.size(); k++)
    {
-      tcliqueFree(&tgraph);
-      tgraph = NULL;
+      if(Neighbors[k] == j)
+      {
+         edge_ij = 1;
+         k = (int)Neighbors.size();
+      }
    }
+   return edge_ij;
 }
 
-int Graph::getNNodes() {
-   return tcliqueGetNNodes(tgraph);
-}
-
-int Graph::getNEdges() {
-   return tcliqueGetNEdges(tgraph);
-}
-
-int Graph::getNNeighbors(int i) {
+template <class T>
+int Graph<T>::getNNeighbors(int i) {
    assert( i >= 0);
-   return tcliqueGetLastAdjedge(tgraph,i)-tcliqueGetFirstAdjedge(tgraph, i)+1;
+   return graph->getNNeighbors(i);
 }
 
-std::vector<int> Graph::getNeighbors(int i) {
+template <class T>
+std::vector<int> Graph<T>::getNeighbors(int i) {
    assert(i >= 0);
-   std::vector<int> part(tcliqueGetFirstAdjedge(tgraph, i), tcliqueGetLastAdjedge(tgraph,i)+1);
-   return part;
+
+   return graph->getNeighbors(i);
 }
 
-std::vector<int> Graph::getPartition()
+template <class T>
+std::vector<int> Graph<T>::getPartition()
 {
    return partition;
 }
 
-SCIP_RETCODE Graph::writeToFile(
+template <class T>
+void Graph<T>::setPartition(int i, int ID) {
+   partition.resize(getNNodes(), -1);
+   partition[i] = ID;
+}
+
+/** write the graph to a file */
+template <class T>
+SCIP_RETCODE Graph<T>::writeToFile(
       const char* filename,
       SCIP_Bool writeweights
     )
@@ -97,19 +133,19 @@ SCIP_RETCODE Graph::writeToFile(
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   nnodes = Graph::getNNodes();
-   nedges = Graph::getNEdges();
+   nnodes = Graph<T>::getNNodes();
+   nedges = Graph<T>::getNEdges();
 
    SCIPinfoMessage(scip_, file, "%d %d\n", nnodes+dummynodes, nedges/2);
 
    for( int i = 0; i < nnodes; ++i )
    {
-      int nneighbors = Graph::getNNeighbors(i);
-      std::vector<int> neighbors = Graph::getNeighbors(i);
+      int nneighbors = Graph<T>::getNNeighbors(i);
+      std::vector<int> neighbors = Graph<T>::getNeighbors(i);
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", Graph::getWeight(i));
+         SCIPinfoMessage(scip_, file, "%d ", Graph<T>::getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
@@ -126,7 +162,9 @@ SCIP_RETCODE Graph::writeToFile(
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE Graph::readPartition(
+/** read in the partition from a file */
+template <class T>
+SCIP_RETCODE Graph<T>::readPartition(
    const char* filename
 )
 {
@@ -153,11 +191,14 @@ SCIP_RETCODE Graph::readPartition(
 }
 
 /** return the weight of given node */
-int Graph::getWeight(
+template <class T>
+int Graph<T>::getWeight(
    int                i                   /**< the given node */
    )
 {
-   return tcliqueGetWeights(tgraph)[i];
+   return graph->graphGetWeights(i);
 }
 
-}
+} /* namespace gcg */
+
+#endif

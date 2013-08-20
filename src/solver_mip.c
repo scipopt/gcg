@@ -391,7 +391,7 @@ SCIP_Bool problemIsFeasible(
    SCIP*                 pricingprob         /**< pricing problem SCIP data structure */
    )
 {
-   return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL;
+   return SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT;
 }
 
 /** returns whether the solution has an infinite value for at least one variable */
@@ -403,8 +403,11 @@ SCIP_Bool problemHasUnboundedSolution(
    int i;
    SCIP_SOL* sol;
    sol = SCIPgetBestSol(pricingprob);
-   assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL);
-   /*assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol)));*/
+   assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT );
+   /* assert(!SCIPisInfinity(pricingprob, SCIPsolGetOrigObj(sol))); */
+
+   if( sol == NULL )
+      return FALSE;
 
    for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {
@@ -580,7 +583,7 @@ SCIP_RETCODE solveProblem(
          *nsols = *nsols + 1;
       }
 
-      if( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL )
+      if( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT )
          *lowerbound = SCIPgetDualbound(pricingprob);
 
       *status = SCIP_STATUS_OPTIMAL;

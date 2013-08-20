@@ -48,6 +48,12 @@ SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+extern
+SCIP_RETCODE GCGcreateBranchruleConsOrig(
+   SCIP*                 scip,
+   SCIP_BRANCHRULE*      branchrule
+   );
+
 #ifdef __cplusplus
 }
 #endif

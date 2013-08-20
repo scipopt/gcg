@@ -291,13 +291,14 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    detectextended = FALSE;
 
    *ndecdecomps = 0;
+   *decdecomps = NULL;
+   SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
 
    for( i = 0; i < runs && *result != SCIP_SUCCESS; ++i )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely block diagonal" );
 
       SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
       SCIP_CALL( findConnectedComponents(scip, &((*decdecomps)[0]), detectextended, result) );
 
       SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
@@ -322,6 +323,10 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
       }
    }
 
+   if( *ndecdecomps == 0 )
+   {
+      SCIPfreeMemoryArrayNull(scip, decdecomps);
+   }
    return SCIP_OKAY;
 }
 

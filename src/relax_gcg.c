@@ -162,7 +162,8 @@ SCIP_RETCODE setOriginalVarBlockNr(
    assert(scip != NULL);
    assert(var != NULL);
    assert(newblock >= 0);
-   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE);
+
+   assert(SCIPvarIsOriginal(var) || SCIPvarGetStatus(var) == SCIP_VARSTATUS_LOOSE || SCIPvarGetStatus(var) == SCIP_VARSTATUS_COLUMN);
    assert(relaxdata != NULL);
 
    blocknr = GCGvarGetBlock(var);
@@ -288,7 +289,7 @@ SCIP_RETCODE convertStructToGCG(
    for( i = 0; i < nlinkingconss; ++i )
    {
       assert(linkingconss[i] != NULL);
-      SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i]));
+      /* SCIPdebugMessage("\tProcessing linking constraint %s.\n", SCIPconsGetName(linkingconss[i])); */
       if( SCIPconsIsActive(linkingconss[i]) )
       {
          SCIP_CALL( markConsMaster(scip, relaxdata, linkingconss[i]) );
@@ -306,7 +307,7 @@ SCIP_RETCODE convertStructToGCG(
 
    for( i = 0; i < nblocks; ++i )
    {
-      SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]);
+      /* SCIPdebugMessage("\tProcessing block %d (%d conss, %d vars).\n", i, nsubscipconss[i], nsubscipvars[i]); */
       assert((subscipvars[i] == NULL) == (nsubscipvars[i] == 0));
       for( j = 0; j < nsubscipvars[i]; ++j )
       {
@@ -820,14 +821,6 @@ SCIP_RETCODE checkIdenticalBlocks(
    if( !relaxdata->discretization || !relaxdata->aggregation )
    {
       SCIPdebugMessage("discretization is off, aggregation is off\n");
-       return SCIP_OKAY;
-   }
-
-
-   /* aggregate only if the master problem has a set partitioning or set covering structure */
-   if( !relaxdata->masterissetcover && !relaxdata->masterissetpart )
-   {
-      SCIPdebugMessage("Master is no setcover and no set partitioning.\n");
       return SCIP_OKAY;
    }
 
@@ -2498,7 +2491,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
          {
             if( *branchdata != NULL )
             {
-               SCIPfreeMemory(scip, branchdata);
+               SCIPfreeMemory(GCGrelaxGetMasterprob(scip), branchdata);
             }
          }
          break;
@@ -3078,13 +3071,12 @@ SCIP_RETCODE performProbing(
    {
       /* LP iterations are unlimited when probing LP is solved with pricing */
       assert(maxlpiterations == -1);
-      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE/* pretendroot */, TRUE /*displayinfo*/,
-            maxpricerounds, lperror) );
+      SCIP_CALL( SCIPsolveProbingLPWithPricing(masterscip, FALSE, TRUE, maxpricerounds, lperror, NULL) );
    }
    else
    {
       assert(maxpricerounds == 0);
-      SCIP_CALL( SCIPsolveProbingLP(masterscip, maxlpiterations, lperror) );
+      SCIP_CALL( SCIPsolveProbingLP(masterscip, maxlpiterations, lperror, NULL) );
    }
    lpsolstat = SCIPgetLPSolstat(masterscip);
 
@@ -3347,6 +3339,12 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          for( i = 0; i < norigvars; i++ )
             if( SCIPvarGetType(origvars[i]) <= SCIP_VARTYPE_INTEGER && !SCIPisFeasIntegral(scip, SCIPgetRelaxSolVal(scip, origvars[i])) )
             {
+               if( SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])) )
+               {
+                  SCIPdebugMessage("lblocal = %g, ublocal = %g\n", SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i]));
+                  SCIPdebugMessage("var = %s, vartype = %d, val = %g\n", SCIPvarGetName(origvars[i]), SCIPvarGetType(origvars[i]), SCIPgetRelaxSolVal(scip, origvars[i]));
+               }
+
                assert(!SCIPisEQ(scip, SCIPvarGetLbLocal(origvars[i]), SCIPvarGetUbLocal(origvars[i])));
 
                SCIP_CALL( SCIPaddExternBranchCand(scip, origvars[i], SCIPgetRelaxSolVal(scip,

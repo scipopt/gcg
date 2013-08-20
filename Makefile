@@ -102,6 +102,8 @@ LIBOBJ		=	reader_blk.o \
 			pricer_gcg.o \
 			branch_orig.o \
 			branch_ryanfoster.o \
+			branch_generic.o \
+			event_genericbranchvaradd.o \
 			cons_origbranch.o \
 			cons_masterbranch.o \
 			cons_integralorig.o \
@@ -130,7 +132,7 @@ LIBOBJ		=	reader_blk.o \
 			heur_restmaster.o \
 			heur_xpcrossover.o \
 			heur_xprins.o \
-			branch_master.o \
+			branch_empty.o \
 			branch_relpsprob.o \
 			masterplugins.o \
 			nodesel_master.o \
@@ -152,6 +154,7 @@ LIBOBJ		=	reader_blk.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_random.o \
+			dec_colors.o \
 			gcggithash.o \
 			reader_gp.o \
 			scip_misc.o \
@@ -159,17 +162,19 @@ LIBOBJ		=	reader_blk.o \
 			gcgvar.o \
 			class_pricingtype.o \
 			class_stabilization.o \
-			graph/graph.o \
+			graph/weights.o \
+			graph/inst.o \
+			graph/graph_tclique.o \
+			stat.o \
+			objdialog.o \
+			dialog_graph.o
+#			graph/graph.o \
 			graph/bipartitegraph.o \
 			graph/hyperrowcolgraph.o \
 			graph/hypercolgraph.o \
 			graph/hyperrowgraph.o \
 			graph/rowgraph.o \
 			graph/columngraph.o \
-			graph/weights.o \
-			stat.o \
-			objdialog.o \
-			dialog_graph.o
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o
@@ -316,8 +321,12 @@ cleanlib:       $(LIBDIR)
 .PHONY: cleantest
 cleantest:
 ifneq ($(OBJDIR),)
-		@-(rm -f $(OBJDIR)/tests/*.o)
-		@-(cd $(OBJDIR) && rmdir tests);
+		@$(SHELL) -ec 'if test -d $(OBJDIR)/tests/; \
+			then \
+				echo "-> remove $(OBJDIR)/tests/"; \
+				rm -f -f $(OBJDIR)/tests/*.o ; \
+				cd $(OBJDIR) && rmdir tests ; \
+			fi'
 endif
 
 .PHONY: clean

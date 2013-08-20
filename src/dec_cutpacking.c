@@ -32,7 +32,6 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -213,7 +212,7 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
          detectordata->graphs[0].conss[k] = conss[i];
          k++;
       }
-      //SCIPfreeMemoryArrayNull(scip, &vars);
+      /* SCIPfreeMemoryArrayNull(scip, &vars); */
    }
    detectordata->nrelconss = k;
    detectordata->graphs[0].nconss = k;
@@ -595,7 +594,7 @@ static SCIP_RETCODE buildnewadjacencylist(
       SCIPhashmapFree(&newgraph.adjacencylist[i]);
    }
 
-   //SCIPreallocMemoryArray(scip, &detectordata->graphs[pos].adjacencylist, nconss);
+   /* SCIPreallocMemoryArray(scip, &detectordata->graphs[pos].adjacencylist, nconss); */
 
    newgraph.nconss = nconss;
    newgraph.nedges = nedges / 2;
@@ -1618,7 +1617,7 @@ static SCIP_RETCODE StoerWagner(
       {
          if( (t != NULL) && (represent_t == last) )
          {
-            //test if act_cut ist a s-t-cut
+            /* test if act_cut ist a s-t-cut */
             represent_t = next_to_last;
             value_cut = value_act_cut;
             cut = last;
@@ -1636,14 +1635,14 @@ static SCIP_RETCODE StoerWagner(
       if( SCIPhashmapGetNEntries(repres_conss) == 0 )
       {
          SCIP_CALL( SCIPhashmapInsert(repres_conss, next_to_last, (void*) (size_t) nrepres_conss) );
-         nrepres_conss++; //starts with 1
+         nrepres_conss++; /* starts with 1 */
          nmerged_conss[nrepres_conss - 2] = 1;
          merged_conss[nrepres_conss - 2][0] = last;
       }
       else if( !SCIPhashmapExists(repres_conss, next_to_last) )
       {
          SCIP_CALL( SCIPhashmapInsert(repres_conss, next_to_last, (void*) (size_t) nrepres_conss) );
-         nrepres_conss++; //starts with 1
+         nrepres_conss++; /* starts with 1 */
          nmerged_conss[nrepres_conss - 2] = 1;
          merged_conss[nrepres_conss - 2][0] = last;
       }
@@ -1824,14 +1823,14 @@ static SCIP_RETCODE callMetis(
       detectordata->randomseed, detectordata->metisuseptyperb ? "rb" : "kway", detectordata->metisubfactor,
       detectordata->metisverbose ? "" : "> /dev/null");
 
-   //SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) );
-   //SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) );
+   /* SCIP_CALL( SCIPresetClock(scip, detectordata->metisclock) ); */
+   /* SCIP_CALL( SCIPstartClock(scip, detectordata->metisclock) ); */
    SCIPdebugMessage("Calling metis with: %s\n", metiscall);
 
    status = system(metiscall);
 
-   //SCIP_CALL( SCIPstopClock(scip, detectordata->metisclock) );
-   //SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock),  remainingtime-SCIPgetClockTime(scip, detectordata->metisclock) );
+   /* SCIP_CALL( SCIPstopClock(scip, detectordata->metisclock) ); */
+   /* SCIPdebugMessage("time left before metis started: %f, time metis spend %f, remainingtime: %f\n", remainingtime, SCIPgetClockTime(scip, detectordata->metisclock),  remainingtime-SCIPgetClockTime(scip, detectordata->metisclock) ); */
 
    /* check error codes */
    if( status == -1 )
@@ -1933,7 +1932,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 
    *ndecdecomps = 1;
 
-   //assert(strcmp(DECdetectorGetName(cutpacking), DEC_DETECTORNAME) == 0);
+   /* assert(strcmp(DECdetectorGetName(cutpacking), DEC_DETECTORNAME) == 0); */
    SCIPdebugMessage("Detecting structure from %s\n", DEC_DETECTORNAME);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) );

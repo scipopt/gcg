@@ -52,7 +52,7 @@ TEST_F(HyperrowcolTest, CreateTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1.0, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
@@ -68,7 +68,7 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g", 0) );
@@ -97,7 +97,7 @@ TEST_F(HyperrowcolTest, WriteFileWeightsTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g", 1) );
@@ -126,7 +126,7 @@ TEST_F(HyperrowcolTest, ReadPartitionTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
    std::ofstream out;
@@ -158,7 +158,7 @@ TEST_F(HyperrowcolTest, GetHyperedgeNodesTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
    int array[7][7] = {
@@ -193,7 +193,7 @@ TEST_F(HyperrowcolTest, GetNeighborTest) {
    SCIP_CALL_EXPECT( createCons("[linear] <c2>: 2<x1>[I] +2<x2>[I] +3<x3>[I] <= 5") );
    SCIP_CALL_EXPECT( createCons("[linear] <c3>: 1<x1>[I] +1<x3>[I] == 1") );
    gcg::Weights weights(1, 2, 3, 4, 5, 6);
-   gcg::HyperrowcolGraph graph(scip, weights );
+   gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
    int array[8][8] = {

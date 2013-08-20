@@ -44,8 +44,8 @@
 #define HEUR_DESC             "LP rounding heuristic on original variables as suggested by C. Wallace taking row slacks and bounds into account"
 #define HEUR_DISPCHAR         'z'
 #define HEUR_PRIORITY         -500
-//#define HEUR_FREQ             1
-#define HEUR_FREQ             -1    /// @todo heuristic deactivated due to false solutions
+/* #define HEUR_FREQ             1 */
+#define HEUR_FREQ             -1    /* / @todo heuristic deactivated due to false solutions */
 #define HEUR_FREQOFS          0
 #define HEUR_MAXDEPTH         -1
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERNODE
@@ -646,7 +646,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
       /* get row activity */
       activities[i] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
       /** @todo This assertion has been commented out due to numerical troubles */
-//      assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) );
+/*       assert( SCIPisFeasLE(scip, lhs, activities[i]) && SCIPisFeasLE(scip, activities[i], rhs) ); */
 
       /* in special case if LHS or RHS is (-)infinity slacks have to be initialized as infinity*/
       if( SCIPisInfinity(scip, -lhs) )

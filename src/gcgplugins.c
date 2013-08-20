@@ -143,12 +143,11 @@
 #include "reader_dec.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
-#include "branch_orig.h"
-#include "branch_ryanfoster.h"
+#include "branch_empty.h"
+
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
-#include "branch_relpsprob.h"
 #include "reader_ref.h"
 #include "event_bestsol.h"
 
@@ -161,6 +160,7 @@
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
 #include "dec_random.h"
+#include "dec_colors.h"
 
 /* Christian's heuristics */
 #include "heur_gcgcoefdiving.h"
@@ -292,13 +292,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( SCIPincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
-   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
+   SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
+
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
 
-   /* martin's decomp stuff */
+   /* Martin's decomp stuff */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
@@ -307,6 +306,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionStairheur(scip) );
    SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
+   SCIP_CALL( SCIPincludeDetectionColors(scip) );
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );

@@ -28,31 +28,37 @@
 /**@file   columngraph.cpp
  * @brief  A row graph where each column is a node and columns are adjacent if they appear in one row
  * @author Martin Bergner
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+#ifndef GCG_COLUMNGRAPH_DEF_H_
+#define GCG_COLUMNGRAPH_DEF_H_
 
 #include "columngraph.h"
 
 namespace gcg {
 
-ColumnGraph::ColumnGraph(
+template <class T>
+ColumnGraph<T>::ColumnGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : BipartiteGraph(scip, w)
+   ) : BipartiteGraph<T>(scip, w)
 {
-   name = std::string("columngraph");
+   this->name = std::string("columngraph");
 }
 
-
-ColumnGraph::~ColumnGraph()
+template <class T>
+ColumnGraph<T>::~ColumnGraph()
 {
    // TODO Auto-generated destructor stub
 }
 
 
 /** writes column graph to file */
-SCIP_RETCODE ColumnGraph::writeToFile(
+template <class T>
+SCIP_RETCODE ColumnGraph<T>::writeToFile(
    const char*        filename,           /**< filename where the graph should be written to */
    SCIP_Bool          writeweights         /**< whether to write weights */
    )
@@ -71,28 +77,28 @@ SCIP_RETCODE ColumnGraph::writeToFile(
    nrealneighbors = 0;
    nedges = 0;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &handled, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors, nvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &nrealneighbors, nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &handled, this->nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nvars) );
+   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nvars) );
 
    SCIPdebug(tcliquePrintGraph(tgraph));
-   for( int i = 0; i < nvars; ++i )
+   for( int i = 0; i < this->nvars; ++i )
    {
-      BMSclearMemoryArray(handled, nvars);
+      BMSclearMemoryArray(handled, this->nvars);
       handled[i] = TRUE;
       nrealneighbors[i] = 0;
 
-      SCIP_CALL( SCIPallocMemoryArray(scip_, &realneighbors[i], nvars) );
-      int nneighbors = getNNeighbors(i);
+      SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nvars) );
+      int nneighbors = this->getNNeighbors(i);
 
       SCIPdebugMessage("%d has %d neighbors\n", i, nneighbors);
 
-      std::vector<int> neighbors = getNeighbors(i);
+      std::vector<int> neighbors = this->getNeighbors(i);
       for( int j = 0; j < nneighbors; ++j )
       {
          int neighbor = neighbors[j];
-         int nneighborneighbors = getNNeighbors(neighbor);
-         std::vector<int> neighborneighbors = getNeighbors(neighbor);
+         int nneighborneighbors = this->getNNeighbors(neighbor);
+         std::vector<int> neighborneighbors = this->getNeighbors(neighbor);
          SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
          for( int k = 0; k < nneighborneighbors; ++k )
          {
@@ -116,28 +122,30 @@ SCIP_RETCODE ColumnGraph::writeToFile(
       }
    }
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nvars, nedges);
+   SCIPinfoMessage(this->scip_, file, "%d %d\n", this->nvars, nedges);
 
-   for( int i = 0; i < nvars; ++i)
+   for( int i = 0; i < this->nvars; ++i)
    {
       for( int j = 0; j < nrealneighbors[i]; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", realneighbors[i][j]+1);
+         SCIPinfoMessage(this->scip_, file, "%d ", realneighbors[i][j]+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
-      SCIPfreeMemoryArray(scip_, &realneighbors[i]);
+      SCIPinfoMessage(this->scip_, file, "\n");
+      SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
    }
 
-   for( int i = 0; i < dummynodes; ++i )
+   for( int i = 0; i < this->dummynodes; ++i )
    {
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(this->scip_, file, "\n");
    }
 
-   SCIPfreeMemoryArray(scip_, &handled);
-   SCIPfreeMemoryArray(scip_, &realneighbors);
-   SCIPfreeMemoryArray(scip_, &nrealneighbors);
+   SCIPfreeMemoryArray(this->scip_, &handled);
+   SCIPfreeMemoryArray(this->scip_, &realneighbors);
+   SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
 
    return SCIP_OKAY;
 }
 
 } /* namespace gcg */
+
+#endif

@@ -32,7 +32,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-
 #ifndef GCG_HYPERCOLGRAPH_H_
 #define GCG_HYPERCOLGRAPH_H_
 
@@ -40,8 +39,8 @@
 
 namespace gcg
 {
-
-class HypercolGraph: public gcg::BipartiteGraph
+template <class T>
+class HypercolGraph: public gcg::BipartiteGraph<T>
 {
 protected:
    class function {

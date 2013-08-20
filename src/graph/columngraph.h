@@ -38,8 +38,8 @@
 #include "bipartitegraph.h"
 
 namespace gcg {
-
-class ColumnGraph: public gcg::BipartiteGraph
+template <class T>
+class ColumnGraph: public gcg::BipartiteGraph<T>
 {
 public:
    ColumnGraph(

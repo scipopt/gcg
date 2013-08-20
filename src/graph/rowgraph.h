@@ -28,6 +28,7 @@
 /**@file   rowgraph.h
  * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
  * @author Martin Bergner
+ * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -35,12 +36,19 @@
 #ifndef GCG_ROWGRAPH_H_
 #define GCG_ROWGRAPH_H_
 
+#include "graph.h"
 #include "bipartitegraph.h"
+#include "matrixgraph.h"
 
 namespace gcg {
-
-class RowGraph: public gcg::BipartiteGraph
+template <class T>
+class RowGraph : public gcg::MatrixGraph<T>
 {
+private:
+   gcg::BipartiteGraph<T> graph;
+   int nconss;
+   int nvars;
+   int nnonzeroes;
 public:
    RowGraph(
          SCIP*                 scip,              /**< SCIP data structure */
@@ -54,6 +62,13 @@ public:
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+      );
+
+   virtual SCIP_RETCODE createFromMatrix(
+      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,               /**< variables for which graph should be created */
+      int                   nconss_,             /**< number of constraints */
+      int                   nvars_               /**< number of variables */
       );
 };
 
