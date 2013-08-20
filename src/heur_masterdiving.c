@@ -606,10 +606,10 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #ifdef NDEBUG
             if( (!heurdata->usefarkasonly || farkaspricing)
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
-               retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror);
+               retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror, &cutoff);
 
             else
-               retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror);
+               retstat = SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror, &cutoff);
             if( retstat != SCIP_OKAY )
             {
                SCIPwarningMessage(scip, "Error while solving LP in %s heuristic; LP solve terminated with code <%d>\n", SCIPheurGetName(heur), retstat);
@@ -617,9 +617,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #else
             if( (!heurdata->usefarkasonly || farkaspricing)
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
-               SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror) );
+               SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror, &cutoff) );
             else
-               SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror) );
+               SCIP_CALL( SCIPsolveProbingLP(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &lperror, &cutoff) );
 #endif
             SCIPstatistic( SCIP_CALL( SCIPstopClock(scip, lptime) ) );
 
@@ -634,7 +634,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
             /* get LP solution status */
             lpsolstat = SCIPgetLPSolstat(scip);
-            cutoff = (lpsolstat == SCIP_LPSOLSTAT_OBJLIMIT || lpsolstat == SCIP_LPSOLSTAT_INFEASIBLE);
          }
 
          /* if infeasibility is encountered, perform Farkas pricing
