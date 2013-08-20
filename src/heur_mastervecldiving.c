@@ -44,8 +44,7 @@
 #define HEUR_DISPCHAR         'v'
 #define HEUR_PRIORITY         -1003100
 #define HEUR_FREQ             10
-//#define HEUR_FREQOFS          4
-#define HEUR_FREQOFS          0
+#define HEUR_FREQOFS          4
 #define HEUR_MAXDEPTH         -1
 
 
