@@ -127,7 +127,7 @@ SCIP_RETCODE createSubproblem(
    int nbinvars;
    int nintvars;
    int i;
-   
+
    int fixingcounter;
    int zerocounter;
 
@@ -203,7 +203,7 @@ SCIP_RETCODE createSubproblem(
       SCIPstatisticPrintf("GCG RENS statistic: fixed only %5.2f (%5.2f zero) integer variables --> abort \n", *intfixingrate, *zerofixingrate);
       return SCIP_OKAY;
    }
-   
+
    if( uselprows )
    {
       SCIP_ROW** rows; /* original scip rows */
@@ -769,7 +769,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    /* only continue with some fractional variables */
    if( SCIPgetNExternBranchCands(scip) == 0 )
       return SCIP_OKAY;
-      
+
    *result = SCIP_DIDNOTRUN;
 
    /* calculate the maximal number of branching nodes until heuristic is aborted */
@@ -869,7 +869,7 @@ SCIP_RETCODE SCIPincludeHeurGcgrens(
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
-         
+
    SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/addallsols",
          "should all subproblem solutions be added to the original SCIP?",
          &heurdata->addallsols, TRUE, DEFAULT_ADDALLSOLS, NULL, NULL) );

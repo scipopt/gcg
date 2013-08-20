@@ -512,7 +512,7 @@ SCIP_RETCODE createNewSols(
 
    assert(scip != NULL);
    assert(subscip != NULL);
-   
+
    /* get variables' data */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
 
@@ -525,13 +525,13 @@ SCIP_RETCODE createNewSols(
    SCIP_CALL( SCIPallocBufferArray(scip, &subvars, nvars) );
    for( i = 0; i < nvars; i++ )
       subvars[i] = (SCIP_VAR*) SCIPhashmapGetImage(varmapfw, vars[i]);
-   
+
    SCIP_CALL( SCIPallocBufferArray(scip, &subsolvals, nvars) );
-   
+
    nsubsols = SCIPgetNSols(subscip);
    subsols = SCIPgetSols(subscip);
    *success = FALSE;
-   
+
    for( i = 0; i < nsubsols && !(*success); ++i )
    {
       /* copy the solution */
@@ -544,7 +544,7 @@ SCIP_RETCODE createNewSols(
       /* try to add new solution to scip and free it immediately */
       SCIP_CALL( SCIPtrySolFree(scip, &newsol, FALSE, TRUE, TRUE, TRUE, success) );
    }
-   
+
    SCIPfreeBufferArray(scip, &subvars);
    SCIPfreeBufferArray(scip, &subsolvals);
 
@@ -820,7 +820,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
             return SCIP_OKAY;
          }
 
-         if( SCIPgetStage(probingscip) != SCIP_STAGE_SOLVING)
+         if( SCIPgetStage(probingscip) != SCIP_STAGE_SOLVING )
          {
             SCIP_STATUS probingstatus = SCIPgetStatus(probingscip);
 
@@ -864,7 +864,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    {
       SCIP_CALL( SCIPcreateSol(scip, &closestsol, heur) );
    }
-   
+
    /* setup the diving SCIP */
    SCIP_CALL( setupDivingSCIP(scip, &divingscip, &varmapfwdive, heurdata->copycuts, &success) );
 
@@ -1034,7 +1034,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          divingvar = (SCIP_VAR*) SCIPhashmapGetImage(varmapfwdive, var);
          SCIP_CALL( SCIPchgVarObj(divingscip, divingvar, newobjcoeff) );
       }
-      
+
       if( heurdata->usefp20 )
       {
          SCIP_CALL( SCIPbacktrackProbing(probingscip, 1) );
@@ -1113,7 +1113,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       {
          SCIP_CALL( SCIPunlinkSol(scip, heurdata->roundedsol) );
       }
-      
+
       /* solve the subproblem */
       retcode = SCIPsolve(divingscip);
 
@@ -1208,7 +1208,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    }
 
    /* try final solution, if no more fractional variables are left */
-   if( nfracs == 0  )
+   if( nfracs == 0 )
    {
       success = FALSE;
 

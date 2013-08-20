@@ -273,7 +273,7 @@ SCIP_RETCODE calcPscostDownMaster(
       {
          idx = SCIPvarGetProbindex(origmastervars[i]);
          masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
-         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]) )
             && SCIPisFeasLE(masterprob, origmastervals[i], roundval) )
             *pscostdown -= masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
       }
@@ -284,7 +284,7 @@ SCIP_RETCODE calcPscostDownMaster(
       {
          idx = SCIPvarGetProbindex(origmastervars[i]);
          masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
-         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]) )
             && SCIPisFeasGT(masterprob, origmastervals[i], roundval) )
             *pscostdown += masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
       }
@@ -347,7 +347,7 @@ SCIP_RETCODE calcPscostUpMaster(
       {
          idx = SCIPvarGetProbindex(origmastervars[i]);
          masterlpval = SCIPgetSolVal(masterprob, NULL, origmastervars[i]);
-         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]) )
             && SCIPisFeasGE(masterprob, origmastervals[i], roundval) )
             *pscostup -= masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
       }
@@ -358,7 +358,7 @@ SCIP_RETCODE calcPscostUpMaster(
       {
          idx = SCIPvarGetProbindex(origmastervars[i]);
          masterlpval = SCIPgetSolVal(masterprob, NULL, mastervars[i]);
-         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]))
+         if( (SCIPvarIsBinary(origmastervars[i]) || SCIPvarIsIntegral(origmastervars[i]) )
             && SCIPisFeasLT(masterprob, origmastervals[i], roundval) )
             *pscostup += masterpscosts[idx] * SCIPfeasFrac(masterprob, masterlpval);
       }

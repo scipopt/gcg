@@ -604,7 +604,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
             npricerounds = SCIPgetNPriceRounds(scip);
             SCIPstatistic( SCIP_CALL( SCIPstartClock(scip, lptime) ) );
 #ifdef NDEBUG
-            if( (!heurdata->usefarkasonly || farkaspricing)
+            if( (!heurdata->usefarkasonly || farkaspricing )
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
                retstat = SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror, &cutoff);
 
@@ -615,7 +615,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
                SCIPwarningMessage(scip, "Error while solving LP in %s heuristic; LP solve terminated with code <%d>\n", SCIPheurGetName(heur), retstat);
             }
 #else
-            if( (!heurdata->usefarkasonly || farkaspricing)
+            if( (!heurdata->usefarkasonly || farkaspricing )
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
                SCIP_CALL( SCIPsolveProbingLPWithPricing(scip, FALSE, TRUE, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds, &lperror, &cutoff) );
             else

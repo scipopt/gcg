@@ -888,7 +888,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
          }
 
          /* hard fixing if rootlpsolval=nodelpsolval=mipsolval(s) and delta (is TRUE) */
-         if( delta[i] && SCIPisFeasEQ(scip, mipsolval, lpsolval) && SCIPisFeasEQ(scip, mipsolval, rootlpsolval)
+         if( delta[i] && SCIPisFeasEQ(scip, mipsolval, lpsolval) && SCIPisFeasEQ(scip, mipsolval, rootlpsolval )
             && SCIPisFeasEQ(scip, rootlpsolval, lpsolval) )
          {
             SCIP_CALL( SCIPfixVar(subscip, subvars[i], mipsolval, &infeasible, &success) );

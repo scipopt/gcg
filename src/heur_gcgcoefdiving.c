@@ -165,19 +165,19 @@ SCIP_RETCODE getNLocksDown(
    {
       for( i = 0; i < nmastervars; ++i )
       {
-         if( areVarsInSameBlock(var, mastervars[i])
+         if( areVarsInSameBlock(var, mastervars[i] )
             && !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
             *nlocksdown += SCIPvarGetNLocksDown(mastervars[i]);
       }
       for( i = 0; i < norigmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]))
+         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]) )
             && SCIPisFeasLE(masterprob, origmastervals[i], roundval) )
             *nlocksdown -= SCIPvarGetNLocksDown(origmastervars[i]);
    }
    else
    {
       for( i = 0; i < norigmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]))
+         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]) )
             && SCIPisFeasGT(masterprob, origmastervals[i], roundval) )
             *nlocksdown += SCIPvarGetNLocksDown(origmastervars[i]);
    }
@@ -226,7 +226,7 @@ SCIP_RETCODE getNLocksUp(
    {
       for( i = 0; i < nmastervars; ++i )
       {
-         if( areVarsInSameBlock(var, mastervars[i])
+         if( areVarsInSameBlock(var, mastervars[i] )
             && !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, mastervars[i])) )
             *nlocksup += SCIPvarGetNLocksDown(mastervars[i]);
       }
@@ -238,7 +238,7 @@ SCIP_RETCODE getNLocksUp(
    else
    {
       for( i = 0; i < norigmastervars; ++i )
-         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]))
+         if( !SCIPisFeasZero(masterprob, SCIPgetSolVal(masterprob, NULL, origmastervars[i]) )
             && SCIPisFeasLT(masterprob, origmastervals[i], roundval) )
             *nlocksup += SCIPvarGetNLocksDown(origmastervars[i]);
    }

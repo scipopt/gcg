@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   event_bestsol.h
- * @ingroup EVENTS 
+ * @ingroup EVENTS
  * @brief  eventhdlr to record the best primal bound for each heuristic
  * @author Christian Puchert
  */
