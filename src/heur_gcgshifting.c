@@ -60,9 +60,6 @@ struct SCIP_HeurData
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
    unsigned int          randseed;           /**< seed value for random number generator */
-#ifdef SCIP_STATISTIC
-   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic            */
-#endif
 };
 
 
@@ -521,33 +518,13 @@ SCIP_DECL_HEURINITSOL(heurInitsolGcgshifting)
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    heurdata->lastlp = -1;
-#ifdef SCIP_STATISTIC
-   heurdata->bestprimalbd = SCIPinfinity(scip);
-#endif
 
    return SCIP_OKAY;
 }
 
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#ifdef SCIP_STATISTIC
-static
-SCIP_DECL_HEUREXITSOL(heurExitsolGcgshifting)
-{
-   SCIP_HEURDATA* heurdata;
-
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
-
-   SCIPstatisticPrintf("Rounding statistics -- "HEUR_NAME" : bestprimalbd = %13.6e\n", heurdata->bestprimalbd);
-
-   return SCIP_OKAY;
-}
-#else
 #define heurExitsolGcgshifting NULL
-#endif
 
 
 /** execution method of primal heuristic */
@@ -882,10 +859,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
       {
          SCIPdebugMessage("found feasible shifted solution:\n");
          SCIPdebug(SCIPprintSol(scip, sol, NULL, FALSE));
-#ifdef SCIP_STATISTIC
-         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
-            heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
-#endif
          *result = SCIP_FOUNDSOL;
       }
    }

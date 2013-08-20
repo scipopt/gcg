@@ -76,9 +76,6 @@ struct SCIP_HeurData
    SCIP_Bool             stopziround;        /**< sets deactivation check */
    SCIP_Real             stoppercentage;     /**< threshold for deactivation check */
    int                   minstopncalls;      /**< number of heuristic calls before deactivation check */
-#ifdef SCIP_STATISTIC
-   SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic            */
-#endif
 };
 
 enum Direction
@@ -449,32 +446,11 @@ SCIP_DECL_HEURINITSOL(heurInitsolGcgzirounding)
 
    heurdata->lastlp = -1;
 
-#ifdef SCIP_STATISTIC
-   heurdata->bestprimalbd = SCIPinfinity(scip);
-#endif
-
    return SCIP_OKAY;
 }
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed) */
-#ifdef SCIP_STATISTIC
-static
-SCIP_DECL_HEUREXITSOL(heurExitsolGcgzirounding)
-{
-   SCIP_HEURDATA* heurdata;
-
-   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
-
-   SCIPstatisticPrintf("Rounding statistics -- "HEUR_NAME" : bestprimalbd = %13.6e\n", heurdata->bestprimalbd);
-
-   return SCIP_OKAY;
-}
-#else
 #define heurExitsolGcgzirounding NULL
-#endif
 
 /** execution method of primal heuristic */
 static
@@ -866,10 +842,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
          STATISTIC(
             SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "  ZI Round solution value: %g \n", SCIPgetSolOrigObj(scip, sol));
             )
-#ifdef SCIP_STATISTIC
-         if( SCIPgetSolTransObj(scip, sol) < heurdata->bestprimalbd )
-            heurdata->bestprimalbd = SCIPgetSolTransObj(scip, sol);
-#endif
          *result = SCIP_FOUNDSOL;
       }
    }
