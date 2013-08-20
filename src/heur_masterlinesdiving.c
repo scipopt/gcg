@@ -50,23 +50,6 @@
 
 
 /*
- * Default diving rule specific parameter settings
- */
-
-
-
-/* locally defined diving heuristic data */
-struct GCG_DivingData
-{
-};
-
-
-/*
- * Local methods
- */
-
-
-/*
  * Callback methods
  */
 
