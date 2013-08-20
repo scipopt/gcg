@@ -18,10 +18,10 @@ class ProblemNameReader(StatisticReader):
       if fullname != None:
          namewithextension=os.path.basename(fullname);
          namewithextension = os.path.splitext(namewithextension)[0]
-            
+
          if ".mps" in namewithextension[-4:]:
             namewithextension = namewithextension[:-4]
-            
+
          if namewithextension.endswith('.lp'):
             namewithextension=namewithextension[:-3]
          #print namewithextension

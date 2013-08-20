@@ -31,7 +31,7 @@ class SoluFileReader(StatisticReader):
             newaction(line)
       else:
          return None
-            
+
 
    def __storeToStatistics(self, instance, objval, status):
       if not instance in self.statistics.keys():
@@ -78,7 +78,7 @@ class SoluFileReader(StatisticReader):
       assert splittedline[0] == '=best='
       instance = splittedline[1]
       objval = self.INFINITY
-        
+
       self.__storeToStatistics(instance, objval, status='feas')
 
 
@@ -90,4 +90,4 @@ class SoluFileReader(StatisticReader):
       self.actions['=unkn='] = self.__newUnknInstance
       self.actions['=best='] = self.__newBestInstance
       self.actions['=feas='] = self.__newFeasInstance
-        
+

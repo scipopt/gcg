@@ -9,7 +9,7 @@ class SolvingTimeReader(StatisticReader):
    columnwidth = 12
    datakey = 'SolvingTime'
    columnheaderstr = 'Time(s)'.rjust(columnwidth)
-    
+
    solvingtimereadkeys = {
       StatisticReader.SOLVERTYPE_SCIP : "Solving Time (sec) :",
       StatisticReader.SOLVERTYPE_CPLEX : "Solution time =",
@@ -18,7 +18,7 @@ class SolvingTimeReader(StatisticReader):
       StatisticReader.SOLVERTYPE_XPRESS : " *** Search ",
       StatisticReader.SOLVERTYPE_GCG : "Solving Time (sec) :"
    }
-                   
+
    solvingtimelineindex = {
       StatisticReader.SOLVERTYPE_SCIP : -1,
       StatisticReader.SOLVERTYPE_CPLEX : 3,
@@ -27,7 +27,7 @@ class SolvingTimeReader(StatisticReader):
       StatisticReader.SOLVERTYPE_XPRESS : 5,
       StatisticReader.SOLVERTYPE_GCG : -1
    }
-    
+
    returned = False
    DEFAULT_SOLVINGTIME=3600.0
 

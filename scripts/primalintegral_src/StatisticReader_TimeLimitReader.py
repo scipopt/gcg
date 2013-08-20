@@ -12,7 +12,7 @@ class TimeLimitReader(StatisticReader):
                   StatisticReader.SOLVERTYPE_CBC : "Coin:Total time (CPU seconds):",
                   StatisticReader.SOLVERTYPE_XPRESS : " *** Search ",
                   StatisticReader.SOLVERTYPE_GCG : "Solving Time (sec) :"}
-                   
+
    timelimitreadkeys= {
                   StatisticReader.SOLVERTYPE_SCIP : '(SCIP> limits/time =|SCIP> set limits time)',
                   StatisticReader.SOLVERTYPE_CPLEX : 'CPLEX> New value for time limit in seconds',
@@ -20,7 +20,7 @@ class TimeLimitReader(StatisticReader):
                   StatisticReader.SOLVERTYPE_CBC : "Coin:seconds has value",
                   StatisticReader.SOLVERTYPE_XPRESS : " @05",
                   StatisticReader.SOLVERTYPE_GCG: '(GCG> limits/time =|GCG> set limits time)'}
-                   
+
    solvingtimelineindex = {
                   StatisticReader.SOLVERTYPE_SCIP : -1,
                   StatisticReader.SOLVERTYPE_CPLEX : 3,
@@ -35,12 +35,12 @@ class TimeLimitReader(StatisticReader):
    timelimit_reached = 'true'
    timelimit_not_reached = 'false'
 
-   
+
    def __init__(self):
       self.timelimit=7200
 
    def extractStatistic(self, line):
-        
+
       if re.search(self.timelimitreadkeys[StatisticReader.solvertype], line):
          self.timelimit = float(line.split()[-1])
       elif self.solvingtimereadkeys[StatisticReader.solvertype] in line:
@@ -49,6 +49,6 @@ class TimeLimitReader(StatisticReader):
 
    def execEndOfProb(self):
       return self.timelimit
-   
-   
-   
+
+
+

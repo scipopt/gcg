@@ -19,10 +19,10 @@ def floatPrint(number, digitsbef=16, digitsafter=9, dispchar='g' ):
       return 'Inf'
    else:
       return formatstring % (number)
-        
+
 def getTexName(name):
    return name.replace('_', '\_')
-           
+
 
 def getGap(value, referencevalue, useCplexGap=False):
    '''
@@ -57,7 +57,7 @@ def listGetArithmeticMean(listofnumbers):
    arithmeticmean = sum(listofnumbers)
    arithmeticmean /= max(len(listofnumbers),1)*1.0
    return arithmeticmean
-   
+
 def listGetGeomMean(listofnumbers, mingeommean=DEFAULT_MIN_GEOM_MEAN):
    '''
    returns the geometric mean of a list of numbers, where each element under consideration
@@ -68,12 +68,12 @@ def listGetGeomMean(listofnumbers, mingeommean=DEFAULT_MIN_GEOM_MEAN):
    for number in listofnumbers:
       nitems = nitems + 1
       nextnumber = max(number, mingeommean)
-      geommean = pow(geommean, (nitems - 1)/float(nitems)) * pow(nextnumber, 1 / float(nitems)) 
+      geommean = pow(geommean, (nitems - 1)/float(nitems)) * pow(nextnumber, 1 / float(nitems))
    return geommean
-   
+
 def listGetShiftedGeometricMean(listofnumbers, shiftby=10.0):
    '''
-   returns the shifted geometric mean of a list of numbers, where the additional shift defaults to 
+   returns the shifted geometric mean of a list of numbers, where the additional shift defaults to
    10.0 and can be set via shiftby
    '''
    geommean = 1.0
@@ -81,10 +81,10 @@ def listGetShiftedGeometricMean(listofnumbers, shiftby=10.0):
    for number in listofnumbers:
       nitems = nitems + 1
       nextnumber = number + shiftby
-      geommean = pow(geommean, (nitems - 1)/float(nitems)) * pow(nextnumber, 1 / float(nitems)) 
+      geommean = pow(geommean, (nitems - 1)/float(nitems)) * pow(nextnumber, 1 / float(nitems))
    return geommean - shiftby
-                
-   
+
+
 def cutString(string, char = '_', maxlength = -1):
    iscuttable = True
    stringcopy = string[0:len(string)]
@@ -108,7 +108,7 @@ def cutString(string, char = '_', maxlength = -1):
                stringcopy = stringcopy + stringitem + char
             else:
                stringcopy.rstrip(char)
-            
+
    return stringcopy.rstrip(char)
 
 def listGetMinColWidth(listofitems):
@@ -117,5 +117,5 @@ def listGetMinColWidth(listofitems):
       if len(item) > maxlen:
          maxlen = len(item)
    return maxlen
-   
-   
+
+

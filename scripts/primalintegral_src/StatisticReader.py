@@ -5,8 +5,8 @@ class StatisticReader:
    '''
    base class for all statistic readers - readers should always inherit from this base class for minimal implementation
    effort
-   
-   readers only need to overwrite the methods extractStatistic() and perhaps execEndOfProb() 
+
+   readers only need to overwrite the methods extractStatistic() and perhaps execEndOfProb()
    '''
 
    name = 'NO_NAME_DEFINED_YET'
@@ -20,8 +20,8 @@ class StatisticReader:
    problemnamelist = []
 
    noregexp_err = 'no reg exp defined yet'
-   
-   
+
+
    # the reader might behave differently depending on the solver type, due to the different output
    SOLVERTYPE_SCIP="SCIP"
    SOLVERTYPE_GUROBI="GUROBI"
@@ -38,7 +38,7 @@ class StatisticReader:
       else:
          StatisticReader.problemname = problemname
       StatisticReader.problemnamelist.append(problemname)
-       
+
    setProblemName = staticmethod(setProblemName)
 
    def initializeForTestrun(self):
@@ -63,7 +63,7 @@ class StatisticReader:
          return list[index]
 
       return None
-       
+
    def getName(self):
       return self.name
 
@@ -72,14 +72,14 @@ class StatisticReader:
          return True
       else:
          return False
-   
+
    def extractStatistic(self, line):
       '''
       overwrite this method for own reader subclasses - make sure that a return statement different from 'None'
       is only accepted once on each instance of the log file
       '''
       return None
-       
+
    def checkSolverType(self, line):
       changed = False
       if "Gurobi Optimizer version" in line and self.solvertype != StatisticReader.SOLVERTYPE_GUROBI:
@@ -102,7 +102,7 @@ class StatisticReader:
          changed = True
       if changed:
          print "changed solver type to", StatisticReader.solvertype
-          
+
 
    def setTestRun(self, testrun):
       pass
@@ -114,7 +114,7 @@ class StatisticReader:
       return None
 
    def operateOnLine(self, line):
-      
+
       if self.endOfInstanceReached(line):
          stat = self.execEndOfProb()
          if stat != None:

@@ -5,13 +5,13 @@ class SoluFileDataCollector(DataCollector):
    '''
       a data collector to be run on .solu files.
    '''
-      
+
    def __init__(self, testrun = None, index = 0):
       self.registerReader(SoluFileReader())
       if testrun != None:
          self.setTestrun(testrun)
          self.filestring = self.testrun.solufilename
-      
+
    def setTestRun(self, testrun):
       if self.testrun != testrun:
          self.testrun = testrun

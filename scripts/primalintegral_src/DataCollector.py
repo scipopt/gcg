@@ -4,7 +4,7 @@ from TestRun import TestRun
 class DataCollector:
    '''
       acquires test run data
-   '''  
+   '''
    listofreaders = []
    register_err = 'register error: Reader already in list of readers'
    readernotfound_err = 'Error: Reader is not registered'
@@ -31,13 +31,13 @@ class DataCollector:
 
    def getNReaders(self):
       return len(self.listofreaders)
-   
-   
+
+
    def registerReader(self, reader):
       for handl in self.listofreaders:
          if reader.getName() == handl.getName():
             raise self.register_err
-            
+
       self.listofreaders.append(reader)
       reader.setTestRun(self.testrun)
 
@@ -52,23 +52,23 @@ class DataCollector:
       try:
          f = open(self.filestring, 'r')
       except IOError:
-         print 'File', self.filestring, "doesn't exist!!!" 
-      
+         print 'File', self.filestring, "doesn't exist!!!"
+
       for reader in self.listofreaders:
          reader.initializeForTestrun()
-      
+
       for line in f:
          for reader in self.listofreaders:
             data = reader.operateOnLine(line)
             if data != None:
                self.testrun.addData(data)
-            
+
       f.close()
       #print("Collection of data finished")
       self.datacollected = True
       self.testrun.setDataCollected(True)
       return 1
-      
+
    def printData(self):
       ninstances = -1;
       for reader in self.listofreaders:
@@ -77,25 +77,25 @@ class DataCollector:
          else:
             if ninstances != reader.getNInstances():
                raise self.ndata_err
-            
-         
+
+
       for reader in self.listofreaders:
          print reader.columnheaderstr,
       else:
          print
-      
+
       for reader in self.listofreaders:
          print reader.columnwidth * '-',
       else:
          print
-      
-      
+
+
       for i in range(0, ninstances):
          for reader in self.listofreaders:
             print reader.getStatisticForInstance(i),
          else:
             print
-         
+
       return 1
-      
-      
+
+

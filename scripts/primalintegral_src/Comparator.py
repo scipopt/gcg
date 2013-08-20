@@ -48,20 +48,20 @@ class Comparator:
          testrun = TestRun(filename, solufilename, testsetname)
          self.testruns.append(testrun)
          testrun.settings = filename.split('.')[-2]
-            
+
       self.datacollector = DataCollector()
       self.datacollector.registerListOfReaders(listofreaders)
       if solufilename != '':
 #        print 'solufiledatacollector initialized for solufilename:', solufilename
          self.solufiledatacollector = SoluFileDataCollector()
-        
+
       self.readers = listofreaders
       for reader in self.readers:
          self.addDataKey(reader.datakey)
 
    def addDataKey(self, datakey):
       self.datakeys.append(datakey)
-    
+
    def setTestRun(self, testrun):
       self.datacollector.setTestRun(testrun)
       if self.solufiledatacollector != None:
@@ -79,9 +79,9 @@ class Comparator:
             for probname in testrun.problist:
                if not probname in self.probnamelist:
                   self.probnamelist.append(probname)
-                    
-                        
-        
+
+
+
 
    def collectData(self):
       for testrun in self.testruns:
@@ -91,7 +91,7 @@ class Comparator:
             #print 'Collecting Solu File Data'
             assert self.solufiledatacollector.testrun == self.datacollector.testrun
             self.solufiledatacollector.collectData()
-                
+
 #      for testrun in self.testruns:
          #print testrun.problist
       self.__makeProbNameList__()
@@ -100,10 +100,10 @@ class Comparator:
    def problemCompareData(self, probname, testrun1, testrun2, datakey, compsign):
       if not datakey in self.datakeys:
          raise self.datakey_err
-            
+
 #        if not testrun1.datacollected or not testrun2.datacollected:
 #            print 'Collect all Data First'
-        
+
       if not probname in self.probnamelist:
          raise self.probname_err
 
