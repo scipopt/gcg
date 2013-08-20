@@ -35,8 +35,8 @@
 #include <assert.h>
 
 #include "heur_relaxcolsel.h"
+#include "gcg.h"
 #include "pricer_gcg.h"
-#include "pub_gcgvar.h"
 #include "relax_gcg.h"
 
 

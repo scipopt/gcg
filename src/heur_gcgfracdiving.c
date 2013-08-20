@@ -38,7 +38,7 @@
 
 #include "heur_gcgfracdiving.h"
 #include "heur_origdiving.h"
-#include "pub_gcgvar.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 

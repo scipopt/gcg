@@ -37,7 +37,7 @@
 #include <stdio.h>
 
 #include "heur_xprins.h"
-#include "pub_gcgvar.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 

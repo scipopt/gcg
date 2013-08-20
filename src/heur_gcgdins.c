@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "heur_gcgdins.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
@@ -383,7 +384,7 @@ SCIP_RETCODE getRootRelaxSol(
       SCIP_CALL( SCIPsetSolVal(masterprob, masterrootsol, mastervars[i], SCIPvarGetRootSol(mastervars[i])) );
 
    /* calculate original root LP solution */
-   SCIP_CALL( GCGrelaxTransformMastersolToOrigsol(scip, masterrootsol, rootsol) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol) );
 
    /* free memory */
    SCIP_CALL( SCIPfreeSol(masterprob, &masterrootsol) );
