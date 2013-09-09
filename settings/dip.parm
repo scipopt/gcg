@@ -13,8 +13,6 @@ doRelaxCut    = 0
 #{0,1}: use DECOMP to build compact formulation then call direct IP solver
 doDirect      = 0
 
-timeLimit     = 3600
-
 #############################################################################
 Settings for all decomp algorithms.
   section=DECOMP
@@ -22,6 +20,42 @@ Settings for all decomp algorithms.
 [DECOMP]
 LogLevel      = 1
 LimitTime     = $TIMELIMIT
+NumThreads    = $THREADS
+
+# AutoDecomp    = 1
+# NumBlocks     = 3
+# LogObjHistory = 0
+# LogDumpModel  = 0 # 1: dump master, 2: dump every master + pricing
+# LogDebugLevel = 0
+# LogLpLevel = 0
+
+# 0: dual simplex, 1: primal simplex, 2: barrier
+# SolveMasterUpdateAlgo = 0
+
+# remove "duplicate" columns
+# CompressColumns = 1
+
+# avoid columns with huge coeficients (defined below)
+# checkIlledColumns = 0
+# checkColumnThreshold = 1000000
+
+# dual stabilization
+# DualStab = 1
+
+# cutting plane separation
+# CutCGL = 1
+# CutCglMir=1
+# CutCglKnapC = 1
+# CutCglFlowC=1
+# CutCglClique =1
+# CutCglOddHole =1
+# CutCglGomory = 1
+
+# restricted master heuristic (default: on)
+# SolveMasterAsIp=1
+
+# limit on number of pricing iterations without changing lower bound
+# TailoffLength = 100
 
 #############################################################################
 Settings for decomp algorithm cutting plane method.
@@ -40,6 +74,15 @@ Settings for ALPS framework.
   section=ALPS
 #############################################################################
 [ALPS]
+nodeLimit = $NODELIMIT
+
+# node selection rule:
+# 0: best-first
+# 1: best-first-estimate
+# 2: breadth-first
+# 3: depth-first
+# 4: hybrid (default)
+# searchStrategy = 4
 
 #############################################################################
 Settings for MILPBlock application.
@@ -53,7 +96,9 @@ LogLevel       = 0
 DataDir        = /$GCGPATH
 
 # {Pair,List}: Block file format. See README.txt.
-BlockFileFormat = List
+BlockFileFormat = ZIBList
+
+InstanceFormat = LP
 
 # Name of block file (assumed to be in DataDir).
 BlockFile       = $BLOCK

@@ -143,6 +143,11 @@ for i in `cat testset/$TSTNAME.test`
 do
     if test "$LASTPROB" = ""
     then
+        DIR=`dirname $i`
+        NAME=`basename $i .gz`
+        NAME=`basename $NAME .mps`
+        NAME=`basename $NAME .lp`
+        DECFILE=$DIR/$NAME.dec
         LASTPROB=""
         if test -f $i
         then
@@ -151,8 +156,8 @@ do
             echo @01 $i ===========                 >> $ERRFILE
             echo @05 SETTINGS: $SETNAME
 
-	    i=`echo "$i" | sed 's/.gz//'`
-	    i=`echo "$i" | sed 's/.lp/.mps/'`
+	    #i=`echo "$i" | sed 's/.gz//'`
+	    #i=`echo "$i" | sed 's/.lp/.mps/'`
 
 	    echo $i
 
@@ -162,13 +167,19 @@ do
 	    sed -i "s,\$TIMELIMIT,$TIMELIMIT," $TMPFILE
 
 	    # change the time limit in the param file
+	    sed -i "s,\$THREADS,$THREADS," $TMPFILE
+
+	    # change the time limit in the param file
+	    sed -i "s,\$NODELIMIT,$NODELIMIT," $TMPFILE
+
+	    # change the time limit in the param file
 	    sed -i "s,\$GCGPATH,$GCGPATH," $TMPFILE
 
 	    # change the instance in the param file
 	    sed -i "s,\$INSTANCE,$i," $TMPFILE
 
 	    # change the block file in the param file
-	    sed -i "s,\$BLOCK,$i.block," $TMPFILE
+	    sed -i "s,\$BLOCK,$DECFILE," $TMPFILE
 
             cp $TMPFILE $SETFILE
             echo -----------------------------

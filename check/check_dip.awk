@@ -121,6 +121,7 @@ BEGIN {
    sbiter     = 0;
    tottime    = 0.0;
    aborted    = 1;
+   objfactor  = 1;
    dipversion = "";
 }
 
@@ -134,7 +135,9 @@ BEGIN {
    dipversion = $3;
 }
 
-
+/Maximization problem reformulated as minimization/ {
+   objfactor = -1;
+}
 #
 # solution
 #
@@ -167,11 +170,11 @@ BEGIN {
 }
 
 /^ BestLB        =/ {
-   db = $3;
+   db = objfactor * $3;
 }
 
 /^ BestUB        =/ {
-   pb = $3;
+   pb = objfactor * $3;
 }
 
 /^ Nodes         =/ {
