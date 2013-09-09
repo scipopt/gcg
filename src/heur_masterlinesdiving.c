@@ -76,7 +76,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);

@@ -93,7 +93,8 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -231,7 +232,8 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -375,7 +377,8 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -517,7 +520,8 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -659,7 +663,8 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -801,7 +806,8 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -940,7 +946,8 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1078,7 +1085,8 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1218,7 +1226,8 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1360,7 +1369,8 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1502,7 +1512,8 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \

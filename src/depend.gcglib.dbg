@@ -290,7 +290,8 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -708,7 +709,8 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -818,7 +820,8 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1084,7 +1087,8 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1194,7 +1198,8 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1799,7 +1804,8 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -1910,7 +1916,8 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2021,7 +2028,8 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -2607,7 +2615,8 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
@@ -3026,7 +3035,8 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/heur_twoopt.h lib/scip/src/scip/heur_undercover.h \
  lib/scip/src/scip/heur_vbounds.h lib/scip/src/scip/heur_veclendiving.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
- lib/scip/src/scip/nodesel_dfs.h lib/scip/src/scip/nodesel_estimate.h \
+ lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
+ lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \

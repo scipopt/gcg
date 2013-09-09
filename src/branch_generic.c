@@ -2195,7 +2195,7 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &copymastervars, mastervars, nmastervars) );
    SCIP_CALL( SCIPduplicateMemoryArray(scip, &mastervars2, mastervars, nmastervars) );
 
-   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
    SCIPdebugMessage("Vanderbeck branching rule: creating %d nodes\n", Ssize+1);
 
@@ -2923,7 +2923,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    origscip = GCGpricerGetOrigprob(masterscip);
 
    assert(origscip != NULL);
-   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );

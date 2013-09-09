@@ -508,7 +508,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    /* the current original solution is not integral, now we have to branch;
     * first, get the master problem and all variables of the master problem
     */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &branchcands, NULL, NULL, &nbranchcands, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(scip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
    /* now search for two (fractional) columns mvar1, mvar2 in the master and 2 original variables ovar1, ovar2
     * s.t. mvar1 contains both ovar1 and ovar2 and mvar2 contains ovar1, but not ovar2
