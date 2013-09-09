@@ -224,9 +224,10 @@ do
                 echo display statistics            >> $TMPFILE
             elif test $MODE = "detectall"
             then
+                echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
                 echo write all dec                 >> $TMPFILE
-		echo write all gp                  >> $TMPFILE
+               echo write all gp                  >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
