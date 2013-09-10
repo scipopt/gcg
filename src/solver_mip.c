@@ -540,9 +540,9 @@ SCIP_RETCODE solveProblem(
       {
          *nsols = 1;
          sols[0] = sol;
-         solisray[0] = isray ? TRUE: freesol ? 2 : FALSE;
+         solisray[0] = isray;
          SCIPdebugMessage("# changing solution\n");
-         *status = SCIP_STATUS_OPTIMAL;
+         *status = isray ? SCIP_STATUS_UNBOUNDED : SCIP_STATUS_OPTIMAL;
       }
    }
    /* the pricing problem was solved to optimality, copy all solutions found into the solution arrays */
