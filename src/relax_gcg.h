@@ -172,6 +172,12 @@ int GCGrelaxGetBlockRepresentative(
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
+/** returns the number of relevant pricing problems */
+extern
+int GCGrelaxGetNRelPricingprobs(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
 /** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
 extern

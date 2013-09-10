@@ -841,13 +841,38 @@ SCIP_RETCODE checkIdenticalBlocks(
          {
             SCIPdebugMessage("Block %d is identical to block %d!\n", i, j);
 
+            /* save variables in pricing problem variable */
+            vars = SCIPgetVars(relaxdata->pricingprobs[i]);
+            nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
+
+            /*
+             * quick check whether some of the variables are linking in which case we can not aggregate
+             */
+
+            /** @todo: This can probably be fixed */
+            for( k = 0; k < nvars; k++ )
+            {
+               assert(GCGvarIsPricing(vars[k]));
+               origvar = GCGpricingVarGetOrigvars(vars[k])[0];
+               if( GCGvarIsLinking(origvar) )
+               {
+                  SCIPdebugMessage("Var <%s> is linking and can not be aggregated.\n", SCIPvarGetName(origvar));
+                  identical = FALSE;
+                  break;
+               }
+            }
+
+            if( !identical )
+            {
+               break;
+            }
+
+
             /* block i will be represented by block j */
             relaxdata->blockrepresentative[i] = j;
             relaxdata->nblocksidentical[i] = 0;
             relaxdata->nblocksidentical[j]++;
-            /* save variables in pricing problem variable */
-            vars = SCIPgetVars(relaxdata->pricingprobs[i]);
-            nvars = SCIPgetNVars(relaxdata->pricingprobs[i]);
+
             for( k = 0; k < nvars; k++ )
             {
                int blocknr;
