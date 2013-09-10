@@ -649,10 +649,18 @@ SCIP_RETCODE solveCplex(
       break;
    case CPXMIP_UNBOUNDED:
    case CPXMIP_INForUNBD: /* 119 */
-      SCIPerrorMessage("unbounded pricing problems are not handled yet in the CPLEX pricing solver\n");
-      return SCIP_INVALIDDATA;
-      /* *result = SCIP_STATUS_UNBOUNDED; */
-      /* break; */
+   {
+      CHECK_ZERO( CPXgetray(solverdata->cpxenv[probnr], solverdata->lp[probnr], cplexsolvals) );
+
+      SCIP_CALL( SCIPcreateSol(pricingprob, &sols[*nsols], NULL) );
+      SCIP_CALL( SCIPsetSolVals(pricingprob, sols[*nsols], numcols, solverdata->pricingvars[probnr], cplexsolvals) );
+      solisray[*nsols] = TRUE;
+      ++(*nsols);
+
+      *result = SCIP_STATUS_UNBOUNDED;
+
+      return SCIP_OKAY;
+   }
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
    case CPXMIP_TIME_LIM_FEAS: /* 107 */
    case CPXMIP_MEM_LIM_FEAS: /* 112 */
