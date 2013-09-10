@@ -1014,31 +1014,32 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* set the pointer in the parent node to NULL */
    if( (*consdata)->parentcons != NULL )
    {
+      SCIP_Bool isinprobing;
       consdata2 = SCIPconsGetData((*consdata)->parentcons);
 
-      if( (SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip)) || (SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip))) )
+      isinprobing = (SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip)) || (SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip)));
+      if( isinprobing )
       {
          consdata2->probingtmpcons = NULL;
       }
-      else
+
+      childdeleted = FALSE;
+      for( i=0; i<consdata2->nchildcons; ++i )
       {
-         childdeleted = FALSE;
-         for( i=0; i<consdata2->nchildcons; ++i )
+         if( consdata2->childcons[i] == cons )
          {
-            if( consdata2->childcons[i] == cons )
-            {
-               consdata2->childcons[i] = consdata2->childcons[consdata2->nchildcons-1];/*NULL;*/
+            consdata2->childcons[i] = consdata2->childcons[consdata2->nchildcons-1];/*NULL;*/
 
-               consdata2->childcons[consdata2->nchildcons-1] = NULL;
-               consdata2->nchildcons--;
+            consdata2->childcons[consdata2->nchildcons-1] = NULL;
+            consdata2->nchildcons--;
 
-               childdeleted = TRUE;
+            childdeleted = TRUE;
 
-               break;
-            }
+            break;
          }
-         assert( childdeleted);
       }
+      assert( childdeleted || isinprobing );
+
    }
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the

@@ -29,8 +29,10 @@
  * @ingroup CONSHDLRS
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
+ * @author Martin Bergner
+ *
  */
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 /* #define CHECKCONSISTENCY */
 #include <assert.h>
 #include <string.h>
@@ -284,23 +286,21 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
       {
          parentdata->probingtmpcons = NULL;
       }
-      else
-      {
-         childdeleted = FALSE;
-         for( i=0; i < parentdata->nchildcons; ++i )
-         {
-            if( parentdata->childcons[i] == cons )
-            {
 
-               parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
-               parentdata->childcons[parentdata->nchildcons-1] = NULL;
-               childdeleted = TRUE;
-               parentdata->nchildcons--;
-               break;
-            }
+      childdeleted = FALSE;
+      for( i=0; i < parentdata->nchildcons; ++i )
+      {
+         if( parentdata->childcons[i] == cons )
+         {
+
+            parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
+            parentdata->childcons[parentdata->nchildcons-1] = NULL;
+            childdeleted = TRUE;
+            (parentdata->nchildcons) -= 1;
+            break;
          }
-         assert(childdeleted);
       }
+      assert(childdeleted || SCIPinProbing(scip));
    }
    /* no child nodes may exist */
    for( i=0; i<(*consdata)->nchildcons; ++i )
