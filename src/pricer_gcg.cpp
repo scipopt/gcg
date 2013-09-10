@@ -1595,18 +1595,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    #pragma omp parallel for private(j)
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      /* @todo Martin: can't we use BMSclearMemoryArray here? */
-      for( j = 0; j < maxsols; ++j )
-      {
-         solisray[i][j] = FALSE;
-         sols[i][j] = NULL;
-      }
+      BMSclearMemoryArray(solisray[i], maxsols);
+      BMSclearMemoryArray(sols[i], maxsols);
    }
 
    do
    {
       *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
+
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
       SCIP_CALL( setPricingObjs(pricetype) );
