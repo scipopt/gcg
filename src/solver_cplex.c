@@ -668,7 +668,12 @@ SCIP_RETCODE solveCplex(
       break;
    case CPX_STAT_ABORT_USER: /* 13 */
    default:
+   {
+      /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen, because gaplimit is set to 0, but happens anyway */
       *result = SCIP_STATUS_UNKNOWN;
+      SCIPfreeBufferArray(scip, &cplexsolvals);
+      return SCIP_OKAY;
+   }
    }
 
    CHECK_ZERO( CPXgetbestobjval(solverdata->cpxenv[probnr], solverdata->lp[probnr], lowerbound) );
