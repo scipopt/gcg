@@ -87,7 +87,7 @@ struct SCIP_RelaxData
    SCIP*                 masterprob;         /**< the master problem */
    SCIP**                pricingprobs;       /**< the array of pricing problems */
    int                   npricingprobs;      /**< the number of pricing problems */
-   int                   nrelpricingprobs;   /**< the number of relevantpricing problems */
+   int                   nrelpricingprobs;   /**< the number of relevant pricing problems */
    int*                  blockrepresentative;/**< number of the pricing problem, that represents the i-th problem */
    int*                  nblocksidentical;   /**< number of pricing blocks represented by the i-th pricing problem */
    SCIP_CONS**           convconss;          /**< array of convexity constraints, one for each block */
@@ -2687,6 +2687,26 @@ SCIP* GCGrelaxGetPricingprob(
    assert(relaxdata != NULL);
 
    return relaxdata->pricingprobs[pricingprobnr];
+}
+
+/** returns the number of relevant pricing problems */
+int GCGrelaxGetNRelPricingprobs(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+
+   assert(scip != NULL);
+
+   relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   assert(relaxdata->nrelpricingprobs >= -1);
+   return relaxdata->nrelpricingprobs;
 }
 
 /** returns the number of pricing problems */

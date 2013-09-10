@@ -401,6 +401,10 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 
    *result = SCIP_DIDNOTRUN;
 
+   /* diving heuristics on the original variables are only applicable if blocks have not been aggregated */
+   if( GCGrelaxGetNRelPricingprobs(scip) != GCGrelaxGetNPricingprobs(scip) )
+      return SCIP_OKAY;
+
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
@@ -630,8 +634,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             }
             else
             {
-               /* round bestcandiable down */
-               SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: bestcand <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
+               /* round variable down */
+               SCIPdebugMessage("  dive %d/%d, LP iter %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", pricerounds %d/%d: var <%s>, sol=%g, oldbounds=[%g,%g], newbounds=[%g,%g]\n",
                   divedepth, maxdivedepth, heurdata->nlpiterations, maxnlpiterations, totalpricerounds, heurdata->maxpricerounds,
                   SCIPvarGetName(bestcand), bestcandsol, SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand),
                   SCIPvarGetLbLocal(bestcand), SCIPfeasFloor(scip, bestcandsol));
