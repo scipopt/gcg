@@ -193,6 +193,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIP_CALL( (*detector->exitDetection)(scip, detector) );
       }
       SCIP_CALL( SCIPfreeClock(scip, &(conshdlrdata->detectors[i]->dectime)) );
+      SCIPfreeBlockMemory(scip, &(conshdlrdata->detectors[i]));
    }
 
    if( conshdlrdata->ndecomps > 0 )
