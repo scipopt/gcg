@@ -55,7 +55,9 @@ Stabilization::Stabilization(
 
 Stabilization::~Stabilization()
 {
-   // TODO Auto-generated destructor stub
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterconss);
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
+   SCIPfreeMemoryArrayNull(scip_, &stabcentercuts);
 }
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()
