@@ -96,7 +96,6 @@ SCIP_Bool areVarsInSameBlock(
          SCIP_VAR** mastervars;
 
          mastervars = GCGoriginalVarGetMastervars(origvar);
-         assert(GCGoriginalVarGetNMastervars(origvar) == 1);
 
          return mastervars[0] == mastervar;
       }
