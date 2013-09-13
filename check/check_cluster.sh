@@ -450,7 +450,7 @@ EOF
 		qsub -l walltime=$HARDTIMELIMIT -l mem=$HARDMEMLIMIT -l nodes=1:ppn=$PPN -N GCG$SHORTPROBNAME -V -q $QUEUE -o /dev/null -e /dev/null runcluster.sh
 	    fi
 	else
-	    echo "input file "$GCGPATH/$i" not found!"
+	    echo "input file "$PROB" not found!"
 	fi
     done
     if test  "$QUEUETYPE" = "bsub"
