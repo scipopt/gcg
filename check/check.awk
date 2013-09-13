@@ -66,6 +66,7 @@ BEGIN {
    useshortnames = 1;           # should problem name be truncated to fit into column?
    writesolufile = 0;           # should a solution file be created from the results
    printsoltimes = 0;           # should the times until first and best solution be shown
+   printdecname = 0;            # should the name of the read decomposition be read?
    checksol = 1;                # should the solution check of SCIP be parsed and counted as a fail if best solution is not feasible?
    NEWSOLUFILE = "new_solufile.solu";
    infty = +1e+20;
@@ -126,7 +127,7 @@ BEGIN {
    conftottime = 0.0;
    overheadtottime = 0.0;
    timelimit = 0.0;
-
+   decname = "";
    #initialize paver input file
    if( PAVFILE != "" ) {
       printf("* Trace Record Definition\n") > PAVFILE;
@@ -453,6 +454,14 @@ BEGIN {
    incons = 0;
 }
 
+/^read problem </ {
+   split($3,tmp1,"<")
+   split(tmp1[2],tmp2,">")
+   n = split(tmp2[1],tmp1,"/")
+   sub(/\.dec$/, "", tmp1[n])
+   decname =  tmp1[n];
+}
+
 #
 # solution
 #
@@ -578,6 +587,11 @@ BEGIN {
          tablehead3 = tablehead3"----------+---------+";
       }
 
+      if( printdecname == 1 ) {
+         tablehead1 = tablehead1"-----Decomposition-----+";
+         tablehead2 = tablehead2"          Name         |";
+         tablehead3 = tablehead3"-----------------------+";
+      }
       tablehead1 = tablehead1"--------\n";
       tablehead2 = tablehead2"       \n";
       tablehead3 = tablehead3"--------\n";
@@ -964,6 +978,8 @@ BEGIN {
                 pricecall, pricevars, pricetime, lptime, simpiters, bbnodes, tottime);
          if( printsoltimes )
             printf("%9.1f %9.1f ", timetofirst, timetobest);
+         if( printdecname )
+            printf("%-23s ", decname);
          printf("%s\n", status);
       }
 
