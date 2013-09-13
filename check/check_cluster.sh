@@ -297,7 +297,7 @@ do
 	    fi
 
 	    DIR=`dirname $PROB`
-	    NAME=`basename $NAME .gz`
+	    NAME=`basename $PROB .gz`
 	    NAME=`basename $NAME .mps`
 	    NAME=`basename $NAME .lp`
 
@@ -375,8 +375,8 @@ do
 	    echo set display freq $DISPFREQ        >> $TMPFILE
 	    echo set memory savefac 1.0            >> $TMPFILE # avoid switching to dfs - better abort with memory error
 	    echo set save $SETFILE                 >> $TMPFILE
-	    echo read $GCGPATH/$i                 >> $TMPFILE
-#           echo presolve                         >> $TMPFILE
+	    echo read $PROB                        >> $TMPFILE
+#           echo presolve                          >> $TMPFILE
 	    if test $MODE = "detect"
 	    then
 		echo presolve                      >> $TMPFILE

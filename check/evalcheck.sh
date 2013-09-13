@@ -56,7 +56,7 @@ do
     PAVFILE=$DIR/$NAME.pav
 
     TSTNAME=`echo $NAME | sed 's/check.\([a-zA-Z0-9_-]*\).*/\1/g'`
-
+    echo "$TSTNAME"
     if test -f testset/$TSTNAME.test
     then
 	TESTFILE=testset/$TSTNAME.test
