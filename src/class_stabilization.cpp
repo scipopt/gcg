@@ -369,11 +369,11 @@ SCIP_Real Stabilization::calculateSubgradient(
          gradientproduct += (stabcenterconss[i] - dual) * vals[j] * val;
       }
 
-      if( SCIPisGT(scip_, dual, 0.0) )
+      if( SCIPisFeasPositive(scip_, dual) )
       {
          lhs = SCIPgetLhsLinear(origprob, origcons);
       }
-      else if( SCIPisLT(scip_, dual, 0.0) )
+      else if( SCIPisFeasNegative(scip_, dual) )
       {
          lhs = SCIPgetRhsLinear(origprob, origcons);
       }
