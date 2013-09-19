@@ -1,6 +1,6 @@
 # this local Makefile includes the cluster targets
 
-OPTHOST	   	 := $(shell uname -n | tr '[:upper:]' '[:lower:]' | tr -cd '[:alpha:]')
+OPTHOST	   	 := $(shell uname -n | sed 's/\(.zib.de\)//g' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alpha:]')
 
 -include make/local/make.$(OPTHOST)
 
