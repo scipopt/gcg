@@ -296,7 +296,7 @@ do
 		./waitcluster.sh 1600 $QUEUE 200
 	    fi
 
-	    DIR=`dirname $NAME`
+	    DIR=`dirname $PROB`
 	    NAME=`basename $NAME .gz`
 	    NAME=`basename $NAME .mps`
 	    NAME=`basename $NAME .lp`
