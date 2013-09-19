@@ -36,6 +36,7 @@
 /* #define DEBUG_PRICING_ALL_OUTPUT */
 
 #include <assert.h>
+#include <string.h>
 
 #include "solver_mip.h"
 #include "scip/cons_linear.h"
@@ -53,12 +54,14 @@
 #define SOLVER_PRIORITY      0
 
 #define DEFAULT_CHECKSOLS    TRUE
+#define DEFAULT_SETTINGSFILE "-"
 
 
 /** branching data for branching decisions */
 struct GCG_SolverData
 {
    SCIP_Bool             checksols;          /**< should solutions be checked extensively */
+   char*                 settingsfile;       /**< settings file to be applied in pricing problems */
 };
 
 /** extracts ray from pricing problem */
@@ -652,13 +655,18 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
 {  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
 
+   solverdata = GCGsolverGetSolverdata(solver);
+   assert(solverdata != NULL);
+
+   if( strcmp(solverdata->settingsfile, "-") != 0 )
+   {
+      SCIP_CALL( SCIPreadParams(pricingprob, solverdata->settingsfile) );
+   }
+
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
    SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
 #endif
-
-   solverdata = GCGsolverGetSolverdata(solver);
-   assert(solverdata != NULL);
 
    *lowerbound = -SCIPinfinity(pricingprob);
    SCIPdebugMessage("solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
@@ -723,6 +731,10 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddStringParam(GCGpricerGetOrigprob(scip), "pricingsolver/mip/settingsfile",
+         "settings file for pricing problems",
+         &data->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
 
 
    return SCIP_OKAY;
