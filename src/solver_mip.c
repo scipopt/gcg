@@ -723,6 +723,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory(scip, &data) );
+   data->settingsfile = NULL;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
