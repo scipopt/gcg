@@ -262,7 +262,7 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
          SCIP_CALL( SCIPreleaseVar(scip, &(pricerdata->pricedvars[i])) );
          (pricerdata->npricedvars)--;
          pricerdata->pricedvars[i] = pricerdata->pricedvars[pricerdata->npricedvars];
-
+         (pricerdata->oldvars)--;
          break;
       }
    }
@@ -359,6 +359,9 @@ void GCGpricerGetNodeTimeHistogram(
    {
       i = PRICER_STAT_ARRAYLEN_TIME-1;
    }
+
+   assert(i < PRICER_STAT_ARRAYLEN_TIME);
+   assert(i >= 0);
    pricerdata->nodetimehist[i]++;
 
 }
@@ -373,11 +376,13 @@ void GCGpricerGetFoundVarsHistogram(
 {
    int i;
    i = foundvars/PRICER_STAT_BUCKETSIZE_VARS;
-
    if( i >= PRICER_STAT_ARRAYLEN_VARS )
    {
       i = PRICER_STAT_ARRAYLEN_VARS-1;
    }
+
+   assert(i < PRICER_STAT_ARRAYLEN_VARS);
+   assert(i >= 0);
    pricerdata->foundvarshist[i]++;
 
 }
@@ -412,11 +417,11 @@ void GCGpricerCollectStatistic(
       pricerdata->redcostnodetimedist[probindex] += time;
 
    }
-   pricerdata->oldvars = pricerdata->npricedvars;
 
    GCGpricerGetNodeTimeHistogram(pricerdata, time);
    GCGpricerGetFoundVarsHistogram(pricerdata, foundvars);
 
+   pricerdata->oldvars = pricerdata->npricedvars;
 }
 #endif
 
@@ -1945,7 +1950,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
        * <=> E -= E/n - x_n/n
        */
       ++pricerdata->ndegeneracycalcs;
-      pricerdata->avgrootnodedegeneracy -= pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs) - degeneracy/(pricerdata->ndegeneracycalcs);
+      pricerdata->avgrootnodedegeneracy -= (pricerdata->avgrootnodedegeneracy/(pricerdata->ndegeneracycalcs) - degeneracy/(pricerdata->ndegeneracycalcs));
    }
 
    return SCIP_OKAY;
@@ -2175,8 +2180,8 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    SCIPfreeMemoryArray(scip, &(pricerdata->solvals));
 
-   SCIPfreeMemoryArray(scip, &(pricerdata->nodetimehist));
-   SCIPfreeMemoryArray(scip, &(pricerdata->foundvarshist));
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->nodetimehist));
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->foundvarshist));
 
    pricerdata->nodetimehist = NULL;
    pricerdata->foundvarshist = NULL;
