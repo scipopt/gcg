@@ -97,3 +97,28 @@ $(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE
 ifeq ($(GTEST),true)
 FLAGS+=-I$(LIBDIR)/gtest/
 endif
+
+.PHONY: coverage
+coverage: tests
+#		-ln -sf ../../../../src $(OBJDIR)/lib/graph/
+		-ln -sf ../../../../lib $(OBJDIR)/lib/graph/
+#		-ln -sf ../../../src $(OBJDIR)/lib/
+		-ln -sf ../../../lib $(OBJDIR)/lib/
+#		-ln -sf ../../../src $(OBJDIR)/tests/
+		-ln -sf ../../../lib $(OBJDIR)/tests/
+#		-ln -sf ../../src $(OBJDIR)/
+		-mkdir -p gcov
+		lcov -d $(OBJDIR) -z
+		bin/gcg_test
+		make  $^ test
+		lcov --config-file lcovrc -d $(OBJDIR) -c >gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "/usr/include/*" > gcov/gcg.capture
+		mv gcov/gcg.capture gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/scip/*" > gcov/gcg.capture
+		mv gcov/gcg.capture gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/blissinc/*" > gcov/gcg.capture
+		mv gcov/gcg.capture gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "*lib/gtest/*" > gcov/gcg.capture
+		mv gcov/gcg.capture gcov/gcg.capture.tmp
+		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "src/tests/*" > gcov/gcg.capture
+		genhtml --config-file lcovrc -o gcov gcov/gcg.capture
