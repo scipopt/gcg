@@ -55,7 +55,9 @@ TESTOBJ		=	tests/test.o \
 				tests/aggregation_test.o \
 				tests/statistic_test.o \
 				tests/rowgraph_test.o \
-				tests/columngraph_test.o
+				tests/columngraph_test.o \
+				tests/decomp_test.o
+
 TESTSRCDIR	=	$(SRCDIR)/tests
 
 TESTSRC		=	$(filter $(wildcard $(TESTSRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.c))) $(filter $(wildcard $(TESTSRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(TESTOBJ:.o=.cpp)))

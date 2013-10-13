@@ -362,6 +362,7 @@ SCIP_RETCODE DECdecompCreate(
    (*decomp)->presolved = (SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING);
    (*decomp)->consindex = NULL;
    (*decomp)->varindex = NULL;
+   (*decomp)->detector = NULL;
 
    return SCIP_OKAY;
 }

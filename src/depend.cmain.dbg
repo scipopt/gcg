@@ -77,7 +77,7 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/heur_zirounding.h lib/scip/src/scip/nodesel_bfs.h \
  lib/scip/src/scip/nodesel_breadthfirst.h lib/scip/src/scip/nodesel_dfs.h \
  lib/scip/src/scip/nodesel_estimate.h \
- lib/scip/src/scip/nodesel_hybridestim.h \
+ lib/scip/src/scip/nodesel_hybridestim.h lib/scip/src/scip/nodesel_uct.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/presol_boundshift.h \
  lib/scip/src/scip/presol_components.h \
