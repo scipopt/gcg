@@ -49,8 +49,9 @@ template <class T>
 HyperrowcolGraph<T>::HyperrowcolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-): Graph<T>(scip, w)
+): MatrixGraph<T>(scip, w),graph(scip),nnonzeroes(0)
 {
+   this->graphiface = &graph;
    this->name = std::string("hyperrowcol");
 }
 
@@ -108,7 +109,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
          SCIPdebugMessage("Weight for cons <%s> is %d\n", SCIPconsGetName(conss[i-this->nvars]), weight);
       }
 
-      SCIP_CALL( this->graph->addNode(i, weight) );
+      SCIP_CALL( this->graph.addNode(i, weight) );
    }
 
    /* go through all constraints */
@@ -153,16 +154,16 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
 
          SCIPdebugMessage("Cons <%s> (%d), var <%s> (%d), nonzero %d\n", SCIPconsGetName(conss[i]), i, SCIPvarGetName(var), varIndex, this->nnonzeroes);
          /* add nonzero node and edge to variable and constraint) */;
-         SCIP_CALL( this->graph->addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
-         SCIP_CALL( this->graph->addEdge(varIndex, this->nvars+this->nconss+this->nnonzeroes) );
-         SCIP_CALL( this->graph->addEdge(this->nvars+i, this->nvars+this->nconss+this->nnonzeroes) );
+         SCIP_CALL( this->graph.addNode( this->nvars+this->nconss+this->nnonzeroes, 0) );
+         SCIP_CALL( this->graph.addEdge(varIndex, this->nvars+this->nconss+this->nnonzeroes) );
+         SCIP_CALL( this->graph.addEdge(this->nvars+i, this->nvars+this->nconss+this->nnonzeroes) );
 
          this->nnonzeroes++;
       }
       SCIPfreeBufferArray(this->scip_, &curvars);
    }
 
-   SCIP_CALL( this->graph->graphFlush() );
+   SCIP_CALL( this->graph.flush() );
 
    return SCIP_OKAY;
 }
@@ -186,11 +187,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
 
    for( int i = 0; i < this->nvars+this->nconss; ++i )
    {
-      std::vector<int> neighbors = Graph<T>::getNeighbors(i);
-      int nneighbors = Graph<T>::getNNeighbors(i);
+      std::vector<int> neighbors = graph.getNeighbors(i);
+      int nneighbors = graph.getNNeighbors(i);
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", Graph<T>::getWeight(i));
+         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
@@ -205,44 +206,6 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
       return SCIP_WRITEERROR;
 }
 
-template <class T>
-SCIP_RETCODE HyperrowcolGraph<T>::readPartition(
-   const char* filename
-)
-{
-   ifstream input(filename);
-   if( !input.good() )
-   {
-      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
-      return SCIP_READERROR;
-   }
-   this->partition.resize(this->nnonzeroes);
-   for( int i = 0; i < this->nnonzeroes; ++i )
-   {
-      int part = 0;
-      if( !(input >> part) )
-      {
-         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
-         return SCIP_READERROR;
-      }
-      this->partition[i] = part;
-   }
-
-   input.close();
-   return SCIP_OKAY;
-}
-
-template <class T>
-int HyperrowcolGraph<T>::getNEdges()
-{
-   return this->nconss+this->nvars;
-}
-
-template <class T>
-int HyperrowcolGraph<T>::getNNodes()
-{
-   return this->nnonzeroes;
-}
 
 class function {
    int diff;
@@ -261,10 +224,10 @@ std::vector<int> HyperrowcolGraph<T>::getNeighbors(
    function f(this->nconss+this->nvars);
    std::vector<int>::iterator it;
    std::set<int> neighbors;
-   std::vector<int> immediateneighbors = Graph<T>::getNeighbors(i+this->nconss+this->nvars);
+   std::vector<int> immediateneighbors = this->graph.getNeighbors(i+this->nconss+this->nvars);
    for( size_t j = 0; j < immediateneighbors.size(); ++j)
    {
-      std::vector<int> alternateneighbor = Graph<T>::getNeighbors(immediateneighbors[j]);
+      std::vector<int> alternateneighbor = this->graph.getNeighbors(immediateneighbors[j]);
       neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
    }
    std::vector<int> r(neighbors.size(), 0);
@@ -283,7 +246,7 @@ std::vector<int> HyperrowcolGraph<T>::getHyperedgeNodes(
    assert(i >= 0);
    assert(i < this->nconss+this->nvars);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
+   std::vector<int> neighbors = this->graph.getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }
@@ -297,7 +260,7 @@ std::vector<int> HyperrowcolGraph<T>::getConsNonzeroNodes(
    assert(i >= 0);
    assert(i < this->nconss);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i+this->nvars);
+   std::vector<int> neighbors = this->graph.getNeighbors(i+this->nvars);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }
@@ -311,7 +274,7 @@ std::vector<int> HyperrowcolGraph<T>::getVarNonzeroNodes(
    assert(i >= 0);
    assert(i < this->nvars);
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
+   std::vector<int> neighbors = this->graph.getNeighbors(i);
    std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
    return neighbors;
 }
@@ -329,11 +292,11 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    SCIP_CONS **conss;
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
-
+   std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    vars = SCIPgetVars(this->scip_);
 
-   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
@@ -346,7 +309,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
       std::vector<int> nonzeros = getConsNonzeroNodes(i);
       for( size_t k = 0; k < nonzeros.size(); ++k )
       {
-         blocks.insert(this->partition[nonzeros[k]]);
+         blocks.insert(partition[nonzeros[k]]);
       }
       if( blocks.size() > 1 )
       {
@@ -382,6 +345,34 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 
    SCIPfreeBufferArray(this->scip_, &nsubscipconss);
    return SCIP_OKAY;
+}
+
+template <class T>
+SCIP_RETCODE HyperrowcolGraph<T>::readPartition(
+   const char*        filename            /**< filename where the partition is stored */
+   )
+{
+
+   ifstream input(filename);
+   if( !input.good() )
+   {
+      SCIPerrorMessage("Could not open file <%s> for reading\n", filename);
+      return SCIP_READERROR;
+   }
+   for( int i = 0; i < this->nnonzeroes; ++i )
+   {
+      int part = 0;
+      if( !(input >> part) )
+      {
+         SCIPerrorMessage("Could not read from file <%s>. It may be in the wrong format\n", filename);
+         return SCIP_READERROR;
+      }
+      graph.setPartition(i,part);
+   }
+
+   input.close();
+   return SCIP_OKAY;
+
 }
 
 } /* namespace gcg */

@@ -55,7 +55,7 @@ TEST_F(ColumnTest, WriteFileTest) {
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("columngraph.g") );
 
    ASSERT_TRUE( SCIPfileExists("columngraph.g") );
-   int tmp[] = {3, 4, 3, 2, 1, 1};
+   int tmp[] = {3, 2, 2, 3, 1, 1};
 
    std::vector<int> array(&tmp[0], &tmp[0]+6);
 

@@ -25,20 +25,19 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graph.cpp
- * @brief  miscellaneous graph methods for structure detection
+/**@file   hypergraph.cpp
+ * @brief  miscellaneous hypergraph methods for structure detection
  * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#define SCIP_Debug
 
-#ifndef GCG_GRAPH_DEF_H_
-#define GCG_GRAPH_DEF_H_
+#ifndef GCG_HYPERGRAPH_DEF_H_
+#define GCG_HYPERGRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "graph.h"
+#include "hypergraph.h"
 #include <fstream>
 
 using std::ifstream;
@@ -46,139 +45,178 @@ using std::ifstream;
 namespace gcg {
 
 template <class T>
-Graph<T>::Graph(
+Hypergraph<T>::Hypergraph(
    SCIP*                 scip               /**< SCIP data structure */
-) : name("graph"),scip_(scip),graph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0)
+) : name("hypergraph"),scip_(scip),graph(NULL),lastnode(0),dummynodes(0)
 {
-   graph = new T();
+   SCIPdebugMessage("Creating graph\n");
+   graph = new Graph<T>(scip);
 }
 
 template <class T>
-Graph<T>::~Graph()
+Hypergraph<T>::~Hypergraph()
 {
    if(graph != NULL)
       delete graph;
 
 }
-template <class T>
-int Graph<T>::getNNodes() {
-   return graph->getNNodes();
-}
 
 template <class T>
-int Graph<T>::getNEdges() {
-   return graph->getNEdges();
-}
-
-template <class T>
-SCIP_RETCODE  Graph<T>::addNode(int i,int weight)
+int Hypergraph<T>::computeNodeId(int i)
 {
-   SCIP_CALL( graph->addNode(i, weight) );
+   int nodeid;
+   if( i < (int) nodes.size())
+      nodeid = nodes[i];
+   else
+      nodeid = lastnode;
+
+   SCIPdebugMessage("Nodeid %d is %d\n", i, nodeid);
+   return nodeid;
+}
+
+template <class T>
+SCIP_RETCODE  Hypergraph<T>::addNode(int i,int weight)
+{
+   int nodeid = lastnode;
+   SCIPdebugMessage("Adding node %d (id=%d)\n", i, nodeid);
+   SCIP_CALL( graph->addNode(nodeid, weight) );
+   nodes.push_back(nodeid);
+   mapping.resize(nodeid+1);
+   mapping[nodeid] = i;
+   ++lastnode;
    return SCIP_OKAY;
 }
 
 /** adds the edge to the graph */
 template <class T>
-SCIP_RETCODE Graph<T>::addEdge(int i, int j)
+SCIP_RETCODE Hypergraph<T>::addHyperedge(std::vector<int> &edge, int weight)
 {
-   SCIP_CALL( graph->addEdge(i, j) );
-   return SCIP_OKAY;
-}
+   int edgenodeid = lastnode;
+   ++lastnode;
+   SCIPdebugMessage("Adding hyperedge %lu (id=%d)\n", hedges.size(), edgenodeid);
+   SCIP_CALL( graph->addNode(edgenodeid, weight) );
 
-template <class T>
-SCIP_RETCODE Graph<T>::flush()
-{
-   SCIP_CALL( graph->flush() );
-   return SCIP_OKAY;
-}
-
-template <class T>
-int Graph<T>::edge(int i, int j) {
-   assert( i>= 0);
-   assert(j >= 0);
-
-   //int edge_ij=0;
-
-   //return tcliqueIsEdge(tgraph,i,j);
-
-   int edge_ij=0;
-   std::vector<int> Neighbors;
-
-   Neighbors = getNeighbors(i);
-   for(int k=0; k<(int)Neighbors.size(); k++)
+   for( size_t i = 0; i < edge.size(); ++i )
    {
-      if(Neighbors[k] == j)
-      {
-         edge_ij = 1;
-         k = (int)Neighbors.size();
-      }
+      SCIP_CALL( graph->addEdge(edgenodeid, computeNodeId(edge[i])) );
    }
-   return edge_ij;
+   hedges.push_back(edgenodeid);
+   mapping.resize(edgenodeid+1);
+   mapping[edgenodeid] = hedges.size()-1;
+   return SCIP_OKAY;
+}
+
+/** adds the edge to the graph */
+template <class T>
+SCIP_RETCODE Hypergraph<T>::addNodeToHyperedge(int node, int hedge)
+{
+   int edgenodeid = hedges[hedge];
+   int nodeid = nodes[node];
+   SCIP_CALL( graph->addEdge(edgenodeid, nodeid) );
+
+   return SCIP_OKAY;
+}
+
+
+template <class T>
+int Hypergraph<T>::getNNodes() {
+   return nodes.size();
 }
 
 template <class T>
-int Graph<T>::getNNeighbors(int i) {
+int Hypergraph<T>::getNHyperedges() {
+   return hedges.size();
+}
+
+template <class T>
+int Hypergraph<T>::getNNeighbors(int i) {
    assert( i >= 0);
    return graph->getNNeighbors(i);
 }
 
 template <class T>
-std::vector<int> Graph<T>::getNeighbors(int i) {
+std::vector<int> Hypergraph<T>::getNeighbors(int i) {
    assert(i >= 0);
+   int nodeid = computeNodeId(i);
+   std::vector<int> edges = graph->getNeighbors(nodeid);
 
-   return graph->getNeighbors(i);
+   std::set<int> neighbors;
+   for( size_t j = 0; j < edges.size(); ++j )
+   {
+      std::vector<int> tempneighbors = graph->getNeighbors(edges[j]);
+      neighbors.insert(tempneighbors.begin(), tempneighbors.end());
+   }
+   std::vector<int> r(neighbors.begin(), neighbors.end());
+   for( size_t j = 0; j < r.size(); ++j)
+   {
+      r[j] = mapping[r[j]];
+   }
+   std::vector<int>::iterator it = std::remove(r.begin(), r.end(), nodeid);
+
+   return std::vector<int>(r.begin(), it);
 }
 
 template <class T>
-std::vector<int> Graph<T>::getPartition()
+std::vector<int> Hypergraph<T>::getHyperedgeNodes(
+   int i
+   )
+{
+   std::vector<int> hnodes =  graph->getNeighbors(hedges[i]);
+   for( size_t j = 0; j < hnodes.size(); ++j)
+   {
+      hnodes[j] = computeNodeId(hnodes[j]);
+   }
+   return hnodes;
+}
+
+template <class T>
+int Hypergraph<T>::getNHyperedgeNodes(
+   int i
+   )
+{
+   return graph->getNNeighbors(hedges[i]);
+}
+
+template <class T>
+std::vector<int> Hypergraph<T>::getPartition()
 {
    return partition;
 }
 
 template <class T>
-void Graph<T>::setPartition(int i, int ID) {
+void Hypergraph<T>::setPartition(int i, int ID) {
    partition.resize(getNNodes(), -1);
    partition[i] = ID;
 }
 
-/** write the graph to a file */
+/** write the hypergraph to a file */
 template <class T>
-SCIP_RETCODE Graph<T>::writeToFile(
+SCIP_RETCODE Hypergraph<T>::writeToFile(
       const char* filename,
       SCIP_Bool writeweights
     )
 {
-   int nnodes;
-   int nedges;
    FILE* file;
    assert(filename != NULL);
    file = fopen(filename, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   nnodes = Graph<T>::getNNodes();
-   nedges = Graph<T>::getNEdges();
+   SCIPinfoMessage(scip_, file, "%d %d\n", nodes.size()+dummynodes, hedges.size());
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes+dummynodes, nedges/2);
-
-   for( int i = 0; i < nnodes; ++i )
+   for( size_t i = 0; i < hedges.size(); ++i )
    {
-      int nneighbors = Graph<T>::getNNeighbors(i);
-      std::vector<int> neighbors = Graph<T>::getNeighbors(i);
+      int nneighbors = graph->getNNeighbors(hedges[i]);
+      std::vector<int> neighbors = graph->getNeighbors(hedges[i]);
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", Graph<T>::getWeight(i));
+         SCIPinfoMessage(scip_, file, "%d ", graph->getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
+         SCIPinfoMessage(scip_, file, "%d ", computeNodeId(neighbors[j])+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
-   }
-
-   for( int i = 0; i < dummynodes; ++i )
-   {
       SCIPinfoMessage(scip_, file, "\n");
    }
 
@@ -187,7 +225,7 @@ SCIP_RETCODE Graph<T>::writeToFile(
 
 /** read in the partition from a file */
 template <class T>
-SCIP_RETCODE Graph<T>::readPartition(
+SCIP_RETCODE Hypergraph<T>::readPartition(
    const char* filename
 )
 {
@@ -215,11 +253,29 @@ SCIP_RETCODE Graph<T>::readPartition(
 
 /** return the weight of given node */
 template <class T>
-int Graph<T>::getWeight(
+int Hypergraph<T>::getWeight(
    int                i                   /**< the given node */
    )
 {
-   return graph->graphGetWeights(i);
+   return graph->getWeight(i);
+}
+
+/** return the weight of given hyperedge */
+template <class T>
+int Hypergraph<T>::getHyperedgeWeight(
+   int                i                   /**< the given hyperedge */
+   )
+{
+   int edgenodeid = hedges[i];
+
+   return graph->getWeight(edgenodeid);
+}
+
+template <class T>
+SCIP_RETCODE Hypergraph<T>::flush()
+{
+   SCIP_CALL( graph->flush() );
+   return SCIP_OKAY;
 }
 
 } /* namespace gcg */

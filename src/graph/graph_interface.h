@@ -25,61 +25,70 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   bridge.h
- * @brief  bridge
+/**@file   graph_interface.h
+ * @brief  miscellaneous graph interface methods
+ * @author Martin Bergner
  * @author Annika Thome
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BRIDGE_H
-#define GCG_BRIDGE_H
+
+
+#ifndef GCG_GRAPHINTERFACE_H_
+#define GCG_GRAPHINTERFACE_H_
+
 #include "objscip/objscip.h"
+#include "weights.h"
+
 #include <vector>
 
-namespace gcg
-{
+namespace gcg {
 
-class Bridge
-{
+class GraphInterface {
+protected:
+   std::vector<int> partition;
 public:
-   Bridge() {};
-   virtual ~Bridge() {};
-   /** get number of nodes in the graph */
-   virtual int getNNodes() = 0;
 
-   /** get number of edges in the graph */
-   virtual int getNEdges() = 0;
+   GraphInterface() {};
 
-   /** return whether a given pair of vertices is connected by an edge */
-   virtual SCIP_Bool isEdge(int i, int j) = 0;
+   virtual ~GraphInterface() {};
 
-   /** get number of neighbors of a given node */
-   virtual int getNNeighbors(int i) = 0;
+   /** return a partition of the nodes */
+   std::vector<int> getPartition() { return partition; };
 
-   /** get a vector of all neighbors of a given node */
-   virtual std::vector<int> getNeighbors(int i) = 0;
+   /** assigns partition to a given node*/
+   virtual void setPartition(int i, int nodeid) = 0;
 
-   /** adds the node with the given weight to the graph */
-   virtual SCIP_RETCODE addNode(int i,int weight) = 0;
+   /** writes the graph to the given file.
+    *  The format is graph dependent
+    */
+   virtual SCIP_RETCODE writeToFile(
+      const char*        filename,           /**< filename where the graph should be written to */
+      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+    ) = 0;
 
-   /** deletes the given node from the graph */
-   virtual SCIP_RETCODE deleteNode(int i) = 0;
+   /**
+    * reads the partition from the given file.
+    * The format is graph dependent. The default is a file with one line for each node a
+    */
+   virtual SCIP_RETCODE readPartition(
+      const char*        filename            /**< filename where the partition is stored */
+   ) = 0;
 
-   /** adds the edge to the graph */
-   virtual SCIP_RETCODE addEdge(int i, int j) = 0;
 
-   /** deletes the edge from the graph */
-   virtual SCIP_RETCODE deleteEdge(int i, int j) = 0;
-
-   /** return the weight of a node */
-   virtual int graphGetWeights(int i) = 0;
+   /** create decomposition based on the read in partition */
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
+   )
+   {
+      return SCIP_ERROR;
+   }
 
    virtual SCIP_RETCODE flush() = 0;
 
 };
 
-
-} /* namespace gcg*/
+}
 
 #endif

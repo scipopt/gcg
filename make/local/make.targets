@@ -46,17 +46,18 @@ testexamples:
 # google testing framework
 TESTNAME	=	gcg_test
 TESTOBJ		=	tests/test.o \
-				tests/graphtest.o \
-				tests/bipartitegraph_test.o \
-				tests/hyperrowcolgraph_test.o \
-				tests/hypercolgraph_test.o \
-				tests/hyperrowgraph_test.o \
-				tests/weights_test.o \
-				tests/aggregation_test.o \
-				tests/statistic_test.o \
-				tests/rowgraph_test.o \
-				tests/columngraph_test.o \
-				tests/decomp_test.o
+			tests/graphtest.o \
+			tests/bipartitegraph_test.o \
+			tests/hyperrowcolgraph_test.o \
+			tests/hypercolgraph_test.o \
+			tests/hyperrowgraph_test.o \
+			tests/weights_test.o \
+			tests/aggregation_test.o \
+			tests/statistic_test.o \
+			tests/rowgraph_test.o \
+			tests/columngraph_test.o \
+			tests/decomp_test.o \
+#			tests/hypergraph_test.o
 
 TESTSRCDIR	=	$(SRCDIR)/tests
 

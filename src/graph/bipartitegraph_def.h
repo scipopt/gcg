@@ -44,16 +44,16 @@ template <class T>
 BipartiteGraph<T>::BipartiteGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                 /**< weights for the given graph */
-   ): Graph<T>(scip, w)
+   ): MatrixGraph<T>(scip,w), graph(scip)
 {
-   // TODO Auto-generated constructor stub
+   this->graphiface = &graph;
    this->name = std::string("bipartite");
 }
 
 template <class T>
 BipartiteGraph<T>::~BipartiteGraph()
 {
-   // TODO Auto-generated destructor stub
+
 }
 
 
@@ -94,7 +94,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
       else
          weight = this->weights.calculate(conss[i-this->nvars]);
 
-      this->graph->addNode(i, weight);
+      this->graph.addNode(i, weight);
    }
 
    /* go through all constraints */
@@ -137,17 +137,27 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
          assert(varIndex >= 0);
          assert(varIndex < this->nvars);
 
-         SCIP_CALL( this->graph->addEdge(varIndex, this->nvars+i) );
+         SCIP_CALL( this->graph.addEdge(varIndex, this->nvars+i) );
       }
       SCIPfreeBufferArray(this->scip_, &curvars);
    }
 
-   this->graph->graphFlush();
-
-   this->nnonzeroes = this->graph->getNEdges();
-
+   this->graph.flush();
    return SCIP_OKAY;
 }
+
+template <class T>
+int BipartiteGraph<T>::getNConsNodes()
+{
+   return this->nconss;
+}
+
+template <class T>
+int BipartiteGraph<T>::getNVarNodes()
+{
+   return this->nvars;
+}
+
 
 } /* namespace gcg */
 

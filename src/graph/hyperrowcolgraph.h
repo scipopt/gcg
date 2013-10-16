@@ -35,12 +35,16 @@
 #ifndef GCG_HYPERROWCOLGRAPH_H_
 #define GCG_HYPERROWCOLGRAPH_H_
 
-#include "graph.h"
+#include "matrixgraph.h"
+#include "hypergraph.h"
 
 namespace gcg {
 template <class T>
-class HyperrowcolGraph: public Graph<T>
+class HyperrowcolGraph: public MatrixGraph<T>
 {
+private:
+   Graph<T> graph;
+   int nnonzeroes;
 public:
    HyperrowcolGraph(
          SCIP*                 scip,              /**< SCIP data structure */
@@ -62,16 +66,18 @@ public:
       SCIP_Bool          writeweights         /**< whether to write weights */
     );
 
-   SCIP_RETCODE readPartition(
-      const char* filename
-      );
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
       );
 
-   virtual int getNNodes();
-   virtual int getNEdges();
+   /**
+    * reads the partition from the given file.
+    * The format is graph dependent. The default is a file with one line for each node a
+    */
+   virtual SCIP_RETCODE readPartition(
+      const char*        filename            /**< filename where the partition is stored */
+   );
 
    virtual std::vector<int> getNeighbors(
          int i
@@ -88,6 +94,11 @@ public:
    std::vector<int> getVarNonzeroNodes(
          int i
    );
+
+   int getNNonzeroes() const
+   {
+      return nnonzeroes;
+   }
 };
 
 } /* namespace gcg */

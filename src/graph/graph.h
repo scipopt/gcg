@@ -42,38 +42,15 @@
 #include "weights.h"
 #include "pub_decomp.h"
 #include "bridge.h"
-
+#include "graph_interface.h"
 #include <exception>
 #include <vector>
 #include <string>
 
-#define TCLIQUE_CALL_EXC(x)   do                                                                              \
-                       {                                                                                      \
-                          SCIP_Bool _restat_;                                                                 \
-                          if( (_restat_ = (x)) != TRUE )                                                      \
-                          {                                                                                   \
-                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
-                             throw std::exception();                          \
-                           }                                                                                  \
-                       }                                                                                      \
-                       while( FALSE )
-
-#define TCLIQUE_CALL(x)   do                                                                                  \
-                       {                                                                                      \
-                          SCIP_Bool _restat_;                                                                 \
-                          if( (_restat_ = (x)) != TRUE )                                                      \
-                          {                                                                                   \
-                             SCIPerrorMessage("Error <%d> in function call\n", _restat_);                     \
-                             return SCIP_ERROR;                                                               \
-                           }                                                                                  \
-                       }                                                                                      \
-                       while( FALSE )
-
-
 namespace gcg {
 
 template <class T>
-class Graph {
+class Graph : public GraphInterface {
 public:
    std::string name;
 protected:
@@ -83,14 +60,11 @@ protected:
    int nvars;
    int nnonzeroes;
    int dummynodes;
-   Weights weights;
-   std::vector<int> partition;
 
 public:
    /** Constructor */
    Graph(
-      SCIP*                 scip,              /**< SCIP data structure */
-      Weights               w                  /**< weights for the given graph */
+      SCIP*                 scip               /**< SCIP data structure */
    );
 
    void swap(Graph & other) // the swap member function (should never fail!)
@@ -102,9 +76,7 @@ public:
       std::swap(nconss , other.nconss);
       std::swap(nvars , other.nvars);
       std::swap(nnonzeroes , other.nnonzeroes);
-      std::swap(weights , other.weights);
       std::swap(dummynodes, other.dummynodes);
-
    }
 
    Graph& operator=(Graph other) // note: argument passed by value!
@@ -118,11 +90,17 @@ public:
    /** Destruktor */
    virtual ~Graph();
 
+   /** adds the node with the given weight to the graph */
+   SCIP_RETCODE addNode(int i,int weight);
+
+   /** adds the edge to the graph */
+   SCIP_RETCODE addEdge(int i, int j);
+
    /** return the number of nodes */
-   virtual int getNNodes();
+   int getNNodes();
 
    /** return the number of edges (or hyperedges) */
-   virtual int getNEdges();
+   int getNEdges();
 
    /** returns whether there is an edge between nodes i and j */
    virtual int edge(int i, int j);
@@ -183,20 +161,12 @@ public:
       dummynodes = dummynodes_;
    };
 
-   /** create decomposition based on the read in partition */
-   virtual SCIP_RETCODE createDecompFromPartition(
-      DEC_DECOMP**       decomp              /**< decomposition structure to generate */
-   )
-   {
-      return SCIP_ERROR;
-   }
-
    int getDummynodes() const
    {
       return dummynodes;
    }
 
-   ;
+   SCIP_RETCODE flush();
 
 };
 

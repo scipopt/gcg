@@ -64,7 +64,7 @@ int GraphBoost::graphGetWeights(int i)
    return 0;
 }
 
-SCIP_RETCODE GraphBoost::graphFlush()
+SCIP_RETCODE GraphBoost::flush()
 {
    return SCIP_OKAY;
 }

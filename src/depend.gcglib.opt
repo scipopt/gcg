@@ -4200,7 +4200,7 @@ $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.cpp src/dec_arrowheur.h \
  src/type_decomp.h src/cons_decomp.h src/type_detector.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h lib/scip/src/scip/cons_linear.h \
- src/graph/hyperrowcolgraph.h src/graph/graph.h \
+ src/graph/hyperrowcolgraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
@@ -4215,7 +4215,8 @@ $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.cpp src/dec_arrowheur.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/graph/bridge.h src/graph/graph_tclique.h src/graph/weights.h
+ src/graph/bridge.h src/graph/graph_interface.h src/graph/hypergraph.h \
+ src/graph/graph.h src/graph/graph_tclique.h src/graph/weights.h
 $(LIBOBJDIR)/dec_borderheur.o: src/dec_borderheur.cpp src/dec_borderheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4269,9 +4270,8 @@ $(LIBOBJDIR)/dec_borderheur.o: src/dec_borderheur.cpp src/dec_borderheur.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
  src/struct_decomp.h src/pub_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/graph/hyperrowgraph.h \
- src/graph/bipartitegraph.h src/graph/graph.h \
- lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
- lib/scip/src/objscip/objcloneable.h \
+ src/graph/matrixgraph.h lib/scip/src/objscip/objscip.h \
+ lib/scip/src/objscip/objbranchrule.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
  lib/scip/src/objscip/objconshdlr.h \
  lib/scip/src/objscip/objprobcloneable.h \
@@ -4284,7 +4284,8 @@ $(LIBOBJDIR)/dec_borderheur.o: src/dec_borderheur.cpp src/dec_borderheur.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/graph/bridge.h src/graph/graph_tclique.h
+ src/graph/bridge.h src/graph/graph_interface.h src/graph/hypergraph.h \
+ src/graph/graph.h src/graph/graph_tclique.h
 $(LIBOBJDIR)/dec_stairheur.o: src/dec_stairheur.cpp src/dec_stairheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4638,10 +4639,11 @@ $(LIBOBJDIR)/dialog_graph.o: src/dialog_graph.cpp src/dialog_graph.h src/objdial
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
  src/type_decomp.h src/type_detector.h src/graph/bridge.h \
- lib/scip/src/scip/dialog_default.h src/graph/bipartitegraph.h \
- src/graph/graph.h src/graph/hyperrowcolgraph.h src/graph/hyperrowgraph.h \
- src/graph/bipartitegraph.h src/graph/hypercolgraph.h \
- src/graph/columngraph.h src/graph/rowgraph.h src/graph/matrixgraph.h \
+ src/graph/graph_interface.h lib/scip/src/scip/dialog_default.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h src/graph/graph.h \
+ src/graph/hyperrowcolgraph.h src/graph/hypergraph.h \
+ src/graph/hyperrowgraph.h src/graph/hypercolgraph.h \
+ src/graph/columngraph.h src/graph/bipartitegraph.h src/graph/rowgraph.h \
  src/scip_misc.h lib/scip/src/scip/cons_setppc.h src/cons_decomp.h \
  src/graph/graph_tclique.h
 $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
@@ -4764,7 +4766,7 @@ $(LIBOBJDIR)/graph/weights.o: src/graph/weights.cpp src/graph/weights.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h
 $(LIBOBJDIR)/graph/inst.o: src/graph/inst.cpp src/graph/bipartitegraph_def.h \
- src/graph/bipartitegraph.h src/graph/graph.h \
+ src/graph/bipartitegraph.h src/graph/matrixgraph.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4828,14 +4830,16 @@ $(LIBOBJDIR)/graph/inst.o: src/graph/inst.cpp src/graph/bipartitegraph_def.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  lib/scip/src/tclique/tclique.h src/graph/weights.h src/pub_decomp.h \
- src/type_decomp.h src/type_detector.h src/graph/bridge.h src/scip_misc.h \
+ src/type_decomp.h src/type_detector.h src/graph/bridge.h \
+ src/graph/graph_interface.h src/graph/graph.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/graph/columngraph_def.h \
  src/graph/columngraph.h src/graph/rowgraph_def.h src/graph/rowgraph.h \
- src/graph/matrixgraph.h src/graph/hypercolgraph_def.h \
- src/graph/hypercolgraph.h src/graph/hyperrowgraph_def.h \
+ src/graph/hypercolgraph_def.h src/graph/hypercolgraph.h \
+ src/graph/hypergraph.h src/graph/hyperrowgraph_def.h \
  src/graph/hyperrowgraph.h src/graph/hyperrowcolgraph_def.h \
  src/graph/hyperrowcolgraph.h src/graph/graph_def.h \
- src/graph/graph_tclique.h src/graph/matrixgraph_def.h
+ src/graph/hypergraph_def.h src/graph/graph_tclique.h \
+ src/graph/matrixgraph_def.h
 $(LIBOBJDIR)/graph/graph_tclique.o: src/graph/graph_tclique.cpp src/graph/graph_tclique.h \
  src/graph/bridge.h lib/scip/src/objscip/objscip.h \
  lib/scip/src/objscip/objbranchrule.h lib/scip/src/scip/scip.h \

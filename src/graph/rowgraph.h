@@ -45,7 +45,7 @@ template <class T>
 class RowGraph : public gcg::MatrixGraph<T>
 {
 private:
-   gcg::BipartiteGraph<T> graph;
+   gcg::Graph<T> graph;
    int nconss;
    int nvars;
    int nnonzeroes;
@@ -55,10 +55,6 @@ public:
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~RowGraph();
-   virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
-      );
 
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */

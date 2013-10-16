@@ -58,7 +58,7 @@ TEST_F(RowTest, WriteFileTest) {
    ASSERT_EQ( SCIP_OKAY, graph.writeToFile("rowgraph.g") );
    ASSERT_TRUE( SCIPfileExists("rowgraph.g") );
 
-   int tmp[] = {4, 8, 2, 4, 3, 1, 4, 1, 1, 2};
+   int tmp[] = {4, 4, 2, 3, 4, 1, 4, 1, 1, 2};
 
    std::vector<int> array(&tmp[0], &tmp[0]+10);
 

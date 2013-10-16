@@ -31,7 +31,7 @@ public:
    virtual int* graphGetLastAdjedge(int i);
    virtual int graphGetWeights(int i);
 
-   virtual SCIP_RETCODE graphFlush();
+   virtual SCIP_RETCODE flush();
 };
 
 } /* namespace gcg */

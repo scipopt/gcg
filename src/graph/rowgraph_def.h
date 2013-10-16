@@ -46,8 +46,9 @@ template <class T>
 RowGraph<T>::RowGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip), graph(scip, w),nconss(0),nvars(0),nnonzeroes(0)
+   ) : MatrixGraph<T>(scip,w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
 {
+   this->graphiface = &graph;
    this->name = std::string("rowgraph");
 }
 
@@ -55,97 +56,6 @@ template <class T>
 RowGraph<T>::~RowGraph()
 {
    // TODO Auto-generated destructor stub
-}
-
-/** writes row graph to file */
-template <class T>
-SCIP_RETCODE RowGraph<T>::writeToFile(
-   const char*        filename,           /**< filename where the graph should be written to */
-   SCIP_Bool          writeweights         /**< whether to write weights */
-   )
-{
-   int nedges;
-   int* nrealneighbors;
-   int** realneighbors;
-
-   SCIP_Bool* handled;
-   FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
-   if( file == NULL )
-      return SCIP_FILECREATEERROR;
-
-   nrealneighbors = 0;
-   nedges = 0;
-
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &handled, this->nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors, this->nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(this->scip_, &nrealneighbors, this->nconss) );
-
-   SCIPdebug(tcliquePrintGraph(tgraph));
-   for( int i = 0; i < this->nconss; ++i )
-   {
-      BMSclearMemoryArray(handled, this->nconss);
-      handled[i] = TRUE;
-      nrealneighbors[i] = 0;
-
-      SCIP_CALL( SCIPallocMemoryArray(this->scip_, &realneighbors[i], this->nconss) );
-      int nneighbors = graph.getNNeighbors(this->nvars+i);
-
-      SCIPdebugMessage("%d has %d neighbors\n", i+this->nvars, nneighbors);
-
-      std::vector<int> neighbors = graph.getNeighbors(i+this->nvars);
-      for( int j = 0; j < nneighbors; ++j )
-      {
-         int neighbor = neighbors[j];
-         int nneighborneighbors = graph.getNNeighbors(neighbor);
-
-         SCIPdebugMessage("\tneighbor %d has %d neighbors\n", neighbor, nneighborneighbors);
-         std::vector<int> neighborneighbors = graph.getNeighbors(neighbor);
-         for( int k = 0; k < nneighborneighbors; ++k )
-         {
-            int neighborneighbor = neighborneighbors[k];
-
-            SCIPdebugMessage("\t\t%d->%d->%d (", i+this->nvars, neighbor, neighborneighbor);
-            if( !handled[neighborneighbor-this->nvars] )
-            {
-               SCIPdebugPrintf("x)\n");
-               realneighbors[i][nrealneighbors[i]] = neighborneighbor-this->nvars;
-               ++(nrealneighbors[i]);
-
-               handled[neighborneighbor-this->nvars] = TRUE;
-               ++nedges;
-            }
-            else
-            {
-               SCIPdebugPrintf("-)\n");
-            }
-         }
-      }
-   }
-
-   SCIPinfoMessage(this->scip_, file, "%d %d\n", this->nconss, nedges);
-
-   for( int i = 0; i < this->nconss; ++i)
-   {
-      for( int j = 0; j < nrealneighbors[i]; ++j )
-      {
-         SCIPinfoMessage(this->scip_, file, "%d ", realneighbors[i][j]+1);
-      }
-      SCIPinfoMessage(this->scip_, file, "\n");
-      SCIPfreeMemoryArray(this->scip_, &realneighbors[i]);
-   }
-
-   for( int i = 0; i < graph.getDummynodes(); ++i )
-   {
-      SCIPinfoMessage(this->scip_, file, "\n");
-   }
-
-   SCIPfreeMemoryArray(this->scip_, &handled);
-   SCIPfreeMemoryArray(this->scip_, &realneighbors);
-   SCIPfreeMemoryArray(this->scip_, &nrealneighbors);
-
-   return SCIP_OKAY;
 }
 
 template <class T>
@@ -161,10 +71,10 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    SCIP_CONS **conss;
    SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
-
+   std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    vars = SCIPgetVars(this->scip_);
-   nblocks = *(std::max_element(this->partition.begin(), this->partition.end()))+1;
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
@@ -174,7 +84,7 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
    {
-      int block = this->partition[i];
+      int block = partition[i];
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
       ++(nsubscipconss[block]);
    }
@@ -211,9 +121,131 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
    int                   nvars_               /**< number of variables */
    )
 {
+   int i;
+   int j;
+   int k;
+   int l;
+   SCIP_Bool success;
+
+   assert(conss != NULL);
+   assert(vars != NULL);
+   assert(nvars_ > 0);
+   assert(nconss_ > 0);
+
    this->nvars = nvars_;
    this->nconss = nconss_;
-   SCIP_CALL( graph.createFromMatrix(conss, vars, nconss_, nvars_) );
+
+   /* go through all variables */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(conss[i]);
+
+      this->graph.addNode(i, weight);
+   }
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      SCIP_VAR **curvars1;
+
+      int ncurvars1;
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+      assert(success);
+      if( ncurvars1 == 0 )
+         continue;
+
+      /*
+       * may work as is, as we are copying the constraint later regardless
+       * if there are variables in it or not
+       */
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+      assert(success);
+
+      /* go through all constraints */
+      for( j = 0; j < i; ++j )
+      {
+         SCIP_VAR **curvars2;
+         SCIP_Bool continueloop;
+         int ncurvars2;
+         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
+         assert(success);
+         if( ncurvars2 == 0 )
+            continue;
+
+         if(this->graph.edge(i, j))
+            continue;
+
+         continueloop = FALSE;
+         /*
+          * may work as is, as we are copying the constraint later regardless
+          * if there are variables in it or not
+          */
+         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[j], curvars2, ncurvars2, &success) );
+         assert(success);
+
+
+         /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+         /** @todo Do more then one entry per variable actually work? */
+
+         for( k = 0; k < ncurvars1; ++k )
+         {
+            SCIP_VAR* var1;
+            int varIndex1;
+
+            if( !SCIPisVarRelevant(curvars1[k]) )
+               continue;
+
+            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               var1 = SCIPvarGetProbvar(curvars1[k]);
+            else
+               var1 = curvars1[k];
+
+            assert(var1 != NULL);
+            varIndex1 = SCIPvarGetProbindex(var1);
+            assert(varIndex1 >= 0);
+            assert(varIndex1 < this->nvars);
+
+            for( l = 0; l < ncurvars2; ++l )
+            {
+               SCIP_VAR* var2;
+               int varIndex2;
+
+               if( !SCIPisVarRelevant(curvars2[l]) )
+                  continue;
+
+               if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+                  var2 = SCIPvarGetProbvar(curvars2[l]);
+               else
+                  var2 = curvars2[l];
+
+               assert(var2 != NULL);
+               varIndex2 = SCIPvarGetProbindex(var2);
+               assert(varIndex2 >= 0);
+               assert(varIndex2 < this->nvars);
+
+               if(varIndex1 == varIndex2)
+               {
+                  SCIP_CALL( this->graph.addEdge(i, j) );
+                  this->graph.flush();
+
+                  continueloop = TRUE;
+                  break;
+               }
+            }
+            if(continueloop)
+               break;
+         }
+         SCIPfreeBufferArray(this->scip_, &curvars2);
+      }
+      SCIPfreeBufferArray(this->scip_, &curvars1);
+   }
+   this->graph.flush();
+
    return SCIP_OKAY;
 }
 

@@ -50,8 +50,9 @@ template <class T>
 HypercolGraph<T>::HypercolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-):  BipartiteGraph<T>(scip, w)
+):  MatrixGraph<T>(scip, w), graph(scip)
 {
+   this->graphiface = &graph;
    this->name = std::string("hypercol");
 }
 
@@ -83,18 +84,17 @@ SCIP_RETCODE HypercolGraph<T>::writeToFile(
    for( int i = 0; i < getNEdges(); ++i )
    {
       std::vector<int> neighbors = getHyperedgeNodes(i);
-      int nneighbors = Graph<T>::getNNeighbors(i);
+
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", Graph<T>::getWeight(i));
+         SCIPinfoMessage(this->scip_, file, "%d ", graph.getHyperedgeWeight(i));
       }
-      for( int j = 0; j < nneighbors; ++j )
+      for( size_t j = 0; j < neighbors.size(); ++j )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", neighbors[j]+1);
+         SCIPinfoMessage(this->scip_, file, "%d ",neighbors[j]+1);
       }
       SCIPinfoMessage(this->scip_, file, "\n");
    }
-
    if( !fclose(file) )
       return SCIP_OKAY;
    else
@@ -113,42 +113,114 @@ int HypercolGraph<T>::getNNodes()
    return this->nconss;
 }
 
-template <class T>
-std::vector<int> HypercolGraph<T>::getNeighbors(
-   int i
-)
-{
-   assert(i >= 0);
-   assert(i < this->nconss);
-   function f(this->nvars);
-   std::vector<int>::iterator it;
-   std::set<int> neighbors;
-   std::vector<int> immediateneighbors = Graph<T>::getNeighbors(i+this->nvars);
-   for( size_t j = 0; j < immediateneighbors.size(); ++j)
-   {
-      std::vector<int> alternateneighbor = Graph<T>::getNeighbors(immediateneighbors[j]);
-      neighbors.insert(alternateneighbor.begin(), alternateneighbor.end() );
-   }
-   std::vector<int> r(neighbors.size(), 0);
-   std::transform(neighbors.begin(), neighbors.end(), r.begin(), f);
-   it = std::remove(r.begin(), r.end(), i);
-
-   return std::vector<int>(r.begin(), it);
-}
 
 template <class T>
 std::vector<int> HypercolGraph<T>::getHyperedgeNodes(
    int i
 )
 {
-   function f(this->nvars);
    assert(i >= 0);
-   assert(i < this->nvars);
+   assert(i < getNEdges());
 
-   std::vector<int> neighbors = Graph<T>::getNeighbors(i);
-   std::transform(neighbors.begin(), neighbors.end(), neighbors.begin(), f);
+   std::vector<int> neighbors = graph.getHyperedgeNodes(i);
    return neighbors;
 }
+
+
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
+   SCIP_CONS**           conss,              /**< constraints for which graph should be created */
+   SCIP_VAR**            vars,               /**< variables for which graph should be created */
+   int                   nconss_,             /**< number of constraints */
+   int                   nvars_               /**< number of variables */
+   )
+{
+   int i;
+   int k;
+   SCIP_Bool success;
+   std::vector< std::vector<int> > hyperedges;
+
+   assert(conss != NULL);
+   assert(vars != NULL);
+   assert(nvars_ > 0);
+   assert(nconss_ > 0);
+
+   this->nvars = nvars_;
+   this->nconss = nconss_;
+
+   /* go through all variables */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(conss[i]);
+
+      this->graph.addNode(i, weight);
+   }
+
+   hyperedges.resize(this->nvars);
+
+   /* go through all constraints */
+   for( i = 0; i < this->nconss; ++i )
+   {
+      SCIP_VAR **curvars1;
+
+      int ncurvars1;
+      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+      assert(success);
+      if( ncurvars1 == 0 )
+         continue;
+
+      /*
+       * may work as is, as we are copying the constraint later regardless
+       * if there are variables in it or not
+       */
+      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+      assert(success);
+
+      /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
+      /** @todo Do more then one entry per variable actually work? */
+
+      for( k = 0; k < ncurvars1; ++k )
+      {
+         SCIP_VAR* var1;
+         int varIndex1;
+
+         if( !SCIPisVarRelevant(curvars1[k]) )
+            continue;
+
+         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            var1 = SCIPvarGetProbvar(curvars1[k]);
+         else
+            var1 = curvars1[k];
+
+         assert(var1 != NULL);
+         varIndex1 = SCIPvarGetProbindex(var1);
+         assert(varIndex1 >= 0);
+         assert(varIndex1 < this->nvars);
+
+         hyperedges[varIndex1].insert(hyperedges[varIndex1].end(), i);
+      }
+      SCIPfreeBufferArray(this->scip_, &curvars1);
+   }
+
+   /* go through all variables */
+   for( i = 0; i < this->nvars; ++i )
+   {
+      TCLIQUE_WEIGHT weight;
+
+      /* calculate weight of node */
+      weight = this->weights.calculate(vars[i]);
+
+      this->graph.addHyperedge(hyperedges[i], weight);
+   }
+   this->graph.flush();
+
+   return SCIP_OKAY;
+}
+
 
 } /* namespace gcg */
 
