@@ -520,7 +520,7 @@ SCIP_RETCODE solversInitsol(
 {
    int i;
 
-   if( pricerdata->npricingprobs == 0 )
+   if( pricerdata->npricingprobs == 0)
       return SCIP_OKAY;
 
    assert(scip != NULL);

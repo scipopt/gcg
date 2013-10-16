@@ -6,7 +6,6 @@
 #include "cons_decomp.h"
 #include "reader_blk.h"
 #include "reader_dec.h"
-#include "pub_decomp.h"
 
 #define SCIP_CALL_EXPECT(x) do { EXPECT_EQ(SCIP_OKAY, (x)); } while(FALSE)
 
@@ -254,51 +253,15 @@ TEST_F(GcgDecTest, ReadBlkTest) {
 }
 
 TEST_F(GcgDecTest, NoDecTest) {
+   SCIP_RESULT result;
    SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
    ASSERT_EQ(0, SCIPconshdlrDecompGetNDecdecomps(scip));
    SCIP_CALL_EXPECT( SCIPsetIntParam(scip, "presolving/maxrounds", 0) );
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 1) );
    SCIP_CALL_EXPECT( SCIPsetLongintParam(scip, "limits/nodes", 1L) );
 
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
    ASSERT_EQ(1, SCIPconshdlrDecompGetNDecdecomps(scip));
    ASSERT_NEAR(15.873333333333, SCIPgetLowerbound(scip), SCIPfeastol(scip));
-   SCIP_CALL_EXPECT( SCIPsetBoolParam(scip, "constraints/decomp/createbasicdecomp", 0) );
-}
-
-TEST_F(GcgDecTest, MasterSpecificationTest) {
-   SCIP_CONS** conss = NULL;
-   DEC_DECOMP* decomp = NULL;
-   int i = 0;
-   char name[SCIP_MAXSTRLEN];
-
-   SCIP_CALL_EXPECT( SCIPreadProb(scip, "check/instances/bpp/N1C3W1_A.lp", "lp") );
-   SCIP_CALL_EXPECT( SCIPallocMemoryArray(scip, &conss, 50) );
-   for( i = 0; i < 50; ++i )
-   {
-      SCIP_CONS* cons;
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "Allocate_%d", i+1);
-      cons = SCIPfindCons(scip, name);
-      ASSERT_TRUE(cons != NULL);
-      conss[i] = cons;
-   }
-
-   SCIP_CALL_EXPECT(DECcreateDecompFromMasterconss(scip, &decomp, conss, 50) );
-   ASSERT_TRUE(decomp != NULL);
-   ASSERT_EQ(50, DECdecompGetNBlocks(decomp));
-   ASSERT_EQ(50, DECdecompGetNLinkingconss(decomp));
-   ASSERT_EQ(0, DECdecompGetNLinkingvars(decomp));
-
-   ASSERT_TRUE(DECdecompGetNSubscipconss(decomp) != NULL);
-
-   for( i = 0; i < 50; ++i )
-   {
-      ASSERT_EQ(1, DECdecompGetNSubscipconss(decomp)[i]);
-      ASSERT_EQ(51, DECdecompGetNSubscipvars(decomp)[i]);
-   }
-
-   SCIPfreeMemoryArray(scip, &conss);
-
 }
 
 int main(int argc, char** argv) {
