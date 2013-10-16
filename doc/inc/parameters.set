@@ -1,4 +1,4 @@
-# SCIP version 3.0.1
+# SCIP version 3.0.2
 
 # branching score function ('s'um, 'p'roduct)
 # [type: char, range: {sp}, default: p]
@@ -388,7 +388,7 @@ misc/usesmalltables = FALSE
 # [type: int, range: [-1,2147483647], default: -1]
 misc/permutationseed = -1
 
-# should the statistics be reseted if the transformed problem is freed (in case of a benders decomposition this parameter should be set to FALSE)
+# should the statistics be reset if the transformed problem is freed (in case of a benders decomposition this parameter should be set to FALSE)
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 misc/resetstat = TRUE
 
@@ -3950,12 +3950,12 @@ separating/zerohalf/dynamiccuts = TRUE
 
 # maximal number of {0,1/2}-cuts determined per separation round
    #                      (this includes separated but inefficacious cuts)
-# [type: int, range: [0,2147483647], default: 100]
+# [type: int, range: [0,1000000], default: 100]
 separating/zerohalf/maxcutsfound = 100
 
 # maximal number of {0,1/2}-cuts determined per separation round in the root node
    #                      (this includes separated but inefficacious cuts)
-# [type: int, range: [0,2147483647], default: 1000]
+# [type: int, range: [0,1000000], default: 1000]
 separating/zerohalf/maxcutsfoundroot = 1000
 
 # separating cuts only if depth <= maxdepth (-1: unlimited)
@@ -4338,6 +4338,10 @@ constraints/decomp/delayprop = TRUE
 # should presolving method be delayed, if other presolvers found reductions?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 constraints/decomp/delaypresol = TRUE
+
+# indicates whether to create a decomposition with all constraints in the master if no other specified
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+constraints/decomp/createbasicdecomp = FALSE
 
 # flag to indicate whether detector <connected> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]

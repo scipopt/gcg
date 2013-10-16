@@ -41,7 +41,7 @@
  *
  *
  * <b> Latest Version </b>
- *  - The latest version is 1.1.0.
+ *  - The latest version is 1.1.1.
  *  - Get it \ref DOWNLOAD "here"
  *
  *
@@ -64,7 +64,7 @@
  * - \ref LICENSE      "Licensing information"
  * - \ref LITERATURE   "Papers dealing with GCG"
  *
- * @version  1.1.0
+ * @version  1.1.1
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
@@ -95,9 +95,10 @@
  *
  * GCG can be downloaded from two locations in two versions
  * - Standalone from the server at  RWTH Aachen
+ *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.1.tgz</a> (682K)
  *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (680K)
  *  - <a href="download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670K)
- * - Complete with SCIP in the SCIP Optimization Suite 3.0.0 from the Zuse Institute Berlin
+ * - Complete with SCIP in the SCIP Optimization Suite 3.0.2 from the Zuse Institute Berlin
  *  - <a href="http://scip.zib.de">http://scip.zib.de</a>
  *
  * You will need SCIP to compile GCG, which you can download <a href="http://scip.zib.de">here</a>.
