@@ -95,7 +95,7 @@
  *
  * GCG can be downloaded from two locations in two versions
  * - Standalone from the server at  RWTH Aachen
- *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.1.tgz</a> (682K)
+ *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.1.tgz</a> (666K)
  *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (680K)
  *  - <a href="download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670K)
  * - Complete with SCIP in the SCIP Optimization Suite 3.0.2 from the Zuse Institute Berlin
