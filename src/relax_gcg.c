@@ -183,7 +183,7 @@ SCIP_RETCODE setOriginalVarBlockNr(
       if( !GCGvarIsLinking(var) )
          relaxdata->nlinkingvars++;
 
-      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock) );
+      SCIP_CALL( GCGoriginalVarAddBlock(scip, var, newblock, relaxdata->npricingprobs) );
       assert(GCGisLinkingVarInBlock(var, newblock));
       assert(GCGvarIsLinking(var));
    }

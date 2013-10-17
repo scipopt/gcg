@@ -591,11 +591,11 @@ SCIP_CONS** GCGoriginalVarGetMasterconss(
 SCIP_RETCODE GCGoriginalVarAddBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
-   int                   newblock            /**< the new block the variable will be in */
+   int                   newblock,           /**< the new block the variable will be in */
+   int                   nblocks             /**< total number of pricing problems */
    )
 {
    SCIP_VARDATA* vardata;
-   int nblocks;
    int blocknr;
    assert(scip != NULL);
    assert(var != NULL);
@@ -604,7 +604,7 @@ SCIP_RETCODE GCGoriginalVarAddBlock(
    vardata = SCIPvarGetData(var);
    assert(vardata != NULL);
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   assert(nblocks >= 0);
    assert(newblock >= 0 && newblock < nblocks);
    blocknr = GCGvarGetBlock(var);
    /* the variable was only in one block so far, so set up the linking variable data */
