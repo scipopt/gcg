@@ -276,8 +276,4 @@ private:
    SCIP_RETCODE solversExitsol();
 };
 
-int ObjPricerGcg::threads;
-ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
-FarkasPricing* ObjPricerGcg::farkaspricing;
-Stabilization* ObjPricerGcg::stabilization;
 #endif

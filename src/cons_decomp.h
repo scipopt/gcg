@@ -52,14 +52,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** creates and captures a decomp constraint */
-extern
-SCIP_RETCODE SCIPcreateConsDecomp(
-   SCIP*                 scip,               /**< SCIP data structure                    */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name                /**< name of constraint                     */
-   );
-
 /** returns the decomposition structure **/
 extern
 DEC_DECOMP** SCIPconshdlrDecompGetDecdecomps(

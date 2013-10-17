@@ -180,6 +180,11 @@ struct SCIP_PricerData
 };
 
 
+int ObjPricerGcg::threads;
+ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
+FarkasPricing* ObjPricerGcg::farkaspricing;
+Stabilization* ObjPricerGcg::stabilization;
+
 /** information method for a parameter change of enablelpcutoff */
 static
 SCIP_DECL_PARAMCHGD(paramChgdEnablelpcutoff)

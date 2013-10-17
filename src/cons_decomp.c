@@ -313,37 +313,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    return SCIP_OKAY;
 }
 
-/** creates and captures a decomp constraint */
-SCIP_RETCODE SCIPcreateConsDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
-   const char*           name                /**< name of constraint */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSDATA* consdata;
-
-   SCIPerrorMessage("method of decomp constraint handler not implemented yet\n");
-   SCIPABORT(); /*lint --e{527} --e{715}*/
-
-   /* find the decomp constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   if( conshdlr == NULL )
-   {
-      SCIPerrorMessage("decomp constraint handler not found\n");
-      return SCIP_PLUGINNOTFOUND;
-   }
-
-   /* create constraint data */
-   consdata = NULL;
-
-   /* create constraint */
-   SCIP_CALL( SCIPcreateCons(scip, cons, name, conshdlr, consdata, FALSE, FALSE, FALSE, FALSE, FALSE,
-         FALSE, FALSE, FALSE, TRUE, FALSE) );
-
-   return SCIP_OKAY;
-}
-
 /** sets (and adds) the decomposition structure **/
 SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */
