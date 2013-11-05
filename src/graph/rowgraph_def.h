@@ -127,6 +127,9 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
    int l;
    SCIP_Bool success;
 
+   std::pair< int, int> edge;
+   std::vector< std::pair< int, int> > edges;
+
    assert(conss != NULL);
    assert(vars != NULL);
    assert(nvars_ > 0);
@@ -176,9 +179,15 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
          if( ncurvars2 == 0 )
             continue;
 
-         if(this->graph.edge(i, j))
-            continue;
+         edge = std::make_pair(MIN(i, j), MAX(i, j) );
 
+          /* check if edge was not already added to graph */
+          if(edges.end() != std::find(edges.begin(), edges.end(), edge) )
+             continue;
+
+          /*if(this->graph.edge(i, j))
+            continue;
+           */
          continueloop = FALSE;
          /*
           * may work as is, as we are copying the constraint later regardless
@@ -231,7 +240,13 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
                if(varIndex1 == varIndex2)
                {
                   SCIP_CALL( this->graph.addEdge(i, j) );
-                  this->graph.flush();
+
+                  edges.push_back(edge);
+                  std::sort(edges.begin(), edges.end());
+
+                  /*
+                   * this->graph.flush();
+                   */
 
                   continueloop = TRUE;
                   break;

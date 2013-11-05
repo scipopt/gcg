@@ -38,6 +38,8 @@
 
 #include "columngraph.h"
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 namespace gcg {
 
@@ -204,6 +206,7 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
    return SCIP_OKAY;
 }
 
+
 template <class T>
 SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    SCIP_CONS**           conss,              /**< constraints for which graph should be created */
@@ -216,6 +219,8 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    int j;
    int k;
    SCIP_Bool success;
+   std::pair< int, int> edge;
+   std::vector< std::pair< int, int> > edges;
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -224,6 +229,8 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
 
    this->nvars = nvars_;
    this->nconss = nconss_;
+
+
 
    /* go through all variables */
    for( i = 0; i < this->nvars; ++i )
@@ -294,11 +301,23 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             assert(varIndex2 >= 0);
             assert(varIndex2 < this->nvars);
 
+            edge = std::make_pair(MIN(varIndex1, varIndex2), MAX(varIndex1, varIndex2) );
+
+            /* check if edge was not already added to graph */
+            if(edges.end() == std::find(edges.begin(), edges.end(), edge) )
+            {
+
+               SCIP_CALL( this->graph.addEdge(varIndex1, varIndex2) );
+               edges.push_back(edge);
+               std::sort(edges.begin(), edges.end());
+            }
+            /*
             if(!(this->graph.edge(varIndex1, varIndex2)))
             {
                SCIP_CALL( this->graph.addEdge(varIndex1, varIndex2) );
                this->graph.flush();
             }
+            */
          }
       }
       SCIPfreeBufferArray(this->scip_, &curvars);
