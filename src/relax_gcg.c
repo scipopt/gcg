@@ -1569,7 +1569,7 @@ SCIP_RETCODE createMaster(
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
 
    enableppcuts = FALSE;
-   //SCIPgetBoolParam(scip, "sepa/base/enableppcuts", &enableppcuts);
+   SCIPgetBoolParam(scip, "sepa/base/enableppcuts", &enableppcuts);
 
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )

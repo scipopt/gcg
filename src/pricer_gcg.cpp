@@ -55,7 +55,7 @@
 #include "pricer_gcg.h"
 #include "objpricer_gcg.h"
 #include "sepa_master.h"
-//#include "sepa_base.h"
+#include "sepa_base.h"
 
 #include "relax_gcg.h"
 #include "struct_solver.h"
@@ -2202,7 +2202,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
 
    enableppcuts = FALSE;
-   //SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
+   SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
    /** add pool cuts to sepa base */
    if(enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_))
    {
@@ -2503,7 +2503,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
 
    enableppcuts = FALSE;
-   //SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
+   SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
    /** add pool cuts to sepa base */
    if(enableppcuts && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_))
    {
@@ -2523,8 +2523,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                   SCIP_ROW* row;
                   row = SCIPcutGetRow(cuts[i]);
 
-                  //if(!SCIProwIsLocal(row) && SCIProwGetRank(row) >=1)
-                     //SCIP_CALL( GCGsepaBaseAddPricingCut(scip_, j, row) );
+                  if(!SCIProwIsLocal(row) && SCIProwGetRank(row) >=1)
+                     SCIP_CALL( GCGsepaBaseAddPricingCut(scip_, j, row) );
                }
             }
       }
