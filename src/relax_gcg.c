@@ -920,7 +920,8 @@ SCIP_RETCODE checkIdenticalBlocks(
 static
 SCIP_RETCODE setPricingProblemParameters(
    SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_base */
    )
 {
    assert(scip != NULL);
@@ -975,7 +976,20 @@ SCIP_RETCODE setPricingProblemParameters(
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
 
+   /* jonas' stuff */
+   if(enableppcuts)
+   {
+      int pscost;
+      int prop;
 
+      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
+      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
+      //SCIPinfoMessage(scip, NULL, "pscost = %d, prop = %d\n", pscost, prop);
+
+      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
+      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+   }
    return SCIP_OKAY;
 }
 
@@ -1315,7 +1329,8 @@ static
 SCIP_RETCODE createPricingProblem(
    SCIP**                pricingscip,        /**< Pricing scip data structure */
    const char*           name,               /**< name of the pricing problem */
-   int                   clocktype           /**< clocktype to use in the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_base */
    )
 {
    assert(pricingscip != NULL);
@@ -1323,7 +1338,7 @@ SCIP_RETCODE createPricingProblem(
 
    SCIP_CALL( SCIPcreate(pricingscip) );
    SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype) );
+   SCIP_CALL( setPricingProblemParameters(*pricingscip, clocktype, enableppcuts) );
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1522,6 +1537,7 @@ SCIP_RETCODE createMaster(
 {
    int npricingprobs;
    SCIP_HASHMAP** hashorig2pricingvar;
+   SCIP_Bool enableppcuts;
    char name[SCIP_MAXSTRLEN];
    int clocktype;
    int i;
@@ -1552,13 +1568,16 @@ SCIP_RETCODE createMaster(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "master_%s", SCIPgetProbName(scip));
    SCIP_CALL( createMasterProblem(relaxdata->masterprob, name, clocktype) );
 
+   enableppcuts = FALSE;
+   //SCIPgetBoolParam(scip, "sepa/base/enableppcuts", &enableppcuts);
+
    /* create the pricing problems */
    for( i = 0; i < npricingprobs; i++ )
    {
       relaxdata->convconss[i] = NULL;
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pricing_block_%d", i);
 
-      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype) );
+      SCIP_CALL( createPricingProblem(&(relaxdata->pricingprobs[i]), name, clocktype, enableppcuts) );
       SCIP_CALL( SCIPhashmapCreate(&(hashorig2pricingvar[i]), SCIPblkmem(scip), SCIPgetNVars(scip)) ); /*lint !e613*/
    }
 

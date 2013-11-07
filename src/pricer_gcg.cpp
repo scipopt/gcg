@@ -55,6 +55,7 @@
 #include "pricer_gcg.h"
 #include "objpricer_gcg.h"
 #include "sepa_master.h"
+//#include "sepa_base.h"
 
 #include "relax_gcg.h"
 #include "struct_solver.h"
@@ -2176,6 +2177,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool pricinghaserror;
    SCIP_Bool stabilized;
    SCIP_Bool added;
+   SCIP_Bool enableppcuts;
    SCIP_STATUS* pricingstatus = NULL;
    int solvedmips;
    int successfulmips;
@@ -2198,6 +2200,20 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    assert(pnfoundvars != NULL);
 
    SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
+
+   enableppcuts = FALSE;
+   //SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
+   /** add pool cuts to sepa base */
+   if(enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_))
+   {
+      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      {
+         SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "branching/pscost/priority", 2000) );
+         SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "propagating/maxroundsroot", 1000) );
+         SCIP_CALL( SCIPsetPresolving(pricerdata->pricingprobs[i], SCIP_PARAMSETTING_DEFAULT, TRUE) );
+      }
+   }
+
 
    solvedmips = 0;
    successfulmips = 0;
@@ -2486,6 +2502,35 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIPfreeBlockMemoryArray(scip_, &pricingstatus, pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs);
 
+   enableppcuts = FALSE;
+   //SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
+   /** add pool cuts to sepa base */
+   if(enableppcuts && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_))
+   {
+      for( j = 0; j < pricerdata->npricingprobs; j++ )
+      {
+         if( pricerdata->pricingprobs[j] != NULL
+            && SCIPgetStage(pricerdata->pricingprobs[j]) >= SCIP_STAGE_SOLVING)
+            {
+               SCIP_CUT** cuts;
+               int ncuts;
+
+               ncuts = SCIPgetNPoolCuts(pricerdata->pricingprobs[j]);
+               cuts = SCIPgetPoolCuts(pricerdata->pricingprobs[j]);
+
+               for(i = 0; i < ncuts; ++i)
+               {
+                  SCIP_ROW* row;
+                  row = SCIPcutGetRow(cuts[i]);
+
+                  //if(!SCIProwIsLocal(row) && SCIProwGetRank(row) >=1)
+                     //SCIP_CALL( GCGsepaBaseAddPricingCut(scip_, j, row) );
+               }
+            }
+      }
+   }
+
+
    /* free the pricingproblems if they exist and need to be freed */
    SCIP_CALL( freePricingProblems() );
    *pnfoundvars = nfoundvars;
@@ -2508,6 +2553,41 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    return SCIP_OKAY;
 }
+
+/** set pricing objectives */
+extern
+SCIP_RETCODE GCGsetPricingObjs(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
+)
+{
+  ObjPricerGcg* pricer;
+  SCIP_Bool stabilizationtmp;
+  int i;
+
+  assert(scip != NULL);
+
+  pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+  assert(pricer != NULL);
+
+  stabilizationtmp = pricer->pricerdata->stabilization;
+
+  pricer->pricerdata->stabilization = FALSE;
+
+  pricer->setPricingObjs(pricer->getReducedCostPricing());
+
+  if(dualsolconv != NULL)
+  {
+     for(i = 0; i < pricer->pricerdata->npricingprobs; ++i)
+     {
+        dualsolconv[i] = pricer->pricerdata->dualsolconv[i];
+     }
+  }
+  pricer->pricerdata->stabilization = stabilizationtmp;
+
+  return SCIP_OKAY;
+}
+
 
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
 SCIP_RETCODE ObjPricerGcg::priceNewVariables(

@@ -67,6 +67,18 @@ struct SCIP_SepaData
    SCIP_ROW**            origcuts;           /**< cuts in the original problem */
    int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
+   SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
+   int                   ncgcut;             /**< number of cgcuts */
+   int                   nclique;            /**< number of clique cuts */
+   int                   ncmir;              /**< number of cmir cuts */
+   int                   nflowcover;         /**< number of flowcover cuts */
+   int                   ngom;               /**< number of gomory cuts */
+   int                   nimplbd;            /**< number of implied bounds cuts */
+   int                   nmcf;               /**< number of mcf cuts */
+   int                   noddcycle;          /**< number of oddcycle cuts */
+   int                   nscg;               /**< number of strong cg cuts */
+   int                   nzerohalf;           /**< number of zero half cuts */
+
 };
 
 
@@ -120,6 +132,17 @@ SCIP_DECL_SEPAFREE(sepaFreeMaster)
    SCIP_SEPADATA* sepadata;
 
    sepadata = SCIPsepaGetData(sepa);
+
+   SCIPinfoMessage(scip, NULL, "SepaMaster      mCuts\n");
+   SCIPinfoMessage(scip, NULL, "clique         %6d\n", sepadata->nclique);
+   SCIPinfoMessage(scip, NULL, "cmir           %6d\n", sepadata->ncmir);
+   SCIPinfoMessage(scip, NULL, "flowcover      %6d\n", sepadata->nflowcover);
+   SCIPinfoMessage(scip, NULL, "gomory         %6d\n", sepadata->ngom);
+   SCIPinfoMessage(scip, NULL, "impliedbounds  %6d\n", sepadata->nimplbd);
+   SCIPinfoMessage(scip, NULL, "mcf            %6d\n", sepadata->nmcf);
+   SCIPinfoMessage(scip, NULL, "oddcycle       %6d\n", sepadata->noddcycle);
+   SCIPinfoMessage(scip, NULL, "strongcg       %6d\n", sepadata->nscg);
+   SCIPinfoMessage(scip, NULL, "zerohalf       %6d\n", sepadata->nzerohalf);
 
    SCIPfreeMemoryArray(scip, &(sepadata->origcuts));
    SCIPfreeMemoryArray(scip, &(sepadata->mastercuts));
@@ -185,6 +208,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
 
+   SCIP_SEPA** sepas;
+   int nsepas;
+
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
    int nmastervars;
@@ -210,6 +236,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    *result = SCIP_DIDNOTFIND;
 
+   if( !sepadata->enable )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIPdebugMessage("master LP not solved to optimality, do no separation!\n");
@@ -217,6 +249,28 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    }
 
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+
+   SCIP_CALL( SCIPsetSeparating(origscip, SCIP_PARAMSETTING_DEFAULT, TRUE) );
+
+   sepas = SCIPgetSepas(origscip);
+   nsepas = SCIPgetNSepas(origscip);
+
+   for(i = 0; i < nsepas; ++i)
+   {
+      const char* sepaname;
+      char paramname[SCIP_MAXSTRLEN];
+
+      sepaname = SCIPsepaGetName(sepas[i]);
+
+      /* get frequency parameter of separator */
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "separating/%s/freq", sepaname);
+
+      if( strcmp(sepaname, "intobj") == 0 || strcmp(sepaname, "closecuts") == 0
+         || (strcmp(sepaname, "cgmip") == 0))
+         SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
+      else
+         SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
+   }
 
    SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
          FALSE, FALSE, &delayed, &cutoff) );
@@ -231,6 +285,50 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
    for( i = 0; i < ncuts; i++ )
    {
+      SCIP_ROW* origcut;
+      origcut = cuts[i];
+
+      if(strncmp("cgcut", SCIProwGetName(origcut), 5) == 0)
+      {
+         ++(sepadata->ncgcut);
+      }
+      else if(strncmp("clique", SCIProwGetName(origcut), 6) == 0)
+      {
+         ++(sepadata->nclique);
+      }
+      else if(strncmp("cmir", SCIProwGetName(origcut), 4) == 0)
+      {
+         ++(sepadata->ncmir);
+      }
+      else if(strncmp("flowcover", SCIProwGetName(origcut), 9) == 0)
+      {
+         ++(sepadata->nflowcover);
+      }
+      else if(strncmp("gom", SCIProwGetName(origcut), 3) == 0)
+      {
+         ++(sepadata->ngom);
+      }
+      else if(strncmp("implbd", SCIProwGetName(origcut), 6) == 0)
+      {
+         ++(sepadata->nimplbd);
+      }
+      else if(strncmp("mcf", SCIProwGetName(origcut), 3) == 0)
+      {
+         ++(sepadata->nmcf);
+      }
+      else if(strncmp("oddcycle", SCIProwGetName(origcut), 8) == 0)
+      {
+         ++(sepadata->noddcycle);
+      }
+      else if(strncmp("scg", SCIProwGetName(origcut), 3) == 0)
+      {
+         ++(sepadata->nscg);
+      }
+      else if(strncmp("zerohalf", SCIProwGetName(origcut), 8) == 0)
+      {
+         ++(sepadata->nzerohalf);
+      }
+
       sepadata->origcuts[norigcuts] = cuts[i];
       SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[norigcuts]) );
       norigcuts++;
@@ -322,6 +420,16 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
    sepadata->maxcuts = STARTMAXCUTS;
    sepadata->ncuts = 0;
+   sepadata->ncgcut = 0;
+   sepadata->nclique = 0;
+   sepadata->ncmir = 0;
+   sepadata->nflowcover = 0;
+   sepadata->ngom = 0;
+   sepadata->nimplbd = 0;
+   sepadata->nmcf = 0;
+   sepadata->noddcycle = 0;
+   sepadata->nscg = 0;
+   sepadata->nzerohalf = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
@@ -329,6 +437,9 @@ SCIP_RETCODE SCIPincludeSepaMaster(
          sepaInitsolMaster, sepaExitsolMaster,
          sepaExeclpMaster, sepaExecsolMaster,
          sepadata) );
+
+   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/master/enable", "enable master separator",
+         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
 
    return SCIP_OKAY;
 }
@@ -389,4 +500,35 @@ SCIP_ROW** GCGsepaGetMastercuts(
    assert(sepadata != NULL);
 
    return sepadata->mastercuts;
+}
+
+/** adds given original and master cut to master separator data */
+extern
+SCIP_RETCODE GCGsepaAddMastercuts(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
+   SCIP_ROW*            mastercut           /**< pointer to master cut */
+)
+{
+   SCIP_SEPA* sepa;
+   SCIP_SEPADATA* sepadata;
+
+   assert(scip != NULL);
+
+   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   assert(sepa != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + 1) );
+
+   sepadata->origcuts[sepadata->ncuts] = origcut;
+   sepadata->mastercuts[sepadata->ncuts] = mastercut;
+   SCIP_CALL( SCIPcaptureRow(scip, sepadata->origcuts[sepadata->ncuts]) );
+   SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->ncuts]) );
+
+   ++(sepadata->ncuts);
+
+   return SCIP_OKAY;
 }
