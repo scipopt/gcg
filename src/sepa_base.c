@@ -1941,7 +1941,7 @@ SCIP_RETCODE SCIPincludeSepaBase(
 
    /* add base separator parameters */
    SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enable", "is base separator enabled?",
-         &(sepadata->enable), FALSE, TRUE, NULL, NULL);
+         &(sepadata->enable), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
