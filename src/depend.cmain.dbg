@@ -30,7 +30,7 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/scipdefplugins.h \
@@ -56,8 +56,8 @@ $(OBJDIR)/main.o: src/main.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \

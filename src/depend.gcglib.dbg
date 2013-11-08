@@ -31,7 +31,7 @@ $(LIBOBJDIR)/reader_blk.o: src/reader_blk.c src/reader_blk.h lib/scip/src/scip/s
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/relax_gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/pub_gcgvar.h src/pub_decomp.h src/type_detector.h \
@@ -69,7 +69,7 @@ $(LIBOBJDIR)/reader_dec.o: src/reader_dec.c src/reader_dec.h lib/scip/src/scip/s
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/type_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h src/cons_decomp.h \
@@ -108,7 +108,7 @@ $(LIBOBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/type_branchgcg.h \
  lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h src/pub_decomp.h \
@@ -146,7 +146,7 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/scip/debug.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bounddisjunction.h \
@@ -246,7 +246,7 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -271,8 +271,8 @@ $(LIBOBJDIR)/relax_gcg.o: src/relax_gcg.c lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -361,7 +361,7 @@ $(LIBOBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
@@ -401,7 +401,7 @@ $(LIBOBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
@@ -450,7 +450,7 @@ $(LIBOBJDIR)/branch_generic.o: src/branch_generic.c src/branch_generic.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_branchgcg.h src/relax_gcg.h src/type_decomp.h \
@@ -498,7 +498,7 @@ $(LIBOBJDIR)/cons_origbranch.o: src/cons_origbranch.c src/cons_origbranch.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_branchgcg.h lib/scip/src/scip/cons_linear.h src/relax_gcg.h \
@@ -545,7 +545,7 @@ $(LIBOBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c src/cons_masterbranch.
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_branchgcg.h src/branch_generic.h \
@@ -584,7 +584,7 @@ $(LIBOBJDIR)/cons_integralorig.o: src/cons_integralorig.c src/cons_integralorig.
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/pricer_gcg.h src/type_solver.h src/cons_masterbranch.h \
@@ -623,7 +623,7 @@ $(LIBOBJDIR)/heur_gcgcoefdiving.o: src/heur_gcgcoefdiving.c src/heur_gcgcoefdivi
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/heur_origdiving.h src/type_origdiving.h src/gcg.h \
@@ -662,7 +662,7 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -690,8 +690,8 @@ $(LIBOBJDIR)/heur_gcgdins.o: src/heur_gcgdins.c src/heur_gcgdins.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -774,7 +774,7 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
@@ -801,8 +801,8 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -885,7 +885,7 @@ $(LIBOBJDIR)/heur_gcgfracdiving.o: src/heur_gcgfracdiving.c src/heur_gcgfracdivi
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/heur_origdiving.h src/type_origdiving.h src/gcg.h \
@@ -925,7 +925,7 @@ $(LIBOBJDIR)/heur_gcgguideddiving.o: src/heur_gcgguideddiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_origdiving.h src/type_origdiving.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -964,7 +964,7 @@ $(LIBOBJDIR)/heur_gcglinesdiving.o: src/heur_gcglinesdiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_origdiving.h src/type_origdiving.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1003,7 +1003,7 @@ $(LIBOBJDIR)/heur_gcgpscostdiving.o: src/heur_gcgpscostdiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_origdiving.h src/type_origdiving.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1041,7 +1041,7 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
@@ -1068,8 +1068,8 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1152,7 +1152,7 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
@@ -1179,8 +1179,8 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1263,7 +1263,7 @@ $(LIBOBJDIR)/heur_gcgrounding.o: src/heur_gcgrounding.c src/heur_gcgrounding.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
@@ -1301,7 +1301,7 @@ $(LIBOBJDIR)/heur_gcgsimplerounding.o: src/heur_gcgsimplerounding.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/relax_gcg.h src/type_branchgcg.h \
  src/type_decomp.h
@@ -1338,7 +1338,7 @@ $(LIBOBJDIR)/heur_gcgshifting.o: src/heur_gcgshifting.c src/heur_gcgshifting.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
@@ -1376,7 +1376,7 @@ $(LIBOBJDIR)/heur_gcgveclendiving.o: src/heur_gcgveclendiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_origdiving.h src/type_origdiving.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1414,7 +1414,7 @@ $(LIBOBJDIR)/heur_gcgzirounding.o: src/heur_gcgzirounding.c src/heur_gcgziroundi
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
@@ -1451,7 +1451,7 @@ $(LIBOBJDIR)/heur_greedycolsel.o: src/heur_greedycolsel.c src/heur_greedycolsel.
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1490,7 +1490,7 @@ $(LIBOBJDIR)/heur_masterdiving.o: src/heur_masterdiving.c src/heur_masterdiving.
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_masterdiving.h src/pricer_gcg.h src/type_solver.h \
@@ -1529,7 +1529,7 @@ $(LIBOBJDIR)/heur_mastercoefdiving.o: src/heur_mastercoefdiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_masterdiving.h \
  src/type_masterdiving.h
@@ -1567,7 +1567,7 @@ $(LIBOBJDIR)/heur_masterfracdiving.o: src/heur_masterfracdiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_masterdiving.h \
  src/type_masterdiving.h
@@ -1605,7 +1605,7 @@ $(LIBOBJDIR)/heur_masterlinesdiving.o: src/heur_masterlinesdiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_masterdiving.h \
  src/type_masterdiving.h
@@ -1643,7 +1643,7 @@ $(LIBOBJDIR)/heur_mastervecldiving.o: src/heur_mastervecldiving.c \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/heur_masterdiving.h \
  src/type_masterdiving.h
@@ -1680,7 +1680,7 @@ $(LIBOBJDIR)/heur_origdiving.o: src/heur_origdiving.c src/heur_origdiving.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_origdiving.h src/cons_origbranch.h src/type_branchgcg.h \
@@ -1718,7 +1718,7 @@ $(LIBOBJDIR)/heur_relaxcolsel.o: src/heur_relaxcolsel.c src/heur_relaxcolsel.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1757,7 +1757,7 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1785,8 +1785,8 @@ $(LIBOBJDIR)/heur_restmaster.o: src/heur_restmaster.c src/heur_restmaster.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1869,7 +1869,7 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -1897,8 +1897,8 @@ $(LIBOBJDIR)/heur_xpcrossover.o: src/heur_xpcrossover.c src/heur_xpcrossover.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -1981,7 +1981,7 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -2009,8 +2009,8 @@ $(LIBOBJDIR)/heur_xprins.o: src/heur_xprins.c src/heur_xprins.h \
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2093,7 +2093,7 @@ $(LIBOBJDIR)/branch_empty.o: src/branch_empty.c src/branch_empty.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
@@ -2138,7 +2138,7 @@ $(LIBOBJDIR)/branch_relpsprob.o: src/branch_relpsprob.c src/branch_relpsprob.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
@@ -2185,7 +2185,7 @@ $(LIBOBJDIR)/masterplugins.o: src/masterplugins.c src/masterplugins.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/cons_and.h lib/scip/src/scip/cons_bounddisjunction.h \
@@ -2265,7 +2265,7 @@ $(LIBOBJDIR)/nodesel_master.o: src/nodesel_master.c src/nodesel_master.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_origbranch.h src/type_branchgcg.h src/cons_masterbranch.h \
@@ -2303,7 +2303,7 @@ $(LIBOBJDIR)/sepa_master.o: src/sepa_master.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/scip/lp.h \
  lib/scip/src/scip/struct_lp.h src/sepa_master.h src/gcg.h \
@@ -2343,7 +2343,7 @@ $(LIBOBJDIR)/disp_gcg.o: src/disp_gcg.c src/disp_gcg.h lib/scip/src/scip/scip.h 
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
@@ -2381,7 +2381,7 @@ $(LIBOBJDIR)/disp_master.o: src/disp_master.c src/disp_master.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/disp_default.h src/pricer_gcg.h src/type_solver.h
@@ -2418,7 +2418,7 @@ $(LIBOBJDIR)/dialog_gcg.o: src/dialog_gcg.c lib/scip/src/scip/pub_dialog.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/gcg.h src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
@@ -2458,7 +2458,7 @@ $(LIBOBJDIR)/dialog_master.o: src/dialog_master.c lib/scip/src/scip/dialog_defau
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/dialog_master.h
@@ -2495,7 +2495,7 @@ $(LIBOBJDIR)/event_bestsol.o: src/event_bestsol.c src/event_bestsol.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h
 $(LIBOBJDIR)/event_solvingstats.o: src/event_solvingstats.c src/event_solvingstats.h \
@@ -2531,7 +2531,7 @@ $(LIBOBJDIR)/event_solvingstats.o: src/event_solvingstats.c src/event_solvingsta
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/pricer_gcg.h src/type_solver.h
@@ -2568,7 +2568,7 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/scip/cons_linear.h \
  lib/scip/src/scip/cons_knapsack.h src/gcg.h src/type_branchgcg.h \
@@ -2596,8 +2596,8 @@ $(LIBOBJDIR)/solver_mip.o: src/solver_mip.c src/solver_mip.h lib/scip/src/scip/s
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -2680,7 +2680,7 @@ $(LIBOBJDIR)/solver_knapsack.o: src/solver_knapsack.c src/solver_knapsack.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/cons_linear.h lib/scip/src/scip/cons_knapsack.h \
@@ -2719,7 +2719,7 @@ $(LIBOBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_detector.h src/type_decomp.h src/dec_connected.h \
@@ -2759,7 +2759,7 @@ $(LIBOBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/gcg.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_branchgcg.h src/type_detector.h src/type_solver.h \
@@ -2798,7 +2798,7 @@ $(LIBOBJDIR)/dec_connected.o: src/dec_connected.c src/dec_connected.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
@@ -2836,7 +2836,7 @@ $(LIBOBJDIR)/dec_cutpacking.o: src/dec_cutpacking.c src/dec_cutpacking.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
@@ -2875,7 +2875,7 @@ $(LIBOBJDIR)/dec_staircase.o: src/dec_staircase.c src/dec_staircase.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
@@ -2914,7 +2914,7 @@ $(LIBOBJDIR)/dec_random.o: src/dec_random.c src/dec_random.h lib/scip/src/scip/s
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/cons_decomp.h src/type_detector.h \
  src/type_decomp.h src/pub_decomp.h lib/scip/src/scip/clock.h
@@ -2952,7 +2952,7 @@ $(LIBOBJDIR)/reader_gp.o: src/reader_gp.c src/reader_gp.h lib/scip/src/scip/scip
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/type_decomp.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/struct_decomp.h src/type_detector.h \
@@ -2990,7 +2990,7 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/scip/cons_setppc.h \
  lib/scip/src/scip/scipdefplugins.h \
@@ -3016,8 +3016,8 @@ $(LIBOBJDIR)/scip_misc.o: src/scip_misc.c src/scip_misc.h lib/scip/src/scip/scip
  lib/scip/src/scip/disp_default.h lib/scip/src/scip/heur_actconsdiving.h \
  lib/scip/src/scip/heur_clique.h lib/scip/src/scip/heur_coefdiving.h \
  lib/scip/src/scip/heur_crossover.h lib/scip/src/scip/heur_dins.h \
- lib/scip/src/scip/heur_feaspump.h lib/scip/src/scip/heur_fixandinfer.h \
- lib/scip/src/scip/heur_fracdiving.h \
+ lib/scip/src/scip/heur_dualval.h lib/scip/src/scip/heur_feaspump.h \
+ lib/scip/src/scip/heur_fixandinfer.h lib/scip/src/scip/heur_fracdiving.h \
  lib/scip/src/scip/heur_guideddiving.h lib/scip/src/scip/heur_zeroobj.h \
  lib/scip/src/scip/heur_intdiving.h lib/scip/src/scip/heur_intshifting.h \
  lib/scip/src/scip/heur_linesearchdiving.h \
@@ -3100,7 +3100,7 @@ $(LIBOBJDIR)/misc.o: src/misc.c src/gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/type_branchgcg.h src/type_decomp.h \
  src/type_detector.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h \
@@ -3138,7 +3138,7 @@ $(LIBOBJDIR)/gcgvar.o: src/gcgvar.c src/gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/type_branchgcg.h src/type_decomp.h \
  src/type_detector.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h \
@@ -3176,7 +3176,7 @@ $(LIBOBJDIR)/stat.o: src/stat.c lib/scip/src/scip/scip.h lib/scip/src/scip/def.h
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/stat.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
@@ -3215,7 +3215,7 @@ $(LIBOBJDIR)/solver_cplex.o: src/solver_cplex.c lib/scip/src/scip/scip.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/scip_misc.h \
  lib/scip/src/scip/cons_setppc.h src/type_solver.h src/pricer_gcg.h \
@@ -3254,7 +3254,7 @@ $(LIBOBJDIR)/pricer_gcg.o: src/pricer_gcg.cpp lib/scip/src/scip/scip.h \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/gcg.h src/type_branchgcg.h \
  src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
@@ -3309,7 +3309,7 @@ $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.cpp src/dec_arrowheur.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/type_decomp.h src/cons_decomp.h src/type_detector.h \
@@ -3365,7 +3365,7 @@ $(LIBOBJDIR)/dec_borderheur.o: src/dec_borderheur.cpp src/dec_borderheur.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
@@ -3420,7 +3420,7 @@ $(LIBOBJDIR)/dec_stairheur.o: src/dec_stairheur.cpp src/dec_stairheur.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h \
@@ -3459,7 +3459,7 @@ $(LIBOBJDIR)/dec_colors.o: src/dec_colors.cpp src/dec_colors.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  src/cons_decomp.h src/type_detector.h src/type_decomp.h src/scip_misc.h \
@@ -3497,7 +3497,7 @@ $(LIBOBJDIR)/class_pricingtype.o: src/class_pricingtype.cpp lib/scip/src/scip/sc
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h src/class_pricingtype.h \
  lib/scip/src/objscip/objscip.h lib/scip/src/objscip/objbranchrule.h \
@@ -3551,7 +3551,7 @@ $(LIBOBJDIR)/class_stabilization.o: src/class_stabilization.cpp \
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
@@ -3601,7 +3601,7 @@ $(LIBOBJDIR)/objdialog.o: src/objdialog.cpp src/objdialog.h lib/scip/src/scip/sc
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h
@@ -3638,7 +3638,7 @@ $(LIBOBJDIR)/dialog_graph.o: src/dialog_graph.cpp src/dialog_graph.h src/objdial
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/objscip/objcloneable.h \
@@ -3700,7 +3700,7 @@ $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h src/relax_gcg.h \
@@ -3739,7 +3739,7 @@ $(LIBOBJDIR)/graph/weights.o: src/graph/weights.cpp src/graph/weights.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/objscip/objcloneable.h \
@@ -3789,7 +3789,7 @@ $(LIBOBJDIR)/graph/inst.o: src/graph/inst.cpp src/graph/bipartitegraph_def.h \
  lib/scip/src/scip/pub_reader.h lib/scip/src/scip/pub_relax.h \
  lib/scip/src/scip/pub_sepa.h lib/scip/src/scip/pub_prop.h \
  lib/scip/src/scip/pub_sol.h lib/scip/src/scip/pub_tree.h \
- lib/scip/src/scip/pub_var.h lib/scip/src/scip/lpi.h \
+ lib/scip/src/scip/pub_var.h lib/scip/src/lpi/lpi.h \
  lib/scip/src/nlpi/pub_expr.h lib/scip/src/scip/intervalarith.h \
  lib/scip/src/nlpi/type_exprinterpret.h lib/scip/src/scip/presolve.h \
  lib/scip/src/objscip/objcloneable.h \
@@ -3850,7 +3850,7 @@ $(LIBOBJDIR)/graph/graph_tclique.o: src/graph/graph_tclique.cpp src/graph/graph_
  lib/scip/src/scip/pub_relax.h lib/scip/src/scip/pub_sepa.h \
  lib/scip/src/scip/pub_prop.h lib/scip/src/scip/pub_sol.h \
  lib/scip/src/scip/pub_tree.h lib/scip/src/scip/pub_var.h \
- lib/scip/src/scip/lpi.h lib/scip/src/nlpi/pub_expr.h \
+ lib/scip/src/lpi/lpi.h lib/scip/src/nlpi/pub_expr.h \
  lib/scip/src/scip/intervalarith.h lib/scip/src/nlpi/type_exprinterpret.h \
  lib/scip/src/scip/presolve.h lib/scip/src/objscip/objcloneable.h \
  lib/scip/src/objscip/type_objcloneable.h \
