@@ -1,28 +1,58 @@
-/*
- * dec_isomorph.cpp
- *
- *  Created on: Jul 1, 2013
- *      Author: peters
- */
-//#define SCIP_DEBUG
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*                  This file is part of the program                         */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
+/*         SCIP --- Solving Constraint Integer Programs                      */
+/*                                                                           */
+/* Copyright (C) 2010-2013 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/* This program is free software; you can redistribute it and/or             */
+/* modify it under the terms of the GNU Lesser General Public License        */
+/* as published by the Free Software Foundation; either version 3            */
+/* of the License, or (at your option) any later version.                    */
+/*                                                                           */
+/* This program is distributed in the hope that it will be useful,           */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/* GNU Lesser General Public License for more details.                       */
+/*                                                                           */
+/* You should have received a copy of the GNU Lesser General Public License  */
+/* along with this program; if not, write to the Free Software               */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <assert.h>
-#include <string.h>
+/**@file   dec_isomorphism.c
+ * @ingroup DETECTORS
+ * @brief  detector problems that can be aggregated
+ * @author Martin Bergner
+ * @author Daniel Peters
+ */
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+
+#include <cassert>
 
 #include "dec_isomorph.h"
+#include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
-#include "pub_decomp.h"
 
 
 /* constraint handler properties */
-#define DEC_DETECTORNAME         "isomorphism"    /**< name of detector */
+#define DEC_DETECTORNAME         "isomorphism" /**< name of detector */
 #define DEC_DESC                 "Detector for isomorphisms between subprobs" /**< description of detector*/
-#define DEC_PRIORITY             1500              /**< priority of the constraint handler for separation */
-#define DEC_DECCHAR              'I'            /**< display character of detector */
+#define DEC_PRIORITY             700         /**< priority of the constraint handler for separation */
+#define DEC_DECCHAR              'I'         /**< display character of detector */
 
-#define DEC_ENABLED              TRUE           /**< should the detection be enabled */
-#define DEFAULT_SETPPCINMASTER   TRUE           /**< should the extended structure be detected */
+#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEFAULT_SETPPCINMASTER   TRUE        /**< should the extended structure be detected */
+#define DEC_SKIP                 TRUE        /**< should the detector be skipped if others found decompositions */
+
 /*
  * Data structures
  */
@@ -202,21 +232,6 @@ SCIP_Real struct_coef::getVal()
    return this->val;
 }
 
-//void struct_hook::setBool( SCIP_Bool aut_ )
-//{
-//   aut = aut_;
-//}
-//
-//SCIP_Bool struct_hook::getBool()
-//{
-//   return this->aut;
-//}
-//
-//int struct_hook::getNNodes()
-//{
-//   return this->n;
-//}
-
 SCIP* struct_hook::getScip()
 {
    return this->scip;
@@ -287,16 +302,6 @@ void struct_colorinformation::insert(
 
 }
 
-//int struct_colorinformation::getLenVar()
-//{
-//   return lenvarsarray;
-//}
-//
-//int struct_colorinformation::getLenCons()
-//{
-//   return lenconssarray;
-//}
-
 int struct_colorinformation::get(
    AUT_VAR svar                             /**< variable whose pointer you want */
    )
@@ -356,23 +361,6 @@ struct_coef::struct_coef(
    scip = scip_;
    val = val_;
 }
-
-/** constructor of the color struct */
-//struct_colorinformation::struct_colorinformation(
-//   int color_,                              /**< color of the nodes of the graph */
-//   int lenvars,                             /**< length of ptrvarsarray */
-//   int lenconss,                            /**< length of ptrconsarray */
-//   int lencoefs                             /**< length of ptrcoefsarray */
-//   )
-//{
-//   color = color_;
-//   lenvarsarray = lenvars;
-//   lenconssarray = lenconss;
-//   lencoefsarray = lencoefs;
-//   ptrarraycoefs = NULL;
-//   ptrarrayconss = NULL;
-//   ptrarrayvars = NULL;
-//}
 
 /** constructor of the hook struct */
 struct_hook::struct_hook(
@@ -913,8 +901,6 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism) {
 			SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL,
 					" found with %d blocks.\n",
 					DECdecompGetNBlocks((*decdecomps)[i]));
-			detectordata->isomorph = DECdecompGetType((*decdecomps)[i])
-					== DEC_DECTYPE_ISOMORPH;
 		}
 		if (n < detectordata->numofsol) {
 			*ndecdecomps = n;
@@ -954,7 +940,7 @@ SCIP_RETCODE SCIPincludeDetectionIsomorphism(
 
    detectordata->isomorph = FALSE;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism) );
+   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectIsomorphism, initIsomorphism, exitIsomorphism) );
 
    /* add connected constraint handler parameters */
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/isomorph/setppcinmaster", "Controls whether SETPPC constraints could be ignored while detecting and be directly placed in the master", &detectordata->setppcinmaster, FALSE, DEFAULT_SETPPCINMASTER, NULL, NULL) );
