@@ -159,7 +159,7 @@ SCIP_RETCODE createMasterconssArray(
 
    for (i = 0; i < nconss; ++i)
    {
-      if(isConsMaster(scip, conss[i]) )
+      if( isConsMaster(scip, conss[i]) )
       {
          SCIPdebugMessage("Constraint <%s> to be placed in master.\n", SCIPconsGetName(conss[i]));
          (*masterconss)[*nmasterconss] = conss[i];

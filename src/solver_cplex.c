@@ -626,7 +626,7 @@ SCIP_RETCODE solveCplex(
    numcols = CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
    assert(numcols == SCIPgetNVars(pricingprob));
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &cplexsolvals, numcols));
+   SCIP_CALL( SCIPallocBufferArray(scip, &cplexsolvals, numcols) );
 
    /* the optimization call */
    CHECK_ZERO( CPXmipopt(solverdata->cpxenv[probnr], solverdata->lp[probnr]) );
@@ -917,7 +917,7 @@ SCIP_RETCODE GCGincludeSolverCplex(
 {
    GCG_SOLVERDATA* data;
 
-   SCIP_CALL( SCIPallocMemory(scip, &data));
+   SCIP_CALL( SCIPallocMemory(scip, &data) );
    data->origprob = GCGpricerGetOrigprob(scip);
    data->masterprob = scip;
 

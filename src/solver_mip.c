@@ -85,8 +85,8 @@ SCIP_RETCODE createSolutionFromRay(
    probvars = SCIPgetOrigVars(pricingprob);
    nprobvars = SCIPgetNOrigVars(pricingprob);
    nsolvars = 0;
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, nprobvars));
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, nprobvars));
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvars, nprobvars) );
+   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, nprobvars) );
 
    /* store the primal ray values */
    for ( i = 0; i < nprobvars; i++ )
@@ -105,10 +105,10 @@ SCIP_RETCODE createSolutionFromRay(
       SCIPdebugMessage("%s: %g (obj = %g)\n", SCIPvarGetName(probvars[i]), SCIPgetPrimalRayVal(pricingprob, probvars[i]), SCIPvarGetObj(probvars[i]));
    }
 
-   SCIP_CALL( SCIPfreeSolve(pricingprob, TRUE));
-   SCIP_CALL( SCIPtransformProb(pricingprob));
-   SCIP_CALL( SCIPcreateSol(pricingprob, newsol, NULL));
-   SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, nsolvars, solvars, solvals));
+   SCIP_CALL( SCIPfreeSolve(pricingprob, TRUE) );
+   SCIP_CALL( SCIPtransformProb(pricingprob) );
+   SCIP_CALL( SCIPcreateSol(pricingprob, newsol, NULL) );
+   SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, nsolvars, solvars, solvals) );
 
    SCIPfreeMemoryArray(pricingprob, &solvars);
    SCIPfreeMemoryArray(pricingprob, &solvals);
@@ -164,7 +164,7 @@ SCIP_RETCODE inferFiniteSolution(
 
    if( SCIPhasPrimalRay(pricingprob) )
    {
-      SCIP_CALL(createSolutionFromRay(pricingprob, newsol) );
+      SCIP_CALL( createSolutionFromRay(pricingprob, newsol) );
 
       *freesol = TRUE;
       *solisray = TRUE;
@@ -201,7 +201,7 @@ SCIP_RETCODE inferFiniteSolution(
    SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, oldsol, NULL, FALSE) ));
 
    SCIP_CALL( SCIPcreate(&newscip) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(newscip));
+   SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
    SCIP_CALL( SCIPcreateProb(newscip, "finite", NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(newscip), SCIPgetNOrigVars(pricingprob)) );
    SCIP_CALL( SCIPsetIntParam(newscip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
@@ -212,7 +212,7 @@ SCIP_RETCODE inferFiniteSolution(
    SCIP_CALL( SCIPfreeTransform(pricingprob) );
 
    /* copy variables to temporary problem */
-   for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i)
+   for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
    {
       SCIP_VAR* copyvar;
       SCIP_CALL( SCIPgetVarCopy(pricingprob, newscip, SCIPgetOrigVars(pricingprob)[i], &copyvar, varmap, NULL, TRUE, &valid) );
@@ -221,7 +221,7 @@ SCIP_RETCODE inferFiniteSolution(
    }
 
    /* copy constraints to temporary problem */
-   for( i = 0; i < SCIPgetNOrigConss(pricingprob); ++i)
+   for( i = 0; i < SCIPgetNOrigConss(pricingprob); ++i )
    {
       SCIP_CONS* copycons;
       SCIP_CALL( SCIPgetConsCopy(pricingprob, newscip, SCIPgetOrigConss(pricingprob)[i], &copycons, SCIPconsGetHdlr(SCIPgetOrigConss(pricingprob)[i]), varmap, NULL, NULL, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &valid) );
@@ -252,11 +252,11 @@ SCIP_RETCODE inferFiniteSolution(
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_p", SCIPvarGetName(origvar));
 
          assert(valid);
-         SCIP_CALL( SCIPcreateVarBasic(newscip, &plus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS));
+         SCIP_CALL( SCIPcreateVarBasic(newscip, &plus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS) );
          SCIP_CALL( SCIPaddVar(newscip, plus) );
 
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_m", SCIPvarGetName(origvar));
-         SCIP_CALL( SCIPcreateVarBasic(newscip, &minus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS));
+         SCIP_CALL( SCIPcreateVarBasic(newscip, &minus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS) );
          SCIP_CALL( SCIPaddVar(newscip, minus) );
 
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "abs_%s_cons", SCIPvarGetName(origvar));
@@ -283,7 +283,7 @@ SCIP_RETCODE inferFiniteSolution(
    /* if the new solution is optimal, copy new solution to old pricing problem*/
    if( SCIPgetStatus(newscip) == SCIP_STATUS_OPTIMAL )
    {
-      SCIPdebug(SCIP_CALL( SCIPprintSol(newscip, SCIPgetBestSol(newscip), NULL, FALSE) ));
+      SCIPdebug(SCIP_CALL( SCIPprintSol(newscip, SCIPgetBestSol(newscip), NULL, FALSE) ) );
       *freesol = TRUE;
       SCIP_CALL( SCIPcreateSol(pricingprob, newsol, NULL) );
       SCIP_CALL( SCIPreallocMemoryArray(pricingprob, &solvals, SCIPgetNOrigVars(pricingprob)) );
@@ -296,7 +296,7 @@ SCIP_RETCODE inferFiniteSolution(
          solvals[i] = SCIPgetSolVal(newscip, SCIPgetBestSol(newscip), newvar);
       }
       SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, SCIPgetNOrigVars(pricingprob), SCIPgetOrigVars(pricingprob), solvals) );
-      SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, *newsol, NULL, TRUE) ));
+      SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, *newsol, NULL, TRUE) ) );
    }
 
    SCIPhashmapFree(&varmap);
@@ -438,7 +438,7 @@ SCIP_RETCODE filterInfiniteSolutions(
 
    origvars = SCIPgetOrigVars(pricingprob);
    norigvars = SCIPgetNOrigVars(pricingprob);
-   for( s = 0; s < *nsols; ++s)
+   for( s = 0; s < *nsols; ++s )
    {
       for( i = 0; i < norigvars; ++i )
       {
@@ -593,10 +593,10 @@ SCIP_RETCODE solveProblem(
       SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
    }
 
-   if( *nsols > 0)
+   if( *nsols > 0 )
    {
       SCIP_CALL( filterInfiniteSolutions(pricingprob, sols, nsols) );
-      if( nsols == 0)
+      if( nsols == 0 )
       {
          *status = SCIP_STATUS_UNKNOWN;
       }
@@ -604,7 +604,7 @@ SCIP_RETCODE solveProblem(
 
    assert(*nsols >= 0);
 
-   for( s = 0; s < *nsols; ++s)
+   for( s = 0; s < *nsols; ++s )
    {
       for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
       {

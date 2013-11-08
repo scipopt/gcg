@@ -733,13 +733,13 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), nconss) );
 
-   for( i = 0; i < nconss; ++i)
+   for( i = 0; i < nconss; ++i )
    {
 
       int blockid;
       assert(SCIPhashmapExists(readerdata->constoblock, conss[i]));
       blockid = (size_t) SCIPhashmapGetImage(readerdata->constoblock, conss[i]);
-      if(blockid == LINKINGVALUE)
+      if( blockid == LINKINGVALUE )
       {
          blockid = decinput->nblocks+1;
          SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*)(size_t) (nblocks+1)) );
@@ -1003,7 +1003,7 @@ SCIP_RETCODE SCIPreadDec(
    /* evaluate the result */
    if( decinput.haserror )
       return SCIP_READERROR;
-   else if( retcode == SCIP_OKAY)
+   else if( retcode == SCIP_OKAY )
    {
       *result = SCIP_SUCCESS;
    }

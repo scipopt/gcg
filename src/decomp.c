@@ -878,7 +878,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    {
       assert(nstairlinkingvars[b] > 0 || stairlinkingvars[b] == NULL);
       decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
-      if(stairlinkingvars[b] != NULL)
+      if( stairlinkingvars[b] != NULL )
       {
          SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
       }
@@ -1145,7 +1145,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
          }
          SCIPfreeBufferArray(scip, &curvars);
       }
-      if(b < nblocks-1)
+      if( b < nblocks-1 )
       {
          cumindex += nsubscipvars[b] + nstairlinkingvars[b];
       }
@@ -1157,7 +1157,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 
    for( b = 0; b < nblocks; ++b )
    {
-      if( nstairlinkingvars[b] == 0)
+      if( nstairlinkingvars[b] == 0 )
       {
          SCIPfreeMemoryArrayNull(scip, &(stairlinkingvars[b]));
       }
@@ -1220,7 +1220,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
       consblock = (int)(size_t)SCIPhashmapGetImage(constoblock, conss[i]);  /*lint !e507*/
 
       assert(consblock > 0 && consblock <= nblocks+1);
-      if(consblock == nblocks+1)
+      if( consblock == nblocks+1 )
       {
          SCIPdebugMessage("cons <%s> is linking and need not be handled\n", SCIPconsGetName(conss[i]));
          continue;
@@ -1254,7 +1254,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
             SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
-         else if(consblock == nblocks+1)
+         else if( consblock == nblocks+1 )
          {
             SCIPdebugMessage(" var <%s> not handled and current cons linking.\n", SCIPvarGetName(probvar));
          }
@@ -1944,7 +1944,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
       blockrepresentative[i] = -1;
    }
 
-   SCIP_CALL(assignConstraintsToRepresentatives(scip, conss, nconss, consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );
+   SCIP_CALL( assignConstraintsToRepresentatives(scip, conss, nconss, consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );
 
    /* postprocess blockrepresentatives */
    nblocks = processBlockRepresentatives(nextblock, blockrepresentative);
@@ -2022,25 +2022,25 @@ void DECgetSubproblemVarsData(
    assert(nproblems > 0);
 
    assert(DECdecompGetType(decomp) != DEC_DECTYPE_UNKNOWN);
-   if(nvars != NULL)
+   if( nvars != NULL )
       BMSclearMemoryArray(nvars, nproblems);
-   if(nbinvars != NULL)
+   if( nbinvars != NULL )
       BMSclearMemoryArray(nbinvars, nproblems);
-   if(nintvars != NULL)
+   if( nintvars != NULL )
       BMSclearMemoryArray(nintvars, nproblems);
-   if(nimplvars != NULL)
+   if( nimplvars != NULL )
       BMSclearMemoryArray(nimplvars, nproblems);
-   if(ncontvars != NULL)
+   if( ncontvars != NULL )
       BMSclearMemoryArray(ncontvars, nproblems);
 
-   for( i = 0; i < nproblems; ++i)
+   for( i = 0; i < nproblems; ++i )
    {
       SCIP_VAR*** subscipvars;
       int* nsubscipvars;
 
       nsubscipvars = DECdecompGetNSubscipvars(decomp);
       subscipvars = DECdecompGetSubscipvars(decomp);
-      if(nvars != NULL)
+      if( nvars != NULL )
          nvars[i] = nsubscipvars[i];
 
       for( j = 0; j < nsubscipvars[i]; ++j )
@@ -2074,15 +2074,15 @@ void DECgetLinkingVarsData(
    nlinkingvars = DECdecompGetNLinkingvars(decomp);
    linkingvars = DECdecompGetLinkingvars(decomp);
 
-   if(nvars != NULL)
+   if( nvars != NULL )
       *nvars = nlinkingvars;
-   if(nbinvars != NULL)
+   if( nbinvars != NULL )
       *nbinvars = 0;
-   if(nintvars != NULL)
+   if( nintvars != NULL )
       *nintvars = 0;
-   if(nimplvars != NULL)
+   if( nimplvars != NULL )
       *nimplvars = 0;
-   if(ncontvars != NULL)
+   if( ncontvars != NULL )
       *ncontvars = 0;
 
 
@@ -2630,13 +2630,13 @@ SCIP_RETCODE computeVarDensities(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &mastervardistribution, nvars) );
    BMSclearMemoryArray(mastervardistribution, nvars);
 
-   for( b = 0; b < nblocks; ++b)
+   for( b = 0; b < nblocks; ++b )
    {
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]) );
       BMSclearMemoryArray(vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
    }
 
-   for( v = 0; v < nvars; ++v)
+   for( v = 0; v < nvars; ++v )
    {
       int block = GCGvarGetBlock(vars[v]);
       SCIPdebugMessage("Var <%s>:", SCIPvarGetName(vars[v]));
@@ -2657,7 +2657,7 @@ SCIP_RETCODE computeVarDensities(
       }
    }
 
-   for( b = 0; b < nblocks; ++b)
+   for( b = 0; b < nblocks; ++b )
    {
       max = 0;
       min = 1.0;
@@ -2667,7 +2667,7 @@ SCIP_RETCODE computeVarDensities(
       ncurvars = DECdecompGetNSubscipvars(decomp)[b];
 
       SCIPdebugMessage("block %d:", b);
-      for( v = 0; v < ncurvars; ++v)
+      for( v = 0; v < ncurvars; ++v )
       {
 
          SCIPdebugPrintf(" <%s> %.3f", SCIPvarGetName(DECdecompGetSubscipvars(decomp)[b][v]), vardistribution[b][v]);
@@ -2692,7 +2692,7 @@ SCIP_RETCODE computeVarDensities(
    mean = 0;
    SCIPdebugMessage("master:");
 
-   for( v = 0; v < nvars; ++v)
+   for( v = 0; v < nvars; ++v )
    {
 
       SCIPdebugPrintf(" <%s> %.3f", SCIPvarGetName(vars[v]), mastervardistribution[v]);
@@ -2710,7 +2710,7 @@ SCIP_RETCODE computeVarDensities(
    mastervardensity->median = median;
    mastervardensity->mean = mean;
 
-   for( b = 0; b < nblocks; ++b)
+   for( b = 0; b < nblocks; ++b )
    {
       SCIPfreeBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
    }
@@ -2802,9 +2802,9 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", DECdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;
-   for( b = 0; b < nblocks; ++b)
+   for( b = 0; b < nblocks; ++b )
    {
-      if( GCGrelaxGetNIdenticalBlocks(scip, b) == 0)
+      if( GCGrelaxGetNIdenticalBlocks(scip, b) == 0 )
          nblocksrelevant -= 1;
    }
 
@@ -2816,7 +2816,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
          mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
-   for( b = 0; b < nblocks; ++b)
+   for( b = 0; b < nblocks; ++b )
    {
       if( GCGrelaxIsPricingprobRelevant(scip, b) )
       {
@@ -2916,7 +2916,7 @@ int DECfilterSimilarDecompositions(
    nunique = ndecs;
    for( i = 0; i < nunique; ++i )
    {
-      for( j = i+1; j < nunique; ++j)
+      for( j = i+1; j < nunique; ++j )
       {
          DEC_DECOMP* tmp;
          if( DECdecompositionsAreEqual(scip, decs[i], decs[j]) )

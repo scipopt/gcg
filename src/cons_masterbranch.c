@@ -365,7 +365,7 @@ SCIP_RETCODE resetPricingVarBound(
    if( consdata->boundtypes[i] == SCIP_BOUNDTYPE_LOWER )
    {
 
-      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0 )
          return SCIP_OKAY;
 
       assert(SCIPisGE(scip, SCIPvarGetLbLocal(pricingvar), consdata->newbounds[i])
@@ -393,7 +393,7 @@ SCIP_RETCODE resetPricingVarBound(
    /* upper bound was changed */
    else
    {
-      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+      if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0 )
          return SCIP_OKAY;
 
       assert(SCIPisLE(scip, SCIPvarGetUbLocal(pricingvar), consdata->newbounds[i])
@@ -772,7 +772,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       {
 
          /** @todo Ok, here is a serious problem with aggregation */
-         if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0  )
+         if( GCGrelaxGetNIdenticalBlocks(origscip, blocknr) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, blocknr) == 0 )
          {
             SCIPdebugMessage("Don't know how to handle var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
             continue;
@@ -780,7 +780,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
          SCIPdebugMessage("adjusting bound of pricing var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
          /* set corresponding bound in the pricing problem */
-         SCIP_CALL( tightenPricingVarBound(scip, GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr));
+         SCIP_CALL( tightenPricingVarBound(scip, GCGoriginalVarGetPricingVar(consdata->boundchgvars[i]), consdata, i, blocknr) );
       }
       else if( GCGvarGetBlock(consdata->boundchgvars[i]) == -2 )
       {
@@ -795,7 +795,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
          {
             if( pricingvars[j] == NULL )
                continue;
-            if( GCGrelaxGetNIdenticalBlocks(origscip, j) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, j) == 0  )
+            if( GCGrelaxGetNIdenticalBlocks(origscip, j) > 1 || GCGrelaxGetNIdenticalBlocks(origscip, j) == 0 )
             {
                SCIPdebugMessage("Don't know how to handle var <%s>\n", SCIPvarGetName(consdata->boundchgvars[i]));
                aggregate = TRUE;
@@ -959,14 +959,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
-   if((*consdata)->nchildcons > 0)
+   if( (*consdata)->nchildcons > 0 )
    {
-      SCIP_CALL(SCIPallocMemoryArray(scip, &childconsdatas, (*consdata)->nchildcons));
-      SCIP_CALL(SCIPallocMemoryArray(scip, &childcons, (*consdata)->nchildcons));
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, (*consdata)->nchildcons) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childcons, (*consdata)->nchildcons) );
    }
    for( i=0; i< (*consdata)->nchildcons; ++i )
    {
-      if((*consdata)->childcons != NULL && (*consdata)->childcons[i] != NULL)
+      if( (*consdata)->childcons != NULL && (*consdata)->childcons[i] != NULL )
       {
          childconsdatas[i] = SCIPconsGetData((*consdata)->childcons[i]);
          childcons[i] = (*consdata)->childcons[i];
@@ -984,7 +984,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    {
       SCIPdebugMessage("Deleting %d childnodes\n", nchildcons);
 
-      if(childcons[i] != NULL)
+      if( childcons[i] != NULL )
       {
          /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
          SCIP_CALL( SCIPreleaseCons(scip, &childcons[i]) );
@@ -1003,7 +1003,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
    {
-      if(GCGconsOrigbranchGetMastercons((*consdata)->origcons) != cons)
+      if( GCGconsOrigbranchGetMastercons((*consdata)->origcons) != cons )
       {
          printf("mastercons %p should be mastercons %p\n", (void *) GCGconsOrigbranchGetMastercons((*consdata)->origcons), (void *) cons);
       }
@@ -1052,22 +1052,22 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
    else
    {
-      if((*consdata)->origbranchdata != NULL)
+      if( (*consdata)->origbranchdata != NULL )
       {
          SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->origbranchrule, &(*consdata)->origbranchdata) );
          (*consdata)->origbranchdata = NULL;
          (*consdata)->branchdata = NULL;
-         if((*consdata)->origcons != NULL)
+         if( (*consdata)->origcons != NULL )
          {
             GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
          }
       }
-      if((*consdata)->branchdata != NULL)
+      if( (*consdata)->branchdata != NULL )
       {
          SCIP_CALL( GCGrelaxBranchDataDelete(GCGpricerGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
          (*consdata)->origbranchdata = NULL;
          (*consdata)->branchdata = NULL;
-         if((*consdata)->origcons != NULL)
+         if( (*consdata)->origcons != NULL )
          {
             GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
          }
@@ -1910,7 +1910,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       parentdata = SCIPconsGetData(parentcons);
       assert(parentdata != NULL);
 
-      if( SCIPinProbing(scip) || SCIPinProbing(GCGpricerGetOrigprob(scip)))
+      if( SCIPinProbing(scip) || SCIPinProbing(GCGpricerGetOrigprob(scip)) )
       {
          parentdata->probingtmpcons = *cons;
       }
@@ -1965,7 +1965,7 @@ SCIP_Bool GCGnodeisVanderbeck(
    if( branchrule == NULL )
       branchrule = GCGconsMasterbranchGetOrigbranchrule(masterbranchcons);
 
-   if(branchrule == NULL )
+   if( branchrule == NULL )
       return FALSE;
 
    if( strcmp(SCIPbranchruleGetName(branchrule), "generic") == 0 )
@@ -2003,7 +2003,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
 
    if( name != NULL )
    {
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(consdata->origbranchconsname), name, strlen(name)+1));
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &(consdata->origbranchconsname), name, strlen(name)+1) );
    }
    else if( consdata->origbranchconsname != NULL )
    {
@@ -2020,11 +2020,11 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    consdata->origbranchrule = branchrule;
 
 
-   if(branchdata == NULL)
+   if( branchdata == NULL )
       SCIPfreeMemoryNull(scip, &(consdata->origbranchdata));
    consdata->origbranchdata = branchdata;
 
-   if(origcons == NULL)
+   if( origcons == NULL )
       SCIPfreeMemoryArrayNull(scip, &(consdata->origcons));
    consdata->origbranchcons = origcons;
    consdata->norigbranchcons = norigcons;

@@ -122,7 +122,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    norigbranchcons = GCGconsMasterbranchGetNOrigbranchCons(masterbranchchildcons);
    origbranchcons = GCGconsMasterbranchGetOrigbranchCons(masterbranchchildcons);
 
-   for( i=0; i<norigbranchcons; ++i)
+   for( i=0; i<norigbranchcons; ++i )
    {
       SCIP_CALL( SCIPaddConsNode(scip, child, origbranchcons[i], NULL) );
       SCIP_CALL( SCIPreleaseCons(scip, &(origbranchcons[i])) );
@@ -156,7 +156,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    if( norigbranchcons > 0 )
       SCIPfreeMemoryArrayNull(GCGrelaxGetMasterprob(scip), &origbranchcons);
 
-   if(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))))
+   if( SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))) )
    {
       SCIPdebugMessage("norignodes = %d; nmasternodes = %d\n",
          (int) SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))),
@@ -245,7 +245,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
       masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
    }
 
    *result = SCIP_BRANCHED;
@@ -311,7 +311,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
       masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
    }
 
    *result = SCIP_BRANCHED;
@@ -391,7 +391,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
       masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons));
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
    }
    assert(nchildnodes > 0);
 

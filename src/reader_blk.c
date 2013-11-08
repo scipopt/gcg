@@ -1170,7 +1170,7 @@ SCIP_RETCODE SCIPreadBlk(
    /* evaluate the result */
    if( blkinput.haserror )
       return SCIP_READERROR;
-   else if( retcode == SCIP_OKAY)
+   else if( retcode == SCIP_OKAY )
    {
       *result = SCIP_SUCCESS;
    }

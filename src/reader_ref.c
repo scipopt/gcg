@@ -860,7 +860,7 @@ SCIP_RETCODE SCIPreadRef(
    /* evaluate the result */
    if( refinput.haserror )
       return SCIP_READERROR;
-   else if( retcode == SCIP_OKAY)
+   else if( retcode == SCIP_OKAY )
    {
       *result = SCIP_SUCCESS;
    }

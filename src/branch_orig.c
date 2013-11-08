@@ -523,7 +523,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
-   if(*branchdata == NULL)
+   if( *branchdata == NULL )
       return SCIP_OKAY;
 
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),

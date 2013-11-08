@@ -406,10 +406,10 @@ SCIP_Real GCGgetRedcost(
 
 /** updates the statistics part of the variable */
 void GCGupdateVarStatistics(
-    SCIP*                scip,               /** master SCIP data structure */
-    SCIP*                origprob,           /** original SCIP data structure */
-    SCIP_VAR*            newvar,             /** new variable for statistic update */
-    SCIP_Real            redcost             /** reduced cost of the variable */
+    SCIP*                scip,               /**< master SCIP data structure */
+    SCIP*                origprob,           /**< original SCIP data structure */
+    SCIP_VAR*            newvar,             /**< new variable for statistic update */
+    SCIP_Real            redcost             /**< reduced cost of the variable */
    );
 
 /** prints the given variable: name, type (original, master or pricing) block number,

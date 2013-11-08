@@ -714,7 +714,7 @@ SCIP_RETCODE DECwriteAllDecomps(
       detector =  conshdlrdata->detectors[i];
       assert(detector != NULL);
 
-      for( j = 0; j < detector->ndecomps; ++j)
+      for( j = 0; j < detector->ndecomps; ++j )
       {
          decomp = detector->decomps[j];
          assert(decomp != NULL);

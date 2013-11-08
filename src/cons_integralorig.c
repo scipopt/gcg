@@ -121,7 +121,7 @@ void sortBranchrules(
    assert(nbranchrules >= 0);
    assert(branchrules != NULL);
 
-   for( pos=0; pos<nbranchrules; ++pos)
+   for( pos=0; pos<nbranchrules; ++pos )
    {
       maxi = pos;
       for( i=pos+1; i<nbranchrules; ++i )
@@ -188,7 +188,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    {
       assert(conshdlrdata->branchrules[i] != NULL);
 
-      if(conshdlrdata->branchrules[i]->branchexeclp == NULL)
+      if( conshdlrdata->branchrules[i]->branchexeclp == NULL )
       {
          ++i;
          continue;
@@ -244,7 +244,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    {
       assert(conshdlrdata->branchrules[i] != NULL);
 
-      if(conshdlrdata->branchrules[i]->branchexecps == NULL)
+      if( conshdlrdata->branchrules[i]->branchexecps == NULL )
       {
          ++i;
          continue;
@@ -351,7 +351,7 @@ SCIP_DECL_CONSFREE(consFreeIntegralOrig)
 
    SCIPdebugMessage("freeing integralorig constraint handler\n");
 
-   if(conshdlrdata->nbranchrules > 0)
+   if( conshdlrdata->nbranchrules > 0 )
    {
       assert(conshdlrdata->branchrules != NULL);
       SCIPfreeMemoryArray(scip, &(conshdlrdata->branchrules) );
