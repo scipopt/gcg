@@ -33,14 +33,19 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
-
-#include <cassert>
+/* #define SCIP_DEBUG */
 
 #include "dec_isomorph.h"
 #include "pub_decomp.h"
 #include "cons_decomp.h"
 #include "scip_misc.h"
+
+#include "graph.hh"
+#include "bliss_automorph.h"
+#include "pub_gcgvar.h"
+#include <cstring>
+#include <cassert>
+
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
@@ -64,12 +69,6 @@ struct DEC_DetectorData
    int numofsol;                             /**< number of solutions */
 };
 
-#include "graph.hh"
-#include "bliss_automorph.h"
-#include "scip_misc.h"
-#include "scip/scip.h"
-#include "pub_gcgvar.h"
-#include <cstring>
 
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
@@ -851,15 +850,13 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       tmp = n;
       for( i = 0; i < nconss; i++ )
       {
-         if( ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n
-               && ptrhook->conssperm[i] != tmp )
+         if( ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n && ptrhook->conssperm[i] != tmp )
          {
             n++;
             tmp = ptrhook->conssperm[i];
             ptrhook->conssperm[i] = n;
          }
-         if( ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n
-               && ptrhook->conssperm[i] == tmp )
+         if( ptrhook->conssperm[i] != -1 && ptrhook->conssperm[i] != n && ptrhook->conssperm[i] == tmp )
          {
             ptrhook->conssperm[i] = n;
          }
@@ -885,7 +882,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
             }
          }
          SCIPdebugMessage("%d\n", x);
-         blocksize[j] = nconss - x;
+         blocksize[j] = x;
 
       }
 
