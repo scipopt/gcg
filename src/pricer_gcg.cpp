@@ -2726,6 +2726,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    SCIP_Bool added;
    int prob;
    int i;
+   int j;
 
    SCIP_VAR** origvars;
    SCIP_Real* origsolvals;
@@ -2796,6 +2797,25 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
          assert((GCGoriginalVarGetNMastervars(origvars[i]) == 1) || (GCGvarIsLinking(origvars[i])));
          assert(GCGoriginalVarGetMastervars(origvars[i])[0] != NULL);
          SCIP_CALL( SCIPsetSolVal(scip, mastersol, GCGoriginalVarGetMastervars(origvars[i])[0], origsolvals[i]) );
+
+         if( GCGvarIsLinking(origvars[i]) )
+         {
+            if( !SCIPisZero(scip, origsolvals[i]) )
+            {
+               int* blocks;
+               int nblocks = GCGlinkingVarGetNBlocks(origvars[i]);
+               SCIP_CALL( SCIPallocBufferArray(scip, &blocks, nblocks) );
+               GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks);
+               for ( j = 0; j < nblocks; ++j)
+               {
+                  int prob = blocks[j];
+
+                  pricingvars[prob][npricingvars[prob]] = GCGlinkingVarGetPricingVars(origvars[i])[prob];
+                  pricingvals[prob][npricingvars[prob]] = origsolvals[i];
+                  npricingvars[prob]++;
+               }
+            }
+         }
       }
    }
 
