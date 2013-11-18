@@ -1611,6 +1611,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    do
    {
+      *bestredcost = 0.0;
       *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
 
