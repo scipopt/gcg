@@ -615,7 +615,10 @@ SCIP_RETCODE DECdetectStructure(
                assert(decdecomps != NULL);
                DECdecompSetDetector(decdecomps[j], detector);
             }
-            ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+            if( ndecdecomps > 2 )
+            {
+               ndecdecomps = DECfilterSimilarDecompositions(scip, decdecomps, ndecdecomps);
+            }
             SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
 
             SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
