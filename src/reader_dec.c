@@ -871,8 +871,8 @@ SCIP_RETCODE readDECFile(
    else
    {
       SCIP_CALL( DECdecompFree(scip, &decdecomp) );
-      SCIPhashmapFree(&readerdata->constoblock);
    }
+   SCIPhashmapFree(&readerdata->constoblock);
 
    /* close file */
    SCIPfclose(decinput->file);

@@ -1804,6 +1804,7 @@ SCIP_RETCODE initRelaxator(
 {
    SCIP* masterprob;
    SCIP_VAR** vars;
+   SCIP_CONS** oldconss;
    SCIP_RELAXDATA* relaxdata;
    int i;
    int nvars;
@@ -1839,9 +1840,16 @@ SCIP_RETCODE initRelaxator(
    relaxdata->lastsolvednodenr = -1;
 
    SCIP_CALL( SCIPtransformProb(masterprob) );
+   SCIP_CALL( SCIPduplicateMemoryArray(scip, &oldconss, relaxdata->masterconss, relaxdata->nmasterconss) );
 
    SCIP_CALL( SCIPtransformConss(masterprob, relaxdata->nmasterconss,
          relaxdata->masterconss, relaxdata->masterconss) );
+
+   for( i = 0; i < relaxdata->nmasterconss; ++i )
+   {
+      SCIP_CALL( SCIPreleaseCons(masterprob, &(oldconss[i])) );
+   }
+   SCIPfreeMemoryArray(scip, &oldconss);
 
    SCIP_CALL( DECdecompTransform(scip, relaxdata->decdecomp) );
 
@@ -1849,6 +1857,8 @@ SCIP_RETCODE initRelaxator(
    {
       if( relaxdata->convconss[i] != NULL )
       {
+         SCIP_CONS* oldcons = relaxdata->convconss[i];
+         SCIP_CALL( SCIPreleaseCons(masterprob, &oldcons) );
          SCIP_CALL( SCIPtransformCons(masterprob, relaxdata->convconss[i], &(relaxdata->convconss[i])) );
       }
    }

@@ -2830,6 +2830,9 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  avg. density     : %10.3f\n", scores.densityscore);
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  linking score    : %10.3f\n", scores.linkingscore);
 
+   SCIPfreeBlockMemoryArray(scip, &vars, nvars);
+   SCIPfreeBlockMemoryArray(scip, &conss, nconss);
+
    SCIPfreeBlockMemoryArray(scip, &varprobdensity, SCIPgetNVars(scip));
    SCIPfreeBlockMemoryArray(scip, &varmasterdensity, SCIPgetNVars(scip));
    SCIPfreeBlockMemoryArray(scip, &consprobsensity, SCIPgetNConss(scip));
