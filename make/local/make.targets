@@ -116,6 +116,7 @@ coverage: tests
 		lcov -d $(OBJDIR) -z
 		bin/gcg_test
 		make  $^ test
+		make  $^ TIME=60 TEST=regression test
 		lcov --config-file lcovrc -d $(OBJDIR) -c >gcov/gcg.capture.tmp
 		lcov --config-file lcovrc -r gcov/gcg.capture.tmp "/usr/include/*" > gcov/gcg.capture
 		mv gcov/gcg.capture gcov/gcg.capture.tmp
