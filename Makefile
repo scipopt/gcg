@@ -25,7 +25,7 @@ SCIPDIR         =   lib/scip
 
 
 LIBDIR          =	lib
-DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(addprefix $(LIBOBJDIR)/,$(LIBOBJSUBDIRS))
+DIRECTORIES     =	$(LIBDIR) $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 SOFTLINKS	=
 MAKESOFTLINKS	=	true
 
@@ -167,13 +167,6 @@ LIBOBJ		=	reader_blk.o \
 			stat.o \
 			objdialog.o \
 			dialog_graph.o
-#			graph/graph.o \
-			graph/bipartitegraph.o \
-			graph/hyperrowcolgraph.o \
-			graph/hypercolgraph.o \
-			graph/hyperrowgraph.o \
-			graph/rowgraph.o \
-			graph/columngraph.o \
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o
@@ -194,7 +187,8 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-LIBOBJSUBDIRS	= 	graph
+OBJSUBDIRS	= 	graph
+LIBOBJSUBDIRS   =       $(addprefix $(LIBOBJDIR)/,$(OBJSUBDIRS))
 
 GCGLIBSHORTNAME =	gcg
 GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
@@ -329,10 +323,10 @@ ifneq ($(OBJDIR),)
 endif
 
 .PHONY: clean
-clean:          cleantest cleanlib cleanbin  $(LIBOBJDIR) $(LIBOBJSUBDIRS) $(OBJDIR)
+clean:          cleantest cleanlib cleanbin  $(DIRECTORIES)
 ifneq ($(LIBOBJDIR),)
 		@-(rm -f $(LIBOBJDIR)/*.o)
-		@-(cd $(LIBOBJDIR) && rm -f */*.o && rmdir $(LIBOBJSUBDIRS));
+		@-(cd $(LIBOBJDIR) && rm -f */*.o && rmdir $(OBJSUBDIRS));
 		@-rmdir $(LIBOBJDIR);
 endif
 ifneq ($(OBJDIR),)
@@ -374,16 +368,17 @@ $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(M
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
-$(LIBOBJSUBDIRS):	$(LIBOBJDIR)
-		@-mkdir -p $(LIBOBJDIR)/$@
+#$(LIBOBJSUBDIRS):	$(LIBOBJDIR)
+#		@mkdir -p $(LIBOBJDIR)/$@
+
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.c
 		@echo "-> compiling $@"
