@@ -194,7 +194,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-LIBOBJSUBDIRS  = graph
+LIBOBJSUBDIRS	= 	graph
 
 GCGLIBSHORTNAME =	gcg
 GCGLIBNAME	=	$(GCGLIBSHORTNAME)-$(VERSION)
@@ -374,11 +374,11 @@ $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(M
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
