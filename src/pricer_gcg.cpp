@@ -2808,12 +2808,14 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
                GCGlinkingVarGetBlocks(origvars[i], nblocks, blocks);
                for ( j = 0; j < nblocks; ++j)
                {
-                  int prob = blocks[j];
+                  prob = blocks[j];
 
                   pricingvars[prob][npricingvars[prob]] = GCGlinkingVarGetPricingVars(origvars[i])[prob];
                   pricingvals[prob][npricingvars[prob]] = origsolvals[i];
                   npricingvars[prob]++;
                }
+               SCIPfreeBufferArray(scip, &blocks);
+
             }
          }
       }
