@@ -142,7 +142,6 @@ SCIP_RETCODE inferFiniteSolution(
    SCIP_Bool*            freesol             /**< whether the new solution has to be freed */
    )
 {
-
    SCIP* newscip;
    SCIP_HASHMAP* varmap;
    SCIP_Bool valid;
@@ -444,6 +443,8 @@ SCIP_RETCODE filterInfiniteSolutions(
       {
          if( SCIPisInfinity(pricingprob, SCIPgetSolVal(pricingprob, sols[s], origvars[i])) )
          {
+            SCIPdebugMessage("Removing solution with infeasible value.\n");
+            SCIP_CALL( SCIPfreeSol(pricingprob, &sols[s]) );
             sols[s] = sols[*nsols-1];
             --(*nsols);
             --s;
