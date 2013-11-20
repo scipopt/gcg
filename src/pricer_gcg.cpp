@@ -1685,7 +1685,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    pricinghaserror = FALSE;
    bestredcost = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
-   pricinglowerbound = SCIPinfinity(scip_);
+   pricinglowerbound = -SCIPinfinity(scip_);
 
    maxsols = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),reducedcostpricing->getMaxvarsroundroot());
 
@@ -2057,9 +2057,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
    {
       assert(lowerbound != NULL);
-      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g, bestredcost = %g\n", SCIPgetLPObjval(scip_) + bestredcost, bestredcost);
-
-      *lowerbound = SCIPgetLPObjval(scip_) + bestredcost;
+      GCGpricerPrintInfo(scip_, pricerdata, "lower bound = %g, bestredcost = %g\n", *lowerbound, bestredcost);
 
       pricerdata->eagerage = 0;
    }
@@ -2273,6 +2271,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( solversInitsol() );
 
    SCIP_CALL( stabilization->setNLinkingconss(GCGrelaxGetNLinkingconss(origprob)) );
+
+   SCIP_CALL( stabilization->setNConvconss(GCGrelaxGetNPricingprobs(origprob)) );
+
 
    return SCIP_OKAY;
 }

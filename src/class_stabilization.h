@@ -51,7 +51,10 @@ private:
    int stabcentercutssize;
    int nstabcentercuts;
    SCIP_Real* stabcenterlinkingconss;
+   int stabcenterconvsize;
    int nstabcenterlinkingconss;
+   SCIP_Real* stabcenterconv;
+   int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
    SCIP_NODE* node;
@@ -75,6 +78,11 @@ public:
       SCIP_Real* dual
       );
 
+   SCIP_RETCODE convGetDual(
+      int i,
+      SCIP_Real* dual
+      );
+
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real lowerbound
       );
@@ -93,6 +101,10 @@ public:
    SCIP_RETCODE setNLinkingconss(
       int nlinkingconssnew
       );
+
+   SCIP_RETCODE setNConvconss(
+         int nconvconssnew
+         );
 
    SCIP_RETCODE linkingconsGetDual(
       int i,
