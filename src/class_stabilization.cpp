@@ -190,6 +190,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_Real lowerbound
    )
 {
+   SCIP_Real dualsol;
    SCIPdebugMessage("Updating stability center: ");
 
    /* in case the bound is not improving, do nothing */
@@ -218,17 +219,23 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nconss; ++i )
    {
-      stabcenterconss[i] = pricingtype->consGetDual(scip_, conss[i]);
+      consGetDual(i, &dualsol);
+
+      stabcenterconss[i] = dualsol;
    }
 
    for( int i = 0; i < ncuts; ++i )
    {
-      stabcentercuts[i] = pricingtype->rowGetDual(cuts[i]);
+      rowGetDual(i, &dualsol);
+
+      stabcentercuts[i] = dualsol;
    }
 
    for( int i = 0; i < nstabcenterlinkingconss; ++i)
    {
-      stabcenterlinkingconss[i] = pricingtype->consGetDual(scip_, linkingconss[i]);
+      linkingconsGetDual(i, &dualsol);
+
+      stabcenterlinkingconss[i] = dualsol;
    }
 
    hasstabilitycenter = TRUE;

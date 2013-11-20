@@ -112,12 +112,13 @@ public:
 
    /** performs optimal or farkas pricing */
    SCIP_RETCODE performPricing(
-         PricingType *pricetype, /**< type of pricing */
-         unsigned int optimal, /**< heuristic or optimal pricing */
-         SCIP_RESULT *result, /**< result pointer */
-         int * nfoundvars, /**< pointer to store number of found variables */
-         double* bestredcost, /**< pointer to store reduced cost */
-         unsigned int* bestredcostvalid);
+         PricingType*   pricetype,          /**< type of pricing */
+         unsigned int   optimal,            /**< heuristic or optimal pricing */
+         SCIP_RESULT*   result,             /**< result pointer */
+         int*           nfoundvars,         /**< pointer to store number of found variables */
+         SCIP_Real*     lowerbound,         /**< pointer to store lowerbound obtained due to lagrange bound */
+         SCIP_Bool*     bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
+         );
 
     FarkasPricing *getFarkasPricing() const
     {
@@ -140,6 +141,9 @@ public:
    void createPricingTypes();
    void createStabilization();
 
+
+   /* computes the objective value of the current (stabilized) dual variables) in the dual program */
+   SCIP_Real getStabilizedDualObjectiveValue();
 private:
    static ReducedCostPricing *reducedcostpricing;
    static FarkasPricing *farkaspricing;
