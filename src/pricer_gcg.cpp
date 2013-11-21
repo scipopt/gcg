@@ -1652,6 +1652,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool** solisray;
    SCIP_Real pricinglowerbound;
    SCIP_Real bestredcost;
+   SCIP_Real dualconvsum;
    SCIP_RETCODE retcode;
    SCIP_Bool infeasible;
    SCIP_Bool pricinghaserror;
@@ -1684,6 +1685,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    infeasible = FALSE;
    pricinghaserror = FALSE;
    bestredcost = 0.0;
+   dualconvsum = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = -SCIPinfinity(scip_);
 
@@ -1770,24 +1772,15 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
          if( optimal )
          {
-            if( !SCIPisInfinity(scip_, pricinglowerbound) && isPricingOptimal(pricerdata->pricingprobs[prob], pricingstatus[prob]) && isMasterLPOptimal() )
-            {
-               if( SCIPisSumPositive(scip_, pricinglowerbound - pricerdata->dualsolconv[prob]) && !stabilized )
-               {
-                  SCIPwarningMessage(scip_, "Numerical troubles solving pricing %d (error is %.4g)\n", prob, pricinglowerbound - pricerdata->dualsolconv[prob]);
-
-                  #pragma omp critical (cost)
-                  *bestredcostvalid = FALSE;
-
-                  assert(SCIPisLT(scip_, pricinglowerbound - pricerdata->dualsolconv[prob], 1.0));
-
-                  #pragma omp critical (error)
-                  pricinghaserror = TRUE;
-               }
-            }
+            SCIP_Real convdual;
+            stabilization->convGetDual(prob, &convdual);
 
             #pragma omp atomic
-            bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - pricerdata->dualsolconv[prob]);
+            dualconvsum += GCGrelaxGetNIdenticalBlocks(origprob, prob) * convdual;
+
+            #pragma omp atomic
+            bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * pricinglowerbound;
+
          }
 
          #pragma omp atomic
@@ -1818,11 +1811,14 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       if( pricerdata->stabilization && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
-         if(*bestredcostvalid && !SCIPisNegative(scip_, bestredcost))
-         {
-            SCIP_Real lowerboundcandidate;
+         SCIP_Real lowerboundcandidate;
 
-            lowerboundcandidate = getStabilizedDualObjectiveValue() + bestredcost;
+         lowerboundcandidate = getStabilizedDualObjectiveValue() + bestredcost;
+
+         //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
+
+         if(*bestredcostvalid && SCIPisGE(scip_, bestredcost, dualconvsum))
+         {
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
             SCIP_CALL( stabilization->updateStabilityCenter( lowerboundcandidate) );
          }
@@ -1835,7 +1831,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                stabilization->updateAlphaMisprice();
             }
          }
-         else if( *bestredcostvalid )
+         else if( *bestredcostvalid && !SCIPisGE(scip_, bestredcost, dualconvsum))
          {
             SCIP_SOL** pricingsols = NULL;
 

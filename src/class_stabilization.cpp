@@ -125,7 +125,7 @@ SCIP_RETCODE Stabilization::setNConvconss(
 {
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconv);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, SCIPcalcMemGrowSize(scip_, nconvconssnew)) );
-   nstabcenterlinkingconss = nconvconssnew;
+   nstabcenterconv = nconvconssnew;
    BMSclearMemoryArray(stabcenterconv, nstabcenterconv);
 
    return SCIP_OKAY;
@@ -245,7 +245,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_ROW** cuts = GCGsepaGetMastercuts(scip_);
    int ncuts = GCGsepaGetNMastercuts(scip_);
    assert(ncuts <= nstabcentercuts);
-   int nprobs = GCGrelaxGetNPricingprobs(scip_);
+   int nprobs = GCGrelaxGetNPricingprobs(origprob);
 
    for( int i = 0; i < nconss; ++i )
    {
@@ -270,6 +270,8 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nprobs; ++i )
    {
+      if(!GCGrelaxIsPricingprobRelevant(origprob, i))
+         continue;
       convGetDual(i, &dualsol);
 
       stabcenterconv[i] = dualsol;
