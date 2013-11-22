@@ -1651,6 +1651,20 @@ int ObjPricerGcg::countPricedVariables(
    return nfoundvars;
 }
 
+/** computes the stack of masterbranch constraints up to the last generic branching node */
+SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
+   SCIP_CONS***          consstack,          /**< stack of branching constraints */
+   int*                  nconsstack          /**< size of the stack */
+   )
+{
+   assert(consstack != NULL);
+   assert(nconsstack != NULL);
+
+   *consstack = NULL;
+   *nconsstack = 0;
+   return SCIP_OKAY;
+}
+
 /** generic method to generate feasible columns from the pricing problem */
 SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    int                   prob,               /**< index of pricing problem */
@@ -1664,7 +1678,98 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_STATUS*          status              /**< solution status of the pricing problem */
    )
 {
+   SCIP_Real cumsigma = 0.0; /* the sum of branching dual variables on the stack up to the current point */
+   SCIP_SOL* bestsol = NULL; /* the current best solution from the sequence of solves */
+   SCIP_Real objvalue = -SCIPinfinity(pricerdata->pricingprobs[prob]); /* objective value of the best solution found in the sequence of solves */
+   SCIP_Bool found = FALSE; /* whether a feasible solution has been found */
+   int i;
+   int j;
+
+
+   SCIP_CONS** branchconss = NULL; /* stack of branching constraints */
+   int nbranchconss = 0; /* number of branching constraints */
+
+   /* Compute path to last generic branching node */
+   SCIP_CALL( computeGenericBranchingconssStack(&branchconss, &nbranchconss) );
+   if( nbranchconss == 0)
+   {
+      SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );
+      return SCIP_OKAY;
+   }
+
+   /* unapply all bound changes up to the branching point */
+
+   /* solve initial pricing problem */
    SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );
+
+   /* update objvalue */
+   bestsol = sols[0];
+   objvalue = SCIPsolGetOrigObj(bestsol);
+
+   /* traverse the tree in reverse order */
+   for( i = nbranchconss-1; i >= 0 && !found; --i )
+   {
+      SCIP_Bool feasible = FALSE;
+      SCIP_Real trycumsigma; /* cumulative sum of sigma for subsequent feasibility checks */
+      /* add bound changes of current branch */
+
+      /* try the current best solution */
+
+      if( feasible )
+         continue;
+
+      /* update cumsigma */
+
+      if( SCIPisGE(scip_, objvalue - cumsigma, 0.0) )
+         continue;
+
+      SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );
+
+      /* update objvalue */
+      bestsol = sols[0];
+      objvalue = SCIPsolGetOrigObj(bestsol);
+
+      if( SCIPisGE(scip_, objvalue - cumsigma, 0.0) )
+      {
+         /* the current solution is perfect */
+
+         /* stop everything*/
+         found = TRUE;
+         break;
+      }
+      /* check feasibility in subsequent problems */
+
+      trycumsigma = cumsigma;
+
+      for( j = i-1; j >= 0 && !found; --j)
+      {
+
+         /* substract next sigma */
+
+         /* check feasibility */
+
+         if( feasible )
+         {
+            /* apply bounds for pricing problem */
+
+            i = j;
+
+            if( SCIPisGE(scip_, objvalue - trycumsigma, 0.0) )
+            {
+               /* the current solution is perfect */
+
+               /* stop everything*/
+               found = TRUE;
+               break;
+            }
+
+         }
+      }
+
+   }
+
+
+   SCIPfreeMemoryArrayNull(scip_, &branchconss);
 
    return SCIP_OKAY;
 }

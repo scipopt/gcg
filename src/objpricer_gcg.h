@@ -293,6 +293,12 @@ private:
 
    /** calls the exitsol method of all solvers */
    SCIP_RETCODE solversExitsol();
+
+   /** computes the stack of masterbranch constraints up to the last generic branching node */
+   SCIP_RETCODE computeGenericBranchingconssStack(
+      SCIP_CONS***          consstack,          /**< stack of branching constraints */
+      int*                  nconsstack          /**< size of the stack */
+      );
 };
 
 #endif
