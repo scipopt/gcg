@@ -104,6 +104,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    int*                 checkedblocksnsortstrips
    );
 
+/** returns true when the branch rule is the generic branchrule */
+SCIP_Bool GCGisBranchruleGeneric(
+   SCIP_BRANCHRULE*      branchrule          /**< branchrule to check */
+);
+
 #ifdef __cplusplus
 }
 #endif

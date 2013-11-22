@@ -12,10 +12,11 @@
  * @ingroup BRANCHINGRULES
  * @brief  branching rule based on vanderbeck's generic branching scheme
  * @author Marcel Schmickerath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include "branch_generic.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
@@ -2183,8 +2184,9 @@ SCIP_RETCODE createChildNodesGeneric(
    L = 0;
    mu = 0;
 
-   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGrelaxGetNIdenticalBlocks(scip, blocknr));
    pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);
+   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, pL);
+
 
    /*  get variable data of the master problem */
    masterscip = GCGrelaxGetMasterprob(scip);
@@ -3754,4 +3756,12 @@ SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
 {
    assert(branchdata != NULL);
    return branchdata->mastercons;
+}
+
+/** returns true when the branch rule is the generic branchrule */
+SCIP_Bool GCGisBranchruleGeneric(
+   SCIP_BRANCHRULE*      branchrule          /**< branchrule to check */
+)
+{
+   return (branchrule != NULL) && (strcmp(BRANCHRULE_NAME, SCIPbranchruleGetName(branchrule)) == 0);
 }

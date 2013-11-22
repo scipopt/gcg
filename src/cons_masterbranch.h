@@ -36,6 +36,7 @@
 
 #include "scip/scip.h"
 #include "type_branchgcg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
