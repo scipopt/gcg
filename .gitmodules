@@ -4,3 +4,6 @@
 [submodule "lib/soplex-git"]
 	path = lib/soplex-git
 	url = git@git.or.rwth-aachen.de:gcg/soplex.git
+[submodule "lib/bliss"]
+	path = lib/bliss
+	url = git@git.or.rwth-aachen.de:gcg/bliss.git
