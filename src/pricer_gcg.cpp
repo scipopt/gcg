@@ -1651,6 +1651,24 @@ int ObjPricerGcg::countPricedVariables(
    return nfoundvars;
 }
 
+/** generic method to generate feasible columns from the pricing problem */
+SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
+   int                   prob,               /**< index of pricing problem */
+   PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+   SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
+   SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
+   SCIP_SOL**            sols,               /**< pointer to store solutions */
+   SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
+   int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
+   int*                  nsols,              /**< number of solutions */
+   SCIP_STATUS*          status              /**< solution status of the pricing problem */
+   )
+{
+   SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );
+
+   return SCIP_OKAY;
+}
+
 /** performs optimal or farkas pricing */
 SCIP_RETCODE ObjPricerGcg::performPricing(
    PricingType*          pricetype,          /**< type of pricing */
@@ -1760,7 +1778,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          {
             goto done;
          }
-         private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &pricingstatus[prob]);
+         private_retcode = generateColumnsFromPricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &pricingstatus[prob]);
          SCIPdebugMessage("nsols: %d, pricinglowerbound: %.4g\n", nsols[prob], pricinglowerbound);
          #pragma omp ordered
          {

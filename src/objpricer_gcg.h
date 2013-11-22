@@ -251,6 +251,19 @@ private:
       SCIP_Bool             optimal             /**< heuristic or optimal pricing */
       );
 
+   /** generic method to generate feasible columns from the pricing problem */
+   SCIP_RETCODE generateColumnsFromPricingProblem(
+      int                   prob,               /**< index of pricing problem */
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
+      SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
+      SCIP_SOL**            sols,               /**< pointer to store solutions */
+      SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
+      int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
+      int*                  nsols,              /**< number of solutions */
+      SCIP_STATUS*          status              /**< solution status of the pricing problem */
+      );
+
    /** solves a specific pricing problem
     * @todo simplify
     */
