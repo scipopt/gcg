@@ -49,7 +49,8 @@
       if( (_restat_ = (x)) != 0 )                                       \
       {                                                                 \
          SCIPerrorMessage("Error in pricing solver: CPLEX returned %d\n", _restat_); \
-         return SCIP_INVALIDRESULT;                                     \
+         retval = SCIP_INVALIDRESULT;                                   \
+         goto TERMINATE;                                                \
       }                                                                 \
    }
 
@@ -153,12 +154,13 @@ SCIP_RETCODE buildProblem(
    double* rhss;
    double* ranges;
    char* senses;
-   double* coefs;
+   double* coefs = NULL;
    int* rowidx;
    int* colidx;
    SCIP_Real lhs;
    SCIP_Real rhs;
    SCIP_VARTYPE type;
+   SCIP_RETCODE retval;
    int nconss;
    int nvars;
    int status;
@@ -175,6 +177,8 @@ SCIP_RETCODE buildProblem(
    solverdata->lp[probnr] = CPXcreateprob(solverdata->cpxenv[probnr], &status, SCIPgetProbName(pricingprob));
    solverdata->pricingprobs[probnr] = pricingprob;
 
+   retval = SCIP_OKAY;
+
    /* set parameters */
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPGAP, 0.0) );
    CHECK_ZERO( CPXsetdblparam(solverdata->cpxenv[probnr], CPX_PARAM_EPAGAP, 0.0) );
@@ -184,7 +188,7 @@ SCIP_RETCODE buildProblem(
 
    /* set objective sense */
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
-#if CPX_VERSION_VERSION >= 12 && CPX_VERSION_RELEASE >= 5
+#if (CPX_VERSION_VERSION == 12 && CPX_VERSION_RELEASE >= 5) || CPX_VERSION_VERSION > 12
    CHECK_ZERO( CPXchgobjsen(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPX_MIN) );
 #else
    CPXchgobjsen(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPX_MIN);
@@ -336,37 +340,40 @@ SCIP_RETCODE buildProblem(
 #endif
 
    solverdata->created[probnr] = TRUE;
-
+ TERMINATE:
    /* free temporary memory */
-   SCIPfreeBufferArray(scip, &coefs);
-   SCIPfreeBufferArray(scip, &colidx);
-   SCIPfreeBufferArray(scip, &rowidx);
-
-   SCIPfreeBufferArray(scip, &consvals);
-   SCIPfreeBufferArray(scip, &consvars);
-
-   for( v = nvars - 1; v >= 0; --v )
+   if( coefs != NULL )
    {
-      SCIPfreeBufferArray(scip, &varnames[v]);
+      SCIPfreeBufferArray(scip, &coefs);
+      SCIPfreeBufferArray(scip, &colidx);
+      SCIPfreeBufferArray(scip, &rowidx);
+
+      SCIPfreeBufferArray(scip, &consvals);
+      SCIPfreeBufferArray(scip, &consvars);
+
+      for( v = nvars - 1; v >= 0; --v )
+      {
+         SCIPfreeBufferArray(scip, &varnames[v]);
+      }
+
+      for( c = nconss - 1; c >= 0; --c )
+      {
+         SCIPfreeBufferArray(scip, &consnames[c]);
+      }
+
+      SCIPfreeBufferArray(scip, &consnames);
+      SCIPfreeBufferArray(scip, &ranges);
+      SCIPfreeBufferArray(scip, &senses);
+      SCIPfreeBufferArray(scip, &rhss);
+
+      SCIPfreeBufferArray(scip, &varnames);
+      SCIPfreeBufferArray(scip, &varub);
+      SCIPfreeBufferArray(scip, &varlb);
+      SCIPfreeBufferArray(scip, &vartype);
+      SCIPfreeBufferArray(scip, &varobj);
    }
 
-   for( c = nconss - 1; c >= 0; --c )
-   {
-      SCIPfreeBufferArray(scip, &consnames[c]);
-   }
-
-   SCIPfreeBufferArray(scip, &consnames);
-   SCIPfreeBufferArray(scip, &ranges);
-   SCIPfreeBufferArray(scip, &senses);
-   SCIPfreeBufferArray(scip, &rhss);
-
-   SCIPfreeBufferArray(scip, &varnames);
-   SCIPfreeBufferArray(scip, &varub);
-   SCIPfreeBufferArray(scip, &varlb);
-   SCIPfreeBufferArray(scip, &vartype);
-   SCIPfreeBufferArray(scip, &varobj);
-
-   return SCIP_OKAY;
+   return retval;
 }
 
 
@@ -400,6 +407,7 @@ SCIP_RETCODE updateProblem(
    int* newcolidx;
    SCIP_Real lhs;
    SCIP_Real rhs;
+   SCIP_RETCODE retval;
    int nconss;
    int nvars;
    int varidx;
@@ -408,7 +416,7 @@ SCIP_RETCODE updateProblem(
    int nnonzeros;
    int npricingvars;
    int nbasicpricingconss;
-   int nnewconss;
+   int nnewconss = 0;
    int considx;
    int idx;
    int c;
@@ -423,6 +431,8 @@ SCIP_RETCODE updateProblem(
    nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
 
    assert(npricingvars == nvars);
+
+   retval = SCIP_OKAY;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &objidx, npricingvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &varobj, npricingvars) );
@@ -440,14 +450,6 @@ SCIP_RETCODE updateProblem(
    {
       CHECK_ZERO( CPXdelrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nbasicpricingconss, ncpxrows - 1) );
    }
-
-   nnewconss = nconss - nbasicpricingconss;
-
-   /* temporary arrays for storing data about new constraints */
-   SCIP_CALL( SCIPallocBufferArray(scip, &newrhss, nnewconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &newsenses, nnewconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &newranges, nnewconss) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &newconsnames, nnewconss) );
 
    /* get new bounds and objective coefficients of variables */
    for( i = 0; i < nvars; i++ )
@@ -467,6 +469,21 @@ SCIP_RETCODE updateProblem(
       objidx[varidx] = varidx;
       varobj[varidx] = SCIPvarGetObj(var);
    }
+
+   /* update bounds and objective coefficient of basic variables */
+   CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, udpatevaridx, boundtypes, bounds) );
+   CHECK_ZERO( CPXchgobj(solverdata->cpxenv[probnr], solverdata->lp[probnr], nvars, objidx, varobj) );
+
+   nnewconss = nconss - nbasicpricingconss;
+
+   if( nnewconss == 0 )
+      goto TERMINATE;
+
+   /* temporary arrays for storing data about new constraints */
+   SCIP_CALL( SCIPallocBufferArray(scip, &newrhss, nnewconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &newsenses, nnewconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &newranges, nnewconss) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &newconsnames, nnewconss) );
 
    /* get information about new constraints */
    nnonzeros = 0;
@@ -552,14 +569,11 @@ SCIP_RETCODE updateProblem(
    }
    assert(idx == nnonzeros);
 
-   /* update bounds and objective coefficient of basic variables */
-   CHECK_ZERO( CPXchgbds(solverdata->cpxenv[probnr], solverdata->lp[probnr], 2 * nvars, udpatevaridx, boundtypes, bounds) );
-   CHECK_ZERO( CPXchgobj(solverdata->cpxenv[probnr], solverdata->lp[probnr], nvars, objidx, varobj) );
-
    /* add new constraints */
    CHECK_ZERO( CPXnewrows(solverdata->cpxenv[probnr], solverdata->lp[probnr], nnewconss, newrhss, newsenses, newranges, newconsnames) );
    CHECK_ZERO( CPXchgcoeflist(solverdata->cpxenv[probnr], solverdata->lp[probnr], nnonzeros, newrowidx, newcolidx, newcoefs) );
 
+ TERMINATE:
 #ifdef WRITEPROBLEMS
    {
       char* ausgabe[SCIP_MAXSTRLEN];
@@ -570,22 +584,25 @@ SCIP_RETCODE updateProblem(
 #endif
 
    /* free temporary memory */
-   SCIPfreeBufferArray(scip, &newcoefs);
-   SCIPfreeBufferArray(scip, &newcolidx);
-   SCIPfreeBufferArray(scip, &newrowidx);
-
-   SCIPfreeBufferArray(scip, &consvals);
-   SCIPfreeBufferArray(scip, &consvars);
-
-   for( c = nnewconss - 1; c >= 0; --c )
+   if( nnewconss > 0 )
    {
-      SCIPfreeBufferArray(scip, &newconsnames[c]);
-   }
+      SCIPfreeBufferArray(scip, &newcoefs);
+      SCIPfreeBufferArray(scip, &newcolidx);
+      SCIPfreeBufferArray(scip, &newrowidx);
 
-   SCIPfreeBufferArray(scip, &newconsnames);
-   SCIPfreeBufferArray(scip, &newranges);
-   SCIPfreeBufferArray(scip, &newsenses);
-   SCIPfreeBufferArray(scip, &newrhss);
+      SCIPfreeBufferArray(scip, &consvals);
+      SCIPfreeBufferArray(scip, &consvars);
+
+      for( c = nnewconss - 1; c >= 0; --c )
+      {
+         SCIPfreeBufferArray(scip, &newconsnames[c]);
+      }
+
+      SCIPfreeBufferArray(scip, &newconsnames);
+      SCIPfreeBufferArray(scip, &newranges);
+      SCIPfreeBufferArray(scip, &newsenses);
+      SCIPfreeBufferArray(scip, &newrhss);
+   }
 
    SCIPfreeBufferArray(scip, &bounds);
    SCIPfreeBufferArray(scip, &boundtypes);
@@ -593,7 +610,7 @@ SCIP_RETCODE updateProblem(
    SCIPfreeBufferArray(scip, &varobj);
    SCIPfreeBufferArray(scip, &objidx);
 
-   return SCIP_OKAY;
+   return retval;
 }
 
 
@@ -613,6 +630,7 @@ SCIP_RETCODE solveCplex(
    SCIP_STATUS*          result              /**< pointer to store the result code */
    )
 {
+   SCIP_RETCODE retval;
    double* cplexsolvals;
    double objective;
    double upperbound;
@@ -622,6 +640,9 @@ SCIP_RETCODE solveCplex(
    int s;
 
    *nsols = 0;
+   *result = SCIP_STATUS_UNKNOWN;
+
+   retval = SCIP_OKAY;
 
    numcols = CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
    assert(numcols == SCIPgetNVars(pricingprob));
@@ -659,7 +680,7 @@ SCIP_RETCODE solveCplex(
 
       *result = SCIP_STATUS_UNBOUNDED;
 
-      return SCIP_OKAY;
+      goto TERMINATE;
    }
    case CPXMIP_NODE_LIM_FEAS: /* 105 */
    case CPXMIP_TIME_LIM_FEAS: /* 107 */
@@ -679,8 +700,7 @@ SCIP_RETCODE solveCplex(
    {
       /* @todo what about CPXMIP_OPTIMAL_TOL = 102? should not happen, because gaplimit is set to 0, but happens anyway */
       *result = SCIP_STATUS_UNKNOWN;
-      SCIPfreeBufferArray(scip, &cplexsolvals);
-      return SCIP_OKAY;
+      goto TERMINATE;
    }
    }
 
@@ -741,10 +761,10 @@ SCIP_RETCODE solveCplex(
          }
       }
    }
-
+ TERMINATE:
    SCIPfreeBufferArray(scip, &cplexsolvals);
 
-   return SCIP_OKAY;
+   return retval;
 }
 
 
@@ -802,6 +822,7 @@ static GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
 static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 {
    GCG_SOLVERDATA* solverdata;
+   SCIP_RETCODE retval;
    int npricingprobs;
    int i;
    int j;
@@ -811,6 +832,8 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
+
+   retval = SCIP_OKAY;
 
    npricingprobs = GCGrelaxGetNPricingprobs(solverdata->origprob);
 
@@ -847,6 +870,7 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
       }
    }
 
+ TERMINATE:
    SCIPfreeBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->npricingvars), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->pricingconss), solverdata->npricingprobs);
@@ -858,7 +882,7 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
    SCIPfreeBlockMemoryArray(scip, &(solverdata->lp), solverdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(solverdata->cpxenv), solverdata->npricingprobs);
 
-   return SCIP_OKAY;
+   return retval;
 }
 
 #define solverInitCplex NULL
