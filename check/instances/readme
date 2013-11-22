@@ -22,13 +22,6 @@ The instances
  Ceselli A., Righini G., "A branch and price algorithm for the capacitated p-median problem",
  Networks 45(3): 125-142 (2005)
 
-The instances
- TEST0055.lp
- TEST0059.lp
- are introduced in the paper
- Y. Cui*, X. Zhao, Y. Yang, and P. Yu, A heuristic for the one-dimensional cutting stock problem with
- pattern reduction, 2008
-
 The nowswot.mps instance is from the MIPLIB2003 available under http://miplib.zib.de
 
 The testset files
