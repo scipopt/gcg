@@ -148,11 +148,17 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
    assert(masterbranchcons != NULL);
+
+   /* if branch rule is not generic, abort */
+   if( GCGconsMasterbranchGetbranchrule(masterbranchcons) == NULL || strcmp(BRANCHRULE_NAME, SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(masterbranchcons))) != 0)
+      return SCIP_OKAY;
+
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    parentcons = masterbranchcons;
    branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
+
 
    if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
    {
