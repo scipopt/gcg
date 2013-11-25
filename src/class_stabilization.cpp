@@ -28,6 +28,7 @@
 /**@file   class_stabilization.cpp
  * @brief  Description
  * @author Martin Bergner
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -143,8 +144,7 @@ SCIP_RETCODE Stabilization::linkingconsGetDual(
    SCIP_CONS* cons = GCGrelaxGetLinkingconss(origprob)[i];
 
    *dual = computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
-   //SCIPdebugMessage("dual for constraint <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIPconsGetName(cons), *dual, alpha, stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
+
    return SCIP_OKAY;
 }
 
@@ -168,8 +168,7 @@ SCIP_RETCODE Stabilization::consGetDual(
    assert(i < nstabcenterconss);
 
    *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons) );
-   //SCIPdebugMessage("dual for constraint <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIPconsGetName(cons), *dual, alpha, stabcenterconss[i], pricingtype->consGetDual(scip_, cons));
+
    return SCIP_OKAY;
 }
 
@@ -192,8 +191,6 @@ SCIP_RETCODE Stabilization::rowGetDual(
    assert(i < nstabcentercuts);
 
    *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row) );
-   //SCIPdebugMessage("dual for row <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIProwGetName(row), *dual, alpha, stabcenterconss[i], pricingtype->rowGetDual(row));
 
    return SCIP_OKAY;
 }
@@ -210,8 +207,7 @@ SCIP_RETCODE Stabilization::convGetDual(
    SCIP_CONS* cons = GCGrelaxGetConvCons(origprob, i);
 
    *dual = computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons));
-   //SCIPdebugMessage("dual for constraint <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIPconsGetName(cons), *dual, alpha, stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
+
    return SCIP_OKAY;
 }
 
@@ -237,15 +233,14 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    /* get new dual values */
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
-   SCIP_CONS** conss = GCGrelaxGetMasterConss(origprob);
-   SCIP_CONS** linkingconss = GCGrelaxGetLinkingconss(origprob);
-   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
+
    int nconss = GCGrelaxGetNMasterConss(origprob);
-   assert(nconss <= nstabcenterconss);
-   SCIP_ROW** cuts = GCGsepaGetMastercuts(scip_);
    int ncuts = GCGsepaGetNMastercuts(scip_);
-   assert(ncuts <= nstabcentercuts);
    int nprobs = GCGrelaxGetNPricingprobs(origprob);
+
+   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
+   assert(nconss <= nstabcenterconss);
+   assert(ncuts <= nstabcentercuts);
 
    for( int i = 0; i < nconss; ++i )
    {
