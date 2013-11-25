@@ -28,6 +28,7 @@
 /**@file   class_stabilization.cpp
  * @brief  Description
  * @author Martin Bergner
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -47,7 +48,7 @@ Stabilization::Stabilization(
    PricingType* pricingtype_
    ) :scip_(scip), stabcenterconss(NULL), stabcenterconsssize(0), nstabcenterconss(0),
       stabcentercuts(NULL), stabcentercutssize(0), nstabcentercuts(0),
-      stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0),
+      stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0), stabcenterconv(NULL), stabcenterconvsize(0), nstabcenterconv(0),
       pricingtype(pricingtype_), alpha(0.8), node(NULL), k(0), hasstabilitycenter(FALSE)
 {
 
@@ -58,6 +59,7 @@ Stabilization::~Stabilization()
    SCIPfreeMemoryArrayNull(scip_, &stabcenterconss);
    SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
    SCIPfreeMemoryArrayNull(scip_, &stabcentercuts);
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterconv);
 }
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()
@@ -118,6 +120,17 @@ SCIP_RETCODE Stabilization::setNLinkingconss(
    return SCIP_OKAY;
 }
 
+SCIP_RETCODE Stabilization::setNConvconss(
+      int nconvconssnew
+      )
+{
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconv);
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, SCIPcalcMemGrowSize(scip_, nconvconssnew)) );
+   nstabcenterconv = nconvconssnew;
+   BMSclearMemoryArray(stabcenterconv, nstabcenterconv);
+
+   return SCIP_OKAY;
+}
 
 SCIP_RETCODE Stabilization::linkingconsGetDual(
    int i,
@@ -131,8 +144,7 @@ SCIP_RETCODE Stabilization::linkingconsGetDual(
    SCIP_CONS* cons = GCGrelaxGetLinkingconss(origprob)[i];
 
    *dual = computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
-   //SCIPdebugMessage("dual for constraint <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIPconsGetName(cons), *dual, alpha, stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
+
    return SCIP_OKAY;
 }
 
@@ -156,8 +168,7 @@ SCIP_RETCODE Stabilization::consGetDual(
    assert(i < nstabcenterconss);
 
    *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons) );
-   //SCIPdebugMessage("dual for constraint <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIPconsGetName(cons), *dual, alpha, stabcenterconss[i], pricingtype->consGetDual(scip_, cons));
+
    return SCIP_OKAY;
 }
 
@@ -180,8 +191,22 @@ SCIP_RETCODE Stabilization::rowGetDual(
    assert(i < nstabcentercuts);
 
    *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row) );
-   //SCIPdebugMessage("dual for row <%s> is %g (alpha = %g, stab = %g, dual = %g).\n",
-   //      SCIProwGetName(row), *dual, alpha, stabcenterconss[i], pricingtype->rowGetDual(row));
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Stabilization::convGetDual(
+   int i,
+   SCIP_Real* dual
+   )
+{
+   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+
+   assert(nstabcenterconv<= GCGrelaxGetNPricingprobs(origprob));
+
+   SCIP_CONS* cons = GCGrelaxGetConvCons(origprob, i);
+
+   *dual = computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons));
 
    return SCIP_OKAY;
 }
@@ -190,6 +215,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_Real lowerbound
    )
 {
+   SCIP_Real dualsol;
    SCIPdebugMessage("Updating stability center: ");
 
    /* in case the bound is not improving, do nothing */
@@ -207,28 +233,43 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    /* get new dual values */
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
-   SCIP_CONS** conss = GCGrelaxGetMasterConss(origprob);
-   SCIP_CONS** linkingconss = GCGrelaxGetLinkingconss(origprob);
-   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
+
    int nconss = GCGrelaxGetNMasterConss(origprob);
-   assert(nconss <= nstabcenterconss);
-   SCIP_ROW** cuts = GCGsepaGetMastercuts(scip_);
    int ncuts = GCGsepaGetNMastercuts(scip_);
+   int nprobs = GCGrelaxGetNPricingprobs(origprob);
+
+   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
+   assert(nconss <= nstabcenterconss);
    assert(ncuts <= nstabcentercuts);
 
    for( int i = 0; i < nconss; ++i )
    {
-      stabcenterconss[i] = pricingtype->consGetDual(scip_, conss[i]);
+      consGetDual(i, &dualsol);
+
+      stabcenterconss[i] = dualsol;
    }
 
    for( int i = 0; i < ncuts; ++i )
    {
-      stabcentercuts[i] = pricingtype->rowGetDual(cuts[i]);
+      rowGetDual(i, &dualsol);
+
+      stabcentercuts[i] = dualsol;
    }
 
    for( int i = 0; i < nstabcenterlinkingconss; ++i)
    {
-      stabcenterlinkingconss[i] = pricingtype->consGetDual(scip_, linkingconss[i]);
+      linkingconsGetDual(i, &dualsol);
+
+      stabcenterlinkingconss[i] = dualsol;
+   }
+
+   for( int i = 0; i < nprobs; ++i )
+   {
+      if(!GCGrelaxIsPricingprobRelevant(origprob, i))
+         continue;
+      convGetDual(i, &dualsol);
+
+      stabcenterconv[i] = dualsol;
    }
 
    hasstabilitycenter = TRUE;

@@ -28,6 +28,7 @@
 /**@file   class_stabilization.h
  * @brief  Description
  * @author Martin Bergner
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -52,6 +53,9 @@ private:
    int nstabcentercuts;
    SCIP_Real* stabcenterlinkingconss;
    int nstabcenterlinkingconss;
+   SCIP_Real* stabcenterconv;
+   int stabcenterconvsize;
+   int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;
    SCIP_NODE* node;
@@ -75,6 +79,11 @@ public:
       SCIP_Real* dual
       );
 
+   SCIP_RETCODE convGetDual(
+      int i,
+      SCIP_Real* dual
+      );
+
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real lowerbound
       );
@@ -93,6 +102,10 @@ public:
    SCIP_RETCODE setNLinkingconss(
       int nlinkingconssnew
       );
+
+   SCIP_RETCODE setNConvconss(
+         int nconvconssnew
+         );
 
    SCIP_RETCODE linkingconsGetDual(
       int i,
