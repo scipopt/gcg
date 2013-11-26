@@ -1529,6 +1529,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    }
 
    GCGupdateVarStatistics(scip, origprob, newvar, redcost);
+   SCIPdebugMessage("Added variable <%s>\n", varname);
 
    return SCIP_OKAY;
 }
@@ -1721,9 +1722,7 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
  */
 SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
    int                   prob,               /**< index of pricing problem */
-   SCIP_CONS*            branchcons,          /**< branching constraints from which bound should applied */
-   SCIP_CONS***          pricingconss,
-   int*                  npricingconss
+   SCIP_CONS*            branchcons         /**< branching constraints from which bound should applied */
 )
 {
    GCG_BRANCHDATA* branchdata = GCGconsMasterbranchGetBranchdata(branchcons);
@@ -1732,28 +1731,23 @@ SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
    int i;
    for( i = 0; i < ncomponents; ++i)
    {
-      SCIP_CONS* cons;
-      char name[SCIP_MAXSTRLEN];
-      SCIP_Real val[] = {1.0};
       SCIP_Real bound = components[i].bound;
       SCIP_VAR* var = GCGoriginalVarGetPricingVar(components[i].component);
-      SCIP_VAR* vars[1] = {var};
-      SCIPsnprintf(name, SCIP_MAXSTRLEN, "bound_%s", SCIPvarGetName(var));
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, pricingconss, (*npricingconss) +1) );
+      SCIP_Bool infeasible = FALSE;
+      SCIP_Bool tightened = TRUE;
 
-      if( components->sense == GCG_COMPSENSE_GE )
+      if( components[i].sense == GCG_COMPSENSE_GE )
       {
-         SCIP_CALL( SCIPcreateConsBasicLinear(pricerdata->pricingprobs[prob], &cons, name, 1, vars, val, bound, SCIPinfinity(pricerdata->pricingprobs[prob])) );
-         SCIP_CALL( SCIPaddCons(pricerdata->pricingprobs[prob], cons));
+         SCIP_CALL( SCIPtightenVarLb(pricerdata->pricingprobs[prob], var, bound, TRUE, &infeasible, &tightened));
+         SCIPdebugMessage("Added <%s> >= %.2f\n", SCIPvarGetName(var), bound);
+         assert(infeasible || tightened || SCIPvarGetLbLocal(var) >= bound);
       }
       else
       {
-         SCIP_CALL( SCIPcreateConsBasicLinear(pricerdata->pricingprobs[prob], &cons, name, 1, vars, val, -SCIPinfinity(pricerdata->pricingprobs[prob]), bound-1) );
-         SCIP_CALL( SCIPaddCons(pricerdata->pricingprobs[prob], cons));
+         SCIP_CALL( SCIPtightenVarUb(pricerdata->pricingprobs[prob], var, bound-1, TRUE, &infeasible, &tightened));
+         SCIPdebugMessage("Added <%s> <= %.2f\n", SCIPvarGetName(var), bound-1);
+         assert(infeasible || tightened || SCIPvarGetUbGlobal(var) <= bound-1);
       }
-      SCIPdebugPrintCons(pricerdata->pricingprobs[prob], cons, NULL);
-      (*pricingconss)[*npricingconss] = cons;
-      (*npricingconss) += 1;
    }
 
    return SCIP_OKAY;
@@ -1812,8 +1806,8 @@ SCIP_RETCODE ObjPricerGcg::removeBranchingDecisionsFromPricingProblem(
 
    for( i = 0; i < npricingconss; ++i )
    {
-      SCIP_CALL( SCIPdelCons(pricerdata->pricingprobs[prob], (pricingconss[i])) );
-      SCIP_CALL( SCIPreleaseCons(pricerdata->pricingprobs[prob], &(pricingconss[i])) );
+  //    SCIP_CALL( SCIPdelCons(pricerdata->pricingprobs[prob], (pricingconss[i])) );
+  //    SCIP_CALL( SCIPreleaseCons(pricerdata->pricingprobs[prob], &(pricingconss[i])) );
    }
 
    return SCIP_OKAY;
@@ -1842,9 +1836,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_Bool candidatefound = TRUE;
    int i;
    int j;
-   int lastboundchanges = -1;
-   SCIP_CONS** pricingconss = NULL;
-   int npricingconss = 0;
 
    SCIP_CONS** branchconss = NULL; /* stack of branching constraints */
    int nbranchconss = 0; /* number of branching constraints */
@@ -1862,7 +1853,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       return SCIP_OKAY;
    }
 
-   lastboundchanges = nbranchconss;
 
    /* unapply all bound changes up to the branching point
     * Not needed because they are not added to the pricing problem
@@ -1871,8 +1861,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    /* solve initial pricing problem (one solution only) */
    SCIPdebugMessage("solving initial problem %d:\n", prob);
 
-   //SCIP_CALL( addBranchingBoundChangesToPricing(prob, branchconss[nbranchconss-1], &pricingconss, &npricingconss) );
-   lastboundchanges = nbranchconss;
    SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, 1, nsols, status) ); /**@todo change 1 to maxsols if implemented */
 
    if( *status == SCIP_STATUS_INFEASIBLE ) /** @todo other statuses */
@@ -1886,6 +1874,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
          SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &bestsol) );
       }
       *nsols = 0;
+      //SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], NULL, "lp", FALSE) );
       SCIPdebugMessage("Problem is infeasible\n");
       return SCIP_OKAY;
    }
@@ -1909,11 +1898,11 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       SCIPdebugMessage("Check bound changes at depth -%d\n", i);
       /* check feasibility of the current best solution (bounds only is enough) */
-   //   for( j = lastboundchanges-1; j >= i; --j )
+      for( j = nbranchconss-1; j >= i; --j )
       {
          SCIP_CALL( checkBranchingBoundChanges(prob, bestsol, branchconss[i], &feasible) );
-     //    if( !feasible)
-     //       break;
+         if( !feasible)
+            break;
       }
 
       /* update cumsigma */
@@ -1939,24 +1928,28 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       /* add bound changes of current branch */
       SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &bestsol) );
       SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
-      //SCIP_CALL( removeBranchingDecisionsFromPricingProblem(prob, pricingconss, npricingconss) );
-      //npricingconss = 0;
-      //SCIP_CALL( SCIPpresolve(pricerdata->pricingprobs[prob]) );
-      for( j = nbranchconss-1; j >= i; --j )
+      //SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], NULL, "lp", FALSE) );
+      SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
+      for( j = nbranchconss-1;j >= 0; --j )
       {
-         SCIPdebugMessage("Applying bound change of depth %d", -i);
-         SCIP_CALL( addBranchingBoundChangesToPricing(prob, branchconss[j], &pricingconss, &npricingconss) );
+         SCIPdebugMessage("Applying bound change of depth %d\n", -j);
+         SCIP_CALL( addBranchingBoundChangesToPricing(prob, branchconss[j]) );
       }
-      lastboundchanges = i;
+
+
+      //SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], NULL, "lp", FALSE) );
 
       SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, 1, nsols, status) ); /**@todo change 1 to maxsols if implemented */
+
       if( *status == SCIP_STATUS_INFEASIBLE) /** @todo handle remaiming status */
       {
-         SCIPdebugMessage("The problem is infeasible");
-         SCIP_CALL( SCIPwriteOrigProblem(pricerdata->pricingprobs[prob], "pricing_f.lp", "lp", FALSE) );
+         SCIPdebugMessage("The problem is infeasible\n");
+         // SCIP_CALL( SCIPwriteTransProblem(pricerdata->pricingprobs[prob], NULL, "lp", FALSE) );
          found = FALSE;
+         candidatefound = FALSE;
          break;
       }
+      assert(*status == SCIP_STATUS_OPTIMAL);
       /* update objvalue */
       bestsol = sols[0];
       objvalue = *lowerbound;
@@ -1978,7 +1971,11 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       }
 
       SCIPdebugPrintf("not good enough: %.4f(-%.4f) - %.4f = %.4f < 0\n", objvalue,pricerdata->dualsolconv[prob], cumsigma, objvalue-cumsigma);
-
+      if( i == 0)
+      {
+         found = FALSE;
+         candidatefound = FALSE;
+      }
       /* check feasibility in subsequent problems */
       trycumsigma = cumsigma;
       continue;
@@ -2028,20 +2025,16 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
          SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &bestsol) );
       }
    }
-   SCIP_Bool success;
-   SCIP_CALL( SCIPcreateFiniteSolCopy(pricerdata->pricingprobs[prob], &bestsol, sols[0], &success) );
-   assert(success);
-   SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[0]) );
-   sols[0] = bestsol;
 
-   SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]));
-   SCIP_CALL( removeBranchingDecisionsFromPricingProblem(prob, pricingconss, npricingconss) );
+   *lowerbound -= cumsigma;
+   if(!solisray[0])
+      *lowerbound += pricerdata->dualsolconv[prob];
 
-   *lowerbound -= cumsigma + pricerdata->dualsolconv[prob];
+   assert(found || *nsols == 0);
 
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
    SCIPfreeMemoryArrayNull(scip_, &branchduals);
-   SCIPfreeMemoryArrayNull(scip_, &pricingconss);
+
    return SCIP_OKAY;
 }
 

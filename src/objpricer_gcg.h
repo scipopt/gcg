@@ -321,9 +321,7 @@ private:
     */
    SCIP_RETCODE addBranchingBoundChangesToPricing(
       int                   prob,               /**< index of pricing problem */
-      SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
-      SCIP_CONS***          pricingconss,
-      int*                  npricingconss
+      SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
    );
 
    /** remove bounds change from constraint from the pricing problem at this node

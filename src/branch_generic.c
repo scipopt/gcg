@@ -143,7 +143,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   /* SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
+   SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
    assert(masterbranchcons != NULL);
@@ -161,7 +161,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
    {
-
+      SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
       while( parentcons != NULL && branchdata != NULL
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
       {
@@ -169,15 +169,14 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          SCIP_VAR** pricingvars;
          int k;
 
-         if( GCGconsMasterbranchGetbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0 )
+         if( GCGconsMasterbranchGetbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") != 0 )
             break;
 
-         if( GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") == 0 )
+         if( GCGconsMasterbranchGetOrigbranchrule(parentcons) == NULL || strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetOrigbranchrule(parentcons)), "generic") != 0 )
             break;
 
          assert(branchdata != NULL);
 
-         varinS = TRUE;
 
          if( (GCGbranchGenericBranchdataGetConsblocknr(branchdata) != GCGvarGetBlock(mastervar) && GCGvarGetBlock(mastervar) != -1 )
                || (GCGvarGetBlock(mastervar) == -1 && !GCGvarIsLinking(mastervar)) )
@@ -223,8 +222,8 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
          }
 
 
-        /*  SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata)); */
-
+         SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
+         varinS = TRUE;
          for( p = 0; p < GCGbranchGenericBranchdataGetConsSsize(branchdata); ++p )
          {
             SCIP_Real generatorentry;
@@ -2185,7 +2184,7 @@ SCIP_RETCODE createChildNodesGeneric(
    mu = 0;
 
    pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);
-   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, pL);
+   SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %.1f identical blocks \n", blocknr, pL);
 
 
    /*  get variable data of the master problem */
