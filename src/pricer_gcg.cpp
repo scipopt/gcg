@@ -1233,6 +1233,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
 }
 
 SCIP_Real ObjPricerGcg::computeRedCost(
+   PricingType*          pricetype,          /**< type of pricing */
+   SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
    SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
    SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
    int                   nsolvars,           /**< number of variables in array solvars */
@@ -1364,6 +1366,8 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 /** creates a new master variable corresponding to the given solution and problem */
 SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
+   PricingType*          pricetype,          /**< type of pricing */
+   SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
    SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
    SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
    int                   nsolvars,           /**< number of variables in array solvars */
@@ -1388,7 +1392,8 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    assert(solvals != NULL);
    assert(nsolvars >= 0);
    assert(pricerdata != NULL);
-
+   assert((pricetype == NULL) == (force));
+   assert((pricetype == NULL) == (sol == NULL));
    if( addedvar != NULL )
       *addedvar = NULL;
 
@@ -1398,7 +1403,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( !force )
    {
       /* compute the objective function value of the solution */
-      redcost = computeRedCost(solvars, solvals, nsolvars, solisray, prob, &objvalue);
+      redcost = computeRedCost(pricetype, sol, solvars, solvals, nsolvars, solisray, prob, &objvalue);
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
@@ -1485,7 +1490,6 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
 
    if( addedvar != NULL )
    {
-
       *addedvar = newvar;
    }
 
@@ -1603,6 +1607,7 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
 }
 
 int ObjPricerGcg::countPricedVariables(
+   PricingType* pricetype,
    int& prob,
    SCIP_SOL** sols,
    int nsols,
@@ -1616,6 +1621,8 @@ int ObjPricerGcg::countPricedVariables(
    int nfoundvars;
 
    SCIPdebugMessage("checking %d solution of pricing problem %d\n", nsols, prob);
+   if(nsols == 0)
+      return 0;
 
    nfoundvars = 0;
    solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
@@ -1624,7 +1631,8 @@ int ObjPricerGcg::countPricedVariables(
    for( int j = 0; j < nsols; ++j )
    {
       SCIP_CALL_ABORT( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[j], nsolvars, solvars, solvals) );
-      redcost = computeRedCost(solvars, solvals, nsolvars, solisray[j], prob, NULL);
+      redcost = computeRedCost(pricetype, sols[j], solvars, solvals, nsolvars, solisray[j], prob, NULL);
+
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (sols[j]), redcost);
       if( SCIPisNegative(scip_, redcost) )
       {
@@ -1760,7 +1768,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !infeasible )
             {
                #pragma omp atomic
-               nfoundvars += countPricedVariables(prob, sols[prob], nsols[prob], solisray[prob] );
+               nfoundvars += countPricedVariables(pricetype, prob, sols[prob], nsols[prob], solisray[prob] );
             }
 
             if( nvarsfound < nfoundvars )
@@ -1770,7 +1778,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             }
          }
 
-         if( optimal )
+         if( optimal && nsols[prob] > 0)
          {
             SCIP_Real convdual;
             stabilization->convGetDual(prob, &convdual);
@@ -1809,7 +1817,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          }
       }
 
-      if( pricerdata->stabilization && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
+      if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
          SCIP_Real lowerboundcandidate;
 
@@ -1924,7 +1932,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
 
             /* create new variable, compute objective function value and add it to the master constraints and cuts it belongs to */
-            SCIP_CALL( createNewMasterVar(scip_, solvars, solvals, nsolvars, solisray[prob][j], prob,
+            SCIP_CALL( createNewMasterVar(scip_, pricetype, sols[prob][j], solvars, solvals, nsolvars, solisray[prob][j], prob,
                   FALSE, &added, NULL) );
 
             if( added )
@@ -1944,7 +1952,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
-      SCIPdebugMessage("Freeing information for pricing %d.\n", i);
+      //SCIPdebugMessage("Freeing information for pricing %d.\n", i);
 
       for( j = 0; j < nsols[i]; ++j )
       {
@@ -2169,6 +2177,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
 
+   createStabilization();
+
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGrelaxGetNPricingprobs(origprob);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
@@ -2285,6 +2295,9 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    assert(pricerdata != NULL);
 
    SCIP_CALL( solversExitsol() );
+
+   delete stabilization;
+   stabilization = NULL;
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 
@@ -2472,7 +2485,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
 
    pricer->createPricingTypes();
-   pricer->createStabilization();
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,
@@ -2949,7 +2961,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       {
          continue;
       }
-      SCIP_CALL( pricer->createNewMasterVar(scip, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, TRUE, &added, &newvar) );
+      SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, TRUE, &added, &newvar) );
       assert(added);
 
       SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGrelaxGetNIdenticalBlocks(origprob, prob)) );

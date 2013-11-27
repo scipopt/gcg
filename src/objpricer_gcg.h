@@ -100,6 +100,8 @@ public:
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
          SCIP*          scip,               /**< SCIP data structure */
+         PricingType*   pricetype,          /**< type of pricing */
+         SCIP_SOL*      sol,                /**< solution to compute reduced cost for */
          SCIP_VAR**     solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
          double*        solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
          int            nsolvars,           /**< number of variables in array solvars */
@@ -161,6 +163,8 @@ private:
    );
 
    SCIP_Real  computeRedCost(
+      PricingType*          pricetype,          /**< type of pricing*/
+      SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars,           /**< number of variables in array solvars */
@@ -170,6 +174,7 @@ private:
       );
 
    int countPricedVariables(
+      PricingType*          pricetype,          /**< type of pricing*/
       int& prob,
       SCIP_SOL** sols,
       int nsols,
