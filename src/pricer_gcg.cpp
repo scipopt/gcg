@@ -1740,13 +1740,13 @@ SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
       {
          SCIP_CALL( SCIPtightenVarLb(pricerdata->pricingprobs[prob], var, bound, TRUE, &infeasible, &tightened));
          SCIPdebugMessage("Added <%s> >= %.2f\n", SCIPvarGetName(var), bound);
-         assert(infeasible || tightened || SCIPvarGetLbLocal(var) >= bound);
+         assert(infeasible || tightened ||  SCIPisGE(pricerdata->pricingprobs[prob], SCIPvarGetLbLocal(var), bound));
       }
       else
       {
          SCIP_CALL( SCIPtightenVarUb(pricerdata->pricingprobs[prob], var, bound-1, TRUE, &infeasible, &tightened));
          SCIPdebugMessage("Added <%s> <= %.2f\n", SCIPvarGetName(var), bound-1);
-         assert(infeasible || tightened || SCIPvarGetUbGlobal(var) <= bound-1);
+         assert(infeasible || tightened || SCIPisLE(pricerdata->pricingprobs[prob], SCIPvarGetUbGlobal(var), bound-1));
       }
    }
 
@@ -2123,7 +2123,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       bestredcost = 0.0;
       *bestredcostvalid =  (SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL) && optimal;
-      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
+      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));;
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
