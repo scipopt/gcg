@@ -165,9 +165,6 @@ private:
    SCIP_Real  computeRedCost(
       PricingType*          pricetype,          /**< type of pricing*/
       SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
-      SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
-      SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
-      int                   nsolvars,           /**< number of variables in array solvars */
       SCIP_Bool             solisray,           /**< is the solution a ray? */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */

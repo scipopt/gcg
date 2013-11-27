@@ -130,6 +130,7 @@ SCIP_RETCODE resolvePricingWithoutPresolving(
    SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrounds", 0) );
    SCIP_CALL( SCIPtransformProb(pricingprob) );
    SCIP_CALL( SCIPsolve(pricingprob) );
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrounds", -1) );
 
    return SCIP_OKAY;
 }
@@ -587,11 +588,11 @@ SCIP_RETCODE solveProblem(
          *nsols = *nsols + 1;
       }
 
-      if( SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT )
+      if( (SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL) || (SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT) )
          *lowerbound = SCIPgetDualbound(pricingprob);
 
       *status = SCIP_STATUS_OPTIMAL;
-      SCIPdebugMessage("pricingproblem found %d sols!\n", *nsols);
+      SCIPdebugMessage("pricingproblem found %d sols, lowerbound = %.4g!\n", *nsols, *lowerbound);
    }
 
    if( *nsols > 0 )

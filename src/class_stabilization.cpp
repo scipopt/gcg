@@ -56,10 +56,10 @@ Stabilization::Stabilization(
 
 Stabilization::~Stabilization()
 {
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterconss);
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
-   SCIPfreeMemoryArrayNull(scip_, &stabcentercuts);
-   SCIPfreeMemoryArrayNull(scip_, &stabcenterconv);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconss);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterlinkingconss, nstabcenterlinkingconss);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, nstabcentercuts);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv);
 }
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()

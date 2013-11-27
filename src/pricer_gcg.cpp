@@ -1235,16 +1235,24 @@ SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
 SCIP_Real ObjPricerGcg::computeRedCost(
    PricingType*          pricetype,          /**< type of pricing */
    SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
-   SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
-   SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
-   int                   nsolvars,           /**< number of variables in array solvars */
    SCIP_Bool             solisray,           /**< is the solution a ray? */
    int                   prob,               /**< number of the pricing problem the solution belongs to */
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    )
 {
+   SCIP* pricingscip;
+
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   int nsolvars;
    SCIP_Real objvalue;
    objvalue = 0.0;
+
+   pricingscip = pricerdata->pricingprobs[prob];
+   solvars = SCIPgetOrigVars(pricingscip);
+   nsolvars = SCIPgetNOrigVars(pricingscip);
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip_, &solvals, nsolvars) );
+   SCIP_CALL_ABORT( SCIPgetSolVals(pricingscip, sol, nsolvars, solvars, solvals) );
 
    /* compute the objective function value of the solution */
    for( int i = 0; i < nsolvars; i++ )
@@ -1253,6 +1261,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    if( objvalptr != NULL )
       *objvalptr = objvalue;
 
+   SCIPfreeBlockMemoryArray(scip_, &solvals, nsolvars);
    /* compute reduced cost of variable (i.e. subtract dual solution of convexity constraint, if solution corresponds to a point) */
    return (solisray ? objvalue : objvalue - pricerdata->dualsolconv[prob]);
 }
@@ -1403,7 +1412,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    if( !force )
    {
       /* compute the objective function value of the solution */
-      redcost = computeRedCost(pricetype, sol, solvars, solvals, nsolvars, solisray, prob, &objvalue);
+      redcost = computeRedCost(pricetype, sol, solisray, prob, &objvalue);
 
       if( !SCIPisSumNegative(scip, redcost) )
       {
@@ -1614,10 +1623,8 @@ int ObjPricerGcg::countPricedVariables(
    SCIP_Bool* solisray
    )
 {
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
+
    SCIP_Real redcost;
-   int nsolvars;
    int nfoundvars;
 
    SCIPdebugMessage("checking %d solution of pricing problem %d\n", nsols, prob);
@@ -1625,13 +1632,9 @@ int ObjPricerGcg::countPricedVariables(
       return 0;
 
    nfoundvars = 0;
-   solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
-   nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip_, &solvals, nsolvars));
    for( int j = 0; j < nsols; ++j )
    {
-      SCIP_CALL_ABORT( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[j], nsolvars, solvars, solvals) );
-      redcost = computeRedCost(pricetype, sols[j], solvars, solvals, nsolvars, solisray[j], prob, NULL);
+      redcost = computeRedCost(pricetype, sols[j], solisray[j], prob, NULL);
 
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (sols[j]), redcost);
       if( SCIPisNegative(scip_, redcost) )
@@ -1639,8 +1642,6 @@ int ObjPricerGcg::countPricedVariables(
          nfoundvars += 1;
       }
    }
-
-   SCIPfreeMemoryArray(scip_, &solvals);
 
    return nfoundvars;
 }
@@ -1696,6 +1697,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    dualconvsum = 0.0;
    *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = -SCIPinfinity(scip_);
+   if(lowerbound != NULL)
+      *lowerbound = -SCIPinfinity(scip_);
 
    maxsols = MAX(MAX(farkaspricing->getMaxvarsround(),reducedcostpricing->getMaxvarsround()),reducedcostpricing->getMaxvarsroundroot());
 
@@ -1727,7 +1730,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    do
    {
       bestredcost = 0.0;
-      *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
+      *bestredcostvalid =  (SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL) && optimal;
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
 
       /* set objectives of the variables in the pricing sub-MIPs */
@@ -1753,7 +1756,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
          }
          private_retcode = solvePricingProblem(prob, pricetype, optimal, &pricinglowerbound, sols[prob], solisray[prob], maxsols, &nsols[prob], &pricingstatus[prob]);
-
+         SCIPdebugMessage("nsols: %d, pricinglowerbound: %.4g\n", nsols[prob], pricinglowerbound);
          #pragma omp ordered
          {
             #pragma omp critical (retcode)
@@ -1871,10 +1874,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       }
       else if(*bestredcostvalid)
       {
-         *lowerbound = MAX(*lowerbound, SCIPgetLPObjval(scip_) + bestredcost);
+         *lowerbound = MAX(*lowerbound, SCIPgetLPObjval(scip_) + bestredcost-dualconvsum);
       }
 
-      SCIPdebugMessage("nfoundvars: %d\n", nfoundvars);
+      SCIPdebugMessage("nfoundvars: %d, lowerbound: %.4g\n", nfoundvars, lowerbound == NULL? -SCIPinfinity(scip_): *lowerbound);
 
       /* free solutions if none of them has negative reduced cost */
       if( nfoundvars == 0 )
