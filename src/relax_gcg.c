@@ -2226,11 +2226,14 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       }
 
       SCIPdebugMessage("Update lower bound (value = %g).\n", *lowerbound);
+      /* transform the current solution of the master problem to the original space and save it */
+      SCIPdebugMessage("Update current sol.\n");
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
    }
-
-   /* transform the current solution of the master problem to the original space and save it */
-   SCIPdebugMessage("Update current sol.\n");
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+   else
+   {
+      SCIPdebugMessage("Problem has been already solved at this node\n");
+   }
 
    if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL
       && SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
