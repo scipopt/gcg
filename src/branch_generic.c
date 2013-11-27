@@ -1531,7 +1531,7 @@ SCIP_RETCODE Explore(
 
       generatorentry = getGeneratorEntry(F[j], origvar);
 
-      if( SCIPisGE(scip, generatorentry, median) )
+      if( SCIPisGT(scip, generatorentry, median) )
       {
          alphacontrol += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
          mucontrol += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);

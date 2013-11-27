@@ -307,27 +307,10 @@ private:
       SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
       );
 
-   /** remove all bounds changes from the pricing problem at this node
-    * @note This message has to be threadsafe!
-    */
-   SCIP_RETCODE removeBranchingDecisionsFromPricingProblem(
-      int                   prob,                /**< index of pricing problem */
-      SCIP_CONS**           branchconss,         /**< stack of branching constraints  */
-      int                   nbranchconss         /**< size of the stack */
-      );
-
    /** add bounds change from constraint from the pricing problem at this node
     * @note This message has to be threadsafe!
     */
    SCIP_RETCODE addBranchingBoundChangesToPricing(
-      int                   prob,               /**< index of pricing problem */
-      SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
-   );
-
-   /** remove bounds change from constraint from the pricing problem at this node
-    * @note This message has to be threadsafe!
-    */
-   SCIP_RETCODE removeBranchingBoundChangesFromPricing(
       int                   prob,               /**< index of pricing problem */
       SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
    );
