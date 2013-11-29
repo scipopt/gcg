@@ -83,8 +83,27 @@ testdepend::
 $(TESTOBJDIR):	$(OBJDIR)
 		@-mkdir -p $(TESTOBJDIR)
 
+.PHONY: googletest
+googletest:
+		-mkdir lib/googletest/build
+		cd lib/googletest/build && cmake ../
+		cd lib/googletest/build && make
+
+.PHONY: bliss
+bliss:
+		@$(MAKE) -C lib/bliss
+
+.PHONY: soplex
+soplex:
+		@$(MAKE) -C lib/soplex-git OPT=opt
+
+.PHONY: deps
+deps:		bliss googletest scip soplex
+
 .PHONY: tests
 tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
+
+
 
 $(TESTSHORTLINK):	$(TESTFILE)
 		@rm -f $@

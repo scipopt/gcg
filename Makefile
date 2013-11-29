@@ -269,11 +269,6 @@ else
 		$(SHELL) -c '$(SPLINT) -I$(SRCDIR) -I/usr/include/linux $(FLAGS) $(SPLINTFLAGS) $(FILES %.c %.h,$^) &>> splint.out;'
 endif
 
-.PHONY: bliss
-bliss:
-		@$(MAKE) -C $(LIBDIR)/blissinc $^
-
-
 .PHONY: doc
 doc:
 		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
