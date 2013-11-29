@@ -54,7 +54,6 @@ private:
    SCIP_Real* stabcenterlinkingconss;
    int nstabcenterlinkingconss;
    SCIP_Real* stabcenterconv;
-   int stabcenterconvsize;
    int nstabcenterconv;
    PricingType* pricingtype;
    SCIP_Real alpha;

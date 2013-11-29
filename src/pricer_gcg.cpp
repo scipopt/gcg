@@ -2181,8 +2181,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    nmasterconss = GCGrelaxGetNMasterConss(origprob);
    masterconss = GCGrelaxGetMasterConss(origprob);
 
-   createStabilization();
-
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGrelaxGetNPricingprobs(origprob);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
@@ -2280,8 +2278,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    SCIP_CALL( solversInitsol() );
 
+   createStabilization();
    SCIP_CALL( stabilization->setNLinkingconss(GCGrelaxGetNLinkingconss(origprob)) );
-
    SCIP_CALL( stabilization->setNConvconss(GCGrelaxGetNPricingprobs(origprob)) );
 
 

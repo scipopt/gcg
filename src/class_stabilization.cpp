@@ -48,7 +48,8 @@ Stabilization::Stabilization(
    PricingType* pricingtype_
    ) :scip_(scip), stabcenterconss(NULL), stabcenterconsssize(0), nstabcenterconss(0),
       stabcentercuts(NULL), stabcentercutssize(0), nstabcentercuts(0),
-      stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0), stabcenterconv(NULL), stabcenterconvsize(0), nstabcenterconv(0),
+      stabcenterlinkingconss(NULL), nstabcenterlinkingconss(0),
+      stabcenterconv(NULL), nstabcenterconv(0),
       pricingtype(pricingtype_), alpha(0.8), node(NULL), k(0), hasstabilitycenter(FALSE)
 {
 
@@ -56,9 +57,9 @@ Stabilization::Stabilization(
 
 Stabilization::~Stabilization()
 {
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconss);
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterlinkingconss, nstabcenterlinkingconss);
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, nstabcentercuts);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, stabcenterconsssize);
+   SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, stabcentercutssize);
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv);
 }
 
@@ -112,8 +113,9 @@ SCIP_RETCODE Stabilization::setNLinkingconss(
       int nlinkingconssnew
       )
 {
-   SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterlinkingconss, nstabcenterlinkingconss);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterlinkingconss, SCIPcalcMemGrowSize(scip_, nlinkingconssnew)) );
+
+   SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
+   SCIP_CALL( SCIPallocMemoryArray(scip_, &stabcenterlinkingconss, nlinkingconssnew) );
    nstabcenterlinkingconss = nlinkingconssnew;
    BMSclearMemoryArray(stabcenterlinkingconss, nstabcenterlinkingconss);
 
@@ -125,7 +127,8 @@ SCIP_RETCODE Stabilization::setNConvconss(
       )
 {
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconss, nstabcenterconv);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, SCIPcalcMemGrowSize(scip_, nconvconssnew)) );
+
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &stabcenterconv, nconvconssnew) );
    nstabcenterconv = nconvconssnew;
    BMSclearMemoryArray(stabcenterconv, nstabcenterconv);
 
