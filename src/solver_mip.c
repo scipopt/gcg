@@ -45,9 +45,6 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "scip/scipdefplugins.h"
-/*
-  #define EXPERIMENTALUNBOUNDED
-*/
 
 #define SOLVER_NAME          "mip"
 #define SOLVER_DESC          "mip solver for pricing problems"
@@ -131,180 +128,6 @@ SCIP_RETCODE resolvePricingWithoutPresolving(
    SCIP_CALL( SCIPtransformProb(pricingprob) );
    SCIP_CALL( SCIPsolve(pricingprob) );
    SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrounds", -1) );
-
-   return SCIP_OKAY;
-}
-static
-SCIP_RETCODE inferFiniteSolution(
-   SCIP*                 pricingprob,        /**< pricing problem to solve again */
-   SCIP_SOL*             oldsol,             /**< old solution with infinite solution values */
-   SCIP_SOL**            newsol,             /**< new solution with finite solution values, or NULL if not possible */
-   SCIP_Bool*            solisray,           /**< whether the new solution is a ray */
-   SCIP_Bool*            freesol             /**< whether the new solution has to be freed */
-   )
-{
-   SCIP* newscip;
-   SCIP_HASHMAP* varmap;
-   SCIP_Bool valid;
-   SCIP_Real* solvals;
-   int i;
-   SCIP_Bool isinfinity;
-
-   assert(pricingprob != NULL);
-   assert(oldsol != NULL);
-   assert(newsol != NULL);
-   assert(solisray != NULL);
-   assert(freesol != NULL);
-
-   *newsol = NULL;
-   *freesol = FALSE;
-   SCIPdebugMessage("Trying to infer finite value!\n");
-
-   SCIP_CALL( resolvePricingWithoutPresolving(pricingprob) );
-
-   if( SCIPhasPrimalRay(pricingprob) )
-   {
-      SCIP_CALL( createSolutionFromRay(pricingprob, newsol) );
-
-      *freesol = TRUE;
-      *solisray = TRUE;
-      return SCIP_OKAY;
-   }
-
-   SCIP_CALL( SCIPallocMemoryArray(pricingprob, &solvals, SCIPgetNOrigVars(pricingprob)) );
-
-   *solisray = FALSE;
-   oldsol = SCIPgetBestSol(pricingprob);
-   SCIP_CALL( SCIPgetSolVals(pricingprob, oldsol, SCIPgetNOrigVars(pricingprob), SCIPgetOrigVars(pricingprob), solvals) );
-
-   isinfinity = FALSE;
-   for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
-   {
-      if( SCIPisInfinity(pricingprob, solvals[i]) )
-      {
-         isinfinity = TRUE;
-         break;
-      }
-   }
-
-   if( !isinfinity )
-   {
-      SCIPdebugMessage("No infinite value found after resolving \n");
-      SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, oldsol, NULL, FALSE) ));
-      *newsol = oldsol;
-      *freesol = FALSE;
-      SCIPfreeMemoryArray(newscip, &solvals);
-      return SCIP_OKAY;
-   }
-
-   SCIPdebugMessage("Infinite value found\n");
-   SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, oldsol, NULL, FALSE) ));
-
-   SCIP_CALL( SCIPcreate(&newscip) );
-   SCIP_CALL( SCIPincludeDefaultPlugins(newscip) );
-   SCIP_CALL( SCIPcreateProb(newscip, "finite", NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
-   SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(newscip), SCIPgetNOrigVars(pricingprob)) );
-   SCIP_CALL( SCIPsetIntParam(newscip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-   SCIP_CALL( SCIPsetPresolving(newscip, SCIP_PARAMSETTING_OFF, TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(newscip, "presolving/donotmultaggr", TRUE) );
-
-   /* make sure that we create a copy of the original problem */
-   SCIP_CALL( SCIPfreeTransform(pricingprob) );
-
-   /* copy variables to temporary problem */
-   for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
-   {
-      SCIP_VAR* copyvar;
-      SCIP_CALL( SCIPgetVarCopy(pricingprob, newscip, SCIPgetOrigVars(pricingprob)[i], &copyvar, varmap, NULL, TRUE, &valid) );
-      assert(valid);
-      SCIP_CALL( SCIPaddVar(newscip, copyvar) );
-   }
-
-   /* copy constraints to temporary problem */
-   for( i = 0; i < SCIPgetNOrigConss(pricingprob); ++i )
-   {
-      SCIP_CONS* copycons;
-      SCIP_CALL( SCIPgetConsCopy(pricingprob, newscip, SCIPgetOrigConss(pricingprob)[i], &copycons, SCIPconsGetHdlr(SCIPgetOrigConss(pricingprob)[i]), varmap, NULL, NULL, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, &valid) );
-      assert(valid);
-      SCIP_CALL( SCIPaddCons(newscip, copycons) );
-   }
-
-   /* roll original problem back to transformed stage */
-   SCIP_CALL( SCIPtransformProb(pricingprob) );
-
-   /* change objective function to 0 in temporary problem and create absolute value for infinite variables */
-   for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
-   {
-      SCIP_VAR* newvar;
-      SCIP_VAR* origvar;
-      origvar = SCIPgetOrigVars(pricingprob)[i];
-      SCIPdebugMessage("Origvar <%s>\n", SCIPvarGetName(origvar));
-      newvar = SCIPhashmapGetImage(varmap, origvar);
-      assert(newvar != NULL);
-
-      SCIP_CALL( SCIPchgVarObj(newscip, newvar, 0.0) );
-      if( SCIPisInfinity(pricingprob, solvals[i]) )
-      {
-         SCIP_VAR* plus;
-         SCIP_VAR* minus;
-         SCIP_CONS* cons;
-         char name[SCIP_MAXSTRLEN];
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_p", SCIPvarGetName(origvar));
-
-         assert(valid);
-         SCIP_CALL( SCIPcreateVarBasic(newscip, &plus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS) );
-         SCIP_CALL( SCIPaddVar(newscip, plus) );
-
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_m", SCIPvarGetName(origvar));
-         SCIP_CALL( SCIPcreateVarBasic(newscip, &minus, name, 0.0, SCIPinfinity(newscip), 0.0001, SCIP_VARTYPE_CONTINUOUS) );
-         SCIP_CALL( SCIPaddVar(newscip, minus) );
-
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "abs_%s_cons", SCIPvarGetName(origvar));
-         SCIP_CALL( SCIPcreateConsBasicLinear(newscip, &cons, name, 0, NULL, NULL, 0.0, 0.0 ) );
-         SCIP_CALL( SCIPaddCoefLinear(newscip, cons, newvar, -1.0) );
-         SCIP_CALL( SCIPaddCoefLinear(newscip, cons, plus, 1.0) );
-         SCIP_CALL( SCIPaddCoefLinear(newscip, cons, minus, -1.0) );
-         SCIP_CALL( SCIPaddCons(newscip, cons) );
-         assert(SCIPisZero(pricingprob, SCIPvarGetObj(origvar)));
-      }
-      else
-      {
-         SCIP_Bool infeasible;
-         SCIPdebugMessage("Fixing <%s> to %.3g\n", SCIPvarGetName(newvar), solvals[i]);
-         SCIP_CALL( SCIPfixVar(newscip, newvar, solvals[i], &infeasible, &valid) );
-         assert(valid);
-         assert(!infeasible);
-      }
-   }
-
-   /* solve problem */
-   SCIP_CALL( SCIPsolve(newscip) );
-
-   /* if the new solution is optimal, copy new solution to old pricing problem*/
-   if( SCIPgetStatus(newscip) == SCIP_STATUS_OPTIMAL )
-   {
-      SCIPdebug(SCIP_CALL( SCIPprintSol(newscip, SCIPgetBestSol(newscip), NULL, FALSE) ) );
-      *freesol = TRUE;
-      SCIP_CALL( SCIPcreateSol(pricingprob, newsol, NULL) );
-      SCIP_CALL( SCIPreallocMemoryArray(pricingprob, &solvals, SCIPgetNOrigVars(pricingprob)) );
-      for( i = 0; i < SCIPgetNOrigVars(pricingprob); ++i )
-      {
-         SCIP_VAR* newvar;
-         SCIP_VAR* origvar;
-         origvar = SCIPgetOrigVars(pricingprob)[i];
-         newvar = SCIPhashmapGetImage(varmap, origvar);
-         solvals[i] = SCIPgetSolVal(newscip, SCIPgetBestSol(newscip), newvar);
-      }
-      SCIP_CALL( SCIPsetSolVals(pricingprob, *newsol, SCIPgetNOrigVars(pricingprob), SCIPgetOrigVars(pricingprob), solvals) );
-      SCIPdebug(SCIP_CALL( SCIPprintSol(pricingprob, *newsol, NULL, TRUE) ) );
-   }
-
-   SCIPhashmapFree(&varmap);
-   SCIPfreeMemoryArray(pricingprob, &solvals);
-   assert(oldsol != NULL);
-   assert(SCIPgetStatus(newscip) == SCIP_STATUS_OPTIMAL || *newsol != NULL);
-
-   SCIPfree(&newscip);
 
    return SCIP_OKAY;
 }
@@ -444,7 +267,9 @@ SCIP_RETCODE filterInfiniteSolutions(
       {
          if( SCIPisInfinity(pricingprob, SCIPgetSolVal(pricingprob, sols[s], origvars[i])) )
          {
-            SCIPdebugMessage("Removing solution with infeasible value.\n");
+            if( s == 0 )
+               printf("WARNING: Removing solution with infinite value.\n");
+
             SCIP_CALL( SCIPfreeSol(pricingprob, &sols[s]) );
             sols[s] = sols[*nsols-1];
             --(*nsols);
@@ -537,18 +362,19 @@ SCIP_RETCODE solveProblem(
    else if( problemHasUnboundedSolution(pricingprob) )
    {
       SCIP_SOL* sol = NULL;
-      SCIP_Bool isray;
-      SCIP_Bool freesol;
+      SCIP_Bool success = FALSE;
       *status = SCIP_STATUS_UNKNOWN;
-      SCIP_CALL( inferFiniteSolution(pricingprob, SCIPgetBestSol(pricingprob), &sol, &isray, &freesol) );
-      if( sol != NULL )
-      {
-         *nsols = 1;
-         sols[0] = sol;
-         solisray[0] = isray;
-         SCIPdebugMessage("# changing solution\n");
-         *status = isray ? SCIP_STATUS_UNBOUNDED : SCIP_STATUS_OPTIMAL;
-      }
+
+      SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
+
+      SCIP_CALL( SCIPcreateFiniteSolCopy(pricingprob, &sol, SCIPgetBestSol(pricingprob), &success) );
+      assert(success);
+      assert(sol != NULL);
+
+      *nsols = 1;
+      sols[0] = sol;
+      solisray[0] = FALSE;
+      *status = SCIP_STATUS_OPTIMAL;
    }
    /* the pricing problem was solved to optimality, copy all solutions found into the solution arrays */
    else if( problemIsFeasible(pricingprob) )
