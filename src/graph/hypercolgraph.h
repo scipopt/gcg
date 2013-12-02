@@ -106,10 +106,14 @@ public:
    }
 
    virtual SCIP_RETCODE createFromMatrix(
-      SCIP_CONS**           conss,              /**< constraints for which graph should be created */
-      SCIP_VAR**            vars,               /**< variables for which graph should be created */
-      int                   nconss_,             /**< number of constraints */
-      int                   nvars_               /**< number of variables */
+      SCIP_CONS**           conss,           /**< constraints for which graph should be created */
+      SCIP_VAR**            vars,            /**< variables for which graph should be created */
+      int                   nconss_,         /**< number of constraints */
+      int                   nvars_           /**< number of variables */
+      );
+
+   virtual SCIP_RETCODE createDecompFromPartition(
+      DEC_DECOMP**          decomp           /**< decomposition structure to generate */
       );
 };
 

@@ -42,6 +42,7 @@
 #include <set>
 #include <fstream>
 #include <algorithm>
+#include <vector>
 
 using std::ifstream;
 namespace gcg
@@ -216,6 +217,39 @@ SCIP_RETCODE HypercolGraph<T>::createFromMatrix(
       this->graph.addHyperedge(hyperedges[i], weight);
    }
    this->graph.flush();
+
+   return SCIP_OKAY;
+}
+template <class T>
+SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
+   DEC_DECOMP**          decomp           /**< decomposition structure to generate */
+   )
+{
+   SCIP_HASHMAP* constoblock;
+
+   SCIP_CONS** conss;
+
+   SCIP_VAR** vars;
+   int nblocks;
+   assert(decomp != NULL);
+   std::vector<int> partition = getPartition();
+   conss = SCIPgetConss(this->scip_);
+   vars = SCIPgetVars(this->scip_);
+
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+
+   assert((size_t)SCIPgetNConss(this->scip_) == partition.size());
+   nblocks = 1+*std::max_element(partition.begin(), partition.end() );
+
+   for( int c = 0; c < this->nconss; ++c )
+   {
+      int consblock = partition[c]+1;
+
+      SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) consblock) );
+   }
+
+   SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
+   SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
 
    return SCIP_OKAY;
 }
