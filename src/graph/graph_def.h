@@ -144,15 +144,14 @@ void Graph<T>::setPartition(int i, int ID) {
 /** write the graph to a file */
 template <class T>
 SCIP_RETCODE Graph<T>::writeToFile(
-      const char* filename,
+      int                fd,                    /**< filename where the graph should be written to */
       SCIP_Bool writeweights
     )
 {
    int nnodes;
    int nedges;
    FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fdopen(fd, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

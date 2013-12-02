@@ -59,6 +59,10 @@ TEST_F(HyperrowcolTest, CreateTest) {
 }
 
 TEST_F(HyperrowcolTest, WriteFileTest) {
+   FILE* file = fopen("hypergraph.g", "wx");
+   ASSERT_TRUE(file != NULL);
+   int fd= fileno(file);
+   ASSERT_NE(fd, -1);
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -71,8 +75,8 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
    gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g", 0) );
-
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd, 0) );
+   fclose(file);
    ASSERT_TRUE( SCIPfileExists("hypergraph.g") );
 
    int tmp[] = {7, 8, 0, 1, 4, 7, 2, 5, 6, 8, 3, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -88,6 +92,10 @@ TEST_F(HyperrowcolTest, WriteFileTest) {
 }
 
 TEST_F(HyperrowcolTest, WriteFileWeightsTest) {
+   FILE* file = fopen("hypergraph.g", "wx");
+   ASSERT_TRUE(file != NULL);
+   int fd= fileno(file);
+   ASSERT_NE(fd, -1);
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -100,8 +108,8 @@ TEST_F(HyperrowcolTest, WriteFileWeightsTest) {
    gcg::HyperrowcolGraph<gcg::GraphTclique> graph(scip, weights );
 
    ASSERT_EQ(SCIP_OKAY, graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("hypergraph.g", 1) );
-
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd, 1) );
+   fclose(file);
    ASSERT_TRUE( SCIPfileExists("hypergraph.g") );
 
    int tmp[] = {7, 8, 1, 2, 1, 4, 7, 4, 2, 5, 5, 6, 8, 3, 3, 6, 1, 2, 3, 6, 4, 5, 6, 6, 7, 8};

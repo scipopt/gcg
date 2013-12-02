@@ -47,7 +47,7 @@ template <class T>
 MatrixGraph<T>::MatrixGraph(
       SCIP*                 scip,              /**< SCIP data structure */
       Weights               w                 /**< weights for the given graph */
-) : name("graph"),scip_(scip),nconss(0),nvars(0),dummynodes(0),weights(w),graphiface(NULL)
+) : name("graph"),scip_(scip),nconss(0),nvars(0),dummynodes(0),weights(w),graphiface(NULL),nnonzeroes(0)
 {
 
 }

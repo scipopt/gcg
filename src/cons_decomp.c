@@ -844,8 +844,10 @@ char DECdetectorGetChar(
    DEC_DETECTOR*         detector            /**< pointer to detector */
 )
 {
-   assert(detector != NULL);
-   return detector->decchar;
+   if(detector == NULL)
+     return '0';
+   else
+      return detector->decchar;
 }
 
 /** display statistics about detectors */

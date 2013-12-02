@@ -46,13 +46,19 @@
 #include "scip/pub_misc.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
+#include "graph/matrixgraph.h"
+#include "graph/hypercolgraph.h"
 #include "graph/hyperrowcolgraph.h"
+#include "graph/hyperrowgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
 
 #include <set>
 
 using gcg::HyperrowcolGraph;
+using gcg::HyperrowGraph;
+using gcg::HypercolGraph;
+using gcg::MatrixGraph;
 using gcg::Weights;
 
 #define DEC_DETECTORNAME      "arrowheur"    /**< name of the detector */
@@ -81,7 +87,7 @@ using gcg::Weights;
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
 #define DEFAULT_REALNAME          FALSE      /**< whether the metis name should be real or temporary */
-
+#define DEFAULT_TYPE              'a'        /**< type of the decomposition 'c' column hypergraph, 'r' row hypergraph and 'a' column-row hypergraph */
 /*
  * Data structures
  */
@@ -90,8 +96,8 @@ using gcg::Weights;
 struct DEC_DetectorData
 {
    /* Graph stuff for hmetis */
-   HyperrowcolGraph<gcg::GraphTclique>* graph;                   /**< the graph of the matrix */
-   char           tempfile[SCIP_MAXSTRLEN];  /**< filename for the metis input file */
+   MatrixGraph<gcg::GraphTclique>* graph;    /**< the graph of the matrix */
+   char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
    /* weight parameters */
    int       varWeight;             /**< weight of a variable hyperedge */
@@ -121,6 +127,7 @@ struct DEC_DetectorData
    SCIP_CLOCK* metisclock;    /**< clock to measure metis time */
    int         blocks;        /**< indicates the current block */
    SCIP_Bool   found;         /**< indicates whethere a decomposition has been found */
+   char        type;          /**< ype of the decomposition 'c' column hypergraph, 'r' row hypergraph and 'a' column-row hypergraph */
 };
 
 /*
@@ -282,8 +289,7 @@ SCIP_RETCODE createMetisFile(
 {
    int nvertices;
    int ndummyvertices;
-   char* filename;
-
+   int fd;
    nvertices = detectordata->graph->getNNonzeroes();
    /*lint --e{524}*/
    ndummyvertices = SCIPceil(scip, detectordata->dummynodes*nvertices);
@@ -298,9 +304,10 @@ SCIP_RETCODE createMetisFile(
       (void) SCIPsnprintf(detectordata->tempfile, SCIP_MAXSTRLEN, "gcg-%s-XXXXXX", SCIPgetProbName(scip));
    }
 
-   filename = mktemp(detectordata->tempfile);
+   fd = mkstemp(detectordata->tempfile);
 
-   SCIP_CALL( detectordata->graph->writeToFile(filename, TRUE) );
+   SCIP_CALL( detectordata->graph->writeToFile(fd, TRUE) );
+   close(fd);
    return SCIP_OKAY;
 }
 
@@ -329,7 +336,23 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    /* build the hypergraph structure from the original problem */
 
    Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+   switch(detectordata->type)
+   {
+   case 'c':
+      detectordata->graph = new HypercolGraph<gcg::GraphTclique>(scip, w);
+      break;
+   case 'r':
+      detectordata->graph = new HyperrowGraph<gcg::GraphTclique>(scip, w);
+      break;
+   case 'a':
+      detectordata->graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+      break;
+
+   default:
+      SCIPerrorMessage("Wrong type: '%c'\n", detectordata->type);
+      return SCIP_INVALIDCALL;
+   }
+
    SCIP_CALL( detectordata->graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
    SCIP_CALL( createMetisFile(scip, detectordata) );
 
@@ -415,6 +438,6 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detectors/arrowheur/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
-
+   SCIP_CALL( SCIPaddCharParam(scip, "detectors/arrowheur/type", "Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph", &detectordata->type, FALSE, DEFAULT_TYPE, "cra", NULL, NULL) );
    return SCIP_OKAY;
 }

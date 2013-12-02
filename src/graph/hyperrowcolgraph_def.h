@@ -49,7 +49,7 @@ template <class T>
 HyperrowcolGraph<T>::HyperrowcolGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-): MatrixGraph<T>(scip, w),graph(scip),nnonzeroes(0)
+): MatrixGraph<T>(scip, w),graph(scip)
 {
    this->graphiface = &graph;
    this->name = std::string("hyperrowcol");
@@ -173,13 +173,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
  */
 template <class T>
 SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
-   const char*        filename,           /**< filename where the graph should be written to */
+   int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
  )
 {
    FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "wx");
+   file = fdopen(fd, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

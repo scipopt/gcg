@@ -44,7 +44,6 @@ class HyperrowcolGraph: public MatrixGraph<T>
 {
 private:
    Graph<T> graph;
-   int nnonzeroes;
 public:
    HyperrowcolGraph(
          SCIP*                 scip,              /**< SCIP data structure */
@@ -62,7 +61,7 @@ public:
     *  The format is graph dependent
     */
    virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
+      int                fd,                  /**< file descriptor where the graph should be written to */
       SCIP_Bool          writeweights         /**< whether to write weights */
     );
 
@@ -95,10 +94,6 @@ public:
          int i
    );
 
-   int getNNonzeroes() const
-   {
-      return nnonzeroes;
-   }
 };
 
 } /* namespace gcg */

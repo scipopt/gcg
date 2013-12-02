@@ -192,13 +192,12 @@ void Hypergraph<T>::setPartition(int i, int ID) {
 /** write the hypergraph to a file */
 template <class T>
 SCIP_RETCODE Hypergraph<T>::writeToFile(
-      const char* filename,
+      int                fd,                    /**< filename where the graph should be written to */
       SCIP_Bool writeweights
     )
 {
    FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fdopen(fd, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

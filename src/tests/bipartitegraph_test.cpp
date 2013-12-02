@@ -36,7 +36,6 @@
 #include <iostream>
 #include <algorithm>
 
-
 class BipartiteTest : public GraphTest {
 };
 
@@ -66,6 +65,10 @@ TEST_F(BipartiteTest, CreateTest) {
 }
 
 TEST_F(BipartiteTest, WriteFileTest) {
+   FILE* file = fopen("graph.g", "wx");
+   ASSERT_TRUE(file != NULL);
+   int fd= fileno(file);
+   ASSERT_NE(fd, -1);
    SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=1.0, original bounds=[0,1]") );
    SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=1.0, original bounds=[0,3]") );
    SCIP_CALL_EXPECT( createVar("[implicit] <x3>: obj=1.0, original bounds=[0,1]") );
@@ -78,7 +81,8 @@ TEST_F(BipartiteTest, WriteFileTest) {
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile("graph.g") );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd) );
+   fclose(file);
 
    ASSERT_TRUE( SCIPfileExists("graph.g") );
    int tmp[] = {7,8,5,6,7,5,6,6,7,5,1,2,4,1,2,3,1,3};

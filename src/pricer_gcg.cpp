@@ -1991,6 +1991,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          *result = SCIP_DIDNOTRUN;
    }
 
+   //SCIPinfoMessage(scip_, NULL, "node: %d, nfoundvars: %d, lowerbound: %.8g, master lp %.8g\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip_)), nfoundvars, lowerbound == NULL? -SCIPinfinity(scip_): *lowerbound, SCIPgetLPObjval(scip_));
    return SCIP_OKAY;
 }
 

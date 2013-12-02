@@ -68,14 +68,13 @@ HypercolGraph<T>::~HypercolGraph()
  */
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::writeToFile(
-   const char*        filename,           /**< filename where the graph should be written to */
+   int                fd,                    /**< filename where the graph should be written to */
    SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
  )
 {
    function f(this->nvars);
    FILE* file;
-   assert(filename != NULL);
-   file = fopen(filename, "w");
+   file = fdopen(fd, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 

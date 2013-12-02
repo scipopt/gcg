@@ -59,6 +59,7 @@ protected:
    int dummynodes;
    Weights weights;
    GraphInterface *graphiface;
+   int nnonzeroes;
 
 public:
    /** Constructor */
@@ -74,11 +75,11 @@ public:
     *  The format is graph dependent
     */
    virtual SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
+      int                fd,           /**< file descriptor where the graph should be written to */
       SCIP_Bool          writeweights = FALSE /**< whether to write weights */
       )
    {
-      SCIP_CALL(graphiface->writeToFile(filename, writeweights) );
+      SCIP_CALL(graphiface->writeToFile(fd, writeweights) );
       return SCIP_OKAY;
    };
 
@@ -122,6 +123,10 @@ public:
       ) { return SCIP_ERROR; };
 
 
+   virtual int getNNonzeroes() const
+   {
+      return nnonzeroes;
+   }
 };
 
 }

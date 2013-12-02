@@ -59,7 +59,7 @@ public:
     *  The format is graph dependent
     */
    SCIP_RETCODE writeToFile(
-      const char*        filename,           /**< filename where the graph should be written to */
+      int                fd,                 /**< filename where the graph should be written to */
       SCIP_Bool          edgeweights         /**< whether to write edgeweights */
     );
 
@@ -113,6 +113,7 @@ public:
       int                   nconss_,             /**< number of constraints */
       int                   nvars_               /**< number of variables */
       );
+
 };
 
 } /* namespace gcg */

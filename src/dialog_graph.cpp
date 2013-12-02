@@ -114,12 +114,25 @@ SCIP_RETCODE DialogWriteGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog,
    }
    if( filename[0] != '\0' )
    {
-      MatrixGraph<T>* graph = new G<T>(scip, Weights());
+
       char* extension;
+      int fd;
+      FILE* file;
+
       extension = filename;
+
+      file = fopen(filename, "wx");
+      if( file == NULL )
+         return SCIP_FILECREATEERROR;
+
+      fd = fileno(file);
+      if( fd == -1 )
+               return SCIP_FILECREATEERROR;
+
+      MatrixGraph<T>* graph = new G<T>(scip, Weights());
       SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, extension, TRUE) );
       SCIP_CALL( graph->createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-      SCIP_CALL( graph->writeToFile(extension, FALSE) );
+      SCIP_CALL( graph->writeToFile(fd, FALSE) );
       delete graph;
       SCIPdialogMessage(scip, NULL, "graph written to <%s>\n", extension);
    }

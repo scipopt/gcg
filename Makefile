@@ -147,7 +147,6 @@ LIBOBJ		=	reader_blk.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \
-			dec_borderheur.o \
 			dec_stairheur.o \
 			dec_connected.o \
 			dec_cutpacking.o \
