@@ -53,7 +53,8 @@ CPLEXSOLVER	=	true
 #-----------------------------------------------------------------------------
 
 SOFTLINKS	+=	$(LIBDIR)/scip
-LINKMSG		=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
+LINKMSG		=  	" SCIP framework links:\n"
+LINKMSG		+=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CPLEXSOLVER)
 
 #-----------------------------------------------------------------------------
@@ -67,8 +68,9 @@ LDFLAGS		+= 	-lbliss
 FLAGS		+=	-I$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
-LINKMSG		+=  " -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
-LINKMSG		+=  " -> \"libbliss.*\" is the path to the bliss library, e.g., \"blissinc/libbliss.a\"\n"
+LINKMSG		+=	"bliss graph isomorphism framework:\n"
+LINKMSG		+=	" -> blissinc is the path to the bliss include files, e.g., \"bliss-0.72\"\n"
+LINKMSG		+=	" -> \"libbliss.$(STATICLIBEXT)\" is the path to the bliss library, e.g., \"blissinc/libbliss.$(STATICLIBEXT)\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -84,8 +86,9 @@ FLAGS		+=	-I$(LIBDIR)/cpxinc
 SOFTLINKS	+=	$(LIBDIR)/cpxinc
 SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(STATICLIBEXT)
 SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)
-LINKMSG		=	"  -> \"cpxinc\" is the path to the CPLEX \"include\" directory, e.g., \"<CPLEX-path>/include/ilcplex\".\n"
-LINKMSG		+=	" -> \"libcplex.*\" is the path to the CPLEX library, e.g., \"<CPLEX-path>/lib/x86_rhel4.0_3.4/static_pic/libcplex.a\""
+LINKMSG		+=      "CPLEX links:\n"
+LINKMSG		+=	" -> \"cpxinc\" is the path to the CPLEX \"include\" directory, e.g., \"<CPLEX-path>/include/ilcplex\".\n"
+LINKMSG		+=	" -> \"libcplex.*\" is the path to the CPLEX library, e.g., \"<CPLEX-path>/lib/x86_rhel4.0_3.4/static_pic/libcplex.a\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -419,10 +422,9 @@ ifeq ($(MAKESOFTLINKS), true)
 			then \
 				DIRNAME=`dirname $@` ; \
 				echo ; \
-		                echo "* GCG needs a softlink to SCIP" ; \
-		                echo "* Please insert the paths to scip below." ; \
-		                echo "* The link will be installed in the 'lib' directory." ; \
-		                echo "* For more information and if you experience problems see the INSTALL file." ; \
+		                echo "* GCG needs links to external libraries" ; \
+		                echo "* Please insert the paths to the libaries below." ; \
+		                echo "* The links will be installed in the 'lib' directory." ; \
 		                echo ; \
 		                echo -e $(LINKMSG) ; \
 				echo "> Enter soft-link target file or directory for \"$@\" (return if not needed): " ; \
