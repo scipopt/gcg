@@ -281,8 +281,11 @@ BEGIN {
 /^SCIP> SCIP> / { $0 = substr($0, 13, length($0)-12); }
 /^SCIP> / { $0 = substr($0, 7, length($0)-6); }
 /^loaded parameter file/ { settings = $4; sub(/<.*settings\//, "", settings); sub(/\.set>/, "", settings); }
+/^GCG> GCG> loaded parameter file/ { settings = $6; sub(/<.*settings\//, "", settings); sub(/\.set>/, "", settings); }
 /^parameter <limits\/time> set to/ { timelimit = $5; }
+/^GCG> parameter <limits\/time> set to/ { timelimit = $6; }
 /^limits\/time =/ { timelimit = $3; }
+/^GCG> limits\/time =/ { timelimit = $4; }
 #
 # get objective sense
 #
