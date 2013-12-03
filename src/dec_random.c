@@ -71,7 +71,6 @@ struct DEC_DetectorData
 {
    int                   seed;               /**< random seed for the random number generator */
    int                   maxblocks;          /**< the maximal number of blocks, -1 defaults to min(nvars, nconstraints) */
-   SCIP_CLOCK*           clock;              /**< clock to measure time */
    SCIP_HASHMAP*         constoblock;        /**< hashmap to store partition */
    int                   nblocks;            /**< number of actual blocks found */
 };
@@ -169,9 +168,6 @@ DEC_DECL_EXITDETECTOR(exitRandom)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->clock != NULL )
-      SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
-
    if( detectordata->constoblock  != NULL )
       SCIPhashmapFree(&detectordata->constoblock);
 
@@ -196,7 +192,6 @@ DEC_DECL_INITDETECTOR(initRandom)
 
    detectordata->nblocks = 0;
 
-   SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    return SCIP_OKAY;
@@ -210,13 +205,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting random structure:");
 
-   SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
-
    SCIP_CALL( findRandomPartition(scip, detectordata) );
-
-   SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
-
-   SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
 
@@ -262,7 +251,6 @@ SCIP_RETCODE SCIPincludeDetectionRandom(
    detectordata->seed = -1;
    detectordata->constoblock = NULL;
    detectordata->nblocks = 0;
-   detectordata->clock = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectRandom, initRandom, exitRandom) );
 

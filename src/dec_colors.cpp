@@ -66,7 +66,6 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_CLOCK* clock;                        /**< clock to measure detection time */
 };
 
 
@@ -96,6 +95,23 @@ struct ConsData {
 typedef struct ConsData CONSDATA;
 
 /* put your local methods here, and declare them static */
+#ifdef SCIP_DEBUG
+static
+void printSubset(
+   std::vector<bool> bit_mask
+   )
+{
+
+   static int cnt = 0;
+   std::cout << ++cnt << ". [ ";
+   for( std::size_t i = 0; i < bit_mask.size(); ++i )
+      if( bit_mask[i] )
+         std::cout << i << ' ';
+   std::cout << "]\n";
+}
+#endif
+
+
 static
 SCIP_DECL_SORTPTRCOMP(sortCons)
 {
@@ -230,29 +246,24 @@ SCIP_RETCODE createMasterconssArray(
    *pricingisempty = *nmasterconss == nconss;
    *masterisempty = *nmasterconss == 0;
 
-
    return SCIP_OKAY;
 }
 
-
-bool next_bitmask( std::vector<bool>& bit_mask )
+static
+bool nextBitmask(
+   std::vector<bool>& bit_mask
+   )
 {
-    std::size_t i = 0 ;
-    for( ; ( i < bit_mask.size() ) && bit_mask[i] ; ++i )
-        bit_mask[i] = false ;
+   std::size_t i = 0;
+   for( ; (i < bit_mask.size()) && bit_mask[i]; ++i )
+      bit_mask[i] = false;
 
-    if( i < bit_mask.size() ) { bit_mask[i] = true ; return true ; }
-    else return false ;
-}
-
-void print_subset( std::vector<bool> bit_mask)
-{
-
-        static int cnt = 0 ;
-        std::cout << ++cnt << ". [ " ;
-        for( std::size_t i = 0 ; i < bit_mask.size() ; ++i )
-            if( bit_mask[i] ) std::cout << i << ' ' ;
-        std::cout << "]\n" ;
+   if( i < bit_mask.size() )
+   {
+      bit_mask[i] = true;
+      return true;
+   } else
+      return false;
 }
 
 static
@@ -260,10 +271,10 @@ std::set<int> getSetFromBits(
    std::vector<bool> bits,
    int* colors,
    int ncolors
-   )
+)
 {
    std::set<int> set;
-   for( size_t i = 0; i < bits.size(); ++i)
+   for( size_t i = 0; i < bits.size(); ++i )
    {
       if( bits[i] )
          set.insert(i);
@@ -271,16 +282,21 @@ std::set<int> getSetFromBits(
    return set;
 }
 
-static int nChooseK(int n, int k)
+static
+int nChooseK(
+   int n,
+   int k
+   )
 {
    int result = 1;
-   for (int i = 1; i <= k; i++)
+   for( int i = 1; i <= k; i++ )
    {
-       result *= n - (k - i);
-       result /= i;
+      result *= n - (k - i);
+      result /= i;
    }
    return result;
 }
+
 /** looks for colors components in the constraints in detectordata */
 static
 SCIP_RETCODE findColorsComponents(
@@ -306,26 +322,25 @@ SCIP_RETCODE findColorsComponents(
    *decomps = 0;
    *result = SCIP_DIDNOTFIND;
 
-
    SCIP_CALL( SCIPallocMemoryArray(scip, &colors, SCIPgetNConss(scip)) );
 
    SCIP_CALL( assignConsColors(scip, SCIPgetConss(scip), SCIPgetNConss(scip), colors, &ncolors) );
 
-   std::vector<bool> bit_mask(ncolors) ;
+   std::vector<bool> bit_mask(ncolors);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, decomps, 1) );
 
    int nbits = 2;
 
-   for( int subsetsize = 2; subsetsize <= nbits; ++subsetsize)
+   for( int subsetsize = 2; subsetsize <= nbits; ++subsetsize )
    {
       int size = nChooseK(ncolors, subsetsize);
 
-      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps  + size) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps + size) );
 
       do
       {
-         if( std::count( bit_mask.begin(), bit_mask.end(), true ) != subsetsize )
+         if( std::count(bit_mask.begin(), bit_mask.end(), true) != subsetsize )
             continue;
 
          std::set<int> colorset = getSetFromBits(bit_mask, colors, ncolors);
@@ -336,23 +351,22 @@ SCIP_RETCODE findColorsComponents(
             SCIPdebugPrintf(" %d", *it);
          }
          SCIPdebugPrintf("\n");
-         print_subset(bit_mask);
+         printSubset(bit_mask);
 #endif
          SCIP_CALL( createMasterconssArray(scip, &conss, &nconss, colors, colorset, &masterisempty, &pricingisempty) );
 
          SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decomps)[*ndecomps]), conss, nconss) );
          ++(*ndecomps);
 
-      } while( next_bitmask(bit_mask) ) ;
+      } while( nextBitmask(bit_mask) );
    }
-   if(*ndecomps > 0)
+   if( *ndecomps > 0 )
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps) );
       *result = SCIP_SUCCESS;
    }
 
    SCIPfreeMemoryArrayNull(scip, &colors);
-
 
    return SCIP_OKAY;
 }
@@ -372,9 +386,6 @@ DEC_DECL_EXITDETECTOR(exitColors)
 
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
-
-   if( detectordata->clock != NULL )
-      SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
 
    SCIPfreeMemory(scip, &detectordata);
 
@@ -396,10 +407,6 @@ DEC_DECL_INITDETECTOR(initColors)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   detectordata->clock = NULL;
-
-   SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
-
    return SCIP_OKAY;
 }
 
@@ -414,11 +421,7 @@ DEC_DECL_DETECTSTRUCTURE(detectColors)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting colored structure:");
 
-   SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
    SCIP_CALL( findColorsComponents(scip, decdecomps, ndecdecomps, result) );
-   SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
-
-   SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
 
    if( *result == SCIP_SUCCESS )
    {
@@ -454,8 +457,6 @@ SCIP_RETCODE SCIPincludeDetectionColors(
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
-
-   detectordata->clock = NULL;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectColors, initColors, exitColors) );
 

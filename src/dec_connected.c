@@ -60,8 +60,6 @@
 /** constraint handler data */
 struct DEC_DetectorData
 {
-   SCIP_CLOCK* clock;                        /**< clock to measure detection time */
-
    SCIP_Bool blockdiagonal;                  /**< flag to indicate whether the problem is block diagonal */
    SCIP_Bool setppcinmaster;                 /**< flag to indicate whether setppc constraints should always be in the master */
 };
@@ -250,9 +248,6 @@ DEC_DECL_EXITDETECTOR(exitConnected)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->clock != NULL )
-      SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
-
    SCIPfreeMemory(scip, &detectordata);
 
    return SCIP_OKAY;
@@ -273,10 +268,7 @@ DEC_DECL_INITDETECTOR(initConnected)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   detectordata->clock = NULL;
    detectordata->blockdiagonal = FALSE;
-
-   SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
 
    return SCIP_OKAY;
 }
@@ -300,12 +292,7 @@ DEC_DECL_DETECTSTRUCTURE(detectConnected)
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting %s structure:", detectextended ? "set partitioning master":"purely block diagonal" );
 
-      SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
       SCIP_CALL( findConnectedComponents(scip, &((*decdecomps)[0]), detectextended, result) );
-
-      SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
-
-      SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
 
       if( *result == SCIP_SUCCESS )
       {
@@ -350,7 +337,6 @@ SCIP_RETCODE SCIPincludeDetectionConnected(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   detectordata->clock = NULL;
    detectordata->blockdiagonal = FALSE;
 
    SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectConnected, initConnected, exitConnected) );

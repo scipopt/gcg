@@ -55,8 +55,6 @@ struct DEC_DetectorData
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
    TCLIQUE_GRAPH* graph;
-
-   SCIP_CLOCK* clock;
    int nblocks;
 };
 
@@ -441,12 +439,10 @@ DEC_DECL_INITDETECTOR(initStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   detectordata->clock = NULL;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
 
    detectordata->nblocks = 0;
-   SCIP_CALL( SCIPcreateClock(scip, &detectordata->clock) );
    SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
    return SCIP_OKAY;
 }
@@ -465,9 +461,6 @@ DEC_DECL_EXITDETECTOR(exitStaircase)
    detectordata = DECdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   if( detectordata->clock != NULL )
-      SCIP_CALL( SCIPfreeClock(scip, &detectordata->clock) );
-
    if( detectordata->graph != NULL )
    {
       tcliqueFree(&detectordata->graph);
@@ -484,15 +477,10 @@ DEC_DECL_DETECTSTRUCTURE(detectStaircase)
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting staircase structure:");
 
-   SCIP_CALL( SCIPstartClock(scip, detectordata->clock) );
-
    SCIP_CALL( createGraph(scip, &(detectordata->graph)) );
 
    SCIP_CALL( findStaircaseComponents(scip, detectordata, result) );
 
-   SCIP_CALL( SCIPstopClock(scip, detectordata->clock) );
-
-   SCIPdebugMessage("Detection took %fs.\n", SCIPgetClockTime(scip, detectordata->clock));
    if( *result == SCIP_SUCCESS )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d blocks.\n", detectordata->nblocks);
@@ -531,7 +519,6 @@ SCIP_RETCODE SCIPincludeDetectionStaircase(
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
    detectordata->graph = NULL;
-   detectordata->clock = NULL;
    detectordata->constoblock = NULL;
    detectordata->vartoblock = NULL;
    detectordata->nblocks = 0;
