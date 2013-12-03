@@ -72,22 +72,22 @@ using gcg::Weights;
 #define DEFAULT_VARWEIGHT         1          /**< weight for variable nodes */
 #define DEFAULT_VARWEIGHTBIN      2          /**< weight for binary variable nodes */
 #define DEFAULT_VARWEIGHTINT      2          /**< weight for integer variable nodes */
-#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
 #define DEFAULT_VARWEIGHTIMPL     2          /**< weight for implicit integer variable nodes */
+#define DEFAULT_VARWEIGHTCONT     1          /**< weight for continous variable nodes */
 #define DEFAULT_CONSWEIGHT        5          /**< weight for constraint hyperedges */
 #define DEFAULT_RANDSEED          1          /**< random seed for the hmetis call */
 #define DEFAULT_TIDY              TRUE       /**< whether to clean up afterwards */
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering constraints */
-#define DEFAULT_MAXBLOCKS         10         /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
+#define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is distributed (keep 1/2 for the same on both) */
 #define DEFAULT_METIS_UBFACTOR    5.0        /**< default unbalance factor given to metis on the commandline */
 #define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
 #define DEFAULT_METISUSEPTYPE_RB  TRUE       /**< Should metis use the rb or kway partitioning algorithm */
 #define DEFAULT_REALNAME          FALSE      /**< whether the metis name should be real or temporary */
-#define DEFAULT_TYPE              'a'        /**< type of the decomposition 'c' column hypergraph, 'r' row hypergraph and 'a' column-row hypergraph */
+#define DEFAULT_TYPE              'r'        /**< type of the decomposition 'c' column hypergraph, 'r' row hypergraph and 'a' column-row hypergraph */
 /*
  * Data structures
  */

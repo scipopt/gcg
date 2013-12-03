@@ -12,6 +12,4 @@ presolving/maxrounds = 0
 # [type: int, range: [-1,2147483647], default: -1]
 presolving/maxrestarts = 0
 
-
 detectors/arrowheur/enabled = FALSE
-detectors/borderheur/enabled = FALSE

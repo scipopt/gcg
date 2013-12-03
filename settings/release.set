@@ -12,10 +12,6 @@ presolving/maxrestarts = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/connected/enabled = TRUE
 
-# flag to indicate whether detector <borderheur> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/borderheur/enabled = FALSE
-
 # flag to indicate whether detector <arrowheur> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/arrowheur/enabled = FALSE

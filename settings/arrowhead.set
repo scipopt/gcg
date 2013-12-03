@@ -25,14 +25,4 @@ detectors/arrowheur/maxblocks = 5
 detectors/arrowheur/ubfactor = 0.1
 detectors/arrowheur/metisverbose = FALSE
 detectors/arrowheur/priority = 0
-
-detectors/borderheur/minblocks = 2
-detectors/borderheur/maxblocks = 20
-detectors/borderheur/ubfactor = 0.1
-detectors/borderheur/metisverbose = FALSE
-detectors/borderheur/priority = 100
-detectors/connected/enabled = FALSE
-detectors/random/enabled = FALSE
-detectors/staircase/enabled = FALSE
-detectors/stairheur/enabled = FALSE
-detectors/borderheur/enabled = FALSE
+detectors/arrowheur/type = a
