@@ -45,7 +45,7 @@
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
-
+#include <algorithm>
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
@@ -363,7 +363,7 @@ struct_hook::struct_hook(
    SCIP_Bool             aut_,               /**< true if there is an automorphism */
    unsigned int          n_,                 /**< number of permutations */
    SCIP*                 scip_               /**< array of scips to search for automorphisms */
-   )
+   ) : conssperm(NULL)
 {
    aut = aut_;
    n = n_;
@@ -762,23 +762,6 @@ static DEC_DECL_EXITDETECTOR(exitIsomorphism)
    return SCIP_OKAY;
 }
 
-static
-int max(int* blocksize, int n)
-{
-   int i;
-   int mx = 0;
-   int r;
-   for( i = 0; i < n; i++ )
-   {
-      if( blocksize[i] > mx )
-      {
-         mx = blocksize[i];
-         r = i;
-      }
-   }
-   return r;
-}
-
 /** detection initialization function of detector (called before solving is about to begin) */
 static DEC_DECL_INITDETECTOR(initIsomorphism)
 { /*lint --e{715}*/
@@ -889,7 +872,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       // set numofsol biggest Decompositions
       for( i = 0; i < detectordata->numofsol && i < n; i++ )
       {
-         j = max(blocksize, n);
+         j = std::max_element(blocksize, blocksize+n) - blocksize;
          SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[i]), conss[j], blocksize[j]) );
          blocksize[j] = 0;
       }
