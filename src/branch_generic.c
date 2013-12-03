@@ -150,7 +150,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    assert(masterbranchcons != NULL);
 
    /* if branch rule is not generic, abort */
-   if( GCGconsMasterbranchGetbranchrule(masterbranchcons) == NULL || strcmp(BRANCHRULE_NAME, SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(masterbranchcons))) != 0)
+   if( GCGconsMasterbranchGetbranchrule(masterbranchcons) == NULL || strcmp(BRANCHRULE_NAME, SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(masterbranchcons))) != 0 )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );

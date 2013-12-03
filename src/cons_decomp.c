@@ -844,7 +844,7 @@ char DECdetectorGetChar(
    DEC_DETECTOR*         detector            /**< pointer to detector */
 )
 {
-   if(detector == NULL)
+   if( detector == NULL )
      return '0';
    else
       return detector->decchar;
