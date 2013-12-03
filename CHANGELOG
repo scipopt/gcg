@@ -10,6 +10,8 @@ features
 - GCG can branch on integer aggregated problems using Vanderbeck's general
   branching rule
 - GCG can solve integer knapsack problems as a dynamic program
+- GCG features additional detectors which are able to detect significantly
+  more structures
 
 code cleanup
 - moved some detection methods to a more global scope to make it usable
@@ -20,6 +22,7 @@ code cleanup
 bug fixes
 - memory allocation bugs
 - bound change propagation fixes
+- corrected copyright
 
 GCG Version 1.1
 ===============
