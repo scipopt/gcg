@@ -158,8 +158,8 @@ do
 
     PROB=`echo $i|cut -d";" -f1`
     DECFILE=`echo $i|cut -d";" -f2`
-    DIR=`dirname $NAME`
-    NAME=`basename $NAME .gz`
+    DIR=`dirname $PROB`
+    NAME=`basename $PROB .gz`
     NAME=`basename $NAME .mps`
     NAME=`basename $NAME .lp`
 
@@ -211,16 +211,16 @@ do
 
             if test $MODE = "detect"
             then
-                echo write prob images\/$base.gp   >> $TMPFILE
+                echo write prob images\/$NAME.gp   >> $TMPFILE
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                echo write prob images\/$base-dec.gp >> $TMPFILE
-                echo write prob decs\/$base.dec    >> $TMPFILE
+                echo write prob images\/$NAME-dec.gp >> $TMPFILE
+                echo write prob decs\/$NAME.dec    >> $TMPFILE
                 echo write all dec                 >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
-                echo write prob bip\/$base-dec.bip >> $TMPFILE
+                echo write prob bip\/$NAME-dec.bip >> $TMPFILE
                 echo display statistics            >> $TMPFILE
             elif test $MODE = "detectall"
             then
