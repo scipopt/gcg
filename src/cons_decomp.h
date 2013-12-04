@@ -153,6 +153,22 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
+/** sets detector parameters values to
+ *
+ *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all detector parameters
+ *  - SCIP_PARAMSETTING_FAST such that the time spend for detection is decreased
+ *  - SCIP_PARAMSETTING_AGGRESSIVE such that the detectors produce more decompositions
+ *  - SCIP_PARAMSETTING_OFF which turns off all detection
+ *
+ *  @return \ref SCIP_OKAY is returned if everything worked. Otherwise a suitable error code is passed. See \ref
+ *          SCIP_Retcode "SCIP_RETCODE" for a complete list of error codes.
+ */
+SCIP_RETCODE GCGsetDetection(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   );
+
 #ifdef __cplusplus
 }
 #endif

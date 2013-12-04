@@ -445,6 +445,41 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecWriteAllDecompositions)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the set detector aggressive command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_AGGRESSIVE, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set detector off command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_OFF, FALSE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set detector fast command */
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( GCGsetDetection(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+
+   return SCIP_OKAY;
+}
 
 /** creates a root dialog */
 SCIP_RETCODE GCGcreateRootDialog(
@@ -462,6 +497,32 @@ SCIP_RETCODE GCGcreateRootDialog(
    return SCIP_OKAY;
 }
 
+/** create a "emphasis" sub menu */
+static
+SCIP_RETCODE createEmphasisSubmenu(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_DIALOG*          root,               /**< the menu to add the empty sub menu */
+   SCIP_DIALOG**         submenu             /**< pointer to store the created emphasis sub menu */
+   )
+{
+   if( !SCIPdialogHasEntry(root, "emphasis") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, submenu,
+            NULL, SCIPdialogExecMenu, NULL, NULL,
+            "emphasis", "predefined parameter settings", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, root, *submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, submenu) );
+   }
+   else if( SCIPdialogFindEntry(root, "emphasis", submenu) != 1 )
+   {
+      SCIPerrorMessage("emphasis sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   assert(*submenu != NULL);
+
+   return SCIP_OKAY;
+}
 
 /** includes or updates the GCG dialog menus in SCIP */
 SCIP_RETCODE SCIPincludeDialogGcg(
@@ -471,6 +532,8 @@ SCIP_RETCODE SCIPincludeDialogGcg(
    SCIP_DIALOG* root;
    SCIP_DIALOG* submenu;
    SCIP_DIALOG* dialog;
+   SCIP_DIALOG* setmenu;
+   SCIP_DIALOG* emphasismenu;
 
    /* root menu */
    root = SCIPgetRootDialog(scip);
@@ -587,20 +650,70 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPaddDialogEntry(scip, root, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
-   if( SCIPdialogFindEntry(root, "set", &submenu) != 1 )
+   if( SCIPdialogFindEntry(root, "set", &setmenu) != 1 )
    {
       SCIPerrorMessage("set sub menu not found\n");
       return SCIP_PLUGINNOTFOUND;
    }
 
    /* set loadmaster */
-   if( !SCIPdialogHasEntry(submenu, "loadmaster") )
+   if( !SCIPdialogHasEntry(setmenu, "loadmaster") )
    {
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL,
             GCGdialogExecSetLoadmaster, NULL, NULL,
             "loadmaster", "load parameter settings for master problem from a file", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, submenu, dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set detectors */
+   if( !SCIPdialogHasEntry(setmenu, "detectors") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+            NULL,
+            SCIPdialogExecMenu, NULL, NULL,
+            "detectors", "change parameters for primal detectors", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(setmenu, "detectors", &submenu) != 1 )
+   {
+      SCIPerrorMessage("heuristics sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   /* create set presolving emphasis */
+   SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
+   assert(emphasismenu != NULL);
+
+   /* set detectors emphasis aggressive */
+   if( !SCIPdialogHasEntry(emphasismenu, "aggressive") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, SCIPdialogExecSetDetectorsAggressive, NULL, NULL,
+            "aggressive", "sets detectors <aggressive>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set detectors emphasis fast */
+   if( !SCIPdialogHasEntry(emphasismenu, "fast") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, SCIPdialogExecSetDetectorsFast, NULL, NULL,
+            "fast", "sets detectors <fast>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set detectors emphasis off */
+   if( !SCIPdialogHasEntry(emphasismenu, "off") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+            NULL, SCIPdialogExecSetDetectorsOff, NULL, NULL,
+            "off", "turns <off> all detectors", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
 
