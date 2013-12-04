@@ -25,3 +25,4 @@ lp/rootiterlim = -1
 
 conflict/enable = FALSE
 
+separating/poolfreq = -1

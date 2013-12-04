@@ -2201,20 +2201,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    SCIPdebugMessage("%s pricing\n", optimal ? "optimal" : "heuristic");
 
-   enableppcuts = FALSE;
-   SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
-   /** add pool cuts to sepa base */
-   if(enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_))
-   {
-      for( i = 0; i < pricerdata->npricingprobs; i++ )
-      {
-         SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "branching/pscost/priority", 2000) );
-         SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "propagating/maxroundsroot", 1000) );
-         SCIP_CALL( SCIPsetPresolving(pricerdata->pricingprobs[i], SCIP_PARAMSETTING_DEFAULT, TRUE) );
-      }
-   }
-
-
    solvedmips = 0;
    successfulmips = 0;
    retcode = SCIP_OKAY;
@@ -2240,6 +2226,22 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       SCIP_CALL( SCIPallocMemoryArray(scip_, &(cols[i]), maxcols) ); /*lint !e866*/
       pricingstatus[i] = SCIP_STATUS_UNKNOWN;
+   }
+
+   enableppcuts = FALSE;
+   SCIPgetBoolParam(GCGpricerGetOrigprob(scip_), "sepa/base/enableppcuts", &enableppcuts);
+   /** add pool cuts to sepa base */
+   if(enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_))
+   {
+      for( i = 0; i < pricerdata->npricingprobs; i++ )
+      {
+         if(GCGrelaxIsPricingprobRelevant(origprob, i))
+         {
+            SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "branching/pscost/priority", 2000) );
+            SCIP_CALL( SCIPsetIntParam(pricerdata->pricingprobs[i], "propagating/maxroundsroot", 1000) );
+            SCIP_CALL( SCIPsetPresolving(pricerdata->pricingprobs[i], SCIP_PARAMSETTING_DEFAULT, TRUE) );
+         }
+      }
    }
 
 #ifdef _OPENMP

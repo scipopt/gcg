@@ -2106,7 +2106,7 @@ SCIP_RETCODE GCGsepaBaseAddPricingCut(
    {
       SCIP_ROW* origcut;
 
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "newconstraint_%d_%d_%d", SCIPsepaGetNCalls(sepa), ppnumber, k);
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ppcut_%d_%d_%d", SCIPsepaGetNCalls(sepa), ppnumber, k);
 
       SCIP_CALL( SCIPcreateEmptyRowUnspec(origscip, &origcut, name,
          ( SCIPisInfinity(pricingprob, -SCIProwGetLhs(cut)) ?

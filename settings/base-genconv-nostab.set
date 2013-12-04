@@ -22,3 +22,4 @@ detectors/random/enabled = FALSE
 
 pricing/masterpricer/stabilization = FALSE
 
+separating/poolfreq = -1

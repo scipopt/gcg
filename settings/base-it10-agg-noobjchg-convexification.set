@@ -26,3 +26,4 @@ conflict/enable = FALSE
 relaxdata/discretization = FALSE
 
 
+separating/poolfreq = -1

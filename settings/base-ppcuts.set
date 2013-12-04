@@ -22,3 +22,4 @@ conflict/enable = FALSE
 
 detectors/random/enabled = FALSE
 
+separating/poolfreq = -1
