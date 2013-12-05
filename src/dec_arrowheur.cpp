@@ -36,7 +36,7 @@
 #include <cassert>
 #include <cstring>
 #include <cerrno>
-
+#include <unistd.h>
 #include "dec_arrowheur.h"
 
 #include "cons_decomp.h"

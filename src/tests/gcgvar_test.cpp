@@ -434,7 +434,7 @@ TEST_F(GcgVarTest, RayMastervarIsRay) {
    ASSERT_EQ(TRUE, GCGmasterVarIsRay(&var));
 }
 
-TEST_F(GcgVarTest, NomRayMastervarIsNotRay) {
+TEST_F(GcgVarTest, NonRayMastervarIsNotRay) {
    MASTERVAR(var, vardata);
    vardata.data.mastervardata.isray = FALSE;
    ASSERT_EQ(FALSE, GCGmasterVarIsRay(&var));
@@ -442,12 +442,17 @@ TEST_F(GcgVarTest, NomRayMastervarIsNotRay) {
 
 TEST_F(GcgVarTest, MastervarGetOrigvars) {
    MASTERVAR(var, vardata);
-   vardata.data.mastervardata.origvars = (SCIP_VAR**) 0xDEADBEEF;
-   ASSERT_EQ((SCIP_VAR**) 0xDEADBEEF, GCGmasterVarGetOrigvars(&var));
+   ORIGVAR(var2, vardata2);
+   SCIP_VAR* vars[1] = { &var2 };
+   vardata2.blocknr = 1;
+   vardata.data.mastervardata.origvars = vars;
+   vardata.data.mastervardata.norigvars = 1;
+   ASSERT_EQ((SCIP_VAR**) &vars, GCGmasterVarGetOrigvars(&var));
 }
 
 TEST_F(GcgVarTest, MastervarGetNOrigvars) {
    MASTERVAR(var, vardata);
+   vardata.blocknr = 1;
    vardata.data.mastervardata.norigvars = 0xDEAD;
    ASSERT_EQ(0xDEAD, GCGmasterVarGetNOrigvars(&var));
 }
