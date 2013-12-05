@@ -932,7 +932,6 @@ SCIP_RETCODE Separate(
    Jsize = 0;
    Fupper = 0;
    Flower = 0;
-   max = 0;
    muF = 0;
    min = INT_MAX;
    found = FALSE;
@@ -959,15 +958,8 @@ SCIP_RETCODE Separate(
    assert( F != NULL );
    assert( IndexSet != NULL );
 
-   max = getMaxGeneratorEntry(scip, F, Fsize, IndexSet, IndexSetSize);
-
-   if( max == 0 )
-      max = 1;
-
-   SCIPdebugMessage("max = %g\n", max);
-
    for( j=0; j<Fsize; ++j )
-      muF += max * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+      muF += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
 
    /* detect fractional alpha_i */
    SCIP_CALL( SCIPallocBufferArray(scip, &alpha, IndexSetSize) );
@@ -977,16 +969,12 @@ SCIP_RETCODE Separate(
       GCG_COMPSEQUENCE* copyS;
       SCIP_Real mu_F;
       SCIP_Bool even;
-      SCIP_Real alphacontrol;
-      SCIP_Real mucontrol;
 
       even = TRUE;
       mu_F = 0;
       origvar = IndexSet[k];
       copyS = NULL;
       alpha[k] = 0;
-      alphacontrol = 0;
-      mucontrol = 0;
 
       if( SCIPvarGetType(origvar) == SCIP_VARTYPE_CONTINUOUS )
          continue;
@@ -1009,24 +997,19 @@ SCIP_RETCODE Separate(
          SCIP_Real generatorentry;
 
          generatorentry = getGeneratorEntry(F[j], origvar);
-         alpha[k] += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
 
          if( SCIPisGE(scip, generatorentry, median) )
          {
-            alphacontrol += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
-            mucontrol += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+            alpha[k] += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
          }
       }
       if( SCIPisGT(scip, alpha[k], 0) && SCIPisLT(scip, alpha[k], muF) )
       {
          ++Jsize;
       }
-      if( !SCIPisFeasIntegral(scip, alpha[k]) || !SCIPisFeasIntegral(scip, alphacontrol )
-            || !SCIPisFeasIntegral(scip, mucontrol) )
+      if( !SCIPisFeasIntegral(scip, alpha[k]))
       {
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
-         SCIPdebugMessage("alphacontrol = %g\n", alphacontrol);
-         SCIPdebugMessage("mucontrol = %g\n", mucontrol);
          found = TRUE;
 
          /* ********************************** *
@@ -1367,7 +1350,7 @@ double computeAlpha(
       if ( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, generatorentry, ivalue)) ||
            (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, generatorentry, ivalue)) )
       {
-         alpha_i += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+         alpha_i += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
       }
    }
 
@@ -1412,23 +1395,17 @@ SCIP_RETCODE Explore(
    SCIP_Real  muF;
    SCIP_Bool found;
    SCIP_Real nu_F;
-   SCIP_Real max;
-   SCIP_Real alphacontrol;
-   SCIP_Real mucontrol;
 
    j = 0;
    k = 0;
    l = 0;
    alpha_i = 0;
    muF = 0;
-   max = 0;
    Fupper = 0;
    Flower = 0;
    Cupper = 0;
    Clower = 0;
    lowerSsize = 0;
-   alphacontrol = 0;
-   mucontrol = 0;
    newsequencesizes = NULL;
    copyF = NULL;
    CopyC = NULL;
@@ -1499,14 +1476,9 @@ SCIP_RETCODE Explore(
    assert(origvar != NULL);
    /* SCIPdebugMessage("orivar = %s; ivalue = %g\n", SCIPvarGetName(origvar), ivalue); */
 
-   max = getMaxGeneratorEntry(scip, F, Fsize, IndexSet, IndexSetSize);
-
-   if( max == 0 )
-      max = 1;
-
    for( j=0; j<Fsize; ++j )
    {
-      muF += max * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+      muF += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
    }
 
    /* SCIPdebugMessage("muF = %g\n", muF); */
@@ -1525,26 +1497,13 @@ SCIP_RETCODE Explore(
 
    median = ivalue;
 
-   for( j = 0; j < Fsize; ++j )
-   {
-      SCIP_Real generatorentry;
-
-      generatorentry = getGeneratorEntry(F[j], origvar);
-
-      if( SCIPisGT(scip, generatorentry, median) )
-      {
-         alphacontrol += generatorentry * SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
-         mucontrol += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
-      }
-    }
-
    /* SCIPdebugMessage("alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
 
    /* ******************************************* *
     * if f > 0, add pair to record                *
     * ******************************************* */
-   if( !SCIPisFeasIntegral(scip, alpha_i) || !SCIPisFeasIntegral(scip, alphacontrol )
-      || !SCIPisFeasIntegral(scip, mucontrol) )
+
+   if( !SCIPisFeasIntegral(scip, alpha_i) )
    {
       found = TRUE;
       /* SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
