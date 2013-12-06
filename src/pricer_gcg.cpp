@@ -1830,6 +1830,15 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
     * Not needed because they are not added to the pricing problem
     */
 
+   SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );
+   bestsol = sols[0];
+   SCIP_Real redcost = computeRedCost(pricetype, bestsol, *solisray, prob, NULL);
+
+   if( SCIPisLT(scip_, redcost, 0.0) )
+   {
+      found = TRUE;
+   }
+
    /* traverse the tree in reverse order */
    for( i = nbranchconss-1; i >= 0 && !found; --i )
    {

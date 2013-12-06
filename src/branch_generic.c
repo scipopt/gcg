@@ -139,17 +139,19 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    varinS = TRUE;
    p = 0;
    mastervar = SCIPeventGetVar(event);
+   if( !GCGvarIsMaster(mastervar) )
+      return SCIP_OKAY;
 
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   SCIPdebugMessage("exec method of event_genericbranchvaradd\n");
+   /*   SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
    assert(masterbranchcons != NULL);
 
    /* if branch rule is not generic, abort */
-   if( GCGconsMasterbranchGetbranchrule(masterbranchcons) == NULL || strcmp(BRANCHRULE_NAME, SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(masterbranchcons))) != 0 )
+   if( !GCGisBranchruleGeneric(GCGconsMasterbranchGetbranchrule(masterbranchcons)) )
       return SCIP_OKAY;
 
    SCIP_CALL( SCIPgetVarsData(origscip, &allorigvars, &allnorigvars, NULL, NULL, NULL, NULL) );
@@ -293,42 +295,6 @@ SCIP_Real getGeneratorEntry(
    }
 
    return 0;
-}
-
-/** method for calculating the maximum over all generatorentries in F
- * @return maxentry */
-static
-SCIP_Real getMaxGeneratorEntry(
-   SCIP*                scip,           /**< SCIP data structure */
-   SCIP_VAR**           F,              /**< array of mastervars */
-   int                  Fsize,          /**< number of mastervars */
-   SCIP_VAR**           IndexSet,       /**< set of origvars to respect*/
-   int                  IndexSetSize    /**< number of origvars to respect */
-   )
-{
-   int i;
-   int j;
-   SCIP_Real maxentry;
-
-   maxentry = 0;
-
-   assert(F != NULL);
-   assert(Fsize > 0);
-   assert(IndexSet != NULL);
-   assert(IndexSetSize > 0);
-
-   for( i=0; i<Fsize; ++i )
-   {
-      for( j=0; j<IndexSetSize; ++j )
-      {
-         SCIP_Real generatorentry;
-
-         generatorentry = getGeneratorEntry(F[i], IndexSet[j]);
-         maxentry = MAX(generatorentry, maxentry);
-      }
-   }
-
-   return maxentry;
 }
 
 /** method for initializing the set of respected indices */
@@ -909,7 +875,6 @@ SCIP_RETCODE Separate(
    SCIP_VAR** J;
    SCIP_Real median;
    SCIP_Real min;
-   SCIP_Real max;
    int Fupper;
    int Flower;
    int* priority;
@@ -953,13 +918,12 @@ SCIP_RETCODE Separate(
       return SCIP_OKAY;
    }
 
-   SCIPdebugPrintf("Fsize = %d; Ssize = %d, IndexSetSize = %d\n", Fsize, Ssize, IndexSetSize);
-
    assert( F != NULL );
    assert( IndexSet != NULL );
 
    for( j=0; j<Fsize; ++j )
       muF += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+   SCIPdebugPrintf("Fsize = %d; Ssize = %d, IndexSetSize = %d, nuF=%.6g \n", Fsize, Ssize, IndexSetSize, muF);
 
    /* detect fractional alpha_i */
    SCIP_CALL( SCIPallocBufferArray(scip, &alpha, IndexSetSize) );
@@ -1246,8 +1210,6 @@ SCIP_RETCODE ChoseS(
    SCIPdebugMessage("Chose S \n");
 
    assert((*record)->recordsize > 0);
-
-   SCIPdebugMessage("recordsize = %d \n", (*record)->recordsize);
 
    for( i=0; i< (*record)->recordsize; ++i )
    {
@@ -3316,6 +3278,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
+
    if( branchdata->consblocknr == -3 )
    {
       assert(branchdata->consSsize == 1);
@@ -3472,7 +3435,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    /* add constraint to the master problem that enforces the branching decision */
    SCIP_CALL( SCIPaddCons(scip, branchdata->mastercons) );
 
-   SCIPdebugMessage("%d vars added with lhs= %g\n", nvarsadded, branchdata->lhs);
+   SCIPdebugMessage("%d vars added with lhs=%g\n", nvarsadded, branchdata->lhs);
    assert(nvarsadded > 0);
 
    SCIPfreeMemoryArrayNull(origscip, &copymastervars);
@@ -3488,13 +3451,12 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterGeneric)
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
-   SCIPdebugMessage("branchDeactiveMasterGeneric: Block %d, Ssize %d)\n", branchdata->consblocknr,
+   SCIPdebugMessage("branchDeactiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr,
       branchdata->consSsize);
 
    /* remove constraint from the master problem that enforces the branching decision */
    assert(branchdata->mastercons != NULL);
    SCIP_CALL( SCIPdelCons(scip, branchdata->mastercons) );
-
    SCIP_CALL( SCIPreleaseCons(scip, &(branchdata->mastercons)) );
    branchdata->mastercons = NULL;
 
@@ -3512,8 +3474,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterGeneric)
    assert(branchdata->mastercons != NULL);
    assert(branchdata->consS != NULL);
 
-   SCIPdebugMessage("branchPropMasterGeneric: Block %d ,Ssize %d)\n", branchdata->consblocknr,
-      branchdata->consSsize);
+   /* SCIPdebugMessage("branchPropMasterGeneric: Block %d ,Ssize %d)\n", branchdata->consblocknr, branchdata->consSsize); */
 
    return SCIP_OKAY;
 }
