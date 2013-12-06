@@ -1833,6 +1833,14 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    /* traverse the tree in reverse order */
    for( i = nbranchconss-1; i >= 0 && !found; --i )
    {
+      if( bestsol != NULL )
+      {
+         for(int j = 0; j < *nsols; ++j)
+         {
+            SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &sols[j]) );
+         }
+         SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
+      }
       SCIPdebugMessage("Applying bound change of depth %d\n", -i);
       SCIP_CALL( SCIPtransformProb(pricerdata->pricingprobs[prob]) );
       SCIP_CALL( addBranchingBoundChangesToPricing(prob, branchconss[i]) );
@@ -1853,32 +1861,10 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       if( SCIPisLT(scip_, redcost, 0.0) )
       {
-
          found = TRUE;
          break;
       }
-      SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &bestsol) );
-      SCIP_CALL( SCIPfreeTransform(pricerdata->pricingprobs[prob]) );
-
    }
-
-   if( found )
-   {
-      SCIPdebugMessage("We have finally found a variable\n");
-   }
-   else
-   {
-      *nsols = 0;
-      if( bestsol != NULL)
-      {
-         SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[prob], &bestsol) );
-      }
-   }
-
-   if(!solisray[0])
-      *lowerbound += pricerdata->dualsolconv[prob];
-
-   assert(found || *nsols == 0);
 
    SCIPfreeMemoryArrayNull(scip_, &branchconss);
    SCIPfreeMemoryArrayNull(scip_, &branchduals);
@@ -1970,8 +1956,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    do
    {
       bestredcost = 0.0;
-      *bestredcostvalid = (SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL) && optimal;
-      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));;
+      *bestredcostvalid = (SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL) && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+      stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       /* set objectives of the variables in the pricing sub-MIPs */
       SCIP_CALL( freePricingProblems() );
@@ -1991,7 +1977,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             goto done;
 
          #pragma omp flush(infeasible,nfoundvars,successfulmips)
-         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !  pricerdata->stabilization)
+         if( (abortPricing(pricetype, nfoundvars, solvedmips, successfulmips, optimal) || infeasible) && !pricerdata->stabilization)
          {
             goto done;
          }
@@ -2031,7 +2017,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
                dualconvsum += GCGrelaxGetNIdenticalBlocks(origprob, prob) * convdual;
             }
             #pragma omp atomic
-            bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * (pricinglowerbound - (solisray[prob][0]? 0.0 : convdual));
+            bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * computeRedCost(pricetype, sols[prob][0], solisray[prob][0], prob, NULL);
 
          }
 
@@ -2117,8 +2103,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       {
          *lowerbound = MAX(*lowerbound, SCIPgetLPObjval(scip_) + bestredcost);
       }
-
-      SCIPdebugMessage("nfoundvars: %d, lowerbound: %.4g\n", nfoundvars, lowerbound == NULL? -SCIPinfinity(scip_): *lowerbound);
 
       /* free solutions if none of them has negative reduced cost */
       if( nfoundvars == 0 )
