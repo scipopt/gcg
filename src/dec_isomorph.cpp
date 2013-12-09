@@ -485,9 +485,13 @@ void hook(
       assert(aut[i] < INT_MAX);
       if( (size_t) i != aut[i])
       {
-         SCIPdebugMessage("cons <%s> <-> cons <%s>\n", SCIPconsGetName(conss[i]), SCIPconsGetName(conss[aut[i]]));
-         SCIPdebugMessage("i <%d> <-> aut[i] <%d> \n", i, aut[i]);
+         SCIPdebugMessage("%d <%s> <-> %d <%s>\n",i, SCIPconsGetName(conss[i]), aut[i], SCIPconsGetName(conss[aut[i]]));
          int index = MIN(i, aut[i]);
+         if( hook->conssperm[i] != -1)
+            index = MIN(index, hook->conssperm[i]);
+         if( hook->conssperm[aut[i]] != -1 )
+            index = MIN(index, hook->conssperm[aut[i]]);
+
          hook->conssperm[i] = index;
          hook->conssperm[aut[i]] = index;
          hook->setBool(TRUE);
@@ -641,9 +645,6 @@ static SCIP_RETCODE createGraph(
    SCIP_VAR** vars;
    SCIP_VAR** curvars;
    SCIP_Real* curvals;
-   AUT_COEF *scoef;
-   AUT_VAR *svar;
-   AUT_CONS *scons;
    unsigned int nnodes;
    nnodes = 0;
    //building the graph out of the arrays
@@ -661,9 +662,9 @@ static SCIP_RETCODE createGraph(
       if( ncurvars == 0 )
          continue;
 
-      scons = new AUT_CONS(scip, conss[i]);
-      color = colorinfo.get(*scons);
-      delete scons;
+      AUT_CONS scons(scip, conss[i]);
+      color = colorinfo.get(scons);
+
       if( color == -1 )
       {
          *result = SCIP_DIDNOTFIND;
@@ -676,9 +677,8 @@ static SCIP_RETCODE createGraph(
    //add a node for every variable
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
    {
-      svar = new AUT_VAR(scip, vars[i]);
-      color = colorinfo.get(*svar);
-      delete svar;
+      AUT_VAR svar(scip, vars[i]);
+      color = colorinfo.get(svar);
 
       if( color == -1 )
       {
@@ -692,7 +692,7 @@ static SCIP_RETCODE createGraph(
    //it is necessary, since only nodes have colors
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      scons = new AUT_CONS(scip, conss[i]);
+      AUT_CONS scons(scip, conss[i]);
       ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
@@ -700,14 +700,17 @@ static SCIP_RETCODE createGraph(
       SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars);
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
       SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
+
       for( j = 0; j < ncurvars; j++ )
       {
-         scoef = new AUT_COEF(scip, curvals[j]);
-         color = colorinfo.get(*scoef);
+         AUT_COEF scoef(scip, curvals[j]);
+         AUT_VAR svar(scip, curvars[j]);
+
+         color = colorinfo.get(scoef);
          if( color == -1 )
          {
             *result = SCIP_DIDNOTFIND;
-            delete scoef;
+
             break;
          }
          curvar = SCIPvarGetProbindex(curvars[j]);
@@ -717,15 +720,14 @@ static SCIP_RETCODE createGraph(
          h->add_edge(nconss + nvars + z, nconss + curvar);
          SCIPdebugMessage(
                "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
-               SCIPconsGetName(conss[i]), i, colorinfo.get(*scons),
-               nconss + nvars + z, scoef->getVal(),
+               SCIPconsGetName(conss[i]), i, colorinfo.get(scons),
+               nconss + nvars + z, scoef.getVal(),
                color + colorinfo.getLenCons() + colorinfo.getLenVar(),
                SCIPvarGetName(curvars[j]), nconss + curvar,
-               colorinfo.get(*svar) + colorinfo.getLenCons());
+               colorinfo.get(svar) + colorinfo.getLenCons());
          z++;
-         delete scoef;
+
       }
-      delete scons;
 
       SCIPfreeMemoryArray(scip, &curvals);
       SCIPfreeMemoryArray(scip, &curvars);
@@ -770,7 +772,7 @@ static DEC_DECL_INITDETECTOR(initIsomorphism)
    assert(detectordata != NULL);
 
    detectordata->result = SCIP_SUCCESS;
-   detectordata->numofsol = 100;
+   detectordata->numofsol = 10000;
 
    return SCIP_OKAY;
 }
@@ -784,25 +786,30 @@ int renumberPermutations(
 )
 {
    // renumbering from 0 to number of permutations
-   int n = 0;
-   int tmp = n;
-   int i;
-   for( i = 0; i < permsize; i++ )
+   int nperms = -1;
+
+   for( int i = 0; i < permsize; i++ )
    {
-      if( permutation[i] != -1 && permutation[i] != n && permutation[i] != tmp )
+      SCIPdebugMessage("%d: %d -> ", i, permutation[i]);
+      if( permutation[i] == -1 )
       {
-         n++;
-         tmp = permutation[i];
-         permutation[i] = n;
+         SCIPdebugPrintf("%d\n", permutation[i]);
+         continue;
       }
-      if( permutation[i] != -1 && permutation[i] != n && permutation[i] == tmp )
+
+      if( permutation[i] > nperms && permutation[permutation[i]] > nperms )
       {
-         permutation[i] = n;
+         nperms++;
+         permutation[i] = nperms;
       }
-      SCIPdebugMessage("%d\n", permutation[i]);
+      else
+      {
+         permutation[i] = permutation[permutation[i]];
+      }
+      SCIPdebugPrintf("%d\n", permutation[i]);
    }
-   n++;
-   return n;
+
+   return nperms+1;
 }
 
 /** collapses the permutation, if possible */
@@ -815,11 +822,13 @@ void collapsePermutation(
    // assign to a permutation circle only one number
    for( int i = 0; i < permsize; i++ )
    {
-      if( permutation[i] != -1 && permutation[i] < i )
+      if( permutation[i] != -1 && permutation[i] != i )
       {
          tmp = permutation[i];
          permutation[i] = permutation[tmp];
       }
+      SCIPdebugMessage("%d %d\n",i, permutation[i]);
+
    }
 }
 
