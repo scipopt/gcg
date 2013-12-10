@@ -88,6 +88,8 @@ struct SCIP_SepaData
    SCIP_Bool             chgobj;             /**< parameter returns if basis is searched with different objective */
    SCIP_Bool             chgobjallways;      /**< parameter returns if obj is not only changed in first iteration */
    SCIP_Bool             genobjconvex;       /**< parameter returns if objconvex is generated dynamically */
+   SCIP_Bool             enableposslack;     /**< parameter returns if positive slack should influence the dive objective function */
+   int                   posslackexp;        /**< parameter return exponent of usage of positive slack */
    int                   iterations;         /**< parameter returns number of new rows adding iterations (rows just cut off dive lp sol) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
@@ -214,6 +216,26 @@ SCIP_Real getL2Norm(
    return norm;
 }
 
+/* computes base^exp */
+static
+SCIP_Real exponentiate(
+   SCIP_Real            base,               /**< basis for exponentiation */
+   int                  exp                 /**< exponent for exponentiation */
+   )
+{
+   SCIP_Real result;
+   int i;
+
+   assert(exp >= 0);
+
+   result = 1.0;
+   for(i = 0; i < exp; ++i)
+   {
+      result *= base;
+   }
+
+   return result;
+}
 
 /**< Initialize dive objective coefficient for each variable with original objective. */
 static
@@ -1952,6 +1974,10 @@ SCIP_RETCODE SCIPincludeSepaBase(
          &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL);
    SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL);
+   SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/enableposslack", "should positive slack influence the dive objective function?",
+         &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL);
+   SCIPaddIntParam(GCGpricerGetOrigprob(scip), "sepa/base/posslackexp", "exponent of positive slack usage",
+         &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL);
    SCIPaddRealParam(GCGpricerGetOrigprob(scip), "sepa/base/objconvex", "convex combination factor",
          &(sepadata->objconvex), FALSE, 1.0, 0.0, 1.0, NULL, NULL);
    SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "sepa/base/aggressive", "parameter returns if aggressive separation is used",
