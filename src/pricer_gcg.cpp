@@ -1313,14 +1313,16 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
       SCIP_CALL( stabilization->linkingconsGetDual(i, &dualsol) );
 
-      if(SCIPisGE(scip_, dualsol, 0.0))
+      if(SCIPisGT(scip_, dualsol, 0.0))
       {
          boundval = SCIPgetLhsLinear(scip_, linkcons);
       }
-      else
+      else if( SCIPisLT(scip_, dualsol, 0.0) )
       {
          boundval = SCIPgetRhsLinear(scip_, linkcons);
       }
+      else
+         continue;
 
       dualobjval += boundval*dualsol;
    }
@@ -1330,14 +1332,16 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    {
       SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
 
-      if(SCIPisGE(scip_, dualsol, 0.0))
+      if(SCIPisFeasGT(scip_, dualsol, 0.0))
       {
          boundval = SCIPgetLhsLinear(scip_, masterconss[i]);
       }
-      else
+      else if( SCIPisFeasLT(scip_, dualsol, 0.0) )
       {
          boundval = SCIPgetRhsLinear(scip_, masterconss[i]);
       }
+      else
+         continue;
 
       dualobjval += boundval*dualsol;
    }
@@ -1356,15 +1360,16 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    {
       SCIP_CALL( stabilization->rowGetDual(i, &dualsol));
 
-      if(SCIPisGE(scip_, dualsol, 0.0))
+      if(SCIPisFeasGT(scip_, dualsol, 0.0))
       {
          boundval = SCIProwGetLhs(mastercuts[i]);
       }
-      else
+      else if( SCIPisFeasLT(scip_, dualsol, 0.0) )
       {
          boundval = SCIProwGetRhs(mastercuts[i]);
       }
-      boundval -= SCIProwGetConstant(mastercuts[i]);
+      else
+         continue;
 
       dualobjval += boundval*dualsol;
    }
@@ -1824,7 +1829,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
          SCIP_Real lowerboundcandidate;
-         SCIPdebugMessage("bestredcost %.4g, dualconvsum %.4g\n", bestredcost, dualconvsum);
+         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", getStabilizedDualObjectiveValue(), bestredcost, dualconvsum);
          lowerboundcandidate = getStabilizedDualObjectiveValue() + bestredcost + dualconvsum;
 
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);

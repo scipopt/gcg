@@ -292,6 +292,16 @@ void DECdecompPrintDecomp(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/**
+ * Adds all those constraints that were added to the problem after the decomposition as created
+ */
+extern
+SCIP_RETCODE DECdecompAddRemainingConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
+
 extern
 SCIP_RETCODE DECdecompCheckConsistency(
    SCIP*                 scip,               /**< SCIP data structure */
