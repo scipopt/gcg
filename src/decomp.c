@@ -2761,7 +2761,6 @@ SCIP_RETCODE GCGprintDecompStatistics(
    DEC_STATISTIC* blockvardensities;
    DEC_STATISTIC* blockconsdensities;
    DEC_STATISTIC mastervardensity;
-   DEC_STATISTIC masterconsdensity;
 
    assert(scip != NULL);
 
@@ -2771,6 +2770,12 @@ SCIP_RETCODE GCGprintDecompStatistics(
 
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
+
+   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+   {
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP in the original problem.\n");
+      return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nallvars, nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nblocks) );
@@ -2864,7 +2869,6 @@ SCIP_Bool DECdecompositionsAreEqual(
    int nconss;
 
    SCIP_VAR** vars;
-   int nvars;
    int i;
 
    assert(scip != NULL);
@@ -2880,7 +2884,6 @@ SCIP_Bool DECdecompositionsAreEqual(
    nconss = SCIPgetNConss(scip);
 
    vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
 
    constoblock1 = DECdecompGetConstoblock(decomp1);
    constoblock2 = DECdecompGetConstoblock(decomp2);
