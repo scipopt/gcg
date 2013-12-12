@@ -1313,11 +1313,11 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
       SCIP_CALL( stabilization->linkingconsGetDual(i, &dualsol) );
 
-      if(SCIPisGT(scip_, dualsol, 0.0))
+      if(SCIPisFeasGT(scip_, dualsol, 0.0))
       {
          boundval = SCIPgetLhsLinear(scip_, linkcons);
       }
-      else if( SCIPisLT(scip_, dualsol, 0.0) )
+      else if( SCIPisFeasLT(scip_, dualsol, 0.0) )
       {
          boundval = SCIPgetRhsLinear(scip_, linkcons);
       }
