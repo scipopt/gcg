@@ -422,6 +422,15 @@ int DECfilterSimilarDecompositions(
    int                   ndecs               /**< number of decompositions */
 );
 
+/** returns the number of the block that the constraint is with respect to the decomposition */
+extern
+SCIP_RETCODE DECdetermineConsBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   int                   *block              /**< block of the constraint (or nblocks for master) */
+);
+
 #ifdef __cplusplus
 }
 #endif
