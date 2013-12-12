@@ -24,7 +24,7 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/pub_implics.h \
  lib/scip/src/scip/type_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_lpi.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_nodesel.h \
  lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
  lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
@@ -168,7 +168,7 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/pub_implics.h \
  lib/scip/src/scip/type_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_lpi.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_nodesel.h \
  lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
  lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
@@ -309,7 +309,7 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -453,7 +453,7 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -597,7 +597,7 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -741,7 +741,7 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -884,7 +884,7 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -1023,7 +1023,7 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -1164,7 +1164,7 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -1305,7 +1305,7 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/pub_implics.h \
  lib/scip/src/scip/type_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_lpi.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_nodesel.h \
  lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
  lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
@@ -1449,7 +1449,7 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/pub_history.h lib/scip/src/scip/pub_implics.h \
  lib/scip/src/scip/type_implics.h lib/scip/src/scip/pub_lp.h \
  lib/scip/src/scip/type_set.h lib/scip/src/scip/type_stat.h \
- lib/scip/src/scip/type_lpi.h lib/scip/src/scip/pub_nlp.h \
+ lib/scip/src/lpi/type_lpi.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/pub_nodesel.h \
  lib/scip/src/scip/pub_paramset.h lib/scip/src/scip/pub_presol.h \
  lib/scip/src/scip/pub_pricer.h lib/scip/src/scip/pub_reader.h \
@@ -1592,7 +1592,7 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \
@@ -1733,7 +1733,7 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/pub_heur.h lib/scip/src/scip/pub_history.h \
  lib/scip/src/scip/pub_implics.h lib/scip/src/scip/type_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/pub_nlp.h lib/scip/src/scip/pub_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
  lib/scip/src/scip/pub_presol.h lib/scip/src/scip/pub_pricer.h \

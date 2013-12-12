@@ -83,6 +83,18 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDetect);
 extern
 SCIP_DECL_DIALOGEXEC(GCGdialogExecOptimize);
 
+/** dialog execution method for the set heuristics fast command */
+extern
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast);
+
+/** dialog execution method for the set heuristics off command */
+extern
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsOff);
+
+/** dialog execution method for the set heuristics aggressive command */
+extern
+SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsAggressive);
+
 /** creates a root dialog */
 extern
 SCIP_RETCODE GCGcreateRootDialog(

@@ -876,3 +876,127 @@ SCIP_RETCODE GCGprintDetectorStatistics(
    }
    return SCIP_OKAY;
 }
+
+/** resets the parameters to their default value */
+static
+SCIP_RETCODE setDetectionDefault(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   )
+{
+   int i;
+   assert(scip != NULL);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      char paramname[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
+
+      SCIP_CALL( SCIPresetParam(scip, paramname) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** sets the parameters to aggressive values */
+static
+SCIP_RETCODE setDetectionAggressive(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   )
+{
+   assert(scip != NULL);
+   assert(conshdlrdata != NULL);
+
+   return SCIP_OKAY;
+}
+
+/** disables detectors */
+static
+SCIP_RETCODE setDetectionOff(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   )
+{
+   int i;
+   assert(scip != NULL);
+   assert(conshdlrdata != NULL);
+
+   for( i = 0; i < conshdlrdata->ndetectors; ++i )
+   {
+      char paramname[SCIP_MAXSTRLEN];
+      (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "detectors/%s/enabled", conshdlrdata->detectors[i]->name);
+
+      SCIP_CALL( SCIPsetBoolParam(scip, paramname, FALSE) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** sets the parameters to fast values */
+static
+SCIP_RETCODE setDetectionFast(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   )
+{
+   assert(scip != NULL);
+   assert(conshdlrdata != NULL);
+
+   return SCIP_OKAY;
+}
+
+/** sets detector parameters values to
+ *
+ *  - SCIP_PARAMSETTING_DEFAULT which are the default values of all detector parameters
+ *  - SCIP_PARAMSETTING_FAST such that the time spend for detection is decreased
+ *  - SCIP_PARAMSETTING_AGGRESSIVE such that the detectors produce more decompositions
+ *  - SCIP_PARAMSETTING_OFF which turns off all detection
+ *
+ *  @return \ref SCIP_OKAY is returned if everything worked. Otherwise a suitable error code is passed. See \ref
+ *          SCIP_Retcode "SCIP_RETCODE" for a complete list of error codes.
+ */
+SCIP_RETCODE GCGsetDetection(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
+   SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
+   )
+{
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+
+   assert(scip != NULL);
+
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   assert(scip != NULL);
+   SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet));
+
+   switch(paramsetting)
+   {
+   case SCIP_PARAMSETTING_AGGRESSIVE:
+      SCIP_CALL( setDetectionAggressive(scip, conshdlrdata, quiet));
+      break;
+   case SCIP_PARAMSETTING_OFF:
+      SCIP_CALL( setDetectionOff(scip, conshdlrdata, quiet) );
+      break;
+   case SCIP_PARAMSETTING_FAST:
+      SCIP_CALL( setDetectionFast(scip, conshdlrdata, quiet) );
+      break;
+   case SCIP_PARAMSETTING_DEFAULT:
+      break;
+   default:
+      SCIPerrorMessage("The given paramsetting is invalid!\n");
+      break;
+   }
+
+   return SCIP_OKAY;
+}
