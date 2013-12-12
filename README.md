@@ -12,13 +12,13 @@ http://www.or.rwth-aachen.de/gcg.
 
 In order to compile GCG, you need
 
- * readline-devel
- * zlib-devel
  * SCIP Optimization Suite >= 3.0.2
  * bliss >= 0.72 ([Direct download](http://www.tcs.hut.fi/Software/bliss/bliss-0.72.zip))
 
 and optionally
 
+ * readline-devel
+ * zlib-devel
  * CPLEX >= 12.4.1
 
 ### Prerequisites
@@ -64,6 +64,7 @@ The official documentation can be found either under
 http://www.or.rwth-aachen.de/gcg or it can be locally created using doxygen with
 
     make doc
+
 
 ### Licensing
 
