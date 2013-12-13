@@ -292,6 +292,16 @@ void DECdecompPrintDecomp(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
+/**
+ * Adds all those constraints that were added to the problem after the decomposition as created
+ */
+extern
+SCIP_RETCODE DECdecompAddRemainingConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   );
+
+
 extern
 SCIP_RETCODE DECdecompCheckConsistency(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -420,6 +430,15 @@ int DECfilterSimilarDecompositions(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP**          decs,               /**< array of decompositions */
    int                   ndecs               /**< number of decompositions */
+);
+
+/** returns the number of the block that the constraint is with respect to the decomposition */
+extern
+SCIP_RETCODE DECdetermineConsBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   int                   *block              /**< block of the constraint (or nblocks for master) */
 );
 
 #ifdef __cplusplus

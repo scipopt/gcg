@@ -1482,6 +1482,52 @@ void DECdecompPrintDecomp(
    SCIPinfoMessage(scip, NULL, "========================================\n");
 }
 
+/**
+ * Adds all those constraints that were added to the problem after the decomposition as created
+ */
+SCIP_RETCODE DECdecompAddRemainingConss(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
+   )
+{
+   int c;
+
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   for( c = 0; c < SCIPgetNConss(scip); ++c )
+   {
+      SCIP_CONS * cons = SCIPgetConss(scip)[c];
+
+      if( !GCGisConsGCGCons(cons) )
+      {
+         if( !SCIPhashmapExists(DECdecompGetConstoblock(decdecomp), cons) )
+         {
+            int block;
+            SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
+            SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
+            if( block == DECdecompGetNBlocks(decdecomp))
+            {
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->linkingconss, decdecomp->nlinkingconss+1));
+               decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
+               decdecomp->nlinkingconss += 1;
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)));
+            }
+            else
+            {
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[block], decdecomp->nsubscipconss[block]+1));
+               decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
+               decdecomp->nsubscipconss[block] += 1;
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)));
+            }
+            SCIP_CALL( SCIPcaptureCons(scip, cons) );
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** checks the consistency of the data structure
  *
  *  In particular, it checks whether the redundant information in the structure agree and
@@ -2936,4 +2982,73 @@ int DECfilterSimilarDecompositions(
       }
    }
    return nunique;
+}
+
+/** returns the number of the block that the constraint is with respect to the decomposition */
+SCIP_RETCODE DECdetermineConsBlock(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_CONS*            cons,               /**< constraint to check */
+   int                   *block              /**< block of the constraint (or nblocks for master) */
+)
+{
+   SCIP_VAR** curvars = NULL;
+   int ncurvars = 0;
+   SCIP_Bool success = FALSE;
+   int i;
+   int nblocks;
+   SCIP_HASHMAP* vartoblock;
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(cons != NULL);
+   assert(block != NULL);
+
+   *block = -2;
+
+   SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
+   assert(success);
+
+   if(ncurvars == 0)
+      return SCIP_OKAY;
+
+   vartoblock= DECdecompGetVartoblock(decomp);
+   assert(vartoblock != NULL);
+
+   nblocks = DECdecompGetNBlocks(decomp);
+
+   SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+   SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
+   assert(success);
+
+   for( i = 0; i < ncurvars && *block != nblocks; ++i )
+   {
+      int varblock = -1;
+
+      assert(SCIPhashmapExists(vartoblock, SCIPvarGetProbvar(curvars[i])));
+      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1;
+
+      /* if variable is linking skip*/
+      if( varblock == nblocks )
+      {
+         continue;
+      }
+      else if( *block != varblock )
+      {
+         if( *block < 0)
+            *block = varblock;
+         else
+         {
+            assert(*block != nblocks);
+            *block = nblocks;
+            break;
+         }
+      }
+   }
+
+   SCIPfreeBufferArrayNull(scip, &curvars);
+
+   if( ncurvars > 0 && *block == -2 )
+      *block = nblocks;
+
+   return SCIP_OKAY;
 }

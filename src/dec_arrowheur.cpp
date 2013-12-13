@@ -37,8 +37,8 @@
 #include <cstring>
 #include <cerrno>
 #include <unistd.h>
-#include "dec_arrowheur.h"
 
+#include "dec_arrowheur.h"
 #include "cons_decomp.h"
 #include "struct_decomp.h"
 #include "pub_decomp.h"

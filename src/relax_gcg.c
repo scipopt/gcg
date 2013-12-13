@@ -265,6 +265,7 @@ SCIP_RETCODE convertStructToGCG(
    assert(DECdecompGetLinkingconss(decdecomp) != NULL || DECdecompGetNLinkingconss(decdecomp) == 0);
    assert(DECdecompGetNSubscipvars(decdecomp) != NULL || DECdecompGetSubscipvars(decdecomp) == NULL);
 
+   SCIP_CALL( DECdecompAddRemainingConss(scip, decdecomp) );
    SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
 
    origvars = SCIPgetOrigVars(scip);
