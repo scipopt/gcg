@@ -460,6 +460,7 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
    SCIPfreeMemory(scip, decdecomp);
 
+   decdecomp = NULL;
    return SCIP_OKAY;
 }
 
@@ -3050,4 +3051,14 @@ SCIP_RETCODE DECdetermineConsBlock(
       *block = nblocks;
 
    return SCIP_OKAY;
+}
+
+/** tries to assign masterconss to pricing problem */
+SCIP_RETCODE DECtryAssignMasterconssToPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int*                  transferred         /**< number of master constraints reassigned */
+   )
+{
+   return SCIP_ERROR;
 }

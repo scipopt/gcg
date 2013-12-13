@@ -441,6 +441,12 @@ SCIP_RETCODE DECdetermineConsBlock(
    int                   *block              /**< block of the constraint (or nblocks for master) */
 );
 
+/** tries to assign masterconss to pricing problem */
+SCIP_RETCODE DECtryAssignMasterconssToPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int*                  transferred         /**< number of master constraints reassigned */
+   );
 #ifdef __cplusplus
 }
 #endif

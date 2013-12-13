@@ -44,6 +44,11 @@ class GcgDecompTest : public ::testing::Test {
    }
 
    virtual void TearDown() {
+      if( decomp != NULL)
+      {
+         SCIP_CALL_ABORT( DECdecompFree(scip, &decomp) );
+      }
+
       SCIP_CALL_ABORT( SCIPfree(&scip) );
    }
 protected:
@@ -98,7 +103,7 @@ TEST_F(GcgDecompTest, CreateAndFreeTest) {
    ASSERT_EQ(DEC_DECTYPE_UNKNOWN , decomp->type);
    ASSERT_EQ(NULL, decomp->detector);
 
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
+   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
    ASSERT_EQ(NULL, decomp);
 }
 
@@ -107,7 +112,6 @@ TEST_F(GcgDecompTest, GetDetectorTest) {
    ASSERT_EQ(NULL, DECdecompGetDetector(decomp));
    decomp->detector = (DEC_DETECTOR*) 0xDEADBEEF;
    ASSERT_EQ((DEC_DETECTOR*) 0xDEADBEEF, DECdecompGetDetector(decomp));
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetDetectorTest) {
@@ -115,7 +119,6 @@ TEST_F(GcgDecompTest, SetDetectorTest) {
    ASSERT_EQ(NULL, decomp->detector);
    DECdecompSetDetector(decomp, (DEC_DETECTOR*) 0xDEADBEEF);
    ASSERT_EQ(decomp->detector, (DEC_DETECTOR*) 0xDEADBEEF);
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, GetConsindexTest) {
@@ -124,7 +127,6 @@ TEST_F(GcgDecompTest, GetConsindexTest) {
    decomp->consindex = (SCIP_HASHMAP*) 0xDEADBEEF;
    ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, DECdecompGetConsindex(decomp));
    decomp->consindex = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetConsindexTest) {
@@ -133,7 +135,6 @@ TEST_F(GcgDecompTest, SetConsindexTest) {
    DECdecompSetConsindex(decomp, (SCIP_HASHMAP*) 0xDEADBEEF);
    ASSERT_EQ(decomp->consindex, (SCIP_HASHMAP*) 0xDEADBEEF);
    decomp->consindex = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, GetVarindexTest) {
@@ -142,7 +143,6 @@ TEST_F(GcgDecompTest, GetVarindexTest) {
    decomp->varindex = (SCIP_HASHMAP*) 0xDEADBEEF;
    ASSERT_EQ((SCIP_HASHMAP*) 0xDEADBEEF, DECdecompGetVarindex(decomp));
    decomp->varindex = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetVarindexTest) {
@@ -170,14 +170,12 @@ TEST_F(GcgDecompTest, SetTypeDiagonalTest) {
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
    ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL));
    decomp->linkingvars = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetTypeUnknownTest) {
    SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
    ASSERT_EQ(DEC_DECTYPE_UNKNOWN, decomp->type);
    ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_UNKNOWN));
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetTypeArrowheadTest) {
@@ -196,7 +194,6 @@ TEST_F(GcgDecompTest, SetTypeArrowheadTest) {
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
    ASSERT_EQ(SCIP_OKAY, DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD));
    decomp->linkingvars = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, SetTypeBorderedTest) {
@@ -215,7 +212,6 @@ TEST_F(GcgDecompTest, SetTypeBorderedTest) {
    decomp->linkingvars = (SCIP_VAR**) 0xDEADBEEF;
    ASSERT_EQ(SCIP_INVALIDDATA, DECdecompSetType(decomp, DEC_DECTYPE_BORDERED));
    decomp->linkingvars = NULL;
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, GetPresolvedTest) {
@@ -224,7 +220,6 @@ TEST_F(GcgDecompTest, GetPresolvedTest) {
    ASSERT_EQ(FALSE, DECdecompGetPresolved(decomp));
    decomp->presolved = TRUE;
    ASSERT_EQ(TRUE, DECdecompGetPresolved(decomp));
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, determineConsInPricing) {
@@ -241,12 +236,11 @@ TEST_F(GcgDecompTest, determineConsInPricing) {
 
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
    SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, NULL, 0) );
+
    SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(0, block);
    SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
    ASSERT_EQ(1, block);
-
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 TEST_F(GcgDecompTest, determineConsInMaster) {
@@ -265,12 +259,11 @@ TEST_F(GcgDecompTest, determineConsInMaster) {
    SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
    SCIP_CONS* masterconss[2] = {SCIPfindCons(scip, "c3"), SCIPfindCons(scip, "c4")};
    SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, masterconss, 2) );
+
    SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(2, block);
    SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c4"), &block));
    ASSERT_EQ(2, block);
-
-   SCIP_CALL_EXPECT(DECdecompFree(scip, &decomp));
 }
 
 
@@ -295,7 +288,117 @@ TEST_F(GcgDecompTest, determineConsLinkingvarOnly) {
    SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
    SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
    SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
    SCIP_CALL_EXPECT( DECdetermineConsBlock(scip, decomp, SCIPfindCons(scip, "c3"), &block));
    ASSERT_EQ(2, block);
-   SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp) );
+}
+
+TEST_F(GcgDecompTest, polishMasterconssToPricing) {
+   SCIP_HASHMAP* constoblock;
+   int transferred;
+
+   SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+   SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x2>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
+
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECtryAssignMasterconssToPricing(scip, decomp, &transferred) );
+   ASSERT_EQ(1, transferred);
+}
+
+TEST_F(GcgDecompTest, polishNoMasterconssToPricing) {
+   SCIP_HASHMAP* constoblock;
+   int transferred;
+
+   SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+   SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I]  <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] + <x2>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECtryAssignMasterconssToPricing(scip, decomp, &transferred) );
+   ASSERT_EQ(0, transferred);
+}
+
+TEST_F(GcgDecompTest, polishLinkingVarsNoTransfer) {
+   SCIP_HASHMAP* constoblock;
+   int transferred;
+
+   SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+   SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I] + <x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x3>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECtryAssignMasterconssToPricing(scip, decomp, &transferred) );
+   ASSERT_EQ(0, transferred);
+}
+
+TEST_F(GcgDecompTest, polishLinkingVarsTransfer) {
+   SCIP_HASHMAP* constoblock;
+   int transferred;
+
+   SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scip) );
+   SCIP_CALL_ABORT( SCIPcreateProbBasic(scip, "prob") );
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I] + <x3>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
+
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECtryAssignMasterconssToPricing(scip, decomp, &transferred) );
+   ASSERT_EQ(1, transferred);
 }
