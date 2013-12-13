@@ -4299,7 +4299,7 @@ $(LIBOBJDIR)/dec_isomorph.o: src/dec_isomorph.cpp src/dec_isomorph.h \
  lib/scip/src/scip/struct_history.h lib/scip/src/scip/pub_implics.h \
  lib/scip/src/scip/type_implics.h lib/scip/src/scip/struct_implics.h \
  lib/scip/src/scip/pub_lp.h lib/scip/src/scip/type_set.h \
- lib/scip/src/scip/type_stat.h lib/scip/src/scip/type_lpi.h \
+ lib/scip/src/scip/type_stat.h lib/scip/src/lpi/type_lpi.h \
  lib/scip/src/scip/struct_lp.h lib/scip/src/scip/pub_nlp.h \
  lib/scip/src/scip/pub_misc.h lib/scip/src/scip/struct_misc.h \
  lib/scip/src/scip/pub_nodesel.h lib/scip/src/scip/pub_paramset.h \
