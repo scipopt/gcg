@@ -3060,5 +3060,49 @@ SCIP_RETCODE DECtryAssignMasterconssToPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    )
 {
-   return SCIP_ERROR;
+   SCIP_CONS** linkingconss;
+   int nlinkingconss;
+   int c;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(transferred != NULL);
+
+   *transferred = 0;
+   nlinkingconss = DECdecompGetNLinkingconss(decomp);
+   linkingconss = DECdecompGetLinkingconss(decomp);
+
+   for( c = 0; c < nlinkingconss; ++c )
+   {
+      SCIP_CONS* linkcons = linkingconss[c];
+      int block;
+      SCIP_CALL( DECdetermineConsBlock(scip, decomp, linkcons, &block) );
+      if( block == DECdecompGetNBlocks(decomp) )
+      {
+         continue;
+      }
+
+      linkingconss[c] =  linkingconss[nlinkingconss];
+      --nlinkingconss;
+      --c;
+      *transferred += 1;
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
+      decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
+      decomp->nsubscipconss[block] += 1;
+   }
+
+   if( nlinkingconss < DECdecompGetNLinkingconss(decomp) )
+   {
+      if( nlinkingconss > 0 )
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->linkingconss, nlinkingconss) );
+      }
+      else
+      {
+         SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
+      }
+      decomp->nlinkingconss = nlinkingconss;
+   }
+
+   return SCIP_OKAY;
 }
