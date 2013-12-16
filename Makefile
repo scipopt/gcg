@@ -176,8 +176,8 @@ LIBOBJ		=	reader_blk.o \
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
-			dec_isomorph.o \
-			bliss.o
+			dec_isomorph.o
+
 endif
 ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	solver_cplex.o
