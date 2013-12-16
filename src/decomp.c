@@ -45,7 +45,6 @@
 #include "relax_gcg.h"
 
 #include <assert.h>
-#include <string.h>
 
 typedef struct {
    SCIP_Real mean;

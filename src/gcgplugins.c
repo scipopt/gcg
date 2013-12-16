@@ -155,7 +155,11 @@
 #include "reader_gp.h"
 #include "cons_decomp.h"
 #include "dec_connected.h"
+
+#ifndef NBLISS
 #include "dec_isomorph.h"
+#endif
+
 #include "dec_arrowheur.h"
 #include "dec_stairheur.h"
 #include "dec_staircase.h"
@@ -296,7 +300,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
 
-   /* Martin's decomp stuff */
+   /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );
    SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
    SCIP_CALL( SCIPincludeDetectionConnected(scip) );
@@ -305,12 +309,12 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectionStaircase(scip) );
    SCIP_CALL( SCIPincludeDetectionRandom(scip) );
    SCIP_CALL( SCIPincludeDetectionColors(scip) );
-
-   /* Friederike's */
    SCIP_CALL( SCIPincludeDetectionCutpacking(scip) );
 
-   /* Daniel's */
+
+#ifndef NBLISS
    SCIP_CALL( SCIPincludeDetectionIsomorphism(scip) );
+#endif
 
    /* Christian's heuristics */
    SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );

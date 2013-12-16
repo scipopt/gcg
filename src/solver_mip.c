@@ -259,8 +259,14 @@ SCIP_RETCODE filterInfiniteSolutions(
    SCIP_VAR** origvars;
    int norigvars;
 
+   assert(pricingprob != NULL);
+   assert(sols != NULL);
+   assert(nsols != NULL);
+
    origvars = SCIPgetOrigVars(pricingprob);
    norigvars = SCIPgetNOrigVars(pricingprob);
+
+   /*lint --e{850} s is modified in the loop */
    for( s = 0; s < *nsols; ++s )
    {
       for( i = 0; i < norigvars; ++i )
@@ -303,6 +309,16 @@ SCIP_RETCODE solveProblem(
    int i;
 
    SCIP_RETCODE retcode;
+
+   assert(pricingprob != NULL);
+   assert(probnr >= 0);
+   assert(solverdata != NULL);
+   assert(sols != NULL);
+   assert(maxsols > 0);
+   assert(nsols != NULL);
+   assert(lowerbound != NULL);
+   assert(status != NULL);
+
    /* solve the pricing submip */
    retcode = SCIPsolve(pricingprob);
 
@@ -424,7 +440,7 @@ SCIP_RETCODE solveProblem(
    if( *nsols > 0 )
    {
       SCIP_CALL( filterInfiniteSolutions(pricingprob, sols, nsols) );
-      if( nsols == 0 )
+      if( *nsols == 0 )
       {
          *status = SCIP_STATUS_UNKNOWN;
       }

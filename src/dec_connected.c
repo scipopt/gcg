@@ -171,14 +171,13 @@ SCIP_RETCODE createMasterconssArray(
    }
    else
    {
-      SCIPfreeMemoryArray(scip, masterconss);
+      SCIPfreeMemoryArrayNull(scip, masterconss);
       *nmasterconss = 0;
-      masterconss = 0;
+      *masterconss = NULL;
    }
 
-   *pricingisempty = *nmasterconss == nconss;
-   *masterisempty = *nmasterconss == 0;
-
+   *pricingisempty = (*nmasterconss == nconss);
+   *masterisempty = (*nmasterconss == 0);
 
    return SCIP_OKAY;
 }
@@ -224,7 +223,7 @@ SCIP_RETCODE findConnectedComponents(
    else
    {
       SCIP_CALL( DECdecompFree(scip, decomp) );
-      decomp = NULL;
+      *decomp = NULL;
       *result = SCIP_DIDNOTFIND;
    }
 

@@ -38,8 +38,8 @@
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
 
-#ifndef GCG_OBJPRICER_GCG__
-#define GCG_OBJPRICER_GCG__
+#ifndef GCG_OBJPRICER_GCG_H
+#define GCG_OBJPRICER_GCG_H
 
 using gcg::Stabilization;
 

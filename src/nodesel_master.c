@@ -145,44 +145,44 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
          assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)) == SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
          assert( *selnode != NULL );
-   }
+      }
 
-   if( *selnode == NULL )
-   {
-      SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
-   }
-   assert(*selnode != NULL);
+      if( *selnode == NULL )
+      {
+         SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
+      }
+      assert(*selnode != NULL);
 
-   /* set the dual bound to the lower bound of the corresponding original node */
-   SCIP_CALL( SCIPupdateNodeDualbound(scip, *selnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
-}
-else
-{
-   SCIPdebugMessage("select random node\n");
+      /* set the dual bound to the lower bound of the corresponding original node */
+      SCIP_CALL( SCIPupdateNodeDualbound(scip, *selnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
+   }
+   else
+   {
+      SCIPdebugMessage("select random node\n");
 
-   if( SCIPgetNChildren(scip) > 0 )
-   {
-      SCIP_CALL( SCIPgetChildren(scip, &nodes, &nnodes) );
-      *selnode = nodes[0];
+      if( SCIPgetNChildren(scip) > 0 )
+      {
+         SCIP_CALL( SCIPgetChildren(scip, &nodes, &nnodes) );
+         *selnode = nodes[0];
+      }
+      else if( SCIPgetNSiblings(scip) > 0 )
+      {
+         SCIP_CALL( SCIPgetSiblings(scip, &nodes, &nnodes) );
+         *selnode = nodes[0];
+      }
+      else if( SCIPgetNLeaves(scip) > 0 )
+      {
+         SCIP_CALL( SCIPgetLeaves(scip, &nodes, &nnodes) );
+         *selnode = nodes[0];
+      }
    }
-   else if( SCIPgetNSiblings(scip) > 0 )
-   {
-      SCIP_CALL( SCIPgetSiblings(scip, &nodes, &nnodes) );
-      *selnode = nodes[0];
-   }
-   else if( SCIPgetNLeaves(scip) > 0 )
-   {
-      SCIP_CALL( SCIPgetLeaves(scip, &nodes, &nnodes) );
-      *selnode = nodes[0];
-   }
-}
 
 #ifndef NDEBUG
-GCGconsOrigbranchCheckConsistency(origscip);
-GCGconsMasterbranchCheckConsistency(scip);
+   GCGconsOrigbranchCheckConsistency(origscip);
+   GCGconsMasterbranchCheckConsistency(scip);
 #endif
 
-return SCIP_OKAY;
+   return SCIP_OKAY;
 }
 
 

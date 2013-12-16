@@ -558,7 +558,11 @@ SCIP_RETCODE createColumnindexList(
  * @param nrows The number of rows of the constraint matrix (=number of relevant constraints)
  * @return A vector with the new row order. E.g. (2 3 1) means the second row comes first now, and so on. */
 static
-vector<int> rowOrdering(SCIP* scip, vector<vector<int> > &columnindices, int nrows)
+vector<int> rowOrdering(
+   SCIP* scip,
+   vector<vector<int> > &columnindices,
+   int nrows
+   )
 {
    vector<int> roworder;
    vector<int> new_roworder;
@@ -594,7 +598,11 @@ vector<int> rowOrdering(SCIP* scip, vector<vector<int> > &columnindices, int nro
  * @param end Array to store the last nonzero entry of the i-th column (row)
  * @param indices columnindices vector (rowindices vector) */
 static
-SCIP_RETCODE formIndexArray(int* begin, int* end, vector<vector<int> > &indices)
+SCIP_RETCODE formIndexArray(
+   int* begin,
+   int* end,
+   vector<vector<int> > &indices
+   )
 {
    vector<vector<int> >::iterator it1;
    int i;
@@ -620,7 +628,11 @@ SCIP_RETCODE formIndexArray(int* begin, int* end, vector<vector<int> > &indices)
 
 /**returns FALSE if at least one entry of new_array and old_array are different.*/
 static
-SCIP_Bool arraysAreEqual(int* new_array, int* old_array, int num_elements)
+SCIP_Bool arraysAreEqual(
+   int* new_array,
+   int* old_array,
+   int num_elements
+   )
 {
    int i;
    for( i = 0; i < num_elements; ++i )
@@ -639,11 +651,11 @@ SCIP_Bool arraysAreEqual(int* new_array, int* old_array, int num_elements)
  *  One call of this function is equivalent to one iteration of the ROC2-algortihm. */
 static
 SCIP_RETCODE rankOrderClusteringIteration(
-      SCIP*             scip,          /**< SCIP data structure */
-      DEC_DETECTORDATA*  detectordata, /**< presolver data data structure */
-      INDEXMAP* inputmap,              /**< indexmap for input */
-      INDEXMAP* outputmap              /**< indexmap for output */
-      )
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   INDEXMAP*             inputmap,           /**< indexmap for input */
+   INDEXMAP*             outputmap           /**< indexmap for output */
+   )
 {
    vector<int> roworder;
    vector<int> columnorder;
@@ -715,7 +727,11 @@ SCIP_RETCODE rankOrderClusteringIteration(
 }
 
 static
-int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iterations)
+int rankOrderClustering(
+   SCIP* scip,
+   DEC_DETECTORDATA* detectordata,
+   int max_iterations
+   )
 {
    int i;
    int nvars;
@@ -790,7 +806,10 @@ int rankOrderClustering(SCIP* scip, DEC_DETECTORDATA* detectordata, int max_iter
 
 /** finds rows with local minima regarding the number of linking variables and stores them in detectordata->rowsWithConstrictions */
 static
-SCIP_RETCODE rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
+SCIP_RETCODE rowsWithConstriction(
+   SCIP* scip,
+   DEC_DETECTORDATA* detectordata
+   )
 {
    /* if blocking is performed after row i+1; local minima */
    int i;
@@ -810,7 +829,13 @@ SCIP_RETCODE rowsWithConstriction(SCIP* scip, DEC_DETECTORDATA* detectordata)
 
 /** assigns constraints in the interval [first_cons, last_cons] to 'block'. */
 static
-SCIP_RETCODE assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int block, int first_cons, int last_cons)
+SCIP_RETCODE assignConsToBlock(
+   SCIP* scip,
+   DEC_DETECTORDATA* detectordata,
+   int block,
+   int first_cons,
+   int last_cons
+   )
 {
    int i;
    int j;
@@ -832,7 +857,11 @@ SCIP_RETCODE assignConsToBlock(SCIP* scip, DEC_DETECTORDATA* detectordata, int b
 
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
 static
-int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
+int getMaxColIndex(
+   DEC_DETECTORDATA* detectordata,
+   int from_row,
+   int to_row
+   )
 {
    /* some pointer arithmetic */
    return std::max_element(detectordata->iend + (from_row), detectordata->iend+(to_row + 1))-detectordata->iend;
@@ -840,7 +869,10 @@ int getMaxColIndex(DEC_DETECTORDATA* detectordata, int from_row, int to_row)
 
 /** returns the column index of the first nonzero entry in 'row'. Rows start counting at 1, not 0. */
 static
-int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
+int getMinColIndex(
+   DEC_DETECTORDATA* detectordata,
+   int row
+   )
 {
    return detectordata->ibegin[row-1];
 }
@@ -854,7 +886,12 @@ int getMinColIndex(DEC_DETECTORDATA* detectordata, int row)
  * @return TRUE if blocking is valid, else FALSE
  */
 static
-SCIP_Bool isValidBlocking(DEC_DETECTORDATA* detectordata, int prev_block_first_row, int prev_block_last_row, int block_at_row)
+SCIP_Bool isValidBlocking(
+   DEC_DETECTORDATA* detectordata,
+   int prev_block_first_row,
+   int prev_block_last_row,
+   int block_at_row
+   )
 {
    int last_column_prev_block;
    int first_column_current_block;
@@ -877,7 +914,12 @@ SCIP_Bool isValidBlocking(DEC_DETECTORDATA* detectordata, int prev_block_first_r
  * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no candidate was found
  */
 static
-vector<int>::iterator findBlockingCandidate(vector<int>::iterator it_constrictions, vector<int>* it_vector, int min_block_size, int prev_block_last_row)
+vector<int>::iterator findBlockingCandidate(
+   vector<int>::iterator it_constrictions,
+   vector<int>* it_vector,
+   int min_block_size,
+   int prev_block_last_row
+   )
 {
    for( ;; )
    {
@@ -907,7 +949,14 @@ vector<int>::iterator findBlockingCandidate(vector<int>::iterator it_constrictio
  * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no row was found
  */
 static
-vector<int>::iterator nextRowToBlockAt(DEC_DETECTORDATA* detectordata, vector<int>::iterator it_constrictions, vector<int>* it_vector, int min_block_size, int prev_block_first_row, int prev_block_last_row)
+vector<int>::iterator nextRowToBlockAt(
+   DEC_DETECTORDATA* detectordata,
+   vector<int>::iterator it_constrictions,
+   vector<int>* it_vector,
+   int min_block_size,
+   int prev_block_first_row,
+   int prev_block_last_row
+   )
 {
 
    /* end of the constriction vector? */
@@ -944,7 +993,9 @@ vector<int>::iterator nextRowToBlockAt(DEC_DETECTORDATA* detectordata, vector<in
 }
 
 static
-int calculateNdecompositions(DEC_DETECTORDATA* detectordata)
+int calculateNdecompositions(
+   DEC_DETECTORDATA* detectordata
+   )
 {
    int nblockingtypes;
    int nblockingspertype;
@@ -978,7 +1029,10 @@ int calculateNdecompositions(DEC_DETECTORDATA* detectordata)
 }
 
 static
-void checkParameterConsistency(DEC_DETECTORDATA* detectordata, SCIP_RESULT* result)
+void checkParameterConsistency(
+   DEC_DETECTORDATA* detectordata,
+   SCIP_RESULT* result
+   )
 {
    /* maxblocks < nRelevantsCons? */
 
@@ -1005,11 +1059,11 @@ void checkParameterConsistency(DEC_DETECTORDATA* detectordata, SCIP_RESULT* resu
 /** tries to dynamically divide the problem into subproblems (blocks)*/
 static
 SCIP_RETCODE blockingDynamic(
-      SCIP* scip,                      /**< scip object */
-      DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
-      int tau,                         /**< desired number of blocks */
-      int nvars                        /**< number of variables in the problem*/
-      )
+   SCIP*                 scip,               /**< scip object */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   int                   tau,                /**< desired number of blocks */
+   int                   nvars               /**< number of variables in the problem*/
+   )
 {
    int block;
    int prev_block_first_row;
@@ -1071,26 +1125,12 @@ SCIP_RETCODE blockingDynamic(
    return SCIP_OKAY;
 }
 
-/** returns the number of rows in a block in order to distribute the number of rows evenly across the blocks */
-static
-int rowsInConstantBlock(int block, int desired_blocks, int nrows)
-{
-   if( block <= desired_blocks - (nrows % desired_blocks) )
-   {
-      return (nrows / desired_blocks);
-   }
-   else
-   {
-      return ((nrows / desired_blocks) + 1);
-   }
-}
-
 /** creates blocks with the same number of rows*/
 static
 SCIP_RETCODE blockingStatic(
-      SCIP* scip,                      /**< scip object */
-      DEC_DETECTORDATA* detectordata   /**< presolver data data structure */
-      )
+   SCIP*                 scip,               /**< scip object */
+   DEC_DETECTORDATA*    detectordata         /**< presolver data data structure */
+   )
 {
    int nblocks;
    int block;
@@ -1179,14 +1219,14 @@ SCIP_RETCODE resetDetectordata(
 
 static
 SCIP_RETCODE blocking(
-      SCIP* scip,
-      DEC_DETECTORDATA* detectordata,
-      DEC_DECOMP*** decdecomps,
-      int* ndecdecomps,
-      int nvars,
-      int ncons,
-      SCIP_RESULT* result
-      )
+   SCIP* scip,
+   DEC_DETECTORDATA* detectordata,
+   DEC_DECOMP*** decdecomps,
+   int* ndecdecomps,
+   int nvars,
+   int ncons,
+   SCIP_RESULT* result
+   )
 {
    int n;   /*  maximum width of the band after ROC */
    int v;   /*  minimum width of the band after ROC */
@@ -1527,7 +1567,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 /** creates the stairheur presolver and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionStairheur(
    SCIP*                 scip              /**< SCIP data structure */
-
    )
 {
    DEC_DETECTORDATA *detectordata;

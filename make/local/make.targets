@@ -83,7 +83,7 @@ LINKMSG		+=	" -> \"libgtest.$(STATICLIBEXT)\" is the path to the googletest libr
 
 .PHONY: testdepend
 testdepend::
-		$(SHELL) -ec '$(DCC) $(FLAGS) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
+		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) -Ilib/gtest $(DFLAGS) $(TESTSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(TESTSRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(TESTOBJDIR\)/\2.o: $(TESTSRCDIR)/\2.c|g'\'' \
 		>$(TESTDEP)'
 -include	$(TESTDEP)

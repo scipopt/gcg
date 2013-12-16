@@ -66,7 +66,7 @@ FLAGS		+=	-DNBLISS
 else
 LDFLAGS		+= 	-lbliss
 ifeq ($(COMP),gnu)
-FLAGS		+=	-isystem $(LIBDIR)/blissinc
+FLAGS		+=	-isystem$(LIBDIR)/blissinc
 else
 FLAGS		+=	-I$(LIBDIR)/blissinc
 endif
@@ -156,7 +156,6 @@ LIBOBJ		=	reader_blk.o \
 			dec_arrowheur.o \
 			dec_stairheur.o \
 			dec_connected.o \
-			dec_isomorph.o \
 			dec_cutpacking.o \
 			dec_staircase.o \
 			dec_random.o \
@@ -176,7 +175,9 @@ LIBOBJ		=	reader_blk.o \
 			dialog_graph.o
 
 ifeq ($(BLISS),true)
-LIBOBJ		+=	bliss_automorph.o
+LIBOBJ		+=	bliss_automorph.o \
+			dec_isomorph.o \
+			bliss.o
 endif
 ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	solver_cplex.o
@@ -347,14 +348,14 @@ tags:
 
 .PHONY: depend
 depend:		$(SCIPDIR) gcglibdepend testdepend
-		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(MAINSRC) \
+		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(MAINSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z\_]*\).c|$$\(OBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(MAINDEP)'
 -include	$(MAINDEP)
 
 .PHONY: gcglibdepend
 gcglibdepend:
-		$(SHELL) -ec '$(DCC) $(FLAGS) $(DFLAGS) $(GCGLIBSRC) \
+		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(GCGLIBSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z_/]*\).c|$$\(LIBOBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(GCGLIBDEP)'
 -include	$(GCGLIBDEP)
