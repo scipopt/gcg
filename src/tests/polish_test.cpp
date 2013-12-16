@@ -332,9 +332,10 @@ TEST_F(GcgPolishDecompTest, TransferNewVarToPricingWithLinking) {
    ASSERT_EQ(1, transferred);
    ASSERT_EQ(2, DECdecompGetNBlocks(decomp));
    ASSERT_EQ(1, DECdecompGetNLinkingvars(decomp));
+   ASSERT_EQ(SCIPfindVar(scip, "t_x3"), DECdecompGetLinkingvars(decomp)[0]);
 }
 
-TEST_F(GcgPolishDecompTest, CreateNewPricingProblem) {
+TEST_F(GcgPolishDecompTest, DISABLED_CreateNewPricingProblem) {
    SCIP_HASHMAP* constoblock;
    int transferred;
 
@@ -361,7 +362,7 @@ TEST_F(GcgPolishDecompTest, CreateNewPricingProblem) {
    ASSERT_EQ(3, DECdecompGetNBlocks(decomp));
 }
 
-TEST_F(GcgPolishDecompTest, CreateNewPricingProblemWithLinking) {
+TEST_F(GcgPolishDecompTest, DISABLED_CreateNewPricingProblemWithLinking) {
    SCIP_HASHMAP* constoblock;
    int transferred;
 

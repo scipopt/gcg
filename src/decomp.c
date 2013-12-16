@@ -3086,6 +3086,7 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP_CONS** linkingconss;
    int nlinkingconss;
    int c;
+   int v;
 
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -3106,13 +3107,42 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
       }
       else if( block >= 0)
       {
+         SCIP_VAR** curvars = NULL;
+         int ncurvars = 0;
+         SCIP_Bool success = FALSE;
+
+         SCIP_CALL( SCIPgetConsNVars(scip, linkcons, &ncurvars, &success) );
+         assert(success);
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, linkcons, curvars, ncurvars, &success) );
+         assert(success);
+
          linkingconss[c] =  linkingconss[nlinkingconss-1];
          --nlinkingconss;
          --c;
          *transferred += 1;
+
          SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
          decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
          decomp->nsubscipconss[block] += 1;
+         SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t) (block+1)) );
+         for( v = 0; v < ncurvars; ++v )
+         {
+            SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
+            assert(SCIPhashmapExists(decomp->vartoblock, probvar));
+            /* if variable is in master only, move to subproblem */
+            if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 )
+            {
+               SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t) (block+1)) );
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) );
+               decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
+               decomp->nsubscipvars[block] += 1;
+               SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
+               assert(success);
+            }
+         }
+
+         SCIPfreeBufferArrayNull(scip, &curvars);
       }
    }
 
