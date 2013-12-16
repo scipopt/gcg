@@ -65,7 +65,11 @@ ifeq ($(BLISS),false)
 FLAGS		+=	-DNBLISS
 else
 LDFLAGS		+= 	-lbliss
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem $(LIBDIR)/blissinc
+else
 FLAGS		+=	-I$(LIBDIR)/blissinc
+endif
 SOFTLINKS	+=	$(LIBDIR)/blissinc
 SOFTLINKS	+=	$(LIBDIR)/libbliss.$(STATICLIBEXT)
 LINKMSG		+=	"bliss graph isomorphism framework:\n"

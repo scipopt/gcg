@@ -127,7 +127,11 @@ $(TESTFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) libs $(LPILIBFILE) $(NLPILIBFILE
 		$(LINKCXX_o)$@
 
 ifeq ($(GTEST),true)
+ifeq ($(COMP),gnu)
+FLAGS+=-isystem$(LIBDIR)/gtest/
+else
 FLAGS+=-I$(LIBDIR)/gtest/
+endif
 endif
 
 .PHONY: coverage
