@@ -3076,6 +3076,62 @@ SCIP_RETCODE DECdetermineConsBlock(
    return SCIP_OKAY;
 }
 
+/** move a master constraint to pricing problem */
+SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int                   consindex,          /**< index of constraint to move */
+   int                   block               /**< block of the pricing problem where to move */
+   )
+{
+   SCIP_CONS* linkcons;
+   SCIP_VAR** curvars = NULL;
+   int ncurvars = 0;
+   SCIP_Bool success = FALSE;
+   int v;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(consindex >= 0 && consindex < decomp->nlinkingconss);
+   assert(block >= 0 && block < decomp->nblocks);
+
+   linkcons = decomp->linkingconss[consindex];
+
+   SCIP_CALL( SCIPgetConsNVars(scip, linkcons, &ncurvars, &success) );
+   assert(success);
+   SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+   SCIP_CALL( SCIPgetConsVars(scip, linkcons, curvars, ncurvars, &success) );
+   assert(success);
+
+   decomp->linkingconss[consindex] =  decomp->linkingconss[decomp->nlinkingconss-1];
+   decomp->nlinkingconss -= 1;
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
+   decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
+   decomp->nsubscipconss[block] += 1;
+   SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t) (block+1)) );
+
+   for( v = 0; v < ncurvars; ++v )
+   {
+      SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
+      assert(SCIPhashmapExists(decomp->vartoblock, probvar));
+      /* if variable is in master only, move to subproblem */
+      if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 )
+      {
+         SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t) (block+1)) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) );
+         decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
+         decomp->nsubscipvars[block] += 1;
+         SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
+         assert(success);
+      }
+   }
+
+   SCIPfreeBufferArrayNull(scip, &curvars);
+   return SCIP_OKAY;
+}
+
+
 /** tries to assign masterconss to pricing problem */
 SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -3083,80 +3139,40 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    )
 {
-   SCIP_CONS** linkingconss;
-   int nlinkingconss;
    int c;
-   int v;
 
    assert(scip != NULL);
    assert(decomp != NULL);
    assert(transferred != NULL);
 
    *transferred = 0;
-   nlinkingconss = DECdecompGetNLinkingconss(decomp);
-   linkingconss = DECdecompGetLinkingconss(decomp);
 
-   for( c = 0; c < nlinkingconss; ++c )
+   for( c = 0; c < decomp->nlinkingconss; ++c )
    {
-      SCIP_CONS* linkcons = linkingconss[c];
       int block;
-      SCIP_CALL( DECdetermineConsBlock(scip, decomp, linkcons, &block) );
+      SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
       if( block == DECdecompGetNBlocks(decomp) )
       {
          continue;
       }
       else if( block >= 0)
       {
-         SCIP_VAR** curvars = NULL;
-         int ncurvars = 0;
-         SCIP_Bool success = FALSE;
-
-         SCIP_CALL( SCIPgetConsNVars(scip, linkcons, &ncurvars, &success) );
-         assert(success);
-         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetConsVars(scip, linkcons, curvars, ncurvars, &success) );
-         assert(success);
-
-         linkingconss[c] =  linkingconss[nlinkingconss-1];
-         --nlinkingconss;
+         SCIP_CALL( DECdecompMoveLinkingConsToPricing(scip, decomp, c, block) );
          --c;
          *transferred += 1;
-
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
-         decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
-         decomp->nsubscipconss[block] += 1;
-         SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t) (block+1)) );
-         for( v = 0; v < ncurvars; ++v )
-         {
-            SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
-            assert(SCIPhashmapExists(decomp->vartoblock, probvar));
-            /* if variable is in master only, move to subproblem */
-            if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 )
-            {
-               SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t) (block+1)) );
-               SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) );
-               decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
-               decomp->nsubscipvars[block] += 1;
-               SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
-               assert(success);
-            }
-         }
-
-         SCIPfreeBufferArrayNull(scip, &curvars);
       }
    }
 
-   if( nlinkingconss < DECdecompGetNLinkingconss(decomp) )
+   if( *transferred > 0 )
    {
-      if( nlinkingconss > 0 )
+      if( decomp->nlinkingconss > 0 )
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->linkingconss, nlinkingconss) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->linkingconss, decomp->nlinkingconss) );
       }
       else
       {
          SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
       }
-      decomp->nlinkingconss = nlinkingconss;
    }
 
    return SCIP_OKAY;

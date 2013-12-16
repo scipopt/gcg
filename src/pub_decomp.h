@@ -441,6 +441,14 @@ SCIP_RETCODE DECdetermineConsBlock(
    int                   *block              /**< block of the constraint (or nblocks for master) */
 );
 
+/** move a master constraint to pricing problem */
+SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int                   consindex,          /**< index of constraint to move */
+   int                   block               /**< block of the pricing problem where to move */
+   );
+
 /** tries to assign masterconss to pricing problem */
 SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
