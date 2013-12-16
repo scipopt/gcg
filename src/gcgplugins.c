@@ -61,6 +61,7 @@
 #include "scip/heur_coefdiving.h"
 #include "scip/heur_crossover.h"
 #include "scip/heur_dins.h"
+#include "scip/heur_dualval.h"
 #include "scip/heur_feaspump.h"
 #include "scip/heur_fixandinfer.h"
 #include "scip/heur_fracdiving.h"
@@ -76,6 +77,7 @@
 #include "scip/heur_oneopt.h"
 #include "scip/heur_proximity.h"
 #include "scip/heur_pscostdiving.h"
+#include "scip/heur_randrounding.h"
 #include "scip/heur_rens.h"
 #include "scip/heur_rins.h"
 #include "scip/heur_rootsoldiving.h"
@@ -245,6 +247,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurCoefdiving(scip) );
    SCIP_CALL( SCIPincludeHeurCrossover(scip) );
    SCIP_CALL( SCIPincludeHeurDins(scip) );
+   SCIP_CALL( SCIPincludeHeurDualval(scip) );
    SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
@@ -260,6 +263,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurOneopt(scip) );
    SCIP_CALL( SCIPincludeHeurProximity(scip) );
    SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurRandrounding(scip) );
    SCIP_CALL( SCIPincludeHeurRens(scip) );
    SCIP_CALL( SCIPincludeHeurRins(scip) );
    SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );

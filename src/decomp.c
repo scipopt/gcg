@@ -1505,19 +1505,19 @@ SCIP_RETCODE DECdecompAddRemainingConss(
             int block;
             SCIP_CALL( DECdetermineConsBlock(scip, decdecomp, cons, &block) );
             SCIPdebugMessage("cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, DECdecompGetNBlocks(decdecomp) );
-            if( block == DECdecompGetNBlocks(decdecomp))
+            if( block == DECdecompGetNBlocks(decdecomp) )
             {
-               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->linkingconss, decdecomp->nlinkingconss+1));
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->linkingconss, decdecomp->nlinkingconss+1) );
                decdecomp->linkingconss[decdecomp->nlinkingconss] = cons;
                decdecomp->nlinkingconss += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)));
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (DECdecompGetNBlocks(decdecomp)+1)) );
             }
             else
             {
-               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[block], decdecomp->nsubscipconss[block]+1));
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[block], decdecomp->nsubscipconss[block]+1) );
                decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
                decdecomp->nsubscipconss[block] += 1;
-               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)));
+               SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
             }
             SCIP_CALL( SCIPcaptureCons(scip, cons) );
          }
@@ -3007,7 +3007,7 @@ SCIP_RETCODE DECdetermineConsBlock(
    SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
    assert(success);
 
-   if(ncurvars == 0)
+   if( ncurvars == 0 )
       return SCIP_OKAY;
 
    vartoblock= DECdecompGetVartoblock(decomp);
@@ -3033,7 +3033,7 @@ SCIP_RETCODE DECdetermineConsBlock(
       }
       else if( *block != varblock )
       {
-         if( *block < 0)
+         if( *block < 0 )
             *block = varblock;
          else
          {

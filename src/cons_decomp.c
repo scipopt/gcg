@@ -978,12 +978,12 @@ SCIP_RETCODE GCGsetDetection(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
    assert(scip != NULL);
-   SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet));
+   SCIP_CALL( setDetectionDefault(scip, conshdlrdata, quiet) );
 
-   switch(paramsetting)
+   switch( paramsetting )
    {
    case SCIP_PARAMSETTING_AGGRESSIVE:
-      SCIP_CALL( setDetectionAggressive(scip, conshdlrdata, quiet));
+      SCIP_CALL( setDetectionAggressive(scip, conshdlrdata, quiet) );
       break;
    case SCIP_PARAMSETTING_OFF:
       SCIP_CALL( setDetectionOff(scip, conshdlrdata, quiet) );
