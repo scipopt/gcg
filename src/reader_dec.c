@@ -71,7 +71,7 @@ typedef enum DecSection DECSECTION;
 /** exponent indicator of the a value */
 enum DecExpType
 {
-   DEC_EXP_NONE, DEC_EXP_UNSIGNED, DEC_EXP_SIGNED
+   DEC_EXP_NONE
 };
 typedef enum DecExpType DECEXPTYPE;
 
@@ -179,7 +179,7 @@ SCIP_Bool isValueChar(
    SCIP_Bool*            hasdot,             /**< pointer to update the dot flag */
    DECEXPTYPE*           exptype             /**< pointer to update the exponent type */
    )
-{
+{  /*lint --e{715}*/
    assert(hasdot != NULL);
    assert(exptype != NULL);
 
@@ -738,7 +738,7 @@ SCIP_RETCODE fillDecompStruct(
 
       int blockid;
       assert(SCIPhashmapExists(readerdata->constoblock, conss[i]));
-      blockid = (size_t) SCIPhashmapGetImage(readerdata->constoblock, conss[i]);
+      blockid = (int) (size_t) SCIPhashmapGetImage(readerdata->constoblock, conss[i]); /*lint !e507*/
       if( blockid == LINKINGVALUE )
       {
          blockid = decinput->nblocks+1;

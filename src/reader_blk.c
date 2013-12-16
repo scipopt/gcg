@@ -888,7 +888,7 @@ SCIP_RETCODE readBLKFile(
    const char*           filename            /**< name of the input file */
    )
 {
-   SCIP_RETCODE retcode;
+   SCIP_RETCODE retcode = SCIP_ERROR;
    DEC_DECOMP *decdecomp;
    int i;
    int nconss;

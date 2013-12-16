@@ -399,7 +399,6 @@ SCIP_RETCODE createChildNodesRyanfoster(
    if( norigvars1 > 0 )
    {
       SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons, norigvars1) );
-
       SCIP_CALL( SCIPinitOrigconsArray(masterscip, &origbranchcons2, norigvars1) );
    }
 
@@ -410,6 +409,8 @@ SCIP_RETCODE createChildNodesRyanfoster(
       SCIP_CONS* origcons2;
 
       assert(GCGvarGetBlock(origvars1[v]) == GCGvarGetBlock(origvars2[v]));
+      assert(origbranchcons != NULL);
+      assert(origbranchcons2 != NULL);
 
       /* create constraint for same-child */
       SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, samename, origvars1[v], origvars2[v],
@@ -425,9 +426,9 @@ SCIP_RETCODE createChildNodesRyanfoster(
    }
 
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons1, samename, branchrule, branchsamedata,
-         origbranchcons, norigvars1, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
+         origbranchcons, norigvars1, FALSE, FALSE, FALSE, NULL, 0.0, 2, 0.0) );
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, cons2, differname, branchrule, branchdifferdata,
-         origbranchcons2, norigvars1, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
+         origbranchcons2, norigvars1, FALSE, FALSE, FALSE, NULL, 0.0, 2, 0.0) );
 
    /*  release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &cons1) );

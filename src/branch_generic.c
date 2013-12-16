@@ -16,9 +16,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /*#define SCIP_DEBUG*/
-#include <assert.h>
-#include <string.h>
-
 #include "branch_generic.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
@@ -42,8 +39,9 @@
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+
 
 #define BRANCHRULE_NAME          "generic"
 #define BRANCHRULE_DESC          "generic branching rule by Vanderbeck"
@@ -279,7 +277,6 @@ SCIP_Real getGeneratorEntry(
    SCIP_Real* origvals;
    int norigvars;
 
-   i = 0;
    assert(mastervar != NULL);
    assert(origvar != NULL);
 
@@ -287,7 +284,7 @@ SCIP_Real getGeneratorEntry(
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
 
-   for( i=0; i < norigvars; ++i )
+   for( i = 0; i < norigvars; ++i )
    {
       if( origvars[i] == origvar )
       {
@@ -313,8 +310,6 @@ SCIP_Real getMaxGeneratorEntry(
    int j;
    SCIP_Real maxentry;
 
-   i = 0;
-   j = 0;
    maxentry = 0;
 
    assert(F != NULL);
@@ -566,7 +561,7 @@ int ILOcomp(
    int l;
    int Nupper;
    int Nlower;
-   SCIP_Bool returnvalue;
+   int returnvalue;
    GCG_COMPSEQUENCE** CopyC;
    SCIP_VAR* origvar;
    int* newsequencesizes;

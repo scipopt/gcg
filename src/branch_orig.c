@@ -82,9 +82,6 @@ SCIP_RETCODE updateExternBranchcandsForMasterbranch(
    int norigvars;
    int i;
 
-   i = 0;
-   norigvars = 0;
-
    origvars = SCIPgetVars(scip);
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
@@ -806,7 +803,7 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
-   GCGcreateBranchruleConsOrig(scip, branchrule);
+   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
 
    return SCIP_OKAY;
 }
