@@ -321,7 +321,7 @@ SCIP_RETCODE createNewSol(
       SCIPgetSolTransObj(scip, newsol), SCIPsolGetNodenum(subsol));
 #endif
 
-   SCIPfreeSol(scip, &newsol);
+   SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
    SCIPfreeBufferArray(scip, &subsolvals);
 

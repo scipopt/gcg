@@ -1207,7 +1207,7 @@ SCIP_RETCODE Separate(
          SCIPfreeMemoryArray(scip, &J);
          J = NULL;
       }
-      Separate( scip, copyF, Flower, J, Jsize, upperLowerS, Ssize+1, record );
+      SCIP_CALL( Separate( scip, copyF, Flower, J, Jsize, upperLowerS, Ssize+1, record) );
    }
 
    if( Fupper > 0 )
@@ -1230,7 +1230,7 @@ SCIP_RETCODE Separate(
          SCIPfreeMemoryArray(scip, &J);
          J = NULL;
       }
-      Separate( scip, copyF, Fupper, J, Jsize, upperS, Ssize+1, record );
+      SCIP_CALL( Separate( scip, copyF, Fupper, J, Jsize, upperS, Ssize+1, record) );
    }
 
    SCIPfreeMemoryArrayNull(scip, &copyF);
@@ -1451,7 +1451,7 @@ SCIP_RETCODE Explore(
    if( C == NULL || Fsize==0 || IndexSetSize==0 || Csize == 0 )
    {
       /* SCIPdebugMessage("go to Separate\n"); */
-      Separate( scip, F, Fsize, IndexSet, IndexSetSize, *S, *Ssize, record );
+      SCIP_CALL( Separate( scip, F, Fsize, IndexSet, IndexSetSize, *S, *Ssize, record) );
 
       if( S != NULL && *Ssize > 0 && *S != NULL )
       {
@@ -1479,7 +1479,7 @@ SCIP_RETCODE Explore(
       if( k >= Csize )
       {
          SCIPdebugMessage("no %dth element bounded\n", p);
-         Separate( scip, F, Fsize, IndexSet, IndexSetSize, *S, *Ssize, record );
+         SCIP_CALL( Separate( scip, F, Fsize, IndexSet, IndexSetSize, *S, *Ssize, record) );
 
          if( S != NULL && *Ssize > 0 && *S != NULL )
          {
@@ -1686,7 +1686,7 @@ SCIP_RETCODE Explore(
          k = 0;
       }
 
-      Explore( scip, CopyC, Cupper, newsequencesizes, p+1, copyF, Fupper, IndexSet, IndexSetSize, S, Ssize, record );
+      SCIP_CALL( Explore( scip, CopyC, Cupper, newsequencesizes, p+1, copyF, Fupper, IndexSet, IndexSetSize, S, Ssize, record) );
       SCIPfreeMemoryArrayNull(scip, &copyF);
       copyF = NULL;
    }
@@ -1730,7 +1730,7 @@ SCIP_RETCODE Explore(
          k = 0;
       }
 
-      Explore( scip, CopyC, Clower, newsequencesizes, p+1, copyF, Flower, IndexSet, IndexSetSize, &lowerS, &lowerSsize, record );
+      SCIP_CALL( Explore( scip, CopyC, Clower, newsequencesizes, p+1, copyF, Flower, IndexSet, IndexSetSize, &lowerS, &lowerSsize, record) );
    }
 
    SCIPfreeMemoryArrayNull(scip, &copyF);
@@ -1806,11 +1806,11 @@ SCIP_RETCODE ChooseSeparateMethod(
 
    /* rootnode? */
    if( Csize<=0 )
-      Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record );
+      SCIP_CALL( Separate( scip, F, Fsize, IndexSet, IndexSetSize, NULL, 0, record) );
    else
    {
       assert( C!=NULL );
-      Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, record);
+      SCIP_CALL( Explore( scip, C, Csize, CompSizes, 1, F, Fsize, IndexSet, IndexSetSize, &exploreS, &exploreSsize, record) );
 
       SCIPfreeMemoryArrayNull(scip, &exploreS);
    }
@@ -1891,7 +1891,7 @@ SCIP_RETCODE ChooseSeparateMethod(
          }
       }
 
-      InducedLexicographicSort(scip, strips, nstrips, C, Csize, CompSizes);
+      SCIP_CALL( InducedLexicographicSort(scip, strips, nstrips, C, Csize, CompSizes) );
 
       checkedblocksnsortstrips[ncheckedblocks-1] = nstrips;
 
@@ -1945,7 +1945,7 @@ SCIP_RETCODE ChooseSeparateMethod(
 
    assert(record->recordsize > 0);
 
-   ChoseS( scip, &record, S, Ssize );
+   SCIP_CALL( ChoseS( scip, &record, S, Ssize) );
    assert(*S!=NULL);
 
    SCIPfreeMemoryArray(scip, &IndexSet);
@@ -3613,7 +3613,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
 
    *result = SCIP_BRANCHED;
 
-   GCGbranchGenericInitbranch(scip, branchrule, result, NULL, 0, NULL, NULL);
+   SCIP_CALL( GCGbranchGenericInitbranch(scip, branchrule, result, NULL, 0, NULL, NULL) );
 
    return SCIP_OKAY;
 }

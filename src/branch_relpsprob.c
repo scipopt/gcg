@@ -1565,7 +1565,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
-   GCGcreateBranchruleConsOrig(scip, branchrule);
+   SCIP_CALL( GCGcreateBranchruleConsOrig(scip, branchrule) );
 
    return SCIP_OKAY;
 }

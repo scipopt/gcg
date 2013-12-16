@@ -450,7 +450,7 @@ SCIP_RETCODE createNewSol(
    }
 #endif
 
-   SCIPfreeSol(scip, &newsol);
+   SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
    SCIPfreeBufferArray(scip, &subsolvals);
    return SCIP_OKAY;
@@ -549,7 +549,7 @@ SCIP_DECL_HEUREXITSOL(heurExitsolGcgdins)
 
    /* free root relaxation solution */
    if( heurdata->rootsol != NULL )
-      SCIPfreeSol(scip, &heurdata->rootsol);
+      SCIP_CALL( SCIPfreeSol(scip, &heurdata->rootsol) );
 
 #ifdef SCIP_STATISTIC
    ncalls = SCIPheurGetNCalls(heur);

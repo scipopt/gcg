@@ -295,7 +295,7 @@ SCIP_RETCODE createNewSol(
    }
 #endif
 
-   SCIPfreeSol(scip, &newsol);
+   SCIP_CALL( SCIPfreeSol(scip, &newsol) );
 
    SCIPfreeBufferArray(scip, &subsolvals);
 

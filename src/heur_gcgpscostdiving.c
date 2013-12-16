@@ -497,7 +497,7 @@ GCG_DECL_DIVINGEXIT(heurExitGcgpscostdiving) /*lint --e{715}*/
 
    /* free root relaxation solution */
    if( divingdata->rootsol != NULL )
-      SCIPfreeSol(scip, &divingdata->rootsol);
+      SCIP_CALL( SCIPfreeSol(scip, &divingdata->rootsol) );
 
    return SCIP_OKAY;
 }

@@ -917,7 +917,7 @@ static SCIP_RETCODE buildnewgraphs(
 
    if( (nconss1 > 1) && !stop1 )
    {
-      buildnewadjacencylist(scip, detectordata, pos1, nconss1, graph, consslink1, consslink2);
+      SCIP_CALL( buildnewadjacencylist(scip, detectordata, pos1, nconss1, graph, consslink1, consslink2) );
       SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 1, pos1, graph.cons1, graph.cons2) );
    }
    else if( stop1 )
@@ -927,7 +927,7 @@ static SCIP_RETCODE buildnewgraphs(
 
    if( (nconss2 > 1) && !stop2 )
    {
-      buildnewadjacencylist(scip, detectordata, pos2, nconss2, graph, consslink2, consslink1);
+      SCIP_CALL( buildnewadjacencylist(scip, detectordata, pos2, nconss2, graph, consslink2, consslink1) );
       SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 2, pos2, graph.cons2, graph.cons1) );
    }
    else if( stop2 )
@@ -1148,7 +1148,7 @@ SCIP_RETCODE GetConsindex(
    if( !detectordata->fixedblocks )
    {
 
-      DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE);
+      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
 
       for( i = 0; i < detectordata->nblocks; ++i )
       {
@@ -1298,7 +1298,7 @@ static SCIP_RETCODE FixedBlocks(
 
    SCIPdebugMessage("nblocks %d; nconss %d; blocksize %d; \n", block, detectordata->nrelconss, blocksize);
 
-   SCIPhashmapRemoveAll(detectordata->constoblock);
+   SCIP_CALL( SCIPhashmapRemoveAll(detectordata->constoblock) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->nsubscipconss, block) );
    SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->subscipconss, block) );
    for( i = 0; i < block; ++i )
@@ -1331,7 +1331,7 @@ static SCIP_RETCODE FixedBlocks(
 
    assert( SCIPhashmapGetNEntries(detectordata->constoblock) == detectordata->nrelconss);
 
-   DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE);
+   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
    return SCIP_OKAY;
 
 }
@@ -1370,7 +1370,7 @@ static SCIP_RETCODE StoerWagner(
 
    cut = NULL;
 
-   SCIPhashmapCreate(&tightness, SCIPblkmem(scip), graph.nconss);
+   SCIP_CALL( SCIPhashmapCreate(&tightness, SCIPblkmem(scip), graph.nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &mincut, graph.nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &nmerged_conss, graph.nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &merged_conss, graph.nconss) );
@@ -1378,10 +1378,10 @@ static SCIP_RETCODE StoerWagner(
    for( i = 0; i < graph.nconss; ++i )
    {
       SCIP_CALL( SCIPallocMemoryArray(scip, &(merged_conss[i]), graph.nconss) );
-      SCIPhashmapCreate(&(adja[i]), SCIPblkmem(scip), graph.nconss);
+      SCIP_CALL( SCIPhashmapCreate(&(adja[i]), SCIPblkmem(scip), graph.nconss) );
    }
-   SCIPhashmapCreate(&constopos, SCIPblkmem(scip), graph.nconss);
-   SCIPhashmapCreate(&repres_conss, SCIPblkmem(scip), graph.nconss);
+   SCIP_CALL( SCIPhashmapCreate(&constopos, SCIPblkmem(scip), graph.nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&repres_conss, SCIPblkmem(scip), graph.nconss) );
 
    /* copy constopos */
    SCIP_CALL( copyhashmap(graph.constopos, constopos) );
@@ -1421,7 +1421,7 @@ static SCIP_RETCODE StoerWagner(
    represent_t = t;
    while( SCIPhashmapGetNEntries(constopos) > 1 )
    {
-      SCIPhashmapRemoveAll(tightness);
+      SCIP_CALL( SCIPhashmapRemoveAll(tightness) );
       detectordata->iter = 0;
       list = NULL;
       do
@@ -1474,7 +1474,7 @@ static SCIP_RETCODE StoerWagner(
          } while (list != NULL);
          assert(next_to_last != last);
          assert(SCIPhashmapExists(tightness, last));
-         SCIPhashmapRemove(tightness, last);
+         SCIP_CALL( SCIPhashmapRemove(tightness, last) );
       }
       /* calculate the value of the current cut */
       value_act_cut = 0;
@@ -1557,7 +1557,7 @@ static SCIP_RETCODE StoerWagner(
          }
       } while (list != NULL);
 
-      SCIPhashmapRemove(constopos, last);
+      SCIP_CALL( SCIPhashmapRemove(constopos, last) );
 
       /* delete last in adja */
       for( i = 0; i < graph.nconss; ++i )
@@ -1565,7 +1565,7 @@ static SCIP_RETCODE StoerWagner(
          if( SCIPhashmapExists(constopos, graph.conss[i]) )
          {
             if( SCIPhashmapExists(adja[i], last) )
-               SCIPhashmapRemove(adja[i], last);
+               SCIP_CALL( SCIPhashmapRemove(adja[i], last) );
          }
       }
    }

@@ -372,7 +372,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
    }
 
    /* free memory */
-   SCIPfreeSol(masterprob, &masterlpsol);
+   SCIP_CALL( SCIPfreeSol(masterprob, &masterlpsol) );
 
    return SCIP_OKAY;
 }

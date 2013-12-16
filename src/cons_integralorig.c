@@ -195,7 +195,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
       }
 
       /** todo handle bool allowaddcons; here default TRUE */
-      conshdlrdata->branchrules[i]->branchexeclp(scip, conshdlrdata->branchrules[i], TRUE, result);
+      SCIP_CALL( conshdlrdata->branchrules[i]->branchexeclp(scip, conshdlrdata->branchrules[i], TRUE, result) );
       ++i;
    }
 
@@ -250,7 +250,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
          continue;
       }
       /** todo handle bool allowaddcons; here default TRUE */
-      conshdlrdata->branchrules[i]->branchexecps(scip, conshdlrdata->branchrules[i], TRUE, result);
+      SCIP_CALL( conshdlrdata->branchrules[i]->branchexecps(scip, conshdlrdata->branchrules[i], TRUE, result) );
       ++i;
    }
 

@@ -223,13 +223,13 @@ SCIP_RETCODE writeData(
 
          for( j = 0; j < decdecomp->nlinkingvars; ++j )
          {
-            assert(decdecomp->linkingvars[j]);
+            assert(decdecomp->linkingvars[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(varindexmap, decdecomp->linkingvars[j], (void*)varindex) );
             varindex++;
          }
          for( j = 0; j < decdecomp->nlinkingconss; ++j )
          {
-            assert(decdecomp->linkingconss[j]);
+            assert(decdecomp->linkingconss[j] != NULL);
             SCIP_CALL( SCIPhashmapInsert(consindexmap, decdecomp->linkingconss[j], (void*)consindex) );
             consindex++;
          }
