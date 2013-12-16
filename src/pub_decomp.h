@@ -442,11 +442,20 @@ SCIP_RETCODE DECdetermineConsBlock(
 );
 
 /** tries to assign masterconss to pricing problem */
-SCIP_RETCODE DECtryAssignMasterconssToPricing(
+SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition */
    int*                  transferred         /**< number of master constraints reassigned */
    );
+
+/** Removes a variable from the linking variable array */
+SCIP_RETCODE DECdecompRemoveLinkingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_VAR*             var,                /**< variable to remove */
+   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
+   );
+
 #ifdef __cplusplus
 }
 #endif

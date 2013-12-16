@@ -171,7 +171,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
       }
 
-      assert(block > 0 && block <= nblocks+1);
+      assert(block > 0 && block <= nblocks+2);
 
       /* if variable belongs to a block */
       if( block <= nblocks )
@@ -180,10 +180,15 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          subscipvars[block-1][nsubscipvars[block-1]] = var;
          ++(nsubscipvars[block-1]);
       }
-      else /* variable is linking */
+      else /* variable is linking or master*/
       {
-         SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
-         assert(block == nblocks+1);
+         assert(block == nblocks+1 || block == nblocks+2 );
+
+         if( block == nblocks+2 )
+            SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
+         else
+            SCIPdebugMessage("var %s is in master only.\n", SCIPvarGetName(var));
+
          linkingvars[nlinkingvars] = var;
          ++nlinkingvars;
       }
@@ -1252,11 +1257,12 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
          else if( varblock != consblock && consblock <= nblocks )
          {
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
          }
          else if( consblock == nblocks+1 )
          {
-            SCIPdebugMessage(" var <%s> not handled and current cons linking.\n", SCIPvarGetName(probvar));
+            SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
@@ -1272,7 +1278,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
       {
-         SCIPdebugMessage(" var <%s> not handled at all and now linking\n", SCIPvarGetName(vars[i]));
+         SCIPdebugMessage(" var <%s> not handled at all and now in master\n", SCIPvarGetName(vars[i]));
          SCIP_CALL( SCIPhashmapSetImage(vartoblock, vars[i], (void*) (size_t) (nblocks+1)) );
       }
    }
@@ -1582,7 +1588,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
-            assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
+            assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
          }
          SCIPfreeMemoryArray(scip, &curvars);
       }
@@ -1595,14 +1601,16 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
          assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
          assert(SCIPvarIsActive(var));
-         assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
+         assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1);
       }
    }
 
    /* check linking constraints and variables */
    for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
    {
-      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp)); /*lint !e507*/
+      int varblock;
+      varblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v]);
+      assert( varblock == DECdecompGetNBlocks(decdecomp) +1 || varblock == DECdecompGetNBlocks(decdecomp)+2); /*lint !e507*/
    }
    for (c = 0; c < DECdecompGetNLinkingconss(decdecomp); ++c)
    {
@@ -2996,7 +3004,12 @@ SCIP_RETCODE DECdetermineConsBlock(
    int ncurvars = 0;
    SCIP_Bool success = FALSE;
    int i;
-   int nblocks;
+   int nblocks ;
+
+   int nlinkingvars = 0;
+   int nmastervars = 0;
+   int npricingvars = 0;
+
    SCIP_HASHMAP* vartoblock;
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -3028,12 +3041,19 @@ SCIP_RETCODE DECdetermineConsBlock(
       varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1;
 
       /* if variable is linking skip*/
-      if( varblock == nblocks )
+      if( varblock == nblocks+1 )
       {
+         ++nlinkingvars;
+         continue;
+      }
+      else if( varblock == nblocks )
+      {
+         ++nmastervars;
          continue;
       }
       else if( *block != varblock )
       {
+         ++npricingvars;
          if( *block < 0 )
             *block = varblock;
          else
@@ -3050,11 +3070,14 @@ SCIP_RETCODE DECdetermineConsBlock(
    if( ncurvars > 0 && *block == -2 )
       *block = nblocks;
 
+   if( npricingvars == 0 && nlinkingvars == 0 && nmastervars > 0)
+      *block = -1;
+
    return SCIP_OKAY;
 }
 
 /** tries to assign masterconss to pricing problem */
-SCIP_RETCODE DECtryAssignMasterconssToPricing(
+SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition */
    int*                  transferred         /**< number of master constraints reassigned */
@@ -3081,14 +3104,16 @@ SCIP_RETCODE DECtryAssignMasterconssToPricing(
       {
          continue;
       }
-
-      linkingconss[c] =  linkingconss[nlinkingconss];
-      --nlinkingconss;
-      --c;
-      *transferred += 1;
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
-      decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
-      decomp->nsubscipconss[block] += 1;
+      else if( block >= 0)
+      {
+         linkingconss[c] =  linkingconss[nlinkingconss-1];
+         --nlinkingconss;
+         --c;
+         *transferred += 1;
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
+         decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
+         decomp->nsubscipconss[block] += 1;
+      }
    }
 
    if( nlinkingconss < DECdecompGetNLinkingconss(decomp) )
@@ -3104,5 +3129,53 @@ SCIP_RETCODE DECtryAssignMasterconssToPricing(
       decomp->nlinkingconss = nlinkingconss;
    }
 
+   return SCIP_OKAY;
+}
+
+/** Removes a variable from the linking variable array */
+SCIP_RETCODE DECdecompRemoveLinkingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_VAR*             var,                /**< variable to remove */
+   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
+   )
+{
+   int v;
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(var != NULL);
+   assert(success != NULL);
+
+   *success = FALSE;
+
+   for( v = 0; v < decomp->nlinkingvars; ++v )
+   {
+      if( decomp->linkingvars[v] == var )
+      {
+         decomp->linkingvars[v] = decomp->linkingvars[decomp->nlinkingvars-1];
+         decomp->nlinkingvars -= 1;
+         *success = TRUE;
+      }
+   }
+
+   if( *success )
+   {
+      if( decomp->nlinkingvars == 0)
+      {
+         SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
+         if( DECdecompGetNLinkingconss(decomp) == 0)
+         {
+            DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL);
+         }
+         else
+         {
+            DECdecompSetType(decomp, DEC_DECTYPE_BORDERED);
+         }
+      }
+      else
+      {
+         SCIPreallocMemoryArray(scip, &decomp->linkingvars, decomp->nlinkingvars);
+      }
+   }
    return SCIP_OKAY;
 }
