@@ -149,8 +149,8 @@ SCIP_RETCODE buildProblem(
    double* varlb;
    double* varub;
    char* vartype;
-   char** varnames;
-   char** consnames;
+   char** varnames = NULL;
+   char** consnames = NULL;
    double* rhss;
    double* ranges;
    char* senses;
@@ -161,8 +161,8 @@ SCIP_RETCODE buildProblem(
    SCIP_Real rhs;
    SCIP_VARTYPE type;
    SCIP_RETCODE retval;
-   int nconss;
-   int nvars;
+   int nconss = 0;
+   int nvars = 0;
    int status;
    int varidx;
    int nconsvars;
@@ -202,6 +202,7 @@ SCIP_RETCODE buildProblem(
    /* arrays for storing the basic constraints and variables */
    solverdata->npricingvars[probnr] = nvars;
    solverdata->nbasicpricingconss[probnr] = nconss;
+
    SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->pricingvars[probnr], nvars) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &solverdata->pricingconss[probnr], nconss) );
 
@@ -217,6 +218,9 @@ SCIP_RETCODE buildProblem(
    SCIP_CALL( SCIPallocBufferArray(scip, &senses, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &ranges, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &consnames, nconss) );
+
+   BMSclearMemoryArray(consnames, nconss);
+   BMSclearMemoryArray(varnames, nvars);
 
    /* collect information about variables: bounds, objective function, name, type */
    for( i = 0; i < nvars; i++ )
@@ -340,6 +344,7 @@ SCIP_RETCODE buildProblem(
 #endif
 
    solverdata->created[probnr] = TRUE;
+
  TERMINATE:
    /* free temporary memory */
    if( coefs != NULL )
@@ -353,12 +358,12 @@ SCIP_RETCODE buildProblem(
 
       for( v = nvars - 1; v >= 0; --v )
       {
-         SCIPfreeBufferArray(scip, &varnames[v]);
+         SCIPfreeBufferArrayNull(scip, &varnames[v]);
       }
 
       for( c = nconss - 1; c >= 0; --c )
       {
-         SCIPfreeBufferArray(scip, &consnames[c]);
+         SCIPfreeBufferArrayNull(scip, &consnames[c]);
       }
 
       SCIPfreeBufferArray(scip, &consnames);
@@ -398,7 +403,7 @@ SCIP_RETCODE updateProblem(
    int* objidx;
    double* bounds;
    char* boundtypes;
-   char** newconsnames;
+   char** newconsnames = NULL;
    double* newrhss;
    double* newranges;
    char* newsenses;
@@ -484,6 +489,8 @@ SCIP_RETCODE updateProblem(
    SCIP_CALL( SCIPallocBufferArray(scip, &newsenses, nnewconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &newranges, nnewconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &newconsnames, nnewconss) );
+
+   BMSclearMemoryArray(newconsnames, nnewconss);
 
    /* get information about new constraints */
    nnonzeros = 0;
@@ -595,7 +602,7 @@ SCIP_RETCODE updateProblem(
 
       for( c = nnewconss - 1; c >= 0; --c )
       {
-         SCIPfreeBufferArray(scip, &newconsnames[c]);
+         SCIPfreeBufferArrayNull(scip, &newconsnames[c]);
       }
 
       SCIPfreeBufferArray(scip, &newconsnames);

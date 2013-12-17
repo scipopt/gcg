@@ -823,7 +823,7 @@ void GCGconsOrigbranchCheckConsistency(
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
-      \** todo assertions for all nchildcons */
+      /** todo assertions for all nchildcons */
       if( consdata->nchildcons == 2 )
          assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->childcons[0] == conss[i]
             || SCIPconsGetData(consdata->parentcons)->childcons[1] == conss[i]
