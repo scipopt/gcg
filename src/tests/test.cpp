@@ -109,12 +109,6 @@ TEST_F(GcgResultTest, optimalSolutionValue) {
    ASSERT_NEAR(41.0, SCIPgetSolTransObj(scip, SCIPgetBestSol(scip)), SCIPfeastol(scip));
 }
 
-TEST_F(GcgResultTest, performanceTest) {
-   // expect solving time less than 5 seconds in debug mode
-   EXPECT_GT(5, SCIPgetSolvingTime(scip));
-}
-
-
 class GcgLibTest : public ::testing::Test {
  protected:
   static SCIP *scip;
