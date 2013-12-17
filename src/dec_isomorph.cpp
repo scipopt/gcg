@@ -48,6 +48,7 @@
 #include <cstring>
 #include <cassert>
 #include <algorithm>
+#include "pub_bliss.h"
 
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
@@ -69,104 +70,7 @@ struct DEC_DetectorData
    int numofsol;                             /**< number of solutions */
 };
 
-
-typedef struct struct_cons AUT_CONS;
-typedef struct struct_var AUT_VAR;
-typedef struct struct_coef AUT_COEF;
 typedef struct struct_hook AUT_HOOK;
-typedef struct struct_colorinformation AUT_COLOR;
-
-/** saves a constraint with its corresponding scip */
-struct struct_cons
-{
-   SCIP* scip;                               /**< SCIP data structure */
-   SCIP_CONS* cons;                          /**< pointer to SCIP constraint */
-
-   /** constructor for the constraint struct */
-   struct_cons(SCIP* scip, SCIP_CONS* scons);
-
-   /** getter for the SCIP constraint */
-   SCIP_CONS* getCons();
-
-   /** getter for the SCIP itself */
-   SCIP* getScip();
-};
-
-/** saves a variable with its corresponding scip */
-struct struct_var
-{
-   SCIP* scip;                               /**< SCIP data structure */
-   SCIP_VAR* var;                            /**< pointer to SCIP variable */
-
-   /** constructor for the variable struct */
-   struct_var(SCIP* scip, SCIP_VAR* svar);
-
-   /** getter for the SCIP variable */
-   SCIP_VAR* getVar();
-
-   /** getter for the SCIP itself */
-   SCIP* getScip();
-};
-
-/** saves a coefficient with its corresponding scip */
-struct struct_coef
-{
-   SCIP* scip;                               /**< SCIP data structure */
-   SCIP_Real val;                            /**< SCIP Real value */
-
-   /** constructor for the coefficient struct */
-   struct_coef(SCIP* scip, SCIP_Real val);
-
-   /** getter for the SCIP Real value */
-   SCIP_Real getVal();
-
-   /** getter for the SCIP itself */
-   SCIP* getScip();
-};
-
-/** saves helping information for creating the graph */
-struct struct_colorinformation
-{
-   int color;                                /**< color of the nodes of the graph */
-   int lenconssarray;                        /**< size of ptrarrayconss */
-   int lenvarsarray;                         /**< size of ptrarrayvars */
-   int lencoefsarray;                        /**< size of ptrarraycoefs */
-   int alloccoefsarray;                      /**< allocated size of ptrarraycoefs */
-   void** ptrarraycoefs;                     /**< array of pointers to coefficient */
-   void** ptrarrayvars;                      /**< array of pointers to variables */
-   void** ptrarrayconss;                     /**< array of pointers to constraints */
-
-   /** constructor for the  colorinformation struct */
-   struct_colorinformation(int color,        /**< color of the nodes of the graph */
-   int lenvars,                              /**< size of ptrarrayvars */
-   int lenconss,                             /**< size of ptrarrayconss */
-   int lencoefs                              /**< size of ptrarraycoefs */
-   );
-
-   /** insert a variable to its pointer array */
-   void insert(AUT_VAR* svar, SCIP_Bool* added);
-
-   /** insert a constraint to its pointer array */
-   void insert(AUT_CONS* scons, SCIP_Bool* added);
-
-   /** insert a coefficient to its pointer array */
-   void insert(AUT_COEF* scoef, SCIP_Bool* added);
-
-   /** getter for the length of the variable array */
-   int getLenVar();
-
-   /** getter for the length of the constraint array */
-   int getLenCons();
-
-   /** getter for the variable struct */
-   int get(AUT_VAR svar);
-
-   /** getter for the constraint struct */
-   int get(AUT_CONS scons);
-
-   /** getter for the coefficient struct */
-   int get(AUT_COEF scoef);
-};
 
 /** saves information of the permutation */
 struct struct_hook
@@ -196,169 +100,11 @@ struct struct_hook
    SCIP* getScip();
 };
 
-SCIP_CONS* struct_cons::getCons()
-{
-   return this->cons;
-}
-
-SCIP* struct_cons::getScip()
-{
-   return this->scip;
-}
-
-SCIP_VAR* struct_var::getVar()
-{
-   return this->var;
-}
-
-SCIP* struct_var::getScip()
-{
-   return this->scip;
-}
-
-SCIP* struct_coef::getScip()
-{
-   return this->scip;
-}
-
-SCIP_Real struct_coef::getVal()
-{
-   return this->val;
-}
-
 SCIP* struct_hook::getScip()
 {
    return this->scip;
 }
 
-static
-SCIP_DECL_SORTPTRCOMP(sortptrcons);
-static
-SCIP_DECL_SORTPTRCOMP(sortptrvar);
-static
-SCIP_DECL_SORTPTRCOMP(sortptrval);
-
-/** inserts a variable to the pointer array of colorinformation */
-void struct_colorinformation::insert(
-   AUT_VAR*                svar,              /**< variable which is to add */
-   SCIP_Bool*              added             /**< true if a variable was added */
-   )
-{
-   int pos;
-   if( !SCIPsortedvecFindPtr(this->ptrarrayvars, sortptrvar, svar, this->lenvarsarray, &pos) )
-   {
-      SCIPsortedvecInsertPtr(this->ptrarrayvars, sortptrvar, svar, &this->lenvarsarray, NULL);
-      *added = TRUE;
-      this->color++;
-   }
-   else
-      *added = FALSE;
-}
-
-/** inserts a constraint to the pointer array of colorinformation */
-void struct_colorinformation::insert(
-   AUT_CONS*             scons,              /**< constraint which is to add */
-   SCIP_Bool*            added               /**< true if a constraint was added */
-   )
-{
-   int pos;
-   if( !SCIPsortedvecFindPtr(this->ptrarrayconss, sortptrcons, scons,
-         this->lenconssarray, &pos) )
-   {
-      SCIPsortedvecInsertPtr(this->ptrarrayconss, sortptrcons, scons,
-            &this->lenconssarray, NULL);
-      *added = TRUE;
-      this->color++;
-   }
-   else
-      *added = FALSE;
-}
-
-/** inserts a coefficient to the pointer array of colorinformation */
-void struct_colorinformation::insert(
-   AUT_COEF*             scoef,              /**< coefficient which is to add */
-   SCIP_Bool*            added               /**< true if a coefficient was added */
-   )
-{
-   int pos;
-   int size;
-   if( !SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, scoef, this->lencoefsarray, &pos) )
-   {
-      size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray+1);
-      if( this->lencoefsarray % this->alloccoefsarray == 0 )
-      {
-         SCIP_CALL_ABORT( SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size) );
-         this->alloccoefsarray = size;
-      }
-
-      SCIPsortedvecInsertPtr(this->ptrarraycoefs, sortptrval, scoef, &this->lencoefsarray, NULL);
-      *added = TRUE;
-      this->color++;
-   }
-   else
-      *added = FALSE;
-
-}
-
-int struct_colorinformation::get(
-   AUT_VAR               svar                /**< variable whose pointer you want */
-   )
-{
-   int pos;
-   SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarrayvars, sortptrvar, &svar, this->lenvarsarray, &pos);
-   return found ? pos : -1;
-}
-
-int struct_colorinformation::get(
-   AUT_CONS              scons               /**< constraint whose pointer you want */
-   )
-{
-   int pos;
-   SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarrayconss, sortptrcons, &scons, this->lenconssarray, &pos);
-   return found ? pos : -1;
-}
-
-int struct_colorinformation::get(
-   AUT_COEF              scoef               /**< coefficient whose pointer you want */
-   )
-{
-   int pos;
-   SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, &scoef, this->lencoefsarray, &pos);
-   return found ? pos : -1;
-}
-
-/** constructor of the variable struct */
-struct_var::struct_var(
-   SCIP*                 scip_,              /**< SCIP data structure */
-   SCIP_VAR*             svar                /**< SCIP variable */
-   )
-{
-   scip = scip_;
-   var = svar;
-}
-
-/** constructor of the constraint struct */
-struct_cons::struct_cons(
-   SCIP*                 scip_,              /**< SCIP data structure */
-   SCIP_CONS*            scons               /**< SCIP constraint */
-   )
-{
-   scip = scip_;
-   cons = scons;
-}
-
-/** constructor of the coefficient struct */
-struct_coef::struct_coef(
-   SCIP*                 scip_,              /**< SCIP data structure */
-   SCIP_Real             val_                /**< SCIP value */
-   )
-{
-   scip = scip_;
-   val = val_;
-}
 
 /** constructor of the hook struct */
 struct_hook::struct_hook(
@@ -377,92 +123,6 @@ struct_hook::~struct_hook()
 {
    SCIPfreeMemoryArrayNull(scip_, &conssperm);
 }
-/** compare two values of two scips */
-static
-int comp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Real             val1,               /**< value 1 to compare */
-   SCIP_Real             val2                /**< value 2 to compare */
-   )
-{
-   if( SCIPisLT(scip, val1, val2) )
-      return -1;
-   if( SCIPisGT(scip, val1, val2) )
-      return 1;
-   else
-      return 0;
-}
-
-/** compare two constraints of two scips */
-static
-int comp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   AUT_CONS*             cons1,              /**< constraint 1 to compare */
-   AUT_CONS*             cons2               /**< constraint 2 to compare */
-   )
-{
-   if( comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())) != 0 )
-      return comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())));
-
-   if( comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())) != 0 )
-      return comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())));
-
-   return strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons1->getCons())), SCIPconshdlrGetName(SCIPconsGetHdlr(cons2->getCons())));
-}
-
-/** compare two variables of two scips */
-static
-int comp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   AUT_VAR*              var1,               /**< variable 1 to compare */
-   AUT_VAR*              var2                /**< variable 2 to compare */
-   )
-{
-   if( comp(scip, SCIPvarGetUbGlobal(var1->getVar()), SCIPvarGetUbGlobal(var2->getVar())) != 0 )
-      return comp(scip, SCIPvarGetUbGlobal(var1->getVar()), SCIPvarGetUbGlobal(var2->getVar()));
-   assert(SCIPisEQ(scip, SCIPvarGetUbGlobal(var1->getVar()), SCIPvarGetUbGlobal(var2->getVar())));
-
-   if( comp(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar())) != 0 )
-      return comp(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar()));
-   assert(SCIPisEQ(scip, SCIPvarGetLbGlobal(var1->getVar()), SCIPvarGetLbGlobal(var2->getVar())));
-
-   if( comp(scip, SCIPvarGetObj((var1->getVar())), SCIPvarGetObj(var2->getVar())) != 0 )
-      return comp(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar()));
-   assert(SCIPisEQ(scip, SCIPvarGetObj(var1->getVar()), SCIPvarGetObj(var2->getVar())));
-
-   if( SCIPvarGetType(var1->getVar()) < SCIPvarGetType(var2->getVar()) )
-      return -1;
-   if( SCIPvarGetType(var1->getVar()) > SCIPvarGetType(var2->getVar()) )
-      return 1;
-   return 0;
-}
-
-static
-SCIP_DECL_SORTPTRCOMP(sortptrcons)
-{
-   AUT_CONS* aut1 = (AUT_CONS*) elem1;
-   AUT_CONS* aut2 = (AUT_CONS*) elem2;
-   return comp(aut1->getScip(), aut1, aut2);
-}
-
-static
-SCIP_DECL_SORTPTRCOMP(sortptrvar)
-{
-   AUT_VAR* aut1 = (AUT_VAR*) elem1;
-   AUT_VAR* aut2 = (AUT_VAR*) elem2;
-   return comp(aut1->getScip(), aut1, aut2);
-}
-
-static
-SCIP_DECL_SORTPTRCOMP(sortptrval)
-{
-   AUT_COEF* aut1 = (AUT_COEF*) elem1;
-   AUT_COEF* aut2 = (AUT_COEF*) elem2;
-   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal());
-}
-
 /** hook function to save the permutation of the graph */
 static
 void hook(
@@ -845,7 +505,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    SCIP_CONS** masterconss;
    int i;
    int nmasterconss;
-   colorinfo = new AUT_COLOR(0, 0, 0, 0);
+   colorinfo = new AUT_COLOR();
 
    SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );

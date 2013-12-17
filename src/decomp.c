@@ -171,7 +171,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          block = (int)(size_t)SCIPhashmapGetImage(vartoblock, var); /*lint !e507*/
       }
 
-      assert(block > 0 && block <= nblocks+1);
+      assert(block > 0 && block <= nblocks+2);
 
       /* if variable belongs to a block */
       if( block <= nblocks )
@@ -180,10 +180,15 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
          subscipvars[block-1][nsubscipvars[block-1]] = var;
          ++(nsubscipvars[block-1]);
       }
-      else /* variable is linking */
+      else /* variable is linking or master*/
       {
-         SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
-         assert(block == nblocks+1);
+         assert(block == nblocks+1 || block == nblocks+2 );
+
+         if( block == nblocks+2 )
+            SCIPdebugMessage("var %s is linking.\n", SCIPvarGetName(var));
+         else
+            SCIPdebugMessage("var %s is in master only.\n", SCIPvarGetName(var));
+
          linkingvars[nlinkingvars] = var;
          ++nlinkingvars;
       }
@@ -460,6 +465,7 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
    SCIPfreeMemory(scip, decdecomp);
 
+   decdecomp = NULL;
    return SCIP_OKAY;
 }
 
@@ -1251,11 +1257,12 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
          else if( varblock != consblock && consblock <= nblocks )
          {
             SCIPdebugMessage(" var <%s> has been handled before, adding to linking (%d != %d)\n", SCIPvarGetName(probvar), consblock, varblock);
-            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+2)) );
          }
          else if( consblock == nblocks+1 )
          {
-            SCIPdebugMessage(" var <%s> not handled and current cons linking.\n", SCIPvarGetName(probvar));
+            SCIPdebugMessage(" var <%s> not handled and current cons linking, var is master.\n", SCIPvarGetName(probvar));
+            SCIP_CALL( SCIPhashmapSetImage(vartoblock, probvar, (void*) (size_t) (nblocks+1)) );
          }
          else
          {
@@ -1271,7 +1278,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    {
       if( !SCIPhashmapExists(vartoblock, vars[i]) )
       {
-         SCIPdebugMessage(" var <%s> not handled at all and now linking\n", SCIPvarGetName(vars[i]));
+         SCIPdebugMessage(" var <%s> not handled at all and now in master\n", SCIPvarGetName(vars[i]));
          SCIP_CALL( SCIPhashmapSetImage(vartoblock, vars[i], (void*) (size_t) (nblocks+1)) );
       }
    }
@@ -1581,7 +1588,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
             SCIPdebugMessage("\tVar <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
             assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
             assert(SCIPvarIsActive(var));
-            assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
+            assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1 );
          }
          SCIPfreeMemoryArray(scip, &curvars);
       }
@@ -1594,14 +1601,16 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIPdebugMessage("Var <%s> in block %d = %d\n", SCIPvarGetName(var), b, varblock);
          assert(SCIPfindVar(scip, SCIPvarGetName(var)) != NULL);
          assert(SCIPvarIsActive(var));
-         assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp));
+         assert(varblock == b || varblock == DECdecompGetNBlocks(decdecomp)+1);
       }
    }
 
    /* check linking constraints and variables */
    for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
    {
-      assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v])) -1 == DECdecompGetNBlocks(decdecomp)); /*lint !e507*/
+      int varblock;
+      varblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v]);
+      assert( varblock == DECdecompGetNBlocks(decdecomp) +1 || varblock == DECdecompGetNBlocks(decdecomp)+2); /*lint !e507*/
    }
    for (c = 0; c < DECdecompGetNLinkingconss(decdecomp); ++c)
    {
@@ -2995,7 +3004,12 @@ SCIP_RETCODE DECdetermineConsBlock(
    int ncurvars = 0;
    SCIP_Bool success = FALSE;
    int i;
-   int nblocks;
+   int nblocks ;
+
+   int nlinkingvars = 0;
+   int nmastervars = 0;
+   int npricingvars = 0;
+
    SCIP_HASHMAP* vartoblock;
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -3027,12 +3041,19 @@ SCIP_RETCODE DECdetermineConsBlock(
       varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1;
 
       /* if variable is linking skip*/
-      if( varblock == nblocks )
+      if( varblock == nblocks+1 )
       {
+         ++nlinkingvars;
+         continue;
+      }
+      else if( varblock == nblocks )
+      {
+         ++nmastervars;
          continue;
       }
       else if( *block != varblock )
       {
+         ++npricingvars;
          if( *block < 0 )
             *block = varblock;
          else
@@ -3049,5 +3070,158 @@ SCIP_RETCODE DECdetermineConsBlock(
    if( ncurvars > 0 && *block == -2 )
       *block = nblocks;
 
+   if( npricingvars == 0 && nlinkingvars == 0 && nmastervars > 0)
+      *block = -1;
+
+   return SCIP_OKAY;
+}
+
+/** move a master constraint to pricing problem */
+SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int                   consindex,          /**< index of constraint to move */
+   int                   block               /**< block of the pricing problem where to move */
+   )
+{
+   SCIP_CONS* linkcons;
+   SCIP_VAR** curvars = NULL;
+   int ncurvars = 0;
+   SCIP_Bool success = FALSE;
+   int v;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(consindex >= 0 && consindex < decomp->nlinkingconss);
+   assert(block >= 0 && block < decomp->nblocks);
+
+   linkcons = decomp->linkingconss[consindex];
+
+   SCIP_CALL( SCIPgetConsNVars(scip, linkcons, &ncurvars, &success) );
+   assert(success);
+   SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+   SCIP_CALL( SCIPgetConsVars(scip, linkcons, curvars, ncurvars, &success) );
+   assert(success);
+
+   decomp->linkingconss[consindex] =  decomp->linkingconss[decomp->nlinkingconss-1];
+   decomp->nlinkingconss -= 1;
+
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
+   decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
+   decomp->nsubscipconss[block] += 1;
+   SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t) (block+1)) );
+
+   for( v = 0; v < ncurvars; ++v )
+   {
+      SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
+      assert(SCIPhashmapExists(decomp->vartoblock, probvar));
+      /* if variable is in master only, move to subproblem */
+      if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 )
+      {
+         SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t) (block+1)) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) );
+         decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
+         decomp->nsubscipvars[block] += 1;
+         SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
+         assert(success);
+      }
+   }
+
+   SCIPfreeBufferArrayNull(scip, &curvars);
+   return SCIP_OKAY;
+}
+
+
+/** tries to assign masterconss to pricing problem */
+SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   int*                  transferred         /**< number of master constraints reassigned */
+   )
+{
+   int c;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(transferred != NULL);
+
+   *transferred = 0;
+
+   for( c = 0; c < decomp->nlinkingconss; ++c )
+   {
+      int block;
+      SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
+      if( block == DECdecompGetNBlocks(decomp) )
+      {
+         continue;
+      }
+      else if( block >= 0)
+      {
+         SCIP_CALL( DECdecompMoveLinkingConsToPricing(scip, decomp, c, block) );
+         --c;
+         *transferred += 1;
+      }
+   }
+
+   if( *transferred > 0 )
+   {
+      if( decomp->nlinkingconss > 0 )
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->linkingconss, decomp->nlinkingconss) );
+      }
+      else
+      {
+         SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** Removes a variable from the linking variable array */
+SCIP_RETCODE DECdecompRemoveLinkingVar(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   SCIP_VAR*             var,                /**< variable to remove */
+   SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
+   )
+{
+   int v;
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(var != NULL);
+   assert(success != NULL);
+
+   *success = FALSE;
+
+   for( v = 0; v < decomp->nlinkingvars; ++v )
+   {
+      if( decomp->linkingvars[v] == var )
+      {
+         decomp->linkingvars[v] = decomp->linkingvars[decomp->nlinkingvars-1];
+         decomp->nlinkingvars -= 1;
+         *success = TRUE;
+      }
+   }
+
+   if( *success )
+   {
+      if( decomp->nlinkingvars == 0)
+      {
+         SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
+         if( DECdecompGetNLinkingconss(decomp) == 0)
+         {
+            DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL);
+         }
+         else
+         {
+            DECdecompSetType(decomp, DEC_DECTYPE_BORDERED);
+         }
+      }
+      else
+      {
+         SCIPreallocMemoryArray(scip, &decomp->linkingvars, decomp->nlinkingvars);
+      }
+   }
    return SCIP_OKAY;
 }

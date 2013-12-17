@@ -130,7 +130,8 @@ SCIP_Bool GCGvarIsPricing(
    assert(var != NULL);
 
    vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
+   if(vardata == NULL)
+      return FALSE;
 
    return vardata->vartype == GCG_VARTYPE_PRICING;
 }

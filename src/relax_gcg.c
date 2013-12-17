@@ -64,6 +64,7 @@
 #include "gcg.h"
 
 #ifndef NBLISS
+#include "pub_bliss.h"
 #include "bliss_automorph.h"
 #endif
 

@@ -57,6 +57,7 @@ TESTOBJ		=	tests/test.o \
 			tests/rowgraph_test.o \
 			tests/columngraph_test.o \
 			tests/decomp_test.o \
+			tests/polish_test.o \
 			tests/gcgvar_test.o
 #			tests/hypergraph_test.o \
 
