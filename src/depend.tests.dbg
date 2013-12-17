@@ -127,13 +127,13 @@ $(TESTOBJDIR)/test.o: src/tests/test.cpp src/relax_gcg.h lib/scip/src/scip/scip.
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -266,13 +266,13 @@ $(TESTOBJDIR)/graphtest.o: src/tests/graphtest.cpp src/tests/graphtest.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -411,13 +411,13 @@ $(TESTOBJDIR)/bipartitegraph_test.o: src/tests/bipartitegraph_test.cpp \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -555,13 +555,13 @@ $(TESTOBJDIR)/hyperrowcolgraph_test.o: src/tests/hyperrowcolgraph_test.cpp \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -699,13 +699,13 @@ $(TESTOBJDIR)/hypercolgraph_test.o: src/tests/hypercolgraph_test.cpp \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -843,13 +843,13 @@ $(TESTOBJDIR)/hyperrowgraph_test.o: src/tests/hyperrowgraph_test.cpp \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -983,13 +983,13 @@ $(TESTOBJDIR)/weights_test.o: src/tests/weights_test.cpp src/graph/weights.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1122,13 +1122,13 @@ $(TESTOBJDIR)/aggregation_test.o: src/tests/aggregation_test.cpp src/tests/test.
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1263,13 +1263,13 @@ $(TESTOBJDIR)/statistic_test.o: src/tests/statistic_test.cpp src/tests/test.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1407,13 +1407,13 @@ $(TESTOBJDIR)/rowgraph_test.o: src/tests/rowgraph_test.cpp src/graph/rowgraph.h 
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1551,13 +1551,13 @@ $(TESTOBJDIR)/columngraph_test.o: src/tests/columngraph_test.cpp \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1691,13 +1691,13 @@ $(TESTOBJDIR)/decomp_test.o: src/tests/decomp_test.cpp src/tests/test.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1832,13 +1832,13 @@ $(TESTOBJDIR)/polish_test.o: src/tests/polish_test.cpp src/tests/test.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \
@@ -1973,13 +1973,13 @@ $(TESTOBJDIR)/gcgvar_test.o: src/tests/gcgvar_test.cpp src/tests/test.h \
  lib/scip/src/scip/scipshell.h lib/scip/src/nlpi/nlpi_ipopt.h \
  src/gcgplugins.h lib/gtest/gtest/gtest.h \
  lib/gtest/gtest/internal/gtest-internal.h \
- lib/gtest/gtest/internal/gtest-port.h lib/gtest/gtest/gtest-message.h \
+ lib/gtest/gtest/internal/gtest-port.h \
  lib/gtest/gtest/internal/gtest-string.h \
  lib/gtest/gtest/internal/gtest-filepath.h \
  lib/gtest/gtest/internal/gtest-type-util.h \
  lib/gtest/gtest/gtest-death-test.h \
  lib/gtest/gtest/internal/gtest-death-test-internal.h \
- lib/gtest/gtest/gtest-param-test.h \
+ lib/gtest/gtest/gtest-message.h lib/gtest/gtest/gtest-param-test.h \
  lib/gtest/gtest/internal/gtest-param-util.h \
  lib/gtest/gtest/internal/gtest-linked_ptr.h \
  lib/gtest/gtest/gtest-printers.h \

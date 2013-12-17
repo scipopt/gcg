@@ -240,11 +240,11 @@ SCIP_RETCODE createMasterconssArray(
    {
       SCIPfreeMemoryArray(scip, masterconss);
       *nmasterconss = 0;
-      masterconss = 0;
+      *masterconss = NULL;
    }
 
-   *pricingisempty = *nmasterconss == nconss;
-   *masterisempty = *nmasterconss == 0;
+   *pricingisempty = (*nmasterconss == nconss);
+   *masterisempty = (*nmasterconss == 0);
 
    return SCIP_OKAY;
 }

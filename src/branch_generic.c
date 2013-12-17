@@ -1431,7 +1431,6 @@ SCIP_RETCODE Explore(
    lowerSsize = 0;
    alphacontrol = 0;
    mucontrol = 0;
-   CopyC = NULL;
    newsequencesizes = NULL;
    copyF = NULL;
    CopyC = NULL;
@@ -1742,10 +1741,10 @@ SCIP_RETCODE Explore(
    SCIPfreeMemoryArrayNull(scip, &CopyC);
    SCIPfreeMemoryArrayNull(scip, &newsequencesizes);
 
-   if( S != NULL && *Ssize > 0 && *S != NULL )
+   if( *Ssize > 0 && *S != NULL )
    {
-      SCIPfreeMemoryArray(scip, S);
-      S = NULL;
+      SCIPfreeMemoryArrayNull(scip, S);
+
       *Ssize = 0;
    }
 
@@ -1941,8 +1940,6 @@ SCIP_RETCODE ChooseSeparateMethod(
 
          SCIPfreeBufferArray(scip, &checkedblockssortstrips);
          SCIPfreeBufferArray(scip, &checkedblocksnsortstrips);
-
-         ncheckedblocks = 0;
       }
    }
 
@@ -2085,7 +2082,6 @@ SCIP_Bool pruneChildNodeByDominanceGeneric(
    SCIP_Bool ispruned;
 
    ispruned = FALSE;
-   cons = NULL;
 
    SCIPdebugMessage("Prune by dominance\n");
    cons = GCGconsMasterbranchGetParentcons(masterbranchcons);
@@ -2910,8 +2906,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    feasible = TRUE;
    SinC = TRUE;
    foundblocknr = FALSE;
-   S = NULL;
-   F = NULL;
    branchdata = NULL;
    S = NULL;
    C = NULL;

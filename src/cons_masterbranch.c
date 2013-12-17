@@ -1952,9 +1952,6 @@ SCIP_Bool GCGnodeisVanderbeck(
    SCIP_CONS* masterbranchcons;
    SCIP_BRANCHRULE* branchrule;
 
-   masterbranchcons = NULL;
-   branchrule = NULL;
-
    masterbranchcons = GCGconsMasterbranchGetActiveCons(scip);
 
    if( masterbranchcons == NULL || SCIPnodeGetDepth(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(scip))) == 0 )

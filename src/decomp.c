@@ -463,9 +463,8 @@ SCIP_RETCODE DECdecompFree(
    SCIPfreeMemoryArrayNull(scip, &decomp->stairlinkingvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->nstairlinkingvars);
    SCIPfreeMemoryArrayNull(scip, &decomp->linkingconss);
-   SCIPfreeMemory(scip, decdecomp);
+   SCIPfreeMemoryNull(scip, decdecomp);
 
-   decdecomp = NULL;
    return SCIP_OKAY;
 }
 
@@ -3035,7 +3034,7 @@ SCIP_RETCODE DECdetermineConsBlock(
 
    for( i = 0; i < ncurvars && *block != nblocks; ++i )
    {
-      int varblock = -1;
+      int varblock;
 
       assert(SCIPhashmapExists(vartoblock, SCIPvarGetProbvar(curvars[i])));
       varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1;

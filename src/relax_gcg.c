@@ -757,8 +757,11 @@ SCIP_RETCODE pricingprobsAreIdentical(
 {
    SCIP* scip1;
    SCIP* scip2;
+
+#ifndef NBLISS
    SCIP_RESULT result;
    SCIP_HASHMAP* consmap;
+#endif
 
    assert(relaxdata != NULL);
    assert(0 <= probnr1 && probnr1 < relaxdata->npricingprobs);

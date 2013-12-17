@@ -75,11 +75,11 @@ public:
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
       std::swap(scip_ , other.scip_);
-      //std::swap(thypergraph , other.tgraph);
+      std::swap(graph , other.graph);
       std::swap(hedges , other.hedges);
       std::swap(nodes , other.nodes);
+      std::swap(lastnode, other.lastnode);
       std::swap(dummynodes, other.dummynodes);
-
    }
 
    Hypergraph& operator=(Hypergraph other) // note: argument passed by value!

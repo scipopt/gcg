@@ -72,7 +72,7 @@ public:
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
       std::swap(scip_ , other.scip_);
-      //std::swap(tgraph , other.tgraph);
+      std::swap(graph , other.graph);
       std::swap(nconss , other.nconss);
       std::swap(nvars , other.nvars);
       std::swap(nnonzeroes , other.nnonzeroes);

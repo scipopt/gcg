@@ -748,9 +748,6 @@ SCIP_RETCODE cmpGraphPair(
    ptrhook = new AUT_HOOK(varmap, consmap, FALSE, pricingnodes, scips);
    graph.find_automorphisms(bstats, hook, ptrhook);
 
-   varmap = ptrhook->getVarHash();
-   consmap = ptrhook->getConsHash();
-
    if( !ptrhook->getBool() )
       *result = SCIP_DIDNOTFIND;
 
