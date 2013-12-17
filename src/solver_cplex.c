@@ -194,10 +194,10 @@ SCIP_RETCODE buildProblem(
    CPXchgobjsen(solverdata->cpxenv[probnr], solverdata->lp[probnr], CPX_MIN);
 #endif
 
-   conss = SCIPgetConss(pricingprob);
-   nconss = SCIPgetNConss(pricingprob);
-   vars = SCIPgetVars(pricingprob);
-   nvars = SCIPgetNVars(pricingprob);
+   conss = SCIPgetOrigConss(pricingprob);
+   nconss = SCIPgetNOrigConss(pricingprob);
+   vars = SCIPgetOrigVars(pricingprob);
+   nvars = SCIPgetNOrigVars(pricingprob);
 
    /* arrays for storing the basic constraints and variables */
    solverdata->npricingvars[probnr] = nvars;
@@ -428,10 +428,10 @@ SCIP_RETCODE updateProblem(
    int i;
    int v;
 
-   conss = SCIPgetConss(pricingprob);
-   nconss = SCIPgetNConss(pricingprob);
-   vars = SCIPgetVars(pricingprob);
-   nvars = SCIPgetNVars(pricingprob);
+   conss = SCIPgetOrigConss(pricingprob);
+   nconss = SCIPgetNOrigConss(pricingprob);
+   vars = SCIPgetOrigVars(pricingprob);
+   nvars = SCIPgetNOrigVars(pricingprob);
    npricingvars = solverdata->npricingvars[probnr];
    nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
 
@@ -468,6 +468,14 @@ SCIP_RETCODE updateProblem(
       udpatevaridx[2 * varidx + 1] = varidx;
       boundtypes[2 * varidx] = 'L';
       boundtypes[2 * varidx + 1] = 'U';
+
+      varobj[varidx] = SCIPvarGetObj(var);
+
+      if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED )
+      {
+       var = SCIPvarGetTransVar(var);
+      }
+
       bounds[2 * varidx] = (double) SCIPvarGetLbLocal(var);
       bounds[2 * varidx + 1] = (double) SCIPvarGetUbLocal(var);
 
@@ -652,7 +660,7 @@ SCIP_RETCODE solveCplex(
    retval = SCIP_OKAY;
 
    numcols = CPXgetnumcols(solverdata->cpxenv[probnr], solverdata->lp[probnr]);
-   assert(numcols == SCIPgetNVars(pricingprob));
+   assert(numcols == SCIPgetNOrigVars(pricingprob));
 
    SCIP_CALL( SCIPallocBufferArray(scip, &cplexsolvals, numcols) );
 
