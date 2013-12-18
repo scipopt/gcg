@@ -1122,7 +1122,7 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
             SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[j]);
 
             /* if the variable is linking */
-            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) == nblocks+1 ) /*lint !e507*/
+            if( (int)(size_t)SCIPhashmapGetImage(vartoblock, probvar) >= nblocks+1 ) /*lint !e507*/
             {
                /* if it has not been already assigned, it links to the next block */
                if( !SCIPhashmapExists(varindex, probvar) )

@@ -506,7 +506,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    int i;
    int nmasterconss;
    colorinfo = new AUT_COLOR();
-
+   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result) );
 
@@ -552,12 +552,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       {
          assert((*decdecomps)[i] != NULL);
 
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found with %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[i]));
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[i]));
       }
    }
    else
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " not found.\n");
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "not found.\n");
    }
 
    if( *ndecdecomps == 0 )
