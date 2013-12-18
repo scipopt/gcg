@@ -1866,7 +1866,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       /* update objvalue for new solution */
       bestsol = sols[0];
-      SCIP_Real redcost = computeRedCost(pricetype, bestsol, *solisray, prob, NULL);
+      redcost = computeRedCost(pricetype, bestsol, *solisray, prob, NULL);
 
       if( SCIPisLT(scip_, redcost, 0.0) )
       {

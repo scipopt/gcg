@@ -962,7 +962,7 @@ SCIP_RETCODE setPricingProblemParameters(
 #if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
 #endif
-   //SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 1) );
+   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 1) );
    SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
 
    /* do not abort subproblem on CTRL-C */
