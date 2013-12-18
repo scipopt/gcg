@@ -45,9 +45,7 @@ class ColumnGraph: public gcg::MatrixGraph<T>
 {
 private:
    gcg::Graph<T> graph;
-   int nconss;
-   int nvars;
-   int nnonzeroes;
+
 public:
    ColumnGraph(
       SCIP*                 scip,              /**< SCIP data structure */

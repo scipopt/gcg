@@ -193,10 +193,9 @@ void struct_colorinformation::insert(
    )
 {
    int pos;
-   int size;
    if( !SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, scoef, this->lencoefsarray, &pos) )
    {
-      size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray+1);
+      int size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray+1);
       if( this->alloccoefsarray == 0 || this->lencoefsarray % this->alloccoefsarray == 0)
       {
          SCIP_CALL_ABORT( SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size) );

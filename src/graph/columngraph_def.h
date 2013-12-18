@@ -47,7 +47,7 @@ template <class T>
 ColumnGraph<T>::ColumnGraph(
    SCIP*                 scip,              /**< SCIP data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip, w), graph(scip),nconss(0),nvars(0),nnonzeroes(0)
+   ) : MatrixGraph<T>(scip, w), graph(scip)
 {
    this->graphiface = &graph;
    this->name = std::string("columngraph");

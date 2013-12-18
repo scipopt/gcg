@@ -1204,8 +1204,7 @@ SCIP_RETCODE Separate(
       assert(j < Fsize+1);
       if( Jsize == 0 && J != NULL )
       {
-         SCIPfreeMemoryArray(scip, &J);
-         J = NULL;
+         SCIPfreeMemoryArrayNull(scip, &J);
       }
       SCIP_CALL( Separate( scip, copyF, Flower, J, Jsize, upperLowerS, Ssize+1, record) );
    }
@@ -1227,8 +1226,7 @@ SCIP_RETCODE Separate(
       assert(j < Fsize+1);
       if( Jsize == 0 && J != NULL )
       {
-         SCIPfreeMemoryArray(scip, &J);
-         J = NULL;
+         SCIPfreeMemoryArrayNull(scip, &J);
       }
       SCIP_CALL( Separate( scip, copyF, Fupper, J, Jsize, upperS, Ssize+1, record) );
    }
@@ -1272,9 +1270,9 @@ SCIP_RETCODE ChoseS(
    {
       assert((*record)->sequencesizes != NULL );
       assert((*record)->sequencesizes[i] > 0);
-      if(maxPriority <= 1 || maxPriority == INT_MIN) /*  later by pseudocosts e.g. */
+      if(maxPriority <= 1 ) /*  later by pseudocosts e.g. */
       {
-         if( maxPriority < 1 || maxPriority == INT_MIN )
+         if( maxPriority < 1 )
          {
             maxPriority = 1; /*  only choose here first smallest S */
             minSizeOfMaxPriority = (*record)->sequencesizes[i];
@@ -1693,7 +1691,7 @@ SCIP_RETCODE Explore(
       copyF = NULL;
    }
 
-   if( Flower > 0 && Flower != INT_MIN )
+   if( Flower > 0 )
    {
       SCIPdebugMessage("chose lower bound Flower = %d Clower = %d\n", Flower, Clower);
 
@@ -2150,6 +2148,9 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIP_RESULT*          result
    )
 {
+#ifdef SCIP_DEBUG
+   SCIP_Real identicalcontrol = -1;
+#endif
    SCIP*  masterscip;
    int i;
    int p;

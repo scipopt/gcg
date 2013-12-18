@@ -62,7 +62,6 @@ protected:
    std::vector<int> mapping;
    int lastnode;
    int dummynodes;
-   std::vector<int> partition;
 
 public:
    /** Constructor */

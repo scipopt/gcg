@@ -46,9 +46,7 @@ class RowGraph : public gcg::MatrixGraph<T>
 {
 private:
    gcg::Graph<T> graph;
-   int nconss;
-   int nvars;
-   int nnonzeroes;
+
 public:
    RowGraph(
          SCIP*                 scip,              /**< SCIP data structure */

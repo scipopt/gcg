@@ -163,7 +163,7 @@ void hook(
       assert(aut[i] < INT_MAX);
       if( (int) (aut[i]) >= n / 2 )
       {
-         SCIPdebugMessage("%d -> %d\n", i, aut[i]);
+         SCIPdebugMessage("%d -> %ud\n", i, aut[i]);
          j++;
       }
       else
@@ -286,20 +286,17 @@ SCIP_RETCODE freeMemory(
    )
 {
    int i;
-   AUT_COEF* scoef;
-   AUT_VAR* svar;
-   AUT_CONS* scons;
 
    for(i = 0; i < colorinfo->lenvarsarray; i++ ){
-      svar =  (AUT_VAR*) colorinfo->ptrarrayvars[i];
+      AUT_VAR* svar =  (AUT_VAR*) colorinfo->ptrarrayvars[i];
       delete svar;
    }
    for(i = 0; i < colorinfo->lenconssarray; i++ ){
-      scons = (AUT_CONS*) colorinfo->ptrarrayconss[i];
+      AUT_CONS* scons = (AUT_CONS*) colorinfo->ptrarrayconss[i];
       delete scons;
    }
    for(i = 0; i < colorinfo->lencoefsarray; i++ ){
-      scoef = (AUT_COEF*) colorinfo->ptrarraycoefs[i];
+      AUT_COEF* scoef = (AUT_COEF*) colorinfo->ptrarraycoefs[i];
       delete scoef;
    }
 
@@ -325,11 +322,6 @@ SCIP_RETCODE setuparrays(
    int ncurvars;
    int nconss;
    int nvars;
-   SCIP_CONS** conss;
-   SCIP_VAR** vars;
-   AUT_COEF* scoef;
-   AUT_VAR* svar;
-   AUT_CONS* scons;
    SCIP_Bool added;
 
    added = FALSE;
@@ -342,13 +334,13 @@ SCIP_RETCODE setuparrays(
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s )
    {
       SCIP *scip = scips[s];
-      conss = SCIPgetConss(scip);
-      vars = SCIPgetVars(scip);
+      SCIP_CONS** conss = SCIPgetConss(scip);
+      SCIP_VAR** vars = SCIPgetVars(scip);
       SCIPdebugMessage("Handling SCIP %i (%d x %d)\n", s, nconss, nvars);
       //save the properties of variables in a struct array and in a sorted pointer array
       for( i = 0; i < nvars; i++ )
       {
-         svar = new AUT_VAR(scip, vars[i]);
+         AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
          //add to pointer array iff it doesn't exist
          colorinfo->insert( svar, &added );
          if( s > 0 && added)
@@ -367,7 +359,7 @@ SCIP_RETCODE setuparrays(
          ncurvars = SCIPgetNVarsXXX(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
          if( ncurvars == 0 )
             continue;
-         scons = new AUT_CONS(scip, conss[i]);
+         AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
          //add to pointer array iff it doesn't exist
          colorinfo->insert( scons, &added );
          if( s > 0 && added)
@@ -384,7 +376,7 @@ SCIP_RETCODE setuparrays(
          //save the properties of variables of the constraints in a struct array and in a sorted pointer array
          for( j = 0; j < ncurvars; j++ )
          {
-            scoef = new AUT_COEF(scip, curvals[j] );
+            AUT_COEF* scoef = new AUT_COEF(scip, curvals[j] );
             //test, whether the coefficient is not zero
             if( !SCIPisEQ(scip, scoef->getVal(), 0) )
             {
@@ -431,7 +423,7 @@ SCIP_RETCODE setuparrays(
       ncurvars = SCIPgetNVarsLinear(origscip, mastercons);
 
       /* add right color for master constraint */
-      scons = new AUT_CONS(origscip, mastercons);
+      AUT_CONS* scons = new AUT_CONS(origscip, mastercons);
       colorinfo->insert( scons, &added );
 
       /* if it hasn't been added, it is already present */
@@ -440,7 +432,7 @@ SCIP_RETCODE setuparrays(
 
       for( j = 0; j < ncurvars; ++j )
       {
-         scoef = new AUT_COEF(origscip, curvals[j] );
+         AUT_COEF* scoef = new AUT_COEF(origscip, curvals[j] );
 
          added = FALSE;
 
@@ -471,16 +463,12 @@ SCIP_RETCODE createGraph(
 {
    int i;
    int j;
-   int z;
    int s;
-   int nvars;
-   int nconss;
    int ncurvars;
    int curvar;
    int* nnodesoffset;
    int color;
-   SCIP_CONS** conss;
-   SCIP_VAR** vars;
+
    SCIP_VAR** curvars;
    SCIP_Real* curvals;
 
@@ -505,12 +493,15 @@ SCIP_RETCODE createGraph(
    {
       SCIPdebugMessage("Pricing problem %d\n", pricingindices[s]);
       SCIP *scip = scips[s];
+      int nconss = SCIPgetNConss(scip);
+      int nvars = SCIPgetNVars(scip);
+      SCIP_CONS** conss = SCIPgetConss(scip);
+      SCIP_VAR** vars = SCIPgetVars(scip);
+
+      int z = 0;
+
       nnodesoffset[s] = nnodes;
-      nconss = SCIPgetNConss(scip);
-      nvars = SCIPgetNVars(scip);
-      conss = SCIPgetConss(scip);
-      vars = SCIPgetVars(scip);
-      z = 0;
+
       //add a node for every constraint
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
@@ -617,11 +608,11 @@ SCIP_RETCODE createGraph(
 
             /* add coefficent node for current coeff */
             h->add_vertex(color);
-            SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[i], color);
+            SCIPdebugMessage("master nz for var <%s> (id: %ud) (value: %f, color: %d)\n", SCIPvarGetName(curvars[j]), nnodes, curvals[i], color);
             nnodes++;
          }
       }
-      SCIPdebugMessage("Iteration %d: nnodes = %d\n", s, nnodes);
+      SCIPdebugMessage("Iteration %d: nnodes = %ud\n", s, nnodes);
       assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
    }
    /* connect the created graphs with nodes for the master problem */

@@ -1353,7 +1353,7 @@ SCIP_RETCODE execRelpsprob(
       assert(SCIPisLT(scip, provedbound, cutoffbound));
 
 #ifdef SCIP_DEBUG
-      SCIPdebugMessage(" -> best: <%s> (strongbranch = %d)\n", SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);
+      SCIPdebugMessage(" -> best: <%s> (strongbranch = %ud)\n", SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);
 #endif
       *branchvar = branchcands[bestcand];
       SCIP_CALL( incNVarBranchings(scip, branchrule, *branchvar) );
