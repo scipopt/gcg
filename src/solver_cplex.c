@@ -469,11 +469,11 @@ SCIP_RETCODE updateProblem(
       boundtypes[2 * varidx] = 'L';
       boundtypes[2 * varidx + 1] = 'U';
 
-      varobj[varidx] = SCIPvarGetObj(var);
-
       if( SCIPgetStage(pricingprob) >= SCIP_STAGE_TRANSFORMED )
       {
-       var = SCIPvarGetTransVar(var);
+         assert(SCIPgetStage(pricingprob) == SCIP_STAGE_TRANSFORMED);
+
+         var = SCIPvarGetTransVar(var);
       }
 
       bounds[2 * varidx] = (double) SCIPvarGetLbLocal(var);
