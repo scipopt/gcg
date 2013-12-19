@@ -671,7 +671,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    SCIP_Real scalingfactor;   /* factor to scale the original objective function with */
    SCIP_Real mindistance;     /* distance of the closest rounded solution from the LP relaxation: used for stage3 */
 
-   SCIP_Longint nlpiterations;    /* number of LP iterations done during one pumping round */
+   SCIP_Longint nlpiterations;    /* number of LP iterations performed so far */
    SCIP_Longint maxnlpiterations; /* maximum number of LP iterations for this heuristic */
    SCIP_Longint nsolsfound;       /* number of solutions found by this heuristic */
    SCIP_Longint ncalls;           /* number of calls of this heuristic */
@@ -763,7 +763,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    maxloops = (heurdata->maxloops == -1 ? INT_MAX : heurdata->maxloops);
    maxstallloops = (heurdata->maxstallloops == -1 ? INT_MAX : heurdata->maxstallloops);
 
-   SCIPdebugMessage("executing feasibility pump heuristic, nlpiters=%"SCIP_LONGINT_FORMAT", maxnlpit:%"SCIP_LONGINT_FORMAT", maxflips:%d \n",
+   SCIPdebugMessage("executing GCG feasibility pump heuristic, nlpiters=%"SCIP_LONGINT_FORMAT", maxnlpit:%"SCIP_LONGINT_FORMAT", maxflips:%d \n",
       nlpiterations, maxnlpiterations, maxflips);
 
    *result = SCIP_DIDNOTFIND;
@@ -1104,9 +1104,9 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       }
 
       /* the LP with the new (distance) objective is solved */
-      nlpiterations = SCIPgetNLPIterations(scip);
       nlpiterationsleft = adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops) - heurdata->nlpiterations;
       iterlimit = MAX((int)nlpiterationsleft, MINLPITER);
+      SCIP_CALL( SCIPsetLongintParam(divingscip, "lp/iterlim", iterlimit) );
       SCIPdebugMessage(" -> solve LP with iteration limit %d\n", iterlimit);
 
       if( heurdata->stage3 )
@@ -1129,12 +1129,10 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          SCIPwarningMessage(scip, "This does not affect the remaining solution procedure --> continue\n");
       }
 
-#if 0
       /* update iteration count */
-      heurdata->nlpiterations += SCIPgetNLPIterations(scip) - nlpiterations;
-      SCIPdebugMessage(" -> number of iterations: %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", lperror=%u, lpsolstat=%d\n",
-         heurdata->nlpiterations, adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops), lperror, lpsolstat);
-#endif
+      heurdata->nlpiterations += SCIPgetNLPIterations(divingscip);
+      SCIPdebugMessage(" -> number of iterations: %"SCIP_LONGINT_FORMAT"/%"SCIP_LONGINT_FORMAT", status=%d\n",
+         heurdata->nlpiterations, adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops), SCIPgetStatus(divingscip));
 
       /* check whether LP was solved to optimality */
       if( SCIPgetStage(divingscip) != SCIP_STAGE_SOLVED || SCIPgetBestSol(divingscip) == NULL )
