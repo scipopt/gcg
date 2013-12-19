@@ -3069,7 +3069,7 @@ SCIP_RETCODE DECdetermineConsBlock(
    if( ncurvars > 0 && *block == -2 )
       *block = nblocks;
 
-   if( npricingvars == 0 && nlinkingvars == 0 && nmastervars > 0)
+   if( npricingvars == 0 && nmastervars > 0)
       *block = -1;
 
    return SCIP_OKAY;
@@ -3150,16 +3150,15 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    {
       int block;
       SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
-      if( block == DECdecompGetNBlocks(decomp) )
+
+      if( block == DECdecompGetNBlocks(decomp) || block < 0)
       {
          continue;
       }
-      else if( block >= 0)
-      {
-         SCIP_CALL( DECdecompMoveLinkingConsToPricing(scip, decomp, c, block) );
-         --c;
-         *transferred += 1;
-      }
+
+      SCIP_CALL( DECdecompMoveLinkingConsToPricing(scip, decomp, c, block) );
+      --c;
+      *transferred += 1;
    }
 
    if( *transferred > 0 )
@@ -3222,5 +3221,61 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
          SCIPreallocMemoryArray(scip, &decomp->linkingvars, decomp->nlinkingvars);
       }
    }
+   return SCIP_OKAY;
+}
+
+/** tries to assign masterconss to new and existing pricing problems */
+SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP**          newdecomp,          /**< new decomposition, if successful */
+   int*                  transferred         /**< number of master constraints reassigned */
+   )
+{
+   int c;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(newdecomp != NULL);
+   assert(transferred != NULL);
+
+   *newdecomp = NULL;
+   *transferred = 0;
+
+   for( c = 0; c < decomp->nlinkingconss; ++c )
+   {
+      int block;
+      int i;
+      int nconss;
+      SCIP_HASHMAP* constoblock;
+      SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
+
+      if( block >= 0)
+      {
+         continue;
+      }
+      SCIPdebugMessage("Cons <%s> in new pricing problem\n", SCIPconsGetName(decomp->linkingconss[c]));
+      nconss = SCIPgetNConss(scip);
+      SCIP_CALL( DECdecompCreate(scip, newdecomp) );
+      SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
+
+      for( i = 0; i < nconss; ++i )
+      {
+         int consblock;
+         SCIP_CONS* cons = SCIPgetConss(scip)[i];
+         assert(SCIPhashmapExists(decomp->constoblock, cons));
+         consblock = (int) (size_t) SCIPhashmapGetImage(decomp->constoblock, cons);
+         SCIPdebugMessage("Cons <%s> %d -> %d\n", SCIPconsGetName(cons), consblock, consblock+1);
+
+         SCIP_CALL( SCIPhashmapSetImage(constoblock, cons, (void*) (size_t) (consblock+1)) );
+      }
+      SCIP_CALL( SCIPhashmapSetImage(constoblock, decomp->linkingconss[c], (void*) (size_t) (1)) );
+      SCIPdebugMessage("Cons <%s>    -> %d\n", SCIPconsGetName(decomp->linkingconss[c]), 1);
+
+      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, *newdecomp, constoblock, decomp->nblocks+1, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+      *transferred += 1;
+      break;
+   }
+
    return SCIP_OKAY;
 }
