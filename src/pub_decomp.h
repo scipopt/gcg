@@ -464,6 +464,14 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
    SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
    );
 
+/** tries to assign masterconss to new pricing problem */
+SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP**          newdecomp,          /**< new decomposition, if successful */
+   int*                  transferred         /**< number of master constraints reassigned */
+   );
+
 #ifdef __cplusplus
 }
 #endif
