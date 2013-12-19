@@ -3627,7 +3627,10 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextGeneric)
    return SCIP_OKAY;
 }
 
-/** branching execution method for not completely fixed pseudo solutions */ /*todo*/
+/** branching execution method for not completely fixed pseudo solutions
+ * @bug this needs to be implemented: #32
+ */
+
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 {  /*lint --e{715}*/
@@ -3640,6 +3643,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of Vanderbecks generic branching\n");
+   SCIPerrorMessage("This method is not implemented, aborting since we cannot recover!");
+   SCIPABORT();
 
    return SCIP_OKAY;
 
