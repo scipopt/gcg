@@ -472,6 +472,13 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
+/** polish the decomposition and try to greedily assign master constraints to pricing problem where usefule */
+SCIP_RETCODE DECcreatePolishedDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
+   );
+
 #ifdef __cplusplus
 }
 #endif
