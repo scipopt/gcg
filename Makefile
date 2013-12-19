@@ -164,6 +164,7 @@ LIBOBJ		=	reader_blk.o \
 			reader_gp.o \
 			scip_misc.o \
 			misc.o \
+			gcgheur.o \
 			gcgvar.o \
 			class_pricingtype.o \
 			class_stabilization.o \

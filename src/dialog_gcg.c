@@ -49,6 +49,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_decomp.h"
+#include "pub_gcgheur.h"
 #include "stat.h"
 #include "reader_dec.h"
 
@@ -481,6 +482,45 @@ SCIP_DECL_DIALOGEXEC(SCIPdialogExecSetDetectorsFast)
    return SCIP_OKAY;
 }
 
+/** dialog execution method for the set heuristics aggressive command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsAggressive)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE, FALSE) );
+   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set heuristics off command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsOff)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_OFF, FALSE) );
+   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_OFF) );
+
+   return SCIP_OKAY;
+}
+
+/** dialog execution method for the set heuristics fast command */
+SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsFast)
+{  /*lint --e{715}*/
+   SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
+
+   *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
+
+   SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_FAST, FALSE) );
+   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_FAST) );
+
+   return SCIP_OKAY;
+}
+
 /** creates a root dialog */
 SCIP_RETCODE GCGcreateRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -673,17 +713,17 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPincludeDialog(scip, &submenu,
             NULL,
             SCIPdialogExecMenu, NULL, NULL,
-            "detectors", "change parameters for primal detectors", TRUE, NULL) );
+            "detectors", "change parameters for detectors", TRUE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
       SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
    }
    if( SCIPdialogFindEntry(setmenu, "detectors", &submenu) != 1 )
    {
-      SCIPerrorMessage("heuristics sub menu not found\n");
+      SCIPerrorMessage("detectors sub menu not found\n");
       return SCIP_PLUGINNOTFOUND;
    }
 
-   /* create set presolving emphasis */
+   /* create set detectors emphasis */
    SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
    assert(emphasismenu != NULL);
 
@@ -713,6 +753,56 @@ SCIP_RETCODE SCIPincludeDialogGcg(
       SCIP_CALL( SCIPincludeDialog(scip, &dialog,
             NULL, SCIPdialogExecSetDetectorsOff, NULL, NULL,
             "off", "turns <off> all detectors", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics */
+   if( !SCIPdialogHasEntry(setmenu, "heuristics") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &submenu,
+         NULL,
+         SCIPdialogExecMenu, NULL, NULL,
+         "heuristics", "change parameters for primal heuristics", TRUE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, setmenu, submenu) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &submenu) );
+   }
+   if( SCIPdialogFindEntry(setmenu, "heuristics", &submenu) != 1 )
+   {
+      SCIPerrorMessage("heuristics sub menu not found\n");
+      return SCIP_PLUGINNOTFOUND;
+   }
+
+   /* create set heuristics emphasis */
+   SCIP_CALL( createEmphasisSubmenu(scip, submenu, &emphasismenu) );
+   assert(emphasismenu != NULL);
+
+   /* set heuristics emphasis aggressive */
+   if( !SCIPdialogHasEntry(emphasismenu, "aggressive") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetHeuristicsAggressive, NULL, NULL,
+         "aggressive", "sets heuristics <aggressive>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics emphasis fast */
+   if( !SCIPdialogHasEntry(emphasismenu, "fast") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetHeuristicsFast, NULL, NULL,
+         "fast", "sets heuristics <fast>", FALSE, NULL) );
+      SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+   }
+
+   /* set heuristics emphasis off */
+   if( !SCIPdialogHasEntry(emphasismenu, "off") )
+   {
+      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+         NULL, GCGdialogExecSetHeuristicsOff, NULL, NULL,
+         "off", "turns <off> all heuristics", FALSE, NULL) );
       SCIP_CALL( SCIPaddDialogEntry(scip, emphasismenu, dialog) );
       SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
    }
