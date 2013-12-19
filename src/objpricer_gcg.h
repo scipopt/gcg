@@ -100,7 +100,7 @@ public:
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
          SCIP*          scip,               /**< SCIP data structure */
-         PricingType*   pricetype,          /**< type of pricing */
+         PricingType*   pricetype,          /**< type of the pricing */
          SCIP_SOL*      sol,                /**< solution to compute reduced cost for */
          SCIP_VAR**     solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
          double*        solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
@@ -163,7 +163,7 @@ private:
    );
 
    SCIP_Real  computeRedCost(
-      PricingType*          pricetype,          /**< type of pricing*/
+      PricingType*          pricetype,          /**< type of pricing */
       SCIP_SOL*             sol,                /**< solution to compute reduced cost for */
       SCIP_Bool             solisray,           /**< is the solution a ray? */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
@@ -171,7 +171,7 @@ private:
       );
 
    int countPricedVariables(
-      PricingType*          pricetype,          /**< type of pricing*/
+      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
       int& prob,
       SCIP_SOL** sols,
       int nsols,
@@ -251,8 +251,24 @@ private:
       SCIP_Bool             optimal             /**< heuristic or optimal pricing */
       );
 
+   /** generic method to generate feasible columns from the pricing problem
+    * @note This message has to be threadsafe!
+    */
+   SCIP_RETCODE generateColumnsFromPricingProblem(
+      int                   prob,               /**< index of pricing problem */
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      SCIP_Bool             optimal,            /**< should the pricing problem be solved optimal or heuristically */
+      SCIP_Real*            lowerbound,         /**< dual bound returned by pricing problem */
+      SCIP_SOL**            sols,               /**< pointer to store solutions */
+      SCIP_Bool*            solisray,           /**< array to indicate whether solution is a ray */
+      int                   maxsols,            /**< size of the sols array to indicate maximum solutions */
+      int*                  nsols,              /**< number of solutions */
+      SCIP_STATUS*          status              /**< solution status of the pricing problem */
+      );
+
    /** solves a specific pricing problem
     * @todo simplify
+    * @note This message has to be threadsafe!
     */
    SCIP_RETCODE solvePricingProblem(
       int                   prob,               /**< index of pricing problem */
@@ -280,6 +296,32 @@ private:
 
    /** calls the exitsol method of all solvers */
    SCIP_RETCODE solversExitsol();
+
+   /** computes the stack of masterbranch constraints up to the last generic branching node
+    * @note This message has to be threadsafe!
+    */
+   SCIP_RETCODE computeGenericBranchingconssStack(
+      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      SCIP_CONS***          consstack,          /**< stack of branching constraints */
+      int*                  nconsstack,         /**< size of the stack */
+      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
+      );
+
+   /** add bounds change from constraint from the pricing problem at this node
+    * @note This message has to be threadsafe!
+    */
+   SCIP_RETCODE addBranchingBoundChangesToPricing(
+      int                   prob,               /**< index of pricing problem */
+      SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
+   );
+
+   SCIP_RETCODE checkBranchingBoundChanges(
+      int                   prob,               /**< index of pricing problem */
+      SCIP_SOL*             sol,                /**< solution to check */
+      SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
+      SCIP_Bool*            feasible            /**< check whether the solution is feasible */
+   );
+
 };
 
 #endif

@@ -971,6 +971,9 @@ SCIP_RETCODE setPricingProblemParameters(
    /* set clock type */
    SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
 
+   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
+
+
    return SCIP_OKAY;
 }
 

@@ -4148,7 +4148,8 @@ $(LIBOBJDIR)/pricer_gcg.o: src/pricer_gcg.cpp lib/scip/src/scip/scip.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
  src/class_pricingtype.h src/class_stabilization.h src/sepa_master.h \
  src/relax_gcg.h src/struct_solver.h src/scip_misc.h \
- lib/scip/src/scip/cons_setppc.h src/cons_masterbranch.h
+ lib/scip/src/scip/cons_setppc.h src/cons_masterbranch.h \
+ src/branch_generic.h
 $(LIBOBJDIR)/dec_arrowheur.o: src/dec_arrowheur.cpp src/dec_arrowheur.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
