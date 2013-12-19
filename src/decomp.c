@@ -3279,3 +3279,47 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
 
    return SCIP_OKAY;
 }
+
+/** polish the decomposition and try to greedily assign master constraints to pricing problem where usefule */
+SCIP_RETCODE DECcreatePolishedDecomp(
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
+   )
+{
+   int transferred = 0;
+   SCIP_Bool found;
+   DEC_DECOMP* origdecomp = decomp;
+   DEC_DECOMP* tempdecomp = NULL;
+
+   assert(scip != NULL);
+   assert(decomp != NULL);
+   assert(newdecomp != NULL);
+   *newdecomp = decomp;
+
+   do
+   {
+      found = FALSE;
+      SCIP_CALL( DECtryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferred) );
+      SCIPdebugMessage("%d conss transferred to existing pricing\n", transferred);
+      found = found || (transferred > 0);
+      SCIP_CALL( DECtryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferred) );
+      found = found || (transferred > 0);
+      SCIPdebugMessage("%d conss transferred to new pricing\n", transferred);
+      if( transferred > 0 )
+      {
+         if( *newdecomp != origdecomp )
+         {
+            DECdecompFree(scip, newdecomp);
+         }
+         *newdecomp = tempdecomp;
+      }
+   } while( transferred > 0 );
+
+   if( *newdecomp == origdecomp )
+   {
+      *newdecomp = NULL;
+   }
+
+   return SCIP_OKAY;
+}

@@ -394,3 +394,93 @@ TEST_F(GcgPolishDecompTest, CreateNewPricingProblemWithLinking) {
    ASSERT_EQ(1, transferred);
    ASSERT_EQ(3, DECdecompGetNBlocks(newdecomp));
 }
+
+TEST_F(GcgPolishDecompTest, PolishDecompTransferAll) {
+   SCIP_HASHMAP* constoblock;
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,8]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,8]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c1a>: <x1>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] + <x3>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2a>: <x2>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x4>[I] + <x3>[I]== 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: <x5>[I] + <x3>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 6) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1a"), (void*) 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2a"), (void*) 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 3) );
+
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   ASSERT_EQ(4, DECdecompGetNBlocks(newdecomp));
+   ASSERT_EQ(0, DECdecompGetNLinkingconss(newdecomp));
+}
+
+TEST_F(GcgPolishDecompTest, PolishDecompOnlyNew) {
+   SCIP_HASHMAP* constoblock;
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x4>: obj=2.0, original bounds=[0,8]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x5>: obj=2.0, original bounds=[0,8]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x3>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: <x4>[I]== 1") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c5>: <x5>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 5) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c5"), (void*) 1) );
+
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 0, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   ASSERT_EQ(5, DECdecompGetNBlocks(newdecomp));
+   ASSERT_EQ(0, DECdecompGetNLinkingconss(newdecomp));
+}
+
+TEST_F(GcgPolishDecompTest, PolishDecompNothingNew) {
+   SCIP_HASHMAP* constoblock;
+
+   SCIP_CALL_EXPECT( createVar("[integer] <x1>: obj=2.0, original bounds=[0,1]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x2>: obj=2.0, original bounds=[0,3]") );
+   SCIP_CALL_EXPECT( createVar("[integer] <x3>: obj=2.0, original bounds=[0,1]") );
+
+   SCIP_CALL_EXPECT( createCons("[linear] <c1>: <x1>[I] + <x2>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c2>: <x2>[I] <= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c3>: <x1>[I]<= 5") );
+   SCIP_CALL_EXPECT( createCons("[linear] <c4>: <x1>[I]+ <x3>[I] + <x2>[I] == 1") );
+
+   SCIP_CALL_EXPECT( SCIPtransformProb(scip) );
+   SCIP_CALL_EXPECT( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), 5) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c1"), (void*) 3) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c2"), (void*) 1) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c3"), (void*) 2) );
+   SCIP_CALL_EXPECT( SCIPhashmapInsert(constoblock, SCIPfindCons(scip, "c4"), (void*) 3) );
+
+   SCIP_CALL_EXPECT( DECdecompCreate(scip, &decomp) );
+   SCIP_CALL_EXPECT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+
+   SCIP_CALL_EXPECT( DECcreatePolishedDecomp(scip, decomp, &newdecomp) );
+   ASSERT_EQ((DEC_DECOMP*) NULL, newdecomp);
+}
