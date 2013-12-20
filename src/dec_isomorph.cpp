@@ -523,6 +523,8 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 
    if( detectordata->result == SCIP_SUCCESS )
    {
+      DEC_DECOMP* newdecomp;
+
       // assign to a permutation circle only one number
       collapsePermutation(ptrhook->conssperm, nconss);
       // renumbering from 0 to number of permutations
@@ -547,13 +549,21 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       SCIP_CALL( DECcreateDecompFromMasterconss(scip, &((*decdecomps)[0]), masterconss, nmasterconss) );
       *ndecdecomps = 1;
       SCIPfreeMemoryArray(scip, &masterconss);
+      SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[0], &newdecomp) );
+      if( newdecomp != NULL )
+      {
+         DECdecompFree(scip, &((*decdecomps)[0]) );
+         (*decdecomps)[0] = newdecomp;
+      }
 
       for( i = 0; i < *ndecdecomps; i++ )
       {
          assert((*decdecomps)[i] != NULL);
 
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "found %d blocks.\n", DECdecompGetNBlocks((*decdecomps)[i]));
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "%d ", DECdecompGetNBlocks((*decdecomps)[i]));
       }
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "blocks.\n");
+
    }
    else
    {

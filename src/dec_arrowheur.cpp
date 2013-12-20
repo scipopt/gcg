@@ -359,18 +359,14 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    for( j = 0, i = detectordata->minblocks; i <= detectordata->maxblocks; ++i )
    {
+      SCIP_RETCODE retcode;
       detectordata->blocks = i;
       /* get the partitions for the new variables from metis */
-      SCIP_CALL( callMetis(scip, detectordata, result) );
+      retcode = callMetis(scip, detectordata, result);
 
-      if( *result != SCIP_SUCCESS )
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
       {
-         *result = SCIP_DIDNOTFIND;
-         return SCIP_OKAY;
-      }
-      else
-      {
-         detectordata->found = TRUE;
+         continue;
       }
 
       SCIP_CALL( detectordata->graph->createDecompFromPartition(&(*decdecomps)[j]) );
@@ -378,6 +374,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       {
          *ndecdecomps += 1;
          ++j;
+         detectordata->found = TRUE;
       }
    }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d decompositions found.\n",  *ndecdecomps);
@@ -397,7 +394,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
       }
    }
 
-   *result = SCIP_SUCCESS;
+   *result = detectordata->found ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    return SCIP_OKAY;
 }
 
