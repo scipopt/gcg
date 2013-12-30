@@ -4,9 +4,9 @@
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 detectors/connected/enabled = FALSE
 
-# Type of the graph: 'c' column hypergraph, 'r' row hypergraph, 'a' column-row hypergraph
-# [type: char, range: {cra}, default: r]
-detectors/arrowheur/type = a
+# flag to indicate whether detector <arrowheur> is enabled
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+detectors/arrowheur/enabled = FALSE
 
 # flag to indicate whether detector <staircase> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
@@ -18,4 +18,4 @@ detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <isomorph> is enabled
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/isomorph/enabled = FALSE
+detectors/isomorph/enabled = TRUE
