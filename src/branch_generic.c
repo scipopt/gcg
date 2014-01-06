@@ -93,7 +93,8 @@ static
 SCIP_RETCODE addVarToMasterbranch(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             mastervar,          /**< the variable to add */
-   GCG_BRANCHDATA*       branchdata          /**< branching data structure where the variable should be added */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
+   SCIP_Bool*            added               /**< whether the variable was added */
 )
 {
    SCIP_VAR** pricingvars;
@@ -103,6 +104,12 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_Bool blockfound = TRUE;
    SCIP_Bool varinS = TRUE;
 
+   assert(scip != NULL);
+   assert(mastervar != NULL);
+   assert(branchdata != NULL);
+   assert(added != NULL);
+
+   *added = FALSE;
    if( GCGvarGetBlock(mastervar) != -1 )
       return SCIP_OKAY;
 
@@ -157,6 +164,7 @@ SCIP_RETCODE addVarToMasterbranch(
    {
       SCIPdebugMessage("mastervar is added\n");
       SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
+      *added = TRUE;
    }
 
    return SCIP_OKAY;
@@ -185,7 +193,7 @@ SCIP_RETCODE createDirectBranchingCons(
    {
       SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL, -SCIPinfinity(scip), branchdata->consS[0].bound-1, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE));
    }
-
+   assert(GCGvarIsMaster(branchdata->consS[0].component));
    SCIP_CALL( SCIPaddCoefLinear(scip, branchdata->mastercons, branchdata->consS[0].component, 1.0));
 
    /* add constraint to the master problem that enforces the branching decision */
@@ -202,9 +210,6 @@ SCIP_RETCODE createBranchingCons(
 )
 {
    char name[SCIP_MAXSTRLEN];
-   int nmastervars;
-   SCIP_VAR** mastervars;
-   int i;
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -215,18 +220,6 @@ SCIP_RETCODE createBranchingCons(
    /*  create constraint for child */
    SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL,
          branchdata->lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
-
-   nmastervars = SCIPgetNVars(scip);
-   mastervars = SCIPgetVars(scip);
-
-   for( i = branchdata->nvars; i < nmastervars; ++i )
-   {
-      assert(mastervars[i] != NULL);
-      assert(GCGvarIsMaster(mastervars[i]));
-
-      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata) );
-   }
-   branchdata->nvars = nmastervars;
 
    return SCIP_OKAY;
 }
@@ -303,6 +296,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 
    if( GCGvarIsMaster(mastervar) &&  (GCGconsMasterbranchGetbranchrule(parentcons) != NULL || GCGconsMasterbranchGetOrigbranchrule(parentcons) != NULL ) )
    {
+      SCIP_Bool added = FALSE;
       SCIPdebugMessage("Mastervar <%s>\n", SCIPvarGetName(mastervar));
       while( parentcons != NULL && branchdata != NULL
             && GCGbranchGenericBranchdataGetConsS(branchdata) != NULL && GCGbranchGenericBranchdataGetConsSsize(branchdata) > 0 )
@@ -327,7 +321,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
             continue;
          }
 
-         SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata) );
+         SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata, &added) );
 
          parentcons = GCGconsMasterbranchGetParentcons(parentcons);
          branchdata = GCGconsMasterbranchGetBranchdata(parentcons);
@@ -2352,10 +2346,11 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) last comp=%s, sense %d, bound %g", SCIPnodeGetNumber(child), blocknr, p+1,
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) last comp=%s, sense %d, bound %g, lhs %g", SCIPnodeGetNumber(child), blocknr, p+1,
                SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
                branchchilddata->consS[branchchilddata->consSsize-1].sense,
-               branchchilddata->consS[branchchilddata->consSsize-1].bound);
+               branchchilddata->consS[branchchilddata->consSsize-1].bound,
+               branchchilddata->lhs);
 
             assert(branchchilddata != NULL);
 
@@ -3338,6 +3333,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    SCIP_VAR** mastervars;
    int nmastervars;
    int i;
+   int nvarsadded;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
@@ -3351,15 +3347,20 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
 
    nmastervars = SCIPgetNVars(scip);
    mastervars = SCIPgetVars(scip);
+   nvarsadded = 0;
 
    for( i = branchdata->nvars; i < nmastervars; ++i )
    {
+      SCIP_Bool added = FALSE;
       assert(mastervars[i] != NULL);
       assert(GCGvarIsMaster(mastervars[i]));
 
-      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata) );
+      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata, &added) );
+      if( added )
+         ++nvarsadded;
+
    }
-   SCIPdebugMessage("%d vars added with lhs=%g\n", nmastervars-branchdata->nvars, branchdata->lhs);
+   SCIPdebugMessage("%d/%d vars added with lhs=%g\n", nvarsadded, nmastervars-branchdata->nvars, branchdata->lhs);
    branchdata->nvars = nmastervars;
 
    return SCIP_OKAY;
