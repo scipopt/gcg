@@ -2145,7 +2145,7 @@ SCIP_RETCODE createChildNodesGeneric(
    )
 {
 #ifdef SCIP_DEBUG
-   SCIP_Real identicalcontrol = -1;
+   SCIP_Real identicalcontrol = 0;
 #endif
    SCIP*  masterscip;
    int i;
@@ -2362,7 +2362,7 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
                NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
 
-            SCIP_CALL( createBranchingCons(scip, branchchilddata) );
+            SCIP_CALL( createBranchingCons(masterscip, branchchilddata) );
 
             /*  release constraints */
             SCIP_CALL( SCIPreleaseCons(masterscip, &childcons) );
@@ -2391,7 +2391,7 @@ SCIP_RETCODE createChildNodesGeneric(
      blockfound = FALSE;
      u = 0;
 
-     if( GCGvarGetBlock(mastervar) == -1 && GCGvarIsLinking(mastervar) )
+     if( GCGvarIsLinking(mastervar) )
      {
         assert( GCGvarIsLinking(mastervar) );
         blockfound = FALSE;
@@ -2399,7 +2399,7 @@ SCIP_RETCODE createChildNodesGeneric(
         pricingvars = GCGlinkingVarGetPricingVars(mastervar);
         assert(pricingvars != NULL );
 
-        for( u=0; u<GCGlinkingVarGetNBlocks(mastervar); ++u )
+        for( u = 0; u < GCGlinkingVarGetNBlocks(mastervar); ++u )
         {
            if( pricingvars[u] != NULL && GCGvarGetBlock(pricingvars[u]) == blocknr )
            {
@@ -2508,8 +2508,8 @@ SCIP_RETCODE branchDirectlyOnMastervar(
       NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
 
    /*  create branching constraint in master */
-   SCIP_CALL( createDirectBranchingCons(scip, branchupchilddata) );
-   SCIP_CALL( createDirectBranchingCons(scip, branchdownchilddata) );
+   SCIP_CALL( createDirectBranchingCons(masterscip, branchupchilddata) );
+   SCIP_CALL( createDirectBranchingCons(masterscip, branchdownchilddata) );
 
    /*  release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &upchildcons) );
@@ -3340,8 +3340,11 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterGeneric)
    int i;
 
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
+
+   SCIPdebugMessage("branchActiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr, branchdata->consSsize);
 
    if( branchdata->nvars >= SCIPgetNVars(scip) )
       return SCIP_OKAY;
@@ -3370,8 +3373,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterGeneric)
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
-   SCIPdebugMessage("branchDeactiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr,
-      branchdata->consSsize);
+   SCIPdebugMessage("branchDeactiveMasterGeneric: Block %d, Ssize %d\n", branchdata->consblocknr, branchdata->consSsize);
 
    /* set number of variables since last call */
    branchdata->nvars = SCIPgetNVars(scip);
