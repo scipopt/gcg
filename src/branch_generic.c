@@ -24,7 +24,7 @@
 #include "pricer_gcg.h"
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
+#include "gcg.h"
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
@@ -3370,6 +3370,7 @@ static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterGeneric)
 {
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
