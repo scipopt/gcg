@@ -110,23 +110,22 @@ SCIP_RETCODE addVarToMasterbranch(
    assert(added != NULL);
 
    *added = FALSE;
-   if( GCGvarGetBlock(mastervar) != -1 )
-      return SCIP_OKAY;
-
-   assert( GCGvarIsLinking(mastervar) );
-   blockfound = FALSE;
-
-   pricingvars = GCGlinkingVarGetPricingVars(mastervar);
-   assert(pricingvars != NULL );
-
-   for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
+   if( GCGvarIsLinking(mastervar) )
    {
-      if( pricingvars[k] != NULL )
+      blockfound = FALSE;
+
+      pricingvars = GCGlinkingVarGetPricingVars(mastervar);
+      assert(pricingvars != NULL );
+
+      for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
       {
-         if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
+         if( pricingvars[k] != NULL )
          {
-            blockfound = TRUE;
-            break;
+            if( GCGvarGetBlock(pricingvars[k]) == GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
+            {
+               blockfound = TRUE;
+               break;
+            }
          }
       }
    }
@@ -174,12 +173,14 @@ SCIP_RETCODE addVarToMasterbranch(
 static
 SCIP_RETCODE createDirectBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
 )
 {
    char name[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
+   assert(node != NULL);
    assert(branchdata->consblocknr == -3);
    assert(branchdata->consSsize == 1);
 
@@ -197,7 +198,7 @@ SCIP_RETCODE createDirectBranchingCons(
    SCIP_CALL( SCIPaddCoefLinear(scip, branchdata->mastercons, branchdata->consS[0].component, 1.0));
 
    /* add constraint to the master problem that enforces the branching decision */
-   SCIP_CALL(SCIPaddCons(scip, branchdata->mastercons));
+   SCIP_CALL(SCIPaddConsNode(scip, node, branchdata->mastercons, NULL));
 
    return SCIP_OKAY;
 }
@@ -206,20 +207,25 @@ SCIP_RETCODE createDirectBranchingCons(
 static
 SCIP_RETCODE createBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
 )
 {
    char name[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
+   assert(node != NULL);
    assert(branchdata != NULL);
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "child(%d, %g)", branchdata->consSsize, branchdata->lhs);
 
    assert(branchdata->mastercons == NULL);
+
    /*  create constraint for child */
    SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL,
          branchdata->lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+
+   SCIP_CALL(SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
 
    return SCIP_OKAY;
 }
@@ -2346,9 +2352,9 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( SCIPaddConsNode(masterscip, child, childcons, NULL) );
 
             /* define names for origbranch constraints */
-            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) last comp=%s, sense %d, bound %g, lhs %g", SCIPnodeGetNumber(child), blocknr, p+1,
+            (void) SCIPsnprintf(childname, SCIP_MAXSTRLEN, "node(%d,%d, %d) (last comp=%s %s %g) >= %g", SCIPnodeGetNumber(child), blocknr, p+1,
                SCIPvarGetName(branchchilddata->consS[branchchilddata->consSsize-1].component),
-               branchchilddata->consS[branchchilddata->consSsize-1].sense,
+               branchchilddata->consS[branchchilddata->consSsize-1].sense == GCG_COMPSENSE_GE? ">=": "<",
                branchchilddata->consS[branchchilddata->consSsize-1].bound,
                branchchilddata->lhs);
 
@@ -2357,7 +2363,7 @@ SCIP_RETCODE createChildNodesGeneric(
             SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
                NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
 
-            SCIP_CALL( createBranchingCons(masterscip, branchchilddata) );
+            SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
             /*  release constraints */
             SCIP_CALL( SCIPreleaseCons(masterscip, &childcons) );
@@ -2503,8 +2509,8 @@ SCIP_RETCODE branchDirectlyOnMastervar(
       NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
 
    /*  create branching constraint in master */
-   SCIP_CALL( createDirectBranchingCons(masterscip, branchupchilddata) );
-   SCIP_CALL( createDirectBranchingCons(masterscip, branchdownchilddata) );
+   SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );
+   SCIP_CALL( createDirectBranchingCons(masterscip, downchild, branchdownchilddata) );
 
    /*  release constraints */
    SCIP_CALL( SCIPreleaseCons(masterscip, &upchildcons) );
@@ -2925,6 +2931,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    assert(nbranchcands > 0);
+   mastervar = NULL;
 
    for( i=0; i<nbranchcands; ++i )
    {
