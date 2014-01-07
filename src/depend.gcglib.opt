@@ -568,7 +568,8 @@ $(LIBOBJDIR)/branch_generic.o: src/branch_generic.c src/branch_generic.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/type_branchgcg.h src/relax_gcg.h src/type_decomp.h \
  src/cons_masterbranch.h src/cons_origbranch.h src/pricer_gcg.h \
- src/type_solver.h lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h \
+ src/type_solver.h lib/scip/src/scip/cons_linear.h src/gcg.h \
+ src/type_detector.h src/pub_gcgvar.h src/pub_decomp.h \
  lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_dfs.h \
  lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \

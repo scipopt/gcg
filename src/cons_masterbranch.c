@@ -79,8 +79,8 @@ struct SCIP_ConsData
    SCIP_NODE*            node;               /**< the node at which the cons is sticking */
    SCIP_CONS*            parentcons;         /**< the masterbranch constraint of the parent node */
 
-   SCIP_CONS**           childcons;    /**< array of the masterbranch constraints of child nodes */
-   int                   nchildcons;   /**< number of the masterbranch constraints of child nodes */
+   SCIP_CONS**           childcons;          /**< array of the masterbranch constraints of child nodes */
+   int                   nchildcons;         /**< number of the masterbranch constraints of child nodes */
 
    SCIP_CONS*            probingtmpcons;     /**< pointer to save the last (second) child if the child2cons pointer is overwritten in probing mode */
    SCIP_CONS*            origcons;           /**< the corresponding origbranch cons in the original program */
@@ -135,12 +135,6 @@ struct SCIP_ConshdlrData
    SCIP_Bool             pendingbndsactivated; /**< were pending bound changes already activated? */
    int                   maxpendingbnds;     /**< size of the array corresponding to pending bound changes */
    SCIP_Bool             enforceproper;      /**< should proper variables be enforced? */
-};
-
-
-/** event handler data */
-struct SCIP_EventhdlrData
-{
 };
 
 /*
@@ -2464,7 +2458,7 @@ void GCGconsMasterbranchCheckConsistency(
 
       SCIPdebugMessage("cons: %s (node %p), origcons: %s, parent %s: %s => %s\n",
          SCIPconsGetName(conss[i]),
-         consdata->node,
+         (void*) consdata->node,
          consdata->origcons == NULL? "NULL" : SCIPconsGetName(consdata->origcons),
          consdata->parentcons == NULL? "NULL" : SCIPconsGetName(consdata->parentcons),
          parent_origcons == NULL? "NULL" :  SCIPconsGetName(parent_origcons),

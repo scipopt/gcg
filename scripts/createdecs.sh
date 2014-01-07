@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $# -lt 2 ]
+then
+    echo "Usage: $0 testname settingsname"
+    exit 1
+fi
+
 name=`basename $1 .test`
 settings=$2
 testset=testset/{name}.test
