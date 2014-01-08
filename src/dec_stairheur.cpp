@@ -1285,7 +1285,7 @@ SCIP_RETCODE blocking(
       SCIPdebugMessage("detectordata->enableblockingdynamic = 1.\n");
       SCIP_CALL( rowsWithConstriction(scip, detectordata) );
 
-      SCIPdebugMessage("detectordata->enablemultipledecomps = %d.\n", detectordata->multipledecomps);
+      SCIPdebugMessage("detectordata->enablemultipledecomps = %ud.\n", detectordata->multipledecomps);
 
       if( detectordata->multipledecomps )
       {
@@ -1323,7 +1323,7 @@ SCIP_RETCODE blocking(
    }
 
    /* static blocking */
-   SCIPdebugMessage("detectordata->staticblocking = %d. \n", detectordata->staticblocking);
+   SCIPdebugMessage("detectordata->staticblocking = %ud. \n", detectordata->staticblocking);
 
    if( detectordata->staticblocking )
    {
@@ -1343,7 +1343,7 @@ SCIP_RETCODE blocking(
    }
 
    /* blocking ASAP */
-   SCIPdebugMessage("detectordata->blockingassoonaspossible = %d. \n", detectordata->blockingassoonaspossible);
+   SCIPdebugMessage("detectordata->blockingassoonaspossible = %ud. \n", detectordata->blockingassoonaspossible);
 
    if( detectordata->blockingassoonaspossible )
    {

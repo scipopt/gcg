@@ -286,12 +286,6 @@ SCIP_RETCODE DECdecompTransform(
    DEC_DECOMP*           decdecomp           /**< decdecomp instance */
    );
 
-/** prints detailed information on the contents of decdecomp on the command line */
-void DECdecompPrintDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
-   );
-
 /**
  * Adds all those constraints that were added to the problem after the decomposition as created
  */

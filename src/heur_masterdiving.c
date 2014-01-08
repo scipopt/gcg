@@ -908,7 +908,7 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
       heurdata->bestsolrounded = rounded;
    }
 
-   SCIPstatisticPrintf("Masterdiving statistic: %s found solution %13.6e , improving = %d , rounded = %d\n",
+   SCIPstatisticPrintf("Masterdiving statistic: %s found solution %13.6e , improving = %ud , rounded = %ud\n",
       SCIPheurGetName(heur), SCIPgetSolTransObj(scip, sol), improving, rounded);
 
    return SCIP_OKAY;

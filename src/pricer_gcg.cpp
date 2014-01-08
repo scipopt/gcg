@@ -2070,7 +2070,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             SCIP_CALL( stabilization->updateStabilityCenter( lowerboundcandidate) );
          }
 
-         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
+         SCIPdebugMessage("Checking whether stabilization information must be updated (stabilized = %ud, nfoundvars = %d, optimal = %ud, *bestredcostvalid = %d\n", stabilized, nfoundvars, optimal, *bestredcostvalid);
          if( nfoundvars == 0 )
          {
             if( optimal && stabilized )

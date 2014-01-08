@@ -48,6 +48,7 @@
 #include <cstring>
 #include <cassert>
 #include <algorithm>
+
 #include "pub_bliss.h"
 
 /* constraint handler properties */
@@ -145,7 +146,7 @@ void hook(
       assert(aut[i] < INT_MAX);
       if( (size_t) i != aut[i])
       {
-         SCIPdebugMessage("%d <%s> <-> %d <%s>\n",i, SCIPconsGetName(conss[i]), aut[i], SCIPconsGetName(conss[aut[i]]));
+         SCIPdebugMessage("%d <%s> <-> %ud <%s>\n", i, SCIPconsGetName(conss[i]), aut[i], SCIPconsGetName(conss[aut[i]]));
          int index = MIN(i, aut[i]);
          if( hook->conssperm[i] != -1)
             index = MIN(index, hook->conssperm[i]);
@@ -175,29 +176,28 @@ SCIP_RETCODE allocMemory(
    return SCIP_OKAY;
 }
 
+/** destructor for colorinfo */
 static
-SCIP_RETCODE freeMemory(SCIP* scip, /**< SCIP data structure */
-AUT_COLOR* colorinfo /**< struct to save intermediate information */
+SCIP_RETCODE freeMemory(
+   SCIP*                 scip,               /**< SCIP data structure */
+   AUT_COLOR*            colorinfo           /**< struct to save intermediate information */
 )
 {
    int i;
-   AUT_COEF* scoef;
-   AUT_VAR* svar;
-   AUT_CONS* scons;
 
    for( i = 0; i < colorinfo->lenvarsarray; i++ )
    {
-      svar = (AUT_VAR*) colorinfo->ptrarrayvars[i];
+      AUT_VAR* svar = (AUT_VAR*) colorinfo->ptrarrayvars[i];
       delete svar;
    }
    for( i = 0; i < colorinfo->lenconssarray; i++ )
    {
-      scons = (AUT_CONS*) colorinfo->ptrarrayconss[i];
+      AUT_CONS* scons = (AUT_CONS*) colorinfo->ptrarrayconss[i];
       delete scons;
    }
    for( i = 0; i < colorinfo->lencoefsarray; i++ )
    {
-      scoef = (AUT_COEF*) colorinfo->ptrarraycoefs[i];
+      AUT_COEF* scoef = (AUT_COEF*) colorinfo->ptrarraycoefs[i];
       delete scoef;
    }
 
@@ -217,13 +217,11 @@ SCIP_RETCODE setuparrays(
 {
    int i;
    int j;
-   int ncurvars;
    int nconss;
    int nvars;
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    AUT_COEF* scoef;
-   AUT_VAR* svar;
    AUT_CONS* scons;
    SCIP_Bool added;
 
@@ -238,7 +236,7 @@ SCIP_RETCODE setuparrays(
    //save the properties of variables in a struct array and in a sorted pointer array
    for( i = 0; i < nvars; i++ )
    {
-      svar = new AUT_VAR(scip, vars[i]);
+      AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
       colorinfo->insert(svar, &added);
 //      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
@@ -251,7 +249,7 @@ SCIP_RETCODE setuparrays(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       SCIP_Real* curvals;
-      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      int ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
       scons = new AUT_CONS(scip, conss[i]);
@@ -392,7 +390,7 @@ static SCIP_RETCODE createGraph(
       SCIPfreeMemoryArray(scip, &curvals);
       SCIPfreeMemoryArray(scip, &curvars);
    }
-   SCIPdebugMessage("Iteration 1: nnodes = %d, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar());
+   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar());
    assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
 
    //free all allocated memory
@@ -499,12 +497,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
+
    *ndecdecomps = 0;
    *decdecomps = NULL;
+
    int nconss = SCIPgetNConss(scip);
-   SCIP_CONS** masterconss;
    int i;
-   int nmasterconss;
    colorinfo = new AUT_COLOR();
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting aggregatable structure: ");
    SCIP_CALL( setuparrays(scip, colorinfo, &detectordata->result) );
@@ -524,6 +522,8 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    if( detectordata->result == SCIP_SUCCESS )
    {
       DEC_DECOMP* newdecomp;
+      int nmasterconss;
+      SCIP_CONS** masterconss;
 
       // assign to a permutation circle only one number
       collapsePermutation(ptrhook->conssperm, nconss);
