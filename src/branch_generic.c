@@ -54,26 +54,26 @@
 #define EVENTHDLR_NAME         "genericbranchvaradd"
 #define EVENTHDLR_DESC         "event handler for adding a new generated mastervar into the right branching constraints by using Vanderbecks generic branching scheme"
 
-
+/** branching data */
 struct GCG_BranchData
 {
-   GCG_COMPSEQUENCE**   C;                  /**< S[k] bound sequence for block k */ /* !!! sort of each C[i] = S is important !!! */
-   int*                 sequencesizes;      /**< number of bounds in S[k] */
-   int                  Csize;
-   SCIP_Real            lhs;
-   SCIP_CONS*           mastercons;         /**< constraint enforcing the branching restriction in the master problem */
-   GCG_COMPSEQUENCE*    consS;              /**< component bound sequence which induce the current branching constraint */
-   int                  consSsize;          /**< size of the component bound sequence */
-   int                  consblocknr;
-   int                  nvars;              /**< number of master variables the last time the node has been visited */
+   GCG_COMPSEQUENCE**    C;                  /**< S[k] bound sequence for block k */ /* !!! sort of each C[i] = S is important !!! */
+   int*                  sequencesizes;      /**< number of bounds in S[k] */
+   int                   Csize;              /**< size/length of the bound sequence C */
+   SCIP_Real             lhs;                /**< lefthandside of the constraint corresponding to the bound sequence C */
+   SCIP_CONS*            mastercons;         /**< constraint enforcing the branching restriction in the master problem */
+   GCG_COMPSEQUENCE*     consS;              /**< component bound sequence which induce the current branching constraint */
+   int                   consSsize;          /**< size of the component bound sequence */
+   int                   consblocknr;        /**< id of the pricing problem (or block) to which this branching constraint belongs */
+   int                   nvars;              /**< number of master variables the last time the node has been visited */
 };
 
 /** set of component bounds in separate */
 struct GCG_Record
 {
-   GCG_COMPSEQUENCE**   record;             /**< returnvalue of separate function */
-   int                  recordsize;
-   int*                 sequencesizes;
+   GCG_COMPSEQUENCE**   record;              /**< array of component bound sequences in record */
+   int                  recordsize;          /**< number of component bound sequences in record */
+   int*                 sequencesizes;       /**< array of sizes of component bound sequences */
 };
 typedef struct GCG_Record GCG_RECORD;
 
@@ -344,8 +344,8 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
 SCIP_Real getGeneratorEntry(
-   SCIP_VAR*            mastervar,          /**< current mastervariable */
-   SCIP_VAR*            origvar             /**< corresponding origvar */
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
    int i;
@@ -374,11 +374,11 @@ SCIP_Real getGeneratorEntry(
 /** method for initializing the set of respected indices */
 static
 SCIP_RETCODE InitIndexSet(
-   SCIP*                scip,           /**< SCIP data structure */
-   SCIP_VAR**           F,              /**< array of fractional mastervars */
-   int                  Fsize,          /**< number of fractional mastervars */
-   SCIP_VAR***           IndexSet,       /**< set to initialize */
-   int*                 IndexSetSize   /**< size of the index set */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            F,                  /**< array of fractional mastervars */
+   int                   Fsize,              /**< number of fractional mastervars */
+   SCIP_VAR***           IndexSet,           /**< set to initialize */
+   int*                  IndexSetSize        /**< size of the index set */
    )
 {
    int i;
@@ -396,7 +396,7 @@ SCIP_RETCODE InitIndexSet(
    assert( F!= NULL);
    assert( Fsize > 0);
 
-   for( i=0; i<Fsize; ++i )
+   for( i = 0; i < Fsize; ++i )
    {
       origvars = GCGmasterVarGetOrigvars(F[i]);
       norigvars = GCGmasterVarGetNOrigvars(F[i]);
@@ -405,20 +405,20 @@ SCIP_RETCODE InitIndexSet(
       {
          *IndexSetSize = norigvars;
          SCIP_CALL( SCIPallocMemoryArray(scip, IndexSet, *IndexSetSize) );
-         for( j=0; j<*IndexSetSize; ++j )
+         for( j = 0; j < *IndexSetSize; ++j )
          {
             (*IndexSet)[j] = origvars[j];
          }
       }
       else
       {
-         for( j=0; j<norigvars; ++j )
+         for( j = 0; j < norigvars; ++j )
          {
             int oldsize;
 
             oldsize = *IndexSetSize;
 
-            for( k=0; k<oldsize; ++k )
+            for( k = 0; k < oldsize; ++k )
             {
                /*  if variable already in union */
                if( (*IndexSet)[k] == origvars[j] )
@@ -449,10 +449,10 @@ SCIP_RETCODE InitIndexSet(
  */
 static
 SCIP_Real GetMedian(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_Real*           array,              /**< array to find the median in (will be destroyed) */
-   int                  arraysize,          /**< size of the array */
-   SCIP_Real            min                 /**< minimum of array */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real*            array,              /**< array to find the median in (will be destroyed) */
+   int                   arraysize,          /**< size of the array */
+   SCIP_Real             min                 /**< minimum of array */
    )
 {
    SCIP_Real Median;
@@ -568,7 +568,7 @@ SCIP_DECL_SORTPTRCOMP(ptrcomp)
 static
 SCIP_RETCODE LexicographicSort(
    GCG_STRIP**           array,              /**< array to sort (will be changed) */
-   int                  arraysize           /**< size of the array */
+   int                   arraysize           /**< size of the array */
    )
 {
 
@@ -586,13 +586,13 @@ SCIP_RETCODE LexicographicSort(
 /** compare function for ILO: returns 1 if bd1 < bd2 else -1 with respect to bound sequence */
 static
 int ILOcomp(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_VAR*            mastervar1,         /**< first strip */
-   SCIP_VAR*            mastervar2,         /**< second strip */
-   GCG_COMPSEQUENCE**   C,                  /**< component bound sequence to compare with */
-   int                  NBoundsequences,    /**< size of the bound sequence */
-   int*                 sequencesizes,      /**< sizes of the bound sequences */
-   int                  p                   /**< current depth in C*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             mastervar1,         /**< first strip */
+   SCIP_VAR*             mastervar2,         /**< second strip */
+   GCG_COMPSEQUENCE**    C,                  /**< component bound sequence to compare with */
+   int                   NBoundsequences,    /**< size of the bound sequence */
+   int*                  sequencesizes,      /**< sizes of the bound sequences */
+   int                   p                   /**< current depth in C*/
    )
 {
    int ivalue;
@@ -781,12 +781,12 @@ SCIP_DECL_SORTPTRCOMP(ptrilocomp)
 /** induced lexicographical sort */
 static
 SCIP_RETCODE InducedLexicographicSort(
-   SCIP*                scip,               /**< SCIP ptr*/
-   GCG_STRIP**          array,              /**< array of strips to sort in ILO*/
-   int                  arraysize,          /**< size of the array */
-   GCG_COMPSEQUENCE**   C,                  /**< current set o comp bound sequences*/
-   int                  NBoundsequences,    /**< size of C */
-   int*                 sequencesizes       /**< sizes of the sequences in C */
+   SCIP*                 scip,               /**< SCIP ptr*/
+   GCG_STRIP**           array,              /**< array of strips to sort in ILO*/
+   int                   arraysize,          /**< size of the array */
+   GCG_COMPSEQUENCE**    C,                  /**< current set o comp bound sequences*/
+   int                   NBoundsequences,    /**< size of C */
+   int*                  sequencesizes       /**< sizes of the sequences in C */
    )
 {
    int i;
@@ -815,17 +815,24 @@ SCIP_RETCODE InducedLexicographicSort(
    return SCIP_OKAY;
 }
 
+/** method for calculating the median over all fractional components values using
+ * the quickselect algorithm (or a variant of it)
+ *
+ * This method will change the array
+ *
+ * @return median or if the median is the minimum return ceil(arithm middle)
+ */
 /** partitions the strip according to the priority */
 static
 SCIP_RETCODE partition(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_VAR**           J,                  /**< */
-   int*                 Jsize,              /**< */
-   int*                 priority,           /**< branching priorities */
-   SCIP_VAR**           F,                  /**< set of fractional solutions satisfying bounds */
-   int                  Fsize,              /**< size of list of fractional solutions satisfying bounds */
-   SCIP_VAR**           origvar,            /**< */
-   SCIP_Real*           median              /**< */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            J,                  /**< array of variables which belong to the discriminating components */
+   int*                  Jsize,              /**< pointer to the number of discriminating components */
+   int*                  priority,           /**< branching priorities */
+   SCIP_VAR**            F,                  /**< set of fractional solutions satisfying bounds */
+   int                   Fsize,              /**< size of list of fractional solutions satisfying bounds */
+   SCIP_VAR**            origvar,            /**< pointer to store the variable which belongs to a discriminating component with maximum priority */
+   SCIP_Real*            median              /**< pointer to store the median of fractional solutions satisfying bounds */
    )
 {
    int j;
@@ -893,10 +900,10 @@ SCIP_RETCODE partition(
 /** add identified sequence to record */
 static
 SCIP_RETCODE addToRecord(
-   SCIP*                scip,               /**< SCIP data structure */
-   GCG_RECORD*          record,             /**< record of identified sequences */
-   GCG_COMPSEQUENCE*    S,                  /**< bound restriction sequence */
-   int                  Ssize               /**< size of bound restriction sequence */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_RECORD*           record,             /**< record of identified sequences */
+   GCG_COMPSEQUENCE*     S,                  /**< bound restriction sequence */
+   int                   Ssize               /**< size of bound restriction sequence */
 )
 {
    int i;
@@ -932,14 +939,14 @@ SCIP_RETCODE addToRecord(
 /** separation at the root node */
 static
 SCIP_RETCODE Separate(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_VAR**           F,                  /**< fractional strips respecting bound restrictions */
-   int                  Fsize,              /**< size of the strips */
-   SCIP_VAR**           IndexSet,           /**< index set */
-   int                  IndexSetSize,       /**< size of index set */
-   GCG_COMPSEQUENCE*    S,                  /**< ordered set of bound restrictions */
-   int                  Ssize,              /**< size of the ordered set */
-   GCG_RECORD*          record              /**< identified bound sequences */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            F,                  /**< fractional strips respecting bound restrictions */
+   int                   Fsize,              /**< size of the strips */
+   SCIP_VAR**            IndexSet,           /**< index set */
+   int                   IndexSetSize,       /**< size of index set */
+   GCG_COMPSEQUENCE*     S,                  /**< ordered set of bound restrictions */
+   int                   Ssize,              /**< size of the ordered set */
+   GCG_RECORD*           record              /**< identified bound sequences */
    )
 {
    int j;
@@ -1265,10 +1272,10 @@ SCIP_RETCODE Separate(
 /** choose a component bound sequence to create branching */
 static
 SCIP_RETCODE ChoseS(
-   SCIP*                scip,               /**< SCIP data structure */
-   GCG_RECORD**         record,             /**< candidate of bound sequences */
-   GCG_COMPSEQUENCE**   S,                  /**< pointer to return chosen bound sequence */
-   int*                 Ssize               /**< size of the chosen bound sequence */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_RECORD**          record,             /**< candidate of bound sequences */
+   GCG_COMPSEQUENCE**    S,                  /**< pointer to return chosen bound sequence */
+   int*                  Ssize               /**< size of the chosen bound sequence */
    )
 {
    int minSizeOfMaxPriority;  /* needed if the last comp priority is equal to the one in other bound sequences */
@@ -1396,18 +1403,18 @@ double computeAlpha(
 /** separation at a node other than the root node */
 static
 SCIP_RETCODE Explore(
-   SCIP*                scip,               /**< SCIP data structure */
-   GCG_COMPSEQUENCE**   C,                  /**< */
-   int                  Csize,              /**< */
-   int*                 sequencesizes,      /**< */
-   int                  p,                  /**< */
-   SCIP_VAR**           F,                  /**< Strip of fractional columns */
-   int                  Fsize,              /**< size of the strips */
-   SCIP_VAR**           IndexSet,           /**< */
-   int                  IndexSetSize,       /**< */
-   GCG_COMPSEQUENCE**   S,                  /**< component sequences */
-   int*                 Ssize,              /**< length of component sequences */
-   GCG_RECORD*          record              /**< */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COMPSEQUENCE**    C,                  /**< array of component bounds sequences*/
+   int                   Csize,              /**< number of component bounds sequences*/
+   int*                  sequencesizes,      /**< array of sizes of component bounds sequences */
+   int                   p,                  /**< depth of recursive call */
+   SCIP_VAR**            F,                  /**< strip of fractional columns */
+   int                   Fsize,              /**< size of the strips */
+   SCIP_VAR**            IndexSet,           /**< array of original variables which belong to the fractional master columns */
+   int                   IndexSetSize,       /**< number of original variables which belong to fractional master columns. Note that IndexSetSize >= Fsize */
+   GCG_COMPSEQUENCE**    S,                  /**< component sequences */
+   int*                  Ssize,              /**< length of component sequences */
+   GCG_RECORD*           record              /**< array of sets of component bounds which we might use for separation */
    )
 {
    int j;
@@ -1748,21 +1755,21 @@ SCIP_RETCODE Explore(
  * decides whether Separate or Explore should be done */
 static
 SCIP_RETCODE ChooseSeparateMethod(
-   SCIP*                scip,               /**< */
-   SCIP_VAR**           F,
-   int                  Fsize,              /**< */
-   GCG_COMPSEQUENCE**   S,                  /**< */
-   int*                 Ssize,              /**< */
-   GCG_COMPSEQUENCE**   C,                  /**< */
-   int                  Csize,              /**< */
-   int*                 CompSizes,           /**< */
-   int                  blocknr,
-   SCIP_BRANCHRULE*      branchrule,
-   SCIP_RESULT*         result,
-   int*                 checkedblocks,
-   int                  ncheckedblocks,
-   GCG_STRIP***         checkedblockssortstrips,
-   int*                 checkedblocksnsortstrips
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            F                   /**< strip of fractional columns */,
+   int                   Fsize,              /**< size of the strips */
+   GCG_COMPSEQUENCE**    S,                  /**< */
+   int*                  Ssize,              /**< */
+   GCG_COMPSEQUENCE**    C,                  /**< array of component bounds sequences*/
+   int                   Csize,              /**< number of component bounds sequences*/
+   int*                  CompSizes,          /**< array of sizes of component bounds sequences */
+   int                   blocknr,            /**< id of the pricing problem (or block) in which we want to branch */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
+   int*                  checkedblocks,
+   int                   ncheckedblocks,
+   GCG_STRIP***          checkedblockssortstrips,
+   int*                  checkedblocksnsortstrips
    )
 {
    SCIP* masterscip;
@@ -1999,12 +2006,12 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
  *  retrun TRUE if node is pruned */
 static
 SCIP_Bool checkchildconsS(
-   SCIP*                 scip,
-   SCIP_Real             lhs,               /**< lhs for childnode which is checkes to be pruned */
-   GCG_COMPSEQUENCE*     childS,            /**< Component Bound Sequence defining the childnode */
-   int                   childSsize,        /**< */
-   SCIP_CONS*            parentcons,      /**< */
-   int                   childBlocknr       /**< number of the block for the childnode */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             lhs,                /**< lhs for childnode which is checkes to be pruned */
+   GCG_COMPSEQUENCE*     childS,             /**< component bound sequence defining the childnode */
+   int                   childSsize,         /**< size of component bound sequence */
+   SCIP_CONS*            parentcons,         /**< constraint of parent node in B&B tree */
+   int                   childBlocknr        /**< number of the block for the child node */
    )
 {
    int i;
@@ -2063,12 +2070,12 @@ SCIP_Bool checkchildconsS(
  *  retrun TRUE if node is pruned */
 static
 SCIP_Bool pruneChildNodeByDominanceGeneric(
-   SCIP*                 scip,              /**< SCIP data structure */
-   SCIP_Real             lhs,               /**< lhs for childnode which is checkes to be pruned */
-   GCG_COMPSEQUENCE*     childS,            /**< Component Bound Sequence defining the childnode */
-   int                   childSsize,        /**< */
-   SCIP_CONS*            masterbranchcons,      /**< */
-   int                   childBlocknr       /**< number of the block for the childnode */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_Real             lhs,                /**< lhs for childnode which is checkes to be pruned */
+   GCG_COMPSEQUENCE*     childS,             /**< Component Bound Sequence defining the childnode */
+   int                   childSsize,         /**< size of component bound sequence */
+   SCIP_CONS*            masterbranchcons,   /**< master branching constraint */
+   int                   childBlocknr        /**< number of the block for the childnode */
    )
 {
    SCIP_CONS* cons;
@@ -2135,13 +2142,13 @@ SCIP_RETCODE initNodeBranchdata(
 /** for given component bound sequence S, create |S|+1 Vanderbeck branching nodes */
 static
 SCIP_RETCODE createChildNodesGeneric(
-   SCIP*                 scip,              /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,        /**< branching rule */
-   GCG_COMPSEQUENCE*     S,                 /**< Component Bound Sequence defining the nodes */
-   int                   Ssize,             /**< size of S*/
-   int                   blocknr,           /**< number of the block */
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   GCG_COMPSEQUENCE*     S,                  /**< Component Bound Sequence defining the nodes */
+   int                   Ssize,              /**< size of S */
+   int                   blocknr,            /**< number of the block */
    SCIP_CONS*            masterbranchcons,   /**< current masterbranchcons*/
-   SCIP_RESULT*          result
+   SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
 #ifdef SCIP_DEBUG
@@ -2443,13 +2450,12 @@ SCIP_RETCODE createChildNodesGeneric(
    return SCIP_OKAY;
 }
 
-/** branching on copied origvar directly in master
- * @return SCIP_RETCODE */
+/** branching on copied origvar directly in master */
 static
 SCIP_RETCODE branchDirectlyOnMastervar(
-   SCIP*                scip,
-   SCIP_VAR*            mastervar,
-   SCIP_BRANCHRULE*     branchrule
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             mastervar,          /**< master variable */
+   SCIP_BRANCHRULE*      branchrule          /**< branching rule */
    )
 {
    SCIP* masterscip;
@@ -2520,17 +2526,16 @@ SCIP_RETCODE branchDirectlyOnMastervar(
 }
 
 
-/** creates (integer) origsol with respect to the oder of the checkedblocks
- * @return SCIP_RETCODE */
+/** creates (integer) origsol with respect to the order of the checkedblocks */
 static
 SCIP_RETCODE createSortedOrigsol(
-   SCIP*               scip,
-   SCIP_VAR**          nonsortmastervars,
-   int                 nnonsortmastervars,
-   GCG_STRIP***        checkedblockssortstrips,
-   int*                checkedblocksnsortstrips,
-   int                 ncheckedblocks,
-   SCIP_SOL**          origsol
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            nonsortmastervars,  /**< unsorted master variables */
+   int                   nnonsortmastervars, /**< number of unsorted master variables */
+   GCG_STRIP***          checkedblockssortstrips,
+   int*                  checkedblocksnsortstrips,
+   int                   ncheckedblocks,
+   SCIP_SOL**            origsol             /**< pointer to store original solution which is obtained by sorting the master variables and applying the integrality preserving mapping */
 )
 {
    SCIP* masterprob;
@@ -2856,16 +2861,15 @@ return SCIP_OKAY;
 }
 
 
-/** prepares informations for using the generic branching scheme
- * @return SCIP_RETCODE */
+/** prepares informations for using the generic branching scheme */
 SCIP_RETCODE GCGbranchGenericInitbranch(
-   SCIP*                masterscip,         /**< */
-   SCIP_BRANCHRULE*     branchrule,
-   SCIP_RESULT*         result,
-   int*                 checkedblocks,
-   int                  ncheckedblocks,
-   GCG_STRIP***         checkedblockssortstrips,
-   int*                 checkedblocksnsortstrips
+   SCIP*                 masterscip,         /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
+   int*                  checkedblocks,
+   int                   ncheckedblocks,
+   GCG_STRIP***          checkedblockssortstrips,
+   int*                  checkedblocksnsortstrips
    )
 {
    SCIP* origscip;
@@ -2933,7 +2937,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    assert(nbranchcands > 0);
    mastervar = NULL;
 
-   for( i=0; i<nbranchcands; ++i )
+   for( i = 0; i < nbranchcands; ++i )
    {
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
@@ -2999,7 +3003,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       nnonsortmastervars = 0;
 
       /* todo handle linking variables, may be multiple in ckeckedblocksstrips */
-      for( i=0; i<nmastervars; ++i )
+      for( i = 0; i < nmastervars; ++i )
       {
          SCIP_Bool blockchecked;
 
@@ -3576,32 +3580,36 @@ SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    return SCIP_OKAY;
 }
 
+/** get component bound sequence */
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*      branchdata          /**< branching data */
    )
 {
    assert(branchdata != NULL);
    return branchdata->consS;
 }
 
+/** get size of component bound sequence */
 int GCGbranchGenericBranchdataGetConsSsize(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*      branchdata          /**< branching data */
    )
 {
    assert(branchdata != NULL);
    return branchdata->consSsize;
 }
 
+/** get id of pricing problem (or block) to which the constraint belongs */
 int GCGbranchGenericBranchdataGetConsblocknr(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*      branchdata          /**< branching data */
    )
 {
    assert(branchdata != NULL);
    return branchdata->consblocknr;
 }
 
+/** get master constraint */
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*      branchdata          /**< branching data */
    )
 {
    assert(branchdata != NULL);

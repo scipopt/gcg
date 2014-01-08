@@ -32,76 +32,80 @@ typedef enum {
    GCG_COMPSENSE_LT = 0
 } GCG_COMPSENSE;
 
+/** component bound structure */
 struct ComponentBoundSequence
 {
-   SCIP_VAR* component;
-   GCG_COMPSENSE sense;
-   SCIP_Real bound;
+   SCIP_VAR*             component;          /**< variable to which this bound belongs */
+   GCG_COMPSENSE         sense;              /**< sense of the bound */
+   SCIP_Real             bound;              /**< bound value */
 };
-
 typedef struct ComponentBoundSequence GCG_COMPSEQUENCE;
 
+/** strip structure */
 struct GCG_Strip
 {
-   SCIP*                scip;
-   SCIP_VAR*            mastervar;
-   GCG_COMPSEQUENCE**   C;             /**< current set of comp bound sequences */
-   int                  Csize;
-   int*                 sequencesizes;
+   SCIP*                 scip;               /**< SCIP data structure */
+   SCIP_VAR*             mastervar;          /**< master variable */
+   GCG_COMPSEQUENCE**    C;                  /**< current set of comp bound sequences */
+   int                   Csize;              /**< number of component bound sequences */
+   int*                  sequencesizes;      /**< array of sizes of component bound sequences */
 };
 typedef struct GCG_Strip GCG_STRIP;
 
 /** creates the most infeasible LP branching rule and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeBranchruleGeneric(
-   SCIP*                scip                /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** initializes branchdata */
 extern
 SCIP_RETCODE GCGbranchGenericCreateBranchdata(
-   SCIP*                scip,               /**< SCIP data structure */
-   GCG_BRANCHDATA**     branchdata          /**< branching data to initialize */
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
    );
 
 /** computes the generator of mastervar for the entry in origvar */
 extern
 SCIP_Real getGeneratorEntry(
-   SCIP_VAR*            mastervar,          /**< current mastervariable */
-   SCIP_VAR*            origvar             /**< corresponding origvar */
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
    );
 
+/** get component bound sequence */
 extern
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
+/** get size of component bound sequence */
 extern
 int GCGbranchGenericBranchdataGetConsSsize(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
+/** get id of pricing problem (or block) to which the constraint belongs */
 extern
 int GCGbranchGenericBranchdataGetConsblocknr(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
+/** get master constraint */
 extern
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
-   GCG_BRANCHDATA*      branchdata          /**< branching data to initialize */
+   GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
    );
 
-/** prepares informations for using the generic branching scheme
- * @return SCIP_RETCODE */
+/** prepares informations for using the generic branching scheme */
 extern
 SCIP_RETCODE GCGbranchGenericInitbranch(
-   SCIP*                masterscip,         /**< */
-   SCIP_BRANCHRULE*     branchrule,
-   SCIP_RESULT*         result,
-   int*                 checkedblocks,
-   int                  ncheckedblocks,
-   GCG_STRIP***         checkedblockssortstrips,
-   int*                 checkedblocksnsortstrips
+   SCIP*                 masterscip,         /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
+   int*                  checkedblocks,
+   int                   ncheckedblocks,
+   GCG_STRIP***          checkedblockssortstrips,
+   int*                  checkedblocksnsortstrips
    );
 
 /** returns true when the branch rule is the generic branchrule */
