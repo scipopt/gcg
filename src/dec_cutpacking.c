@@ -399,14 +399,13 @@ static SCIP_RETCODE copyhashmap(
 )
 {
    int i;
-   SCIP_HASHMAPLIST* list;
 
    assert( hm1 != NULL );
    assert( hm2 != NULL );
 
    for( i = 0; i < SCIPhashmapGetNLists(hm1); ++i )
    {
-      list = SCIPhashmapGetList(hm1, i);
+      SCIP_HASHMAPLIST* list = SCIPhashmapGetList(hm1, i);
       if( SCIPhashmapListGetNEntries(list) > 0 )
       {
          while( list != NULL )
@@ -428,8 +427,6 @@ static SCIP_HASHMAPLIST* hashmapiteration(
    SCIP_HASHMAPLIST*     list                /**< current iteration list */
    )
 {
-      int j;
-
       assert(detectordata->iter < SCIPhashmapGetNLists(hm)+1);
       assert((detectordata->iter == 0)||(list != 0));
 
@@ -442,6 +439,7 @@ static SCIP_HASHMAPLIST* hashmapiteration(
 
       if( list == NULL )
       {
+         int j;
          for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
          {
             list = SCIPhashmapGetList(hm,j);
@@ -484,10 +482,8 @@ static SCIP_RETCODE buildnewadjacencylist(
    )
 {
    int i;
-   int j;
    int cost;
    int nedges;
-   SCIP_HASHMAP* newadja;
    SCIP_HASHMAPLIST* list;
    SCIP_CONS* representative;
    Graph newgraph;
@@ -497,9 +493,9 @@ static SCIP_RETCODE buildnewadjacencylist(
 
    if( SCIPhashmapGetNEntries(consslink) > 0 )
    {
-      newadja = detectordata->graphs[pos].adjacencylist[0];
-      representative = NULL;
-      j = 1;
+      int j = 1;
+      SCIP_HASHMAP* newadja = detectordata->graphs[pos].adjacencylist[0];
+
       for( i = 0; i < nconss; ++i )
       {
          assert( consslink != NULL );
@@ -760,9 +756,6 @@ static SCIP_RETCODE buildnewgraphs(
    int* partition;
    Graph graph;
 
-   SCIP_HASHMAP* adja;
-   SCIP_HASHMAPLIST* list;
-
    int nconss1;
    SCIP_HASHMAP* consslink1;
    int nconss2;
@@ -829,9 +822,10 @@ static SCIP_RETCODE buildnewgraphs(
 
    for( i = 0; i < nconss1; ++i )
    {
-      adja = graph.adjacencylist[(long int)SCIPhashmapGetImage(graph.constopos, detectordata->graphs[pos1].conss[i])];
+      SCIP_HASHMAPLIST* list;
+      SCIP_HASHMAP* adja = graph.adjacencylist[(long int)SCIPhashmapGetImage(graph.constopos, detectordata->graphs[pos1].conss[i])];
       detectordata->iter = 0;
-      list = NULL;
+
       do
       {
          list = hashmapiteration(scip, detectordata,adja,list);
@@ -982,11 +976,9 @@ SCIP_RETCODE getmergedconss(
 {
    int i;
    int j;
-   int block;
    SCIP_HASHMAP** mergedconss;
    SCIP_HASHMAP* representatives;
    SCIP_CONS*** subscipconss;
-   SCIP_HASHMAPLIST* list;
    SCIP_HASHMAP* constoblock;
 
    mergedconss = detectordata->mergedconss;
@@ -1005,9 +997,10 @@ SCIP_RETCODE getmergedconss(
 
    for( i = detectordata->nrepresentatives; i > 0; --i )
    {
-      block = (long int)SCIPhashmapGetImage(constoblock, SCIPhashmapGetImage(representatives, (void*)(size_t)i));
+      int block = (long int)SCIPhashmapGetImage(constoblock, SCIPhashmapGetImage(representatives, (void*)(size_t)i));
+      SCIP_HASHMAPLIST* list;
       detectordata->iter = 0;
-      list = NULL;
+
       do
       {
          list = hashmapiteration(scip, detectordata,mergedconss[i - 1],list);
@@ -1178,7 +1171,6 @@ static SCIP_RETCODE GetLinkingVars(
 {
    int i;
    int j;
-   int stop;
    int oldblock;
    int newblock;
 
@@ -1213,22 +1205,24 @@ static SCIP_RETCODE GetLinkingVars(
 
    for( i = 0; i < SCIPgetNVars(scip); ++i )
    {
+      SCIP_Bool stop;
       while( !SCIPisVarRelevant(SCIPgetVars(scip)[i]) )
       {
          ++i;
       }
       if( i >= SCIPgetNVars(scip) )
          break;
-      oldblock = (long int) SCIPhashmapGetImage(detectordata->constoblock, varinconss[(long int) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])][0]);
-      stop = 0;
-      for( j = 1;(!stop)&& (j < nvarinconss[(long int) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])]); ++j )
+      oldblock = (int) (size_t) SCIPhashmapGetImage(detectordata->constoblock, varinconss[(long int) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])][0]);
+      stop = FALSE;
+      for( j = 1; !stop && (j < nvarinconss[(size_t) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])]); ++j )
       {
-         newblock = (long int) SCIPhashmapGetImage(detectordata->constoblock, varinconss[(long int) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])][j]);
+         newblock = (int) (size_t) SCIPhashmapGetImage(detectordata->constoblock, varinconss[(long int) SCIPhashmapGetImage(detectordata->vartopos, SCIPgetVars(scip)[i])][j]);
          if( newblock != oldblock )
          {
-            stop = 1;
+            stop = TRUE;
          }
       }
+
       if( stop )
       {
          linkingvars[nlinkingvars] = SCIPgetVars(scip)[i];
@@ -1348,7 +1342,6 @@ static SCIP_RETCODE StoerWagner(
    double value_act_cut;
    double value_cut;
    SCIP_HASHMAP* tightness;
-   SCIP_HASHMAPLIST* list;
    SCIP_HASHMAP* repres_conss;
    SCIP_HASHMAP* constopos;
    SCIP_HASHMAP** adja;
@@ -1421,9 +1414,10 @@ static SCIP_RETCODE StoerWagner(
    represent_t = t;
    while( SCIPhashmapGetNEntries(constopos) > 1 )
    {
+      SCIP_HASHMAPLIST* list;
       SCIP_CALL( SCIPhashmapRemoveAll(tightness) );
       detectordata->iter = 0;
-      list = NULL;
+
       do
       {
          list = hashmapiteration(scip, detectordata,constopos,list);
@@ -1633,7 +1627,6 @@ static SCIP_RETCODE callMetis(
    int* partition;
    SCIP_HASHMAP** adja;
    SCIP_HASHMAP* constopos;
-   SCIP_HASHMAPLIST* list;
    SCIP_FILE *zfile;
    FILE* file;
    int temp_filedes = -1;
@@ -1672,9 +1665,10 @@ static SCIP_RETCODE callMetis(
    i = 0;
    for( i = 0; i < nvertices - 1; ++i )
    {
+      SCIP_HASHMAPLIST* list;
       assert(adja[i] != NULL);
       detectordata->iter = 0;
-      list = NULL;
+
       do
       {
          list = hashmapiteration(scip, detectordata,adja[i],list);

@@ -540,7 +540,6 @@ SCIP_RETCODE DECdetectStructure(
 
    SCIP_Real* scores;
    int i;
-   int j;
 
    assert(scip != NULL);
 
@@ -607,8 +606,10 @@ SCIP_RETCODE DECdetectStructure(
 
          if( *result == SCIP_SUCCESS )
          {
+            int j;
             assert(ndecdecomps >= 0);
             assert(decdecomps != NULL || ndecdecomps == 0);
+
             SCIPdebugMessage("We originally have %d decompositions, ", ndecdecomps);
             for( j = 0; j < ndecdecomps; ++j )
             {

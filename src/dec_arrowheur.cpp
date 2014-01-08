@@ -318,7 +318,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
    int i;
    int j;
    int ndecs;
-   int status;
 
    assert(scip != NULL);
    assert(detectordata != NULL);
@@ -386,7 +385,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildArrowhead)
 
    if( detectordata->tidy )
    {
-      status = remove( detectordata->tempfile );
+      int status = remove( detectordata->tempfile );
       if( status == -1 )
       {
          SCIPerrorMessage("Could not remove metis input file: ", strerror( errno ));

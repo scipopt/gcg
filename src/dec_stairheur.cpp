@@ -253,11 +253,10 @@ SCIP_RETCODE indexmapInit(
 {
    int i;
    int* hashmapindex;
-   SCIP_VAR* var;
-   SCIP_CONS* cons;
+
    for( i = 0; i < nvars; ++i )
    {
-      var = vars[i];
+      SCIP_VAR* var = vars[i];
       /* careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error */
       hashmapindex = hashmapindices + i+1;
       assert( ! SCIPhashmapExists(indexmap->indexvar, (void*) hashmapindex));
@@ -265,9 +264,10 @@ SCIP_RETCODE indexmapInit(
       assert( ! SCIPhashmapExists(indexmap->varindex, (void*) var));
       SCIP_CALL( SCIPhashmapInsert(indexmap->varindex, (void*) var, (void*) hashmapindex) );
    }
+
    for( i = 0; i < nconss; ++i )
    {
-      cons = conss[i];
+      SCIP_CONS* cons = conss[i];
       /* careful: hashmapindex+1, because '0' is treated as an empty hashmap entry, which causes an error */
       hashmapindex = hashmapindices + i+1;
       assert( ! SCIPhashmapExists(indexmap->indexcons, (void*) hashmapindex));
@@ -465,23 +465,23 @@ SCIP_RETCODE createRowindexList(
 {
    /* create the rowindices vector */
    int i;
-   int j;
-   vector<int> rowindices_row;
-   int nconss; /* number of constraints of the problem */
-   int nvars; /* number of variables in a constraint */
-   int* probindices;
-   int* hashmapindex;
-   SCIP_CONS* cons; /* one constraint of the problem */
-   SCIP_VAR** vars; /* array of variables that occur in a constraint (unequal zero) */
+   int nconss = SCIPgetNConss(scip);
 
-   nconss = SCIPgetNConss(scip);
    for( i = 0; i < nconss; ++i )
    {
-      hashmapindex = &detectordata->hashmapindices[i+1];
+      int j;
+      SCIP_CONS* cons;
+      SCIP_VAR** vars;
+      int nvars;
+      int* probindices;
+      vector<int> rowindices_row;
+      int* hashmapindex = &detectordata->hashmapindices[i+1];
+
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
+
       nvars = SCIPgetNVarsXXX(scip, cons);
       SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-      SCIPgetVarsXXX(scip, cons, vars, nvars);
+      SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
       /* allocate memory for the array of probindices */
       SCIP_CALL( SCIPallocMemoryArray(scip, &probindices, nvars) );
       /* fill the array with the indices of the variables of the current constraint */
@@ -679,8 +679,6 @@ SCIP_RETCODE rankOrderClusteringIteration(
    int i;
    int position;
    int* hashmapindex;
-   SCIP_CONS* cons;
-   SCIP_VAR* var;
 
    SCIPdebugMessage("Entering rankOrderClusteringIteration\n");
 
@@ -702,6 +700,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    /* consindex and indexcons */
    for( it1 = roworder.begin(), i = 0; it1 != roworder.end() && i < ncons; ++i,++it1 )
    {
+      SCIP_CONS* cons;
       position = *it1;
       hashmapindex = &detectordata->hashmapindices[position];
       cons = (SCIP_CONS*) SCIPhashmapGetImage(inputmap->indexcons, (void*) hashmapindex);
@@ -720,6 +719,7 @@ SCIP_RETCODE rankOrderClusteringIteration(
    /* varindex and indexvar */
    for( it1 = columnorder.begin(), i = 0; it1 != columnorder.end() &&i < nvars; ++i, ++it1 )
    {
+      SCIP_VAR* var;
       position = *it1;
       hashmapindex = &detectordata->hashmapindices[position];
       var = (SCIP_VAR*) SCIPhashmapGetImage(inputmap->indexvar, (void*) hashmapindex);
@@ -746,8 +746,6 @@ int rankOrderClustering(
    )
 {
    int i;
-   int nvars;
-   int nconss;
    INDEXMAP* indexmap_permuted;
    vector<vector<int> > rowindices;
    vector<vector<int> > columnindices;
@@ -764,8 +762,8 @@ int rankOrderClustering(
    }
    else
    {
-      nvars = SCIPgetNVars(scip);
-      nconss = SCIPgetNConss(scip);
+      int nvars = SCIPgetNVars(scip);
+      int nconss = SCIPgetNConss(scip);
 
       indexmapCreate(scip, &indexmap_permuted, nconss, nvars);
       SCIP_CALL( SCIPallocMemoryArray(scip, &ibegin_permuted, nconss) );
@@ -851,13 +849,12 @@ SCIP_RETCODE assignConsToBlock(
 {
    int i;
    int j;
-   int* hashmapindex;
-   SCIP_CONS* cons;
+
    /* assign the constraints to the current block */
    for( i = first_cons, j = 0; i <= last_cons; ++i, ++j )
    {
-      hashmapindex = &detectordata->hashmapindices[i];
-      cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
+      int* hashmapindex = &detectordata->hashmapindices[i];
+      SCIP_CONS* cons = (SCIP_CONS*) SCIPhashmapGetImage(detectordata->indexmap->indexcons, (void*) hashmapindex);
       assert(cons != NULL);
       /* insert cons into hash map vartoblock */
       assert(!SCIPhashmapExists(detectordata->constoblock, cons));
@@ -1080,12 +1077,10 @@ SCIP_RETCODE blockingDynamic(
    int block;
    int prev_block_first_row;
    int prev_block_last_row;
-   int current_row;
    int min_block_size;
    /* notation: i=current block; im1=i-1=previous block; ip1=i+1=next block */
    int max_col_index_im1;
    int min_col_index_ip1;
-   int max_col_index_i;
    vector<int>::iterator it1;
    /* debug */
    SCIPdebugMessage("Starting Blocking...\n");
@@ -1102,8 +1097,8 @@ SCIP_RETCODE blockingDynamic(
          it1 != detectordata->rowsWithConstrictions->end() && block < detectordata->maxblocks;
          it1 = nextRowToBlockAt(detectordata, it1, detectordata->rowsWithConstrictions, min_block_size, prev_block_first_row, prev_block_last_row) )
    {
-      current_row = * it1;
-      max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
+      int current_row = * it1;
+      int max_col_index_i = getMaxColIndex(detectordata, prev_block_last_row + 1, current_row);
       min_col_index_ip1 = getMinColIndex(detectordata, current_row + 1);
       SCIPdebugMessage("vars in block: %i - %i, linking vars: %i - %i\n", max_col_index_im1+1, max_col_index_i, min_col_index_ip1, max_col_index_i);
       /* assign the variables and constraints to block */
@@ -1240,23 +1235,20 @@ SCIP_RETCODE blocking(
    SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
-   int n;   /*  maximum width of the band after ROC */
-   int v;   /*  minimum width of the band after ROC */
-   int tau; /*  desired number of blocks */
-
-   tau = 0;
+   int tau = 0; /*  desired number of blocks */
 
    assert(*ndecdecomps == 0);
 
    SCIPdebugMessage("Entering Blocking\n");
+
    /* if multiple decompositions disabled */
    if( detectordata->multipledecomps == FALSE )
    {
       /* if desiredblocks == 0 let the algorithm determine the desired number of blocks */
       if( detectordata->desiredblocks == 0 )
       {
-         n = *std::max_element(detectordata->width, detectordata->width+ncons);
-         v = *std::min_element(detectordata->width, detectordata->width+ncons);
+         int n = *std::max_element(detectordata->width, detectordata->width+ncons);
+         int v = *std::min_element(detectordata->width, detectordata->width+ncons);
          tau = round((nvars - v)/(n - v));
          SCIPdebugMessage("<n><v><tau>: <%i><%i><%i>\n", n, v, tau);
          if( tau > detectordata->maxblocks )
