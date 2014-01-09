@@ -111,9 +111,9 @@ struct SCIP_ConshdlrData
 
 /** initializes array of cons */
 SCIP_RETCODE SCIPinitOrigconsArray(
-   SCIP*                 scip,                /**< SCIP data structure */
-   SCIP_CONS***           cons,
-   int                   ncons
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          cons,               /**< pointer to constraint array */
+   int                   ncons               /**< number of constraints in cons array */
    )
 {
    int i;
@@ -654,8 +654,8 @@ void GCGconsOrigbranchGetStack(
 
 /** returns the branching data for a given origbranch constraint */
 void GCGconsOrigbranchSetBranchdata(
-   SCIP_CONS*            cons,                /**< origbranch constraint for which the branching data is requested */
-   GCG_BRANCHDATA*       branchdata
+   SCIP_CONS*            cons,               /**< origbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -729,7 +729,7 @@ SCIP_CONS* GCGconsOrigbranchGetParentcons(
 /** returns the number of origbranch constraints of the vanderbeckchildarray of the node at which the
     given origbranch constraint is sticking */
 int GCGconsOrigbranchGetNChildcons(
-   SCIP_CONS*            cons                /**< constraint pointer */
+   SCIP_CONS*            cons                /**< constraint */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -743,8 +743,8 @@ int GCGconsOrigbranchGetNChildcons(
 /** returns the origbranch constraint of the vanderbeckchild of the node at which the
     given origbranch constraint is sticking */
 SCIP_CONS* GCGconsOrigbranchGetChildcons(
-   SCIP_CONS*            cons,                /**< constraint pointer */
-   int                   childnr
+   SCIP_CONS*            cons,               /**< constraint */
+   int                   childnr             /**< number of child */
    )
 {
    SCIP_CONSDATA* consdata;

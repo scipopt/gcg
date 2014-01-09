@@ -55,7 +55,7 @@
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings*/
-#define DEFAULT_NCONSSPERBLOCK                32       /**< number of constraints per block (static blocking only) */
+#define DEFAULT_NCONSSPERBLOCK               32       /**< number of constraints per block (static blocking only) */
 #define DEFAULT_MAXBLOCKS                    20       /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MINBLOCKS                    2        /**< value for the minimum number of blocks to be considered */
 #define DEFAULT_DESIREDBLOCKS                0        /**< value for the desired number of blocks (for all blocking types). Set to zero for self determination of block number */
@@ -79,43 +79,39 @@ using std::swap;
 /** A struct that contains 4 hashmaps, which maps variables and constraints to their position in the constraint matrix (Ax<=b) and vice versa */
 struct IndexMap
 {
-   /** index in problem -> constraint */
-   SCIP_HASHMAP* indexcons;
-   /** constraint -> index in problem */
-   SCIP_HASHMAP* consindex;
-   /** index in problem -> variable */
-   SCIP_HASHMAP* indexvar;
-   /** variable -> index in problem */
-   SCIP_HASHMAP* varindex;
+   SCIP_HASHMAP*         indexcons;          /**< index in problem -> constraint */
+   SCIP_HASHMAP*         consindex;          /**< constraint -> index in problem */
+   SCIP_HASHMAP*         indexvar;           /**< index in problem -> variable */
+   SCIP_HASHMAP*         varindex;           /** variable -> index in problem */
 };
 typedef struct IndexMap INDEXMAP;
 
 /** detector data */
 struct DEC_DetectorData
 {
-   SCIP_HASHMAP* constoblock;
-   int blocks;
-   int nconssperblock;  /**< constraints per block (static blocking only) */
-   int maxblocks;
-   int minblocks;
-   INDEXMAP* indexmap;
-   int* ibegin; /* array, ibegin[i]: index of first nonzero entry in row i */
-   int* iend;   /* array, iend[i]: index of last nonzero entry in row i */
-   int* jbegin; /* array, jbegin[j]: index of first nonzero entry in column j */
-   int* jend;   /* array, jend[j]: index of last nonzero entry in column j */
-   int* jmin;   /* array, jmin[i]: index of first nonzero column of the i-th row */
-   int* jmax;   /* array, jmax[i]: the last nonzero entry among all rows prior to and including the i-th row */
-   int* minV;   /* array, minV[i]: number of linking variables corresponding to a partitioning after the i-th row */
-   int* width;  /* array, width[i]: width of the band (of nonzero entries after ROC) at row i */
-   int* hashmapindices;  /* array with integers running from 0 to maximum(nvars, ncons)+1 (for usage of hash maps) */
-   vector<int>* rowsWithConstrictions;
-   vector<int>* blockedAfterrow;
-   int desiredblocks;
-   SCIP_Bool dynamicblocking;  /* Enable blocking type 'dynamic' */
-   SCIP_Bool staticblocking;  /* Enable blocking type 'static' */
-   SCIP_Bool blockingassoonaspossible;  /* Enable blocking type 'as soon as possible' */
-   SCIP_Bool multipledecomps;  /* Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks */
-   int maxiterationsROC;
+   SCIP_HASHMAP*         constoblock;        /**< hashmap mapping constraints to blocks */
+   int                   blocks;             /**< number of blocks */
+   int                   nconssperblock;     /**< number of constraints per block (static blocking only) */
+   int                   maxblocks;          /**< maximum number of constraints per block */
+   int                   minblocks;          /**< minimum number of constraints per block */
+   INDEXMAP*             indexmap;           /**< index map (contains 4 hashmaps) */
+   int*                  ibegin;             /**< array, ibegin[i]: index of first nonzero entry in row i */
+   int*                  iend;               /**< array, iend[i]: index of last nonzero entry in row i */
+   int*                  jbegin;             /**< array, jbegin[j]: index of first nonzero entry in column j */
+   int*                  jend;               /**< array, jend[j]: index of last nonzero entry in column j */
+   int*                  jmin;               /**< array, jmin[i]: index of first nonzero column of the i-th row */
+   int*                  jmax;               /**< array, jmax[i]: the last nonzero entry among all rows prior to and including the i-th row */
+   int*                  minV;               /**< array, minV[i]: number of linking variables corresponding to a partitioning after the i-th row */
+   int*                  width;              /**< array, width[i]: width of the band (of nonzero entries after ROC) at row i */
+   int*                  hashmapindices;     /**< array with integers running from 0 to maximum(nvars, ncons)+1 (for usage of hash maps) */
+   vector<int>*          rowsWithConstrictions;
+   vector<int>*          blockedAfterrow;
+   int                   desiredblocks;
+   SCIP_Bool             dynamicblocking;    /**< Enable blocking type 'dynamic' */
+   SCIP_Bool             staticblocking;     /**< Enable blocking type 'static' */
+   SCIP_Bool             blockingassoonaspossible; /**< Enable blocking type 'as soon as possible' */
+   SCIP_Bool             multipledecomps;    /**< Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks */
+   int                   maxiterationsROC;
 };
 
 /*
@@ -125,7 +121,9 @@ struct DEC_DetectorData
 /* put your local methods here, and declare them static */
 
 /* debugging methods */
-void printnested(vector<vector<int> > l)
+void printnested(
+   vector<vector<int> >  l
+   )
 {
    vector<int>::iterator inner;
    vector<vector<int> >::iterator outer;
@@ -142,7 +140,9 @@ void printnested(vector<vector<int> > l)
    SCIPdebugPrintf("Done\n");
 }
 
-void printvector(vector<int > l)
+void printvector(
+   vector<int >          l
+   )
 {
    vector<int>::iterator inner;
    for( inner = l.begin(); inner != l.end(); ++inner)
@@ -185,7 +185,9 @@ vector<int> SCIPvectorCreateInt(
  * both vectors must have the same size
  * order must have elements from 1 to vector->size */
 static
-void SCIPvectorRearrange(vector<vector<int> > &l, vector<int> order)
+void SCIPvectorRearrange(
+   vector<vector<int> >  &l,
+   vector<int>           order)
 {
 
    vector<vector<int> > new_vector;
@@ -203,10 +205,10 @@ void SCIPvectorRearrange(vector<vector<int> > &l, vector<int> order)
 /** allocates memory for an indexmap. */
 static
 SCIP_RETCODE indexmapCreate(
-      SCIP* scip,          /**< SCIP data structure  */
-      INDEXMAP** indexmap, /**< address of the pointer which shall store the index map*/
-      int nconss,          /**< number of constraints */
-      int nvars            /**< number of variables */
+      SCIP*              scip,               /**< SCIP data structure  */
+      INDEXMAP**         indexmap,           /**< address of the pointer which shall store the index map*/
+      int                nconss,             /**< number of constraints */
+      int                nvars               /**< number of variables */
       )
 {
    INDEXMAP* imap;
@@ -227,7 +229,10 @@ SCIP_RETCODE indexmapCreate(
 
 /** deallocates memory of indexmap. */
 static
-void indexmapFree(SCIP* scip, INDEXMAP** indexmap)
+void indexmapFree(
+   SCIP*                 scip,               /**< SCIP data structure */
+   INDEXMAP**            indexmap            /**< index map */
+   )
 {
    SCIPhashmapFree(&(*indexmap)->indexvar);
    SCIPhashmapFree(&(*indexmap)->varindex);
@@ -237,7 +242,14 @@ void indexmapFree(SCIP* scip, INDEXMAP** indexmap)
 }
 
 static
-SCIP_RETCODE indexmapInit(INDEXMAP* indexmap, SCIP_VAR** vars, int nvars, SCIP_CONS** conss, int nconss, int* hashmapindices)
+SCIP_RETCODE indexmapInit(
+   INDEXMAP*            indexmap,                  /**< index map */
+   SCIP_VAR**           vars,                      /**< array of variables */
+   int                  nvars,                     /**< number of variables */
+   SCIP_CONS**          conss,                     /**< array of constraints */
+   int                  nconss,                    /**< number of constraints */
+   int*                 hashmapindices
+   )
 {
    int i;
    int* hashmapindex;
@@ -444,11 +456,11 @@ void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
  */
 static
 SCIP_RETCODE createRowindexList(
-   SCIP*                  scip,              /**< SCIP data structure */
-   DEC_DETECTORDATA*      detectordata,      /**< presolver data data structure */
-   SCIP_HASHMAP*          indexcons,         /**< hashmap index -> constraint */
-   SCIP_HASHMAP*          varindex,          /**< hashmap variable -> index*/
-   vector<vector<int> >       &rowindices         /**< vector to store the row indices vector*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   SCIP_HASHMAP*         indexcons,          /**< hashmap index -> constraint */
+   SCIP_HASHMAP*         varindex,           /**< hashmap variable -> index*/
+   vector<vector<int> >  &rowindices         /**< vector to store the row indices vector*/
       )
 {
    /* create the rowindices vector */
@@ -517,10 +529,10 @@ SCIP_RETCODE createRowindexList(
  */
 static
 SCIP_RETCODE createColumnindexList(
-   SCIP* scip,                               /**< SCIP data structure */
-   DEC_DETECTORDATA* detectordata,           /**< detector data data structure */
-   vector<vector<int> > &rowindices,              /**< A vector with the row indices (achieved from calling rowindices_vector() ) */
-   vector<vector<int> > &columnindices            /**< vector to store the column indices vector*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data data structure */
+   vector<vector<int> >  &rowindices,        /**< A vector with the row indices (achieved from calling rowindices_vector() ) */
+   vector<vector<int> >  &columnindices      /**< vector to store the column indices vector*/
 )
 {
    int position;
@@ -559,9 +571,9 @@ SCIP_RETCODE createColumnindexList(
  * @return A vector with the new row order. E.g. (2 3 1) means the second row comes first now, and so on. */
 static
 vector<int> rowOrdering(
-   SCIP* scip,
-   vector<vector<int> > &columnindices,
-   int nrows
+   SCIP*                 scip,               /**< SCIP data structure */
+   vector<vector<int> >  &columnindices,
+   int                   nrows               /**< number of rows */
    )
 {
    vector<int> roworder;
@@ -599,9 +611,9 @@ vector<int> rowOrdering(
  * @param indices columnindices vector (rowindices vector) */
 static
 SCIP_RETCODE formIndexArray(
-   int* begin,
-   int* end,
-   vector<vector<int> > &indices
+   int*                  begin,
+   int*                  end,
+   vector<vector<int> >  &indices
    )
 {
    vector<vector<int> >::iterator it1;
@@ -629,9 +641,9 @@ SCIP_RETCODE formIndexArray(
 /**returns FALSE if at least one entry of new_array and old_array are different.*/
 static
 SCIP_Bool arraysAreEqual(
-   int* new_array,
-   int* old_array,
-   int num_elements
+   int*                  new_array,          /**< new array */
+   int*                  old_array,          /**< old array */
+   int                   num_elements        /**< length of arrays */
    )
 {
    int i;
@@ -728,9 +740,9 @@ SCIP_RETCODE rankOrderClusteringIteration(
 
 static
 int rankOrderClustering(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata,
-   int max_iterations
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   max_iterations      /**< number of maximal iterations */
    )
 {
    int i;
@@ -807,8 +819,8 @@ int rankOrderClustering(
 /** finds rows with local minima regarding the number of linking variables and stores them in detectordata->rowsWithConstrictions */
 static
 SCIP_RETCODE rowsWithConstriction(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    /* if blocking is performed after row i+1; local minima */
@@ -830,11 +842,11 @@ SCIP_RETCODE rowsWithConstriction(
 /** assigns constraints in the interval [first_cons, last_cons] to 'block'. */
 static
 SCIP_RETCODE assignConsToBlock(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata,
-   int block,
-   int first_cons,
-   int last_cons
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   block,              /**< id of block */
+   int                   first_cons,         /**< index of first constraint to assign */
+   int                   last_cons           /**< index of last constraint to assign */
    )
 {
    int i;
@@ -858,9 +870,9 @@ SCIP_RETCODE assignConsToBlock(
 /** returns the largest column index of a nonzero entry between rows [from_row, to_row] */
 static
 int getMaxColIndex(
-   DEC_DETECTORDATA* detectordata,
-   int from_row,
-   int to_row
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   from_row,           /**< index of starting row to check */
+   int                   to_row              /**< index of last row to check */
    )
 {
    /* some pointer arithmetic */
@@ -870,8 +882,8 @@ int getMaxColIndex(
 /** returns the column index of the first nonzero entry in 'row'. Rows start counting at 1, not 0. */
 static
 int getMinColIndex(
-   DEC_DETECTORDATA* detectordata,
-   int row
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   row                 /**< index of row */
    )
 {
    return detectordata->ibegin[row-1];
@@ -887,10 +899,10 @@ int getMinColIndex(
  */
 static
 SCIP_Bool isValidBlocking(
-   DEC_DETECTORDATA* detectordata,
-   int prev_block_first_row,
-   int prev_block_last_row,
-   int block_at_row
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   int                   prev_block_first_row,
+   int                   prev_block_last_row,
+   int                   block_at_row
    )
 {
    int last_column_prev_block;
@@ -916,9 +928,9 @@ SCIP_Bool isValidBlocking(
 static
 vector<int>::iterator findBlockingCandidate(
    vector<int>::iterator it_constrictions,
-   vector<int>* it_vector,
-   int min_block_size,
-   int prev_block_last_row
+   vector<int>*          it_vector,
+   int                   min_block_size,
+   int                   prev_block_last_row
    )
 {
    for( ;; )
@@ -950,12 +962,12 @@ vector<int>::iterator findBlockingCandidate(
  */
 static
 vector<int>::iterator nextRowToBlockAt(
-   DEC_DETECTORDATA* detectordata,
+   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
    vector<int>::iterator it_constrictions,
-   vector<int>* it_vector,
-   int min_block_size,
-   int prev_block_first_row,
-   int prev_block_last_row
+   vector<int>*          it_vector,
+   int                   min_block_size,
+   int                   prev_block_first_row,
+   int                   prev_block_last_row
    )
 {
 
@@ -994,7 +1006,7 @@ vector<int>::iterator nextRowToBlockAt(
 
 static
 int calculateNdecompositions(
-   DEC_DETECTORDATA* detectordata
+   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
    )
 {
    int nblockingtypes;
@@ -1030,8 +1042,8 @@ int calculateNdecompositions(
 
 static
 void checkParameterConsistency(
-   DEC_DETECTORDATA* detectordata,
-   SCIP_RESULT* result
+   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
+   SCIP_RESULT*          result                         /**< pointer to store result */
    )
 {
    /* maxblocks < nRelevantsCons? */
@@ -1059,7 +1071,7 @@ void checkParameterConsistency(
 /** tries to dynamically divide the problem into subproblems (blocks)*/
 static
 SCIP_RETCODE blockingDynamic(
-   SCIP*                 scip,               /**< scip object */
+   SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    int                   tau,                /**< desired number of blocks */
    int                   nvars               /**< number of variables in the problem*/
@@ -1128,8 +1140,8 @@ SCIP_RETCODE blockingDynamic(
 /** creates blocks with the same number of rows*/
 static
 SCIP_RETCODE blockingStatic(
-   SCIP*                 scip,               /**< scip object */
-   DEC_DETECTORDATA*    detectordata         /**< presolver data data structure */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
    )
 {
    int nblocks;
@@ -1186,10 +1198,10 @@ SCIP_RETCODE blockingStatic(
 
 static
 SCIP_RETCODE blockingAsSoonAsPossible(
-   SCIP* scip,                      /**< scip object */
-   DEC_DETECTORDATA* detectordata,  /**< presolver data data structure */
-   int desired_blocks,              /**< desired number of blocks */
-   int nvars                        /**< number of variables in the problem*/
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
+   int                   desired_blocks,     /**< desired number of blocks */
+   int                   nvars               /**< number of variables in the problem*/
 )
 {
    int block;
@@ -1202,8 +1214,8 @@ SCIP_RETCODE blockingAsSoonAsPossible(
 /** resets detectordata such that it can be used for the next decomposition */
 static
 SCIP_RETCODE resetDetectordata(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    if(detectordata->constoblock != NULL)
@@ -1219,13 +1231,13 @@ SCIP_RETCODE resetDetectordata(
 
 static
 SCIP_RETCODE blocking(
-   SCIP* scip,
-   DEC_DETECTORDATA* detectordata,
-   DEC_DECOMP*** decdecomps,
-   int* ndecdecomps,
-   int nvars,
-   int ncons,
-   SCIP_RESULT* result
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   DEC_DECOMP***         decdecomps,
+   int*                  ndecdecomps,
+   int                   nvars,              /**< number of variables */
+   int                   ncons,              /**< number of constraints */
+   SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
    int n;   /*  maximum width of the band after ROC */

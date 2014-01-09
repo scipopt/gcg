@@ -43,9 +43,9 @@ extern "C" {
 extern
 /** initializes array of cons */
 SCIP_RETCODE SCIPinitOrigconsArray(
-   SCIP*                 scip,                /**< SCIP data structure */
-   SCIP_CONS***           cons,
-   int                   ncons
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_CONS***          cons,               /**< pointer to constraint array */
+   int                   ncons               /**< number of constraints in cons array */
    );
 
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
@@ -85,8 +85,8 @@ void GCGconsOrigbranchGetStack(
 /** set the branching data for a given origbranch constraint */
 extern
 void GCGconsOrigbranchSetBranchdata(
-   SCIP_CONS*            cons,                /**< origbranch constraint for which the branching data is requested */
-   GCG_BRANCHDATA*       branchdata
+   SCIP_CONS*            cons,               /**< origbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
    );
 
 /** returns the branching data for a given origbranch constraint */
@@ -126,8 +126,8 @@ int GCGconsOrigbranchGetNChildcons(
     given masterbranch constraint is sticking */
 extern
 SCIP_CONS* GCGconsOrigbranchGetChildcons(
-   SCIP_CONS*            cons,                /**< constraint pointer */
-   int                   childnr
+   SCIP_CONS*            cons,               /**< constraint */
+   int                   childnr             /**< number of child */
    );
 
 /** returns the origbranch constraint of the first child of the node at which the
