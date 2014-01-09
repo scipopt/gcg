@@ -1006,7 +1006,7 @@ vector<int>::iterator nextRowToBlockAt(
 
 static
 int calculateNdecompositions(
-   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
+   DEC_DETECTORDATA*     detectordata                  /**< detector data structure */
    )
 {
    int nblockingtypes;
