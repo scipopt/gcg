@@ -3020,7 +3020,7 @@ SCIP_RETCODE DECdetermineConsBlock(
    if( ncurvars > 0 && *block == -2 )
       *block = nblocks;
 
-   if( npricingvars == 0 && nmastervars > 0)
+   if( npricingvars == 0 && nmastervars > 0 )
       *block = -1;
 
    return SCIP_OKAY;
@@ -3102,7 +3102,7 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
       int block;
       SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
 
-      if( block == DECdecompGetNBlocks(decomp) || block < 0)
+      if( block == DECdecompGetNBlocks(decomp) || block < 0 )
       {
          continue;
       }
@@ -3127,7 +3127,7 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    return SCIP_OKAY;
 }
 
-/** Removes a variable from the linking variable array */
+/** removes a variable from the linking variable array */
 SCIP_RETCODE DECdecompRemoveLinkingVar(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition */
@@ -3155,10 +3155,10 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
 
    if( *success )
    {
-      if( decomp->nlinkingvars == 0)
+      if( decomp->nlinkingvars == 0 )
       {
          SCIPfreeMemoryArrayNull(scip, &decomp->linkingvars);
-         if( DECdecompGetNLinkingconss(decomp) == 0)
+         if( DECdecompGetNLinkingconss(decomp) == 0 )
          {
             SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL) );
          }
@@ -3201,7 +3201,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
       SCIP_HASHMAP* constoblock;
       SCIP_CALL( DECdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
 
-      if( block >= 0)
+      if( block >= 0 )
       {
          continue;
       }

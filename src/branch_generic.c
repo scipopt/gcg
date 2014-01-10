@@ -189,16 +189,16 @@ SCIP_RETCODE createDirectBranchingCons(
    /*  create constraint for child */
    if( branchdata->consS[0].sense == GCG_COMPSENSE_GE )
    {
-      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL, branchdata->consS[0].bound, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE));
+      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL, branchdata->consS[0].bound, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    } else
    {
-      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL, -SCIPinfinity(scip), branchdata->consS[0].bound-1, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE));
+      SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL, -SCIPinfinity(scip), branchdata->consS[0].bound-1, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    }
    assert(GCGvarIsMaster(branchdata->consS[0].component));
-   SCIP_CALL( SCIPaddCoefLinear(scip, branchdata->mastercons, branchdata->consS[0].component, 1.0));
+   SCIP_CALL( SCIPaddCoefLinear(scip, branchdata->mastercons, branchdata->consS[0].component, 1.0) );
 
    /* add constraint to the master problem that enforces the branching decision */
-   SCIP_CALL(SCIPaddConsNode(scip, node, branchdata->mastercons, NULL));
+   SCIP_CALL( SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
 
    return SCIP_OKAY;
 }
@@ -225,7 +225,7 @@ SCIP_RETCODE createBranchingCons(
    SCIP_CALL( SCIPcreateConsLinear(scip, &(branchdata->mastercons), name, 0, NULL, NULL,
          branchdata->lhs, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
 
-   SCIP_CALL(SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
+   SCIP_CALL( SCIPaddConsNode(scip, node, branchdata->mastercons, NULL) );
 
    return SCIP_OKAY;
 }
@@ -1044,7 +1044,7 @@ SCIP_RETCODE Separate(
       {
          ++Jsize;
       }
-      if( !SCIPisFeasIntegral(scip, alpha[k]))
+      if( !SCIPisFeasIntegral(scip, alpha[k]) )
       {
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
          found = TRUE;
@@ -1461,7 +1461,7 @@ SCIP_RETCODE Explore(
 
       SCIP_CALL( Separate( scip, F, Fsize, IndexSet, IndexSetSize, *S, *Ssize, record) );
 
-      if( *Ssize > 0 && *S != NULL)
+      if( *Ssize > 0 && *S != NULL )
       {
          SCIPfreeMemoryArrayNull(scip, S);
          *S = NULL;
