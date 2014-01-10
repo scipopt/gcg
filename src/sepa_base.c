@@ -317,11 +317,15 @@ SCIP_RETCODE origScipChgObj(
 static
 SCIP_RETCODE origScipInitObjOrig(
    SCIP*                origscip,           /**< orig scip problem */
+   SCIP_SEPADATA*       sepadata,           /**< separator specific data */
    SCIP_SOL*            origsol,            /**< orig solution */
    SCIP_Bool            enableobj,          /**< returns if objective row was added to the lp */
    SCIP_Real            objfactor           /**< factor the objective is multiplied with */
 )
 {
+   SCIP_Bool enableposslack;
+   int posslackexp;
+
    SCIP_VAR** origvars;
    int norigvars;
    SCIP_VAR* origvar;
@@ -330,12 +334,15 @@ SCIP_RETCODE origScipInitObjOrig(
    SCIP_Real ub;
    SCIP_Real solval;
    SCIP_Real newobj;
+   SCIP_Real distance;
 
    int i;
 
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
 
+   enableposslack = sepadata->posslackexp;
+   posslackexp = sepadata->posslackexp;
 
    /** loop over original variables */
    for(i = 0; i < norigvars; ++i)
@@ -359,6 +366,29 @@ SCIP_RETCODE origScipInitObjOrig(
       else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisEQ(origscip, lb, solval))
       {
          newobj = 1.0;
+      }
+      else if(enableposslack)
+      {
+         /* compute distance from solution to variable bound */
+         distance = MIN(solval - lb, ub - solval);
+
+         assert(SCIPisPositive(origscip, distance));
+
+         /* check if distance is lower than 1 and compute factor */
+         if(SCIPisLT(origscip, distance, 1.0))
+         {
+            newobj = exponentiate(MAX(0.0, 1.0 - distance), posslackexp);
+
+            /* check if algebraic sign has to be changed */
+            if(SCIPisLT(origscip, distance, solval - lb))
+               newobj = -newobj;
+
+            SCIPinfoMessage(origscip, NULL, "newobj = %f\n", newobj);
+         }
+         else
+         {
+            newobj = 0.0;
+         }
       }
       else
       {
@@ -389,6 +419,9 @@ SCIP_RETCODE origScipChgObjAllRows(
    SCIP_Real            objdivisor          /**< factor the objective is divided with */
 )
 {
+   SCIP_Bool enableposslack;
+   int posslackexp;
+
    SCIP_ROW** rows;
    int nrows;
    SCIP_ROW* row;
@@ -405,12 +438,16 @@ SCIP_RETCODE origScipChgObjAllRows(
    SCIP_Real objadd;
    SCIP_Real obj;
    SCIP_Real norm;
+   SCIP_Real distance;
 
    int i;
    int j;
 
    rows = SCIPgetLPRows(origscip);
    nrows = SCIPgetNLPRows(origscip);
+
+   enableposslack = sepadata->posslackexp;
+   posslackexp = sepadata->posslackexp;
 
    assert(SCIPinDive(origscip));
 
@@ -436,14 +473,7 @@ SCIP_RETCODE origScipChgObjAllRows(
          vars[j] = SCIPcolGetVar(cols[j]);
       }
 
-      activity = SCIPgetRowSolActivity(origscip, row, origsol) + SCIProwGetConstant(row);
-
-      //if(!SCIPisLE(origscip, activity, rhs) || !SCIPisGE(origscip, activity, lhs))
-      //{
-        //SCIPdebugMessage("Something has gone wrong at %s: %f <= %f <= %f \n", SCIProwGetName(row), lhs, activity, rhs);
-        /* SCIPisCutEfficacious(origscip, origsol, row) should be false if we did not find cut in cut pool. found cuts are not deleted from cutpool */
-      //}
-
+      activity = SCIPgetRowSolActivity(origscip, row, origsol);
 
       if(SCIPisEQ(origscip, rhs, lhs))
       {
@@ -452,11 +482,40 @@ SCIP_RETCODE origScipChgObjAllRows(
       if(SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisEQ(origscip, rhs, activity))
       {
          factor = -1.0;
-
       }
       else if(SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisEQ(origscip, lhs, activity))
       {
          factor = 1.0;
+      }
+      else if(enableposslack)
+      {
+         assert(!(SCIPisInfinity(origscip, rhs) && SCIPisInfinity(origscip, lhs)));
+         assert(!(SCIPisInfinity(origscip, activity) && SCIPisInfinity(origscip, -activity)));
+
+         /* compute distance from solution to row */
+         if(SCIPisInfinity(origscip, rhs) && SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)))
+            distance = activity - lhs;
+         else if(SCIPisInfinity(origscip, lhs) && SCIPisLT(origscip, rhs, SCIPinfinity(origscip)))
+            distance = rhs - activity;
+         else
+            distance = MIN(activity - lhs, rhs - activity);
+
+         assert(SCIPisPositive(origscip, distance));
+         /* check if distance is lower than 1 and compute factor */
+         if(SCIPisLT(origscip, distance, 1.0))
+         {
+            factor = exponentiate(MAX(0.0, 1.0 - distance), posslackexp);
+
+            /* check if algebraic sign has to be changed */
+            if(SCIPisLT(origscip, distance, activity - lhs))
+               factor = -1.0*factor;
+
+            SCIPinfoMessage(origscip, NULL, "factor = %f\n", factor);
+         }
+         else
+         {
+            continue;
+         }
       }
       else
       {
@@ -1400,7 +1459,7 @@ SCIP_RETCODE initConvObj(
       SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
       objnormnull = SCIPgetObjNorm(origscip);
 
-      SCIP_CALL( origScipInitObjOrig(origscip, origsol, FALSE, 1.0-convex) );
+      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, FALSE, 1.0-convex) );
       SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, 1.0-convex, 1.0) );
 
       objnormcurrent = SCIPgetObjNorm(origscip)/(1.0-convex);
@@ -1412,7 +1471,7 @@ SCIP_RETCODE initConvObj(
    }
    else if(SCIPisEQ(origscip, convex, 1.0))
    {
-      SCIP_CALL( origScipInitObjOrig(origscip, origsol, !genericconv && sepadata->enableobj, 1.0) );
+      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, !genericconv && sepadata->enableobj, 1.0) );
       SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, 1.0, 1.0) );
    }
    return SCIP_OKAY;
