@@ -151,9 +151,9 @@ ptrarraycoefs(NULL), ptrarrayvars(NULL), ptrarrayconss(NULL)
 }
 
 /** inserts a variable to the pointer array of colorinformation */
-void struct_colorinformation::insert(
-   AUT_VAR*                svar,              /**< variable which is to add */
-   SCIP_Bool*              added             /**< true if a variable was added */
+SCIP_RETCODE struct_colorinformation::insert(
+   AUT_VAR*              svar,               /**< variable which is to add */
+   SCIP_Bool*            added               /**< true if a variable was added */
    )
 {
    int pos;
@@ -165,10 +165,12 @@ void struct_colorinformation::insert(
    }
    else
       *added = FALSE;
+
+   return SCIP_OKAY;
 }
 
 /** inserts a constraint to the pointer array of colorinformation */
-void struct_colorinformation::insert(
+SCIP_RETCODE struct_colorinformation::insert(
    AUT_CONS*             scons,              /**< constraint which is to add */
    SCIP_Bool*            added               /**< true if a constraint was added */
    )
@@ -184,10 +186,12 @@ void struct_colorinformation::insert(
    }
    else
       *added = FALSE;
+
+   return SCIP_OKAY;
 }
 
 /** inserts a coefficient to the pointer array of colorinformation */
-void struct_colorinformation::insert(
+SCIP_RETCODE struct_colorinformation::insert(
    AUT_COEF*             scoef,              /**< coefficient which is to add */
    SCIP_Bool*            added               /**< true if a coefficient was added */
    )
@@ -198,7 +202,7 @@ void struct_colorinformation::insert(
       int size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray+1);
       if( this->alloccoefsarray == 0 || this->lencoefsarray % this->alloccoefsarray == 0)
       {
-         SCIP_CALL_ABORT( SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size) );
          this->alloccoefsarray = size;
       }
 
@@ -209,6 +213,7 @@ void struct_colorinformation::insert(
    else
       *added = FALSE;
 
+   return SCIP_OKAY;
 }
 
 int struct_colorinformation::get(

@@ -228,7 +228,7 @@ SCIP_RETCODE setuparrays(
    //allocate max n of coefarray, varsarray, and boundsarray in scip
    nconss = SCIPgetNConss(scip);
    nvars = SCIPgetNVars(scip);
-   allocMemory(scip, colorinfo, nconss, nvars);
+   SCIP_CALL( allocMemory(scip, colorinfo, nconss, nvars) );
 
    conss = SCIPgetConss(scip);
    vars = SCIPgetVars(scip);
@@ -238,7 +238,7 @@ SCIP_RETCODE setuparrays(
    {
       AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
       //add to pointer array iff it doesn't exist
-      colorinfo->insert(svar, &added);
+      SCIP_CALL( colorinfo->insert(svar, &added) );
 //      SCIPdebugMessage("%s color %d %d\n", SCIPvarGetName(vars[i]), colorinfo->get(*svar), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
@@ -255,7 +255,7 @@ SCIP_RETCODE setuparrays(
       scons = new AUT_CONS(scip, conss[i]);
       //add to pointer array iff it doesn't exist
       //SCIPdebugMessage("nconss %d %d\n", nconss, *result);
-      colorinfo->insert(scons, &added);
+      SCIP_CALL( colorinfo->insert(scons, &added) );
   //    SCIPdebugMessage("%s color %d %d\n", SCIPconsGetName(conss[i]), colorinfo->get(*scons), colorinfo->color);
       //otherwise free allocated memory
       if( !added )
@@ -271,7 +271,7 @@ SCIP_RETCODE setuparrays(
          if( !SCIPisEQ(scip, scoef->getVal(), 0) )
          {
             //add to pointer array iff it doesn't exist
-            colorinfo->insert(scoef, &added);
+            SCIP_CALL( colorinfo->insert(scoef, &added) );
 //            SCIPdebugMessage("%f color %d %d\n", scoef->getVal(), colorinfo->get(*scoef), colorinfo->color);
          }
          //otherwise free allocated memory
@@ -439,8 +439,8 @@ static DEC_DECL_INITDETECTOR(initIsomorphism)
  * @return the number of permutations
  */
 int renumberPermutations(
-   int*                  permutation,          /**< the permutation */
-   int                   permsize              /**< size of the permutation */
+   int*                  permutation,        /**< the permutation */
+   int                   permsize            /**< size of the permutation */
 )
 {
    // renumbering from 0 to number of permutations
@@ -472,8 +472,8 @@ int renumberPermutations(
 
 /** collapses the permutation, if possible */
 void collapsePermutation(
-   int*                  permutation,          /**< the permutation */
-   int                   permsize              /**< size of the permutation */
+   int*                  permutation,        /**< the permutation */
+   int                   permsize            /**< size of the permutation */
 )
 {
    int tmp = 0;
@@ -588,7 +588,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
 
 /** creates the handler for connected constraints and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionIsomorphism(
-   SCIP* scip /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    DEC_DETECTORDATA* detectordata;

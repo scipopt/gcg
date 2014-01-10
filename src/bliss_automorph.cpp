@@ -51,19 +51,19 @@ typedef struct struct_hook AUT_HOOK;
 /** saves information of the permutation */
 struct struct_hook
 {
-   SCIP_Bool aut;                           /**< true if there is an automorphism */
-   unsigned int n;                          /**< number of permutations */
-   SCIP_HASHMAP* varmap;                    /**< hashmap for permutated variables */
-   SCIP_HASHMAP* consmap;                   /**< hashmap for permutated constraints */
-   SCIP** scips;                            /**< array of scips to search for automorphisms */
+   SCIP_Bool aut;                            /**< true if there is an automorphism */
+   unsigned int n;                           /**< number of permutations */
+   SCIP_HASHMAP* varmap;                     /**< hashmap for permutated variables */
+   SCIP_HASHMAP* consmap;                    /**< hashmap for permutated constraints */
+   SCIP** scips;                             /**< array of scips to search for automorphisms */
 
    /** constructor for the hook struct*/
    struct_hook(
-      SCIP_HASHMAP* varmap,                 /**< hashmap for permutated variables */
-      SCIP_HASHMAP* consmap,                /**< hashmap for permutated constraints */
-      SCIP_Bool aut,                        /**< true if there is an automorphism */
-      unsigned int n,                       /**< number of permutations */
-      SCIP** scips                          /**< array of scips to search for automorphisms */
+      SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
+      SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
+      SCIP_Bool aut,                         /**< true if there is an automorphism */
+      unsigned int n,                        /**< number of permutations */
+      SCIP** scips                           /**< array of scips to search for automorphisms */
       );
 
    /** getter for the bool aut */
@@ -117,11 +117,11 @@ SCIP** struct_hook::getScips()
 
 /** constructor of the hook struct */
 struct_hook::struct_hook(
-   SCIP_HASHMAP* varmap_,                   /**< hashmap of permutated variables */
-   SCIP_HASHMAP* consmap_,                  /**< hahsmap of permutated constraints */
-   SCIP_Bool aut_,                          /**< true if there is an automorphism */
-   unsigned int n_,                         /**< number of permutations */
-   SCIP** scips_                            /**< array of scips to search for automorphisms */
+   SCIP_HASHMAP*         varmap_,            /**< hashmap of permutated variables */
+   SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
+   SCIP_Bool             aut_,               /**< true if there is an automorphism */
+   unsigned int          n_,                 /**< number of permutations */
+   SCIP**                scips_              /**< array of scips to search for automorphisms */
    )
 {
    aut = aut_;
@@ -134,9 +134,9 @@ struct_hook::struct_hook(
 /** hook function to save the permutation of the graph */
 static
 void hook(
-   void* user_param,                 /**< data structure to save hashmaps with permutation */
-   unsigned int N,                          /**< number of permutations */
-   const unsigned int *aut                  /**< array of permutations */
+   void*                 user_param,         /**< data structure to save hashmaps with permutation */
+   unsigned int          N,                  /**< number of permutations */
+   const unsigned int*   aut                 /**< array of permutations */
    )
 {
 
@@ -226,9 +226,9 @@ void hook(
 /** tests if two scips have the same number of variables */
 static
 SCIP_RETCODE testScipVars(
-   SCIP* scip1,                             /**< first SCIP data structure */
-   SCIP* scip2,                             /**< second SCIP data structure */
-   SCIP_RESULT* result                      /**< result pointer to indicate success or failure */
+   SCIP*                 scip1,              /**< first SCIP data structure */
+   SCIP*                 scip2,              /**< second SCIP data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
    if(SCIPgetNVars(scip1) != SCIPgetNVars(scip2))
@@ -241,9 +241,9 @@ SCIP_RETCODE testScipVars(
 /** tests if two scips have the same number of constraints */
 static
 SCIP_RETCODE testScipCons(
-   SCIP* scip1,                             /**< first SCIP data structure */
-   SCIP* scip2,                             /**< second SCIP data structure */
-   SCIP_RESULT* result                      /**< result pointer to indicate success or failure */
+   SCIP*                 scip1,              /**< first SCIP data structure */
+   SCIP*                 scip2,              /**< second SCIP data structure */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
    if(SCIPgetNConss(scip1) != SCIPgetNConss(scip2))
@@ -253,11 +253,12 @@ SCIP_RETCODE testScipCons(
    return SCIP_OKAY;
 }
 
+/** constructor for colorinfo arrays */
 static SCIP_RETCODE allocMemory(
-   SCIP* scip,                              /**< SCIP data structure */
-   AUT_COLOR* colorinfo,                    /**< struct to save intermediate information */
-   int nconss,                              /**< number of constraints */
-   int nvars                                /**< number of variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
+   int                   nconss,             /**< number of constraints */
+   int                   nvars               /**< number of variables */
    )
 {
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, (nconss * nvars)));
@@ -266,11 +267,12 @@ static SCIP_RETCODE allocMemory(
    return SCIP_OKAY;
 }
 
+/** reallocate colorinfo arrays with new size */
 static SCIP_RETCODE reallocMemory(
-   SCIP* scip,                              /**< SCIP data structure */
-   AUT_COLOR* colorinfo,                    /**< struct to save intermediate information */
-   int nconss,                              /**< number of constraints */
-   int nvars                                /**< number of variables */
+   SCIP*                 scip,               /**< SCIP data structure */
+   AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
+   int                   nconss,             /**< number of constraints */
+   int                   nvars               /**< number of variables */
    )
 {
    SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarraycoefs, colorinfo->lencoefsarray + (nconss * nvars)));
@@ -279,10 +281,11 @@ static SCIP_RETCODE reallocMemory(
    return SCIP_OKAY;
 }
 
+/** destructor for colorinfoarrays */
 static
 SCIP_RETCODE freeMemory(
-   SCIP* scip,                              /**< SCIP data structure */
-   AUT_COLOR* colorinfo                     /**< struct to save intermediate information */
+   SCIP*                 scip,               /**< SCIP data structure */
+   AUT_COLOR*            colorinfo           /**< struct to save intermediate information */
    )
 {
    int i;
@@ -309,11 +312,11 @@ SCIP_RETCODE freeMemory(
 /** set up a help structure for graph creation */
 static
 SCIP_RETCODE setuparrays(
-   SCIP*                origscip,           /**< SCIP data structure */
-   SCIP**               scips,              /**< SCIPs to compare */
-   int                  nscips,             /**< number of SCIPs */
-   AUT_COLOR*           colorinfo,          /**< data structure to save intermediate data */
-   SCIP_RESULT*         result              /**< result pointer to indicate success or failure */
+   SCIP*                 origscip,           /**< SCIP data structure */
+   SCIP**                scips,              /**< SCIPs to compare */
+   int                   nscips,             /**< number of SCIPs */
+   AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
    int i;
@@ -329,7 +332,7 @@ SCIP_RETCODE setuparrays(
    //allocate max n of coefarray, varsarray, and boundsarray in origscip
    nconss = SCIPgetNConss(scips[0]);
    nvars = SCIPgetNVars(scips[0]);
-   allocMemory(origscip, colorinfo, nconss, nvars);
+   SCIP_CALL( allocMemory(origscip, colorinfo, nconss, nvars) );
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s )
    {
@@ -342,7 +345,7 @@ SCIP_RETCODE setuparrays(
       {
          AUT_VAR* svar = new AUT_VAR(scip, vars[i]);
          //add to pointer array iff it doesn't exist
-         colorinfo->insert( svar, &added );
+         SCIP_CALL( colorinfo->insert(svar, &added) );
          if( s > 0 && added)
          {
            *result = SCIP_DIDNOTFIND;
@@ -361,7 +364,7 @@ SCIP_RETCODE setuparrays(
             continue;
          AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
          //add to pointer array iff it doesn't exist
-         colorinfo->insert( scons, &added );
+         SCIP_CALL( colorinfo->insert(scons, &added) );
          if( s > 0 && added)
          {
            *result = SCIP_DIDNOTFIND;
@@ -381,7 +384,7 @@ SCIP_RETCODE setuparrays(
             if( !SCIPisEQ(scip, scoef->getVal(), 0) )
             {
                //add to pointer array iff it doesn't exist
-               colorinfo->insert( scoef, &added );
+               SCIP_CALL( colorinfo->insert(scoef, &added) );
                if( s > 0 && added)
                {
                   *result = SCIP_DIDNOTFIND;
@@ -451,14 +454,14 @@ SCIP_RETCODE setuparrays(
 /** create a graph out of an array of scips */
 static
 SCIP_RETCODE createGraph(
-   SCIP*                origscip,           /**< SCIP data structure */
-   SCIP**               scips,              /**< SCIPs to compare */
-   int                  nscips,             /**< number of SCIPs */
-   int*                 pricingindices,     /**< indices of the given pricing problems */
-   AUT_COLOR            colorinfo,          /**< result pointer to indicate success or failure */
-   bliss::Graph*        graph,              /**< graph needed for discovering isomorphism */
-   int*                 pricingnodes,             /**< number of pricing nodes without master  */
-   SCIP_RESULT*         result              /**< result pointer to indicate success or failure */
+   SCIP*                 origscip,           /**< SCIP data structure */
+   SCIP**                scips,              /**< SCIPs to compare */
+   int                   nscips,             /**< number of SCIPs */
+   int*                  pricingindices,     /**< indices of the given pricing problems */
+   AUT_COLOR             colorinfo,          /**< result pointer to indicate success or failure */
+   bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
+   int*                  pricingnodes,       /**< number of pricing nodes without master  */
+   SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
 {
    int i;
@@ -705,14 +708,14 @@ SCIP_RETCODE createGraph(
 /** compare two graphs w.r.t. automorphism */
 extern
 SCIP_RETCODE cmpGraphPair(
-   SCIP*                 origscip,            /**< SCIP data structure */
-   SCIP*                 scip1,               /**< first SCIP data structure to compare */
-   SCIP*                 scip2,               /**< second SCIP data structure to compare */
-   int                   prob1,               /**< index of first pricing prob */
-   int                   prob2,               /**< index of second pricing prob */
-   SCIP_RESULT*          result,              /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,              /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap              /**< hashmap to save permutation of constraints */
+   SCIP*                 origscip,           /**< SCIP data structure */
+   SCIP*                 scip1,              /**< first SCIP data structure to compare */
+   SCIP*                 scip2,              /**< second SCIP data structure to compare */
+   int                   prob1,              /**< index of first pricing prob */
+   int                   prob2,              /**< index of second pricing prob */
+   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*         consmap             /**< hashmap to save permutation of constraints */
    )
 {
    bliss::Graph graph;

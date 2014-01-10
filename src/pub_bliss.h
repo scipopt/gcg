@@ -123,13 +123,13 @@ struct struct_colorinformation
    struct_colorinformation();
 
    /** insert a variable to its pointer array */
-   void insert( AUT_VAR* svar, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_VAR* svar, SCIP_Bool* added);
 
    /** insert a constraint to its pointer array */
-   void insert( AUT_CONS* scons, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_CONS* scons, SCIP_Bool* added);
 
    /** insert a coefficient to its pointer array */
-   void insert( AUT_COEF* scoef, SCIP_Bool* added);
+   SCIP_RETCODE insert( AUT_COEF* scoef, SCIP_Bool* added);
 
    /** getter for the length of the variable array */
    int getLenVar();
