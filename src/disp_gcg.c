@@ -1036,25 +1036,12 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalgap)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_PRIMALGAP) == 0);
    assert(scip != NULL);
 
-   if( SCIPisInfinity(scip, SCIPgetLowerbound(scip)) )
-   {
-      /* in case we could not prove whether the problem is unbounded or infeasible, we want to terminate with
-       * gap = +inf instead of gap = 0
-       */
-      if( SCIPgetStatus(scip) == SCIP_STATUS_INFORUNBD )
-         gap = SCIPinfinity(scip);
-      else
-         gap = 0.0;
-   }
-
    primalbound = SCIPgetPrimalbound(scip);
    dualbound = SCIPgetDualbound(scip);
 
    if( SCIPisEQ(scip, primalbound, dualbound) )
       gap = 0.0;
-   else if( SCIPisZero(scip, primalbound )
-      || SCIPisInfinity(scip, REALABS(primalbound))
-      || primalbound * dualbound < 0.0 )
+   else if( SCIPisZero(scip, primalbound) || SCIPisInfinity(scip, REALABS(primalbound)) || primalbound * dualbound < 0.0 )
       gap = SCIPinfinity(scip);
    else
       gap = REALABS((primalbound - dualbound))/REALABS(primalbound + SCIPepsilon(scip));

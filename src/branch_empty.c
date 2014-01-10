@@ -68,9 +68,11 @@
  */
 static
 SCIP_RETCODE GCGincludeOriginalCopyPlugins(
-   SCIP* scip
-   )
+   SCIP*                 scip
+)
 {
+   assert(scip != NULL);
+
    SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleInference(scip) );
@@ -79,6 +81,7 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
    SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+
    return SCIP_OKAY;
 }
 /** copy method for master branching rule */
@@ -87,15 +90,17 @@ SCIP_DECL_BRANCHCOPY(branchCopyEmpty)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
+
    SCIPdebugMessage("pricer copy called.\n");
    SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
+
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE GCGcreateConsOrigbranchNode(
-      SCIP* scip,
-      SCIP_CONS* masterbranchchildcons
-   )
+   SCIP*                 scip,
+   SCIP_CONS*            masterbranchchildcons
+)
 {
    SCIP_NODE* child;
    SCIP_CONS*  origbranch;
@@ -103,8 +108,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    int norigbranchcons;
    int i;
 
-   i = 0;
-
+   assert(scip != NULL);
    assert(masterbranchchildcons != NULL);
 
    SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -196,8 +200,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
    int nchildnodes;
    int i;
 
-   nchildnodes = 0;
-   i = 0;
    feasible = TRUE;
 
    assert(branchrule != NULL);
@@ -262,8 +264,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
    int nchildnodes;
    int i;
 
-   nchildnodes = 0;
-   i = 0;
    feasible = TRUE;
 
    assert(branchrule != NULL);
@@ -329,8 +329,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    int nchildnodes;
    int i;
 
-   nchildnodes = 0;
-   i = 0;
    feasible = TRUE;
 
    assert(branchrule != NULL);
