@@ -990,7 +990,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeMemoryArrayNull(scip, &childcons);
    }
 
-   nchildcons = 0;
    assert((*consdata)->nchildcons == 0);
 
    /* set the mastercons pointer of the corresponding origcons to NULL */

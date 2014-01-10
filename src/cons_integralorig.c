@@ -114,9 +114,6 @@ void sortBranchrules(
    int maxi;
 
    tmp = NULL;
-   pos = 0;
-   i = 0;
-   maxi = 0;
 
    assert(nbranchrules >= 0);
    assert(branchrules != NULL);

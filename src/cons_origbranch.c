@@ -113,20 +113,17 @@ struct SCIP_ConshdlrData
 SCIP_RETCODE SCIPinitOrigconsArray(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS***          cons,               /**< pointer to constraint array */
-   int                   ncons               /**< number of constraints in cons array */
+   int                   nconss              /**< number of constraints in cons array */
    )
 {
-   int i;
+   assert(scip != NULL);
+   assert(nconss > 0);
+   assert(cons != NULL);
 
-   i = 0;
    *cons = NULL;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, cons, ncons) );
-
-   for( i=0; i<ncons; ++i )
-   {
-      (*cons)[i] = NULL;
-   }
+   SCIP_CALL( SCIPallocMemoryArray(scip, cons, nconss) );
+   BMSclearMemoryArray(*cons, nconss);
 
    return SCIP_OKAY;
 }
@@ -257,8 +254,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSDATA* parentdata;
    int i;
-
-   i = 0;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
