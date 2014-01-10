@@ -33,8 +33,8 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define GCG_VERSION 110
-#define GCG_SUBVERSION 1
+#define GCG_VERSION 180
+#define GCG_SUBVERSION 0
 
 #include <string.h>
 
