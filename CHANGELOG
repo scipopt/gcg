@@ -1,4 +1,4 @@
-GCG Version next
+rGCG Version 2.0
 ===============
 features
 - GCG can now automatically create a decomposition to solve the LP with
@@ -12,6 +12,7 @@ features
 - GCG can solve integer knapsack problems as a dynamic program
 - GCG features additional detectors which are able to detect significantly
   more structures
+- improved heuristics
 
 code cleanup
 - moved some detection methods to a more global scope to make it usable
