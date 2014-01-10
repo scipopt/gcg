@@ -148,7 +148,7 @@ SCIP_RETCODE assignConsColors(
 )
 {
 
-   CONSDATA** colordata;
+   CONSDATA** colordata = NULL;
    int pos;
 
    assert(scip != NULL);
