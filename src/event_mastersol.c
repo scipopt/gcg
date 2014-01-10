@@ -29,7 +29,7 @@
  * @brief  eventhdlr to transfer solutions found in the original problem to the master problem
  * @author Christian Puchert
  */
-#define SCIP_DEBUG
+
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <string.h>
@@ -74,10 +74,6 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    SCIP* masterprob;
    SCIP_SOL* sol;
 
-#ifdef SCIP_DEBUG
-   int nmastervars;
-#endif
-
    assert(scip != NULL);
    assert(eventhdlr != NULL);
    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
@@ -90,20 +86,11 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    masterprob = GCGrelaxGetMasterprob(scip);
    assert(masterprob != NULL);
 
-#ifdef SCIP_DEBUG
-   nmastervars = SCIPgetNVars(masterprob);
-#endif
-
    /* transfer solution to the master problem, but only if it is not from the relaxation */
    if( SCIPsolGetHeur(sol) != NULL )
    {
       SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
    }
-
-#ifdef SCIP_DEBUG
-   SCIPinfoMessage(scip, NULL, "Original solution found, added %d new mastervars.\n", SCIPgetNVars(masterprob) - nmastervars);
-#endif
-
    return SCIP_OKAY;
 }
 
