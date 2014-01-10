@@ -63,7 +63,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
 
    low = 0;
    high = n - 1;
-   median = (low + high) / 2;
+   median = high / 2;
 
    for( ;; )
    {
@@ -476,8 +476,9 @@ SCIP_RETCODE DECdecompSetType(
    )
 {
    SCIP_Bool valid;
-   valid = TRUE;
+
    assert(decdecomp != NULL);
+
    switch( type )
    {
    case DEC_DECTYPE_DIAGONAL:
@@ -506,7 +507,6 @@ SCIP_RETCODE DECdecompSetType(
       SCIPerrorMessage("The decomposition is not of the given type!\n");
       return SCIP_INVALIDDATA;
    }
-
 
    decdecomp->type = type;
 
@@ -895,6 +895,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    {
       for( i = 0; i < nstairlinkingvars[b]; ++i )
       {
+         assert(stairlinkingvars[b] != NULL);
          SCIP_CALL( SCIPcaptureVar(scip, decdecomp->stairlinkingvars[b][i]) );
       }
    }
@@ -1090,7 +1091,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    subscipconss = DECdecompGetSubscipconss(decdecomp);
    nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
 
-   idx = 0;
    cindex = 0;
    cumindex = 0;
 
@@ -1152,8 +1152,8 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
       {
          cumindex += nsubscipvars[b] + nstairlinkingvars[b];
       }
-      idx += cumindex;
    }
+
    DECdecompSetVarindex(decdecomp, varindex);
    DECdecompSetConsindex(decdecomp, consindex);
    SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE) );
