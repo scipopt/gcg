@@ -100,7 +100,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    SCIP_NODE** nodes;
    SCIP_CONS* origcons;
    SCIP_CONS* parentorigcons;
-   SCIP_CONS* parentmastercons;
    SCIP* origscip;
    int nnodes;
    SCIP_Longint orignodenumber;
@@ -138,12 +137,11 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       }
       else
       {
-         parentmastercons = GCGconsOrigbranchGetMastercons(parentorigcons);
-         assert(parentmastercons != NULL);
 
+         assert(GCGconsOrigbranchGetMastercons(parentorigcons) != NULL);
          *selnode = GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons));
 
-         assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(parentmastercons)) == SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
+         assert(SCIPnodeGetDepth(GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(parentorigcons))) == SCIPnodeGetDepth(GCGconsOrigbranchGetNode(parentorigcons)));
          assert( *selnode != NULL );
       }
 

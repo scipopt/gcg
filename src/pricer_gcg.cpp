@@ -1299,7 +1299,6 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
    SCIP_ROW** mastercuts;
    int nmastercuts;
-   SCIP_ROW** origcuts;
    int i;
 
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
@@ -1314,23 +1313,22 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
    int nlinkconss;
    SCIP_CONS** linkconss;
-   int* linkconssblock;
    nlinkconss = GCGrelaxGetNLinkingconss(origprob);
    linkconss = GCGrelaxGetLinkingconss(origprob);
-   linkconssblock = GCGrelaxGetLinkingconssBlock(origprob);
 
    for( i = 0; i < nlinkconss; ++i)
    {
-      SCIP_VAR** linkconsvars;
       SCIP_CONS* linkcons = linkconss[i];
-      int block = linkconssblock[i];
+#ifndef NDEBUG
+      SCIP_VAR** linkconsvars;
+      int block = GCGrelaxGetLinkingconssBlock(origprob)[i];
 
       linkconsvars = SCIPgetVarsLinear(scip_, linkcons);
 
       SCIP_VAR* linkvar = linkconsvars[0];
 
-      SCIP_VAR* pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(linkvar)[0])[block];
-      assert(GCGvarIsPricing(pricingvar));
+      assert(GCGvarIsPricing(GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(linkvar)[0])[block]));
+#endif
 
       SCIP_CALL( stabilization->linkingconsGetDual(i, &dualsol) );
 
@@ -1370,10 +1368,8 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
    mastercuts = GCGsepaGetMastercuts(scip_);
    nmastercuts = GCGsepaGetNMastercuts(scip_);
-   origcuts = GCGsepaGetOrigcuts(scip_);
 
    assert(mastercuts != NULL);
-   assert(origcuts != NULL);
    assert(GCGsepaGetNOrigcuts(scip_) == nmastercuts);
 
    /* compute reduced cost and update objectives in the pricing problems */

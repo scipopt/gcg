@@ -396,16 +396,10 @@ DEC_DECL_EXITDETECTOR(exitColors)
 static
 DEC_DECL_INITDETECTOR(initColors)
 {  /*lint --e{715}*/
-
-   DEC_DETECTORDATA *detectordata;
-
    assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
 
    return SCIP_OKAY;
 }

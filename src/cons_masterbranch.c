@@ -939,7 +939,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    SCIP_CONSDATA* consdata2;
    SCIP_CONSDATA** childconsdatas;
    SCIP_CONS** childcons;
-   SCIP_Bool childdeleted;
    int nchildcons;
    int i;
 
@@ -1009,6 +1008,10 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    if( (*consdata)->parentcons != NULL )
    {
       SCIP_Bool isinprobing;
+#ifndef NDEBUG
+      SCIP_Bool childdeleted = FALSE;
+#endif
+
       consdata2 = SCIPconsGetData((*consdata)->parentcons);
 
       isinprobing = (SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && SCIPinProbing(scip)) || (SCIPgetStage(GCGpricerGetOrigprob(scip)) <= SCIP_STAGE_SOLVING && SCIPinProbing(GCGpricerGetOrigprob(scip)));
@@ -1017,7 +1020,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          consdata2->probingtmpcons = NULL;
       }
 
-      childdeleted = FALSE;
       for( i=0; i<consdata2->nchildcons; ++i )
       {
          if( consdata2->childcons[i] == cons )
@@ -1026,8 +1028,9 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
             consdata2->childcons[consdata2->nchildcons-1] = NULL;
             consdata2->nchildcons--;
-
-            childdeleted = TRUE;
+#ifndef NDEBUG
+          childdeleted = TRUE;
+#endif
 
             break;
          }

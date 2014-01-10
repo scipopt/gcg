@@ -256,7 +256,6 @@ static
 SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 {  /*lint --e{715}*/
    SCIP_CONSDATA* parentdata;
-   SCIP_Bool childdeleted;
    int i;
 
    i = 0;
@@ -280,6 +279,9 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    /* set the pointer in the parent constraint to NULL */
    if( (*consdata)->parentcons != NULL )
    {
+#ifndef NDEBUG
+      SCIP_Bool childdeleted = FALSE;
+#endif
       parentdata = SCIPconsGetData((*consdata)->parentcons);
 
       if( SCIPinProbing(scip) )
@@ -287,7 +289,6 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
          parentdata->probingtmpcons = NULL;
       }
 
-      childdeleted = FALSE;
       for( i=0; i < parentdata->nchildcons; ++i )
       {
          if( parentdata->childcons[i] == cons )
@@ -295,7 +296,9 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
             parentdata->childcons[i] = parentdata->childcons[parentdata->nchildcons-1];/*NULL;*/
             parentdata->childcons[parentdata->nchildcons-1] = NULL;
+#ifndef NDEBUG
             childdeleted = TRUE;
+#endif
             (parentdata->nchildcons) -= 1;
             break;
          }
