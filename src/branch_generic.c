@@ -3188,8 +3188,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             continue;
          }
 
-         assert(sequencesizes != NULL);
-
          if( Csize == 0 )
          {
             assert(branchdata != NULL);
@@ -3197,6 +3195,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             Csize = 1;
             SCIP_CALL( SCIPallocMemoryArray(origscip, &C, Csize) );
             SCIP_CALL( SCIPallocMemoryArray(origscip, &sequencesizes, Csize) );
+            assert(sequencesizes != NULL);
             C[0] = NULL;
             SCIP_CALL( SCIPallocMemoryArray(origscip, &(C[0]), branchdata->consSsize) );
             for( i=0; i<branchdata->consSsize; ++i )
@@ -3232,6 +3231,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
                ++Csize;
                SCIP_CALL( SCIPreallocMemoryArray(origscip, &C, Csize) );
                SCIP_CALL( SCIPreallocMemoryArray(origscip, &sequencesizes, Csize) );
+               assert(sequencesizes != NULL);
                C[Csize-1] = NULL;
                SCIP_CALL( SCIPallocMemoryArray(origscip, &(C[Csize-1]), branchdata->consSsize) );
 
@@ -3506,10 +3506,12 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 
    SCIPdebugMessage("Execps method of Vanderbecks generic branching\n");
    SCIPerrorMessage("This method is not implemented, aborting since we cannot recover!");
+   SCIPdialogMessage(scip, NULL, "Due to numerical issues, the problem could not be solved.\n");
+   SCIPdialogMessage(scip, NULL, "You can try to disable discretization and aggregation and resolve the problem.\n");
    SCIPABORT();
 
    *result = SCIP_DIDNOTRUN;
-   return SCIP_OKAY;
+   return SCIP_ERROR;
 }
 
 /** initialization method of branching rule (called after problem was transformed) */
