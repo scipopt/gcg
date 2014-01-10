@@ -3170,6 +3170,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             parentcons = GCGconsMasterbranchGetParentcons(parentcons);
             continue;
          }
+
+         assert(sequencesizes != NULL);
+
          if( Csize == 0 )
          {
             assert(branchdata != NULL);
@@ -3232,6 +3235,8 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
          for( i=0; i<Csize; ++i )
          {
+            assert(sequencesizes != NULL);
+
             for( c=0; c<sequencesizes[i]; ++c )
             {
                SCIPdebugMessage("C[%d][%d].component = %s\n", i, c, SCIPvarGetName(C[i][c].component) );
@@ -3283,7 +3288,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    if( feasible )
    {
       SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
-      return -1;
+      return SCIP_ERROR;
    }
 
    /* create the |S|+1 child nodes in the branch-and-bound tree */
