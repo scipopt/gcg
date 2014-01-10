@@ -13,6 +13,7 @@ features
 - GCG features additional detectors which are able to detect significantly
   more structures
 - improved heuristics
+- Copy solutions from original problem to master problem
 
 code cleanup
 - moved some detection methods to a more global scope to make it usable
