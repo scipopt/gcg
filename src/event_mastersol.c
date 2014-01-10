@@ -87,7 +87,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    assert(masterprob != NULL);
 
    /* transfer solution to the master problem, but only if it is not from the relaxation */
-   if( SCIPsolGetHeur(sol) != NULL )
+   if( SCIPsolGetHeur(sol) != NULL && SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED)
    {
       SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
    }
