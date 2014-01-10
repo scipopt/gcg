@@ -205,11 +205,11 @@ void SCIPvectorRearrange(
 /** allocates memory for an indexmap. */
 static
 SCIP_RETCODE indexmapCreate(
-      SCIP*              scip,               /**< SCIP data structure  */
-      INDEXMAP**         indexmap,           /**< address of the pointer which shall store the index map*/
-      int                nconss,             /**< number of constraints */
-      int                nvars               /**< number of variables */
-      )
+   SCIP*                 scip,               /**< SCIP data structure  */
+   INDEXMAP**            indexmap,           /**< address of the pointer which shall store the index map*/
+   int                   nconss,             /**< number of constraints */
+   int                   nvars               /**< number of variables */
+)
 {
    INDEXMAP* imap;
    assert(scip != NULL);
@@ -241,14 +241,15 @@ void indexmapFree(
    SCIPfreeMemory(scip, indexmap);
 }
 
+/** initialization method for the indexmap */
 static
 SCIP_RETCODE indexmapInit(
-   INDEXMAP*            indexmap,                  /**< index map */
-   SCIP_VAR**           vars,                      /**< array of variables */
-   int                  nvars,                     /**< number of variables */
-   SCIP_CONS**          conss,                     /**< array of constraints */
-   int                  nconss,                    /**< number of constraints */
-   int*                 hashmapindices
+   INDEXMAP*             indexmap,           /**< index map */
+   SCIP_VAR**            vars,               /**< array of variables */
+   int                   nvars,              /**< number of variables */
+   SCIP_CONS**           conss,              /**< array of constraints */
+   int                   nconss,             /**< number of constraints */
+   int*                  hashmapindices
    )
 {
    int i;
@@ -282,7 +283,9 @@ SCIP_RETCODE indexmapInit(
 /* debug ? */
 #ifdef WRITEALLOUTPUT
 /** returns the problem name without the path */
-static const char* getProbNameWithoutPath(SCIP* scip)
+static const char* getProbNameWithoutPath(
+   SCIP*                 scip
+)
 {
    const char* pname;
    /* remove '/' from problem name */
@@ -319,7 +322,11 @@ static void checkConsistencyOfIndexarrays(DEC_DETECTORDATA* detectordata, int nv
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
 static
-SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
+SCIP_RETCODE plotInitialProblem(
+   SCIP*                 scip,
+   DEC_DETECTORDATA*     detectordata,
+   char*                 filename
+)
 {
    FILE* output;
    char datafile[256];
@@ -379,7 +386,11 @@ SCIP_RETCODE plotInitialProblem(SCIP* scip, DEC_DETECTORDATA* detectordata, char
  * @param detectordata < presolver data data structure
  * @param filename name of the output files (without any filename extension) */
 static
-void plotMinV(SCIP* scip, DEC_DETECTORDATA* detectordata, char* filename)
+void plotMinV(
+   SCIP*                 scip,
+   DEC_DETECTORDATA*     detectordata,
+   char*                 filename
+)
 {
    FILE* output;
    char datafile[256];
@@ -950,21 +961,16 @@ vector<int>::iterator findBlockingCandidate(
 
 /** this functions determines the next row to block at
  *
- * @param detectordata detectordata data structure
- * @param it_constrictions Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions)
- * @param min_block_size minimum number of rows to be in a block
- * @param prev_block_first_row the first row of the preceding block
- * @param prev_block_last_row the last row of the preceding block
  * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no row was found
  */
 static
 vector<int>::iterator nextRowToBlockAt(
-   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
-   vector<int>::iterator it_constrictions,
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   vector<int>::iterator it_constrictions,   /**< Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions) */
    vector<int>*          it_vector,
-   int                   min_block_size,
-   int                   prev_block_first_row,
-   int                   prev_block_last_row
+   int                   min_block_size,     /**< minimum number of rows to be in a block */
+   int                   prev_block_first_row, /**< the first row of the preceding block */
+   int                   prev_block_last_row /**< the last row of the preceding block*/
    )
 {
 
@@ -1001,9 +1007,10 @@ vector<int>::iterator nextRowToBlockAt(
    return it_constrictions;
 }
 
+/** calculate the number of decompositions in order to allocate decomps array */
 static
 int calculateNdecompositions(
-   DEC_DETECTORDATA*     detectordata                  /**< detector data structure */
+   DEC_DETECTORDATA*     detectordata        /**< detector data structure */
    )
 {
    int nblockingtypes;
@@ -1037,10 +1044,11 @@ int calculateNdecompositions(
    return nblockingtypes * nblockingspertype;
 }
 
+/** check the consistency of the parameters */
 static
 void checkParameterConsistency(
-   DEC_DETECTORDATA*     detectordata,                  /**< detector data structure */
-   SCIP_RESULT*          result                         /**< pointer to store result */
+   DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
+   SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
    /* maxblocks < nRelevantsCons? */
@@ -1228,8 +1236,8 @@ static
 SCIP_RETCODE blocking(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
-   DEC_DECOMP***         decdecomps,
-   int*                  ndecdecomps,
+   DEC_DECOMP***         decdecomps,         /**< array of decompositions */
+   int*                  ndecdecomps,        /**< size of decompositions array */
    int                   nvars,              /**< number of variables */
    int                   ncons,              /**< number of constraints */
    SCIP_RESULT*          result              /**< pointer to store result */
@@ -1375,7 +1383,7 @@ SCIP_RETCODE blocking(
    return SCIP_OKAY;
 }
 
-
+/** initialization method of stairheur detector */
 static
 DEC_DECL_INITDETECTOR(initStairheur)
 {
@@ -1415,7 +1423,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
    return SCIP_OKAY;
 }
 
-/** presolving deinitialization method of presolver (called after presolving has been finished) */
+/** deinitialization method of detector (called after detection has been finished) */
 static
 DEC_DECL_EXITDETECTOR(exitStairheur)
 {
@@ -1459,6 +1467,7 @@ DEC_DECL_EXITDETECTOR(exitStairheur)
    return SCIP_OKAY;
 }
 
+/** detection method of stairheur detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildStair)
 {
