@@ -554,7 +554,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    int countz;
    int colindex;
    double currentVal;
-   int* indizes;
+   int* indizes = NULL;
    SCIP_COL** cols;
    SCIP_VAR* var;
 
@@ -855,7 +855,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    SCIP_Real* consvals;
    SCIP_Real dualsol;
 
-   SCIP_VAR** consvars;
+   SCIP_VAR** consvars = NULL;
    int nconsvars;
    SCIP_Bool stabilize;
    int i;
@@ -1249,7 +1249,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    int i;
 
    SCIP_VAR** solvars;
-   SCIP_Real* solvals;
+   SCIP_Real* solvals = NULL;
    int nsolvars;
    SCIP_Real objvalue;
    objvalue = 0.0;
@@ -1855,7 +1855,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
       if( *status == SCIP_STATUS_INFEASIBLE) /** @todo handle remaiming status */
       {
          SCIPdebugMessage("The problem is infeasible\n");
-         found = FALSE;
          break;
       }
       assert(*status == SCIP_STATUS_OPTIMAL);
@@ -1866,7 +1865,6 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       if( SCIPisLT(scip_, redcost, 0.0) )
       {
-         found = TRUE;
          break;
       }
    }
@@ -1887,9 +1885,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
    )
 {
-   SCIP_SOL*** sols;
-   int* nsols;
-   SCIP_Bool** solisray;
+   SCIP_SOL*** sols = NULL;
+   int* nsols = NULL;
+   SCIP_Bool** solisray = NULL;
    SCIP_Real pricinglowerbound;
    SCIP_Real bestredcost;
    SCIP_Real dualconvsum;
@@ -1898,7 +1896,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    SCIP_Bool pricinghaserror;
    SCIP_Bool stabilized;
    SCIP_Bool added;
-   SCIP_STATUS* pricingstatus;
+   SCIP_STATUS* pricingstatus = NULL;
    int solvedmips;
    int successfulmips;
    int nfoundvarsprob;
@@ -1924,9 +1922,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    nfoundvars = 0;
    infeasible = FALSE;
    pricinghaserror = FALSE;
-   bestredcost = 0.0;
    dualconvsum = 0.0;
-   *bestredcostvalid = ( SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL && optimal ? TRUE : FALSE );
    pricinglowerbound = -SCIPinfinity(scip_);
    if(lowerbound != NULL)
       *lowerbound = -SCIPinfinity(scip_);
@@ -2149,7 +2145,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       for( j = 0; j < nsols[prob]; ++j )
       {
          SCIP_VAR** solvars;
-         SCIP_Real* solvals;
+         SCIP_Real* solvals = NULL;
          int nsolvars;
 
          /** add variable only if we cannot abort */
@@ -2190,12 +2186,9 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
-      //SCIPdebugMessage("Freeing information for pricing %d.\n", i);
-
       for( j = 0; j < nsols[i]; ++j )
       {
          SCIP_CALL( SCIPfreeSol(pricerdata->pricingprobs[i], &sols[i][j]) );
-//            SCIPdebugMessage("Freeing solution %d of prob %d.\n", j, i);
       }
 
       SCIPfreeMemoryArray(scip_, &(sols[i]));
@@ -2216,7 +2209,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    {
       if( infeasible )
       {
-         bestredcost = SCIPinfinity(scip_);
          *result = SCIP_SUCCESS;
       }
       else if( *pnfoundvars > 0)
@@ -2225,7 +2217,6 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          *result = SCIP_DIDNOTRUN;
    }
 
-   //SCIPinfoMessage(scip_, NULL, "node: %d, nfoundvars: %d, lowerbound: %.8g, master lp %.8g\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip_)), nfoundvars, lowerbound == NULL? -SCIPinfinity(scip_): *lowerbound, SCIPgetLPObjval(scip_));
    return SCIP_OKAY;
 }
 
@@ -2706,7 +2697,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP_PRICERDATA* pricerdata;
+   SCIP_PRICERDATA* pricerdata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &pricerdata) );
 
