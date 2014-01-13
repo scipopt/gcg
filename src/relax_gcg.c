@@ -2211,7 +2211,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
       else
       {
          SCIPdebugMessage("Stage: %d\n", SCIPgetStage(masterprob));
-         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE);
+         assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
          if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
             *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
          else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT )
@@ -2224,6 +2224,11 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
                return SCIP_OKAY;
             }
             *lowerbound = SCIPinfinity(scip);
+         }
+         else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
+         {
+            *result = SCIP_DIDNOTRUN;
+            return SCIP_OKAY;
          }
          else
          {
@@ -3346,6 +3351,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    assert(origvars != NULL);
 
    *feasible = FALSE;
+
+   /* if the master problem has not been solved, don't try to update the solution */
+   if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_TRANSFORMED )
+      return SCIP_OKAY;
 
    /* free previous solution and clear branching candidates */
    if( relaxdata->currentorigsol != NULL )

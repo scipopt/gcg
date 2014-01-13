@@ -2231,7 +2231,12 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    conshdlrData = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrData != NULL);
    assert(conshdlrData->stack != NULL);
-   assert(conshdlrData->nstack > 0);
+
+
+   if(conshdlrData->nstack == 0)
+   {
+      return NULL;
+   }
 
    assert(conshdlrData->stack[conshdlrData->nstack-1] != NULL);
    return conshdlrData->stack[conshdlrData->nstack-1];

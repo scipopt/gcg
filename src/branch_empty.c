@@ -218,13 +218,17 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
    }
 
-   SCIPdebugMessage("Execext method of empty branching\n");
-
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   assert(masterbranchcons != NULL);
+
+
+
+   if(masterbranchcons == NULL)
+   {
+      return SCIP_OKAY;
+   }
 
    nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
    if( nchildnodes <= 0 )

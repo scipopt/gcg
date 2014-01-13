@@ -1013,7 +1013,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
-   char*                 varname,            /**< new variable name */
+   const char*           varname,            /**< new variable name */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
    SCIP_Bool             solisray,           /**< indicates whether new variable is a ray */
