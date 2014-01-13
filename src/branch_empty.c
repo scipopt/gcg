@@ -338,14 +338,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 
    *result = SCIP_DIDNOTRUN;
 
-   /*
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
-    */
-
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
-
    if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
    {
       SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
@@ -371,6 +363,9 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
    }
 
    SCIPdebugMessage("Execeps method of empty branching\n");
+
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
    assert(masterbranchcons != NULL);
