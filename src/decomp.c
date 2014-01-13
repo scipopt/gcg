@@ -2598,11 +2598,11 @@ SCIP_RETCODE computeVarDensities(
       DEC_DECOMP*        decomp,             /**< decomposition data structure */
       int*               varprobdensity,     /**< density information */
       int*               varmasterdensity,   /**< density information */
-      SCIP_VAR**         vars,               /**< */
-      int                nvars,              /**< */
-      DEC_STATISTIC*     blockvardensities,  /**< */
-      DEC_STATISTIC*     mastervardensity,   /**< */
-      int                nblocks             /**< */
+      SCIP_VAR**         vars,               /**< array of variables */
+      int                nvars,              /**< number of variables */
+      DEC_STATISTIC*     blockvardensities,  /**< array of statistic structs to store density information of each block */
+      DEC_STATISTIC*     mastervardensity,   /**< pointer to store density information of master variables*/
+      int                nblocks             /**< number of blocks */
    )
 {
    int v;

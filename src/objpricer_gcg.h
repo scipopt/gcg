@@ -49,7 +49,7 @@ public:
    /*lint --e{1540}*/
 
    SCIP*              origprob;           /**< the original program */
-   SCIP_PRICERDATA *pricerdata;
+   SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
    static int threads;
 
    /** default constructor */
@@ -60,7 +60,7 @@ public:
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
          unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA *pricerdata
+         SCIP_PRICERDATA *pricerdata /**< pricerdata data structure */
    );
    /** destructor */
    virtual ~ObjPricerGcg()
@@ -109,7 +109,7 @@ public:
          int            prob,               /**< number of the pricing problem the solution belongs to */
          unsigned int   force,              /**< should the given variable be added also if it has non-negative reduced cost? */
          unsigned int*  added,              /**< pointer to store whether the variable was successfully added */
-         SCIP_VAR**     addedvar
+         SCIP_VAR**     addedvar            /**< pointer to store the created variable */
       );
 
    /** performs optimal or farkas pricing */

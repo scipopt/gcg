@@ -66,7 +66,7 @@ public:
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
-      int               npricingprobsnotnull
+      int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    ) = 0;
 
    virtual SCIP_Bool canHeuristicPricingBeAborted(
@@ -74,7 +74,7 @@ public:
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
-      int               npricingprobsnotnull
+      int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    ) = 0;
     virtual SCIP_RETCODE startClock();
     virtual SCIP_RETCODE stopClock();
@@ -148,16 +148,16 @@ public:
           int                  nfoundvars,         /**< number of variables found so far */
           int                  solvedmips,         /**< number of MIPS solved so far */
           int                  successfulmips,     /**< number of sucessful mips solved so far */
-          SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
-          int                  npricingprobsnotnull
+          SCIP_Real            successfulmipsrel,  /**< number of sucessful mips solved so far */
+          int                  npricingprobsnotnull /**< number of non-Null pricing problems*/
       );
 
     virtual SCIP_Bool canHeuristicPricingBeAborted(
         int                  nfoundvars,         /**< number of variables found so far */
         int                  solvedmips,         /**< number of MIPS solved so far */
         int                  successfulmips,     /**< number of sucessful mips solved so far */
-        SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
-        int                  npricingprobsnotnull
+        SCIP_Real            successfulmipsrel,  /**< number of sucessful mips solved so far */
+        int                  npricingprobsnotnull /**< number of non-Null pricing problems*/
     );
 
 };
@@ -178,14 +178,14 @@ public:
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
-      int               npricingprobsnotnull
+      int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    );
    virtual SCIP_Bool canHeuristicPricingBeAborted(
       int               nfoundvars,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
       int               successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
-      int               npricingprobsnotnull
+      int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    );
 };
 
