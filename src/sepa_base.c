@@ -70,13 +70,10 @@ struct SCIP_SepaData
    int                   nprimalsols;        /**< number of primal solutions found */
    SCIP_Real             shifteddiffendgeom; /**< mean l2-norm difference between original solution and lp solution */
    SCIP_Real             shifteddiffstartgeom;/**< mean l2-norm difference between original solution and dive lp solution */
-   SCIP_Real             shiftedconvexgeom;
-                                             /**< mean calculated convex coefficient */
+   SCIP_Real             shiftedconvexgeom;  /**< mean calculated convex coefficient */
    int                   ncalculatedconvex;  /**< number of calculated lp solution (and convex and l2 diff) */
-   SCIP_Real             shiftediterationsfound;
-                                             /**< mean number of iterations until usefull cuts were found */
-   SCIP_Real             shiftediterationsnotfound;
-                                             /**< mean number of iterations until no cuts at all were found */
+   SCIP_Real             shiftediterationsfound; /**< mean number of iterations until usefull cuts were found */
+   SCIP_Real             shiftediterationsnotfound; /**< mean number of iterations until no cuts at all were found */
    int                   nfound;             /**< number of calls where useful cuts were found */
    int                   nnotfound;          /**< number of calls where no useful cuts were found */
    SCIP_Bool             enable;             /**< parameter returns if base separator is enabled */
@@ -102,7 +99,7 @@ struct SCIP_SepaData
    int                   nmcf;               /**< number of mcf cuts */
    int                   noddcycle;          /**< number of oddcycle cuts */
    int                   nscg;               /**< number of strong cg cuts */
-   int                   nzerohalf;           /**< number of zero half cuts */
+   int                   nzerohalf;          /**< number of zero half cuts */
 };
 
 /*
@@ -359,11 +356,11 @@ SCIP_RETCODE origScipInitObjOrig(
       /* if solution value of variable is at ub or lb initialize objective value of the variable
        * such that the difference to this bound is minimized
        */
-      if(SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisEQ(origscip, ub, solval))
+      if(SCIPisLT(origscip, ub, SCIPinfinity(origscip)) && SCIPisLE(origscip, ub, solval))
       {
          newobj = -1.0;
       }
-      else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisEQ(origscip, lb, solval))
+      else if(SCIPisGT(origscip, lb, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lb, solval))
       {
          newobj = 1.0;
       }
@@ -383,7 +380,7 @@ SCIP_RETCODE origScipInitObjOrig(
             if(SCIPisLT(origscip, distance, solval - lb))
                newobj = -newobj;
 
-            SCIPinfoMessage(origscip, NULL, "newobj = %f\n", newobj);
+            //SCIPinfoMessage(origscip, NULL, "newobj = %f\n", newobj);
          }
          else
          {
@@ -479,11 +476,11 @@ SCIP_RETCODE origScipChgObjAllRows(
       {
          continue;
       }
-      if(SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisEQ(origscip, rhs, activity))
+      if(SCIPisLT(origscip, rhs, SCIPinfinity(origscip)) && SCIPisLE(origscip, rhs, activity))
       {
          factor = -1.0;
       }
-      else if(SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisEQ(origscip, lhs, activity))
+      else if(SCIPisGT(origscip, lhs, -SCIPinfinity(origscip)) && SCIPisGE(origscip, lhs, activity))
       {
          factor = 1.0;
       }
@@ -500,7 +497,7 @@ SCIP_RETCODE origScipChgObjAllRows(
          else
             distance = MIN(activity - lhs, rhs - activity);
 
-         assert(SCIPisPositive(origscip, distance));
+         assert(SCIPisPositive(origscip, distance) || !SCIPisCutEfficacious(origscip, origsol, row));
          /* check if distance is lower than 1 and compute factor */
          if(SCIPisLT(origscip, distance, 1.0))
          {
@@ -510,7 +507,7 @@ SCIP_RETCODE origScipChgObjAllRows(
             if(SCIPisLT(origscip, distance, activity - lhs))
                factor = -1.0*factor;
 
-            SCIPinfoMessage(origscip, NULL, "factor = %f\n", factor);
+            //SCIPinfoMessage(origscip, NULL, "factor = %f\n", factor);
          }
          else
          {
