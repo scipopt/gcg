@@ -55,9 +55,9 @@ SCIP_ROW** GCGsepaGetOrigcuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns the number of original cuts saved in the separator data */
+/** returns the number of cuts saved in the separator data */
 extern
-int GCGsepaGetNOrigcuts(
+int GCGsepaGetNCuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -67,11 +67,6 @@ SCIP_ROW** GCGsepaGetMastercuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
-/** returns the number of master cuts saved in the separator data */
-extern
-int GCGsepaGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
 #ifdef __cplusplus
 }
 #endif

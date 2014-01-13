@@ -980,12 +980,11 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
    mastercuts = GCGsepaGetMastercuts(scip_);
-   nmastercuts = GCGsepaGetNMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
    origcuts = GCGsepaGetOrigcuts(scip_);
 
    assert(mastercuts != NULL);
    assert(origcuts != NULL);
-   assert(GCGsepaGetNOrigcuts(scip_) == nmastercuts);
 
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )
@@ -1179,12 +1178,11 @@ SCIP_RETCODE addVariableToMastercuts(
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
    mastercuts = GCGsepaGetMastercuts(scip);
-   nmastercuts = GCGsepaGetNMastercuts(scip);
+   nmastercuts = GCGsepaGetNCuts(scip);
    origcuts = GCGsepaGetOrigcuts(scip);
 
    assert(mastercuts != NULL);
    assert(origcuts != NULL);
-   assert(GCGsepaGetNOrigcuts(scip) == nmastercuts);
 
    /* compute coef of the variable in the cuts and add it to the cuts */
    for( i = 0; i < nmastercuts; i++ )
@@ -1367,10 +1365,9 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
    /* get the cuts of the master problem and the corresponding cuts in the original problem */
    mastercuts = GCGsepaGetMastercuts(scip_);
-   nmastercuts = GCGsepaGetNMastercuts(scip_);
+   nmastercuts = GCGsepaGetNCuts(scip_);
 
    assert(mastercuts != NULL);
-   assert(GCGsepaGetNOrigcuts(scip_) == nmastercuts);
 
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )

@@ -88,7 +88,7 @@ SCIP_RETCODE Stabilization::updateStabcenterconss()
 
 SCIP_RETCODE Stabilization::updateStabcentercuts()
 {
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
 
    if( ncuts == nstabcentercuts )
    {
@@ -181,7 +181,7 @@ SCIP_RETCODE Stabilization::rowGetDual(
    )
 {
 #ifndef NDEBUG
-   int nrows = GCGsepaGetNMastercuts(scip_);
+   int nrows = GCGsepaGetNCuts(scip_);
 #endif
    assert(i < nrows);
    assert(dual != NULL);
@@ -238,7 +238,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
 
    int nconss = GCGrelaxGetNMasterConss(origprob);
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
    int nprobs = GCGrelaxGetNPricingprobs(origprob);
 
    assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
@@ -365,7 +365,7 @@ SCIP_Real Stabilization::calculateSubgradient(
    assert(nconss <= nstabcenterconss);
    SCIP_ROW** mastercuts = GCGsepaGetMastercuts(scip_);
    SCIP_ROW** origmastercuts = GCGsepaGetOrigcuts(scip_);
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
    assert(ncuts <= nstabcentercuts);
 
    SCIP_Real gradientproduct = 0.0;
