@@ -341,7 +341,6 @@ SCIP_RETCODE convertStructToGCG(
    SCIPdebugMessage("\tProcessing linking variables.\n");
    for( i = 0; i < nlinkingvars; ++i )
    {
-      int found;
 
       if( GCGvarIsLinking(linkingvars[i]) )
          continue;
@@ -350,7 +349,7 @@ SCIP_RETCODE convertStructToGCG(
       /* HACK; @todo find out constraint blocks more intelligently */
       for( j = 0; j < nblocks; ++j )
       {
-         found = FALSE;
+         int found = FALSE;
          for( k = 0; k < nsubscipconss[j]; ++k )
          {
             SCIP_VAR** curvars;
@@ -593,13 +592,6 @@ SCIP_RETCODE checkIdentical(
    SCIP_CONS** conss2;
    int nconss;
 
-   SCIP_VAR** origvars1;
-   SCIP_VAR** origvars2;
-
-   SCIP_Real* coefs1;
-   int ncoefs1;
-   SCIP_Real* coefs2;
-   int ncoefs2;
    int i;
    int j;
 
@@ -621,6 +613,13 @@ SCIP_RETCODE checkIdentical(
 
    for( i = 0; i < nvars1; i++ )
    {
+      SCIP_Real* coefs1;
+      int ncoefs1;
+      SCIP_Real* coefs2;
+      int ncoefs2;
+      SCIP_VAR** origvars1;
+      SCIP_VAR** origvars2;
+
       if( !SCIPisEQ(relaxdata->masterprob, SCIPvarGetObj(vars1[i]), SCIPvarGetObj(vars2[i])) )
       {
          SCIPdebugMessage("--> obj differs for var %s and var %s!\n", SCIPvarGetName(vars1[i]), SCIPvarGetName(vars2[i]));
@@ -1480,12 +1479,13 @@ SCIP_RETCODE createPricingprobConss(
          {
             SCIP_VAR** curvars;
             int ncurvars;
-            int i;
 
             ncurvars = SCIPgetNVarsXXX(relaxdata->pricingprobs[b], newcons);
             curvars = NULL;
             if( ncurvars > 0 )
             {
+               int i;
+
                SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
                SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
@@ -1625,7 +1625,6 @@ SCIP_RETCODE combineSolutions(
 #endif
 
    int v;
-   SCIP_SOL* sol;
    int nvars;
 
    SCIP_VAR** vars;
@@ -1659,10 +1658,9 @@ SCIP_RETCODE combineSolutions(
       assert(block >= 0);
       assert(block < nprobs);
       assert(probs[block] != NULL);
-      sol = SCIPgetBestSol(probs[block]);
 
       /* @todo solval should be 0 before, anyway, check it with an assert */
-      SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], sol, pricingvar)) );
+      SCIP_CALL( SCIPincSolVal(scip, *newsol, vars[v], SCIPgetSolVal(probs[block], SCIPgetBestSol(probs[block]), pricingvar)) );
    }
    return SCIP_OKAY;
 }
@@ -1678,7 +1676,6 @@ SCIP_RETCODE setPricingObjsOriginal(
    int v;
    int nvars;
    SCIP_VAR** vars;
-   SCIP_VAR* origvar;
 
    assert(scip != NULL);
    assert(probs != NULL);
@@ -1690,12 +1687,13 @@ SCIP_RETCODE setPricingObjsOriginal(
    for( v = 0; v < nvars; ++v )
    {
       SCIP_VAR* pricingvar;
+      SCIP_VAR* origvar;
       SCIP_Real objvalue;
+
       assert(GCGvarIsOriginal(vars[v]));
       origvar = SCIPvarGetProbvar(vars[v]);
       pricingvar = GCGoriginalVarGetPricingVar(origvar);
       assert(pricingvar != NULL);
-
 
       objvalue = SCIPvarGetObj(origvar);
       /* SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(origvar), SCIPvarGetObj(origvar));*/
@@ -1878,18 +1876,18 @@ SCIP_RETCODE initRelaxator(
    /* transform the linking constraints */
    for( i = 0; i < nvars; ++i )
    {
-      int j;
       assert(GCGvarIsOriginal(vars[i]));
 
       if( GCGvarIsLinking(vars[i]) )
       {
+         int j;
          SCIP_CONS** linkconss;
          linkconss = GCGlinkingVarGetLinkingConss(vars[i]);
          for( j = 0;j < relaxdata->npricingprobs; ++j )
          {
-            SCIP_CONS* tempcons;
             if( linkconss[j] != NULL )
             {
+               SCIP_CONS* tempcons;
                SCIP_CALL( SCIPtransformCons(masterprob, linkconss[j], &(tempcons)) );
                GCGlinkingVarSetLinkingCons(vars[i], tempcons, j);
             }
@@ -1976,7 +1974,6 @@ static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
    SCIP_RELAXDATA* relaxdata;
-   int i;
 
    assert(scip != NULL);
    assert(relax != NULL);
@@ -1987,6 +1984,8 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
    {
+      int i;
+
       for( i = 0; i < relaxdata->nbranchrules; i++ )
       {
          SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
@@ -2618,7 +2617,6 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    int i;
    int j;
 
-   SCIP_Real coef;
    SCIP_Bool success;
 
    assert(scip != NULL);
@@ -2668,7 +2666,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
       SCIP_VAR** origvars;
       SCIP_Real* origvals;
       int norigvars;
-      coef = 0;
+      SCIP_Real coef = 0.0;
 
       origvars = GCGmasterVarGetOrigvars(mastervars[v]);
       norigvars = GCGmasterVarGetNOrigvars(mastervars[v]);
@@ -3237,8 +3235,6 @@ SCIP_RETCODE GCGrelaxEndProbing(
    SCIP_VAR** vars;
    int nvars;
 
-   int i;
-
    assert(scip != NULL);
 
    relax = SCIPfindRelax(scip, RELAX_NAME);
@@ -3291,6 +3287,8 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
    if( relaxdata->storedorigsol != NULL )
    {
+      int i;
+
       SCIP_CALL( SCIPcreateSol(scip, &relaxdata->currentorigsol, NULL) );
       SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relaxdata->storedorigsol) );
 
@@ -3333,9 +3331,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP_RELAXDATA* relaxdata;
    SCIP_VAR** origvars;
    int norigvars;
-   SCIP_SOL* mastersol;
    SCIP_Bool stored;
-   int i;
 
    assert(scip != NULL);
    assert(feasible != NULL);
@@ -3366,6 +3362,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
+      SCIP_SOL* mastersol;
+
       relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
 
       /* create new solution */
@@ -3392,6 +3390,8 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) )
       {
+         int i;
+
          /* transform the master solution to the original variable space */
          SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol)) );
 
