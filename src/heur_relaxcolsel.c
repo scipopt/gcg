@@ -274,7 +274,6 @@ SCIP_RETCODE initializeStartsol(
                {
                   SCIP_VAR** linkingpricingvars;
                   SCIP_Bool hasvalue;
-                  SCIP_Real value;
 
                   /* check whether linking variable has already been assigned a value */
                   linkingpricingvars = GCGlinkingVarGetPricingVars(origvar);
@@ -301,6 +300,7 @@ SCIP_RETCODE initializeStartsol(
                   /* otherwise, exclude the current master variable, if the point has a different value for it */
                   else
                   {
+                     SCIP_Real value;
                      value = SCIPgetSolVal(origprob, origsol, origvar);
                      if( !SCIPisEQ(origprob, value, origval) )
                      {
@@ -376,11 +376,6 @@ SCIP_RETCODE searchZeroMastervar(
    SCIP_VAR** mastervars;
    int nmastervars;
 
-   SCIP_VAR* mastervar;
-   int b;
-   SCIP_Real* origvals;
-   int norigvars;
-
    int i;
    int j;
 
@@ -392,12 +387,18 @@ SCIP_RETCODE searchZeroMastervar(
    /* go through all master variables */
    for( i = 0; i < nmastervars && *zeromastervar == NULL; ++i )
    {
+      SCIP_VAR* mastervar;
+      int b;
+
       mastervar = mastervars[i];
       b = GCGvarGetBlock(mastervar);
 
       /* only regard master variables belonging to the block we are searching for */
       if( b == block )
       {
+         SCIP_Real* origvals;
+         int norigvars;
+
          origvals = GCGmasterVarGetOrigvals(mastervar);
          norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
@@ -635,15 +636,12 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       SCIP_VAR* mastervar;
       int candidx;
       SCIP_Real frac;
-      int block;
       SCIP_Bool compatible;
 
       SCIP_VAR** origvars;
       SCIP_Real* origvals;
       int norigvars;
-
-      SCIP_VAR* tmpvar;
-      SCIP_Real tmpfrac;
+      int block;
 
       /* search the candidate list for a master variable that can be rounded up;
        * take the variable with the highest fractionality */
@@ -654,11 +652,14 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       for( i = 0; i < nmastercands; ++i )
       {
          int idx;
+         SCIP_Real tmpfrac;
 
          idx = mastercands[i];
          tmpfrac = candfracs[i];
          if( idx != -1 && SCIPisFeasGT(scip, tmpfrac, frac) )
          {
+            SCIP_VAR* tmpvar;
+
             tmpvar = mastervars[idx];
             block = GCGvarGetBlock(tmpvar);
 
@@ -744,7 +745,6 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
             {
                SCIP_VAR** linkingpricingvars;
                SCIP_Bool hasvalue;
-               SCIP_Real value;
 
                /* check whether linking variable has already been assigned a value */
                linkingpricingvars = GCGlinkingVarGetPricingVars(origvar);
@@ -771,6 +771,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
                /* otherwise do not take this variable */
                else
                {
+                  SCIP_Real value;
                   value = SCIPgetSolVal(origprob, origsol, origvar);
                   if( !SCIPisEQ(origprob, value, origval) )
                   {
@@ -951,7 +952,6 @@ TERMINATE:
 
    return SCIP_OKAY;
 }
-
 
 
 

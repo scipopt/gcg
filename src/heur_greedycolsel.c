@@ -155,11 +155,7 @@ SCIP_RETCODE getBestMastervar(
    SCIP_VAR** mastervars;
    int nmastervars;
 
-   SCIP_VAR* mastervar;
-   int block;
-
    int i;
-/*    int j; */
    int tmpviolchange;
    SCIP_Real tmpobj;
    SCIP_Real curobj;
@@ -178,6 +174,9 @@ SCIP_RETCODE getBestMastervar(
 
    for( i = nmastervars - 1; i >= 0; i-- )
    {
+      SCIP_VAR* mastervar;
+      int block;
+
       mastervar = mastervars[i];
       assert(GCGvarIsMaster(mastervar));
       block = GCGvarGetBlock(mastervar);
@@ -278,11 +277,6 @@ SCIP_RETCODE searchZeroMastervar(
    SCIP_VAR** mastervars;
    int nmastervars;
 
-   SCIP_VAR* mastervar;
-   int b;
-   SCIP_Real* origvals;
-   int norigvars;
-
    int i;
    int j;
 
@@ -294,6 +288,11 @@ SCIP_RETCODE searchZeroMastervar(
    /* go through all master variables */
    for( i = 0; i < nmastervars && *zeromastervar == NULL; ++i )
    {
+      SCIP_VAR* mastervar;
+      int b;
+      SCIP_Real* origvals;
+      int norigvars;
+
       mastervar = mastervars[i];
       b = GCGvarGetBlock(mastervar);
 
@@ -444,21 +443,15 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIP_SOL* mastersol;                      /* working master solution             */
    SCIP_SOL* origsol;                        /* working original solution           */
    SCIP_VAR** mastervars;
-   SCIP_VAR** origvars;
-   SCIP_VAR* mastervar;
    SCIP_Real* activities;                    /* for each master LP row, activity of current master solution          */
-   SCIP_Real* origvals;
    int* blocknr;                             /* for each pricing problem, block we are currently working in          */
    SCIP_Bool* ignored;                       /* for each master variable, store whether it has to be ignored         */
    SCIP_Bool allblocksfull;                  /* indicates if all blocks are full, i.e. all convexity constraints are satisfied */
-/*    SCIP_Bool discretization; */
    SCIP_Bool masterfeas;
    SCIP_Bool success;
-   int block;
    int minnewcols;                           /* minimum number of new columns necessary for calling the heuristic    */
    int nlprows;
    int nmastervars;
-   int norigvars;
    int nblocks;
    int nviolrows;
    int violchange;
@@ -479,13 +472,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
-
-   *result = SCIP_DIDNOTRUN;
-
-   /* this heuristic works only for the discretization approach */
-/*    SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) ); */
-/*    if( !discretization ) */
-/*       return SCIP_OKAY; */
 
    *result = SCIP_DELAYED;
 
@@ -553,6 +539,12 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    /* try to increase master variables until all blocks are full */
    while( !allblocksfull && !success )
    {
+      SCIP_VAR* mastervar;
+      SCIP_VAR** origvars;
+      SCIP_Real* origvals;
+      int norigvars;
+      int block;
+
       SCIP_CALL( getBestMastervar(scip, mastersol, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
@@ -594,7 +586,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
          {
             SCIP_VAR** linkingpricingvars;
             SCIP_Bool hasvalue;
-            SCIP_Real value;
 
             /* check whether linking variable has already been assigned a value */
             linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[i]);
@@ -621,6 +612,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
             /* otherwise, exclude the current master variable, if the point has a different value for it */
             else
             {
+               SCIP_Real value;
                value = SCIPgetSolVal(origprob, origsol, origvars[i]);
                if( !SCIPisEQ(origprob, value, origvals[i]) )
                {
@@ -726,13 +718,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       /* try to add the solution to (original) solution pool */
       SCIP_CALL( SCIPtrySol(origprob, origsol, FALSE, TRUE, TRUE, TRUE, &success) );
 
-      /* if the solution is feasible, ensure that all columns are in the master problem -
-       * necessary if the solution contains a zero column that has not been added before */
-/*       if( success ) */
-/*       { */
-/*          SCIP_CALL( GCGpricerTransOrigSolToMasterVars(origprob, origsol) ); */
-/*       } */
-
       /* check if all blocks are full */
       allblocksfull = TRUE;
       for( i = 0; i < nblocks && allblocksfull; i++ )
@@ -787,11 +772,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       SCIP_CALL( updateActivities(scip, activities, mastervars[index]) );
    }
 
-/* #ifdef SCIP_DEBUG */
-/*    SCIPdebugMessage("generated solution:\n"); */
-/*    SCIPprintSol(origprob, origsol, NULL, FALSE); */
-/* #endif */
-
    if( success )
    {
       *result = SCIP_FOUNDSOL;
@@ -813,7 +793,6 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
    return SCIP_OKAY;
 }
-
 
 
 

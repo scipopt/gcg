@@ -100,13 +100,14 @@ void updateViolations(
    if( oldviol != newviol )
    {
       int rowpos;
-      int violpos;
 
       rowpos = SCIProwGetLPPos(row);
       assert(rowpos >= 0);
 
       if( oldviol )
       {
+         int violpos;
+
          /* the row violation was repaired: remove row from violrows array, decrease violation count */
          violpos = violrowpos[rowpos];
          assert(0 <= violpos && violpos < *nviolrows);
@@ -174,7 +175,6 @@ SCIP_RETCODE updateActivities(
       if( rowpos >= 0 && !SCIProwIsLocal(row) )
       {
          SCIP_Real oldactivity;
-         SCIP_Real newactivity;
 
          assert(SCIProwIsInLP(row));
 
@@ -182,6 +182,8 @@ SCIP_RETCODE updateActivities(
          oldactivity = activities[rowpos];
          if( !SCIPisInfinity(scip, -oldactivity) && !SCIPisInfinity(scip, oldactivity) )
          {
+            SCIP_Real newactivity;
+
             newactivity = oldactivity + delta * colvals[r];
             if( SCIPisInfinity(scip, newactivity) )
                newactivity = SCIPinfinity(scip);
@@ -214,19 +216,10 @@ SCIP_RETCODE selectRounding(
    SCIP_Real*            newsolval           /**< pointer to store new (rounded) solution value of rounding variable */
    )
 {
-   SCIP_COL* col;
-   SCIP_VAR* var;
-   SCIP_Real val;
+   SCIP_Real bestdeltaobj;
    SCIP_COL** rowcols;
    SCIP_Real* rowvals;
-   SCIP_Real solval;
-   SCIP_Real roundval;
-   SCIP_Real obj;
-   SCIP_Real deltaobj;
-   SCIP_Real bestdeltaobj;
-   SCIP_VARTYPE vartype;
    int nrowcols;
-   int nlocks;
    int minnlocks;
    int c;
 
@@ -246,16 +239,28 @@ SCIP_RETCODE selectRounding(
    *roundvar = NULL;
    for( c = 0; c < nrowcols; ++c )
    {
+      SCIP_COL* col;
+      SCIP_VAR* var;
+      SCIP_VARTYPE vartype;
+
       col = rowcols[c];
       var = SCIPcolGetVar(col);
 
       vartype = SCIPvarGetType(var);
       if( vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
       {
+         SCIP_Real solval;
+
          solval = SCIPgetSolVal(scip, sol, var);
 
          if( !SCIPisFeasIntegral(scip, solval) )
          {
+            SCIP_Real val;
+            SCIP_Real roundval;
+            SCIP_Real obj;
+            SCIP_Real deltaobj;
+            int nlocks;
+
             val = rowvals[c];
             obj = SCIPvarGetObj(var);
 
@@ -350,14 +355,8 @@ SCIP_RETCODE selectEssentialRounding(
    SCIP_Real*            newsolval           /**< new (rounded) solution value of rounding variable */
    )
 {
-   SCIP_VAR* var;
-   SCIP_Real solval;
-   SCIP_Real roundval;
-   SCIP_Real obj;
-   SCIP_Real deltaobj;
    SCIP_Real bestdeltaobj;
    int maxnlocks;
-   int nlocks;
    int v;
 
    assert(roundvar != NULL);
@@ -370,12 +369,20 @@ SCIP_RETCODE selectEssentialRounding(
    *roundvar = NULL;
    for( v = 0; v < nlpcands; ++v )
    {
+      SCIP_VAR* var;
+      SCIP_Real solval;
+
       var = lpcands[v];
       assert(SCIPvarGetType(var) == SCIP_VARTYPE_BINARY || SCIPvarGetType(var) == SCIP_VARTYPE_INTEGER);
 
       solval = SCIPgetSolVal(scip, sol, var);
       if( !SCIPisFeasIntegral(scip, solval) )
       {
+         SCIP_Real roundval;
+         SCIP_Real obj;
+         SCIP_Real deltaobj;
+         int nlocks;
+
          obj = SCIPvarGetObj(var);
 
          /* rounding down */
@@ -514,7 +521,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    SCIP_ROW** violrows;
    int* violrowpos;
    SCIP_Real obj;
-   SCIP_Real bestroundval;
    SCIP_Real minobj;
    int nlpcands;
    int nlprows;
@@ -635,6 +641,8 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    }
    for( c = 0; c < nlpcands; ++c )
    {
+      SCIP_Real bestroundval;
+
       obj = SCIPvarGetObj(lpcands[c]);
       bestroundval = obj > 0.0 ? SCIPfeasFloor(scip, lpcandssol[c]) : SCIPfeasCeil(scip, lpcandssol[c]);
       minobj += obj * (bestroundval - lpcandssol[c]);
