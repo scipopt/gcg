@@ -102,7 +102,6 @@ SCIP_RETCODE writeAllDecompositions(
 
    char* filename;
    SCIP_Bool endoffile;
-   SCIP_RETCODE retcode;
 
    if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
    {
@@ -127,7 +126,7 @@ SCIP_RETCODE writeAllDecompositions(
 
       do
       {
-         retcode = DECwriteAllDecomps(scip, extension);
+         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, extension);
 
          if( retcode == SCIP_FILECREATEERROR )
          {

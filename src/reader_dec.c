@@ -578,18 +578,20 @@ SCIP_RETCODE readBlock(
    SCIP_READERDATA*      readerdata          /**< reader data */
    )
 {
-   int i;
    int blockid;
-   int nvars;
-   SCIP_CONS* cons;
-   SCIP_VAR** vars;
-   SCIP_Bool conshasvar;
+
    SCIP_Bool success;
    assert(decinput != NULL);
    assert(readerdata != NULL);
 
    while( getNextToken(decinput) )
    {
+      int i;
+      SCIP_CONS* cons;
+      SCIP_VAR** curvars = NULL;
+      int ncurvars;
+
+      SCIP_Bool conshasvar = FALSE;
       /* check if we reached a new section */
       if( isNewSection(scip, decinput) )
          break;
@@ -608,27 +610,24 @@ SCIP_RETCODE readBlock(
          continue;
       }
 
-      conshasvar = FALSE;
-      /* get all vars for the specific constraint */
-      SCIP_CALL( SCIPgetConsNVars(scip, cons, &nvars, &success) );
+      /* get all curvars for the specific constraint */
+      SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
       assert(success);
-      vars = NULL;
-      if( nvars > 0 )
+      if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetConsVars(scip, cons, vars, nvars, &success) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
          assert(success);
       }
 
       blockid = decinput->blocknr;
 
-      for( i = 0; i < nvars; i ++ )
+      for( i = 0; i < ncurvars; i ++ )
       {
-         SCIP_VAR* var;
-         assert(vars != NULL); /* for flexelint */
+         assert(curvars != NULL); /* for flexelint */
          if( decinput->presolved )
          {
-            var = SCIPvarGetProbvar(vars[i]);
+            SCIP_VAR* var = SCIPvarGetProbvar(curvars[i]);
             if( !SCIPisVarRelevant(var) )
                continue;
          }
@@ -636,7 +635,7 @@ SCIP_RETCODE readBlock(
          conshasvar = TRUE;
       }
 
-      SCIPfreeMemoryArrayNull(scip, &vars);
+      SCIPfreeMemoryArrayNull(scip, &curvars);
 
       if( !conshasvar )
       {
@@ -652,7 +651,6 @@ SCIP_RETCODE readBlock(
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
       SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) (blockid+1))) );
-
    }
 
    return SCIP_OKAY;

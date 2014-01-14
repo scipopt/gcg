@@ -170,13 +170,14 @@ private:
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
       );
 
+   /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
-      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
-      int& prob,
-      SCIP_SOL** sols,
-      int nsols,
-      SCIP_Bool* solisray
-      );
+      PricingType*          pricetype,          /**< pricing type, farkas or redcost */
+      int&                  prob,               /**< number of the pricing problem */
+      SCIP_SOL**            sols,               /**< solutions which should be investigated */
+      int                   nsols,              /**< number of solutions */
+      SCIP_Bool*            solisray            /**< array indicating if a solution is a ray or not */
+     );
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal();

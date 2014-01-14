@@ -157,18 +157,14 @@ SCIP_RETCODE writeData(
    DEC_DECOMP*           decdecomp           /**< Decomposition pointer */
    )
 {
-   SCIP_VAR** vars;
    SCIP_CONS** conss;
 
    SCIP_HASHMAP* varindexmap;
    SCIP_HASHMAP* consindexmap;
-   int nvars;
    int nconss;
 
    int i;
    int j;
-   size_t varindex;
-   size_t consindex;
 
    assert(scip != NULL);
    assert(file != NULL);
@@ -178,8 +174,6 @@ SCIP_RETCODE writeData(
 
    varindexmap = NULL;
    consindexmap = NULL;
-
-
 
    if( decdecomp != NULL )
    {
@@ -192,12 +186,14 @@ SCIP_RETCODE writeData(
       /* if we don't have staicase, but something else, go through the blocks and create the indices */
       if( decdecomp->type == DEC_DECTYPE_ARROWHEAD || decdecomp->type == DEC_DECTYPE_BORDERED || decdecomp->type == DEC_DECTYPE_DIAGONAL )
       {
+         size_t varindex = 1;
+         size_t consindex = 1;
+
          SCIP_CALL( SCIPhashmapCreate(&varindexmap, SCIPblkmem(scip), SCIPgetNVars(scip)) );
          SCIP_CALL( SCIPhashmapCreate(&consindexmap, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
          SCIPdebugMessage("Block information:\n");
-         varindex = 1;
-         consindex = 1;
+
          for( i = 0; i < decdecomp->nblocks; ++i )
          {
             SCIPdebugPrintf("Block %d:\n", i+1);
@@ -246,47 +242,47 @@ SCIP_RETCODE writeData(
 
    for( i = 0; i < nconss; i++ )
    {
-      nvars = SCIPgetNVarsXXX(scip, conss[i]);
-      vars = NULL;
+      int ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      SCIP_VAR** curvars = NULL;
 
-      if( nvars > 0 )
+      if( ncurvars > 0 )
       {
-         SCIP_CALL( SCIPallocBufferArray( scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, nvars) );
+         SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
       }
 
-      for( j = 0; j < nvars; j++ )
+      for( j = 0; j < ncurvars; j++ )
       {
-         assert(vars != NULL);
+         assert(curvars != NULL);
 
          /* if the problem has been created, output the whole model */
          if( SCIPgetStage(scip) == SCIP_STAGE_PROBLEM )
          {
-            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(vars[j]), i);
+            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(curvars[j]), i);
             continue;
          }
 
          /* if there is no decomposition, output the presolved model! */
          if( decdecomp == NULL || decdecomp->type == DEC_DECTYPE_UNKNOWN )
          {
-            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(vars[j]), i);
+            SCIPinfoMessage(scip, file, "%d %d 0.5\n", SCIPvarGetIndex(curvars[j]), i);
          }
          /* if there is a decomposition, output the indices derived from the decomposition above*/
          else
          {
             assert(varindexmap != NULL);
             assert(consindexmap != NULL);
-            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])) != NULL);
+            assert(SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])) != NULL);
             assert(SCIPhashmapGetImage(consindexmap, conss[i]) != NULL);
 
             SCIPinfoMessage(scip, file, "%d %d 0.5\n",
-               SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(vars[j])),
+               SCIPhashmapGetImage(varindexmap, SCIPvarGetProbvar(curvars[j])),
                SCIPhashmapGetImage(consindexmap, conss[i])
                );
          }
       }
 
-      SCIPfreeBufferArrayNull(scip, &vars);
+      SCIPfreeBufferArrayNull(scip, &curvars);
    }
 
    if( decdecomp != NULL && decdecomp->type != DEC_DECTYPE_STAIRCASE )

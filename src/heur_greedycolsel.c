@@ -237,11 +237,9 @@ SCIP_RETCODE updateActivities(
 
    for( r = 0; r < ncolrows; ++r )
    {
-      SCIP_ROW* row;
-      int rowpos;
+      SCIP_ROW* row = colrows[r];
+      int rowpos = SCIProwGetLPPos(row);
 
-      row = colrows[r];
-      rowpos = SCIProwGetLPPos(row);
       assert(-1 <= rowpos);
 
       if( rowpos >= 0 && !SCIProwIsLocal(row) )
@@ -288,19 +286,14 @@ SCIP_RETCODE searchZeroMastervar(
    /* go through all master variables */
    for( i = 0; i < nmastervars && *zeromastervar == NULL; ++i )
    {
-      SCIP_VAR* mastervar;
-      int b;
-      SCIP_Real* origvals;
-      int norigvars;
-
-      mastervar = mastervars[i];
-      b = GCGvarGetBlock(mastervar);
+      SCIP_VAR* mastervar = mastervars[i];
+      int b = GCGvarGetBlock(mastervar);
 
       /* only regard master variables belonging to the block we are searching for */
       if( b == block )
       {
-         origvals = GCGmasterVarGetOrigvals(mastervar);
-         norigvars = GCGmasterVarGetNOrigvars(mastervar);
+         SCIP_Real* origvals = GCGmasterVarGetOrigvals(mastervar);
+         int norigvars = GCGmasterVarGetNOrigvars(mastervar);
 
          /* check if all original variables contained in the master variable have value zero */
          for( j = 0; j < norigvars; ++j )

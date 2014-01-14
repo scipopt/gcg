@@ -318,9 +318,7 @@ SCIP_RETCODE ObjPricerGcg::ensureSizePricedvars(
 
    if( pricerdata->maxpricedvars < size )
    {
-      int oldsize;
-
-      oldsize = pricerdata->maxpricedvars;
+      int oldsize = pricerdata->maxpricedvars;
       pricerdata->maxpricedvars = SCIPcalcMemGrowSize(scip_, size);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->pricedvars), oldsize, pricerdata->maxpricedvars) );
    }
@@ -551,7 +549,6 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    int i;
    int count;
    int countz;
-   int colindex;
    double currentVal;
    int* indizes = NULL;
    SCIP_COL** cols;
@@ -579,7 +576,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
 
    for( i = 0; i < nrows; i++ )
    {
-      colindex = indizes[i];
+      int colindex = indizes[i];
       /* is column if >0 it is column in basis, <0 is for row */
       if( colindex > 0 )
       {
@@ -1634,26 +1631,24 @@ SCIP_RETCODE ObjPricerGcg::freePricingProblems()
    return SCIP_OKAY;
 }
 
+/** counts the number of variables with negative reduced cost */
 int ObjPricerGcg::countPricedVariables(
-   PricingType* pricetype,
-   int& prob,
-   SCIP_SOL** sols,
-   int nsols,
-   SCIP_Bool* solisray
+   PricingType*          pricetype,          /**< pricing type, farkas or redcost */
+   int&                  prob,               /**< number of the pricing problem */
+   SCIP_SOL**            sols,               /**< solutions which should be investigated */
+   int                   nsols,              /**< number of solutions */
+   SCIP_Bool*            solisray            /**< array indicating if a solution is a ray or not */
    )
 {
-
-   SCIP_Real redcost;
-   int nfoundvars;
+   int nfoundvars = 0;
 
    SCIPdebugMessage("checking %d solution of pricing problem %d\n", nsols, prob);
    if(nsols == 0)
       return 0;
 
-   nfoundvars = 0;
    for( int j = 0; j < nsols; ++j )
    {
-      redcost = computeRedCost(pricetype, sols[j], solisray[j], prob, NULL);
+      SCIP_Real redcost = computeRedCost(pricetype, sols[j], solisray[j], prob, NULL);
 
       SCIPdebugMessage("solution %d of prob %d (%p) has reduced cost %g\n", j, prob, (void*) (sols[j]), redcost);
       if( SCIPisNegative(scip_, redcost) )
@@ -2140,9 +2135,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
 
       for( j = 0; j < nsols[prob]; ++j )
       {
-         SCIP_VAR** solvars;
          SCIP_Real* solvals = NULL;
-         int nsolvars;
 
          /** add variable only if we cannot abort */
          if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
@@ -2150,8 +2143,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
              (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
              (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
          {
-            solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
-            nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
+            SCIP_VAR** solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
+            int nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
             SCIP_CALL( SCIPallocMemoryArray(scip, &solvals, nsolvars) );
             SCIPdebugMessage("Solution %d/%d of prob %d: ", j+1, nsols[prob], prob);
             SCIP_CALL( SCIPgetSolVals(pricerdata->pricingprobs[prob], sols[prob][j], nsolvars, solvars, solvals) );
@@ -2224,7 +2217,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    )
 {
    int nfoundvars;
-   double degeneracy;
    SCIP_Real bestredcost;
    SCIP_Bool bestredcostvalid;
 
@@ -2296,6 +2288,8 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    if( isRootNode(scip_) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
    {
+      double degeneracy = 0.0;
+
       SCIP_CALL( computeCurrentDegeneracy(&degeneracy) );
 
       pricerdata->rootnodedegeneracy = degeneracy;
@@ -2631,7 +2625,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_RETCODE retcode;
    SCIP_SOL** origsols;
    int norigsols;
-   int i;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -2652,6 +2645,8 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    /** @todo This is just a workaround around SCIP stages! */
    if( farkaspricing->getCalls() == 0 )
    {
+      int i;
+
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);

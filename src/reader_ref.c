@@ -474,11 +474,7 @@ SCIP_RETCODE readBlocks(
    REFINPUT*             refinput            /**< REF reading data */
    )
 {
-   SCIP_CONS** conss;
-   SCIP_CONS* cons;
-   SCIP_VAR* var;
    int consctr;
-   int v;
 
    assert(refinput != NULL);
 
@@ -489,15 +485,17 @@ SCIP_RETCODE readBlocks(
       SCIPdebugMessage("Reading constraints of block %d/%d\n", refinput->blocknr + 1, refinput->nblocks);
       while( getNextToken(refinput) )
       {
-         SCIP_CONSHDLR* conshdlr;
          SCIP_VAR** vars;
          int consnr;
-         int nvars;
-
-         conss = SCIPgetConss(scip);
+         SCIP_CONS** conss = SCIPgetConss(scip);
 
          if( isInt(scip, refinput, &consnr) )
          {
+            SCIP_CONSHDLR* conshdlr;
+            int nvars;
+            int v;
+            SCIP_CONS* cons;
+
             SCIPdebugMessage("  -> constraint %d\n", consnr);
 
             cons = conss[consnr];
@@ -518,7 +516,7 @@ SCIP_RETCODE readBlocks(
 
             for( v = 0; v < nvars; v++ )
             {
-               var = vars[v];
+               SCIP_VAR* var = vars[v];
 
                SCIPdebugMessage("    -> variable %s\n", SCIPvarGetName(var));
 
