@@ -77,8 +77,8 @@ using namespace scip;
 #define DEFAULT_ABORTPRICINGINT          TRUE       /**< should the pricing be aborted when integral */
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap at which the pricing is aborted */
 #define DEFAULT_SUCCESSFULMIPSREL        1.0        /**< factor of successful mips to be solved */
-#define DEFAULT_DISPINFOS                FALSE      /**< should the cutoffbound be applied in master LP solving? */
-#define DEFAULT_ENABLELPCUTOFF           TRUE       /**< should additional information be displayed */
+#define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
+#define DEFAULT_DISABLECUTOFF            2          /**< should the cutoffbound be applied in master LP solving? (0: on, 1:off, 2:auto) */
 #define DEFAULT_SORTING                  2          /**< default sorting method for pricing mips
                                                      *    0 :   order of pricing problems
                                                      *    1 :   according to dual solution of convexity constraint
@@ -154,7 +154,7 @@ struct SCIP_PricerData
    SCIP_Bool             useheurpricing;     /**< should heuristic pricing be used? */
    SCIP_Bool             abortpricingint;    /**< should the pricing be aborted on integral solutions? */
    SCIP_Bool             dispinfos;          /**< should pricing information be displayed? */
-   SCIP_Bool             enablelpcutoff;     /**< should the cutoffbound be applied in master LP solving? */
+   int                   disablecutoff;      /**< should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)? */
    SCIP_Real             successfulmipsrel;  /**< Factor of successful MIPs solved until pricing be aborted */
    SCIP_Real             abortpricinggap;    /**< Gap at which pricing should be aborted */
    SCIP_Bool             stabilization;      /**< should stabilization be used */
@@ -186,17 +186,17 @@ ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
 FarkasPricing* ObjPricerGcg::farkaspricing;
 Stabilization* ObjPricerGcg::stabilization;
 
-/** information method for a parameter change of enablelpcutoff */
+/** information method for a parameter change of disablecutoff */
 static
-SCIP_DECL_PARAMCHGD(paramChgdEnablelpcutoff)
+SCIP_DECL_PARAMCHGD(paramChgdDisablecutoff)
 {  /*lint --e{715}*/
    SCIP* masterprob;
-   SCIP_Bool newval;
+   int newval;
 
    masterprob = GCGrelaxGetMasterprob(scip);
-   newval = SCIPparamGetBool(param);
+   newval = SCIPparamGetInt(param);
 
-   SCIP_CALL( SCIPsetBoolParam(masterprob, "lp/disablecutoff", newval == FALSE) );
+   SCIP_CALL( SCIPsetIntParam(masterprob, "lp/disablecutoff", newval) );
 
    return SCIP_OKAY;
 }
@@ -2755,10 +2755,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should stabilization be performed?",
          &pricerdata->stabilization, FALSE, DEFAULT_STABILIZATION, NULL, NULL) );
 
-   SCIP_CALL( SCIPsetBoolParam(scip, "lp/disablecutoff", DEFAULT_ENABLELPCUTOFF == FALSE) );
-   SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/enablelpcutoff",
-         "should the cutoffbound be applied in master LP solving?",
-         &pricerdata->enablelpcutoff, FALSE, DEFAULT_ENABLELPCUTOFF, paramChgdEnablelpcutoff, NULL) );
+   SCIP_CALL( SCIPsetIntParam(scip, "lp/disablecutoff", DEFAULT_DISABLECUTOFF) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/disablecutoff",
+         "should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)?",
+         &pricerdata->disablecutoff, FALSE, DEFAULT_DISABLECUTOFF, 0, 2, paramChgdDisablecutoff, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/eagerfreq",
             "frequency at which all pricingproblems should be solved (0 to disable)",

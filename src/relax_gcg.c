@@ -2323,7 +2323,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvars", INT_MAX) );
    SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "pricing/maxvarsroot", INT_MAX) );
    SCIP_CALL( SCIPsetRealParam(relaxdata->masterprob, "pricing/abortfac", 1.0) );
-   SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "lp/disablecutoff", TRUE) );
+   SCIP_CALL( SCIPsetIntParam(relaxdata->masterprob, "lp/disablecutoff", 1) );
 #ifdef DELVARS
    /* set paramteters to allow deletion of variables */
    SCIP_CALL( SCIPsetBoolParam(relaxdata->masterprob, "pricing/delvars", TRUE) );
