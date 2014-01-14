@@ -114,8 +114,6 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_Bool*            added               /**< whether the variable was added */
 )
 {
-   SCIP_VAR** pricingvars;
-   int k;
    int p;
 
    SCIP_Bool blockfound = TRUE;
@@ -129,6 +127,8 @@ SCIP_RETCODE addVarToMasterbranch(
    *added = FALSE;
    if( GCGvarIsLinking(mastervar) )
    {
+      SCIP_VAR** pricingvars;
+      int k;
       blockfound = FALSE;
 
       pricingvars = GCGlinkingVarGetPricingVars(mastervar);
@@ -474,7 +474,6 @@ SCIP_Real GetMedian(
    int l;
    int r;
    int i;
-   int j;
    int MedianIndex;
    SCIP_Real arithmMiddle;
 
@@ -493,9 +492,10 @@ SCIP_Real GetMedian(
 
    while( l < r-1 )
    {
+      int j = r;
       Median = array[MedianIndex];
       i = l;
-      j = r;
+
       do
       {
          while( SCIPisLT(scip, array[i], Median) )
@@ -685,12 +685,12 @@ int ILOcomp(
       SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &newsequencesizes, Nupper) );
       for( j = 0; j < NBoundsequences; ++j )
       {
-         int l;
          if( sequencesizes[j] >= p )
             assert(C[j][p-1].component == origvar);
 
          if( sequencesizes[j] >= p && C[j][p-1].sense == GCG_COMPSENSE_GE )
          {
+            int l;
             CopyC[k] = NULL;
             SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) );
             for( l = 0; l < sequencesizes[j]; ++l )
@@ -850,13 +850,12 @@ SCIP_RETCODE partition(
    int j;
    int l;
    SCIP_Real min;
-   SCIP_Real maxPriority;
    SCIP_Real* compvalues;
 
    do
    {
+      SCIP_Real maxPriority = INT_MIN;
       min = INT_MAX;
-      maxPriority = INT_MIN;
 
       /* max-min priority */
       for ( j = 0; j < *Jsize; ++j )
@@ -1022,9 +1021,6 @@ SCIP_RETCODE Separate(
    for( k = 0; k < IndexSetSize; ++k )
    {
       GCG_COMPSEQUENCE* copyS;
-      SCIP_Bool even;
-
-      even = TRUE;
       origvar = IndexSet[k];
       copyS = NULL;
       alpha[k] = 0;
@@ -1063,6 +1059,7 @@ SCIP_RETCODE Separate(
       if( !SCIPisFeasIntegral(scip, alpha[k]) )
       {
          SCIP_Real mu_F;
+         SCIP_Bool even = TRUE;
 
          SCIPdebugMessage("alpha[%d] = %g\n", k, alpha[k]);
          found = TRUE;
@@ -1443,7 +1440,6 @@ SCIP_RETCODE Explore(
    SCIP_Real alpha_i;
    SCIP_Real  muF;
    SCIP_Bool found;
-   SCIP_Real nu_F;
 
    k = 0;
    muF = 0;
@@ -1548,6 +1544,7 @@ SCIP_RETCODE Explore(
    if( !SCIPisFeasIntegral(scip, alpha_i) )
    {
       int l;
+      SCIP_Real nu_F = 0.0;
 
       found = TRUE;
       /* SCIPdebugMessage("fractional alpha(%s) = %g\n", SCIPvarGetName(origvar), alpha_i); */
@@ -1556,7 +1553,6 @@ SCIP_RETCODE Explore(
        * compute nu_F                                *
        * ******************************************* */
 
-      nu_F = 0;
       for( l = 0; l < Fsize; ++l )
       {
          if( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, getGeneratorEntry(F[l], origvar), ivalue) )
@@ -1772,7 +1768,6 @@ SCIP_RETCODE ChooseSeparateMethod(
    int*                  checkedblocksnsortstrips
    )
 {
-   SCIP* masterscip;
    int i;
    SCIP_VAR** IndexSet;
    SCIP_VAR** mastervars;
@@ -1821,9 +1816,7 @@ SCIP_RETCODE ChooseSeparateMethod(
 
    if( record->recordsize <= 0 )
    {
-      masterscip = GCGrelaxGetMasterprob(scip);
-      assert(masterscip != NULL);
-      SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+      SCIP_CALL( SCIPgetVarsData(GCGrelaxGetMasterprob(scip), &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
       ++ncheckedblocks;
       assert(ncheckedblocks <= GCGrelaxGetNPricingprobs(scip)+1);
@@ -1846,15 +1839,14 @@ SCIP_RETCODE ChooseSeparateMethod(
       for( i=0; i<nmastervars; ++i )
       {
          SCIP_Bool blockfound;
-         SCIP_VAR** pricingvars;
-         int u;
 
          if( GCGvarGetBlock(mastervars[i]) == -1 && GCGvarIsLinking(mastervars[i]) )
          {
-            blockfound = FALSE;
-
-            pricingvars = GCGlinkingVarGetPricingVars(mastervars[i]);
+            int u;
+            SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervars[i]);
             assert(pricingvars != NULL );
+
+            blockfound = FALSE;
 
             for( u = 0; u < GCGlinkingVarGetNBlocks(mastervars[i]); ++u )
             {
@@ -2197,11 +2189,9 @@ SCIP_RETCODE createChildNodesGeneric(
       GCG_BRANCHDATA* branchchilddata;
       SCIP_NODE* child;
       SCIP_CONS* childcons;
-      char childname[SCIP_MAXSTRLEN];
       int k;
 
       SCIP_Real lhs;
-      SCIP_Real mu = 0.0;
       branchchilddata = NULL;
 
       /*  allocate branchdata for child and store information */
@@ -2249,13 +2239,13 @@ SCIP_RETCODE createChildNodesGeneric(
       else
       {
          /* calculate mu */
+         SCIP_Real mu = 0.0;
+
          ncopymastervars = nmastervars2;
          for( i = 0; i < ncopymastervars; ++i )
          {
             SCIP_VAR* swap;
-            SCIP_Real generator_i;
             SCIP_Bool blockfound;
-            int u;
 
             if( i >= nmastervars2 )
                break;
@@ -2263,6 +2253,7 @@ SCIP_RETCODE createChildNodesGeneric(
             if( GCGvarGetBlock(mastervars2[i]) == -1 && GCGvarIsLinking(mastervars2[i]) )
             {
                SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(mastervars2[i]);
+               int u;
 
                assert(pricingvars != NULL );
                blockfound = FALSE;
@@ -2283,7 +2274,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
             if( blockfound )
             {
-               generator_i = getGeneratorEntry(mastervars2[i], S[p].component);
+               SCIP_Real generator_i = getGeneratorEntry(mastervars2[i], S[p].component);
 
                if( (S[p].sense == GCG_COMPSENSE_GE && SCIPisGE(scip, generator_i, S[p].bound)) ||
                   (S[p].sense == GCG_COMPSENSE_LT && SCIPisLT(scip, generator_i, S[p].bound) ) )
@@ -2337,6 +2328,7 @@ SCIP_RETCODE createChildNodesGeneric(
       {
          if( masterbranchcons != NULL )
          {
+            char childname[SCIP_MAXSTRLEN];
             ++nchildnodes;
 
             SCIP_CALL( SCIPcreateChild(masterscip, &child, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
@@ -2375,12 +2367,12 @@ SCIP_RETCODE createChildNodesGeneric(
   for( i = 0; i < nmastervars; ++i )
   {
      SCIP_VAR* mastervar = mastervars[i];
-     SCIP_VAR** pricingvars = NULL;
      SCIP_Bool blockfound;
 
      if( GCGvarIsLinking(mastervar) )
      {
         int u;
+        SCIP_VAR** pricingvars = NULL;
         assert( GCGvarIsLinking(mastervar) );
         blockfound = FALSE;
 
@@ -2860,7 +2852,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP_VAR** nonsortmastervars;
    int nmastervars;
    SCIP_CONS* masterbranchcons;
-   SCIP_CONS* parentcons;
    int nbranchcands;
    GCG_BRANCHDATA* branchdata;
    SCIP_VAR* mastervar;
@@ -3071,13 +3062,13 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    for( i=0; i<nbranchcands; ++i )
    {
       SCIP_Bool blockfound;
-      int k;
 
       mastervar = branchcands[i];
       assert(GCGvarIsMaster(mastervar));
 
       if( GCGvarGetBlock(mastervar) == -1 && GCGvarIsLinking(mastervar) )
       {
+         int k;
          blockfound = FALSE;
 
          pricingvars = GCGlinkingVarGetPricingVars(mastervar);
@@ -3126,7 +3117,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* calculate C */
       int c;
       int Csize = 0;
-      parentcons = masterbranchcons;
+      SCIP_CONS* parentcons = masterbranchcons;
 
       while( parentcons != NULL && GCGconsMasterbranchGetbranchrule(parentcons) != NULL
          && strcmp(SCIPbranchruleGetName(GCGconsMasterbranchGetbranchrule(parentcons)), "generic") == 0)

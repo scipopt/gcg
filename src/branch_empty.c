@@ -184,7 +184,6 @@ SCIP_RETCODE createBranchNodesInOrigprob(
    SCIP* masterscip;
    SCIP_Bool feasible;
    SCIP_CONS* masterbranchcons;
-   SCIP_CONS* masterbranchchildcons;
    int nchildnodes;
    int i;
 
@@ -241,7 +240,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    for( i=0; i<nchildnodes; ++i )
    {
-      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
+      SCIP_CONS* masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
       assert(masterbranchchildcons != NULL);
 
       SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
