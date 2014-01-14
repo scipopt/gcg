@@ -292,7 +292,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 #endif
    SCIP_HEURDATA* heurdata;
    SCIP_LPSOLSTAT lpsolstat;
-   SCIP_VAR* bestcand;
    SCIP_VAR** selectedvars;
    SCIP_VAR** tabulist;
    int* discrepancies;
@@ -301,13 +300,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_Real searchbound;
    SCIP_Real objval;
    SCIP_Real oldobjval;
-   SCIP_Real bestcandsol;
-   SCIP_Real bestfrac;
-   SCIP_Bool bestcandmayround;
    SCIP_Bool lperror;
    SCIP_Bool cutoff;
-   SCIP_Bool backtracked;
-   SCIP_Bool farkaspricing;
    SCIP_Bool origfeas;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
@@ -503,6 +497,14 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       && (divedepth >= heurdata->maxdiscdepth || discrepancies[divedepth] <= heurdata->maxdiscrepancy)
       && !SCIPisStopped(scip) )
    {
+      SCIP_VAR* bestcand;
+      SCIP_Real bestcandsol;
+      SCIP_Real bestfrac;
+      SCIP_Bool bestcandmayround;
+
+      SCIP_Bool backtracked;
+      SCIP_Bool farkaspricing;
+
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
 

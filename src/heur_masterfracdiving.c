@@ -98,7 +98,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
       SCIP_Bool mayroundup;
       SCIP_Real frac;
       SCIP_Real obj;
-      SCIP_Real objgain;
 
       int i;
 
@@ -121,6 +120,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
          /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
          if( bestcandmayrounddown || bestcandmayroundup )
          {
+            SCIP_Real objgain;
+
             objgain = (1.0-frac)*obj;
 
             /* penalize too small fractions */

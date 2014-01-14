@@ -322,23 +322,16 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    SCIP_CONS* probingcons;
    SCIP_LPSOLSTAT lpsolstat;
    SCIP_NODE* probingnode;
-   SCIP_VAR* bestcand;
    SCIP_Real searchubbound;
    SCIP_Real searchavgbound;
    SCIP_Real searchbound;
    SCIP_Real lpobj;
    SCIP_Real objval;
    SCIP_Real oldobjval;
-   SCIP_Real bestcandsol;
-   SCIP_Real bestfrac;
-   SCIP_Bool bestcandmayround;
-   SCIP_Bool bestcandroundup;
    SCIP_Bool lperror;
    SCIP_Bool lpsolved;
    SCIP_Bool cutoff;
    SCIP_Bool feasible;
-   SCIP_Bool backtracked;
-   SCIP_Bool farkaspricing;
    SCIP_Longint ncalls;
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;         /* lp iterations performed in one single diving loop */
@@ -530,6 +523,15 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          || (divedepth < maxdivedepth && heurdata->nlpiterations < maxnlpiterations && objval < searchbound))
       && !SCIPisStopped(scip) )
    {
+      SCIP_VAR* bestcand;
+      SCIP_Real bestcandsol;
+      SCIP_Real bestfrac;
+      SCIP_Bool bestcandmayround;
+      SCIP_Bool bestcandroundup;
+
+      SCIP_Bool backtracked;
+      SCIP_Bool farkaspricing;
+
       SCIP_CALL( SCIPnewProbingNode(scip) );
       divedepth++;
 
