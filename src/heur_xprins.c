@@ -73,8 +73,6 @@
 #define DEFAULT_COPYCUTS      TRUE          /**< if DEFAULT_USELPROWS is FALSE, then should all active cuts from the cutpool
                                              * of the original scip be copied to constraints of the subscip
                                              */
-#define DEFAULT_PRINTSTATISTICS FALSE       /**< shall additional statistics about this heuristic be printed?        */
-
 
 
 
@@ -107,7 +105,7 @@ struct SCIP_HeurData
                                               */
    unsigned int          randseed;           /**< seed value for random number generator                            */
 
-   SCIP_Bool             printstatistics;    /**< shall additional statistics about this heuristic be printed?      */
+#ifdef SCIP_STATISTIC
    SCIP_Real             avgfixrate;         /**< average rate of variables that are fixed                          */
    SCIP_Real             avgzerorate;        /**< average rate of fixed variables that are zero                     */
    SCIP_Longint          totalsols;          /**< total number of subSCIP solutions (including those which have not
@@ -115,6 +113,7 @@ struct SCIP_HeurData
                                               */
    SCIP_Real             subsciptime;        /**< total subSCIP solving time in seconds                             */
    SCIP_Real             bestprimalbd;       /**< objective value of best solution found by this heuristic          */
+#endif
 };
 
 
