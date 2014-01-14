@@ -999,7 +999,6 @@ SCIP_RETCODE execRelpsprob(
 #ifdef SCIP_DEBUG
    SCIP_Bool bestisstrongbranch = FALSE;
 #endif
-   int ninitcands = 0;
    int bestcand = -1;
 
    *result = SCIP_DIDNOTRUN;
@@ -1057,6 +1056,7 @@ SCIP_RETCODE execRelpsprob(
       int i;
       int j;
       int c;
+      int ninitcands = 0;
 
       /* get average conflict, inference, and pseudocost scores */
       avgconflictscore = SCIPgetAvgConflictScore(scip);

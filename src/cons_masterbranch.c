@@ -157,18 +157,12 @@ SCIP_RETCODE createConsData(
 
    SCIP* origscip;
    SCIP_CONS* origcons;
-   SCIP_CONSDATA* parentdata;
-   SCIP_CONSDATA* stackconsdata;
 
    SCIP_DOMCHG* domchg;
-   int ndomboundchgs;
    SCIP_BOUNDCHG* boundchg;
    SCIP_VAR* boundchgvar;
-   SCIP_BOUNDTYPE boundchgtype;
-   SCIP_Real boundchgnewbound;
 
    int i;
-   int j;
 
    assert(scip != NULL);
    assert(consdata != NULL);
@@ -264,7 +258,7 @@ SCIP_RETCODE createConsData(
    assert((consdata->parentcons == NULL) == (conshdlrData->nstack == 0));
    if( consdata->parentcons != NULL )
    {
-      parentdata = SCIPconsGetData(consdata->parentcons);
+      SCIP_CONSDATA* parentdata = SCIPconsGetData(consdata->parentcons);
 
       assert(consdata->parentcons == conshdlrData->stack[conshdlrData->nstack-1]);
       assert(SCIPconsGetData(conshdlrData->stack[0])->parentcons == NULL);
@@ -274,7 +268,8 @@ SCIP_RETCODE createConsData(
        */
       for( i = 1; i < conshdlrData->nstack; ++i )
       {
-         stackconsdata = SCIPconsGetData(conshdlrData->stack[i]);
+         int ndomboundchgs;
+         SCIP_CONSDATA* stackconsdata = SCIPconsGetData(conshdlrData->stack[i]);
          domchg = SCIPnodeGetDomchg(GCGconsOrigbranchGetNode(stackconsdata->origcons));
          ndomboundchgs = SCIPdomchgGetNBoundchgs(domchg);
 
@@ -283,6 +278,7 @@ SCIP_RETCODE createConsData(
          if( ndomboundchgs != parentdata->nboundchangestreated[i] )
          {
             int diff;
+            int j;
 
             diff = ndomboundchgs - parentdata->nboundchangestreated[i];
 
@@ -295,6 +291,8 @@ SCIP_RETCODE createConsData(
             for( j = 0; j < ndomboundchgs; ++j )
             {
                int bndchgindex;
+               SCIP_BOUNDTYPE boundchgtype;
+               SCIP_Real boundchgnewbound;
 
                boundchg = SCIPdomchgGetBoundchg(domchg, j);
                boundchgvar = SCIPboundchgGetVar(boundchg);
@@ -1116,8 +1114,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    SCIP_BOUNDTYPE* propboundtypes;           /**< type of the domain new bound found by propagation */
    SCIP_Real* propbounds;                    /**< new lower/upper bound of the propagated original variable */
    int npropbounds;
-   SCIP_VAR* mastervar;
-
 
    assert(conshdlr != NULL);
    conshdlrData = SCIPconshdlrGetData(conshdlr);
@@ -1192,7 +1188,6 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          for( k = 0; k < conshdlrData->npendingbnds; k++ )
          {
             SCIP_Bool ismastervarrelevant;
-            SCIP_VAR** pricingvars;
             int bndchgblocknr;
             SCIP_VAR** bndchgorigvars;
 
@@ -1224,7 +1219,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
             {
                if( GCGvarIsLinking(origvars[0]) )
                {
-                  pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
+                  SCIP_VAR** pricingvars = GCGlinkingVarGetPricingVars(origvars[0]);
                   ismastervarrelevant = ismastervarrelevant || (pricingvars[bndchgblocknr] != NULL);
                }
             }
@@ -1424,6 +1419,7 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
          &propbounds, &npropbounds) );
    for( i = 0; i < npropbounds; i++ )
    {
+      SCIP_VAR* mastervar;
 
       assert(GCGvarIsOriginal(propvars[i]));
       assert(GCGvarGetBlock(propvars[i]) < 0); /** @todo this might lead to an error with linking variables*/
@@ -1575,7 +1571,6 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    SCIP_VAR* var;
    SCIP_Real oldbound;
    SCIP_Real newbound;
-   int i;
    int blocknr;
 #ifdef SCIP_DEBUG
    SCIP_Bool handled = FALSE;
@@ -1676,9 +1671,9 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
    /* deal with linking variables */
    if( blocknr == -2 )
    {
-
       int npricingprobs;
       SCIP_VAR** pricingvars;
+      int i;
 
       SCIPdebugMessage("Linking var!\n");
       pricingvars = GCGlinkingVarGetPricingVars(var);
@@ -2403,7 +2398,6 @@ void GCGconsMasterbranchCheckConsistency(
 #ifndef NDEBUG
    int i;
    SCIP_CONS** conss;
-   SCIP_CONSDATA* consdata;
 #endif
 
    if( scip == NULL )
@@ -2425,6 +2419,7 @@ void GCGconsMasterbranchCheckConsistency(
 
    for( i = 0; i < nconss; i++ )
    {
+      SCIP_CONSDATA* consdata;
 #ifdef SCIP_DEBUG
       SCIP_CONS* parent_origcons;
       SCIP_CONS* origcons_parent;
@@ -2433,24 +2428,9 @@ void GCGconsMasterbranchCheckConsistency(
       consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
 
-
-      /** todo case for general */
-#if 0
-      assert(consdata->origcons == NULL || consdata->created);
-      /* if( BRANCHRULE_VANDERBECK != 1 ) */
-         assert(consdata->parentcons == NULL || SCIPconsGetData(consdata->parentcons)->child1cons == conss[i]
-            || SCIPconsGetData(consdata->parentcons)->child2cons == conss[i]
-            || ( SCIPinProbing(scip) && SCIPconsGetData(consdata->parentcons)->probingtmpcons == conss[i]));
-      /* if( BRANCHRULE_VANDERBECK != 1 ) */
-         assert(consdata->child1cons == NULL || SCIPconsGetData(consdata->child1cons)->parentcons == conss[i]);
-      /* if( BRANCHRULE_VANDERBECK != 1 ) */
-         assert(consdata->child2cons == NULL || SCIPconsGetData(consdata->child2cons)->parentcons == conss[i]);
-#endif
-
       assert(consdata->probingtmpcons == NULL || SCIPinProbing(scip));
       assert(consdata->probingtmpcons == NULL || SCIPconsGetData(consdata->probingtmpcons)->parentcons == conss[i]);
-      assert(consdata->origcons == NULL ||
-         GCGconsOrigbranchGetMastercons(consdata->origcons) == conss[i]);
+      assert(consdata->origcons == NULL || GCGconsOrigbranchGetMastercons(consdata->origcons) == conss[i]);
 
 #ifdef SCIP_DEBUG
       if( consdata->parentcons != NULL )
@@ -2471,7 +2451,6 @@ void GCGconsMasterbranchCheckConsistency(
          parent_origcons == NULL? "NULL" :  SCIPconsGetName(parent_origcons),
          origcons_parent == NULL? "NULL" : SCIPconsGetName(origcons_parent) );
 #endif
-
    }
 #endif
 

@@ -111,7 +111,6 @@ void sortBranchrules(
    SCIP_BRANCHRULE* tmp;
    int pos;
    int i;
-   int maxi;
 
    tmp = NULL;
 
@@ -120,7 +119,7 @@ void sortBranchrules(
 
    for( pos=0; pos<nbranchrules; ++pos )
    {
-      maxi = pos;
+      int maxi = pos;
       for( i=pos+1; i<nbranchrules; ++i )
       {
          if( branchrules[i]->priority > branchrules[maxi]->priority )
