@@ -347,7 +347,6 @@ SCIP_RETCODE GCGapplyGcgrens(
    SCIP_VAR** subvars;                       /* subproblem's variables                          */
    SCIP_HEURDATA* heurdata;                  /* heuristic's private data structure              */
 
-   SCIP_Real cutoff;                         /* objective cutoff for the subproblem             */
    SCIP_Real timelimit;                      /* time limit for RENS subproblem                  */
    SCIP_Real memorylimit;                    /* memory limit for RENS subproblem                */
    SCIP_Real allfixingrate;                  /* percentage of all variables fixed               */
@@ -507,6 +506,7 @@ SCIP_RETCODE GCGapplyGcgrens(
    /* if there is already a solution, add an objective cutoff */
    if( SCIPgetNSols(scip) > 0 )
    {
+      SCIP_Real cutoff;                         /* objective cutoff for the subproblem             */
       SCIP_Real upperbound;
       cutoff = SCIPinfinity(scip);
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );

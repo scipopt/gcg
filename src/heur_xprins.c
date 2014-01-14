@@ -140,9 +140,7 @@ SCIP_RETCODE selectExtremePoints(
    int nmastervars;
 
    int nusedpts;
-   int block;
    int nidentblocks;
-   SCIP_Real value;
    SCIP_Real* selvalue;
 
    int i;
@@ -180,6 +178,8 @@ SCIP_RETCODE selectExtremePoints(
    for( i = 0; i < nmastervars; i++ )
    {
       SCIP_VAR* mastervar;
+      int block;
+      SCIP_Real value;
 
       mastervar = mastervars[i];
       assert(GCGvarIsMaster(mastervar));
@@ -256,11 +256,9 @@ SCIP_RETCODE selectExtremePointsRandomized(
    int* npts;            /* for each block, the number of available extreme points */
    int* blockpts;        /* all points of a block which to be considered           */
    SCIP_Real* ptvals;    /* solution values of extreme points in master problem    */
-   int lastpt;           /* the worst extreme point possible to choose             */
 
    int i;
    int j;
-   int k;
 
    /* check preconditions */
    assert(scip != NULL);
@@ -325,6 +323,10 @@ SCIP_RETCODE selectExtremePointsRandomized(
    for( i = 0; i < nblocks; ++i )
    {
       int blockrep;
+      int lastpt;           /* the worst extreme point possible to choose             */
+
+      int k;
+
 
       SCIP_CALL( SCIPallocBufferArray(scip, &blockpts, npts[i]) );
       SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
@@ -397,9 +399,6 @@ SCIP_RETCODE initializeSubproblem(
 {
    SCIP_VAR** vars;
    int nvars;
-
-   SCIP_Real cutoff;                         /* objective cutoff for the subproblem                 */
-   SCIP_Real upperbound;
 
    int i;
 
@@ -487,6 +486,9 @@ SCIP_RETCODE initializeSubproblem(
    /* if there is already a solution, add an objective cutoff */
    if( SCIPgetNSols(scip) > 0 )
    {
+      SCIP_Real cutoff;                         /* objective cutoff for the subproblem                 */
+      SCIP_Real upperbound;
+
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       cutoff = SCIPinfinity(scip);

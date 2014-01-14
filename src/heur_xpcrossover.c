@@ -727,9 +727,6 @@ SCIP_RETCODE initializeSubproblem(
    SCIP_VAR** vars;
    int nvars;
 
-   SCIP_Real cutoff;                         /* objective cutoff for the subproblem                 */
-   SCIP_Real upperbound;
-
    int i;
 
    char probname[SCIP_MAXSTRLEN];
@@ -816,6 +813,9 @@ SCIP_RETCODE initializeSubproblem(
    /* if there is already a solution, add an objective cutoff */
    if( SCIPgetNSols(scip) > 0 )
    {
+      SCIP_Real cutoff;                         /* objective cutoff for the subproblem                 */
+      SCIP_Real upperbound;
+
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       cutoff = SCIPinfinity(scip);
@@ -925,7 +925,6 @@ SCIP_RETCODE fixVariables(
       SCIP_VAR** origvars;
       SCIP_Real* origvals;
       int norigvars;
-      int selidx;
 
       /* get the block that represents this block (in case of aggregation) */
       blockrep = GCGrelaxGetBlockRepresentative(scip, i);
@@ -945,6 +944,8 @@ SCIP_RETCODE fixVariables(
       /* compare the selected extreme points, where the first point is the reference point */
       for( j = 0; j < nusedpts; ++j )
       {
+         int selidx;
+
          selidx = i * nusedpts + j;
          if( selection[selidx] != -1 )
          {
@@ -960,9 +961,6 @@ SCIP_RETCODE fixVariables(
             for( k = 0; k < norigvars; ++k )
             {
                SCIP_VAR* origvar;
-               SCIP_VAR* pricingvar;
-               SCIP_VAR** pricingorigvars;
-               int npricingorigvars;
                SCIP_Bool firstblock;
 
                if( SCIPvarGetType(origvars[k]) > SCIP_VARTYPE_INTEGER )
@@ -974,6 +972,9 @@ SCIP_RETCODE fixVariables(
                 */
                if( GCGvarIsLinking(origvars[k]) )
                {
+#ifndef NDEBUG
+                  SCIP_VAR* pricingvar;
+#endif
                   SCIP_VAR** linkingpricingvars;
 
                   linkingpricingvars = GCGlinkingVarGetPricingVars(origvars[k]);
@@ -996,6 +997,10 @@ SCIP_RETCODE fixVariables(
                }
                else
                {
+                  SCIP_VAR* pricingvar;
+                  SCIP_VAR** pricingorigvars;
+                  int npricingorigvars;
+
                   pricingvar = GCGoriginalVarGetPricingVar(origvars[k]);
                   assert(pricingvar != NULL);
                   assert(GCGvarIsPricing(pricingvar));
