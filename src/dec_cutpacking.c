@@ -1171,7 +1171,6 @@ static SCIP_RETCODE GetLinkingVars(
 {
    int i;
    int j;
-   int oldblock;
    int newblock;
 
    SCIP_VAR** linkingvars;
@@ -1205,7 +1204,9 @@ static SCIP_RETCODE GetLinkingVars(
 
    for( i = 0; i < SCIPgetNVars(scip); ++i )
    {
+      int oldblock;
       SCIP_Bool stop;
+
       while( !SCIPisVarRelevant(SCIPgetVars(scip)[i]) )
       {
          ++i;
@@ -1228,7 +1229,6 @@ static SCIP_RETCODE GetLinkingVars(
          linkingvars[nlinkingvars] = SCIPgetVars(scip)[i];
          ++nlinkingvars;
          SCIP_CALL( SCIPhashmapInsert(vartoblock,SCIPgetVars(scip)[i],(void*) (size_t) (detectordata->nblocks+1)) );
-
       }
       else
       {
@@ -1237,7 +1237,6 @@ static SCIP_RETCODE GetLinkingVars(
          ++nsubscipvars[oldblock-1];
       }
    }
-
 
 #ifdef SCIP_DEBUG
    j = 0;
@@ -1330,7 +1329,6 @@ static SCIP_RETCODE FixedBlocks(
 
    SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
    return SCIP_OKAY;
-
 }
 
 /** will find a minimum cut via the Stoer-Wagner algorithm */
@@ -1342,7 +1340,6 @@ static SCIP_RETCODE StoerWagner(
    int i;
    int j;
    int tight;
-   double value_act_cut;
    double value_cut;
    SCIP_HASHMAP* tightness;
    SCIP_HASHMAP* repres_conss;
@@ -1417,6 +1414,8 @@ static SCIP_RETCODE StoerWagner(
    while( SCIPhashmapGetNEntries(constopos) > 1 )
    {
       SCIP_HASHMAPLIST* list = NULL;
+      double value_act_cut;
+
       SCIP_CALL( SCIPhashmapRemoveAll(tightness) );
       detectordata->iter = 0;
 
@@ -1646,7 +1645,6 @@ static SCIP_RETCODE callMetis(
    assert( adja != NULL );
    assert( constopos != NULL );
 
-
    SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    if( (temp_filedes = mkstemp(tempfile)) < 0 )
    {
@@ -1814,7 +1812,6 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    SCIP_CALL( buildGraphStructure(scip, detectordata) );
 
    SCIP_CALL( DECdecompCreate(scip, &(*decdecomps)[0]) );
-
 
    /* get the partitions for the new variables from metis */
    while( detectordata->ngraphs > 0 )

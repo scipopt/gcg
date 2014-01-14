@@ -332,17 +332,10 @@ SCIP_RETCODE plotInitialProblem(
    char datafile[256];
    char gpfile[256];
    char pdffile[256];
-   int i;
-   int j;
-   int* varindex;
-   int* consindex;
-   SCIP_VAR* var;
-   SCIP_VAR** vars;
-   int nvars;
-   SCIP_CONS* cons;
-   int nconss;
 
+   int nconss;
    nconss = SCIPgetNConss(scip);
+
    /* filenames */
    sprintf(datafile, "%s.dat", filename);
    sprintf(gpfile, "%s.gp", filename);
@@ -354,23 +347,30 @@ SCIP_RETCODE plotInitialProblem(
    }
    else
    {
+      int i;
+
       for( i = 0; i < nconss; ++i )
       {
-         cons = SCIPgetConss(scip)[i];
-         consindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->consindex, (void*) cons);
-         assert(consindex != NULL);
+         int j;
+         SCIP_Bool success;
+         SCIP_VAR** curvars;
+         int ncurvars;
+         int consindex;
+         SCIP_CONS* cons = SCIPgetConss(scip)[i];
+         consindex = (int) (size_t) SCIPhashmapGetImage(detectordata->indexmap->consindex, cons);
          /* Get array of variables from constraint */
-         nvars = SCIPgetNVarsXXX(scip, cons);
-         SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
-         for( j = 0; j < nvars; ++j )
+         SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
+         assert(success);
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, cons, curvars, ncurvars, &success) );
+         assert(success);
+         for( j = 0; j < ncurvars; ++j )
          {
-            var = vars[j];
-            varindex = (int*) SCIPhashmapGetImage(detectordata->indexmap->varindex, (void*) var);
-            assert(varindex != NULL);
-            fprintf(output, "%i %i\n", *varindex, *consindex);
+            SCIP_VAR* var = curvars[j];
+            int varindex = (int) (size_t) SCIPhashmapGetImage(detectordata->indexmap->varindex, var);
+            fprintf(output, "%i %i\n", varindex, consindex);
          }
-         SCIPfreeBufferArray(scip, &vars);
+         SCIPfreeBufferArray(scip, &curvars);
       }
    }
    fclose(output);
@@ -397,7 +397,6 @@ void plotMinV(
    char blockingfile[256];
    char gpfile[256];
    char pdffile[256];
-   int i;
    int nconss;
    vector<int>::iterator it1;
 
@@ -417,6 +416,8 @@ void plotMinV(
    }
    else
    {
+      int i;
+
       /* write data to datafile */
       for( i = 0; i < nconss -1; ++i )
       {
