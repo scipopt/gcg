@@ -54,7 +54,7 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
 #define DEC_DESC                 "Detector for pricng problems suitable for aggregation" /**< description of detector*/
-#define DEC_PRIORITY             700         /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'I'         /**< display character of detector */
 
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */

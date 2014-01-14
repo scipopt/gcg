@@ -54,7 +54,7 @@
 #define DEC_DESC                 "Random structure detection" /**< description of detector*/
 #define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
-#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLED              FALSE       /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */

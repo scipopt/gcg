@@ -46,7 +46,7 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "staircase"    /**< name of detector */
 #define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
-#define DEC_PRIORITY             0              /**< priority of the detector */
+#define DEC_PRIORITY             200            /**< priority of the detector */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
