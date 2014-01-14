@@ -180,11 +180,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_Bool cutoff;
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
-   SCIP_ROW* origcut;
-   SCIP_COL** cols;
    SCIP_VAR** rowvars;
-   int ncols;
-   SCIP_Real* vals;
    SCIP_SEPADATA* sepadata;
 
    SCIP_VAR** mastervars;
@@ -246,6 +242,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    for( i = 0; i < ncuts; i++ )
    {
+      SCIP_ROW* origcut;
+      SCIP_COL** cols;
+      int ncols;
+      SCIP_Real* vals;
+
       origcut = sepadata->origcuts[norigcuts-ncuts+i]; /*lint !e679*/
 
       /* get columns and vals of the cut */

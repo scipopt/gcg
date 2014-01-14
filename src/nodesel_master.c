@@ -98,8 +98,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 {
    SCIP_NODESELDATA* nodeseldata;
    SCIP_NODE** nodes;
-   SCIP_CONS* origcons;
-   SCIP_CONS* parentorigcons;
    SCIP* origscip;
    int nnodes;
    SCIP_Longint orignodenumber;
@@ -120,10 +118,10 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
    if( orignodenumber != nodeseldata->lastorignodenumber )
    {
-      nodeseldata->lastorignodenumber = orignodenumber;
+      SCIP_CONS* origcons = GCGconsOrigbranchGetActiveCons(origscip);
+      SCIP_CONS* parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
 
-      origcons = GCGconsOrigbranchGetActiveCons(origscip);
-      parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
+      nodeseldata->lastorignodenumber = orignodenumber;
 
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )

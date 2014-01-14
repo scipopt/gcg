@@ -99,7 +99,6 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
 {
    SCIP* origscip;
    SCIP* pricingscip;
-   char name[SCIP_MAXSTRLEN];
 
    assert(scip != NULL);
    assert(branchdata != NULL);
@@ -125,10 +124,11 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    /* create corresponding constraint in the pricing problem, if not yet created */
    if( branchdata->pricecons == NULL )
    {
+      char name[SCIP_MAXSTRLEN];
+
       if( branchdata->same )
       {
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "same(%s, %s)", SCIPvarGetName(branchdata->var1),
-            SCIPvarGetName(branchdata->var2));
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "same(%s, %s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
          SCIP_CALL( SCIPcreateConsVarbound(pricingscip,
                &(branchdata->pricecons), name, GCGoriginalVarGetPricingVar(branchdata->var1),
@@ -137,8 +137,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
       }
       else
       {
-         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "differ(%s, %s)", SCIPvarGetName(branchdata->var1),
-            SCIPvarGetName(branchdata->var2));
+         (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "differ(%s, %s)", SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
 
          SCIP_CALL( SCIPcreateConsVarbound(pricingscip,
                &(branchdata->pricecons), name, GCGoriginalVarGetPricingVar(branchdata->var1),
@@ -441,29 +440,16 @@ static
 SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 {  /*lint --e{715}*/
    SCIP* origscip;
-
    SCIP_Bool feasible;
-   SCIP_Bool contained;
 
    SCIP_VAR** branchcands;
    int nbranchcands;
 
    int v1;
-   int v2;
-   int o1;
-   int o2;
-   int j;
 
    SCIP_VAR* mvar1;
-   SCIP_VAR* mvar2;
    SCIP_VAR* ovar1;
    SCIP_VAR* ovar2;
-
-   SCIP_VAR** origvars1;
-   SCIP_VAR** origvars2;
-   int norigvars1;
-   int norigvars2;
-
 
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
@@ -517,12 +503,18 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    ovar1 = NULL;
    ovar2 = NULL;
    mvar1 = NULL;
-   mvar2 = NULL;
    feasible = FALSE;
 
    /* select first fractional column (mvar1) */
    for( v1 = 0; v1 < nbranchcands && !feasible; v1++ )
    {
+      int o1;
+      int j;
+
+      SCIP_VAR** origvars1;
+      int norigvars1;
+      SCIP_VAR* mvar2 = NULL;
+
       mvar1 = branchcands[v1];
       assert(GCGvarIsMaster(mvar1));
 
@@ -532,6 +524,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       /* select first original variable ovar1, that should be contained in both master variables */
       for( o1 = 0; o1 < norigvars1 && !feasible; o1++ )
       {
+         int v2;
+
          ovar1 = origvars1[o1];
          /* if we deal with a trivial variable, skip it */
          if( SCIPisZero(origscip, GCGmasterVarGetOrigvals(mvar1)[o1]) )
@@ -540,6 +534,11 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
          /* mvar1 contains ovar1, look for mvar2 which constains ovar1, too */
          for( v2 = v1+1; v2 < nbranchcands && !feasible; v2++ )
          {
+            SCIP_VAR** origvars2;
+            int norigvars2;
+            int o2;
+            SCIP_Bool contained = FALSE;
+
             mvar2 = branchcands[v2];
             assert(GCGvarIsMaster(mvar2));
 
@@ -547,7 +546,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
             norigvars2 = GCGmasterVarGetNOrigvars(mvar2);
 
             /* check whether ovar1 is contained in mvar2, too */
-            contained = FALSE;
             for( j = 0; j < norigvars2; j++ )
             {
                /* if we deal with a trivial variable, skip it */

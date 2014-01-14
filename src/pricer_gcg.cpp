@@ -288,7 +288,6 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
  * Local methods
  */
 
-
 /** return TRUE or FALSE whether the master LP is solved to optimality */
 SCIP_Bool ObjPricerGcg::isMasterLPOptimal()
 {
@@ -1954,7 +1953,7 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
    do
    {
       bestredcost = 0.0;
-      *bestredcostvalid = (SCIPgetLPSolstat(scip_) == SCIP_LPSOLSTAT_OPTIMAL) && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
+      *bestredcostvalid = isMasterLPOptimal() && optimal && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       stabilized = optimal && stabilization->isStabilized() && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST && !GCGisBranchruleGeneric( GCGconsMasterbranchGetbranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
 
       /* set objectives of the variables in the pricing sub-MIPs */

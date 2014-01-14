@@ -486,8 +486,6 @@ SCIP_Bool SCIPgetConsIsSetppc(
    SCIP_VAR** vars;
    SCIP_Real* vals;
    int i;
-   SCIP_Real rhs;
-   SCIP_Real lhs;
 
    int nvars;
    SCIP_Bool relevant = TRUE;
@@ -534,8 +532,8 @@ SCIP_Bool SCIPgetConsIsSetppc(
 
    if( relevant )
    {
-      rhs = SCIPgetRhsXXX(scip, cons);
-      lhs = SCIPgetLhsXXX(scip, cons);
+      SCIP_Real rhs = SCIPgetRhsXXX(scip, cons);
+      SCIP_Real lhs = SCIPgetLhsXXX(scip, cons);
       SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
 
       if( SCIPisEQ(scip, lhs, 1.0) && SCIPisEQ(scip, rhs, 1.0) )

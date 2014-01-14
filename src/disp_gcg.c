@@ -810,7 +810,6 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputPseudoObjval)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputLPObjval)
 {  /*lint --e{715}*/
-   SCIP_Real lpobj;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPOBJ) == 0);
@@ -822,7 +821,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLPObjval)
    }
    else
    {
-      lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
+      SCIP_Real lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
       if( SCIPisInfinity(scip, -lpobj) )
          SCIPinfoMessage(scip, file, "      --      ");
       else if( SCIPisInfinity(scip, lpobj) )

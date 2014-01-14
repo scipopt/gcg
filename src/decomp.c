@@ -1032,7 +1032,6 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP_VAR*** stairlinkingvars;
    SCIP_CONS*** subscipconss;
    SCIP_Bool success;
-   int idx;
    int cindex;
    int cumindex;
    SCIP_Bool haslinking;
@@ -1097,8 +1096,8 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    /* try to deduce staircase map */
    for( b = 0; b < nblocks; ++b )
    {
+      int idx = 0;
       SCIPdebugMessage("block %d (%d vars):\n", b, nsubscipvars[b]);
-      idx = 0;
 
       for( i = 0; i < nsubscipconss[b]; ++i )
       {

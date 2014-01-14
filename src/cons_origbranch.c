@@ -801,7 +801,6 @@ void GCGconsOrigbranchCheckConsistency(
    SCIP_CONS** conss;
    int nconss;
    int i;
-   SCIP_CONSDATA* consdata;
 #endif
 
    assert(scip != NULL);
@@ -817,7 +816,7 @@ void GCGconsOrigbranchCheckConsistency(
 
    for( i = 0; i < nconss; i++ )
    {
-      consdata = SCIPconsGetData(conss[i]);
+      SCIP_CONSDATA* consdata = SCIPconsGetData(conss[i]);
       assert(consdata != NULL);
       assert(consdata->node != NULL);
       assert((consdata->parentcons == NULL) == (SCIPnodeGetDepth(consdata->node) == 0));
