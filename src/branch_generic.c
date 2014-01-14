@@ -1874,8 +1874,10 @@ SCIP_RETCODE ChooseSeparateMethod(
             {
                SCIP_CALL( SCIPreallocBufferArray(scip, &strips, nstrips) );
             }
+            assert(strips != NULL);
 
             SCIP_CALL( SCIPallocBuffer(scip, &(strips[nstrips-1])) );
+            assert(strips[nstrips-1] != NULL);
 
             strips[nstrips-1]->C = NULL;
             strips[nstrips-1]->mastervar = mastervars[i];
@@ -1895,12 +1897,14 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       for( i = 0; i < nstrips; ++i )
       {
+         assert(strips != NULL);
          SCIP_CALL( SCIPallocBuffer(scip, &(checkedblockssortstrips[ncheckedblocks-1][i])) );
          checkedblockssortstrips[ncheckedblocks-1][i] = strips[i];
       }
 
       for( i=0; i<nstrips; ++i )
       {
+         assert(strips != NULL);
          SCIPfreeBuffer(scip, &(strips[i]));
          strips[i] = NULL;
       }
@@ -2345,7 +2349,7 @@ SCIP_RETCODE createChildNodesGeneric(
             assert(branchchilddata != NULL);
 
             SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, childcons, childname, branchrule, branchchilddata,
-               NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
+               NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, 2, 0.0) );
 
             SCIP_CALL( createBranchingCons(masterscip, child, branchchilddata) );
 
@@ -2407,7 +2411,7 @@ SCIP_RETCODE createChildNodesGeneric(
   assert( SCIPisEQ(scip, identicalcontrol, GCGrelaxGetNIdenticalBlocks(scip, blocknr)) );
 #endif
 
-   assert( SCIPisEQ(scip, lhsSum, GCGrelaxGetNIdenticalBlocks(scip, blocknr) + Ssize) );
+   assert( SCIPisEQ(scip, lhsSum, 1.0*(GCGrelaxGetNIdenticalBlocks(scip, blocknr) + Ssize)) );
 
    SCIPfreeMemoryArray(scip, &mastervars2);
    SCIPfreeMemoryArray(scip, &copymastervars);
@@ -2444,7 +2448,7 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    masterscip = GCGrelaxGetMasterprob(scip);
    assert(masterscip != NULL);
 
-   bound = SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar));
+   bound = SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar)); /*lint -e524*/
 
    /*  allocate branchdata for child and store information */
    SCIP_CALL( initNodeBranchdata(&branchupchilddata, -3) );
@@ -2480,11 +2484,11 @@ SCIP_RETCODE branchDirectlyOnMastervar(
 
    assert(branchupchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, upchildcons, upchildname, branchrule, branchupchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
+      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, 2, 0.0) );
 
    assert(branchdownchilddata != NULL);
    SCIP_CALL( GCGconsMasterbranchSetOrigConsData(masterscip, downchildcons, downchildname, branchrule, branchdownchilddata,
-      NULL, 0, FALSE, FALSE, FALSE, NULL, 0, 2, 0) );
+      NULL, 0, FALSE, FALSE, FALSE, NULL, 0.0, 2, 0.0) );
 
    /*  create branching constraint in master */
    SCIP_CALL( createDirectBranchingCons(masterscip, upchild, branchupchilddata) );
@@ -2748,6 +2752,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
                {
                   for( i = 0; i < branchdata->consSsize; ++i )
                   {
+                     assert(C != NULL);
                      if( branchdata->consS[i].component != C[c][i].component || branchdata->consS[i].sense != C[c][i].sense || !SCIPisEQ(origscip, branchdata->consS[i].bound, C[c][i].bound) )
                      {
                         SinC = FALSE;
@@ -3036,7 +3041,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
    SCIPerrorMessage("This method is not implemented, aborting since we cannot recover!");
    SCIPdialogMessage(scip, NULL, "Due to numerical issues, the problem could not be solved.\n");
    SCIPdialogMessage(scip, NULL, "You can try to disable discretization and aggregation and resolve the problem.\n");
-   SCIPABORT();
 
    *result = SCIP_DIDNOTRUN;
    return SCIP_ERROR;
