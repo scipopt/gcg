@@ -789,9 +789,7 @@ SCIP_RETCODE pricingprobsAreIdentical(
    return SCIP_OKAY;
 }
 
-/** checks whether there are identical pricing blocks
-  * @todo we should really use something more sophisticated
-  */
+/** checks whether there are identical pricing blocks */
 static
 SCIP_RETCODE checkIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -852,9 +850,9 @@ SCIP_RETCODE checkIdenticalBlocks(
 
             /*
              * quick check whether some of the variables are linking in which case we can not aggregate
+             * this is suboptimal but we use bliss anyway
              */
 
-            /** @todo: This can probably be fixed */
             for( k = 0; k < nvars; k++ )
             {
                assert(GCGvarIsPricing(vars[k]));
