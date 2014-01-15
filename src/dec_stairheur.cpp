@@ -25,10 +25,15 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_stairheur.c
- * @brief  stairheur presolver
+/**@file   dec_stairheur.cpp
+ * @brief  detector for staircase structures via ROC algorithms
  * @author Martin Bergner
  * @author Mathias Luers
+ * @ingroup DETECTORS
+ *
+ * This detector is based on Jayakumar, Maliyakal D., and Ranga V. Ramasesh.
+ * A clustering heuristic to detect staircase structures in large scale
+ * linear programming models. European journal of operational research 76.1 (1994): 229-239.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

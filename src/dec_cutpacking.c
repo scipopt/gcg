@@ -27,8 +27,12 @@
 
 /**@file   dec_cutpacking.c
  * @ingroup DETECTORS
- * @brief  cutpacking presolver
+ * @brief  staircase detector via recursive partitioning (uses hmetis)
  * @author Friederike Menge
+ * @author Martin Bergner
+ *
+ * This detector tries to detect staircase structures by recursively partitioning the
+ * rowgraph of the matrix by using hmetis.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

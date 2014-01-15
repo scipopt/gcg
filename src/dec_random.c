@@ -29,9 +29,7 @@
  * @ingroup DETECTORS
  * @brief  Random structure detection for testing purposes
  * @author Martin Bergner
- */
-
-/**
+ *
  * This detector will partition the constraints of the problem randomly.
  * For each constraint, it will randomly pick a number between 0 and the
  * maxblocks parameter. Constraints assigned to maxblocks will be put in the

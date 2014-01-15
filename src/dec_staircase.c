@@ -29,6 +29,10 @@
  * @ingroup DETECTORS
  * @brief  detector for staircase matrices
  * @author Martin Bergner
+ *
+ * This detector detects staircase structures in the constraint matrix by searching for the longest shortest path
+ * in the row graph of the matrix.
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_colors.c
+/**@file   dec_colors.cpp
  * @ingroup DETECTORS
  * @brief  detector assigning color classes to constraints and try combinations of colors in the master
  * @author Martin Bergner

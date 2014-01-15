@@ -26,9 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_arrowheur.h
- * @brief  arrowheur presolver
+ * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
  * @author Martin Bergner
- * @ingroup DETECTORS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
