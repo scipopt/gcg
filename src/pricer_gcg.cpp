@@ -1262,7 +1262,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
       *objvalptr = objvalue;
 
    /* Compute path to last generic branching node */
-   SCIP_CALL_ABORT( computeGenericBranchingconssStack(pricetype, &branchconss, &nbranchconss, &branchduals) );
+   SCIP_CALL_ABORT( computeGenericBranchingconssStack(pricetype, prob, &branchconss, &nbranchconss, &branchduals) );
 
    for( i = nbranchconss -1; i >= 0; --i )
    {
@@ -1665,6 +1665,7 @@ int ObjPricerGcg::countPricedVariables(
  */
 SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
    PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+   int                   prob,               /**< index of pricing problem */
    SCIP_CONS***          consstack,          /**< stack of branching constraints */
    int*                  nconsstack,         /**< size of the stack */
    SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
@@ -1672,6 +1673,8 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
 {
    SCIP_BRANCHRULE *branchrule;
    SCIP_CONS *masterbranchcons;
+   int consblocknr;
+
    assert(consstack != NULL);
    assert(nconsstack != NULL);
 
@@ -1685,17 +1688,22 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
    while( GCGisBranchruleGeneric(branchrule) )
    {
       SCIP_CONS* mastercons = GCGbranchGenericBranchdataGetMastercons(GCGconsMasterbranchGetBranchdata(masterbranchcons));;
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (*nconsstack) +1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (*nconsstack) +1) );
+      consblocknr = GCGbranchGenericBranchdataGetConsblocknr(GCGconsMasterbranchGetBranchdata(masterbranchcons));
 
-      (*consstack)[*nconsstack] = masterbranchcons;
-      (*consduals)[*nconsstack] = pricetype->consGetDual(scip_, mastercons);
+      /* check if branching decision belongs to current pricing problem */
+      if(consblocknr == prob)
+      {
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (*nconsstack) +1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (*nconsstack) +1) );
 
-      SCIPdebugPrintCons(scip_, mastercons, NULL);
-      SCIPdebugMessage("Dual: %.4f\n", (*consduals)[*nconsstack]);
-      assert( !SCIPisFeasNegative(scip_, (*consduals)[*nconsstack]));
-      (*nconsstack) += 1;
+         (*consstack)[*nconsstack] = masterbranchcons;
+         (*consduals)[*nconsstack] = pricetype->consGetDual(scip_, mastercons);
 
+         SCIPdebugPrintCons(scip_, mastercons, NULL);
+         SCIPdebugMessage("Dual: %.4f\n", (*consduals)[*nconsstack]);
+         assert( !SCIPisFeasNegative(scip_, (*consduals)[*nconsstack]));
+         (*nconsstack) += 1;
+      }
       masterbranchcons = GCGconsMasterbranchGetParentcons(masterbranchcons);
       branchrule = GCGconsMasterbranchGetbranchrule(masterbranchcons);
    }
@@ -1708,13 +1716,14 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
  */
 SCIP_RETCODE ObjPricerGcg::addBranchingBoundChangesToPricing(
    int                   prob,               /**< index of pricing problem */
-   SCIP_CONS*            branchcons         /**< branching constraints from which bound should applied */
+   SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
 )
 {
    GCG_BRANCHDATA* branchdata = GCGconsMasterbranchGetBranchdata(branchcons);
    GCG_COMPSEQUENCE* components = GCGbranchGenericBranchdataGetConsS(branchdata);
    int ncomponents = GCGbranchGenericBranchdataGetConsSsize(branchdata);
    int i;
+
    for( i = 0; i < ncomponents; ++i)
    {
       SCIP_Real bound = components[i].bound;
@@ -1801,7 +1810,7 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
    SCIP_Real* branchduals = NULL; /* dual values of branching constraints in the master (sigma) */
 
    /* Compute path to last generic branching node */
-   SCIP_CALL( computeGenericBranchingconssStack(pricetype, &branchconss, &nbranchconss, &branchduals) );
+   SCIP_CALL( computeGenericBranchingconssStack(pricetype, prob, &branchconss, &nbranchconss, &branchduals) );
    if( nbranchconss == 0)
    {
       SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, maxsols, nsols, status) );

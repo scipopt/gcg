@@ -303,6 +303,7 @@ private:
     */
    SCIP_RETCODE computeGenericBranchingconssStack(
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      int                   prob,               /**< index of pricing problem */
       SCIP_CONS***          consstack,          /**< stack of branching constraints */
       int*                  nconsstack,         /**< size of the stack */
       SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
