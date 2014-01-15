@@ -2577,15 +2577,16 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             pricingvars = GCGlinkingVarGetPricingVars(mastervar);
             assert(pricingvars != NULL );
 
-            for( i=0; i<GCGlinkingVarGetNBlocks(mastervar); ++i )
+            for( j = 0; j < GCGlinkingVarGetNBlocks(mastervar); ++j )
             {
-               if( pricingvars[i] != NULL )
+               if( pricingvars[j] != NULL )
                {
-                  blocknr = GCGvarGetBlock(pricingvars[i]);
+                  int k;
+                  blocknr = GCGvarGetBlock(pricingvars[j]);
 
                   foundblocknr = TRUE;
 
-                  for( j=0; j<ncheckedblocks; ++j )
+                  for( k = 0; k < ncheckedblocks; ++k )
                   {
                      if( checkedblocks[j] == blocknr )
                         foundblocknr = FALSE;
@@ -2662,7 +2663,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
          pricingvars = GCGlinkingVarGetPricingVars(mastervar);
          assert(pricingvars != NULL );
 
-         for( k=0; k<GCGlinkingVarGetNBlocks(mastervar); ++k )
+         for( k = 0; k < GCGlinkingVarGetNBlocks(mastervar); ++k )
          {
             if( pricingvars[k] != NULL )
             {
