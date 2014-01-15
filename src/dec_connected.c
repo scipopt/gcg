@@ -31,6 +31,16 @@
  * @author Martin Bergner
  * @todo allow decompositions with only one pricing problem by just removing generalized covering and
  *       partitioning constraints
+ * The detector will detect block diagonal matrix structures as wells as generalized
+ * set partitioning or covering master problems.
+ *
+ * It works as follows:
+ * - It implicitly builds a graph with one vertex for every constraint and edges between constraints that
+ *   share a node
+ * - All vertices belonging to constraints of the form \f$\sum x_i = a \f$ for
+ *   \f$x_i \in \mathbb Z, a\in \mathbb Z\f$ or of the form \f$\sum x_i \geq 1 \f$
+ *   for \f$x_i \in \{0,1\} \f$ are removed
+ * - The pricing problems correspond to connected components in the remaining graph
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

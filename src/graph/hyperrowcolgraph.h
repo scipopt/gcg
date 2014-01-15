@@ -26,8 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   hyperrowcolgraph.h
- * @brief  Description
- * @author bergner
+ * @brief  A hypergraph with row and column nodes
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

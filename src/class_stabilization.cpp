@@ -26,9 +26,14 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_stabilization.cpp
- * @brief  Description
+ * @brief  class with functions for dual variable smoothing
  * @author Martin Bergner
  * @author Jonas Witt
+ *
+ * This is based on the paper
+ *
+ * Pessoa, A., Sadykov, R., Uchoa, E., & Vanderbeck, F. (2013). In-Out Separation and Column Generation
+ * Stabilization by Dual Price Smoothing. In Experimental Algorithms (pp. 354-365). Springer Berlin Heidelberg.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
