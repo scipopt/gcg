@@ -111,13 +111,13 @@ struct SCIP_ConsData
                                               *   containing information about the branching restrictions for cons_origbranch */
    SCIP_CONS**           origbranchcons;     /**< the corresponding origbranch cons in the original program for cons_origbranch */
    int                   norigbranchcons;    /**< number of origbranchcons */
-   SCIP_Bool             chgVarUbNode;
-   SCIP_Bool             chgVarLbNode;
-   SCIP_Bool             addPropBoundChg;
-   SCIP_VAR*             chgVarNodeVar;
-   SCIP_Real             chgVarNodeBound;
-   SCIP_BOUNDTYPE        addPropBoundChgBoundtype;
-   SCIP_Real             addPropBoundChgBound;
+   SCIP_Bool             chgVarUbNode;       /**< upper bound of the variable changed */
+   SCIP_Bool             chgVarLbNode;       /**< lower bound of the variable changed */
+   SCIP_Bool             addPropBoundChg;    /**< whether a bound change was added */
+   SCIP_VAR*             chgVarNodeVar;      /**< the variables for whicht the bounds where changed */
+   SCIP_Real             chgVarNodeBound;    /**< the new bound*/
+   SCIP_BOUNDTYPE        addPropBoundChgBoundtype; /**< the type of the propagated bound change */
+   SCIP_Real             addPropBoundChgBound; /**< the bound from the propagated bound change */
 
 };
 
@@ -1965,22 +1965,22 @@ SCIP_Bool GCGnodeisVanderbeck(
    return FALSE;
 }
 
-/** the function initializes the condata data structure */
+/** the function initializes the consdata data structure */
 SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP*                 scip,               /**< SCIP data structure*/
-   SCIP_CONS*            cons,                /**< constraint for which the consdata is setted */
-   char*                 name,
-   SCIP_BRANCHRULE*      branchrule,
-   GCG_BRANCHDATA*       branchdata,
-   SCIP_CONS**           origcons,
-   int                   norigcons,
-   SCIP_Bool             chgVarUbNode,
-   SCIP_Bool             chgVarLbNode,
-   SCIP_Bool             addPropBoundChg,
-   SCIP_VAR*             chgVarNodeVar,
-   SCIP_Real             chgVarNodeBound,
-   SCIP_BOUNDTYPE        addPropBoundChgBoundtype,
-   SCIP_Real             addPropBoundChgBound
+   SCIP_CONS*            cons,               /**< constraint for which the consdata is setted */
+   char*                 name,               /**< name of the constraint */
+   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branchrule*/
+   GCG_BRANCHDATA*       branchdata,         /**< branching data */
+   SCIP_CONS**           origcons,           /**< array of original constraints */
+   int                   norigcons,          /**< number of original constraints */
+   SCIP_Bool             chgVarUbNode,       /**< the upper bound of the variable changed */
+   SCIP_Bool             chgVarLbNode,       /**< the lower bound of the variable changed */
+   SCIP_Bool             addPropBoundChg,    /**< whether a propagated bound change was added */
+   SCIP_VAR*             chgVarNodeVar,      /**< the variable changed */
+   SCIP_Real             chgVarNodeBound,    /**< the new bound */
+   SCIP_BOUNDTYPE        addPropBoundChgBoundtype, /**< the type of the bound change */
+   SCIP_Real             addPropBoundChgBound /**< the propagated bound */
    )
 {
    SCIP_CONSDATA* consdata;
@@ -2343,7 +2343,7 @@ int GCGconsMasterbranchGetNChildcons(
     given masterbranch constraint is sticking */
 SCIP_CONS* GCGconsMasterbranchGetChildcons(
    SCIP_CONS*            cons,                /**< constraint pointer */
-   int                   childnr
+   int                   childnr              /**< index of the child node */
    )
 {
    SCIP_CONSDATA* consdata;

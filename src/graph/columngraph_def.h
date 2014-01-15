@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   columngraph.cpp
+/**@file   columngraph_def.h
  * @brief  A row graph where each column is a node and columns are adjacent if they appear in one row
  * @author Martin Bergner
  * @author Annika Thome

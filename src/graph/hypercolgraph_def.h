@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hypercolgraph.cpp
+/**@file   hypercolgraph_def.h
  * @brief  Column hypergraph
  * @author Martin Bergner
  * @author Annika Thome

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hyperrowgraph.cpp
+/**@file   hyperrowgraph_def.h
  * @brief  Column hypergraph
  * @author Martin Bergner
  * @author Annika Thome

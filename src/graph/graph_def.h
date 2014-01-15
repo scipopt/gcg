@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graph.cpp
+/**@file   graph_def.h
  * @brief  miscellaneous graph methods for structure detection
  * @author Martin Bergner
  */

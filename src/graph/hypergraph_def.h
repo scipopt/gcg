@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hypergraph.cpp
+/**@file   hypergraph_def.h
  * @brief  miscellaneous hypergraph methods for structure detection
  * @author Martin Bergner
  */

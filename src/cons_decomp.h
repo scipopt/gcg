@@ -159,9 +159,6 @@ SCIP_RETCODE GCGprintDetectorStatistics(
  *  - SCIP_PARAMSETTING_FAST such that the time spend for detection is decreased
  *  - SCIP_PARAMSETTING_AGGRESSIVE such that the detectors produce more decompositions
  *  - SCIP_PARAMSETTING_OFF which turns off all detection
- *
- *  @return \ref SCIP_OKAY is returned if everything worked. Otherwise a suitable error code is passed. See \ref
- *          SCIP_Retcode "SCIP_RETCODE" for a complete list of error codes.
  */
 SCIP_RETCODE GCGsetDetection(
    SCIP*                 scip,               /**< SCIP data structure */

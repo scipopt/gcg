@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   rowgraph.cpp
+/**@file   rowgraph_def.h
  * @brief  A row graph where each row is a node and rows are adjacent if they share a variable
  * @author Martin Bergner
  * @author Annika Thome

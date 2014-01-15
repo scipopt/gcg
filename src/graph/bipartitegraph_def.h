@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   bipartitegraph.cpp
+/**@file   bipartitegraph_def.h
  * @brief  A bipartite graph
  * @author Martin Bergner
  */

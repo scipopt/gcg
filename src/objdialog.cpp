@@ -38,8 +38,6 @@
 #include "objdialog.h"
 
 
-
-
 /*
  * Data structures
  */
@@ -50,8 +48,6 @@ struct SCIP_DialogData
    gcg::ObjDialog*       objdialog;          /**< dialog object */
    SCIP_Bool             deleteobject;       /**< should the dialog object be deleted when dialog is freed? */
 };
-
-
 
 
 /*
