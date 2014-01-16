@@ -20,6 +20,3 @@ GCGGITHASH	=	$(shell git describe --always --dirty  | sed -re 's/^.+-g//')
 githash::	# do not remove the double-colon
 		@echo "#define GCG_GITHASH \"$(GCGGITHASH)\"" > $(GCGGITHASHFILE)
 
-# rule for generating the githash.c
-$(GCGGITHASHFILE): githash
-

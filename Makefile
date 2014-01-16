@@ -35,6 +35,7 @@
 # paths
 #-----------------------------------------------------------------------------
 VERSION         :=	1.8.0.0
+GCGGITHASH	=
 SCIPDIR         =   lib/scip
 #-----------------------------------------------------------------------------
 # necessary information
@@ -59,7 +60,7 @@ MODE		=	readdec
 GTEST		=	true
 PARASCIP	= 	true
 BLISS       	=   	true
-CPLEXSOLVER	=	true
+LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -98,18 +99,8 @@ endif
 # CPLEX pricing solver
 #-----------------------------------------------------------------------------
 
-ifeq ($(CPLEXSOLVER),false)
-FLAGS		+=	-DNCPLEXSOLVER
-else
-LPSLDFLAGS	+=	$(LINKCC_l)cplex.$(OSTYPE).$(ARCH).$(COMP)$(LINKLIBSUFFIX) \
-                        $(LINKCC_l)pthread$(LINKLIBSUFFIX)
-FLAGS		+=	-I$(LIBDIR)/cpxinc
-SOFTLINKS	+=	$(LIBDIR)/cpxinc
-SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(STATICLIBEXT)
-SOFTLINKS	+=	$(LIBDIR)/libcplex.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)
-LINKMSG		+=      "CPLEX links:\n"
-LINKMSG		+=	" -> \"cpxinc\" is the path to the CPLEX \"include\" directory, e.g., \"<CPLEX-path>/include/ilcplex\".\n"
-LINKMSG		+=	" -> \"libcplex.*\" is the path to the CPLEX library, e.g., \"<CPLEX-path>/lib/x86_rhel4.0_3.4/static_pic/libcplex.a\"\n"
+ifeq ($(LPS),cpx)
+FLAGS		+=	-DCPLEXSOLVER -I$(SCIPDIR)/lib/cpxinc
 endif
 
 #-----------------------------------------------------------------------------
@@ -169,6 +160,7 @@ LIBOBJ		=	reader_blk.o \
 			event_solvingstats.o \
 			solver_mip.o \
 			solver_knapsack.o \
+			solver_cplex.o \
 			cons_decomp.o \
 			decomp.o \
 			dec_arrowheur.o \
@@ -198,10 +190,6 @@ ifeq ($(BLISS),true)
 LIBOBJ		+=	bliss_automorph.o \
 			dec_isomorph.o \
 			bliss.o
-
-endif
-ifeq ($(CPLEXSOLVER),true)
-LIBOBJ		+=	solver_cplex.o
 endif
 
 MAINOBJ		=	main.o
@@ -243,7 +231,7 @@ SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -whi
 # Rules
 #-----------------------------------------------------------------------------
 .PHONY: all
-all:       githash $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+all:       touchexternal $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
 -include make/local/make.targets
 
@@ -361,7 +349,7 @@ ifneq ($(OBJDIR),)
 		@-(rm -f $(OBJDIR)/*.o);
 		@-(rmdir $(OBJDIR));
 endif
-
+		@-rm -f $(LASTSETTINGS)
 
 .PHONY: tags
 tags:
@@ -416,7 +404,7 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
-$(GCGLIBFILE):	$(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)  $(GCGLIBOBJFILES)
+$(GCGLIBFILE):	touchexternal $(GCGLIBOBJFILES) | $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)
 		@echo "-> generating library $@"
 		-rm -f $@
 		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
@@ -441,6 +429,32 @@ $(DIRECTORIES):
 		@echo
 		@echo "- creating directory \"$@\""
 		@-mkdir -p $@
+-include $(LASTSETTINGS)
+
+.PHONY: touchexternal
+touchexternal: | $(LIBOBJDIR)
+ifneq ($(LAST_LPS),$(LPS))
+		@-touch $(SRCDIR)/solver_cplex.c
+endif
+ifneq ($(USRCFLAGS),$(LAST_USRCFLAGS))
+		@-touch $(ALLSRC)
+endif
+ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
+		@-touch $(ALLSRC)
+endif
+ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
+		@-touch $(ALLSRC)
+endif
+ifneq ($(GCGGITHASH),$(LAST_GCGGITHASH))
+		@-$(MAKE) githash
+endif
+		@-rm -f $(LASTSETTINGS)
+		@echo "LAST_GCGGITHASH=$(GCGGITHASH)" >> $(LASTSETTINGS)
+		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRCXXFLAGS=$(USRCXXFLAGS)" >> $(LASTSETTINGS)
+
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):
