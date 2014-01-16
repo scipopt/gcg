@@ -438,12 +438,18 @@ ifneq ($(LAST_LPS),$(LPS))
 endif
 ifneq ($(USRCFLAGS),$(LAST_USRCFLAGS))
 		@-touch $(ALLSRC)
+		@-$(MAKE) scip_clean
+		@-$(MAKE) scip
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
+		@-$(MAKE) scip_clean
+		@-$(MAKE) scip
 endif
 ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
 		@-touch $(ALLSRC)
+		@-$(MAKE) scip_clean
+		@-$(MAKE) scip
 endif
 ifneq ($(GCGGITHASH),$(LAST_GCGGITHASH))
 		@-$(MAKE) githash
