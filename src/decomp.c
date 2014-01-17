@@ -1407,6 +1407,7 @@ SCIP_RETCODE DECdecompTransform(
    /* transform all linking variables */
    for( v = 0; v < decdecomp->nlinkingvars; ++v )
    {
+      int block;
       SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
          (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
       assert(decdecomp->linkingvars[v] != NULL);
@@ -1418,13 +1419,16 @@ SCIP_RETCODE DECdecompTransform(
       }
       else
          newvar = decdecomp->linkingvars[v];
+
+      block = (int) (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[v]);
+      assert(block == decdecomp->nblocks +1 || block == decdecomp->nblocks +2);
       assert(newvar != NULL);
       assert(SCIPvarIsTransformed(newvar));
       SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->linkingvars[v])) );
 
       decdecomp->linkingvars[v] = newvar;
       SCIP_CALL( SCIPcaptureVar(scip, decdecomp->linkingvars[v]) );
-      SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->linkingvars[v], (void*) (size_t) (decdecomp->nblocks+1) ) );
+      SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->linkingvars[v], (void*) (size_t) (block) ) );
       SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
          (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
       assert(decdecomp->linkingvars[v] != NULL);

@@ -138,7 +138,6 @@ SCIP_RETCODE createGraph(
       SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars1, ncurvars1) );
 
       SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
-      SCIPdebugMessage("conns[%d] = %s (%d vars)\n", i, SCIPconsGetName(conss[i]), ncurvars1);
       for( j = i+1; j < nconss; ++j )
       {
          SCIP_VAR** curvars2;
@@ -149,24 +148,16 @@ SCIP_RETCODE createGraph(
 
          SCIP_CALL( SCIPgetVarsXXX(scip, conss[j], curvars2, ncurvars2) );
 
-         SCIPdebugMessage("\tconns[%d] = %s (%d vars)\n", j, SCIPconsGetName(conss[j]), ncurvars2);
-
          SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )
          {
             int pos;
 
-            SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), (void*)curvars2[v]);
             if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
-               SCIPdebugPrintf(" found (%d: %p)\n", pos, (void*)curvars1[pos]);
                assert(curvars1[pos] == curvars2[v]);
                TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
-            }
-            else
-            {
-               SCIPdebugPrintf(" not found (%d: %p)\n", pos, (void*)curvars1[pos]);
             }
          }
          SCIPfreeBufferArray(scip, &curvars2);
@@ -252,7 +243,6 @@ SCIP_RETCODE doBFS(
 
       /* dequeue new node */
       currentnode = queue[squeue];
-      SCIPdebugMessage("Dequeueing %d\n", currentnode);
 
       assert(currentnode < nnodes);
       ++squeue;
