@@ -340,6 +340,7 @@ endif
 
 .PHONY: clean
 clean:          cleantest cleanlib cleanbin  $(DIRECTORIES)
+		@-rm -f $(LASTSETTINGS)
 ifneq ($(LIBOBJDIR),)
 		@-(rm -f $(LIBOBJDIR)/*.o)
 		@-(cd $(LIBOBJDIR) && rm -f */*.o && rmdir $(OBJSUBDIRS));
@@ -349,7 +350,7 @@ ifneq ($(OBJDIR),)
 		@-(rm -f $(OBJDIR)/*.o);
 		@-(rmdir $(OBJDIR));
 endif
-		@-rm -f $(LASTSETTINGS)
+
 
 .PHONY: tags
 tags:
@@ -404,7 +405,7 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
-$(GCGLIBFILE):	touchexternal $(GCGLIBOBJFILES) | $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS)
+$(GCGLIBFILE):	touchexternal $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS) $(GCGLIBOBJFILES)
 		@echo "-> generating library $@"
 		-rm -f $@
 		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
