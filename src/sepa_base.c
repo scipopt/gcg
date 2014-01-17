@@ -1596,7 +1596,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
       SCIPstartDive(origscip);
 
       /** add origcuts to dive lp */
-      for(i = 0; i < GCGsepaGetNOrigcuts(scip); ++i)
+      for(i = 0; i < GCGsepaGetNCuts(scip); ++i)
       {
          if(SCIProwGetLPPos(GCGsepaGetOrigcuts(scip)[i]) == -1)
             SCIP_CALL( SCIPaddRowDive(origscip, GCGsepaGetOrigcuts(scip)[i]) );
