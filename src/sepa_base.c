@@ -32,6 +32,7 @@
 #include "scip_misc.h"
 #include "sepa_base.h"
 #include "sepa_master.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
@@ -217,16 +218,16 @@ SCIP_Real getL2Norm(
 static
 SCIP_Real exponentiate(
    SCIP_Real            base,               /**< basis for exponentiation */
-   int                  exp                 /**< exponent for exponentiation */
+   int                  exponent            /**< exponent for exponentiation */
    )
 {
    SCIP_Real result;
    int i;
 
-   assert(exp >= 0);
+   assert(exponent >= 0);
 
    result = 1.0;
-   for(i = 0; i < exp; ++i)
+   for(i = 0; i < exponent; ++i)
    {
       result *= base;
    }
@@ -379,8 +380,6 @@ SCIP_RETCODE origScipInitObjOrig(
             /* check if algebraic sign has to be changed */
             if(SCIPisLT(origscip, distance, solval - lb))
                newobj = -newobj;
-
-            //SCIPinfoMessage(origscip, NULL, "newobj = %f\n", newobj);
          }
          else
          {
@@ -506,8 +505,6 @@ SCIP_RETCODE origScipChgObjAllRows(
             /* check if algebraic sign has to be changed */
             if(SCIPisLT(origscip, distance, activity - lhs))
                factor = -1.0*factor;
-
-            //SCIPinfoMessage(origscip, NULL, "factor = %f\n", factor);
          }
          else
          {
@@ -1487,7 +1484,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
    SCIP_SEPA** sepas;
    int nsepas;
 
-   SCIP_ROW** divecuts;
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
    SCIP_ROW* origcut;
@@ -1496,7 +1492,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
    SCIP_VAR** roworigvars;
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
-   int ndivecuts;
    int ncols;
    int ncuts;
    SCIP_Real* vals;
@@ -1583,8 +1578,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
 
    *result = SCIP_DIDNOTFIND;
 
-   //SCIPstartDive(origscip);
-
    /* init iteration counter */
    iteration = 0;
 
@@ -1636,7 +1629,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
       }
 
       /* init dive objective */
-      if(sepadata->chgobj)// && (iteration == 0 || sepadata->chgobjallways))
+      if(sepadata->chgobj)
       {
          if(sepadata->genobjconvex)
          {
@@ -1652,7 +1645,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
       }
 
       /* update rhs/lhs of objective constraint and add it to dive LP, if it exists (only in first iteration) */
-      if(enableobj)// && iteration == 0)
+      if(enableobj)
       {
          /* round rhs/lhs of objective constraint, if it exists, obj is integral and this is enabled */
          if( SCIPisObjIntegral(origscip) && enableobjround)
@@ -1717,12 +1710,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
             || (strcmp(sepaname, "cgmip") == 0))
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, -1) );
-            //SCIPdebugMessage("%s = %d\n", paramname, -1);
+            SCIPdebugMessage("%s = %d\n", paramname, -1);
          }
          else
          {
             SCIP_CALL( SCIPsetIntParam(origscip, paramname, 0) );
-            //SCIPdebugMessage("%s = %d\n", paramname, 0);
+            SCIPdebugMessage("%s = %d\n", paramname, 0);
          }
       }
 
@@ -1774,7 +1767,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
          origcut = cuts[i];
 
 
-         //SCIPdebugMessage("cutname = %s \n", SCIProwGetName(origcut));
+         SCIPdebugMessage("cutname = %s \n", SCIProwGetName(origcut));
 
          /* get columns and vals of the cut */
          ncols = SCIProwGetNNonz(origcut);
@@ -1814,9 +1807,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
          if(!SCIPisCutEfficacious(origscip, origsol, origcut))
          {
             SCIP_CALL( SCIPaddPoolCut(origscip, neworigcut) );
-
-            //if(iteration + 1 < sepadata->iterations)
-            //   SCIPaddRowDive(origscip, origcut);
 
             SCIPfreeBufferArray(scip, &roworigvars);
             SCIPreleaseRow(origscip, &neworigcut);
@@ -1891,9 +1881,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBase)
          GCGsepaAddMastercuts(scip, neworigcut, mastercut);
 
    #ifdef SCIP_DEBUG
-         //SCIPdebugMessage("Cut %d:\n", i);
-         //SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
-         //SCIPdebugMessage("\n\n");
+         SCIPdebugMessage("Cut %d:\n", i);
+         SCIP_CALL( SCIPprintRow(scip, mastercut, NULL) );
+         SCIPdebugMessage("\n\n");
    #endif
 
          SCIPfreeBufferArray(scip, &roworigvars);
