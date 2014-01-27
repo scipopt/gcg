@@ -686,7 +686,6 @@ SCIP_RETCODE DECwriteAllDecomps(
    int j;
    char name[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   char* dirname;
 
    char *pname;
 
