@@ -498,6 +498,41 @@ TEST_F(GcgDecTest, FilterDecTest) {
    SCIP_CALL_EXPECT( DECdecompFree(scip, &decomp4) );
 }
 
+class GcgMultProbsTest : public ::testing::Test {
+ protected:
+  static SCIP *scipone;
+  static SCIP *sciptwo;
+
+   virtual void SetUp() {
+      SCIP_CALL_ABORT( SCIPcreate(&scipone) );
+      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(scipone) );
+      SCIP_CALL_ABORT( SCIPcreateProb(scipone, "testone", NULL, NULL, NULL, NULL,NULL, NULL, NULL) );
+      SCIP_CALL_ABORT( SCIPsetIntParam(scipone, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+
+      SCIP_CALL_ABORT( SCIPcreate(&sciptwo) );
+      SCIP_CALL_ABORT( SCIPincludeGcgPlugins(sciptwo) );
+      SCIP_CALL_ABORT( SCIPfree(&sciptwo) );
+
+   }
+
+   virtual void TearDown() {
+     SCIP_CALL_ABORT( SCIPfree(&scipone) );
+   }
+};
+
+SCIP* GcgMultProbsTest::scipone = NULL;
+SCIP* GcgMultProbsTest::sciptwo = NULL;
+
+TEST_F(GcgMultProbsTest, FreeTransformTest) {
+   SCIP_RESULT result;
+
+   SCIP_CALL_EXPECT( SCIPreadProb(scipone, "check/instances/bpp/N1C1W4_M.BPP.lp", "lp") );
+   SCIP_CALL_EXPECT( SCIPpresolve(scipone) );
+   SCIP_CALL_EXPECT( DECdetectStructure(scipone, &result) );
+   SCIP_CALL_EXPECT( SCIPsolve(scipone) );
+}
+
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
