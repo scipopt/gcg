@@ -1,4 +1,5 @@
-rGCG Version 2.0
+
+GCG Version 2.0
 ===============
 features
 - GCG can now automatically create a decomposition to solve the LP with
@@ -11,20 +12,31 @@ features
   branching rule
 - GCG can solve integer knapsack problems as a dynamic program
 - GCG features additional detectors which are able to detect significantly
-  more structures
+  more structures such as staircase structures and problems that can be
+  aggregated
 - improved heuristics
-- Copy solutions from original problem to master problem
+- copy solutions from original problem to master problem
+- improved handling of compile flags changes such as an automatic
+  recompilation of SCIP if, e.g., USRFLAGS change
+- new solver for pricing problems that uses CPLEX to solve the MIP
+  (enabled if LPS=cpx)
 
 code cleanup
-- moved some detection methods to a more global scope to make it usable
+- moved some detection methods to a more global scope to make them reusable
 - added testing framework to do regression testing (uses google test)
-- Extracted graph methods for reuse
-- Branching is now done in the master problem
+- extracted graph methods for reuse
+- branching is now done in the master problem
+- remove code that was never called
 
 bug fixes
 - memory allocation bugs
 - bound change propagation fixes
 - corrected copyright
+- fixed a lot of code checker issues
+- use an event handler to disable the master display
+- override PARASCIP=true if OPENMP=true
+- correct decomp documentation and simplify interfaces
+
 
 GCG Version 1.1
 ===============
@@ -49,9 +61,9 @@ code cleanup
 - Add consistency check function for decompositions
 - removed a bit of redundant and leftover code
 
+
 GCG Version 1.0
 ===============
-
 features
 - include variable deletion code
 - add a block diagonal detector (cons_connected)
@@ -116,9 +128,9 @@ Makefile and scripts
   decompositions
 - fix clean rule to a safer version
 
+
 GCG Version 0.9
 ===============
-
 features
 - included new heuristics
 - included new reader for the ref file format
@@ -144,7 +156,6 @@ interface
 
 GCG Version 0.81
 ================
-
 features
 - polished source code
 
@@ -154,7 +165,6 @@ bug fixes
 
 GCG Version 0.8
 ===============
-
 bugfixes
 - fixed some bugs for solving MIPs when branching on variables that were
   directly transferred to the master problem
@@ -162,14 +172,12 @@ bugfixes
 
 GCG Version 0.7
 ===============
-
 bugfixes
 - some bugfixes
 
 
 GCG Version 0.6
 ===============
-
 feastures
 - implemented dialog handler for GCG
 - added concept of pricing solvers
@@ -181,7 +189,6 @@ bugfixes
 
 GCG Version 0.5
 ===============
-
 bugfixes
 - fixed problems with transfering bounds from the original program to the
   master program: when propagating a node, the bounds of all variables in
@@ -193,7 +200,6 @@ bugfixes
 
 GCG Version 0.4
 ===============
-
 design
 - working SCIP represents the original problem
 - read in problem is standard format (e.g., .lp-file, .mps-file) and
