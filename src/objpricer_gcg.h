@@ -147,9 +147,9 @@ public:
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
    SCIP_Real getStabilizedDualObjectiveValue();
 private:
-   static ReducedCostPricing *reducedcostpricing;
-   static FarkasPricing *farkaspricing;
-   static Stabilization *stabilization;
+   ReducedCostPricing *reducedcostpricing;
+   FarkasPricing *farkaspricing;
+   Stabilization *stabilization;
    /** free pricing problems */
    SCIP_RETCODE freePricingProblems();
 

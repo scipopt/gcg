@@ -183,9 +183,6 @@ struct SCIP_PricerData
 
 
 int ObjPricerGcg::threads;
-ReducedCostPricing* ObjPricerGcg::reducedcostpricing;
-FarkasPricing* ObjPricerGcg::farkaspricing;
-Stabilization* ObjPricerGcg::stabilization;
 
 /** information method for a parameter change of disablecutoff */
 static
@@ -2320,7 +2317,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
     int                priority,           /**< priority of the variable pricer */
     SCIP_Bool          delay,
     SCIP_PRICERDATA*   p_pricerdata
-    ) : ObjPricer(scip, name, desc, priority, delay)
+    ) : ObjPricer(scip, name, desc, priority, delay), reducedcostpricing(NULL), farkaspricing(NULL), stabilization(NULL)
  {
 
     assert(origscip!= NULL);
