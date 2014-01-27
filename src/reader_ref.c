@@ -623,8 +623,7 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   SCIP_CALL_QUIET( DECfillOutDecdecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock,
-         refinput->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
 
    DECdecompSetPresolved(decomp, FALSE);
    DECdecompSetDetector(decomp, NULL);

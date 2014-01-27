@@ -758,6 +758,10 @@ GCG> q
  * \par DEC_ENABLED: Flag to indicate whether the detector should be enabled by default.
  * Disabled detectors are not started.
  *
+ * \par DEC_SKIP: Flag to indicate whether the detector should be skipped if other detectors found decompositions
+ * This flag is useful if the detector acts as a last resort to generate a decomposition. It will not be called if any detector of higher
+ * priority found a decomposition.
+ *
  * @section DEC_DATA Detector Data
  *
  * Below the header "Data structures" you can find the struct "struct DEC_DetectorData".
@@ -803,11 +807,10 @@ GCG> q
  *
  * The DETECTSTRUCTURE callback is called during the detection loop and should perform the actual detection.
  * It should inspect the problem instance at hand and deduct some structure from the constraint matrix.
- * It needs to store the structure information in DEC_DECOMP and needs to allocate the array where to store the
+ * It needs to store the structure information in \ref DEC_DECOMP "DEC_DECOMP" and needs to allocate the array where to store the
  * information.
  *
- * Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss(), DECdecompSetNBlocks(),
- * DECdecompSet*(), etc. .
+ * Typical methods called by a detector are, for example, SCIPgetVars(), SCIPGetConss(), DECcreateDecompFromMasterconss(), etc. .
  *
  * @section DEC_ADDITIONALCALLBACKS Additional Callback Methods of a Detector
  *
@@ -1152,7 +1155,8 @@ GCG> q
 /**@page DEC_DECOMP How to store the structure information
  *
  * struct_decomp.h is responsible for storing structure information. The memory has to be allocated by caller and is freed
- * later. You have to use getter and setter functions ins pub_decomp.h to fill this structure.
+ * later. You can either create the decomposition by calling DECcreateDecompFromMasterconss() or DECfilloutDecompFromConstoblock()
+ * or use the getter and setter functions ins pub_decomp.h to fill this structure.
  *
  * Very quick until more elaborate, these are the relevant fields of the structure and its basic usage:
  *  - <code>subscipcons   </code>
@@ -1171,7 +1175,8 @@ GCG> q
  *   - number of blocks/pricing problems in the matrix resp. reformulation
  *  - <code>type          </code>
  *   - Type of the decomposition (DEC_DECTYPE_ARROWHEAD is the most general)
- *   - Current supported types: DEC_DECTYPE_DIAGONAL, DEC_DECTYPE_BORDERED, DEC_DECTYPE_ARROWHEAD, DEC_DECTYPE_UNKNOWN
+ *   - Current supported types: DEC_DECTYPE_DIAGONAL, DEC_DECTYPE_BORDERED, DEC_DECTYPE_ARROWHEAD, DEC_DECTYPE_STAIRCASE,
+ *     DEC_DECTYPE_UNKNOWN
  *  - <code>constoblock   </code>
  *   - SCIP_HASHMAP linking constraints to blocks
  *   - Usage: <code>SCIPhashmapGetImage(constoblock, cons)</code> returns <em>b+1</em>, where <em>b</em> is the block of

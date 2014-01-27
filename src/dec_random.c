@@ -214,7 +214,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
 
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, FALSE) );
       *ndecdecomps = 1;
 
       detectordata->constoblock = NULL;

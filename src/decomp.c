@@ -1011,16 +1011,12 @@ SCIP_HASHMAP*  DECdecompGetConsindex(
 }
 
 /** completely initializes decdecomp from the values of the hashmaps */
-SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
+SCIP_RETCODE DECfilloutDecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
-   SCIP_VAR**            vars,               /**< variable array */
-   int                   nvars,              /**< number of variables */
-   SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss,             /**< number of constraints */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
@@ -1040,11 +1036,23 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
    SCIP_VAR** curvars;
    int ncurvars;
    int j;
+
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_CONS** conss;
+   int nconss;
+
    assert(scip != NULL);
    assert(decdecomp != NULL);
    assert(vartoblock != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
+
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+
    assert(vars != NULL);
    assert(nvars > 0);
    assert(conss != NULL);
@@ -1184,22 +1192,21 @@ SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
 }
 
 /** completely fills out detector structure from only the constraint partition */
-SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
+SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition structure */
-   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap, start with 1 for first block and nblocks+1 for linking constraints */
    int                   nblocks,            /**< number of blocks */
-   SCIP_VAR**            vars,               /**< variable array */
-   int                   nvars,              /**< number of variables */
-   SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss,             /**< number of constraints */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
    SCIP_HASHMAP* vartoblock;
    int i;
    int j;
-
+   SCIP_VAR** vars;
+   int nvars;
+   SCIP_CONS** conss;
+   int nconss;
    SCIP_VAR** curvars;
    int ncurvars;
    SCIP_Bool success;
@@ -1208,10 +1215,15 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
    assert(decdecomp != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
+
+   conss = SCIPgetConss(scip);
+   nconss = SCIPgetNConss(scip);
+   vars = SCIPgetVars(scip);
+   nvars = SCIPgetNVars(scip);
+
    assert(vars != NULL);
    assert(nvars > 0);
    assert(conss != NULL);
-
    assert(nconss > 0);
 
    SCIP_CALL( SCIPhashmapCreate(&vartoblock, SCIPblkmem(scip), nvars) );
@@ -1280,7 +1292,7 @@ SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
       }
    }
 
-   SCIP_CALL_QUIET( DECfillOutDecdecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, vars, nvars, conss, nconss, staircase) );
+   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, staircase) );
 
    return SCIP_OKAY;
 }
@@ -1627,7 +1639,7 @@ SCIP_RETCODE DECcreateBasicDecomp(
       SCIP_CALL( SCIPhashmapInsert(constoblock, conss[c], (void*) (size_t) 1 ) );
    }
 
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, *decomp, constoblock, 0, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, *decomp, constoblock, 0, FALSE) );
 
    return SCIP_OKAY;
 }
@@ -1897,7 +1909,6 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    SCIP_HASHMAP* newconstoblock;
    SCIP_CONS** conss;
    int nconss;
-   SCIP_VAR** vars;
    int nvars;
    int nblocks;
    int* blockrepresentative;
@@ -1913,11 +1924,9 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
 
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
-   vars = SCIPgetVars(scip);
    nvars = SCIPgetNVars(scip);
 
    assert( nmasterconss <= nconss );
-
 
    if( GCGisConsGCGCons(conss[nconss-1]) )
       --nconss;
@@ -1960,7 +1969,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    /* convert temporary data to detectordata */
    SCIP_CALL( fillConstoblock(conss, nconss, consismaster, nblocks, constoblock, newconstoblock, blockrepresentative) );
    SCIP_CALL( DECdecompCreate(scip, decomp) );
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, *decomp, newconstoblock, nblocks, vars, nvars, conss, nconss, FALSE) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, *decomp, newconstoblock, nblocks, FALSE) );
 
    SCIPfreeMemoryArray(scip, &blockrepresentative);
    SCIPfreeMemoryArray(scip, &consismaster);
@@ -3226,7 +3235,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
       SCIP_CALL( SCIPhashmapSetImage(constoblock, decomp->linkingconss[c], (void*) (size_t) (1)) );
       SCIPdebugMessage("Cons <%s>    -> %d\n", SCIPconsGetName(decomp->linkingconss[c]), 1);
 
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, *newdecomp, constoblock, decomp->nblocks+1, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(scip, *newdecomp, constoblock, decomp->nblocks+1, FALSE) );
       *transferred += 1;
       break;
    }
@@ -3234,7 +3243,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
    return SCIP_OKAY;
 }
 
-/** polish the decomposition and try to greedily assign master constraints to pricing problem where usefule */
+/** polish the decomposition and try to greedily assign master constraints to pricing problem where useful */
 SCIP_RETCODE DECcreatePolishedDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition */

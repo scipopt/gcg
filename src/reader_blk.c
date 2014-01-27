@@ -870,7 +870,7 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   retcode = DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE);
+   retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;

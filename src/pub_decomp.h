@@ -243,29 +243,21 @@ SCIP_HASHMAP* DECdecompGetConsindex(
    );
 
 /** completely initializes decdecomp from the values of the hashmaps */
-SCIP_RETCODE DECfillOutDecdecompFromHashmaps(
+SCIP_RETCODE DECfilloutDecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
-   SCIP_VAR**            vars,               /**< variable array */
-   int                   nvars,              /**< number of variables */
-   SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss,             /**< number of constraints */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
 /** completely fills out detector structure from only the constraint partition */
-SCIP_RETCODE DECfilloutDecdecompFromConstoblock(
+SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decdecomp,          /**< decomposition structure */
-   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
+   SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap, start with 1 for first block and nblocks+1 for linking constraints */
    int                   nblocks,            /**< number of blocks */
-   SCIP_VAR**            vars,               /**< variable array */
-   int                   nvars,              /**< number of variables */
-   SCIP_CONS**           conss,              /**< constraint array */
-   int                   nconss,             /**< number of constraints */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    );
 
@@ -466,7 +458,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
    int*                  transferred         /**< number of master constraints reassigned */
    );
 
-/** polish the decomposition and try to greedily assign master constraints to pricing problem where usefule */
+/** polish the decomposition and try to greedily assign master constraints to pricing problem where useful */
 SCIP_RETCODE DECcreatePolishedDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DECOMP*           decomp,             /**< decomposition */

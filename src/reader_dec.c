@@ -747,7 +747,7 @@ SCIP_RETCODE fillDecompStruct(
    }
 
 
-   SCIP_CALL_QUIET( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+   SCIP_CALL_QUIET( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE) );
    return SCIP_OKAY;
 }
 

@@ -1310,7 +1310,7 @@ SCIP_RETCODE blocking(
                continue;
 
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+            SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
             detectordata->constoblock = NULL;
 
             (*ndecdecomps) += 1;
@@ -1325,7 +1325,7 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1 )
          {
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+            SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
             detectordata->constoblock = NULL;
 
             (*ndecdecomps) += 1;
@@ -1346,7 +1346,7 @@ SCIP_RETCODE blocking(
       if( detectordata->blocks > 1 )
       {
          SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-         SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+         SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
          detectordata->constoblock = NULL;
 
          (*ndecdecomps) += 1;
@@ -1370,7 +1370,7 @@ SCIP_RETCODE blocking(
                continue;
 
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+            SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
             detectordata->constoblock = NULL;
 
             *ndecdecomps += 1;
@@ -1384,7 +1384,7 @@ SCIP_RETCODE blocking(
          if( detectordata->blocks > 1)
          {
             SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[*ndecdecomps])) );
-            SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+            SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[*ndecdecomps], detectordata->constoblock, detectordata->blocks, TRUE) );
             detectordata->constoblock = NULL;
 
             *ndecdecomps += 1;

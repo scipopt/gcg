@@ -1145,7 +1145,7 @@ SCIP_RETCODE GetConsindex(
    if( !detectordata->fixedblocks )
    {
 
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, TRUE) );
 
       for( i = 0; i < detectordata->nblocks; ++i )
       {
@@ -1331,7 +1331,7 @@ static SCIP_RETCODE FixedBlocks(
 
    assert( SCIPhashmapGetNEntries(detectordata->constoblock) == detectordata->nrelconss);
 
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, TRUE) );
    return SCIP_OKAY;
 }
 
