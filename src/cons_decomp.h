@@ -123,6 +123,7 @@ SCIP_RETCODE DECdetectStructure(
 /** write out all known decompositions **/
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
    char*                 extension           /**< the file extension for the export */
    );
 

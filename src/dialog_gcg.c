@@ -101,6 +101,7 @@ SCIP_RETCODE writeAllDecompositions(
 {
 
    char* filename;
+   char* dirname;
    SCIP_Bool endoffile;
 
    if( SCIPconshdlrDecompGetNDecdecomps(scip) == 0 )
@@ -111,11 +112,21 @@ SCIP_RETCODE writeAllDecompositions(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
+   SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter directory and/or extension: ", &dirname, &endoffile) );
    if( endoffile )
    {
       *nextdialog = NULL;
       return SCIP_OKAY;
+   }
+
+   if( SCIPdialoghdlrIsBufferEmpty(dialoghdlr) )
+   {
+      filename = dirname;
+      dirname = NULL;
+   }
+   else
+   {
+      SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter extension: ", &filename, &endoffile) );
    }
 
    if( filename[0] != '\0' )
@@ -126,7 +137,7 @@ SCIP_RETCODE writeAllDecompositions(
 
       do
       {
-         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, extension);
+         SCIP_RETCODE retcode = DECwriteAllDecomps(scip, dirname, extension);
 
          if( retcode == SCIP_FILECREATEERROR )
          {

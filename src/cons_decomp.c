@@ -678,6 +678,7 @@ SCIP_RETCODE DECdetectStructure(
 /** write out all detected or provided decompositions */
 SCIP_RETCODE DECwriteAllDecomps(
    SCIP*                 scip,               /**< SCIP data structure */
+   char*                 directory,          /**< directory for decompositions */
    char*                 extension           /**< extension for decompositions */
    )
 {
@@ -685,6 +686,8 @@ SCIP_RETCODE DECwriteAllDecomps(
    int j;
    char name[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
+   char* dirname;
+
    char *pname;
 
    SCIP_CONSHDLR* conshdlr;
@@ -708,7 +711,14 @@ SCIP_RETCODE DECwriteAllDecomps(
       return SCIP_OKAY;
    }
 
-   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s",  SCIPgetProbName(scip));
+   if(directory != NULL)
+   {
+      char stmp[SCIP_MAXSTRLEN];
+      (void) strncpy(stmp, directory, SCIP_MAXSTRLEN);
+      SCIPsplitFilename(stmp, NULL, &dirname, NULL, NULL);
+   }
+
+   (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
    tmp = conshdlrdata->decdecomps[0];
@@ -722,9 +732,15 @@ SCIP_RETCODE DECwriteAllDecomps(
       {
          decomp = detector->decomps[j];
          assert(decomp != NULL);
+         if( directory != NULL )
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", dirname, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
+         }
+         else
+         {
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
 
-         (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s_%c_%d_%d.%s", pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
-
+         }
          conshdlrdata->decdecomps[0] = decomp;
          SCIP_CALL( SCIPwriteTransProblem(scip, outname, extension, FALSE) );
       }
