@@ -25,41 +25,31 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   graph_boost.h
- * @brief  interface to boost graph library
- * @author Annika Thome
+/**@file   event_mastersol.h
+ * @ingroup EVENTS
+ * @brief  eventhdlr to transfer solutions found in the original problem to the master problem
+ * @author Christian Puchert
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_GRAPH_BOOST_H_
-#define GCG_GRAPH_BOOST_H_
+#ifndef GCG_EVENT_MASTERSOL_H__
+#define GCG_EVENT_MASTERSOL_H__
 
-#include "bridge.h"
-#include "boost/graph/adjacency_list.hpp"
+#include "scip/scip.h"
 
-namespace gcg
-{
-class GraphBoost: public gcg::Bridge
-{
-public:
-   GraphBoost();
-   virtual ~GraphBoost();
-   virtual int getNNodes();
-   virtual int getNEdges();
-   virtual SCIP_Bool isEdge(int i, int j);
-   virtual int getNNeighbors(int i);
-   virtual std::vector<int> getNeighbors(int i);
-   virtual SCIP_RETCODE addNode(int i, int weight);
-   virtual SCIP_RETCODE deleteNode(int i);
-   virtual SCIP_RETCODE addEdge(int i, int j);
-   virtual SCIP_RETCODE deleteEdge(int i, int j);
-   virtual int* graphGetFirstAdjedge(int i);
-   virtual int* graphGetLastAdjedge(int i);
-   virtual int graphGetWeights(int i);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-   virtual SCIP_RETCODE flush();
-};
+/** creates event handler for mastersol event */
+extern
+SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
-} /* namespace gcg */
-#endif /* GCG_GRAPH_BOOST_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif

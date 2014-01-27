@@ -103,21 +103,15 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
 {
    SCIP_VAR** vars;
    SCIP_SOL* sol;
-   SCIP_Real time;
    SCIP_Real solvingtime;
    SCIP_Longint nnodes;
 
    int nvars, i, n;
-   SCIP_Longint  node;
    SCIP_Longint* createnodestat;
    int nodes[2];         /** < Wurzel Knoten und nicht wurzelknoten  */
    SCIP_Longint createtimestat[10];
    int createiterstat[10];
-   SCIP_Longint iteration;
    int m;
-
-   SCIP_Real redcost;
-   SCIP_Real gap;
 
    assert(scip != NULL);
 
@@ -145,6 +139,12 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\tredcost\tgap\tsolval\n");
    for( i = 0; i < nvars; i++ )
    {
+      SCIP_Real redcost;
+      SCIP_Real gap;
+      SCIP_Longint  node;
+      SCIP_Real time;
+      SCIP_Longint iteration;
+
       node = GCGgetCreationNode(scip, vars[i]);
       time = GCGgetCreationTime(scip, vars[i]);
       iteration = GCGgetIteration(scip, vars[i]);

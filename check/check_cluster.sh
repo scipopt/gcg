@@ -432,6 +432,7 @@ EOF
 		TLIMIT=`expr $HARDTIMELIMIT / 60`
 		ULIMITMEMLIMIT=`expr $HARDMEMLIMIT \* 1024000`
 		sed -i 's,\$CLIENTTMPDIR,$TMP,' runcluster_tmp.sh
+		sed -i "s,\$CONTINUE,$CONTINUE," runcluster_tmp.sh
 		sed -i "s,\$BINNAME,$BINNAME," runcluster_tmp.sh
 		sed -i "s,\$TLIMIT,$TLIMIT," runcluster_tmp.sh
 		sed -i "s,\$EVALFILE,$EVALFILE," runcluster_tmp.sh

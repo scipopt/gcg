@@ -49,10 +49,6 @@ namespace gcg
  *
  *  This class defines the interface for dialogs implemented in C++. Note that there is a pure virtual function (this
  *  function has to be implemented). This function is: scip_exec().
- *
- * - \ref DIALOG "Instructions for implementing a dialog"
- * - \ref DIALOGS "List of available dialogs"
- *  - \ref type_dialog.h "Corresponding C interface"
  */
 class ObjDialog : public scip::ObjCloneable
 {
@@ -99,7 +95,7 @@ public:
 
    /** destructor of dialog to free user data (called when SCIP is exiting)
     *
-    *  @see SCIP_DECL_DIALOGFREE(x) in @ref type_dialog.h
+    *  @see SCIP_DECL_DIALOGFREE(x) in type_dialog.h
     */
    virtual SCIP_DECL_DIALOGFREE(scip_free)
    {  /*lint --e{715}*/
@@ -108,7 +104,7 @@ public:
 
    /** description output method of dialog
     *
-    *  @see SCIP_DECL_DIALOGDESC(x) in @ref type_dialog.h
+    *  @see SCIP_DECL_DIALOGDESC(x) in type_dialog.h
     */
    virtual SCIP_DECL_DIALOGDESC(scip_desc)
    {  /*lint --e{715}*/
@@ -118,7 +114,7 @@ public:
 
    /** execution method of dialog
     *
-    *  @see SCIP_DECL_DIALOGEXEC(x) in @ref type_dialog.h
+    *  @see SCIP_DECL_DIALOGEXEC(x) in type_dialog.h
     */
    virtual SCIP_DECL_DIALOGEXEC(scip_exec) = 0;
 };

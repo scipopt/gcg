@@ -29,9 +29,7 @@
  * @ingroup DETECTORS
  * @brief  Random structure detection for testing purposes
  * @author Martin Bergner
- */
-
-/**
+ *
  * This detector will partition the constraints of the problem randomly.
  * For each constraint, it will randomly pick a number between 0 and the
  * maxblocks parameter. Constraints assigned to maxblocks will be put in the
@@ -54,7 +52,7 @@
 #define DEC_DESC                 "Random structure detection" /**< description of detector*/
 #define DEC_PRIORITY             -10         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'r'         /**< display character of detector */
-#define DEC_ENABLED              TRUE        /**< should the detection be enabled */
+#define DEC_ENABLED              FALSE       /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE       /**< should detector be skipped if others found detections */
 
 #define DEFAULT_MAXBLOCKS        -1          /**< the maximal number of blocks, -1 defaults to average number of constraints */
@@ -216,7 +214,7 @@ DEC_DECL_DETECTSTRUCTURE(detectRandom)
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, 1) ); /*lint !e506*/
       SCIP_CALL( DECdecompCreate(scip, &((*decdecomps)[0])) );
 
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(scip, (*decdecomps)[0], detectordata->constoblock, detectordata->nblocks, FALSE) );
       *ndecdecomps = 1;
 
       detectordata->constoblock = NULL;

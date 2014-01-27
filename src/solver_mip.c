@@ -301,8 +301,6 @@ SCIP_RETCODE solveProblem(
    SCIP_STATUS*          status              /**< pointer to store pricing problem status */
    )
 {
-   SCIP_SOL** probsols;
-   int nprobsols;
    SCIP_Bool newsol;
 
    int s;
@@ -395,8 +393,8 @@ SCIP_RETCODE solveProblem(
    /* the pricing problem was solved to optimality, copy all solutions found into the solution arrays */
    else if( problemIsFeasible(pricingprob) )
    {
-      nprobsols = SCIPgetNSols(pricingprob);
-      probsols = SCIPgetSols(pricingprob);
+      SCIP_SOL** probsols = SCIPgetSols(pricingprob);
+      int nprobsols = SCIPgetNSols(pricingprob);;
 
       *nsols = 0;
 

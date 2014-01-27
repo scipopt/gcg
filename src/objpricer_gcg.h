@@ -49,7 +49,7 @@ public:
    /*lint --e{1540}*/
 
    SCIP*              origprob;           /**< the original program */
-   SCIP_PRICERDATA *pricerdata;
+   SCIP_PRICERDATA *pricerdata;           /**< pricerdata data structure */
    static int threads;
 
    /** default constructor */
@@ -60,7 +60,7 @@ public:
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
          unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA *pricerdata
+         SCIP_PRICERDATA *pricerdata /**< pricerdata data structure */
    );
    /** destructor */
    virtual ~ObjPricerGcg()
@@ -109,7 +109,7 @@ public:
          int            prob,               /**< number of the pricing problem the solution belongs to */
          unsigned int   force,              /**< should the given variable be added also if it has non-negative reduced cost? */
          unsigned int*  added,              /**< pointer to store whether the variable was successfully added */
-         SCIP_VAR**     addedvar
+         SCIP_VAR**     addedvar            /**< pointer to store the created variable */
       );
 
    /** performs optimal or farkas pricing */
@@ -170,13 +170,14 @@ private:
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
       );
 
+   /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
-      PricingType*          pricetype,          /**< type of pricing: optimal or heuristic */
-      int& prob,
-      SCIP_SOL** sols,
-      int nsols,
-      SCIP_Bool* solisray
-      );
+      PricingType*          pricetype,          /**< pricing type, farkas or redcost */
+      int&                  prob,               /**< number of the pricing problem */
+      SCIP_SOL**            sols,               /**< solutions which should be investigated */
+      int                   nsols,              /**< number of solutions */
+      SCIP_Bool*            solisray            /**< array indicating if a solution is a ray or not */
+     );
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
    SCIP_Bool isMasterLPOptimal();
@@ -302,6 +303,7 @@ private:
     */
    SCIP_RETCODE computeGenericBranchingconssStack(
       PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
+      int                   prob,               /**< index of pricing problem */
       SCIP_CONS***          consstack,          /**< stack of branching constraints */
       int*                  nconsstack,         /**< size of the stack */
       SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */

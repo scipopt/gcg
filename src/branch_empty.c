@@ -28,6 +28,7 @@
 /**@file   branch_empty.c
  * @brief  branching rule for original problem in GCG while real branching is applied in the master
  * @author Marcel Schmickerath
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -68,9 +69,11 @@
  */
 static
 SCIP_RETCODE GCGincludeOriginalCopyPlugins(
-   SCIP* scip
-   )
+   SCIP*                 scip
+)
 {
+   assert(scip != NULL);
+
    SCIP_CALL( SCIPincludeBranchruleAllfullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleFullstrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleInference(scip) );
@@ -79,6 +82,7 @@ SCIP_RETCODE GCGincludeOriginalCopyPlugins(
    SCIP_CALL( SCIPincludeBranchrulePscost(scip) );
    SCIP_CALL( SCIPincludeBranchruleRandom(scip) );
    SCIP_CALL( SCIPincludeBranchruleRelpscost(scip) );
+
    return SCIP_OKAY;
 }
 /** copy method for master branching rule */
@@ -87,15 +91,17 @@ SCIP_DECL_BRANCHCOPY(branchCopyEmpty)
 {
    assert(branchrule != NULL);
    assert(scip != NULL);
+
    SCIPdebugMessage("pricer copy called.\n");
    SCIP_CALL( GCGincludeOriginalCopyPlugins(scip) );
+
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE GCGcreateConsOrigbranchNode(
-      SCIP* scip,
-      SCIP_CONS* masterbranchchildcons
-   )
+   SCIP*                 scip,
+   SCIP_CONS*            masterbranchchildcons
+)
 {
    SCIP_NODE* child;
    SCIP_CONS*  origbranch;
@@ -103,8 +109,7 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    int norigbranchcons;
    int i;
 
-   i = 0;
-
+   assert(scip != NULL);
    assert(masterbranchchildcons != NULL);
 
    SCIP_CALL( SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip)) );
@@ -169,6 +174,83 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    return SCIP_OKAY;
 }
 
+/** creates the copies of the master branching nodes in the original problem */
+static
+SCIP_RETCODE createBranchNodesInOrigprob(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_RESULT*          result              /**< result pointer */
+)
+{
+   SCIP* masterscip;
+   SCIP_Bool feasible;
+   SCIP_CONS* masterbranchcons;
+   int nchildnodes;
+   int i;
+
+   feasible = TRUE;
+
+   assert(scip != NULL);
+   assert(result != NULL);
+
+   *result = SCIP_DIDNOTRUN;
+
+   if( GCGrelaxGetCurrentOrigSol(scip) == NULL)
+   {
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
+   }
+   else
+   {
+      /* check whether the current original solution is integral */
+#ifdef SCIP_DEBUG
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
+#else
+      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
+#endif
+   }
+
+   if( feasible )
+   {
+      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
+            SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
+
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
+
+   masterscip = GCGrelaxGetMasterprob(scip);
+   assert(masterscip != NULL);
+
+   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
+
+
+
+   if(masterbranchcons == NULL)
+   {
+      return SCIP_OKAY;
+   }
+
+   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
+   if( nchildnodes <= 0 )
+   {
+      SCIPdebugMessage("node cut off, since there is no successor node\n");
+
+      *result = SCIP_CUTOFF;
+      return SCIP_OKAY;
+   }
+
+   for( i=0; i<nchildnodes; ++i )
+   {
+      SCIP_CONS* masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
+      assert(masterbranchchildcons != NULL);
+
+      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
+   }
+
+   *result = SCIP_BRANCHED;
+   assert(nchildnodes > 0);
+   return SCIP_OKAY;
+}
+
 
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
 #define branchFreeEmpty NULL
@@ -189,132 +271,24 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpEmpty)
 {  /*lint --e{715}*/
-   SCIP* masterscip;
-   SCIP_Bool feasible;
-   SCIP_CONS* masterbranchcons;
-   SCIP_CONS* masterbranchchildcons;
-   int nchildnodes;
-   int i;
-
-   nchildnodes = 0;
-   i = 0;
-   feasible = TRUE;
-
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
 
-   *result = SCIP_DIDNOTRUN;
-
-   /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   SCIPdebugMessage("Execext method of empty branching\n");
-
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
-
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   assert(masterbranchcons != NULL);
-
-   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
-   if( nchildnodes <= 0 )
-   {
-      SCIPdebugMessage("node cut off, since there is no successor node\n");
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   for( i=0; i<nchildnodes; ++i )
-   {
-      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
-      assert(masterbranchchildcons != NULL);
-
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
-   }
-
-   *result = SCIP_BRANCHED;
+   SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
    return SCIP_OKAY;
 }
 /** branching execution method relaxation solutions */
 static
 SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 {  /*lint --e{715}*/
-   SCIP* masterscip;
-   SCIP_Bool feasible;
-   SCIP_CONS* masterbranchcons;
-   SCIP_CONS* masterbranchchildcons;
-   int nchildnodes;
-   int i;
-
-   nchildnodes = 0;
-   i = 0;
-   feasible = TRUE;
-
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
 
-   *result = SCIP_DIDNOTRUN;
-
-   /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-   SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   SCIPdebugMessage("Execext method of empty branching\n");
-
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
-
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   assert(masterbranchcons != NULL);
-
-   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
-   if( nchildnodes <= 0 )
-   {
-      SCIPdebugMessage("node cut off, since there is no successor node\n");
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   for( i=0; i<nchildnodes; ++i )
-   {
-      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
-      assert(masterbranchchildcons != NULL);
-
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
-   }
-
-   *result = SCIP_BRANCHED;
+   SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
    return SCIP_OKAY;
 }
 
@@ -322,80 +296,12 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextEmpty)
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
 {  /*lint --e{715}*/
-   SCIP* masterscip;
-   SCIP_Bool feasible;
-   SCIP_CONS* masterbranchcons;
-   SCIP_CONS* masterbranchchildcons;
-   int nchildnodes;
-   int i;
-
-   nchildnodes = 0;
-   i = 0;
-   feasible = TRUE;
-
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
 
-   *result = SCIP_DIDNOTRUN;
-
-   /*
-   origscip = GCGpricerGetOrigprob(scip);
-   assert(origscip != NULL);
-    */
-
-   masterscip = GCGrelaxGetMasterprob(scip);
-   assert(masterscip != NULL);
-
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
-   {
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
-
-   }
-   else
-   {
-      /* check whether the current original solution is integral */
-#ifdef SCIP_DEBUG
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), TRUE, TRUE, TRUE, TRUE, &feasible) );
-#else
-      SCIP_CALL( SCIPcheckSol(scip, GCGrelaxGetCurrentOrigSol(scip), FALSE, TRUE, TRUE, TRUE, &feasible) );
-#endif
-   }
-
-   if( feasible )
-   {
-      SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-         SCIPgetSolOrigObj(scip, GCGrelaxGetCurrentOrigSol(scip)));
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   SCIPdebugMessage("Execeps method of empty branching\n");
-
-   masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
-   assert(masterbranchcons != NULL);
-
-   nchildnodes = GCGconsMasterbranchGetNChildcons(masterbranchcons);
-   if( nchildnodes <= 0 )
-   {
-      SCIPdebugMessage("node cut off, since there is no successor node\n");
-
-      *result = SCIP_CUTOFF;
-      return SCIP_OKAY;
-   }
-
-   for( i=0; i<nchildnodes; ++i )
-   {
-      masterbranchchildcons = GCGconsMasterbranchGetChildcons(masterbranchcons, i);
-      assert(masterbranchchildcons != NULL);
-
-      SCIP_CALL( GCGcreateConsOrigbranchNode(scip, masterbranchchildcons) );
-   }
-   assert(nchildnodes > 0);
-
-   *result = SCIP_BRANCHED;
+   SCIP_CALL( createBranchNodesInOrigprob(scip, result) );
    return SCIP_OKAY;
 }
 

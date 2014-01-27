@@ -26,9 +26,14 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_stabilization.cpp
- * @brief  Description
+ * @brief  class with functions for dual variable smoothing
  * @author Martin Bergner
  * @author Jonas Witt
+ *
+ * This is based on the paper
+ *
+ * Pessoa, A., Sadykov, R., Uchoa, E., & Vanderbeck, F. (2013). In-Out Separation and Column Generation
+ * Stabilization by Dual Price Smoothing. In Experimental Algorithms (pp. 354-365). Springer Berlin Heidelberg.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -88,7 +93,7 @@ SCIP_RETCODE Stabilization::updateStabcenterconss()
 
 SCIP_RETCODE Stabilization::updateStabcentercuts()
 {
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
 
    if( ncuts == nstabcentercuts )
    {
@@ -181,7 +186,7 @@ SCIP_RETCODE Stabilization::rowGetDual(
    )
 {
 #ifndef NDEBUG
-   int nrows = GCGsepaGetNMastercuts(scip_);
+   int nrows = GCGsepaGetNCuts(scip_);
 #endif
    assert(i < nrows);
    assert(dual != NULL);
@@ -238,7 +243,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP* origprob = GCGpricerGetOrigprob(scip_);
 
    int nconss = GCGrelaxGetNMasterConss(origprob);
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
    int nprobs = GCGrelaxGetNPricingprobs(origprob);
 
    assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
@@ -365,7 +370,7 @@ SCIP_Real Stabilization::calculateSubgradient(
    assert(nconss <= nstabcenterconss);
    SCIP_ROW** mastercuts = GCGsepaGetMastercuts(scip_);
    SCIP_ROW** origmastercuts = GCGsepaGetOrigcuts(scip_);
-   int ncuts = GCGsepaGetNMastercuts(scip_);
+   int ncuts = GCGsepaGetNCuts(scip_);
    assert(ncuts <= nstabcentercuts);
 
    SCIP_Real gradientproduct = 0.0;

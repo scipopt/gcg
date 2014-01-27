@@ -26,8 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   dec_stairheur.h
- * @ingroup DETECTORS
- * @brief  stairheur presolver
+ * @brief  detector for staircase structures via ROC algorithms
  * @author Martin Bergner
  * @author Mathias Luers
  */

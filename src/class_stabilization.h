@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_stabilization.h
- * @brief  Description
+ * @brief  class with functions for dual variable smoothing
  * @author Martin Bergner
  * @author Jonas Witt
  */

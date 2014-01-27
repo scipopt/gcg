@@ -823,16 +823,13 @@ SCIP_RETCODE fillDecompStruct(
          }
          if( blocknr != -1 )
          {
-            int varidx;
-            int varblock;
-
             /* check whether all contained variables are copied into the assigned block;
              * if not, the constraint is treated as a linking constraint
              */
             for( j = 0; j < nconsvars; ++j )
             {
-               varidx = SCIPvarGetProbindex(consvars[j]);
-               varblock = readerdata->varstoblock[varidx];
+               int varidx = SCIPvarGetProbindex(consvars[j]);
+               int varblock = readerdata->varstoblock[varidx];
                assert(varblock != NOVALUE);
 
                if( varblock != LINKINGVALUE && varblock != blocknr )
@@ -873,7 +870,7 @@ SCIP_RETCODE fillDecompStruct(
          }
       }
    }
-   retcode = DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), FALSE);
+   retcode = DECfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;

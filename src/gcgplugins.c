@@ -152,6 +152,7 @@
 #include "dialog_gcg.h"
 #include "reader_ref.h"
 #include "event_bestsol.h"
+#include "event_mastersol.h"
 
 /* Martin's detection stuff */
 #include "reader_gp.h"
@@ -303,6 +304,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
 
    /* Detectors and decompositions */
    SCIP_CALL( SCIPincludeReaderGp(scip) );

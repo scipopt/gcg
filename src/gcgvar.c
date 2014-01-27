@@ -58,7 +58,6 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       if( (*vardata)->blocknr == -2 )
       {
          int nblocks;
-         int i;
 
          nblocks = GCGrelaxGetNPricingprobs(scip);
          assert(nblocks > 0);
@@ -66,6 +65,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
          assert((*vardata)->data.origvardata.linkingvardata != NULL);
          if( (*vardata)->data.origvardata.linkingvardata->linkconss != NULL )
          {
+            int i;
             assert((*vardata)->data.origvardata.linkingvardata->pricingvars != NULL);
 
             for( i = 0; i < nblocks; i++ )
@@ -1013,7 +1013,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
-   char*                 varname,            /**< new variable name */
+   const char*           varname,            /**< new variable name */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
    SCIP_Bool             solisray,           /**< indicates whether new variable is a ray */

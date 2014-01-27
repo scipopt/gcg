@@ -344,7 +344,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
       SCIP_Real downfrac;
       SCIP_Real upfrac;
       SCIP_Real obj;
-      SCIP_Real objgain;
 
       var = lpcands[c];
       mayrounddown = SCIPvarMayRoundDown(var);
@@ -359,6 +358,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgfracdiving) /*lint --e{715}*/
          /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
          if( bestcandmayrounddown || bestcandmayroundup )
          {
+            SCIP_Real objgain;
+
             /* choose rounding direction:
              * - if variable may be rounded in both directions, round corresponding to the fractionality
              * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding

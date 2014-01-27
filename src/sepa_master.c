@@ -65,8 +65,7 @@ struct SCIP_SepaData
 {
    SCIP_ROW**            mastercuts;         /**< cuts in the master problem */
    SCIP_ROW**            origcuts;           /**< cuts in the original problem */
-   int                   norigcuts;          /**< number of cuts in the original problem */
-   int                   nmastercuts;        /**< number of cuts in the master problem */
+   int                   ncuts;          /**< number of cuts in the original problem */
    int                   maxcuts;            /**< maximal number of allowed cuts */
 };
 
@@ -88,10 +87,8 @@ SCIP_RETCODE ensureSizeCuts(
    assert(sepadata != NULL);
    assert(sepadata->mastercuts != NULL);
    assert(sepadata->origcuts != NULL);
-   assert(sepadata->norigcuts <= sepadata->maxcuts);
-   assert(sepadata->norigcuts >= 0);
-   assert(sepadata->nmastercuts <= sepadata->maxcuts);
-   assert(sepadata->nmastercuts >= 0);
+   assert(sepadata->ncuts <= sepadata->maxcuts);
+   assert(sepadata->ncuts >= 0);
 
    if( sepadata->maxcuts < size )
    {
@@ -142,12 +139,11 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
 
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
-   assert(sepadata->nmastercuts == sepadata->norigcuts);
 
    origscip = GCGpricerGetOrigprob(scip);
    assert(origscip != NULL);
 
-   for( i = 0; i < sepadata->norigcuts; i++ )
+   for( i = 0; i < sepadata->ncuts; i++ )
    {
       SCIP_CALL( SCIPreleaseRow(origscip, &(sepadata->origcuts[i])) );
    }
@@ -164,11 +160,10 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
 
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
-   assert(sepadata->nmastercuts == sepadata->norigcuts);
 
    assert(GCGpricerGetOrigprob(scip) != NULL);
 
-   for( i = 0; i < sepadata->nmastercuts; i++ )
+   for( i = 0; i < sepadata->ncuts; i++ )
    {
       SCIP_CALL( SCIPreleaseRow(scip, &(sepadata->mastercuts[i])) );
    }
@@ -185,11 +180,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIP_Bool cutoff;
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
-   SCIP_ROW* origcut;
-   SCIP_COL** cols;
    SCIP_VAR** rowvars;
-   int ncols;
-   SCIP_Real* vals;
    SCIP_SEPADATA* sepadata;
 
    SCIP_VAR** mastervars;
@@ -199,6 +190,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    char name[SCIP_MAXSTRLEN];
 
    int ncuts;
+   int norigcuts;
    int i;
    int j;
    SCIP_Bool feasible;
@@ -233,13 +225,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    ncuts = SCIPgetNCuts(origscip);
 
    /* save cuts in the origcuts array in the separator data */
-   assert(sepadata->norigcuts == sepadata->nmastercuts);
-   SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->norigcuts + ncuts) );
+   norigcuts = sepadata->ncuts;
+   SCIP_CALL( ensureSizeCuts(scip, sepadata, sepadata->ncuts + ncuts) );
    for( i = 0; i < ncuts; i++ )
    {
-      sepadata->origcuts[sepadata->norigcuts] = cuts[i];
-      SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[sepadata->norigcuts]) );
-      sepadata->norigcuts++;
+      sepadata->origcuts[norigcuts] = cuts[i];
+      SCIP_CALL( SCIPcaptureRow(origscip, sepadata->origcuts[norigcuts]) );
+      norigcuts++;
    }
 
    SCIP_CALL( SCIPclearCuts(origscip) );
@@ -250,7 +242,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
    for( i = 0; i < ncuts; i++ )
    {
-      origcut = sepadata->origcuts[sepadata->norigcuts-ncuts+i]; /*lint !e679*/
+      SCIP_ROW* origcut;
+      SCIP_COL** cols;
+      int ncols;
+      SCIP_Real* vals;
+
+      origcut = sepadata->origcuts[norigcuts-ncuts+i]; /*lint !e679*/
 
       /* get columns and vals of the cut */
       ncols = SCIProwGetNNonz(origcut);
@@ -279,8 +276,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
 
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddCut(scip, NULL, mastercut, FALSE, &feasible) );
-      sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
-      sepadata->nmastercuts++;
+      sepadata->mastercuts[sepadata->ncuts] = mastercut;
+      sepadata->ncuts++;
 
 #ifdef SCIP_DEBUG
       SCIPdebugMessage("Cut %d:\n", i);
@@ -291,6 +288,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
       SCIPfreeBufferArray(scip, &rowvars);
    }
 
+   assert(norigcuts == sepadata->ncuts);
+
    if( ncuts > 0 )
       *result = SCIP_SEPARATED;
 
@@ -298,8 +297,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    SCIPdebugMessage("%d cuts are in the master sepastore!\n", SCIPgetNCuts(scip));
 
    SCIPfreeBufferArray(scip, &mastervals);
-
-   assert(sepadata->norigcuts == sepadata->nmastercuts );
 
    return SCIP_OKAY;
 }
@@ -322,8 +319,7 @@ SCIP_RETCODE SCIPincludeSepaMaster(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->origcuts), STARTMAXCUTS) ); /*lint !e506*/
    SCIP_CALL( SCIPallocMemoryArray(scip, &(sepadata->mastercuts), STARTMAXCUTS) ); /*lint !e506*/
    sepadata->maxcuts = STARTMAXCUTS;
-   sepadata->norigcuts = 0;
-   sepadata->nmastercuts = 0;
+   sepadata->ncuts = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
@@ -355,8 +351,8 @@ SCIP_ROW** GCGsepaGetOrigcuts(
    return sepadata->origcuts;
 }
 
-/** returns the number of original cuts saved in the separator data */
-int GCGsepaGetNOrigcuts(
+/** returns the number of cuts saved in the separator data */
+int GCGsepaGetNCuts(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -371,7 +367,7 @@ int GCGsepaGetNOrigcuts(
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   return sepadata->norigcuts;
+   return sepadata->ncuts;
 }
 
 /** returns the array of master cuts saved in the separator data */
@@ -391,23 +387,4 @@ SCIP_ROW** GCGsepaGetMastercuts(
    assert(sepadata != NULL);
 
    return sepadata->mastercuts;
-}
-
-/** returns the number of master cuts saved in the separator data */
-int GCGsepaGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_SEPA* sepa;
-   SCIP_SEPADATA* sepadata;
-
-   assert(scip != NULL);
-
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
-   assert(sepa != NULL);
-
-   sepadata = SCIPsepaGetData(sepa);
-   assert(sepadata != NULL);
-
-   return sepadata->nmastercuts;
 }

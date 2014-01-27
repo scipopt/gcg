@@ -26,8 +26,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   hyperrowcolgraph_def.h
- * @brief  Description
- * @author bergner
+ * @brief  A hypergraph with row and column nodes
+ * @author Martin Bergner
  * @author Annika Thome
  */
 
@@ -289,11 +289,9 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    int *nsubscipconss;
    int i;
    SCIP_CONS **conss;
-   SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
-   vars = SCIPgetVars(this->scip_);
 
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
@@ -335,7 +333,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
    if( !emptyblocks )
    {
       SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);

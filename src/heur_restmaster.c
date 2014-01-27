@@ -106,7 +106,6 @@ SCIP_RETCODE setupSubproblem(
    SCIP_VAR** mastervars;
    int nmastervars;
    SCIP_Real fixingrate;
-   SCIP_Real mastersolval;
 
    int i;
    int fixingcounter;
@@ -121,6 +120,8 @@ SCIP_RETCODE setupSubproblem(
    /* fix zero variables in the restricted master problem */
    for( i = 0; i < nmastervars; i++ )
    {
+      SCIP_Real mastersolval;
+
       mastersolval = SCIPgetSolVal(scip, NULL, mastervars[i]);
 
       /* if LP solution value of master variable is zero, fix it to zero in restricted master */
@@ -346,7 +347,6 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    SCIP_HEURDATA* heurdata;                  /* heuristic's data                    */
    SCIP_Real timelimit;                      /* timelimit for the subproblem        */
    SCIP_Real memorylimit;
-   SCIP_Real cutoff;                         /* objective cutoff for the restricted  master problem        */
    SCIP_Bool discretization;
    SCIP_Bool success;
    SCIP_Longint nstallnodes;                 /* number of stalling nodes for the restricted master problem */
@@ -538,6 +538,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    /* @todo origprob or scip? */
    if( SCIPgetNSols(origprob) > 0 )
    {
+      SCIP_Real cutoff;                         /* objective cutoff for the restricted master problem */
       SCIP_Real upperbound;
       assert(!SCIPisInfinity(origprob,SCIPgetUpperbound(origprob)));
 

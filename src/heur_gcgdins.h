@@ -30,7 +30,7 @@
  * @brief  DINS primal heuristic
  * @author Robert Waniek
  *
- * DINS combines the ideas of RINS (see @ref heur_rins.h) and Local Branching (see @ref heur_localbranching.h). It
+ * DINS combines the ideas of RINS and Local Branching. It
  * defines the neighborhood by introducing a distance function between the incumbent solution and the optimum of the LP
  * relaxation. When applied during a branch-and-bound search, it further takes into account how variables change their
  * values at different nodes of the tree.

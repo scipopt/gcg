@@ -25,9 +25,13 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_arrowheur.c
- * @brief  arrowheur detector
+/**@file   dec_arrowheur.cpp
+ * @brief  arrowhead and bordered detector via graph partitioning (uses hmetis)
+ * @ingroup DETECTORS
  * @author Martin Bergner
+ *
+ * Detects arrowhead (double bordered) decompositions as well as decompositions
+ * with only linking variables or linking constraints.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -65,7 +69,7 @@ using gcg::Weights;
 #define DEC_DESC              "enforces arrowhead structures using graph partitioning" /**< description of detector */
 #define DEC_PRIORITY          1000           /**< priority of the detector */
 #define DEC_DECCHAR           'a'            /**< display character of detector */
-#define DEC_ENABLED           TRUE           /**< should detector be called by default */
+#define DEC_ENABLED           FALSE          /**< should detector be called by default */
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */
@@ -403,7 +407,7 @@ SCIP_RETCODE SCIPincludeDetectionArrowheur(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   DEC_DETECTORDATA *detectordata;
+   DEC_DETECTORDATA *detectordata = NULL;
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hyperrowgraph.cpp
+/**@file   hyperrowgraph_def.h
  * @brief  Column hypergraph
  * @author Martin Bergner
  * @author Annika Thome
@@ -144,68 +144,66 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 )
 {
    int nblocks;
-      SCIP_HASHMAP* constoblock;
+   SCIP_HASHMAP* constoblock;
 
-      int *nsubscipconss;
-      int i;
-      SCIP_CONS **conss;
-      SCIP_VAR **vars;
-      SCIP_Bool emptyblocks = FALSE;
-      std::vector<int> partition = graph.getPartition();
-      conss = SCIPgetConss(this->scip_);
-      vars = SCIPgetVars(this->scip_);
-      nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
+   int *nsubscipconss;
+   int i;
+   SCIP_CONS **conss;
+   SCIP_Bool emptyblocks = FALSE;
+   std::vector<int> partition = graph.getPartition();
+   conss = SCIPgetConss(this->scip_);
+   nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
-      BMSclearMemoryArray(nsubscipconss, nblocks);
+   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   BMSclearMemoryArray(nsubscipconss, nblocks);
 
-      SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
-      /* assign constraints to partition */
-      for( i = 0; i < this->nconss; i++ )
+   /* assign constraints to partition */
+   for( i = 0; i < this->nconss; i++ )
+   {
+
+      std::set<int> blocks;
+      std::vector<int> neighbors = getHyperedgeNodes(i);
+      for( size_t k = 0; k < neighbors.size(); ++k )
       {
-
-         std::set<int> blocks;
-         std::vector<int> neighbors = getHyperedgeNodes(i);
-         for( size_t k = 0; k < neighbors.size(); ++k )
-         {
-            if( partition[neighbors[k]] >= 0 )
-               blocks.insert(partition[neighbors[k]]);
-         }
-         if( blocks.size() > 1 )
-         {
-            SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
-         }
-         else
-         {
-            int block = *(blocks.begin());
-            SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
-            ++(nsubscipconss[block]);
-         }
+         if( partition[neighbors[k]] >= 0 )
+            blocks.insert(partition[neighbors[k]]);
       }
-
-      /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
-      for( i = 0; i < nblocks; ++i )
+      if( blocks.size() > 1 )
       {
-         if( nsubscipconss[i] == 0 )
-         {
-            SCIPdebugMessage("Block %d does not have any constraints!\n", i);
-            emptyblocks = TRUE;
-         }
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks+1)) );
       }
-
-      if( !emptyblocks )
+      else
       {
-         SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-         SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
+         int block = *(blocks.begin());
+         SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
+         ++(nsubscipconss[block]);
       }
-      else {
-         SCIPhashmapFree(&constoblock);
-         *decomp = NULL;
-      }
+   }
 
-      SCIPfreeBufferArray(this->scip_, &nsubscipconss);
-      return SCIP_OKAY;
+   /* first, make sure that there are constraints in every block, otherwise the hole thing is useless */
+   for( i = 0; i < nblocks; ++i )
+   {
+      if( nsubscipconss[i] == 0 )
+      {
+         SCIPdebugMessage("Block %d does not have any constraints!\n", i);
+         emptyblocks = TRUE;
+      }
+   }
+
+   if( !emptyblocks )
+   {
+      SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+   }
+   else {
+      SCIPhashmapFree(&constoblock);
+      *decomp = NULL;
+   }
+
+   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   return SCIP_OKAY;
 }
 
 

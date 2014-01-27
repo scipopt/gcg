@@ -487,7 +487,6 @@ static
 SCIP_DECL_HEURINITSOL(heurInitsolGcgdins)
 {
    SCIP_HEURDATA* heurdata;
-   int i;
 
    assert(heur != NULL);
    assert(scip != NULL);
@@ -508,6 +507,8 @@ SCIP_DECL_HEURINITSOL(heurInitsolGcgdins)
    /* no binvars => no flag array needed */
    if( heurdata->deltalength > 0 )
    {
+      int i;
+
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(heurdata->delta), heurdata->deltalength) );
       for( i = 0; i < heurdata->deltalength; i++ )
          heurdata->delta[i] = TRUE;

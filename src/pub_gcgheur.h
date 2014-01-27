@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   pub_gcgvar.h
+/**@file   pub_gcgheur.h
  * @ingroup PUBLICMETHODS
  * @brief  public methods for GCG heuristics
  * @author Christian Puchert
@@ -49,9 +49,6 @@ extern "C" {
  *  - SCIP_PARAMSETTING_FAST such that the time spent for heuristic is decreased
  *  - SCIP_PARAMSETTING_AGGRESSIVE such that the heuristic are called more aggregative
  *  - SCIP_PARAMSETTING_OFF which turns off all heuristics
- *
- *  @return \ref SCIP_OKAY is returned if everything worked. Otherwise a suitable error code is passed. See \ref
- *          SCIP_Retcode "SCIP_RETCODE" for a complete list of error codes.
  */
 SCIP_RETCODE GCGsetHeuristics(
    SCIP*                 scip,               /**< SCIP data structure */

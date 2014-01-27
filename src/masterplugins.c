@@ -135,6 +135,7 @@
 #include "solver_mip.h"
 #include "event_bestsol.h"
 #include "event_solvingstats.h"
+#include "event_display.h"
 
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
@@ -269,6 +270,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
    SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
+   SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
 
    return SCIP_OKAY;
 }

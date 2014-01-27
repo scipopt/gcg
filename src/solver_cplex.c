@@ -42,7 +42,7 @@
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
 #include "solver_cplex.h"
-
+#ifdef CPLEXSOLVER
 #include "cplex.h"
 
 #define CHECK_ZERO(x) { int _restat_;                                   \
@@ -948,12 +948,13 @@ static GCG_DECL_SOLVERSOLVE(solverSolveCplex)
    assert(*result != SCIP_STATUS_OPTIMAL || *nsols > 0);
    return SCIP_OKAY;
 }
-
+#endif
 /** creates the CPLEX pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverCplex(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
+#ifdef CPLEXSOLVER
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory(scip, &data) );
@@ -971,6 +972,6 @@ SCIP_RETCODE GCGincludeSolverCplex(
    SCIP_CALL( SCIPaddIntParam(data->origprob, "pricingsolver/cplex/threads",
          "number of threads the CPLEX pricing solver is allowed to use (0: automatic)",
          &data->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
-
+#endif
    return SCIP_OKAY;
 }

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   columngraph.cpp
+/**@file   columngraph_def.h
  * @brief  A row graph where each column is a node and columns are adjacent if they appear in one row
  * @author Martin Bergner
  * @author Annika Thome
@@ -162,11 +162,9 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
    int *nsubscipconss;
    int i;
    SCIP_CONS **conss;
-   SCIP_VAR **vars;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
-   vars = SCIPgetVars(this->scip_);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
@@ -195,7 +193,7 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
    if( !emptyblocks )
    {
       SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
+      SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
@@ -311,13 +309,6 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
                edges.push_back(edge);
                std::sort(edges.begin(), edges.end());
             }
-            /*
-            if(!(this->graph.edge(varIndex1, varIndex2)))
-            {
-               SCIP_CALL( this->graph.addEdge(varIndex1, varIndex2) );
-               this->graph.flush();
-            }
-            */
          }
       }
       SCIPfreeBufferArray(this->scip_, &curvars);

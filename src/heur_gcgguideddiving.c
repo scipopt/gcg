@@ -386,7 +386,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
       SCIP_Bool roundup;
       SCIP_Real frac;
       SCIP_Real obj;
-      SCIP_Real objgain;
       SCIP_Real score;
       SCIP_Real solval;
       SCIP_Real bestsolval;
@@ -407,6 +406,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
          /* the candidate may be rounded: choose this candidate only, if the best candidate may also be rounded */
          if( bestcandmayrounddown || bestcandmayroundup )
          {
+            SCIP_Real objgain;
+
             /* choose rounding direction:
              * - if variable may be rounded in both directions, round corresponding to its value in incumbent solution
              * - otherwise, round in the infeasible direction, because feasible direction is tried by rounding

@@ -334,17 +334,18 @@ SCIP_RETCODE handle1Cycle(
    SCIP_Real             alpha               /**< factor how much the original objective is regarded */
    )
 {
-   SCIP_VAR* var;
-   SCIP_VAR* divingvar;
-   SCIP_Real solval;
-   SCIP_Real frac;
-   SCIP_Real newobjcoeff;
-   SCIP_Real orgobjcoeff;
-   int       i;
+   int i;
 
    /* just flipping the objective coefficients from +1 to -1 and the rounding from floor to ceil */
    for( i = 0; i < nflipcands; i++ )
    {
+      SCIP_VAR* var;
+      SCIP_VAR* divingvar;
+      SCIP_Real solval;
+      SCIP_Real frac;
+      SCIP_Real newobjcoeff;
+      SCIP_Real orgobjcoeff;
+
       var = mostfracvars[i];
       solval = SCIPvarGetLPSol(var);
       orgobjcoeff = SCIPvarGetObj(var);
@@ -382,18 +383,17 @@ SCIP_RETCODE handleCycle(
    SCIP_Real             alpha               /**< factor how much the original objective is regarded */
    )
 {
-   SCIP_VAR* var;
-   SCIP_VAR* divingvar;
-   SCIP_Real solval;
-   SCIP_Real frac;
-   SCIP_Real newobjcoeff;
-   SCIP_Real orgobjcoeff;
-   SCIP_Real flipprob;
    int i;
 
    /* just flipping the objective coefficients from +1 to -1 and the rounding from floor to ceil */
    for( i = 0; i < nbinandintvars; i++ )
    {
+      SCIP_VAR* var;
+      SCIP_Real solval;
+      SCIP_Real frac;
+      SCIP_Real orgobjcoeff;
+      SCIP_Real flipprob;
+
       /* decide arbitrarily whether the variable will be flipped or not */
       var = vars[i];
       solval = SCIPvarGetLPSol(var);
@@ -404,6 +404,9 @@ SCIP_RETCODE handleCycle(
       /* flip, iff the sum of the randomized number and the fractionality is big enough */
       if( MIN(frac, 1.0-frac) + MAX(flipprob, 0.0) > 0.5 )
       {
+         SCIP_Real newobjcoeff;
+         SCIP_VAR* divingvar;
+
          if( frac > 0.5 )
          {
             newobjcoeff = (1.0 - alpha) + alpha * orgobjcoeff;
@@ -683,7 +686,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    int nfracs;           /* number of fractional variables updated after each pumping round*/
    int nflipcands;       /* how many flipcands (most frac. var.) have been found */
    int npseudocands;
-   int maxnflipcands;    /* maximal number of candidates to flip in the current pumping round */
    int nloops;           /* how many pumping rounds have been made */
    int maxflips;         /* maximum number of flips, if a 1-cycle is found (depending on heurdata->minflips) */
    int maxloops;         /* maximum number of pumping rounds */
@@ -899,6 +901,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    {
       int minimum;
       SCIP_Real* pseudocandsfrac;
+      int maxnflipcands;    /* maximal number of candidates to flip in the current pumping round */
       SCIP_Longint nlpiterationsleft;
       int iterlimit;
 
@@ -950,7 +953,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       for( i = 0; i < npseudocands; i++ )
       {
          SCIP_VAR* divingvar;
-         SCIP_VAR* probingvar;
          SCIP_Bool infeasible;
          SCIP_Longint ndomreds;
 
@@ -966,6 +968,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
          /* ensure, that the fixing value is inside the local domains */
          if( heurdata->usefp20 )
          {
+            SCIP_VAR* probingvar;
             SCIP_Real lb;
             SCIP_Real ub;
 

@@ -39,6 +39,7 @@
 #define EVENTHDLR_DESC         "event handler to record the best primal bound for each heuristic"
 
 
+#ifdef SCIP_STATISTIC
 /*
  * Data structures
  */
@@ -55,7 +56,6 @@ struct SCIP_EventhdlrData
  */
 
 /** destructor of event handler to free user data (called when SCIP is exiting) */
-#ifdef SCIP_STATISTIC
 static
 SCIP_DECL_EVENTFREE(eventFreeBestsol)
 {  /*lint --e{715}*/

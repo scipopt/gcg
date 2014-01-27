@@ -25,11 +25,9 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_isomorh.h
- * @brief  connected compontent detector
+/**@file   dec_isomorph.h
+ * @brief  detector for pricing problems that can be aggregated (uses bliss)
  * @author Martin Bergner
- *
- * The detector will detect structures such that the pricing problems can be aggregated.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -43,7 +41,7 @@
 extern "C" {
 #endif
 
-/** creates the handler for connected constraints and includes it in SCIP */
+/** creates the handler for isomorph subproblems and includes it in SCIP */
 extern
 SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */

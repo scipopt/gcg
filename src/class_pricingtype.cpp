@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   class_pricingtype.cpp
- * @brief  GCG variable pricer
+ * @brief  abstraction for SCIP pricing types
  * @author Martin Bergner
  */
 

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   hypercolgraph.cpp
+/**@file   hypercolgraph_def.h
  * @brief  Column hypergraph
  * @author Martin Bergner
  * @author Annika Thome
@@ -226,15 +226,12 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
    )
 {
    SCIP_HASHMAP* constoblock;
-
    SCIP_CONS** conss;
-
-   SCIP_VAR** vars;
    int nblocks;
+
    assert(decomp != NULL);
    std::vector<int> partition = getPartition();
    conss = SCIPgetConss(this->scip_);
-   vars = SCIPgetVars(this->scip_);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
@@ -249,7 +246,7 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
    }
 
    SCIP_CALL( DECdecompCreate(this->scip_, decomp) );
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, vars, this->nvars, conss, this->nconss, FALSE) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
 
    return SCIP_OKAY;
 }

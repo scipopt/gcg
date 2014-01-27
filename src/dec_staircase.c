@@ -29,6 +29,10 @@
  * @ingroup DETECTORS
  * @brief  detector for staircase matrices
  * @author Martin Bergner
+ *
+ * This detector detects staircase structures in the constraint matrix by searching for the longest shortest path
+ * in the row graph of the matrix.
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -46,7 +50,7 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "staircase"    /**< name of detector */
 #define DEC_DESC                 "Staircase detection via shortest paths" /**< description of detector */
-#define DEC_PRIORITY             0              /**< priority of the detector */
+#define DEC_PRIORITY             200            /**< priority of the detector */
 #define DEC_DECCHAR              'S'            /**< display character of detector */
 #define DEC_ENABLED              TRUE           /**< should the detection be enabled */
 #define DEC_SKIP                 FALSE          /**< should detector be skipped if others found detections */
@@ -134,7 +138,6 @@ SCIP_RETCODE createGraph(
       SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars1, ncurvars1) );
 
       SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
-      SCIPdebugMessage("conns[%d] = %s (%d vars)\n", i, SCIPconsGetName(conss[i]), ncurvars1);
       for( j = i+1; j < nconss; ++j )
       {
          SCIP_VAR** curvars2;
@@ -145,24 +148,16 @@ SCIP_RETCODE createGraph(
 
          SCIP_CALL( SCIPgetVarsXXX(scip, conss[j], curvars2, ncurvars2) );
 
-         SCIPdebugMessage("\tconns[%d] = %s (%d vars)\n", j, SCIPconsGetName(conss[j]), ncurvars2);
-
          SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )
          {
             int pos;
 
-            SCIPdebugMessage("\tvar <%s> %p", SCIPvarGetName(curvars2[v]), (void*)curvars2[v]);
             if( SCIPsortedvecFindPtr((void*)curvars1, cmp, curvars2[v], ncurvars1, &pos) )
             {
-               SCIPdebugPrintf(" found (%d: %p)\n", pos, (void*)curvars1[pos]);
                assert(curvars1[pos] == curvars2[v]);
                TCLIQUE_CALL( tcliqueAddEdge(*graph, i, j) );
                break;
-            }
-            else
-            {
-               SCIPdebugPrintf(" not found (%d: %p)\n", pos, (void*)curvars1[pos]);
             }
          }
          SCIPfreeBufferArray(scip, &curvars2);
@@ -248,7 +243,6 @@ SCIP_RETCODE doBFS(
 
       /* dequeue new node */
       currentnode = queue[squeue];
-      SCIPdebugMessage("Dequeueing %d\n", currentnode);
 
       assert(currentnode < nnodes);
       ++squeue;
@@ -436,7 +430,7 @@ SCIP_RETCODE copyToDecdecomp(
    assert(detectordata != NULL);
    assert(decdecomp != NULL);
 
-   SCIP_CALL( DECfilloutDecdecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, SCIPgetVars(scip), SCIPgetNVars(scip), SCIPgetConss(scip), SCIPgetNConss(scip), TRUE) );
+   SCIP_CALL( DECfilloutDecompFromConstoblock(scip, decdecomp, detectordata->constoblock, detectordata->nblocks, TRUE) );
 
    return SCIP_OKAY;
 }

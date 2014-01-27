@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   matrixgraph.cpp
+/**@file   matrixgraph_def.h
  * @brief  miscellaneous matrixgraph methods for structure detection
  * @author Martin Bergner
  */

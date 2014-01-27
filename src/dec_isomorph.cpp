@@ -25,13 +25,14 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   dec_isomorph.c
+/**@file   dec_isomorph.cpp
  * @ingroup DETECTORS
- * @brief  detector of problems that can be aggregated
+ * @brief  detector for pricing problems that can be aggregated (uses bliss)
  * @author Martin Bergner
  * @author Daniel Peters
  *
- * @todo try to merge decompositions with the same number of blocks if possible
+ * This detector finds subproblems that can be aggregated thus reducing the symmetry of the problem using color preserving
+ * automorphisms and bliss.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -54,7 +55,7 @@
 /* constraint handler properties */
 #define DEC_DETECTORNAME         "isomorph"  /**< name of detector */
 #define DEC_DESC                 "Detector for pricng problems suitable for aggregation" /**< description of detector*/
-#define DEC_PRIORITY             700         /**< priority of the constraint handler for separation */
+#define DEC_PRIORITY             100         /**< priority of the constraint handler for separation */
 #define DEC_DECCHAR              'I'         /**< display character of detector */
 
 #define DEC_ENABLED              TRUE        /**< should the detection be enabled */
@@ -586,7 +587,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
  * detector specific interface methods
  */
 
-/** creates the handler for connected constraints and includes it in SCIP */
+/** creates the handler for isomorph subproblems and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    )

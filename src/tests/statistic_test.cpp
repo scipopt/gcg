@@ -116,7 +116,7 @@ class GcgDecStatisticTest : public ::testing::Test {
       SCIP_CALL_ABORT( SCIPhashmapInsert(constoblock, transconss[2], (void*) (size_t)3) );
       SCIP_CALL_ABORT( DECdecompCreate(scip, &decomp) );
 
-      SCIP_CALL_ABORT( DECfilloutDecdecompFromConstoblock(scip, decomp, constoblock, 2, transvars, 5, transconss, 3, FALSE) );
+      SCIP_CALL_ABORT( DECfilloutDecompFromConstoblock(scip, decomp, constoblock, 2, FALSE) );
    }
 
    virtual void TearDown() {
