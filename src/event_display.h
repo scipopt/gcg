@@ -25,16 +25,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   event_mastersol.h
+/**@file   event_display.h
  * @ingroup EVENTS
- * @brief  eventhdlr to transfer solutions found in the original problem to the master problem
- * @author Christian Puchert
+ * @brief  eventhdlr to disable the master display after the root node
+ * @author Martin Bergner
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_EVENT_MASTERSOL_H__
-#define GCG_EVENT_MASTERSOL_H__
+#ifndef GCG_EVENT_DISPLAY_H__
+#define GCG_EVENT_DISPLAY_H__
 
 #include "scip/scip.h"
 
@@ -42,9 +42,15 @@
 extern "C" {
 #endif
 
-/** creates event handler for mastersol event */
+/** activates the eventhandler in SCIP */
 extern
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+SCIP_RETCODE SCIPactivateEventHdlrDisplay(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** creates event handler for display event */
+extern
+SCIP_RETCODE SCIPincludeEventHdlrDisplay(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

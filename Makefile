@@ -166,6 +166,7 @@ LIBOBJ		=	reader_blk.o \
 			event_bestsol.o \
 			event_mastersol.o \
 			event_solvingstats.o \
+			event_display.o \
 			solver_mip.o \
 			solver_knapsack.o \
 			solver_cplex.o \

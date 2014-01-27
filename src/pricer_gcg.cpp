@@ -59,6 +59,7 @@
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
 #include "branch_generic.h"
+#include "event_display.h"
 
 using gcg::Stabilization;
 #ifdef _OPENMP
@@ -2245,11 +2246,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
       /* terminate early, if applicable */
       if( canPricingBeAborted() )
       {
-         if( isRootNode(scip_) )
-         {
-            SCIP_CALL( SCIPsetIntParam(scip_, "display/verblevel", 0) );
-         }
-
          *result = SCIP_DIDNOTRUN;
          return SCIP_OKAY;
       }
@@ -2278,11 +2274,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    if( nfoundvars == 0 )
    {
       SCIP_CALL( performPricing(pricetype, TRUE, result, &nfoundvars, lowerbound, &bestredcostvalid) );
-   }
-
-   if( nfoundvars == 0 && isRootNode(scip_) )
-   {
-      SCIP_CALL( SCIPsetIntParam(scip_, "display/verblevel", 0) );
    }
 
    if( pricetype->getType() == GCG_PRICETYPE_REDCOST && bestredcostvalid )
@@ -2507,6 +2498,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( stabilization->setNLinkingconss(GCGrelaxGetNLinkingconss(origprob)) );
    SCIP_CALL( stabilization->setNConvconss(GCGrelaxGetNPricingprobs(origprob)) );
 
+   SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
    return SCIP_OKAY;
 }

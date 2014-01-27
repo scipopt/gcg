@@ -25,31 +25,79 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   event_mastersol.h
- * @ingroup EVENTS
- * @brief  eventhdlr to transfer solutions found in the original problem to the master problem
- * @author Christian Puchert
+/**@file   event_display.c
+ * @brief  eventhdlr to disable the master display after the root node
+ * @author Martin Bergner
  */
 
-/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_EVENT_MASTERSOL_H__
-#define GCG_EVENT_MASTERSOL_H__
+#include "event_display.h"
+#include "gcg.h"
+#include <string.h>
 
-#include "scip/scip.h"
+#define EVENTHDLR_NAME         "display"
+#define EVENTHDLR_DESC         "event handler to disable the master display after the root node"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-/** creates event handler for mastersol event */
-extern
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
+/*
+ * Callback methods of event handler
+ */
 
-#ifdef __cplusplus
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecDisplay)
+{  /*lint --e{715}*/
+
+   SCIP_NODE* node;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   /* get new primal solution */
+   node = SCIPeventGetNode(event);
+   assert(node == SCIPgetRootNode(scip));
+
+   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_NODESOLVED, eventhdlr, NULL, -1) );
+
+   return SCIP_OKAY;
 }
-#endif
 
-#endif
+/** activates the eventhandler in SCIP */
+SCIP_RETCODE SCIPactivateEventHdlrDisplay(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_EVENTHDLR* eventhdlr;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_NODESOLVED, eventhdlr, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+/** creates event handler for display event */
+SCIP_RETCODE SCIPincludeEventHdlrDisplay(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   SCIP_EVENTHDLR* eventhdlr = NULL;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   /* include event handler into SCIP */
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+         eventExecDisplay, NULL) );
+   assert(eventhdlr != NULL);
+
+   return SCIP_OKAY;
+}
