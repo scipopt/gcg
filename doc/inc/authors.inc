@@ -38,6 +38,14 @@
         Primal heuristics, main developer
       </td>
     </tr>
+    <tr>
+      <td>
+	<a href="http://www.or.rwth-aachen.de/team/staff/jonas-witt/">Jonas Witt</a>
+      </td>
+      <td>
+        Cutting planes, main developer
+      </td>
+    </tr>
   </table>
   <br />
   <h3>Contributors</h3>
@@ -74,7 +82,14 @@
 	Student assistant, generic branching
       </td>
     </tr>
-
+    <tr>
+      <td width="180px">
+        <a href="http://www.or.rwth-aachen.de/team/staff/annika-thome/">Annika Thome</a>
+      </td>
+      <td>
+	Graph library methods
+      </td>
+    </tr>
   </table>
 </div>
 
