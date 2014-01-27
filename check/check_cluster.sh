@@ -387,8 +387,8 @@ do
 	    then
 		echo presolve                      >> $TMPFILE
 		echo detect                        >> $TMPFILE
-		mkdir -p $GCGPATH/decs/$TSTNAME.$SETTINGS
-		mkdir -p $GCGPATH/images/$TSTNAME.$SETTINGS
+		mkdir -p $GCGPATH/decs/$TSTNAME.$SETNAME
+		mkdir -p $GCGPATH/images/$TSTNAME.$SETNAME
 		echo write all $GCGPATH/decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
 		echo write all $GCGPATH/images\/$TSTNAME.$SETNAME gp >> $TMPFILE
 	    else
