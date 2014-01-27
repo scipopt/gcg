@@ -58,7 +58,7 @@
  *
  *
  * <b> Latest Version </b>
- *  - The latest version is 1.8.0.
+ *  - The latest version is 1.8.0.1
  *  - Get it \ref DOWNLOAD "here"
  *
  *
@@ -81,7 +81,7 @@
  * - \ref LICENSE      "Licensing information"
  * - \ref LITERATURE   "Papers dealing with GCG"
  *
- * @version  1.8.0
+ * @version  1.8.0.1
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
