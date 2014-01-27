@@ -711,13 +711,6 @@ SCIP_RETCODE DECwriteAllDecomps(
       return SCIP_OKAY;
    }
 
-   if(directory != NULL)
-   {
-      char stmp[SCIP_MAXSTRLEN];
-      (void) strncpy(stmp, directory, SCIP_MAXSTRLEN);
-      SCIPsplitFilename(stmp, NULL, &dirname, NULL, NULL);
-   }
-
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(name, NULL, &pname, NULL, NULL);
 
@@ -734,7 +727,7 @@ SCIP_RETCODE DECwriteAllDecomps(
          assert(decomp != NULL);
          if( directory != NULL )
          {
-            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", dirname, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
+            (void) SCIPsnprintf(outname, SCIP_MAXSTRLEN, "%s/%s_%c_%d_%d.%s", directory, pname, detector->decchar, DECdecompGetNBlocks(decomp), j, extension);
          }
          else
          {

@@ -383,6 +383,14 @@ do
 		echo detect                        >> $TMPFILE
 		echo display statistics            >> $TMPFILE
 		echo presolve                      >> $TMPFILE
+	    elif test $MODE = "detectall"
+	    then
+		echo presolve                      >> $TMPFILE
+		echo detect                        >> $TMPFILE
+		mkdir -p $GCGPATH/decs/$TSTNAME.$SETTINGS
+		mkdir -p $GCGPATH/images/$TSTNAME.$SETTINGS
+		echo write all $GCGPATH/decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
+		echo write all $GCGPATH/images\/$TSTNAME.$SETNAME gp >> $TMPFILE
 	    else
 		if test -f $DECFILE -a $MODE = "readdec"
 		then

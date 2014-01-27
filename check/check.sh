@@ -216,7 +216,8 @@ do
                 echo detect                        >> $TMPFILE
                 echo write prob images\/$NAME-dec.gp >> $TMPFILE
                 echo write prob decs\/$NAME.dec    >> $TMPFILE
-                echo write all dec                 >> $TMPFILE
+                mkdir -p decs/$TSTNAME.$SETNAME
+                echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
             elif test $MODE = "bip"
             then
                 echo presolve                      >> $TMPFILE
@@ -226,8 +227,10 @@ do
             then
                 echo presolve                      >> $TMPFILE
                 echo detect                        >> $TMPFILE
-                echo write all dec                 >> $TMPFILE
-		echo write all gp                  >> $TMPFILE
+                mkdir -p decs/$TSTNAME.$SETTINGS
+                mkdir -p images/$TSTNAME.$SETTINGS
+                echo write all decs\/$TSTNAME.$SETNAME dec >> $TMPFILE
+		echo write all images\/$TSTNAME.$SETNAME gp >> $TMPFILE
             else
                 if test $MODE = "readdec"
                 then
