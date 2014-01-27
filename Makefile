@@ -60,7 +60,15 @@ MODE		=	readdec
 GTEST		=	true
 PARASCIP	= 	true
 BLISS       	=   	true
+OPENMP          =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
+
+
+# overriding SCIP PARASCIP setting if compiled with OPENMP
+ifeq ($(OPENMP),true)
+override PARASCIP=true
+endif
+
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
@@ -244,8 +252,6 @@ CFLAGS+=-fopenmp
 LDFLAGS+=-fopenmp
 CXXFLAGS+=-fopenmp
 endif
-
-#$(SCIPDIR)/make/make.project: $(LINKSMARKERFILE);
 
 .PHONY: libs
 libs:		$(LINKSMARKERFILE) $(GCGLIBFILE) $(GCGLIBSHORTLINK)
@@ -452,6 +458,9 @@ ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
 		@-$(MAKE) scip_clean
 		@-$(MAKE) scip
 endif
+ifneq ($(OPENMP),$(LAST_OPENMP))
+		@-touch $(ALLSRC)
+endif
 ifneq ($(GCGGITHASH),$(LAST_GCGGITHASH))
 		@-$(MAKE) githash
 endif
@@ -461,7 +470,7 @@ endif
 		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCXXFLAGS=$(USRCXXFLAGS)" >> $(LASTSETTINGS)
-
+		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS):
