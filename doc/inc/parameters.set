@@ -1,4 +1,4 @@
-# SCIP version 3.0.2.1
+# SCIP version 3.1.0
 
 # branching score function ('s'um, 'p'roduct, 'q'uotient)
 # [type: char, range: {spq}, default: p]
@@ -24,9 +24,9 @@ branching/lpgainnormalize = s
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 branching/delaypscostupdate = TRUE
 
-# should both strong branching children be regarded even if the first one is detected to be infeasible? (only with propagation)
+# should all strong branching children be regarded even if one is detected to be infeasible? (only with propagation)
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
-branching/forcebothchildren = FALSE
+branching/forceallchildren = FALSE
 
 # child node to be regarded first during strong branching (only with propagation): 'u'p child, 'd'own child, or 'a'utomatic
 # [type: char, range: {adu}, default: a]
@@ -356,9 +356,9 @@ lp/lexdualbasic = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 lp/lexdualstalling = TRUE
 
-# disables the cutoff bound in the LP solver
-# [type: bool, range: {TRUE,FALSE}, default: FALSE]
-lp/disablecutoff = FALSE
+# disable the cutoff bound in the LP solver? (0: enabled, 1: disabled, 2: auto)
+# [type: int, range: [0,2], default: 2]
+lp/disablecutoff = 2
 
 # simplex algorithm shall use row representation of the basis if number of rows divided by number of columns exceeds this value (-1.0 to disable row representation)
 # [type: real, range: [-1,1.79769313486232e+308], default: -1]
@@ -432,6 +432,14 @@ misc/usesmalltables = FALSE
 # [type: int, range: [-1,2147483647], default: -1]
 misc/permutationseed = -1
 
+# should order of constraints be permuted (depends on permutationseed)?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/permuteconss = TRUE
+
+# should order of variables be permuted (depends on permutationseed)?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+misc/permutevars = FALSE
+
 # should the statistics be reset if the transformed problem is freed (in case of a benders decomposition this parameter should be set to FALSE)
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 misc/resetstat = TRUE
@@ -455,6 +463,10 @@ misc/transorigsols = TRUE
 # should SCIP calculate the primal dual integral value?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 misc/calcintegral = TRUE
+
+# should SCIP try to remove infinite fixings from solutions copied to the solution store?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+misc/finitesolutionstore = TRUE
 
 # child selection rule ('d'own, 'u'p, 'p'seudo costs, 'i'nference, 'l'p value, 'r'oot LP value difference, 'h'ybrid inference/root LP value difference)
 # [type: char, range: {dupilrh}, default: h]
@@ -481,8 +493,8 @@ numerics/feastol = 1e-06
 numerics/lpfeastol = 1e-06
 
 # feasibility tolerance for reduced costs in LP solution
-# [type: real, range: [1e-17,0.001], default: 1e-06]
-numerics/dualfeastol = 1e-06
+# [type: real, range: [1e-17,0.001], default: 1e-07]
+numerics/dualfeastol = 1e-07
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, range: [1e-17,0.001], default: 1e-10]
@@ -652,6 +664,10 @@ separating/cutagelimit = 100
 # [type: int, range: [-1,2147483647], default: 0]
 separating/poolfreq = 0
 
+# factor on cut infeasibility to limit feasibility tolerance for relaxation solver (-1: off)
+# [type: real, range: [-1,1], default: -1]
+separating/feastolfac = -1
+
 # default clock type (1: CPU user seconds, 2: wall clock time)
 # [type: int, range: [1,2], default: 1]
 timing/clocktype = 1
@@ -712,7 +728,7 @@ constraints/linear/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/linear/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/linear/timingmask = 1
 
@@ -812,7 +828,7 @@ constraints/and/sepafreq = 1
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/and/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/and/timingmask = 1
 
@@ -880,7 +896,7 @@ constraints/bounddisjunction/sepafreq = -1
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/bounddisjunction/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/bounddisjunction/timingmask = 1
 
@@ -912,7 +928,7 @@ constraints/conjunction/sepafreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 constraints/conjunction/propfreq = -1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/conjunction/timingmask = 1
 
@@ -944,7 +960,7 @@ constraints/integral/sepafreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 constraints/integral/propfreq = -1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/integral/timingmask = 1
 
@@ -976,7 +992,7 @@ constraints/knapsack/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/knapsack/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/knapsack/timingmask = 1
 
@@ -1068,7 +1084,7 @@ constraints/logicor/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/logicor/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/logicor/timingmask = 1
 
@@ -1128,7 +1144,7 @@ constraints/or/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/or/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/or/timingmask = 1
 
@@ -1164,7 +1180,7 @@ constraints/setppc/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/setppc/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/setppc/timingmask = 1
 
@@ -1228,7 +1244,7 @@ constraints/varbound/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/varbound/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/varbound/timingmask = 1
 
@@ -1276,7 +1292,7 @@ constraints/xor/sepafreq = 0
 # [type: int, range: [-1,2147483647], default: 1]
 constraints/xor/propfreq = 1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 1]
 constraints/xor/timingmask = 1
 
@@ -1436,6 +1452,10 @@ presolving/components/intfactor = 1
 # [type: real, range: [0,1], default: 0.2]
 presolving/components/reldecrease = 0.2
 
+# factor to increase the feasibility tolerance of the main SCIP in all sub-SCIPs, default value 1.0
+# [type: real, range: [0,1000000], default: 1]
+presolving/components/feastolfactor = 1
+
 # priority of presolver <domcol>
 # [type: int, range: [-536870912,536870911], default: 20000000]
 presolving/domcol/priority = 20000000
@@ -1564,9 +1584,13 @@ nodeselection/estimate/maxplungequot = 0.25
 # [type: int, range: [0,2147483647], default: 10]
 nodeselection/estimate/bestnodefreq = 10
 
-# depth until breadth-fisrt search is applied
+# depth until breadth-first search is applied
 # [type: int, range: [-1,2147483647], default: -1]
 nodeselection/estimate/breadthfirstdepth = -1
+
+# number of nodes before doing plunging the first time
+# [type: int, range: [0,2147483647], default: 0]
+nodeselection/estimate/plungeoffset = 0
 
 # priority of node selection rule <hybridestim> in standard mode
 # [type: int, range: [-536870912,536870911], default: 50000]
@@ -1971,6 +1995,10 @@ propagating/obbt/itlimitfactor = 5
 # feasibility tolerance for reduced costs used in obbt; this value is used if SCIP's dual feastol is greater
 # [type: real, range: [0,1.79769313486232e+308], default: 1e-09]
 propagating/obbt/dualfeastol = 1e-09
+
+# maximum condition limit used in LP solver (-1.0: no limit)
+# [type: real, range: [-1,1.79769313486232e+308], default: 1000000000000]
+propagating/obbt/conditionlimit = 1000000000000
 
 # priority of heuristic <actconsdiving>
 # [type: int, range: [-536870912,536870911], default: -1003700]
@@ -3408,6 +3436,14 @@ heuristics/shiftandpropagate/nozerofixing = FALSE
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
 heuristics/shiftandpropagate/fixbinlocks = FALSE
 
+# should coefficients and left/right hand sides be normalized by max row coeff?
+# [type: bool, range: {TRUE,FALSE}, default: TRUE]
+heuristics/shiftandpropagate/normalize = TRUE
+
+# should row weight be increased every time the row is violated?
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+heuristics/shiftandpropagate/updateweights = FALSE
+
 # priority of heuristic <shifting>
 # [type: int, range: [-536870912,536870911], default: -5000]
 heuristics/shifting/priority = -5000
@@ -4161,7 +4197,7 @@ separating/gomory/maxrank = 3
 separating/gomory/maxrankintegral = -1
 
 # minimal integrality violation of a basis variable in order to try Gomory cut
-# [type: real, range: [0,0.5], default: 0.01]
+# [type: real, range: [0.0001,0.5], default: 0.01]
 separating/gomory/away = 0.01
 
 # maximal valid range max(|weights|)/min(|weights|) of row weights
@@ -4699,9 +4735,9 @@ pricing/masterpricer/threads = 0
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 pricing/masterpricer/stabilization = TRUE
 
-# should the cutoffbound be applied in master LP solving?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-pricing/masterpricer/enablelpcutoff = TRUE
+# should the cutoffbound be applied in master LP solving (0: on, 1:off, 2:auto)?
+# [type: int, range: [0,2], default: 2]
+pricing/masterpricer/disablecutoff = 2
 
 # frequency at which all pricingproblems should be solved (0 to disable)
 # [type: int, range: [0,2147483647], default: 10]
@@ -4791,14 +4827,6 @@ pricingsolver/mip/checksols = TRUE
 # [type: string, default: "-"]
 pricingsolver/mip/settingsfile = "-"
 
-# should solutions of the pricing MIPs be checked for duplicity?
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-pricingsolver/cplex/checksols = TRUE
-
-# number of threads the CPLEX pricing solver is allowed to use (0: automatic)
-# [type: int, range: [0,2147483647], default: 1]
-pricingsolver/cplex/threads = 1
-
 # should propagated bound changes in the original be enforced in the master (only proper vars)?
 # [type: bool, range: {TRUE,FALSE}, default: TRUE]
 relaxing/gcg/enforceproper = TRUE
@@ -4839,7 +4867,7 @@ constraints/origbranch/sepafreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 constraints/origbranch/propfreq = -1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 15]
 constraints/origbranch/timingmask = 15
 
@@ -4871,7 +4899,7 @@ constraints/decomp/sepafreq = -1
 # [type: int, range: [-1,2147483647], default: -1]
 constraints/decomp/propfreq = -1
 
-# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS))
+# timing when constraint propagation should be called (1:BEFORELP, 2:DURINGLPLOOP, 4:AFTERLPLOOP, 15:ALWAYS)
 # [type: int, range: [1,15], default: 8]
 constraints/decomp/timingmask = 8
 
@@ -4916,8 +4944,8 @@ detectors/connected/priority = 0
 detectors/connected/setppcinmaster = TRUE
 
 # flag to indicate whether detector <arrowheur> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/arrowheur/enabled = TRUE
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+detectors/arrowheur/enabled = FALSE
 
 # flag to indicate whether detector <arrowheur> should be skipped if others found decompositions
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
@@ -5060,12 +5088,12 @@ detectors/staircase/enabled = TRUE
 detectors/staircase/skip = FALSE
 
 # priority of detector <staircase>
-# [type: int, range: [-2147483648,2147483647], default: 0]
-detectors/staircase/priority = 0
+# [type: int, range: [-2147483648,2147483647], default: 200]
+detectors/staircase/priority = 200
 
 # flag to indicate whether detector <random> is enabled
-# [type: bool, range: {TRUE,FALSE}, default: TRUE]
-detectors/random/enabled = TRUE
+# [type: bool, range: {TRUE,FALSE}, default: FALSE]
+detectors/random/enabled = FALSE
 
 # flag to indicate whether detector <random> should be skipped if others found decompositions
 # [type: bool, range: {TRUE,FALSE}, default: FALSE]
@@ -5152,8 +5180,8 @@ detectors/isomorph/enabled = TRUE
 detectors/isomorph/skip = TRUE
 
 # priority of detector <isomorph>
-# [type: int, range: [-2147483648,2147483647], default: 700]
-detectors/isomorph/priority = 700
+# [type: int, range: [-2147483648,2147483647], default: 100]
+detectors/isomorph/priority = 100
 
 # priority of heuristic <gcgcoefdiving>
 # [type: int, range: [-536870912,536870911], default: -1001000]
