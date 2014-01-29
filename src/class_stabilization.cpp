@@ -252,21 +252,21 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nconss; ++i )
    {
-      consGetDual(i, &dualsol);
+      SCIP_CALL( consGetDual(i, &dualsol) );
 
       stabcenterconss[i] = dualsol;
    }
 
    for( int i = 0; i < ncuts; ++i )
    {
-      rowGetDual(i, &dualsol);
+      SCIP_CALL( rowGetDual(i, &dualsol) );
 
       stabcentercuts[i] = dualsol;
    }
 
    for( int i = 0; i < nstabcenterlinkingconss; ++i)
    {
-      linkingconsGetDual(i, &dualsol);
+      SCIP_CALL( linkingconsGetDual(i, &dualsol) );
 
       stabcenterlinkingconss[i] = dualsol;
    }
@@ -275,7 +275,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    {
       if(!GCGrelaxIsPricingprobRelevant(origprob, i))
          continue;
-      convGetDual(i, &dualsol);
+      SCIP_CALL( convGetDual(i, &dualsol) );
 
       stabcenterconv[i] = dualsol;
    }
