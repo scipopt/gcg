@@ -682,19 +682,16 @@ SCIP_RETCODE DECwriteAllDecomps(
    char*                 extension           /**< extension for decompositions */
    )
 {
-   int i;
-   int j;
    char name[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   char* dirname;
-
    char *pname;
-
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    DEC_DETECTOR *detector;
    DEC_DECOMP *decomp;
    DEC_DECOMP *tmp;
+   int i;
+   int j;
 
    assert(scip != NULL);
    assert(extension != NULL);

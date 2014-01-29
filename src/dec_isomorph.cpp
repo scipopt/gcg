@@ -137,6 +137,8 @@ void hook(
    int nconss;
    SCIP_CONS** conss;
    AUT_HOOK* hook = (AUT_HOOK*) user_param;
+   int auti;
+   int index;
 
    nconss = SCIPgetNConss(hook->getScip());
    assert(nconss == SCIPgetNConss(hook->getScip()));
@@ -147,19 +149,22 @@ void hook(
       assert(aut[i] < INT_MAX);
       if( (size_t) i != aut[i])
       {
-         SCIPdebugMessage("%d <%s> <-> %ud <%s>\n", i, SCIPconsGetName(conss[i]), aut[i], SCIPconsGetName(conss[aut[i]]));
-         int index = MIN(i, aut[i]);
+         auti = (int) aut[i];
+
+         SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(conss[i]), auti, SCIPconsGetName(conss[auti]));
+
+         index = MIN(i, auti);
+
          if( hook->conssperm[i] != -1)
             index = MIN(index, hook->conssperm[i]);
-         if( hook->conssperm[aut[i]] != -1 )
-            index = MIN(index, hook->conssperm[aut[i]]);
+         if( hook->conssperm[auti] != -1 )
+            index = MIN(index, hook->conssperm[auti]);
 
          hook->conssperm[i] = index;
-         hook->conssperm[aut[i]] = index;
+         hook->conssperm[auti] = index;
          hook->setBool(TRUE);
       }
    }
-
 }
 
 static
