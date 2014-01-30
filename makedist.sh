@@ -44,7 +44,8 @@ $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres
 $NAME/settings/earlybranching.set \
 $NAME/settings/heurpricing.set \
 $NAME/src/depend.* \
-$NAME/src/*.c $NAME/src/*.h \
+$NAME/src/*.c $NAME/src/*.cpp $NAME/src/*.h \
+$NAME/src/graph/*.cpp $NAME/src/graph/*.c $NAME/src/graph/*.h \
 $NAME/check/instances/cpmp/*.lp \
 $NAME/check/instances/bpp/*.lp \
 $NAME/check/instances/gap/*.lp \

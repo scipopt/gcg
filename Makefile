@@ -62,7 +62,7 @@ PARASCIP	= 	true
 BLISS       	=   	true
 OPENMP          =       false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
-
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS)
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -72,16 +72,7 @@ endif
 #-----------------------------------------------------------------------------
 # include default project Makefile from SCIP
 #-----------------------------------------------------------------------------
--include $(SCIPDIR)/make/make.project
-
-#-----------------------------------------------------------------------------
-# SCIP
-#-----------------------------------------------------------------------------
-
-SOFTLINKS	+=	$(LIBDIR)/scip
-LINKMSG		=  	" SCIP framework links:\n"
-LINKMSG		+=	"  -> \"scip\" is the path to the SCIP directory, e.g., \"scipoptsuite-3.0.0/scip-3.0.0/\"\n"
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CPLEXSOLVER)
+include $(SCIPDIR)/make/make.project
 
 #-----------------------------------------------------------------------------
 # BLISS
@@ -253,7 +244,9 @@ CXXFLAGS	+=	-Wno-variadic-macros
 # Rules
 #-----------------------------------------------------------------------------
 .PHONY: all
-all:       touchexternal $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+all:       $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+
+$(SCIPDIR)/make/make.project: $(SCIPDIR);
 
 -include make/local/make.targets
 
@@ -493,6 +486,34 @@ ifeq ($(MAKESOFTLINKS), true)
 		                echo ; \
 		                echo -e $(LINKMSG) ; \
 				echo "> Enter soft-link target file or directory for \"$@\" (return if not needed): " ; \
+				echo -n "> " ; \
+				cd $$DIRNAME ; \
+				eval $(READ) TARGET ; \
+				cd $(GCGDIR) ; \
+				if test "$$TARGET" != "" ; \
+				then \
+					echo "-> creating softlink \"$@\" -> \"$$TARGET\"" ; \
+					pwd;\
+					rm -f $@ ; \
+					$(LN_s) $$TARGET $@ ; \
+				else \
+					echo "* skipped creation of softlink \"$@\". Call \"make links\" if needed later." ; \
+				fi ; \
+				echo ; \
+			fi'
+endif
+
+$(SCIPDIR): $(LIBDIR)
+ifeq ($(MAKESOFTLINKS), true)
+		@$(SHELL) -ec 'if test ! -e $@ ; \
+			then \
+				DIRNAME=`dirname $@` ; \
+				echo ; \
+		                echo "* GCG needs a link to SCIP" ; \
+		                echo "* Please insert the paths to SCIP below." ; \
+		                echo "* The link will be installed in the 'lib' directory." ; \
+		                echo ; \
+				echo "> Enter soft-link target file or directory for \"scip\" (e.g., scipoptsuite-3.1.0/scip-3.1.0):" ; \
 				echo -n "> " ; \
 				cd $$DIRNAME ; \
 				eval $(READ) TARGET ; \
