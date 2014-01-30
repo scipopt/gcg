@@ -49,16 +49,10 @@
 static
 SCIP_DECL_EVENTEXEC(eventExecDisplay)
 {  /*lint --e{715}*/
-
-   SCIP_NODE* node;
-
    assert(scip != NULL);
    assert(eventhdlr != NULL);
    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-
-   /* get new primal solution */
-   node = SCIPeventGetNode(event);
-   assert(node == SCIPgetRootNode(scip));
+   assert(SCIPeventGetNode(event) == SCIPgetRootNode(scip));
 
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0) );
    SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_NODESOLVED, eventhdlr, NULL, -1) );

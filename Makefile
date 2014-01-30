@@ -236,6 +236,19 @@ SPLINT		=       splint
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
 			-redef +export-header +export-local +decl-undef +relaxtypes
 
+
+#-----------------------------------------------------------------------------
+# Flags
+#-----------------------------------------------------------------------------
+
+ifeq ($(OPENMP),true)
+CFLAGS		+=	-fopenmp
+LDFLAGS		+=	-fopenmp
+CXXFLAGS	+=	-fopenmp
+endif
+
+CXXFLAGS	+=	-Wno-variadic-macros
+
 #-----------------------------------------------------------------------------
 # Rules
 #-----------------------------------------------------------------------------
@@ -246,12 +259,6 @@ all:       touchexternal $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
 
 ifeq ($(VERBOSE),false)
 .SILENT:	$(MAINFILE) $(MAINOBJFILES) $(MAINSHORTLINK) ${GCGLIBFILE} ${GCGLIB} ${GCGLIBSHORTLINK} ${TESTSHORTLINK} ${GCGLIBOBJFILES} $(TESTOBJFILES) ${TESTFILE} ${TESTMAIN}
-endif
-
-ifeq ($(OPENMP),true)
-CFLAGS+=-fopenmp
-LDFLAGS+=-fopenmp
-CXXFLAGS+=-fopenmp
 endif
 
 .PHONY: libs
