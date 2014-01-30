@@ -244,9 +244,9 @@ CXXFLAGS	+=	-Wno-variadic-macros
 # Rules
 #-----------------------------------------------------------------------------
 .PHONY: all
-all:       $(SCIPDIR) $(MAINFILE) $(MAINSHORTLINK)
+all:       $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK) |$(SCIPDIR)
 
-$(SCIPDIR)/make/make.project: $(SCIPDIR);
+$(SCIPDIR)/make/make.project: |$(SCIPDIR);
 
 -include make/local/make.targets
 
@@ -255,7 +255,7 @@ ifeq ($(VERBOSE),false)
 endif
 
 .PHONY: libs
-libs:		$(LINKSMARKERFILE) $(GCGLIBFILE) $(GCGLIBSHORTLINK)
+libs:		$(LINKSMARKERFILE) makegcglibfile $(GCGLIBSHORTLINK)
 
 .PHONY: lint
 lint:		$(ALLSRC)
@@ -364,7 +364,7 @@ tags:
 		cd src/; rm -f TAGS; etags *.cpp *.c *.h ../$(SCIPDIR)/src/scip/*.c ../$(SCIPDIR)/src/scip/*.h ../$(SCIPDIR)/src/objscip/*.cpp ../$(SCIPDIR)/src/objscip/*.h;
 
 .PHONY: depend
-depend:		$(SCIPDIR) gcglibdepend testdepend
+depend:		gcglibdepend testdepend | $(SCIPDIR)
 		$(SHELL) -ec '$(DCC) $(subst isystem,I,$(FLAGS)) $(DFLAGS) $(MAINSRC) \
 		| sed '\''s|^\([0-9A-Za-z\_]\{1,\}\)\.o *: *$(SRCDIR)/\([0-9A-Za-z\_]*\).c|$$\(OBJDIR\)/\2.o: $(SRCDIR)/\2.c|g'\'' \
 		>$(MAINDEP)'
@@ -382,7 +382,7 @@ testdepend:: # do not remove double colon
 
 tests:: #do not remove double colon
 
-$(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) libs
+$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) | libs $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB) \
@@ -392,27 +392,26 @@ $(MAINFILE):	$(BINDIR) $(OBJDIR) $(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(M
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(LIBOBJDIR)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
-#$(LIBOBJSUBDIRS):	$(LIBOBJDIR)
-#		@mkdir -p $(LIBOBJDIR)/$@
-
-
-$(OBJDIR)/%.o:	$(SRCDIR)/%.c
+$(OBJDIR)/%.o:	$(SRCDIR)/%.c | $(OBJDIR)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CFLAGS) -c $< $(CC_o)$@
 
-$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp
+$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
-$(GCGLIBFILE):	touchexternal $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS) $(GCGLIBOBJFILES)
+.PHONY: makesgcgibfile
+makegcglibfile:  touchexternal | $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS) $(GCGLIBFILE)
+
+$(GCGLIBFILE):	$(GCGLIBOBJFILES)
 		@echo "-> generating library $@"
 		-rm -f $@
 		$(LIBBUILD) $(LIBBUILDFLAGS) $(LIBBUILD_o)$@ $(GCGLIBOBJFILES)
@@ -429,7 +428,7 @@ $(LINKSMARKERFILE):
 		@$(MAKE) links
 
 .PHONY: links
-links:		$(LIBDIR) $(SOFTLINKS)
+links:		$(SOFTLINKS) | $(LIBDIR)
 		@rm -f $(LINKSMARKERFILE)
 		@echo "this is only a marker" > $(LINKSMARKERFILE)
 
@@ -446,18 +445,12 @@ ifneq ($(LAST_LPS),$(LPS))
 endif
 ifneq ($(USRCFLAGS),$(LAST_USRCFLAGS))
 		@-touch $(ALLSRC)
-		@-$(MAKE) scip_clean
-		@-$(MAKE) scip
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
-		@-$(MAKE) scip_clean
-		@-$(MAKE) scip
 endif
 ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
 		@-touch $(ALLSRC)
-		@-$(MAKE) scip_clean
-		@-$(MAKE) scip
 endif
 ifneq ($(OPENMP),$(LAST_OPENMP))
 		@-touch $(ALLSRC)
@@ -503,7 +496,7 @@ ifeq ($(MAKESOFTLINKS), true)
 			fi'
 endif
 
-$(SCIPDIR): $(LIBDIR)
+$(SCIPDIR): |$(LIBDIR)
 ifeq ($(MAKESOFTLINKS), true)
 		@$(SHELL) -ec 'if test ! -e $@ ; \
 			then \
