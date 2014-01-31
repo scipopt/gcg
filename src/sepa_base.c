@@ -1453,15 +1453,15 @@ SCIP_RETCODE initConvObj(
       SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
       objnormnull = SCIPgetObjNorm(origscip);
 
-      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, FALSE, 1.0-convex) );
-      SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, 1.0-convex, 1.0) );
+      SCIP_CALL( origScipInitObjOrig(origscip, sepadata, origsol, FALSE, convex) );
+      SCIP_CALL( origScipChgObjAllRows(origscip, sepadata, origsol, convex, 1.0) );
 
-      objnormcurrent = SCIPgetObjNorm(origscip)/(1.0-convex);
+      objnormcurrent = SCIPgetObjNorm(origscip)/(convex);
 
       if(SCIPisEQ(origscip, objnormcurrent, 0.0))
          SCIP_CALL( origScipInitObj(origscip, TRUE, 1.0) );
       else if(SCIPisGT(origscip, objnormnull, 0.0) )
-         SCIP_CALL( origScipChgObj(origscip, convex * objnormcurrent, objnormnull) );
+         SCIP_CALL( origScipChgObj(origscip, (1.0 - convex) * objnormcurrent, objnormnull) );
    }
    else if(SCIPisEQ(origscip, convex, 1.0))
    {
