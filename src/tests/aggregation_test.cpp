@@ -35,6 +35,7 @@
 #include "test.h"
 #include "gcgplugins.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 #include "pub_decomp.h"
 #include "cons_decomp.h"
 

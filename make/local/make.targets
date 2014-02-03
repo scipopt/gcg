@@ -110,7 +110,7 @@ soplex:
 deps:		bliss googletest scip soplex
 
 .PHONY: tests
-tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK)
+tests::		$(TESTOBJDIR) $(TESTFILE) $(TESTSHORTLINK) $(GCGLIBFILE)
 
 
 
