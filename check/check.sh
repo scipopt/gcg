@@ -132,8 +132,8 @@ uname -a >>$ERRFILE
 date >>$OUTFILE
 date >>$ERRFILE
 
-# we add 10% to the hard time limit and additional 10 seconds in case of small time limits
-HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 10\` + \`expr $TIMELIMIT / 10\``
+# we add 50% to the hard time limit and additional 10 seconds in case of small time limits
+HARDTIMELIMIT=`expr \`expr $TIMELIMIT + 10\` + \`expr $TIMELIMIT / 50\``
 
 # we add 10% to the hard memory limit and additional 1000mb to the hard memory limit
 HARDMEMLIMIT=`expr \`expr $MEMLIMIT + 1000\` + \`expr $MEMLIMIT / 10\``
