@@ -161,7 +161,7 @@ SCIP_RETCODE getBestMastervar(
    SCIP_Real curobj;
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get variable data of the master problem */
@@ -375,7 +375,7 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
    assert(scip != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */
@@ -459,7 +459,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    assert(result != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */

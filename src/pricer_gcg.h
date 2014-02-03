@@ -65,25 +65,25 @@ SCIP_RETCODE SCIPincludePricerGcg(
 
 /** returns the pointer to the scip instance representing the original problem */
 extern
-SCIP* GCGpricerGetOrigprob(
+SCIP* GCGmasterGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the array of variables that were priced in during the solving process */
 extern
-SCIP_VAR** GCGpricerGetPricedvars(
+SCIP_VAR** GCGmasterGetPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of variables that were priced in during the solving process */
 extern
-int GCGpricerGetNPricedvars(
+int GCGmasterGetNPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** adds the given constraint and the given position to the hashmap of the pricer */
 extern
-SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
+SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be added */
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
@@ -135,32 +135,32 @@ void GCGpricerPrintStatistics(
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
 extern
-SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
+SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
    );
 
 /** create initial master variables */
 extern
-SCIP_RETCODE GCGpricerCreateInitialMastervars(
+SCIP_RETCODE GCGmasterCreateInitialMastervars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** get root node degeneracy */
 extern
-SCIP_Real GCGpricerGetDegeneracy(
+SCIP_Real GCGmasterGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** get number of iterations in pricing problems */
 extern
-SCIP_Longint GCGpricerGetPricingSimplexIters(
+SCIP_Longint GCGmasterGetPricingSimplexIters(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** print simplex iteration statistics */
 extern
-SCIP_RETCODE GCGpricerPrintSimplexIters(
+SCIP_RETCODE GCGmasterPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    );

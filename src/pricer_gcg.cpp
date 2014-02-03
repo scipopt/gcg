@@ -2652,7 +2652,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);
-         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i]) );
       }
       /* return if we transferred solutions as the master should be feasible */
       if( norigsols > 0 )
@@ -2764,7 +2764,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 }
 
 /** returns the pointer to the scip instance representing the original problem */
-SCIP* GCGpricerGetOrigprob(
+SCIP* GCGmasterGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2779,7 +2779,7 @@ SCIP* GCGpricerGetOrigprob(
 }
 
 /** returns the array of variables that were priced in during the solving process */
-SCIP_VAR** GCGpricerGetPricedvars(
+SCIP_VAR** GCGmasterGetPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2798,7 +2798,7 @@ SCIP_VAR** GCGpricerGetPricedvars(
 }
 
 /** returns the number of variables that were priced in during the solving process */
-int GCGpricerGetNPricedvars(
+int GCGmasterGetNPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2818,7 +2818,7 @@ int GCGpricerGetNPricedvars(
 
 
 /** adds the given constraint and the given position to the hashmap of the pricer */
-SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
+SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be added */
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
@@ -3067,7 +3067,7 @@ void GCGpricerPrintStatistics(
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
-SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
+SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
    )
@@ -3098,7 +3098,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* now compute coefficients of the master variables in the master constraint */
@@ -3217,7 +3217,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
 
 
 /** create initial master variables */
-SCIP_RETCODE GCGpricerCreateInitialMastervars(
+SCIP_RETCODE GCGmasterCreateInitialMastervars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3301,7 +3301,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
 }
 
 /** get root node degeneracy */
-SCIP_Real GCGpricerGetDegeneracy(
+SCIP_Real GCGmasterGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3325,7 +3325,7 @@ SCIP_Real GCGpricerGetDegeneracy(
 }
 
 /* get number of iterations in pricing problems */
-SCIP_Longint GCGpricerGetPricingSimplexIters(
+SCIP_Longint GCGmasterGetPricingSimplexIters(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3345,7 +3345,7 @@ SCIP_Longint GCGpricerGetPricingSimplexIters(
 
 /** print simplex iteration statistics */
 extern
-SCIP_RETCODE GCGpricerPrintSimplexIters(
+SCIP_RETCODE GCGmasterPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    )

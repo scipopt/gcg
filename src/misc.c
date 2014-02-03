@@ -455,7 +455,7 @@ SCIP_RETCODE GCGprintStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
    if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
    {
-      SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
+      SCIP_CALL( GCGmasterPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
    }
    SCIP_CALL( GCGprintDetectorStatistics(scip, file) );

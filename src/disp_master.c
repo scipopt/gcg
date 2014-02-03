@@ -75,7 +75,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputOriginal)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_ORIGINAL) == 0);
    assert(scip != NULL);
 
-   SCIP_CALL( SCIPprintDisplayLine(GCGpricerGetOrigprob(scip), file, SCIP_VERBLEVEL_HIGH, FALSE) );
+   SCIP_CALL( SCIPprintDisplayLine(GCGmasterGetOrigprob(scip), file, SCIP_VERBLEVEL_HIGH, FALSE) );
 
    return SCIP_OKAY;
 }

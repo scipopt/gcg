@@ -105,7 +105,7 @@ SCIP_RETCODE initializeStartsol(
    int k;
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get variable data of the master problem */
@@ -481,7 +481,7 @@ SCIP_DECL_HEURINIT(heurInitRelaxcolsel)
    assert(scip != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */
@@ -561,7 +561,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    assert(result != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */

@@ -140,7 +140,7 @@ SCIP_DECL_SEPAEXIT(sepaExitMaster)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    for( i = 0; i < sepadata->ncuts; i++ )
@@ -161,7 +161,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolMaster)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   assert(GCGpricerGetOrigprob(scip) != NULL);
+   assert(GCGmasterGetOrigprob(scip) != NULL);
 
    for( i = 0; i < sepadata->ncuts; i++ )
    {
@@ -198,7 +198,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -271,7 +271,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpMaster)
             SCIProwIsLocal(origcut), TRUE, FALSE) );
 
       /* transform the original variables to master variables and add them to the cut */
-      GCGtransformOrigvalsToMastervals(GCGpricerGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
+      GCGtransformOrigvalsToMastervals(GCGmasterGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals, nmastervars);
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
 
       /* add the cut to the master problem */

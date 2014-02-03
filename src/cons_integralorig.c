@@ -159,7 +159,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
@@ -216,7 +216,7 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(nconss == 0);
    assert(result != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
@@ -270,7 +270,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    SCIPdebugMessage("Check method of integralorig constraint\n");

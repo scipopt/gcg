@@ -991,7 +991,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSlpiterations)
 
    if( masterprob != NULL && SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGpricerGetPricingSimplexIters(masterprob), DISP_WIDT_SLPITERATIONS);
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGmasterGetPricingSimplexIters(masterprob), DISP_WIDT_SLPITERATIONS);
    }
    else
    {

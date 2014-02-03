@@ -1558,7 +1558,7 @@ SCIP_RETCODE createMaster(
    /* create master and pricing problem constraints */
    SCIP_CALL( createMasterprobConss(scip, relaxdata) );
    SCIP_CALL( createPricingprobConss(scip, relaxdata, hashorig2pricingvar) );
-   SCIP_CALL( GCGpricerCreateInitialMastervars(relaxdata->masterprob) );
+   SCIP_CALL( GCGmasterCreateInitialMastervars(relaxdata->masterprob) );
 
    /* check if the master problem is a set partitioning or set covering problem */
    SCIP_CALL( checkSetppcStructure(scip, relaxdata) );
@@ -2688,7 +2688,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    relaxdata->linearmasterconss[relaxdata->nmasterconss] = newcons;
    relaxdata->masterconss[relaxdata->nmasterconss] = mastercons;
 
-   SCIP_CALL( GCGpricerAddMasterconsToHashmap(relaxdata->masterprob, relaxdata->masterconss[relaxdata->nmasterconss],
+   SCIP_CALL( GCGmasterAddMasterconsToHashmap(relaxdata->masterprob, relaxdata->masterconss[relaxdata->nmasterconss],
          relaxdata->nmasterconss) );
 
    relaxdata->nmasterconss++;
@@ -3596,7 +3596,7 @@ SCIP_Real GCGgetDegeneracy(
    degeneracy = 0.0;
    if( relaxdata->masterprob != NULL )
    {
-      degeneracy = GCGpricerGetDegeneracy(relaxdata->masterprob);
+      degeneracy = GCGmasterGetDegeneracy(relaxdata->masterprob);
       if( SCIPisInfinity(relaxdata->masterprob, degeneracy) )
          degeneracy = SCIPinfinity(scip);
    }

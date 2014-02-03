@@ -1487,7 +1487,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    SCIPdebugMessage("include method of branchrelpsprob called.\n");
 
    assert(scip != NULL);
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /* create relpsprob branching rule data */
@@ -1591,7 +1591,7 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    /* find branching rule */
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /* execute branching rule */

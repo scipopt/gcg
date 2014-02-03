@@ -110,7 +110,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    nodeseldata = SCIPnodeselGetData(nodesel);
    assert(nodeseldata != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
 
    *selnode = NULL;
 

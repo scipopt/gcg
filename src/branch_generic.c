@@ -329,7 +329,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    if( !GCGvarIsMaster(mastervar) )
       return SCIP_OKAY;
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /*   SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
@@ -2550,7 +2550,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    SCIPdebugMessage("get informations for Vanderbecks generic branching\n");
 
-   origscip = GCGpricerGetOrigprob(masterscip);
+   origscip = GCGmasterGetOrigprob(masterscip);
 
    assert(origscip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
@@ -2962,7 +2962,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    SCIPdebugMessage("Execrel method of Vanderbecks generic branching\n");
@@ -3054,7 +3054,7 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
 {
    SCIP* origscip;
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origscip != NULL);
 

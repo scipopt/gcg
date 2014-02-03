@@ -105,7 +105,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    assert(branchdata->var1 != NULL);
    assert(branchdata->var2 != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
@@ -164,7 +164,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
@@ -198,7 +198,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   assert(GCGpricerGetOrigprob(scip) != NULL);
+   assert(GCGmasterGetOrigprob(scip) != NULL);
 
    SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
@@ -458,7 +458,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
    SCIPdebugMessage("Execrel method of ryanfoster branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -694,7 +694,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
    SCIPdebugMessage("Execps method of ryanfoster branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
 
@@ -777,7 +777,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 {
    SCIP* origprob;
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origprob != NULL);
 

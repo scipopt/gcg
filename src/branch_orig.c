@@ -470,7 +470,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    assert(branchdata->origvar != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
@@ -533,7 +533,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       (*branchdata)->cons = NULL;
    }
 
-   SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), branchdata);
+   SCIPfreeMemoryNull(GCGmasterGetOrigprob(scip), branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -552,7 +552,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
    SCIPdebugMessage("Execlp method of orig branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    feasible = FALSE;
 
    assert(origscip != NULL);
@@ -591,7 +591,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 
    SCIPdebugMessage("Execext method of orig branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    feasible = FALSE;
 
    assert(origscip != NULL);
@@ -622,7 +622,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 {
    SCIP* origprob;
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origprob != NULL);
 
@@ -653,7 +653,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    /* masterscip = scip; */
    assert(origscip != NULL);
 
@@ -784,19 +784,19 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
          branchExeclpOrig, branchExecextOrig, branchExecpsOrig, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/enforcebycons",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
          NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/mostfrac",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/mostfrac",
          "should branching be performed on the most fractional variable instead of the first variable?",
          NULL, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepseudocosts",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepsstrong",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepsstrong",
          "should strong branching with propagation be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 

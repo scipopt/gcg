@@ -577,11 +577,11 @@ SCIP_RETCODE GCGincludeSolverMip(
          solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, data) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "pricingsolver/mip/checksols",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &data->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddStringParam(GCGpricerGetOrigprob(scip), "pricingsolver/mip/settingsfile",
+   SCIP_CALL( SCIPaddStringParam(GCGmasterGetOrigprob(scip), "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
          &data->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
 

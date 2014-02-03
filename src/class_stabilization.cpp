@@ -70,7 +70,7 @@ Stabilization::~Stabilization()
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()
 {
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nconss = GCGrelaxGetNMasterConss(origprob);
 
    if( nconss == nstabcenterconss )
@@ -145,7 +145,7 @@ SCIP_RETCODE Stabilization::linkingconsGetDual(
    SCIP_Real* dual
    )
 {
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
    assert(nstabcenterlinkingconss<= GCGrelaxGetNLinkingconss(origprob));
 
@@ -161,7 +161,7 @@ SCIP_RETCODE Stabilization::consGetDual(
    SCIP_Real* dual
    )
 {
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
 #ifndef NDEBUG
    int nconss =  GCGrelaxGetNMasterConss(origprob);
 #endif
@@ -208,7 +208,7 @@ SCIP_RETCODE Stabilization::convGetDual(
    SCIP_Real* dual
    )
 {
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
    assert(nstabcenterconv<= GCGrelaxGetNPricingprobs(origprob));
 
@@ -240,7 +240,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_CALL( updateStabcentercuts() );
 
    /* get new dual values */
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
    int nconss = GCGrelaxGetNMasterConss(origprob);
    int ncuts = GCGsepaGetNCuts(scip_);
@@ -358,7 +358,7 @@ SCIP_Real Stabilization::calculateSubgradient(
    SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
    )
 {
-   SCIP* origprob = GCGpricerGetOrigprob(scip_);
+   SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origprob);
    SCIP_CONS** masterconss = GCGrelaxGetMasterConss(origprob);
 
