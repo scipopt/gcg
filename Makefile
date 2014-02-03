@@ -382,7 +382,7 @@ testdepend:: # do not remove double colon
 
 tests:: #do not remove double colon
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) | libs $(BINDIR)
+$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | libs $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB) \
