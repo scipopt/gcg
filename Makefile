@@ -297,6 +297,7 @@ endif
 doc:
 		cd doc; $(DOXY) $(MAINNAME).dxy; cp tabs.css html/
 
+.PHONY: $(MAINSHORTLINK)
 $(MAINSHORTLINK):	$(MAINFILE)
 		@rm -f $@
 		cd $(dir $@) && ln -s $(notdir $(MAINFILE)) $(notdir $@)
@@ -392,19 +393,19 @@ $(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) | libs 
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR)
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
-$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(LIBOBJDIR)
+$(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
 
-$(OBJDIR)/%.o:	$(SRCDIR)/%.c | $(OBJDIR)
+$(OBJDIR)/%.o:	$(SRCDIR)/%.c | $(OBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CFLAGS) -c $< $(CC_o)$@
 
-$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR)
+$(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
@@ -419,6 +420,7 @@ ifneq ($(RANLIB),)
 		$(RANLIB) $@
 endif
 
+.PHONY: $(GCGLIBSHORTLINK)
 $(GCGLIBSHORTLINK):	$(GCGLIBFILE)
 		@rm -f $@
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
@@ -443,14 +445,24 @@ touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_LPS),$(LPS))
 		@-touch $(SRCDIR)/solver_cplex.c
 endif
-ifneq ($(USRCFLAGS),$(LAST_USRCFLAGS))
+
+ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
 endif
-ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
+ifneq ($(USROFLAGS),$(LAST_USROFLAGS))
+		@-touch $(ALLSRC)
+endif
+ifneq ($(USRCFLAGS),$(LAST_USRCFLAGS))
 		@-touch $(ALLSRC)
 endif
 ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
 		@-touch $(ALLSRC)
+endif
+ifneq ($(USRLDFLAGS),$(LAST_USRLDFLAGS))
+		@-touch $(GCGLIBOBJFILES) $(MAINOBJFILES)
+endif
+ifneq ($(USRARFLAGS),$(LAST_USRARFLAGS))
+		@-touch $(GCGLIBOBJFILES) $(MAINOBJFILES)
 endif
 ifneq ($(OPENMP),$(LAST_OPENMP))
 		@-touch $(ALLSRC)
@@ -461,9 +473,13 @@ endif
 		@-rm -f $(LASTSETTINGS)
 		@echo "LAST_GCGGITHASH=$(GCGGITHASH)" >> $(LASTSETTINGS)
 		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
-		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USROFLAGS=$(USROFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCXXFLAGS=$(USRCXXFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRLDFLAGS=$(USRLDFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRARFLAGS=$(USRARFLAGS)" >> $(LASTSETTINGS)
+		@echo "LAST_USRDFLAGS=$(USRDFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
