@@ -51,6 +51,7 @@
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
 
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"

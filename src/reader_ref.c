@@ -44,10 +44,8 @@
 #include <ctype.h>
 
 #include "reader_ref.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "scip/cons_linear.h"
-#include "pub_gcgvar.h"
-#include "pub_decomp.h"
 #include "cons_decomp.h"
 
 #define READER_NAME             "refreader"

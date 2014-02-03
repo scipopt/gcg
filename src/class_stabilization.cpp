@@ -40,11 +40,10 @@
 
 #include "class_stabilization.h"
 #include "pricer_gcg.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "sepa_master.h"
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"
-#include "pub_gcgvar.h"
 
 namespace gcg {
 

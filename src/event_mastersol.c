@@ -35,6 +35,7 @@
 #include <string.h>
 #include "event_mastersol.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 #define EVENTHDLR_NAME         "mastersol"

@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "heur_gcgfeaspump.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 

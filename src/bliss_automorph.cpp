@@ -38,8 +38,7 @@
 #include "bliss_automorph.h"
 #include "scip_misc.h"
 #include "scip/scip.h"
-#include "pub_gcgvar.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "scip/cons_linear.h"
 #include "pub_bliss.h"
 

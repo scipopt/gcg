@@ -38,7 +38,7 @@
 #include <string.h>
 #include "cons_origbranch.h"
 #include "scip/cons_linear.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "cons_masterbranch.h"
 #include "branch_generic.h"
 #include "cons_masterbranch.h"

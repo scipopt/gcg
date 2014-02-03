@@ -38,6 +38,7 @@
 
 #include "heur_gcgrounding.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 
 #define HEUR_NAME             "gcgrounding"

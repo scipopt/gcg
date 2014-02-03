@@ -38,6 +38,7 @@
 
 #include "branch_empty.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "scip/branch_allfullstrong.h"
@@ -51,7 +52,6 @@
 #include "pricer_gcg.h"
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
 
 #define BRANCHRULE_NAME          "empty"
 #define BRANCHRULE_DESC          "empty branching in generic column generation"

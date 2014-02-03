@@ -42,9 +42,9 @@
 #include "branch_generic.h"
 #include "scip/cons_linear.h"
 #include "cons_origbranch.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-#include "pub_gcgvar.h"
 
 /*#define CHECKPROPAGATEDVARS*/
 

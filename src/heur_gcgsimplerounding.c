@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "heur_gcgsimplerounding.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 

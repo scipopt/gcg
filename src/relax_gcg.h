@@ -115,105 +115,9 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP_CONS**           transcons           /**< pointer to the transformed constraint */
    );
 
-/** returns the master problem */
-extern
-SCIP* GCGgetMasterprob(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the pricing problem of the given number */
-extern
-SCIP* GCGgetPricingprob(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr       /**< number of the pricing problem */
-   );
-
-/** returns the number of pricing problems */
-extern
-int GCGgetNPricingprobs(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
- *  another and represented by it */
-extern
-SCIP_Bool GCGisPricingprobRelevant(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr       /**< number of the pricing problem */
-   );
-
-/**
- *  for a given block, return the block by which it is represented
- */
-extern
-int GCGgetBlockRepresentative(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr       /**< number of the pricing problem */
-   );
-
-/** returns the number of relevant pricing problems */
-extern
-int GCGgetNRelPricingprobs(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the number of blocks in the original formulation, that are represented by
- *  the pricingprob with the given number */
-extern
-int GCGgetNIdenticalBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   pricingprobnr       /**< number of the pricing problem */
-   );
-
-/** returns the number of constraints in the master problem */
-extern
-int GCGgetNMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the contraints in the master problem */
-extern
-SCIP_CONS** GCGgetMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the contraints in the original problem that correspond to the constraints in the master problem */
-extern
-SCIP_CONS** GCGgetOrigMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-
-/** returns the linear counterpart of the contraints in the original problem that correspond
- * to the constraints in the master problem */
-extern
-SCIP_CONS** GCGrgetLinearOrigMasterConss(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the convexity constraint for the given block */
-extern
-SCIP_CONS* GCGgetConvCons(
-   SCIP*                 scip,               /**< SCIP data structure */
-   int                   blocknr             /**< the number of the block for which we
-                                              *   need the convexity constraint */
-   );
-
 /** returns the current solution for the original problem */
 extern
 SCIP_SOL* GCGrelaxGetCurrentOrigSol(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns whether the master problem is a set covering problem */
-extern
-SCIP_Bool GCGisMasterSetCovering(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns whether the master problem is a set partitioning problem */
-extern
-SCIP_Bool GCGisMasterSetPartitioning(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -274,42 +178,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    SCIP_Bool*            feasible            /**< pointer to store whether the master problem's solution is
                                               *   primal feasible*/
    );
-
-/** sets the structure information */
-void GCGsetStructDecdecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< decomposition data structure */
-   );
-
-/** gets the structure information */
-extern
-DEC_DECOMP* GCGgetStructDecdecomp(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns whether the relaxator has been initialized */
-extern
-SCIP_Bool GCGrelaxIsInitialized(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** return linking constraints for variables */
-extern
-SCIP_CONS** GCGgetVarLinkingconss(
-   SCIP*                 scip                /**< SCIP data structure */
-  );
-
-/** return blocks of linking constraints for variables */
-extern
-int* GCGgetVarLinkingconssBlock(
-   SCIP*                 scip                /**< SCIP data structure */
-  );
-
-/** return number of linking constraints for variables */
-extern
-int GCGgetNVarLinkingconss(
-   SCIP*                 scip                /**< SCIP data structure */
-  );
 
 #ifdef __cplusplus
 }

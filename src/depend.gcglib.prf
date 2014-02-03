@@ -107,7 +107,7 @@ $(LIBOBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
  lib/scip/src/scip/struct_message.h lib/scip/src/scip/type_result.h \
- src/type_decomp.h src/relax_gcg.h lib/scip/src/scip/scip.h \
+ src/type_decomp.h src/gcg.h lib/scip/src/scip/scip.h \
  lib/scip/src/blockmemshell/memory.h lib/scip/src/scip/type_clock.h \
  lib/scip/src/scip/type_misc.h lib/scip/src/scip/type_timing.h \
  lib/scip/src/scip/type_paramset.h lib/scip/src/scip/type_event.h \
@@ -153,8 +153,8 @@ $(LIBOBJDIR)/reader_ref.o: src/reader_ref.c src/reader_ref.h \
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
  lib/scip/src/scip/struct_event.h src/type_branchgcg.h \
- lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h src/pub_decomp.h \
- src/type_detector.h src/cons_decomp.h
+ src/type_detector.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h \
+ lib/scip/src/scip/cons_linear.h src/cons_decomp.h
 $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
@@ -247,8 +247,15 @@ $(LIBOBJDIR)/gcgplugins.o: src/gcgplugins.c src/gcgplugins.h lib/scip/src/scip/s
  lib/scip/src/scip/prop_pseudoobj.h lib/scip/src/scip/prop_rootredcost.h \
  lib/scip/src/scip/prop_redcost.h lib/scip/src/scip/prop_genvbounds.h \
  lib/scip/src/scip/prop_vbounds.h lib/scip/src/scip/prop_obbt.h \
- lib/scip/src/scip/reader_lp.h lib/scip/src/scip/reader_mps.h \
- lib/scip/src/scip/reader_sol.h lib/scip/src/scip/reader_cip.h \
+ lib/scip/src/scip/reader_bnd.h lib/scip/src/scip/reader_ccg.h \
+ lib/scip/src/scip/reader_cip.h lib/scip/src/scip/reader_cnf.h \
+ lib/scip/src/scip/reader_fix.h lib/scip/src/scip/reader_fzn.h \
+ lib/scip/src/scip/reader_gms.h lib/scip/src/scip/reader_lp.h \
+ lib/scip/src/scip/reader_mps.h lib/scip/src/scip/reader_opb.h \
+ lib/scip/src/scip/reader_osil.h lib/scip/src/scip/reader_pip.h \
+ lib/scip/src/scip/reader_ppm.h lib/scip/src/scip/reader_pbm.h \
+ lib/scip/src/scip/reader_rlp.h lib/scip/src/scip/reader_sol.h \
+ lib/scip/src/scip/reader_wbo.h lib/scip/src/scip/reader_zpl.h \
  lib/scip/src/scip/sepa_clique.h lib/scip/src/scip/sepa_cmir.h \
  lib/scip/src/scip/sepa_flowcover.h lib/scip/src/scip/sepa_gomory.h \
  lib/scip/src/scip/sepa_impliedbounds.h lib/scip/src/scip/sepa_intobj.h \
@@ -448,10 +455,11 @@ $(LIBOBJDIR)/branch_orig.o: src/branch_orig.c src/branch_orig.h \
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/pricer_gcg.h \
- src/type_solver.h src/cons_origbranch.h src/branch_relpsprob.h \
- lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h src/cons_integralorig.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
+ src/pricer_gcg.h src/cons_origbranch.h src/branch_relpsprob.h \
+ lib/scip/src/scip/cons_linear.h src/cons_integralorig.h \
  src/cons_masterbranch.h
 $(LIBOBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
@@ -502,8 +510,9 @@ $(LIBOBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
  src/cons_masterbranch.h src/cons_origbranch.h \
  lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_dfs.h \
  lib/scip/src/scip/nodesel_estimate.h \
@@ -514,8 +523,7 @@ $(LIBOBJDIR)/branch_ryanfoster.o: src/branch_ryanfoster.c src/branch_ryanfoster.
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
  lib/scip/src/scip/branch_leastinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
- src/pricer_gcg.h src/type_solver.h lib/scip/src/scip/cons_varbound.h \
- src/pub_gcgvar.h
+ src/pricer_gcg.h lib/scip/src/scip/cons_varbound.h
 $(LIBOBJDIR)/branch_generic.o: src/branch_generic.c src/branch_generic.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -629,8 +637,9 @@ $(LIBOBJDIR)/cons_origbranch.o: src/cons_origbranch.c src/cons_origbranch.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_branchgcg.h lib/scip/src/scip/cons_linear.h src/relax_gcg.h \
- src/type_decomp.h src/cons_masterbranch.h src/branch_generic.h \
+ src/type_branchgcg.h lib/scip/src/scip/cons_linear.h src/gcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/cons_masterbranch.h src/branch_generic.h \
  lib/scip/src/scip/nodesel_bfs.h lib/scip/src/scip/nodesel_dfs.h \
  lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
@@ -691,8 +700,9 @@ $(LIBOBJDIR)/cons_masterbranch.o: src/cons_masterbranch.c src/cons_masterbranch.
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/type_branchgcg.h src/branch_generic.h \
- lib/scip/src/scip/cons_linear.h src/cons_origbranch.h src/relax_gcg.h \
- src/type_decomp.h src/pricer_gcg.h src/type_solver.h src/pub_gcgvar.h
+ lib/scip/src/scip/cons_linear.h src/cons_origbranch.h src/gcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/relax_gcg.h src/pricer_gcg.h
 $(LIBOBJDIR)/cons_integralorig.o: src/cons_integralorig.c src/cons_integralorig.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -974,9 +984,10 @@ $(LIBOBJDIR)/heur_gcgfeaspump.o: src/heur_gcgfeaspump.c src/heur_gcgfeaspump.h \
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
+ src/gcgplugins.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
@@ -1314,9 +1325,10 @@ $(LIBOBJDIR)/heur_gcgrens.o: src/heur_gcgrens.c src/heur_gcgrens.h \
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
+ src/gcgplugins.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
@@ -1439,9 +1451,10 @@ $(LIBOBJDIR)/heur_gcgrins.o: src/heur_gcgrins.c src/heur_gcgrins.h \
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcgplugins.h \
- lib/scip/src/scip/scipdefplugins.h \
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h \
+ src/gcgplugins.h lib/scip/src/scip/scipdefplugins.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_cloud.h lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_leastinf.h \
@@ -1565,7 +1578,8 @@ $(LIBOBJDIR)/heur_gcgrounding.o: src/heur_gcgrounding.c src/heur_gcgrounding.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcg.h \
+ src/type_detector.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h
 $(LIBOBJDIR)/heur_gcgsimplerounding.o: src/heur_gcgsimplerounding.c \
  src/heur_gcgsimplerounding.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -1616,8 +1630,9 @@ $(LIBOBJDIR)/heur_gcgsimplerounding.o: src/heur_gcgsimplerounding.c \
  lib/scip/src/scip/struct_set.h lib/scip/src/scip/message.h \
  lib/scip/src/scip/tree.h lib/scip/src/scip/misc.h \
  lib/scip/src/scip/var.h lib/scip/src/scip/event.h \
- lib/scip/src/scip/struct_event.h src/relax_gcg.h src/type_branchgcg.h \
- src/type_decomp.h
+ lib/scip/src/scip/struct_event.h src/gcg.h src/type_branchgcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
+ src/pub_decomp.h src/relax_gcg.h
 $(LIBOBJDIR)/heur_gcgshifting.o: src/heur_gcgshifting.c src/heur_gcgshifting.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -1667,8 +1682,9 @@ $(LIBOBJDIR)/heur_gcgshifting.o: src/heur_gcgshifting.c src/heur_gcgshifting.h \
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h
 $(LIBOBJDIR)/heur_gcgveclendiving.o: src/heur_gcgveclendiving.c \
  src/heur_gcgveclendiving.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
@@ -1772,8 +1788,9 @@ $(LIBOBJDIR)/heur_gcgzirounding.o: src/heur_gcgzirounding.c src/heur_gcgziroundi
  lib/scip/src/scip/type_buffer.h lib/scip/src/scip/struct_set.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
- lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h
+ lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h src/relax_gcg.h
 $(LIBOBJDIR)/heur_greedycolsel.o: src/heur_greedycolsel.c src/heur_greedycolsel.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2138,7 +2155,8 @@ $(LIBOBJDIR)/heur_origdiving.o: src/heur_origdiving.c src/heur_origdiving.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/type_origdiving.h src/cons_origbranch.h src/type_branchgcg.h \
- src/relax_gcg.h src/type_decomp.h
+ src/relax_gcg.h src/type_decomp.h src/gcg.h src/type_detector.h \
+ src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h
 $(LIBOBJDIR)/heur_relaxcolsel.o: src/heur_relaxcolsel.c src/heur_relaxcolsel.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2620,15 +2638,15 @@ $(LIBOBJDIR)/branch_empty.o: src/branch_empty.c src/branch_empty.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
+ src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/gcg.h \
+ src/type_detector.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h \
  src/cons_masterbranch.h src/cons_origbranch.h \
  lib/scip/src/scip/branch_allfullstrong.h \
  lib/scip/src/scip/branch_fullstrong.h \
  lib/scip/src/scip/branch_inference.h lib/scip/src/scip/branch_mostinf.h \
  lib/scip/src/scip/branch_leastinf.h lib/scip/src/scip/branch_pscost.h \
  lib/scip/src/scip/branch_random.h lib/scip/src/scip/branch_relpscost.h \
- src/pricer_gcg.h src/type_solver.h lib/scip/src/scip/cons_varbound.h \
- src/pub_gcgvar.h
+ src/pricer_gcg.h lib/scip/src/scip/cons_varbound.h
 $(LIBOBJDIR)/branch_relpsprob.o: src/branch_relpsprob.c src/branch_relpsprob.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -2681,7 +2699,8 @@ $(LIBOBJDIR)/branch_relpsprob.o: src/branch_relpsprob.c src/branch_relpsprob.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
  src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h \
  src/cons_origbranch.h src/cons_masterbranch.h src/cons_integralorig.h \
- src/pricer_gcg.h src/type_solver.h lib/scip/src/scip/nodesel_estimate.h \
+ src/pricer_gcg.h src/type_solver.h src/gcg.h src/type_detector.h \
+ src/pub_gcgvar.h src/pub_decomp.h lib/scip/src/scip/nodesel_estimate.h \
  lib/scip/src/scip/nodesel_hybridestim.h \
  lib/scip/src/scip/nodesel_restartdfs.h \
  lib/scip/src/scip/branch_allfullstrong.h \
@@ -3198,8 +3217,9 @@ $(LIBOBJDIR)/event_mastersol.o: src/event_mastersol.c src/event_mastersol.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/pricer_gcg.h src/type_solver.h src/relax_gcg.h src/type_branchgcg.h \
- src/type_decomp.h
+ src/pricer_gcg.h src/type_solver.h src/gcg.h src/type_branchgcg.h \
+ src/type_decomp.h src/type_detector.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/relax_gcg.h
 $(LIBOBJDIR)/event_solvingstats.o: src/event_solvingstats.c src/event_solvingstats.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -3585,10 +3605,10 @@ $(LIBOBJDIR)/cons_decomp.o: src/cons_decomp.c src/cons_decomp.h \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- src/type_detector.h src/type_decomp.h src/dec_connected.h \
- src/relax_gcg.h src/type_branchgcg.h src/struct_detector.h \
- src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
- lib/scip/src/scip/clock.h src/pub_gcgvar.h src/pub_decomp.h
+ src/type_detector.h src/type_decomp.h src/dec_connected.h src/gcg.h \
+ src/type_branchgcg.h src/type_solver.h src/pub_gcgvar.h src/pub_decomp.h \
+ src/struct_detector.h src/scip_misc.h lib/scip/src/scip/cons_setppc.h \
+ lib/scip/src/scip/clock.h
 $(LIBOBJDIR)/decomp.o: src/decomp.c src/decomp.h src/type_decomp.h src/gcg.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \
@@ -4612,9 +4632,10 @@ $(LIBOBJDIR)/class_stabilization.o: src/class_stabilization.cpp \
  lib/scip/src/objscip/objprobdata.h lib/scip/src/objscip/objprop.h \
  lib/scip/src/objscip/objreader.h lib/scip/src/objscip/objrelax.h \
  lib/scip/src/objscip/objsepa.h lib/scip/src/objscip/objvardata.h \
- src/class_pricingtype.h src/pricer_gcg.h src/type_solver.h \
- src/relax_gcg.h src/type_branchgcg.h src/type_decomp.h src/sepa_master.h \
- lib/scip/src/scip/cons_linear.h src/pub_gcgvar.h
+ src/class_pricingtype.h src/pricer_gcg.h src/type_solver.h src/gcg.h \
+ src/type_branchgcg.h src/type_decomp.h src/type_detector.h \
+ src/pub_gcgvar.h src/pub_decomp.h src/sepa_master.h \
+ lib/scip/src/scip/cons_linear.h
 $(LIBOBJDIR)/objdialog.o: src/objdialog.cpp src/objdialog.h lib/scip/src/scip/scip.h \
  lib/scip/src/scip/def.h lib/scip/src/scip/type_retcode.h \
  lib/scip/src/scip/pub_message.h lib/scip/src/scip/type_message.h \
@@ -4792,9 +4813,9 @@ $(LIBOBJDIR)/bliss_automorph.o: src/bliss_automorph.cpp lib/blissinc/graph.hh \
  lib/scip/src/scip/message.h lib/scip/src/scip/tree.h \
  lib/scip/src/scip/misc.h lib/scip/src/scip/var.h \
  lib/scip/src/scip/event.h lib/scip/src/scip/struct_event.h \
- lib/scip/src/scip/cons_setppc.h src/pub_gcgvar.h src/relax_gcg.h \
- src/type_branchgcg.h src/type_decomp.h lib/scip/src/scip/cons_linear.h \
- src/pub_bliss.h
+ lib/scip/src/scip/cons_setppc.h src/gcg.h src/type_branchgcg.h \
+ src/type_decomp.h src/type_detector.h src/type_solver.h src/pub_gcgvar.h \
+ src/pub_decomp.h lib/scip/src/scip/cons_linear.h src/pub_bliss.h
 $(LIBOBJDIR)/dec_isomorph.o: src/dec_isomorph.cpp src/dec_isomorph.h \
  lib/scip/src/scip/scip.h lib/scip/src/scip/def.h \
  lib/scip/src/scip/type_retcode.h lib/scip/src/scip/pub_message.h \

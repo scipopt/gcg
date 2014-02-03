@@ -39,6 +39,7 @@
 #include "heur_origdiving.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE

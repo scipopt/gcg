@@ -36,17 +36,16 @@
 #include <string.h>
 
 #include "branch_orig.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_origbranch.h"
 #include "branch_relpsprob.h"
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
 
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
-
 
 
 #define BRANCHRULE_NAME          "orig"

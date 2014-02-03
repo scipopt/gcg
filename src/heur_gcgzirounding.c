@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "heur_gcgzirounding.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 #define HEUR_NAME             "gcgzirounding"
