@@ -58,16 +58,16 @@
 /** solve the pricing problem as a knapsack problem, either exactly or approximately */
 static
 SCIP_RETCODE solveKnapsack(
-   SCIP_Bool             exactly,
-   SCIP*                 pricingprob,
-   GCG_SOLVER*           solver,
-   int                   probnr,
-   SCIP_Real*            lowerbound,
-   SCIP_SOL**            sols,
-   SCIP_Bool*            solisray,
-   int                   maxsols,
-   int*                  nsols,
-   SCIP_STATUS*          result
+   SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   GCG_SOLVER*           solver,             /**< solver data structure */
+   int                   probnr,             /**< problem number */
+   SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
+   SCIP_SOL**            sols,               /**< array of solutions */
+   SCIP_Bool*            solisray,           /**< array indicating whether solution is a ray */
+   int                   maxsols,            /**< size of preallocated array */
+   int*                  nsols,              /**< pointer to store number of solutions */
+   SCIP_STATUS*          result              /**< pointer to store pricing problem status */
    )
 {
    SCIP_CONS* cons;
@@ -119,11 +119,13 @@ SCIP_RETCODE solveKnapsack(
       return SCIP_OKAY;
    }
    for( i = SCIPgetNBinVars(pricingprob); i < SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob); ++i )
+   {
       if( SCIPisNegative(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i])) )
       {
          *result = SCIP_STATUS_UNKNOWN;
          return SCIP_OKAY;
       }
+   }
 
    nconss = SCIPgetNConss(pricingprob);
    if( nconss != 1 )
@@ -217,11 +219,18 @@ SCIP_RETCODE solveKnapsack(
       assert(j == (int)(SCIPvarGetUbLocal(consvars[i]) - SCIPvarGetLbLocal(consvars[i]) + 0.5));
    }
 
-   /* solve knapsack problem, all result pointers are needed! */
    success = TRUE;
+
+   /* problem is infeasible */
+   if( capacity < 0 )
+   {
+      *result = SCIP_STATUS_INFEASIBLE;
+      goto TERMINATE;
+   }
+
+   /* solve knapsack problem, all result pointers are needed! */
    if( exactly )
    {
-
       SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
          nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
    }
@@ -297,6 +306,13 @@ SCIP_RETCODE solveKnapsack(
    SCIP_CALL( SCIPcreateSol(pricingprob, &sols[0], NULL) );
    SCIP_CALL( SCIPsetSolVals(pricingprob, sols[0], nsolvars, solvars, solvals) );
 
+   *nsols = 1;
+
+   *lowerbound = solval;
+
+   *result = SCIP_STATUS_OPTIMAL;
+
+ TERMINATE:
    SCIPfreeBufferArray(pricingprob, &nonsolitems);
    SCIPfreeBufferArray(pricingprob, &solitems);
    SCIPfreeBufferArray(pricingprob, &profits);
@@ -304,12 +320,6 @@ SCIP_RETCODE solveKnapsack(
    SCIPfreeBufferArray(pricingprob, &items);
    SCIPfreeMemoryArray(pricingprob, &solvars);
    SCIPfreeMemoryArray(pricingprob, &solvals);
-
-   *nsols = 1;
-
-   *lowerbound = solval;
-
-   *result = SCIP_STATUS_OPTIMAL;
 
    return SCIP_OKAY;
 }
