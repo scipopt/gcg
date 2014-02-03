@@ -81,8 +81,8 @@ struct ConsData {
 
    ConsData(SCIP* scip_, SCIP_CONS* cons) {
       scip = scip_;
-      lhs = SCIPgetLhsXXX(scip, cons);
-      rhs = SCIPgetRhsXXX(scip, cons);
+      lhs = GCGconsGetLhs(scip, cons);
+      rhs = GCGconsGetRhs(scip, cons);
       conshdlrname = SCIPconshdlrGetName(SCIPconsGetHdlr(cons));
    }
 

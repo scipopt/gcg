@@ -2151,8 +2151,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /** add variable only if we cannot abort */
          if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
              (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
-             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
-             (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
+             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
+             (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
          {
             SCIP_VAR** solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
             int nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
@@ -2287,7 +2287,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
-   if( isRootNode(scip_) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
+   if( GCGisRootNode(scip_) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
    {
       double degeneracy = 0.0;
 
@@ -3316,7 +3316,7 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && GCGisRootNode(scip) )
    {
       return pricerdata->avgrootnodedegeneracy;
    }

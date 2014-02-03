@@ -799,10 +799,10 @@ SCIP_RETCODE fillDecompStruct(
       {
          int nconsvars;
 
-         nconsvars = SCIPgetNVarsXXX(scip, cons);
+         nconsvars = GCGconsGetNVars(scip, cons);
          assert(nconsvars < nvars);
 
-         SCIP_CALL( SCIPgetVarsXXX(scip, cons, consvars, nvars) );
+         SCIP_CALL( GCGconsGetVars(scip, cons, consvars, nvars) );
 
          blocknr = -1;
 

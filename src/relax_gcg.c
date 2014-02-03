@@ -354,12 +354,12 @@ SCIP_RETCODE convertStructToGCG(
          {
             SCIP_VAR** curvars;
             int        ncurvars;
-            ncurvars = SCIPgetNVarsXXX(scip, subscipconss[j][k]);
+            ncurvars = GCGconsGetNVars(scip, subscipconss[j][k]);
             curvars = NULL;
             if( ncurvars > 0 )
             {
                SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-               SCIP_CALL( SCIPgetVarsXXX(scip, subscipconss[j][k], curvars, ncurvars) );
+               SCIP_CALL( GCGconsGetVars(scip, subscipconss[j][k], curvars, ncurvars) );
 
                for( v = 0; v < ncurvars; ++v )
                {
@@ -492,7 +492,7 @@ SCIP_RETCODE checkSetppcStructure(
       {
          SCIP_SETPPCTYPE type;
 
-         if( SCIPgetConsIsSetppc(scip, masterconss[i], &type) )
+         if( GCGgetConsIsSetppc(scip, masterconss[i], &type) )
          {
             switch( type )
             {
@@ -1478,14 +1478,14 @@ SCIP_RETCODE createPricingprobConss(
             SCIP_VAR** curvars;
             int ncurvars;
 
-            ncurvars = SCIPgetNVarsXXX(relaxdata->pricingprobs[b], newcons);
+            ncurvars = GCGconsGetNVars(relaxdata->pricingprobs[b], newcons);
             curvars = NULL;
             if( ncurvars > 0 )
             {
                int i;
 
                SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-               SCIP_CALL( SCIPgetVarsXXX(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
+               SCIP_CALL( GCGconsGetVars(relaxdata->pricingprobs[b], newcons, curvars, ncurvars) );
 
                for( i = 0; i < ncurvars; ++i )
                {

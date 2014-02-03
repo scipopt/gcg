@@ -52,56 +52,49 @@ typedef enum  {
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
 extern
-SCIP_Bool SCIPisVarRelevant(
+SCIP_Bool GCGisVarRelevant(
    SCIP_VAR*             var                 /**< variable to test */
    );
 
 /** returns the type of an arbitrary SCIP constraint */
 extern
-consType SCIPconsGetType(
+consType GCGconsGetType(
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
 
 /** returns the rhs of an arbitrary SCIP constraint */
 extern
-SCIP_Real SCIPgetRhsXXX(
+SCIP_Real GCGconsGetRhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the lhs of an arbitrary SCIP constraint */
 extern
-SCIP_Real SCIPgetLhsXXX(
+SCIP_Real GCGconsGetLhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the number of variables in an arbitrary SCIP constraint */
 extern
-int SCIPgetNVarsXXX(
+int GCGconsGetNVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    );
 
 /** returns the variable array of an arbitrary SCIP constraint */
 extern
-SCIP_RETCODE SCIPgetVarsXXX(
+SCIP_RETCODE GCGconsGetVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
    SCIP_VAR**            vars,               /**< array where variables are stored */
    int                   nvars               /**< size of storage array */
    );
 
-/** returns the dual solution value of an arbitrary SCIP constraint */
-extern
-SCIP_Real SCIPgetDualsolXXX(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< constraint to get dual solution */
-   );
-
 /** returns the value array of an arbitrary SCIP constraint */
 extern
-SCIP_RETCODE SCIPgetValsXXX(
+SCIP_RETCODE GCGconsGetVals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get values from */
    SCIP_Real*            vals,               /**< array where values are stored */
@@ -109,7 +102,7 @@ SCIP_RETCODE SCIPgetValsXXX(
    );
 
 /** returns true if the constraint should be a master constraint and false otherwise */
-SCIP_Bool SCIPgetConsIsSetppc(
+SCIP_Bool GCGgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
@@ -117,7 +110,7 @@ SCIP_Bool SCIPgetConsIsSetppc(
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 extern
-SCIP_Bool isRootNode(
+SCIP_Bool GCGisRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

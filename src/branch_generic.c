@@ -105,6 +105,37 @@ typedef struct GCG_Record GCG_RECORD;
 #define branchExitsolGeneric NULL
 
 
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntry(
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   assert(mastervar != NULL);
+   assert(origvar != NULL);
+
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( origvars[i] == origvar )
+      {
+         return origvals[i];
+      }
+   }
+
+   return 0;
+}
+
 /** adds a variable to a branching constraint */
 static
 SCIP_RETCODE addVarToMasterbranch(
@@ -358,35 +389,6 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
  * branching specific interface methods
  */
 
-/** computes the generator of mastervar for the entry in origvar
- * @return entry of the generator corresponding to origvar */
-SCIP_Real getGeneratorEntry(
-   SCIP_VAR*             mastervar,          /**< current mastervariable */
-   SCIP_VAR*             origvar             /**< corresponding origvar */
-   )
-{
-   int i;
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
-
-   assert(mastervar != NULL);
-   assert(origvar != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   for( i = 0; i < norigvars; ++i )
-   {
-      if( origvars[i] == origvar )
-      {
-         return origvals[i];
-      }
-   }
-
-   return 0;
-}
 
 /** method for initializing the set of respected indices */
 static

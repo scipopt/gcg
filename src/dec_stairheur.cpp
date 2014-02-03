@@ -494,10 +494,10 @@ SCIP_RETCODE createRowindexList(
       int* hashmapindex = &detectordata->hashmapindices[i+1];
 
       cons = (SCIP_CONS*) SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
-      nvars = SCIPgetNVarsXXX(scip, cons);
+      nvars = GCGconsGetNVars(scip, cons);
 
       SCIP_CALL( SCIPallocBufferArray(scip, &vars, nvars) );
-      SCIP_CALL( SCIPgetVarsXXX(scip, cons, vars, nvars) );
+      SCIP_CALL( GCGconsGetVars(scip, cons, vars, nvars) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &probindices, nvars) );
 
       /* fill the array with the indices of the variables of the current constraint */

@@ -628,7 +628,7 @@ SCIP_RETCODE readBlock(
          if( decinput->presolved )
          {
             SCIP_VAR* var = SCIPvarGetProbvar(curvars[i]);
-            if( !SCIPisVarRelevant(var) )
+            if( !GCGisVarRelevant(var) )
                continue;
          }
 

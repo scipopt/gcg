@@ -238,11 +238,11 @@ SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
   ) const
 {
 
-   return !((((nfoundvars < maxvarsroundroot) || !isRootNode(scip_) ) && ((nfoundvars < maxvarsround) || isRootNode(scip_)))
+   return !((((nfoundvars < maxvarsroundroot) || !GCGisRootNode(scip_) ) && ((nfoundvars < maxvarsround) || GCGisRootNode(scip_)))
                && successfulmips < maxsuccessfulmips
                && successfulmips < successfulmipsrel * npricingprobsnotnull
-               && (nfoundvars == 0 || ( (isRootNode(scip_) || solvedmips < mipsrel * npricingprobsnotnull)
-                     && (!isRootNode(scip_) || solvedmips < mipsrelroot * npricingprobsnotnull))));
+               && (nfoundvars == 0 || ( (GCGisRootNode(scip_) || solvedmips < mipsrel * npricingprobsnotnull)
+                     && (!GCGisRootNode(scip_) || solvedmips < mipsrelroot * npricingprobsnotnull))));
 }
 
 SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(

@@ -65,13 +65,13 @@ int comp(
    AUT_CONS*             cons2               /**< constraint 2 to compare */
    )
 {
-   if( comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())) != 0 )
-      return comp(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetRhsXXX(scip, cons1->getCons()), SCIPgetRhsXXX(scip, cons2->getCons())));
+   if( comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons())) != 0 )
+      return comp(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons()));
+   assert(SCIPisEQ(scip, GCGconsGetRhs(scip, cons1->getCons()), GCGconsGetRhs(scip, cons2->getCons())));
 
-   if( comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())) != 0 )
-      return comp(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons()));
-   assert(SCIPisEQ(scip, SCIPgetLhsXXX(scip, cons1->getCons()), SCIPgetLhsXXX(scip, cons2->getCons())));
+   if( comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons())) != 0 )
+      return comp(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons()));
+   assert(SCIPisEQ(scip, GCGconsGetLhs(scip, cons1->getCons()), GCGconsGetLhs(scip, cons2->getCons())));
 
    return strcmp(SCIPconshdlrGetName(SCIPconsGetHdlr(cons1->getCons())), SCIPconshdlrGetName(SCIPconsGetHdlr(cons2->getCons())));
 }
