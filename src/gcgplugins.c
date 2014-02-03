@@ -122,10 +122,24 @@
 #include "scip/prop_obbt.h"
 #endif
 
+#include "scip/reader_bnd.h"
+#include "scip/reader_ccg.h"
+#include "scip/reader_cip.h"
+#include "scip/reader_cnf.h"
+#include "scip/reader_fix.h"
+#include "scip/reader_fzn.h"
+#include "scip/reader_gms.h"
 #include "scip/reader_lp.h"
 #include "scip/reader_mps.h"
+#include "scip/reader_opb.h"
+#include "scip/reader_osil.h"
+#include "scip/reader_pip.h"
+#include "scip/reader_ppm.h"
+#include "scip/reader_pbm.h"
+#include "scip/reader_rlp.h"
 #include "scip/reader_sol.h"
-#include "scip/reader_cip.h"
+#include "scip/reader_wbo.h"
+#include "scip/reader_zpl.h"
 
 #if USESEPA
 #include "scip/sepa_clique.h"
@@ -210,10 +224,24 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
    SCIP_CALL( SCIPincludeConshdlrXor(scip) );
 
+   SCIP_CALL( SCIPincludeReaderBnd(scip) );
+   SCIP_CALL( SCIPincludeReaderCcg(scip) );
    SCIP_CALL( SCIPincludeReaderCip(scip) );
+   SCIP_CALL( SCIPincludeReaderCnf(scip) );
+   SCIP_CALL( SCIPincludeReaderFix(scip) );
+   SCIP_CALL( SCIPincludeReaderFzn(scip) );
+   SCIP_CALL( SCIPincludeReaderGms(scip) );
    SCIP_CALL( SCIPincludeReaderLp(scip) );
-   SCIP_CALL( SCIPincludeReaderSol(scip) );
    SCIP_CALL( SCIPincludeReaderMps(scip) );
+   SCIP_CALL( SCIPincludeReaderOpb(scip) );
+   SCIP_CALL( SCIPincludeReaderOsil(scip) );
+   SCIP_CALL( SCIPincludeReaderPip(scip) );
+   SCIP_CALL( SCIPincludeReaderPpm(scip) );
+   SCIP_CALL( SCIPincludeReaderPbm(scip) );
+   SCIP_CALL( SCIPincludeReaderRlp(scip) );
+   SCIP_CALL( SCIPincludeReaderSol(scip) );
+   SCIP_CALL( SCIPincludeReaderWbo(scip) );
+   SCIP_CALL( SCIPincludeReaderZpl(scip) );
 
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
