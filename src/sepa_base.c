@@ -339,7 +339,7 @@ SCIP_RETCODE origScipInitObjOrig(
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
 
-   enableposslack = sepadata->posslackexp;
+   enableposslack = sepadata->enableposslack;
    posslackexp = sepadata->posslackexp;
 
    /** loop over original variables */
@@ -442,7 +442,7 @@ SCIP_RETCODE origScipChgObjAllRows(
    rows = SCIPgetLPRows(origscip);
    nrows = SCIPgetNLPRows(origscip);
 
-   enableposslack = sepadata->posslackexp;
+   enableposslack = sepadata->enableposslack;
    posslackexp = sepadata->posslackexp;
 
    assert(SCIPinDive(origscip));
