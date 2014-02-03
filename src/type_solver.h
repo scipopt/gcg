@@ -110,6 +110,7 @@ typedef struct GCG_Solver GCG_SOLVER;           /**< the solver */
  *  - nsols           : pointer to store number of solutions
  *  - result          : the result of the solving call:
  *                      - SCIP_STATUS_OPTIMAL if the problem was solved to optimality with a finite optimum
+ *                      - SCIP_STATUS_INFEASIBLE if the problem was proven to be infeasible
  *                      - SCIP_STATUS_UNBOUNDED if the problem was solved and is unbounded
  *                      - SCIP_STATUS_UNKNOWN if the solver was not applicable to the pricing problem or if the solving was stopped
  */

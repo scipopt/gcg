@@ -1850,12 +1850,17 @@ SCIP_RETCODE ObjPricerGcg::generateColumnsFromPricingProblem(
 
       SCIP_CALL( solvePricingProblem(prob, pricetype, optimal, lowerbound, sols, solisray, 1, nsols, status) ); /**@todo change 1 to maxsols if implemented */
 
-      if( *status == SCIP_STATUS_INFEASIBLE) /** @todo handle remaiming status */
+      if( *status == SCIP_STATUS_INFEASIBLE) /** @todo handle remaining status */
       {
          SCIPdebugMessage("The problem is infeasible\n");
          break;
       }
-      assert(*status == SCIP_STATUS_OPTIMAL);
+      /* can happen, e.g., due to time limit in pricing solver */
+      if( *status != SCIP_STATUS_OPTIMAL )
+      {
+         break;
+      }
+
 
       /* update objvalue for new solution */
       bestsol = sols[0];

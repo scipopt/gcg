@@ -208,6 +208,7 @@ SCIP_Bool problemIsInterrupted(
    return SCIPgetStatus(pricingprob) == SCIP_STATUS_USERINTERRUPT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_TIMELIMIT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_MEMLIMIT ||
+          SCIPgetStatus(pricingprob) == SCIP_STATUS_STALLNODELIMIT ||
           SCIPgetStatus(pricingprob) == SCIP_STATUS_UNKNOWN;
 }
 
@@ -329,8 +330,6 @@ SCIP_RETCODE solveProblem(
    }
    SCIPdebugMessage("MIP pricing solver: status = %d\n", SCIPgetStatus(pricingprob));
 
-   *status = SCIPgetStatus(pricingprob);
-
    /* all SCIP statuses handled so far */
    assert(SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL
       || SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT
@@ -371,14 +370,13 @@ SCIP_RETCODE solveProblem(
    else if( problemIsInterrupted(pricingprob) )
    {
       *nsols = 0;
-      *status = SCIPgetStatus(pricingprob);
+      *status = SCIP_STATUS_UNKNOWN;
    }
    /* the pricing problem has an unbounded solution but finite solution, resolve it and extract a finite solution if necessary */
    else if( problemHasUnboundedSolution(pricingprob) )
    {
       SCIP_SOL* sol = NULL;
       SCIP_Bool success = FALSE;
-      *status = SCIP_STATUS_UNKNOWN;
 
       SCIPdebugMessage("solution has infinite values, create a copy with finite values\n");
 
@@ -398,6 +396,7 @@ SCIP_RETCODE solveProblem(
       int nprobsols = SCIPgetNSols(pricingprob);;
 
       *nsols = 0;
+      *status = SCIP_STATUS_OPTIMAL;
 
       for( s = 0; s < nprobsols && s < maxsols; s++ )
       {
@@ -409,7 +408,9 @@ SCIP_RETCODE solveProblem(
          {
             SCIPwarningMessage(pricingprob, "solution of pricing problem %d not feasible:\n", probnr);
             SCIP_CALL( SCIPcheckSolOrig(pricingprob, probsols[s], &feasible, TRUE, TRUE) );
-            if( *status != SCIP_STATUS_OPTIMAL )
+
+            /* if the best solution is not feasible, we set the status to UNKNOWN */
+            if( s == 0 )
             {
                *status = SCIP_STATUS_UNKNOWN;
             }
@@ -432,8 +433,12 @@ SCIP_RETCODE solveProblem(
       if( (SCIPgetStatus(pricingprob) == SCIP_STATUS_OPTIMAL) || (SCIPgetStatus(pricingprob) == SCIP_STATUS_GAPLIMIT) )
          *lowerbound = SCIPgetDualbound(pricingprob);
 
-      *status = SCIP_STATUS_OPTIMAL;
       SCIPdebugMessage("pricingproblem found %d sols, lowerbound = %.4g!\n", *nsols, *lowerbound);
+   }
+   else
+   {
+      SCIPerrorMessage("invalid status of pricing problem %d: %d", probnr, SCIPgetStatus(pricingprob));
+      *status = SCIP_STATUS_UNKNOWN;
    }
 
    if( *nsols > 0 )
