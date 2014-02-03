@@ -83,7 +83,7 @@ SCIP_DECL_DIALOGEXEC(DialogReadPartition::scip_exec) {
    return SCIP_OKAY;
 }
 
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 DialogWriteGraphs<T,G>::DialogWriteGraphs(
    SCIP*              scip                /**< SCIP data structure */
 ):  ObjDialog(scip, G<T>(scip, Weights()).name.c_str(), "writes graph of given type", FALSE)
@@ -92,7 +92,7 @@ DialogWriteGraphs<T,G>::DialogWriteGraphs(
 }
 
 
-template<class T,template <class T> class G>
+template<class T,template <class T1> class G>
 SCIP_RETCODE DialogWriteGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, SCIP_DIALOGHDLR* dialoghdlr, SCIP_DIALOG** nextdialog)
 {
 
@@ -140,7 +140,7 @@ SCIP_RETCODE DialogWriteGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog,
    return SCIP_OKAY;
 }
 
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 DialogReadGraphs<T,G>::DialogReadGraphs(
    SCIP*              scip               /**< SCIP data structure */
 ): ObjDialog(scip, G<T>(scip, Weights()).name.c_str(), "reads graph of given type", FALSE)
@@ -148,7 +148,7 @@ DialogReadGraphs<T,G>::DialogReadGraphs(
    (void)static_cast<MatrixGraph<T>*>((G<T>*)0); /* assure we only get descendants of type Graph */
 }
 
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, SCIP_DIALOGHDLR* dialoghdlr, SCIP_DIALOG** nextdialog)
 {
 
@@ -190,7 +190,7 @@ SCIP_RETCODE DialogReadGraphs<T, G>::scip_exec(SCIP* scip, SCIP_DIALOG* dialog, 
 } /* namespace gcg */
 
 /** include the graph entries for both writing the graph and reading in the partition */
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 SCIP_RETCODE GCGincludeGraphEntries(
    SCIP*              scip                /**< SCIP data structure */
 )

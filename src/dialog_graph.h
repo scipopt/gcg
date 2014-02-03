@@ -73,7 +73,7 @@ public:
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 class DialogReadGraphs: public ObjDialog
 {
 private:
@@ -86,7 +86,7 @@ public:
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
 };
 
-template<class T, template <class T> class G>
+template<class T, template <class T1> class G>
 class DialogWriteGraphs: public ObjDialog
 {
 private:

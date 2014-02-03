@@ -70,7 +70,7 @@ HypercolGraph<T>::~HypercolGraph()
 template <class T>
 SCIP_RETCODE HypercolGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
-   SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
+   SCIP_Bool          edgeweights            /**< whether to write edgeweights */
  )
 {
    function f(this->nvars);

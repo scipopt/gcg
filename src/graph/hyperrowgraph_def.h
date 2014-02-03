@@ -72,7 +72,7 @@ HyperrowGraph<T>::~HyperrowGraph()
 template <class T>
 SCIP_RETCODE HyperrowGraph<T>::writeToFile(
    int                fd,                    /**< filename where the graph should be written to */
-   SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
+   SCIP_Bool          edgeweights            /**< whether to write edgeweights */
  )
 {
    FILE* file;
