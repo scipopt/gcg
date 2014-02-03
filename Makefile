@@ -245,9 +245,9 @@ CXXFLAGS	+=	-Wno-variadic-macros
 # Rules
 #-----------------------------------------------------------------------------
 .PHONY: all
-all:       $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK) |$(SCIPDIR)
+all:       libs $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK) |$(SCIPDIR)
 
-$(SCIPDIR)/make/make.project: |$(SCIPDIR);
+$(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
 -include make/local/make.targets
 
@@ -256,7 +256,7 @@ ifeq ($(VERBOSE),false)
 endif
 
 .PHONY: libs
-libs:		$(LINKSMARKERFILE) makegcglibfile $(GCGLIBSHORTLINK)
+libs:		$(LINKSMARKERFILE) makegcglibfile $(GCGLIBLINK) $(GCGLIBSHORTLINK)
 
 .PHONY: lint
 lint:		$(ALLSRC)
@@ -384,7 +384,12 @@ testdepend:: # do not remove double colon
 
 tests:: #do not remove double colon
 
-$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | libs $(BINDIR)
+$(GCGLIBLINK):	$(GCGLIBFILE)
+		@rm -f $@
+		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
+
+
+$(MAINFILE):	$(SCIPLIBFILE) $(LPILIBFILE) $(NLPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB) \
@@ -410,8 +415,8 @@ $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(OBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(BINOFLAGS) $(CXXFLAGS) -c $< $(CXX_o)$@
 
-.PHONY: makesgcgibfile
-makegcglibfile:  touchexternal | $(LIBOBJDIR) $(LIBDIR) $(LIBOBJSUBDIRS) $(GCGLIBFILE)
+.PHONY: makegcglibfile
+makegcglibfile:  touchexternal $(GCGLIBFILE)
 
 $(GCGLIBFILE):	$(GCGLIBOBJFILES)
 		@echo "-> generating library $@"
