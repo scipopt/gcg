@@ -288,6 +288,7 @@ SCIP_RETCODE filterInfiniteSolutions(
    return SCIP_OKAY;
 }
 
+/** solves the given pricing problem as a sub-SCIP */
 static
 SCIP_RETCODE solveProblem(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
