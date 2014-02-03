@@ -368,7 +368,7 @@ SCIP_RETCODE getRootRelaxSol(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* allocate memory for master root LP solution */
@@ -635,7 +635,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DELAYED;

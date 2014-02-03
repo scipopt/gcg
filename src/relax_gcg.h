@@ -106,19 +106,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
    );
 
-/** creates the data for a variable of the original program */
-extern
-SCIP_RETCODE GCGrelaxCreateOrigVardata(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             var                 /**< pointer to variable object */
-   );
-
-/** creates the data for all variables of the original program */
-extern
-SCIP_RETCODE GCGrelaxCreateOrigVarsData(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
 /** transformes a constraint of the original problem into the master variable space and
  *  adds it to the master problem */
 extern
@@ -128,37 +115,29 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    SCIP_CONS**           transcons           /**< pointer to the transformed constraint */
    );
 
-
-/** marks the constraint to be a master constraint */
-extern
-SCIP_RETCODE GCGrelaxMarkConsMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< constraint that is forced to be in the master */
-   );
-
 /** returns the master problem */
 extern
-SCIP* GCGrelaxGetMasterprob(
+SCIP* GCGgetMasterprob(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the pricing problem of the given number */
 extern
-SCIP* GCGrelaxGetPricingprob(
+SCIP* GCGgetPricingprob(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of pricing problems */
 extern
-int GCGrelaxGetNPricingprobs(
+int GCGgetNPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns TRUE iff the pricingproblem of the given number is relevant, that means is not identical to
  *  another and represented by it */
 extern
-SCIP_Bool GCGrelaxIsPricingprobRelevant(
+SCIP_Bool GCGisPricingprobRelevant(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
@@ -167,40 +146,40 @@ SCIP_Bool GCGrelaxIsPricingprobRelevant(
  *  for a given block, return the block by which it is represented
  */
 extern
-int GCGrelaxGetBlockRepresentative(
+int GCGgetBlockRepresentative(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of relevant pricing problems */
 extern
-int GCGrelaxGetNRelPricingprobs(
+int GCGgetNRelPricingprobs(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the number of blocks in the original formulation, that are represented by
  *  the pricingprob with the given number */
 extern
-int GCGrelaxGetNIdenticalBlocks(
+int GCGgetNIdenticalBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   pricingprobnr       /**< number of the pricing problem */
    );
 
 /** returns the number of constraints in the master problem */
 extern
-int GCGrelaxGetNMasterConss(
+int GCGgetNMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the contraints in the master problem */
 extern
-SCIP_CONS** GCGrelaxGetMasterConss(
+SCIP_CONS** GCGgetMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the contraints in the original problem that correspond to the constraints in the master problem */
 extern
-SCIP_CONS** GCGrelaxGetOrigMasterConss(
+SCIP_CONS** GCGgetOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -208,13 +187,13 @@ SCIP_CONS** GCGrelaxGetOrigMasterConss(
 /** returns the linear counterpart of the contraints in the original problem that correspond
  * to the constraints in the master problem */
 extern
-SCIP_CONS** GCGrelaxGetLinearOrigMasterConss(
+SCIP_CONS** GCGrgetLinearOrigMasterConss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns the convexity constraint for the given block */
 extern
-SCIP_CONS* GCGrelaxGetConvCons(
+SCIP_CONS* GCGgetConvCons(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   blocknr             /**< the number of the block for which we
                                               *   need the convexity constraint */
@@ -228,13 +207,13 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
 
 /** returns whether the master problem is a set covering problem */
 extern
-SCIP_Bool GCGrelaxIsMasterSetCovering(
+SCIP_Bool GCGisMasterSetCovering(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
 /** returns whether the master problem is a set partitioning problem */
 extern
-SCIP_Bool GCGrelaxIsMasterSetPartitioning(
+SCIP_Bool GCGisMasterSetPartitioning(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -329,19 +308,19 @@ SCIP_Bool GCGrelaxIsInitialized(
 
 /** return linking constraints for variables */
 extern
-SCIP_CONS** GCGrelaxGetLinkingconss(
+SCIP_CONS** GCGgetVarLinkingconss(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return blocks of linking constraints for variables */
 extern
-int* GCGrelaxGetLinkingconssBlock(
+int* GCGgetVarLinkingconssBlock(
    SCIP*                 scip                /**< SCIP data structure */
   );
 
 /** return number of linking constraints for variables */
 extern
-int GCGrelaxGetNLinkingconss(
+int GCGgetNVarLinkingconss(
    SCIP*                 scip                /**< SCIP data structure */
   );
 

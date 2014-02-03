@@ -83,7 +83,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    assert(sol != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* transfer solution to the master problem, but only if it is not from the relaxation */

@@ -515,7 +515,7 @@ SCIP_RETCODE applyProbing(
    assert(!solvelp || (lpsolved!=NULL && lpobjvalue!=NULL && lperror!=NULL));
 
    /* get SCIP data structure of master problem */
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* varsol = SCIPgetRelaxSolVal(scip, probingvar); */
@@ -1006,7 +1006,7 @@ SCIP_RETCODE execRelpsprob(
    SCIPdebugMessage("execrelpsprob method called\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n");
 
    /* get SCIP pointer of master problem */
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* get branching rule data */

@@ -876,7 +876,7 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    /* mark the corresponding master node to be repropagated */
    if( consdata->mastercons != NULL )
    {
-      SCIP_CALL( SCIPrepropagateNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
+      SCIP_CALL( SCIPrepropagateNode(GCGgetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
    }
 
    return SCIP_OKAY;

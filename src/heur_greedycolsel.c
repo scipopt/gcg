@@ -192,7 +192,7 @@ SCIP_RETCODE getBestMastervar(
       /* ignore the master variable if the corresponding block is already full
        * or which are fixed
        */
-      if( blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block )
+      if( blocknr[block] < GCGgetNIdenticalBlocks(origprob, block )
             && !ignored[i]
             && SCIPvarGetStatus(mastervar) != SCIP_VARSTATUS_FIXED
             && SCIPisFeasGE(scip, SCIPgetSolVal(scip, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
@@ -383,7 +383,7 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
    assert(heurdata != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(origprob);
 
    heurdata->lastncols = 0;
 
@@ -485,7 +485,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIPdebugMessage("Executing Greedy Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of pricing problems */
-   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(origprob);
    assert(nblocks >= 0);
 
    /* get master LP rows data */
@@ -717,7 +717,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       {
          int nidentblocks;
 
-         nidentblocks = GCGrelaxGetNIdenticalBlocks(origprob, i);
+         nidentblocks = GCGgetNIdenticalBlocks(origprob, i);
 
          /* in case the solution is feasible but the block is not full,
           * we need a zero solution for this block in order to generate

@@ -143,7 +143,7 @@ SCIP_RETCODE getNLocksDown(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -204,7 +204,7 @@ SCIP_RETCODE getNLocksUp(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */

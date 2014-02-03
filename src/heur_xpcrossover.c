@@ -269,11 +269,11 @@ SCIP_RETCODE selectExtremePoints(
    assert(success != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get variables of the master problem */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -337,7 +337,7 @@ SCIP_RETCODE selectExtremePoints(
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
 #ifndef NDEBUG
-      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+      nidentblocks = GCGgetNIdenticalBlocks(scip, block);
 #endif
 
       while( SCIPisFeasGE(scip, mastervals[i], 1.0) )
@@ -354,7 +354,7 @@ SCIP_RETCODE selectExtremePoints(
 
          /* search the next block to be considered */
          for( j = identblock[block] + 1; j < nblocks; ++j )
-            if( GCGrelaxGetBlockRepresentative(scip, j) == block )
+            if( GCGgetBlockRepresentative(scip, j) == block )
             {
                identblock[block] = j;
                break;
@@ -396,7 +396,7 @@ SCIP_RETCODE selectExtremePoints(
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
 #ifndef NDEBUG
-      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+      nidentblocks = GCGgetNIdenticalBlocks(scip, block);
 #endif
 
       assert(SCIPisFeasGE(scip, mastervals[i], 0.0) && SCIPisFeasLT(scip, mastervals[i], 1.0));
@@ -437,7 +437,7 @@ SCIP_RETCODE selectExtremePoints(
 
             /* search the next identical block to be considered */
             for( j = identblock[block] + 1; j < nblocks; ++j )
-               if( GCGrelaxGetBlockRepresentative(scip, j) == block )
+               if( GCGgetBlockRepresentative(scip, j) == block )
                {
                   identblock[block] = j;
                   break;
@@ -506,11 +506,11 @@ SCIP_RETCODE selectExtremePointsRandomized(
    assert(success != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get variables of the master problem */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -542,7 +542,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      if( GCGrelaxIsPricingprobRelevant(scip, i) && npts[i] <= nusedpts )
+      if( GCGisPricingprobRelevant(scip, i) && npts[i] <= nusedpts )
          *success = FALSE;
 
    /* do not randomize if there are not enough points available */
@@ -570,7 +570,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
          SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
 
          /* get representative of this block */
-         blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+         blockrep = GCGgetBlockRepresentative(scip, i);
          assert(blockrep >= 0 && blockrep <= i);
 
          /* get all relevant extreme points for this block */
@@ -661,10 +661,10 @@ SCIP_RETCODE printExtremePoints(
    assert(scip != NULL);
 
    /* get master problem, number of blocks and extreme points per block */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get variables of the master problem */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -884,7 +884,7 @@ SCIP_RETCODE fixVariables(
    assert(success != NULL);
 
    /* get master problem and its variables */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, NULL, NULL, NULL, NULL, NULL) );
    assert(mastervars != NULL);
@@ -892,7 +892,7 @@ SCIP_RETCODE fixVariables(
    /* get required data of the original problem */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
    nusedpts = heurdata->nusedpts;
    assert(nusedpts >= 2);
 
@@ -926,7 +926,7 @@ SCIP_RETCODE fixVariables(
       int norigvars;
 
       /* get the block that represents this block (in case of aggregation) */
-      blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+      blockrep = GCGgetBlockRepresentative(scip, i);
 
       /* at least one extreme point must have been selected */
       assert(selection[i * nusedpts] != -1);
@@ -1505,10 +1505,10 @@ SCIP_DECL_HEUREXEC(heurExecXpcrossover)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);

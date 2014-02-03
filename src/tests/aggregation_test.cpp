@@ -102,11 +102,11 @@ TEST_F(GcgAggregationTest, AggregateTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(2, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(0, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(2, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(0, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(FALSE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 
@@ -126,11 +126,11 @@ TEST_F(GcgAggregationTest, WrongObjTest) {
    ASSERT_EQ(SCIP_SUCCESS, result);
 
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 TEST_F(GcgAggregationTest, WrongTypeTest) {
@@ -150,11 +150,11 @@ TEST_F(GcgAggregationTest, WrongTypeTest) {
    SCIP_CALL_EXPECT( DECcreateDecompFromMasterconss(scip, &decomp, &(mastercons), 1) );
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 TEST_F(GcgAggregationTest, WrongBoundTest) {
@@ -175,11 +175,11 @@ TEST_F(GcgAggregationTest, WrongBoundTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 TEST_F(GcgAggregationTest, WrongCoeffSubproblemTest) {
@@ -200,11 +200,11 @@ TEST_F(GcgAggregationTest, WrongCoeffSubproblemTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
@@ -227,11 +227,11 @@ TEST_F(GcgAggregationTest, WrongCoeffMasterTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
@@ -254,11 +254,11 @@ TEST_F(GcgAggregationTest, NonSetppcMasterTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(2, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(0, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
-   ASSERT_EQ(FALSE, GCGrelaxIsPricingprobRelevant(scip, 1));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(2, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(0, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
+   ASSERT_EQ(FALSE, GCGisPricingprobRelevant(scip, 1));
 }
 
 TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
@@ -281,9 +281,9 @@ TEST_F(GcgAggregationTest, NonSetppcMasterWrongCoeffTest) {
    SCIP_CALL_EXPECT( SCIPconshdlrDecompAddDecdecomp(scip, decomp) );
    SCIP_CALL_EXPECT( SCIPsolve(scip) );
 
-   ASSERT_EQ(2, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 0));
-   ASSERT_EQ(1, GCGrelaxGetNIdenticalBlocks(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 1));
-   ASSERT_EQ(TRUE, GCGrelaxIsPricingprobRelevant(scip, 0));
+   ASSERT_EQ(2, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(1, GCGgetNIdenticalBlocks(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 1));
+   ASSERT_EQ(TRUE, GCGisPricingprobRelevant(scip, 0));
 }

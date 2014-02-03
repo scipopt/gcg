@@ -2789,7 +2789,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP in the original problem.\n");
       return SCIP_OKAY;
@@ -2827,7 +2827,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    nblocksrelevant = nblocks;
    for( b = 0; b < nblocks; ++b )
    {
-      if( GCGrelaxGetNIdenticalBlocks(scip, b) == 0 )
+      if( GCGgetNIdenticalBlocks(scip, b) == 0 )
          nblocksrelevant -= 1;
    }
 
@@ -2841,10 +2841,10 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
    for( b = 0; b < nblocks; ++b )
    {
-      if( GCGrelaxIsPricingprobRelevant(scip, b) )
+      if( GCGisPricingprobRelevant(scip, b) )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
-               DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, GCGrelaxGetNIdenticalBlocks(scip, b));
+               DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, GCGgetNIdenticalBlocks(scip, b));
       }
    }
 

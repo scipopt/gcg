@@ -139,7 +139,7 @@ SCIP_RETCODE branchVar(
    assert(branchrule != NULL);
    assert(branchvar != NULL);
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
    chgVarUbNodeup = FALSE;
    chgVarUbNodedown = FALSE;
@@ -172,7 +172,7 @@ SCIP_RETCODE branchVar(
 
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
-   branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
+   branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
    branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
@@ -180,7 +180,7 @@ SCIP_RETCODE branchVar(
 
    branchdowndata->origvar = branchvar;
    branchdowndata->oldvalue = solval;
-   branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
+   branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
@@ -287,7 +287,7 @@ SCIP_RETCODE branchExtern(
    SCIPdebugMessage("Execrel method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* get values of parameters */
@@ -329,7 +329,7 @@ SCIP_RETCODE branchExtern(
             continue;
 
          /* block is not unique (non-linking variables) */
-         if( !GCGvarIsLinking(branchcands[i]) && GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         if( !GCGvarIsLinking(branchcands[i]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
          /* check that blocks of linking variable are unique */
@@ -346,7 +346,7 @@ SCIP_RETCODE branchExtern(
 
             unique = TRUE;
             for( j = 0; j < nvarblocks; ++j )
-               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+               if( GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1 )
                   unique = FALSE;
 
             SCIPfreeBufferArray(scip, &varblocks);
@@ -502,8 +502,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
-   if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING
-      && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
+   if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
+      && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
    {
       SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar,
             SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue,
@@ -681,7 +681,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];
@@ -716,7 +716,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
             unique = TRUE;
             for( j = 0; j < nvarblocks; ++j )
-               if( GCGrelaxGetNIdenticalBlocks(origscip, varblocks[j]) != 1 )
+               if( GCGgetNIdenticalBlocks(origscip, varblocks[j]) != 1 )
                   unique = FALSE;
 
             SCIPfreeBufferArray(origscip, &varblocks);

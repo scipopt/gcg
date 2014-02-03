@@ -538,7 +538,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;

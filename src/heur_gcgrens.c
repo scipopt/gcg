@@ -741,7 +741,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    assert( result != NULL );
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert( masterprob != NULL);
 
    /* get heuristic data */

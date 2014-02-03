@@ -706,7 +706,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DELAYED;

@@ -71,7 +71,7 @@ Stabilization::~Stabilization()
 SCIP_RETCODE Stabilization::updateStabcenterconss()
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   int nconss = GCGrelaxGetNMasterConss(origprob);
+   int nconss = GCGgetNMasterConss(origprob);
 
    if( nconss == nstabcenterconss )
    {
@@ -147,9 +147,9 @@ SCIP_RETCODE Stabilization::linkingconsGetDual(
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
-   assert(nstabcenterlinkingconss<= GCGrelaxGetNLinkingconss(origprob));
+   assert(nstabcenterlinkingconss<= GCGgetNVarLinkingconss(origprob));
 
-   SCIP_CONS* cons = GCGrelaxGetLinkingconss(origprob)[i];
+   SCIP_CONS* cons = GCGgetVarLinkingconss(origprob)[i];
 
    *dual = computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
 
@@ -163,12 +163,12 @@ SCIP_RETCODE Stabilization::consGetDual(
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 #ifndef NDEBUG
-   int nconss =  GCGrelaxGetNMasterConss(origprob);
+   int nconss =  GCGgetNMasterConss(origprob);
 #endif
    assert(i < nconss);
    assert(dual != NULL);
 
-   SCIP_CONS* cons = GCGrelaxGetMasterConss(origprob)[i];
+   SCIP_CONS* cons = GCGgetMasterConss(origprob)[i];
 
    if( i >= nstabcenterconss )
       SCIP_CALL( updateStabcenterconss() );
@@ -210,9 +210,9 @@ SCIP_RETCODE Stabilization::convGetDual(
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
-   assert(nstabcenterconv<= GCGrelaxGetNPricingprobs(origprob));
+   assert(nstabcenterconv<= GCGgetNPricingprobs(origprob));
 
-   SCIP_CONS* cons = GCGrelaxGetConvCons(origprob, i);
+   SCIP_CONS* cons = GCGgetConvCons(origprob, i);
 
    *dual = computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons));
 
@@ -242,11 +242,11 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    /* get new dual values */
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 
-   int nconss = GCGrelaxGetNMasterConss(origprob);
+   int nconss = GCGgetNMasterConss(origprob);
    int ncuts = GCGsepaGetNCuts(scip_);
-   int nprobs = GCGrelaxGetNPricingprobs(origprob);
+   int nprobs = GCGgetNPricingprobs(origprob);
 
-   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
+   assert(nstabcenterlinkingconss <= GCGgetNVarLinkingconss(origprob) );
    assert(nconss <= nstabcenterconss);
    assert(ncuts <= nstabcentercuts);
 
@@ -273,7 +273,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nprobs; ++i )
    {
-      if(!GCGrelaxIsPricingprobRelevant(origprob, i))
+      if(!GCGisPricingprobRelevant(origprob, i))
          continue;
       SCIP_CALL( convGetDual(i, &dualsol) );
 
@@ -359,14 +359,14 @@ SCIP_Real Stabilization::calculateSubgradient(
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
-   SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origprob);
-   SCIP_CONS** masterconss = GCGrelaxGetMasterConss(origprob);
+   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origprob);
+   SCIP_CONS** masterconss = GCGgetMasterConss(origprob);
 
-   SCIP_CONS** linkingconss = GCGrelaxGetLinkingconss(origprob);
-   int nlinkingconss = GCGrelaxGetNLinkingconss(origprob);
-   int* linkingconsblocks = GCGrelaxGetLinkingconssBlock(origprob);
-   assert(nstabcenterlinkingconss <= GCGrelaxGetNLinkingconss(origprob) );
-   int nconss = GCGrelaxGetNMasterConss(origprob);
+   SCIP_CONS** linkingconss = GCGgetVarLinkingconss(origprob);
+   int nlinkingconss = GCGgetNVarLinkingconss(origprob);
+   int* linkingconsblocks = GCGgetVarLinkingconssBlock(origprob);
+   assert(nstabcenterlinkingconss <= GCGgetNVarLinkingconss(origprob) );
+   int nconss = GCGgetNMasterConss(origprob);
    assert(nconss <= nstabcenterconss);
    SCIP_ROW** mastercuts = GCGsepaGetMastercuts(scip_);
    SCIP_ROW** origmastercuts = GCGsepaGetOrigcuts(scip_);
@@ -405,12 +405,12 @@ SCIP_Real Stabilization::calculateSubgradient(
          else
          {
             int block = GCGvarGetBlock(vars[j]);
-            if( !GCGrelaxIsPricingprobRelevant(origprob, block) )
+            if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
 
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(vars[j]);
             assert(GCGvarIsPricing(pricingvar));
-            SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
+            SCIP* pricingprob = GCGgetPricingprob(origprob, block);
             assert(pricingprob != NULL);
             val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
@@ -467,12 +467,12 @@ SCIP_Real Stabilization::calculateSubgradient(
          else
          {
             int block = GCGvarGetBlock(var);
-            if( !GCGrelaxIsPricingprobRelevant(origprob, block) )
+            if( !GCGisPricingprobRelevant(origprob, block) )
                continue;
 
             SCIP_VAR* pricingvar = GCGoriginalVarGetPricingVar(var);
             assert(GCGvarIsPricing(pricingvar));
-            SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
+            SCIP* pricingprob = GCGgetPricingprob(origprob, block);
             assert(pricingprob != NULL);
             val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
@@ -508,7 +508,7 @@ SCIP_Real Stabilization::calculateSubgradient(
 
       pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(mastervar)[0])[block];
       assert(GCGvarIsPricing(pricingvar));
-      SCIP* pricingprob = GCGrelaxGetPricingprob(origprob, block);
+      SCIP* pricingprob = GCGgetPricingprob(origprob, block);
       assert(pricingprob != NULL);
 
       SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);

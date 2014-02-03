@@ -108,7 +108,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
+   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
@@ -167,7 +167,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
+   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
    SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
@@ -287,7 +287,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->pricecons != NULL )
    {
-      SCIP_CALL( SCIPreleaseCons(GCGrelaxGetPricingprob(scip, (*branchdata)->blocknr),
+      SCIP_CALL( SCIPreleaseCons(GCGgetPricingprob(scip, (*branchdata)->blocknr),
             &(*branchdata)->pricecons) );
    }
 
@@ -342,7 +342,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    origbranchcons = NULL;
    origbranchcons2 = NULL;
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    SCIPdebugMessage("Ryanfoster branching rule: branch on original variables %s and %s!\n",
@@ -464,7 +464,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(origscip) && !GCGrelaxIsMasterSetPartitioning(origscip) )
+   if( !GCGisMasterSetCovering(origscip) && !GCGisMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
@@ -701,7 +701,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(origscip) || !GCGrelaxIsMasterSetPartitioning(origscip) )
+   if( !GCGisMasterSetCovering(origscip) || !GCGisMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Not executing Ryanfoster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
