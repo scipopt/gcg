@@ -13,7 +13,6 @@
 #@author  Stefan Heinz
 #@author  Martin Bergner
 
-GCGGITHASHFILE	= 	$(SRCDIR)/githash.c
 GCGGITHASH	=	$(shell git describe --always --dirty  | sed -re 's/^.+-g//')
 
 .PHONY: githash
