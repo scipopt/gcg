@@ -3039,12 +3039,23 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
    assert(result != NULL);
 
    SCIPdebugMessage("Execps method of Vanderbecks generic branching\n");
-   SCIPerrorMessage("This method is not implemented, aborting since we cannot recover!");
-   SCIPdialogMessage(scip, NULL, "Due to numerical issues, the problem could not be solved.\n");
-   SCIPdialogMessage(scip, NULL, "You can try to disable discretization and aggregation and resolve the problem.\n");
 
-   *result = SCIP_DIDNOTRUN;
-   return SCIP_ERROR;
+   if( SCIPisStopped(scip) )
+   {
+      SCIPwarningMessage(scip, "No branching could be created, solving process cannot be restarted...\n" );
+
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+   else
+   {
+      SCIPerrorMessage("This method is not implemented, aborting since we cannot recover!\n");
+      SCIPdialogMessage(scip, NULL, "Due to numerical issues, the problem could not be solved.\n");
+      SCIPdialogMessage(scip, NULL, "You can try to disable discretization and aggregation and resolve the problem.\n");
+
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_ERROR;
+   }
 }
 
 /** initialization method of branching rule (called after problem was transformed) */
