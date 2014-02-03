@@ -275,19 +275,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
                                               *   primal feasible*/
    );
 
-/** returns the stored primal solution of the original problem  */
-extern
-SCIP_SOL* GCGrelaxGetOrigPrimalSol(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** sets the stored primal solution of the original problem  */
-extern
-void GCGrelaxSetOrigPrimalSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             sol                 /**< solution */
-   );
-
 /** sets the structure information */
 void GCGsetStructDecdecomp(
    SCIP*                 scip,               /**< SCIP data structure */

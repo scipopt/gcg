@@ -134,9 +134,6 @@ struct SCIP_RelaxData
    SCIP_HEUR*            probingheur;        /**< heuristic that started probing in master problem, or NULL */
    SCIP_SOL*             storedorigsol;      /**< orig solution that was stored from before the probing */
 
-   /* solution data */
-   SCIP_SOL*             origprimalsol;      /**< best original primal solution */
-
    /* structure information */
    DEC_DECOMP*           decdecomp;          /**< structure information */
    SCIP_Bool             relaxisinitialized; /**< indicates whether the relaxator is initialized */
@@ -1923,7 +1920,6 @@ void initRelaxdata(
    relaxdata->nrelpricingprobs = 0;
    relaxdata->currentorigsol = NULL;
    relaxdata->storedorigsol = NULL;
-   relaxdata->origprimalsol = NULL;
    relaxdata->nblocksidentical = NULL;
 
    relaxdata->lastmastersol = NULL;
@@ -2138,10 +2134,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
-      if( SCIPgetBestSol(scip) != NULL && SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) == 1 )
-      {
-         relaxdata->origprimalsol = SCIPgetBestSol(scip);
-      }
+
       /* increase the node limit for the master problem by 1 */
       SCIP_CALL( SCIPgetLongintParam(masterprob, "limits/nodes", &oldnnodes) );
       SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes",
@@ -3456,45 +3449,6 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    }
 
    return SCIP_OKAY;
-}
-
-/** returns the stored primal solution of the original problem  */
-SCIP_SOL* GCGrelaxGetOrigPrimalSol(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-
-   assert(scip != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   return relaxdata->origprimalsol;
-}
-
-/** sets the stored primal solution of the original problem  */
-void GCGrelaxSetOrigPrimalSol(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_SOL*             sol                 /**< solution */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-
-   assert(scip != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   relaxdata->origprimalsol = sol;
 }
 
 /** sets the structure information */
