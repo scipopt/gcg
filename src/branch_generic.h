@@ -81,13 +81,6 @@ SCIP_RETCODE GCGbranchGenericCreateBranchdata(
    GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
    );
 
-/** computes the generator of mastervar for the entry in origvar */
-extern
-SCIP_Real getGeneratorEntry(
-   SCIP_VAR*             mastervar,          /**< current mastervariable */
-   SCIP_VAR*             origvar             /**< corresponding origvar */
-   );
-
 /** get component bound sequence */
 extern
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(

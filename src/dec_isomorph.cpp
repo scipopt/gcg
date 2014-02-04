@@ -255,7 +255,7 @@ SCIP_RETCODE setuparrays(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       SCIP_Real* curvals;
-      int ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      int ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
       scons = new AUT_CONS(scip, conss[i]);
@@ -268,7 +268,7 @@ SCIP_RETCODE setuparrays(
          delete scons;
 
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
-      SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
+      GCGconsGetVals(scip, conss[i], curvals, ncurvars);
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
       {
@@ -322,7 +322,7 @@ static SCIP_RETCODE createGraph(
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
 
@@ -357,13 +357,13 @@ static SCIP_RETCODE createGraph(
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
       AUT_CONS scons(scip, conss[i]);
-      ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-      SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars);
+      GCGconsGetVars(scip, conss[i], curvars, ncurvars);
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
-      SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
+      GCGconsGetVals(scip, conss[i], curvals, ncurvars);
 
       for( j = 0; j < ncurvars; j++ )
       {

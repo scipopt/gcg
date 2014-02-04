@@ -38,8 +38,7 @@
 #include "bliss_automorph.h"
 #include "scip_misc.h"
 #include "scip/scip.h"
-#include "pub_gcgvar.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "scip/cons_linear.h"
 #include "pub_bliss.h"
 
@@ -359,7 +358,7 @@ SCIP_RETCODE setuparrays(
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
          SCIP_Real* curvals;
-         ncurvars = SCIPgetNVarsXXX(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
+         ncurvars = GCGconsGetNVars(scip, conss[i]);    //SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(origscip), SCIPgetNVars(scip1)+1) );
          if( ncurvars == 0 )
             continue;
          AUT_CONS* scons = new AUT_CONS(scip, conss[i]);
@@ -375,7 +374,7 @@ SCIP_RETCODE setuparrays(
             delete scons;
 
          SCIP_CALL( SCIPallocMemoryArray(origscip, &curvals, ncurvars));
-         SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
+         GCGconsGetVals(scip, conss[i], curvals, ncurvars);
          //save the properties of variables of the constraints in a struct array and in a sorted pointer array
          for( j = 0; j < ncurvars; j++ )
          {
@@ -414,8 +413,8 @@ SCIP_RETCODE setuparrays(
    }
 
    /* add color information for master constraints */
-   SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origscip);
-   int nmasterconss = GCGrelaxGetNMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   int nmasterconss = GCGgetNMasterConss(origscip);
 
    SCIP_CALL( reallocMemory(origscip, colorinfo, nmasterconss, SCIPgetNVars(origscip)) );
 
@@ -489,8 +488,8 @@ SCIP_RETCODE createGraph(
    BMSclearMemoryArray(nnodesoffset, nscips);
    BMSclearMemoryArray(mastercoefindex, nscips);
 
-   SCIP_CONS** origmasterconss = GCGrelaxGetLinearOrigMasterConss(origscip);
-   int nmasterconss = GCGrelaxGetNMasterConss(origscip);
+   SCIP_CONS** origmasterconss = GCGrgetLinearOrigMasterConss(origscip);
+   int nmasterconss = GCGgetNMasterConss(origscip);
 
    for( s = 0; s < nscips && *result == SCIP_SUCCESS; ++s)
    {
@@ -508,7 +507,7 @@ SCIP_RETCODE createGraph(
       //add a node for every constraint
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
-         ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+         ncurvars = GCGconsGetNVars(scip, conss[i]);
          if( ncurvars == 0 )
             continue;
 
@@ -541,13 +540,13 @@ SCIP_RETCODE createGraph(
       for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
       {
          int conscolor = colorinfo.get(AUT_CONS(scip, conss[i]));
-         ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+         ncurvars = GCGconsGetNVars(scip, conss[i]);
          if( ncurvars == 0 )
             continue;
          SCIP_CALL( SCIPallocMemoryArray(origscip, &curvars, ncurvars));
-         SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars);
+         GCGconsGetVars(scip, conss[i], curvars, ncurvars);
          SCIP_CALL( SCIPallocMemoryArray(origscip, &curvals, ncurvars));
-         SCIPgetValsXXX(scip, conss[i], curvals, ncurvars);
+         GCGconsGetVals(scip, conss[i], curvals, ncurvars);
          for( j = 0; j < ncurvars; j++ )
          {
             int varcolor = colorinfo.get( AUT_VAR(scip, curvars[j] ) ) + colorinfo.getLenCons();

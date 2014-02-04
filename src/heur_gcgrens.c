@@ -38,6 +38,7 @@
 #include <stdio.h>
 
 #include "heur_gcgrens.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
@@ -741,7 +742,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    assert( result != NULL );
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert( masterprob != NULL);
 
    /* get heuristic data */

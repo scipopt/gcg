@@ -376,7 +376,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
       if( mastersetname != NULL )
       {
-         SCIP_CALL( readParams(GCGrelaxGetMasterprob(scip), mastersetname) );
+         SCIP_CALL( readParams(GCGgetMasterprob(scip), mastersetname) );
       }
 
       /**************

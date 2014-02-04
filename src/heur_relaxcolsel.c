@@ -105,7 +105,7 @@ SCIP_RETCODE initializeStartsol(
    int k;
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get variable data of the master problem */
@@ -113,7 +113,7 @@ SCIP_RETCODE initializeStartsol(
    assert(nmastervars >= 0);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(origprob);
    assert( nblocks >= 0 );
 
    /* get master LP solution values */
@@ -481,7 +481,7 @@ SCIP_DECL_HEURINIT(heurInitRelaxcolsel)
    assert(scip != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */
@@ -489,7 +489,7 @@ SCIP_DECL_HEURINIT(heurInitRelaxcolsel)
    assert(heurdata != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(origprob);
 
    heurdata->lastncols = 0;
 
@@ -561,7 +561,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    assert(result != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */
@@ -594,7 +594,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIPdebugMessage("Executing Relaxation Based Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(origprob);
    assert(nblocks >= 0);
 
    /* allocate memory and create working solutions */
@@ -665,7 +665,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
             /* consider only variables whose block is not already full
              * or copied master variables */
-            if( block == -1 || blocknr[block] < GCGrelaxGetNIdenticalBlocks(origprob, block) )
+            if( block == -1 || blocknr[block] < GCGgetNIdenticalBlocks(origprob, block) )
             {
                mastervar = tmpvar;
                candidx = i;
@@ -887,7 +887,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       {
          int nidentblocks;
 
-         nidentblocks = GCGrelaxGetNIdenticalBlocks(origprob, i);
+         nidentblocks = GCGgetNIdenticalBlocks(origprob, i);
 
          /* in case the solution is feasible but the block is not full,
           * we need a zero solution for this block in order to generate

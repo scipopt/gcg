@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "heur_gcgsimplerounding.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 
@@ -149,7 +150,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;

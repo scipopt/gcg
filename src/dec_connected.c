@@ -97,21 +97,20 @@ SCIP_Bool isConsMaster(
    assert(cons != NULL);
 
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
-
-   if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+   if( GCGconsGetType(cons) == setcovering || GCGconsGetType(cons) == setpartitioning || GCGconsGetType(cons) == logicor )
    {
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;
    }
-   nvars = SCIPgetNVarsXXX(scip, cons);
+   nvars = GCGconsGetNVars(scip, cons);
    vars = NULL;
    vals = NULL;
    if( nvars > 0 )
    {
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
-      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
-      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars) );
    }
 
    /* check vars and vals for integrality */

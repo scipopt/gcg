@@ -83,7 +83,7 @@ SCIP_RETCODE getRootRelaxSol(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* allocate memory for master root LP solution */

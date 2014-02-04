@@ -369,7 +369,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    assert(SCIPhasCurrentNodeLP(scip));
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* get heuristic's data */

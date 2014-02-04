@@ -59,7 +59,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelOrig)
       {
          int nblocks;
 
-         nblocks = GCGrelaxGetNPricingprobs(scip);
+         nblocks = GCGgetNPricingprobs(scip);
          assert(nblocks > 0);
 
          assert((*vardata)->data.origvardata.linkingvardata != NULL);

@@ -155,11 +155,11 @@ SCIP_RETCODE selectExtremePoints(
 
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get variables of the master problem */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -205,7 +205,7 @@ SCIP_RETCODE selectExtremePoints(
 
       /* get number of blocks that are identical to this block */
       assert(block >= 0);
-      nidentblocks = GCGrelaxGetNIdenticalBlocks(scip, block);
+      nidentblocks = GCGgetNIdenticalBlocks(scip, block);
 
       value = value / nidentblocks;
 
@@ -267,11 +267,11 @@ SCIP_RETCODE selectExtremePointsRandomized(
    assert(success != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get number of blocks */
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get variables of the master problem */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
@@ -303,7 +303,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
          ++npts[block];
    }
    for( i = 0; i < nblocks; ++i )
-      if( GCGrelaxIsPricingprobRelevant(scip, i) && npts[i] <= nusedpts )
+      if( GCGisPricingprobRelevant(scip, i) && npts[i] <= nusedpts )
                *success = FALSE;
 
    /* do not randomize if there are not enough points available */
@@ -332,7 +332,7 @@ SCIP_RETCODE selectExtremePointsRandomized(
       SCIP_CALL( SCIPallocBufferArray(scip, &ptvals, npts[i]) );
 
       /* get representative of this block */
-      blockrep = GCGrelaxGetBlockRepresentative(scip, i);
+      blockrep = GCGgetBlockRepresentative(scip, i);
       assert(blockrep >= 0 && blockrep <= i);
 
       /* get all relevant extreme points for this block */
@@ -561,7 +561,7 @@ static SCIP_RETCODE fixVariables(
    assert(success != NULL);
 
    /* get master problem and its variables */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(mastervars != NULL);
@@ -570,7 +570,7 @@ static SCIP_RETCODE fixVariables(
    /* get required data of the original problem */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, &nbinvars, &nintvars, NULL, NULL) );
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
    nusedpts = heurdata->nusedpts;
    fixingcounter = 0;
    zerocounter = 0;
@@ -763,7 +763,7 @@ static SCIP_RETCODE fixVariables(
       for( i = 0; i < nblocks; ++i )
       {
          /* ignore blocks represented by others */
-         if( !GCGrelaxIsPricingprobRelevant(scip, i) )
+         if( !GCGisPricingprobRelevant(scip, i) )
             continue;
 
          /* compare the relaxation solution to the selected extreme points */
@@ -859,7 +859,7 @@ static SCIP_RETCODE fixVariables(
       solval = SCIPgetRelaxSolVal(scip, var);
 
       /* if the variable is represented by another one, it is not treated here */
-      if( block >= 0 && !GCGrelaxIsPricingprobRelevant(scip, block) )
+      if( block >= 0 && !GCGisPricingprobRelevant(scip, block) )
          continue;
 
       /* we still need to treat variables belonging to no block (as they did not appear in any extreme point);
@@ -1285,10 +1285,10 @@ SCIP_DECL_HEUREXEC(heurExecXprins)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
-   nblocks = GCGrelaxGetNPricingprobs(scip);
+   nblocks = GCGgetNPricingprobs(scip);
 
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);

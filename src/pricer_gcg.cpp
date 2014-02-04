@@ -190,7 +190,7 @@ SCIP_DECL_PARAMCHGD(paramChgdDisablecutoff)
    SCIP* masterprob;
    int newval;
 
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    newval = SCIPparamGetInt(param);
 
    SCIP_CALL( SCIPsetIntParam(masterprob, "lp/disablecutoff", newval) );
@@ -855,9 +855,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    int j;
 
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
-   nmasterconss = GCGrelaxGetNMasterConss(origprob);
-   masterconss = GCGrelaxGetMasterConss(origprob);
-   origconss = GCGrelaxGetLinearOrigMasterConss(origprob);
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
+   origconss = GCGrgetLinearOrigMasterConss(origprob);
 
    stabilize = (pricetype->getType() == GCG_PRICETYPE_REDCOST) && pricerdata->stabilization;
 
@@ -890,9 +890,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    int nlinkconss;
    SCIP_CONS** linkconss;
    int* linkconssblock;
-   nlinkconss = GCGrelaxGetNLinkingconss(origprob);
-   linkconss = GCGrelaxGetLinkingconss(origprob);
-   linkconssblock = GCGrelaxGetLinkingconssBlock(origprob);
+   nlinkconss = GCGgetNVarLinkingconss(origprob);
+   linkconss = GCGgetVarLinkingconss(origprob);
+   linkconssblock = GCGgetVarLinkingconssBlock(origprob);
 
    for( i = 0; i < nlinkconss; ++i)
    {
@@ -1032,18 +1032,18 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* get dual solutions / farkas values of the convexity constraints */
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      assert( GCGrelaxIsPricingprobRelevant(origprob, i) == (GCGrelaxGetConvCons(origprob, i) != NULL) );
-      if( !GCGrelaxIsPricingprobRelevant(origprob, i) )
+      assert( GCGisPricingprobRelevant(origprob, i) == (GCGgetConvCons(origprob, i) != NULL) );
+      if( !GCGisPricingprobRelevant(origprob, i) )
       {
          pricerdata->dualsolconv[i] = -1.0 * SCIPinfinity(scip_);
          continue;
       }
 
-      pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGrelaxGetConvCons(origprob, i));
+      pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
 #ifdef PRINTDUALSOLS
-      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
+      if( GCGisPricingprobRelevant(origprob, i) )
       {
-         SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGrelaxGetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
+         SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGgetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
       }
 #endif
    }
@@ -1069,8 +1069,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMasterconstraints(
    SCIP_Real* mastercoefs;
    SCIP_CONS* linkcons;
 
-   nmasterconss = GCGrelaxGetNMasterConss(origprob);
-   masterconss = GCGrelaxGetMasterConss(origprob);
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
 
    SCIP_CALL( SCIPallocBufferArray(scip_, &mastercoefs, nmasterconss) );
    BMSclearMemoryArray(mastercoefs, nmasterconss);
@@ -1293,8 +1293,8 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    int i;
 
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
-   nmasterconss = GCGrelaxGetNMasterConss(origprob);
-   masterconss = GCGrelaxGetMasterConss(origprob);
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
 
    dualobjval = 0.0;
 
@@ -1304,15 +1304,15 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
 
    int nlinkconss;
    SCIP_CONS** linkconss;
-   nlinkconss = GCGrelaxGetNLinkingconss(origprob);
-   linkconss = GCGrelaxGetLinkingconss(origprob);
+   nlinkconss = GCGgetNVarLinkingconss(origprob);
+   linkconss = GCGgetVarLinkingconss(origprob);
 
    for( i = 0; i < nlinkconss; ++i)
    {
       SCIP_CONS* linkcons = linkconss[i];
 #ifndef NDEBUG
       SCIP_VAR** linkconsvars;
-      int block = GCGrelaxGetLinkingconssBlock(origprob)[i];
+      int block = GCGgetVarLinkingconssBlock(origprob)[i];
 
       linkconsvars = SCIPgetVarsLinear(scip_, linkcons);
 
@@ -1506,7 +1506,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    /* add variable to convexity constraint */
    if( !solisray )
    {
-      SCIP_CALL( SCIPaddCoefLinear(scip, GCGrelaxGetConvCons(origprob, prob), newvar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, GCGgetConvCons(origprob, prob), newvar, 1.0) );
    }
 
    if( addedvar != NULL )
@@ -2017,10 +2017,10 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
             if( !solisray[prob][0] )
             {
                #pragma omp atomic
-               dualconvsum += GCGrelaxGetNIdenticalBlocks(origprob, prob) * convdual;
+               dualconvsum += GCGgetNIdenticalBlocks(origprob, prob) * convdual;
             }
             #pragma omp atomic
-            bestredcost += GCGrelaxGetNIdenticalBlocks(origprob, prob) * computeRedCost(pricetype, sols[prob][0], solisray[prob][0], prob, NULL);
+            bestredcost += GCGgetNIdenticalBlocks(origprob, prob) * computeRedCost(pricetype, sols[prob][0], solisray[prob][0], prob, NULL);
 
          }
 
@@ -2151,8 +2151,8 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
          /** add variable only if we cannot abort */
          if( (nfoundvarsprob <= pricerdata->maxsolsprob &&
              (pricetype->getType() == GCG_PRICETYPE_REDCOST || nfoundvars < pricetype->getMaxvarsround()) &&
-             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || isRootNode(scip_) ) &&
-             (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !isRootNode(scip_))))) )
+             (pricetype->getType() == GCG_PRICETYPE_FARKAS || ((nfoundvars < pricetype->getMaxvarsround() || GCGisRootNode(scip_) ) &&
+             (nfoundvars < reducedcostpricing->getMaxvarsroundroot() || !GCGisRootNode(scip_))))) )
          {
             SCIP_VAR** solvars = SCIPgetOrigVars(pricerdata->pricingprobs[prob]);
             int nsolvars = SCIPgetNOrigVars(pricerdata->pricingprobs[prob]);
@@ -2287,7 +2287,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 
    SCIPdebugMessage("%s pricing: found %d new vars\n", (pricetype->getType() == GCG_PRICETYPE_REDCOST ? "Redcost" : "Farkas"), nfoundvars);
 
-   if( isRootNode(scip_) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
+   if( GCGisRootNode(scip_) && pricetype->getType() == GCG_PRICETYPE_REDCOST && pricetype->getCalls() > 0 )
    {
       double degeneracy = 0.0;
 
@@ -2395,11 +2395,11 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    pricerdata->currnodenr = -1;
    pricerdata->eagerage = 0;
 
-   nmasterconss = GCGrelaxGetNMasterConss(origprob);
-   masterconss = GCGrelaxGetMasterConss(origprob);
+   nmasterconss = GCGgetNMasterConss(origprob);
+   masterconss = GCGgetMasterConss(origprob);
 
    /* init array containing all pricing problems */
-   pricerdata->npricingprobs = GCGrelaxGetNPricingprobs(origprob);
+   pricerdata->npricingprobs = GCGgetNPricingprobs(origprob);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->nraysprob), pricerdata->npricingprobs) );
@@ -2435,9 +2435,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->redcostnodetimedist[i]= 0;
 
 
-      if( GCGrelaxIsPricingprobRelevant(origprob, i) )
+      if( GCGisPricingprobRelevant(origprob, i) )
       {
-         pricerdata->pricingprobs[i] = GCGrelaxGetPricingprob(origprob, i);
+         pricerdata->pricingprobs[i] = GCGgetPricingprob(origprob, i);
          pricerdata->npricingprobsnotnull++;
          SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->realdualvalues[i]), SCIPgetNVars(pricerdata->pricingprobs[i])) );
       }
@@ -2496,8 +2496,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( solversInitsol() );
 
    createStabilization();
-   SCIP_CALL( stabilization->setNLinkingconss(GCGrelaxGetNLinkingconss(origprob)) );
-   SCIP_CALL( stabilization->setNConvconss(GCGrelaxGetNPricingprobs(origprob)) );
+   SCIP_CALL( stabilization->setNLinkingconss(GCGgetNVarLinkingconss(origprob)) );
+   SCIP_CALL( stabilization->setNConvconss(GCGgetNPricingprobs(origprob)) );
 
    SCIP_CALL( SCIPactivateEventHdlrDisplay(scip_) );
 
@@ -2652,7 +2652,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
       for( i = 0; i < norigsols; ++i )
       {
          assert(origsols[i] != NULL);
-         SCIP_CALL( GCGpricerTransOrigSolToMasterVars(scip, origsols[i]) );
+         SCIP_CALL( GCGmasterTransOrigSolToMasterVars(scip, origsols[i]) );
       }
       /* return if we transferred solutions as the master should be feasible */
       if( norigsols > 0 )
@@ -2764,7 +2764,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 }
 
 /** returns the pointer to the scip instance representing the original problem */
-SCIP* GCGpricerGetOrigprob(
+SCIP* GCGmasterGetOrigprob(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2779,7 +2779,7 @@ SCIP* GCGpricerGetOrigprob(
 }
 
 /** returns the array of variables that were priced in during the solving process */
-SCIP_VAR** GCGpricerGetPricedvars(
+SCIP_VAR** GCGmasterGetPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2798,7 +2798,7 @@ SCIP_VAR** GCGpricerGetPricedvars(
 }
 
 /** returns the number of variables that were priced in during the solving process */
-int GCGpricerGetNPricedvars(
+int GCGmasterGetNPricedvars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -2818,7 +2818,7 @@ int GCGpricerGetNPricedvars(
 
 
 /** adds the given constraint and the given position to the hashmap of the pricer */
-SCIP_RETCODE GCGpricerAddMasterconsToHashmap(
+SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< the constraint that should be added */
    int                   pos                 /**< the position of the constraint in the relaxator's masterconss array */
@@ -3067,7 +3067,7 @@ void GCGpricerPrintStatistics(
 
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
-SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
+SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             origsol             /**< the solution that should be transferred */
    )
@@ -3098,7 +3098,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
    /* now compute coefficients of the master variables in the master constraint */
@@ -3185,7 +3185,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
       SCIP_CALL( pricer->createNewMasterVar(scip, NULL, NULL, pricingvars[prob], pricingvals[prob], npricingvars[prob], FALSE, prob, TRUE, &added, &newvar) );
       assert(added);
 
-      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGrelaxGetNIdenticalBlocks(origprob, prob)) );
+      SCIP_CALL( SCIPsetSolVal(scip, mastersol, newvar, 1.0 * GCGgetNIdenticalBlocks(origprob, prob)) );
    }
 
 #ifdef SCIP_DEBUG
@@ -3217,7 +3217,7 @@ SCIP_RETCODE GCGpricerTransOrigSolToMasterVars(
 
 
 /** create initial master variables */
-SCIP_RETCODE GCGpricerCreateInitialMastervars(
+SCIP_RETCODE GCGmasterCreateInitialMastervars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3237,7 +3237,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
    origprob = pricer->getOrigprob();
    assert(origprob != NULL);
 
-   npricingprobs = GCGrelaxGetNPricingprobs(origprob);
+   npricingprobs = GCGgetNPricingprobs(origprob);
    assert(npricingprobs >= 0);
 
    /* for variables in the original problem that do not belong to any block,
@@ -3301,7 +3301,7 @@ SCIP_RETCODE GCGpricerCreateInitialMastervars(
 }
 
 /** get root node degeneracy */
-SCIP_Real GCGpricerGetDegeneracy(
+SCIP_Real GCGmasterGetDegeneracy(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3316,7 +3316,7 @@ SCIP_Real GCGpricerGetDegeneracy(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && isRootNode(scip) )
+   if( SCIPgetStage(scip) >= SCIP_STAGE_INITPRESOLVE && SCIPgetStage(scip) <= SCIP_STAGE_SOLVING && GCGisRootNode(scip) )
    {
       return pricerdata->avgrootnodedegeneracy;
    }
@@ -3325,7 +3325,7 @@ SCIP_Real GCGpricerGetDegeneracy(
 }
 
 /* get number of iterations in pricing problems */
-SCIP_Longint GCGpricerGetPricingSimplexIters(
+SCIP_Longint GCGmasterGetPricingSimplexIters(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3345,7 +3345,7 @@ SCIP_Longint GCGpricerGetPricingSimplexIters(
 
 /** print simplex iteration statistics */
 extern
-SCIP_RETCODE GCGpricerPrintSimplexIters(
+SCIP_RETCODE GCGmasterPrintSimplexIters(
    SCIP*                 scip,               /**< SCIP data structure */
    FILE*                 file                /**< output file */
    )

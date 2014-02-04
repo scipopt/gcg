@@ -38,6 +38,7 @@
 
 #include "branch_empty.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "scip/branch_allfullstrong.h"
@@ -51,7 +52,6 @@
 #include "pricer_gcg.h"
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
 
 #define BRANCHRULE_NAME          "empty"
 #define BRANCHRULE_DESC          "empty branching in generic column generation"
@@ -159,16 +159,16 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    SCIP_CALL( SCIPreleaseCons(scip, &origbranch) );
 
    if( norigbranchcons > 0 )
-      SCIPfreeMemoryArrayNull(GCGrelaxGetMasterprob(scip), &origbranchcons);
+      SCIPfreeMemoryArrayNull(GCGgetMasterprob(scip), &origbranchcons);
 
-   if( SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))) )
+   if( SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) != SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))) )
    {
       SCIPdebugMessage("norignodes = %d; nmasternodes = %d\n",
          (int) SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))),
-         (int) SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))));
+         (int) SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGgetMasterprob(scip)))));
    }
 
-   assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGrelaxGetMasterprob(scip)));
+   assert(SCIPgetNNodes(scip) == SCIPgetNNodes(GCGgetMasterprob(scip)));
    /*assert(SCIPnodeGetNumber(GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(scip))) == SCIPnodeGetNumber(GCGconsMasterbranchGetNode(GCGconsMasterbranchGetActiveCons(GCGrelaxGetMasterprob(scip)))));*/
 
    return SCIP_OKAY;
@@ -217,7 +217,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
    }
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);

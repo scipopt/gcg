@@ -182,7 +182,7 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
 
    for( i = 0; i < nallvars; ++i )
    {
-      if( SCIPisVarRelevant(allvars[i]) )
+      if( GCGisVarRelevant(allvars[i]) )
       {
          relvars[j] = SCIPvarGetProbvar(allvars[i]);
          SCIP_CALL( SCIPhashmapInsert(vartopos, SCIPvarGetProbvar(allvars[i]), (void*) (size_t) j) );
@@ -204,17 +204,17 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
          continue;
       }
 
-      nvars = SCIPgetNVarsXXX(scip, conss[i]);
+      nvars = GCGconsGetNVars(scip, conss[i]);
       if( nvars > 0 )
       {
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], vars, nvars) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[i], vars, nvars) );
       }
       ishandled = FALSE;
 
       for( j = 0; (j < nvars) && (ishandled == FALSE); ++j )
       {
-         ishandled = SCIPisVarRelevant(vars[j]);
+         ishandled = GCGisVarRelevant(vars[j]);
       }
 
       if( ishandled )
@@ -257,12 +257,12 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
 
    for( i = 0; i < k; ++i )
    {
-      nvars = SCIPgetNVarsXXX(scip, detectordata->graphs[0].conss[i]);
+      nvars = GCGconsGetNVars(scip, detectordata->graphs[0].conss[i]);
       SCIP_CALL( SCIPallocMemoryArray(scip,&vars,nvars) );
-      SCIP_CALL( SCIPgetVarsXXX(scip,detectordata->graphs[0].conss[i], vars, nvars) );
+      SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], vars, nvars) );
       for( j = 0; j < nvars; ++j )
       {
-         if( SCIPisVarRelevant(vars[j]) )
+         if( GCGisVarRelevant(vars[j]) )
          {
             (varinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))])[nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))]] = detectordata->graphs[0].conss[i];
             ++nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))];
@@ -1089,13 +1089,13 @@ SCIP_RETCODE GetConsindex(
    {
       for( i = 0; i < detectordata->nsubscipconss[block - 1]; ++i )
       {
-         nvars = SCIPgetNVarsXXX(scip, detectordata->subscipconss[block - 1][i]);
+         nvars = GCGconsGetNVars(scip, detectordata->subscipconss[block - 1][i]);
          SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, detectordata->subscipconss[block - 1][i], vars, nvars) );
+         SCIP_CALL( GCGconsGetVars(scip, detectordata->subscipconss[block - 1][i], vars, nvars) );
 
          for( j = 0; j < nvars; ++j )
          {
-            while( (!SCIPisVarRelevant(vars[j])) && (j < nvars) )
+            while( (!GCGisVarRelevant(vars[j])) && (j < nvars) )
             {
                ++j;
             }
@@ -1211,7 +1211,7 @@ static SCIP_RETCODE GetLinkingVars(
       int oldblock;
       SCIP_Bool stop;
 
-      while( !SCIPisVarRelevant(SCIPgetVars(scip)[i]) )
+      while( !GCGisVarRelevant(SCIPgetVars(scip)[i]) )
       {
          ++i;
       }

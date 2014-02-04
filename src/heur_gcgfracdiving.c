@@ -147,7 +147,7 @@ SCIP_RETCODE getMasterDownFrac(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -217,7 +217,7 @@ SCIP_RETCODE getMasterUpFrac(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */

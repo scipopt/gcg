@@ -41,13 +41,12 @@
 
 #include "cons_decomp.h"
 #include "dec_connected.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "struct_detector.h"
 #include "string.h"
 #include "scip_misc.h"
 #include "scip/clock.h"
-#include "pub_gcgvar.h"
-#include "pub_decomp.h"
+
 
 /* constraint handler properties */
 #define CONSHDLR_NAME          "decomp"

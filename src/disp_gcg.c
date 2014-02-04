@@ -409,7 +409,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolFound)
    assert(scip != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    origsol = SCIPgetBestSol(scip);
@@ -515,8 +515,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
       SCIPinfoMessage(scip, file, "     - ");
    else
       SCIPinfoMessage(scip, file, "%6.1f ",
-         (SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)) - SCIPgetNRootLPIterations(GCGrelaxGetMasterprob(scip)))
-         / (SCIP_Real)(SCIPgetNNodes(GCGrelaxGetMasterprob(scip)) - 1) );
+         (SCIPgetNLPIterations(GCGgetMasterprob(scip)) - SCIPgetNRootLPIterations(GCGgetMasterprob(scip)))
+         / (SCIP_Real)(SCIPgetNNodes(GCGgetMasterprob(scip)) - 1) );
 
    return SCIP_OKAY;
 }
@@ -574,10 +574,10 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemUsed)
    assert(scip != NULL);
 
    memused = SCIPgetMemUsed(scip);
-   memused += SCIPgetMemUsed(GCGrelaxGetMasterprob(scip));
-   for( i = 0; i < GCGrelaxGetNPricingprobs(scip); i++ )
+   memused += SCIPgetMemUsed(GCGgetMasterprob(scip));
+   for( i = 0; i < GCGgetNPricingprobs(scip); i++ )
    {
-      memused += SCIPgetMemUsed(GCGrelaxGetPricingprob(scip, i));
+      memused += SCIPgetMemUsed(GCGgetPricingprob(scip, i));
    }
 
    SCIPdispLongint(SCIPgetMessagehdlr(scip), file, memused, DISP_WIDT_MEMUSED);
@@ -726,9 +726,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNSepaRounds)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SEPAROUNDS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGrelaxGetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGgetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
    }
    else
    {
@@ -746,9 +746,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputCutPoolSize)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_POOLSIZE) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGrelaxGetMasterprob(scip)), DISP_WIDT_POOLSIZE);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGgetMasterprob(scip)), DISP_WIDT_POOLSIZE);
    }
    else
    {
@@ -815,13 +815,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputLPObjval)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPOBJ) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) != SCIP_STAGE_SOLVING || SCIPgetLPSolstat(GCGrelaxGetMasterprob(scip)) == SCIP_LPSOLSTAT_NOTSOLVED )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) != SCIP_STAGE_SOLVING || SCIPgetLPSolstat(GCGgetMasterprob(scip)) == SCIP_LPSOLSTAT_NOTSOLVED )
    {
       SCIPinfoMessage(scip, file, "      --      ");
    }
    else
    {
-      SCIP_Real lpobj = SCIPgetLPObjval(GCGrelaxGetMasterprob(scip));
+      SCIP_Real lpobj = SCIPgetLPObjval(GCGgetMasterprob(scip));
       if( SCIPisInfinity(scip, -lpobj) )
          SCIPinfoMessage(scip, file, "      --      ");
       else if( SCIPisInfinity(scip, lpobj) )
@@ -987,11 +987,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSlpiterations)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
 
    if( masterprob != NULL && SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGpricerGetPricingSimplexIters(masterprob), DISP_WIDT_SLPITERATIONS);
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGmasterGetPricingSimplexIters(masterprob), DISP_WIDT_SLPITERATIONS);
    }
    else
    {
@@ -1072,9 +1072,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(GCGgetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
    }
    else
    {
@@ -1092,9 +1092,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MVARS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MVARS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGgetMasterprob(scip)), DISP_WIDT_MVARS);
    }
    else
    {
@@ -1112,9 +1112,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCONSS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCONSS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGgetMasterprob(scip)), DISP_WIDT_MCONSS);
    }
    else
    {
@@ -1132,9 +1132,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCUTS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGrelaxGetMasterprob(scip)), DISP_WIDT_MCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(scip)), DISP_WIDT_MCUTS);
    }
    else
    {

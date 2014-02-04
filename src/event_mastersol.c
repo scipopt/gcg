@@ -35,6 +35,7 @@
 #include <string.h>
 #include "event_mastersol.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 #define EVENTHDLR_NAME         "mastersol"
@@ -83,13 +84,13 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    assert(sol != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* transfer solution to the master problem, but only if it is not from the relaxation */
    if( SCIPsolGetHeur(sol) != NULL && SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED)
    {
-      SCIP_CALL( GCGpricerTransOrigSolToMasterVars(masterprob, sol) );
+      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol) );
    }
    return SCIP_OKAY;
 }

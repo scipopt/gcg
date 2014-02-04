@@ -51,6 +51,7 @@
 #include "cons_masterbranch.h"
 #include "cons_integralorig.h"
 #include "pricer_gcg.h"
+#include "gcg.h"
 
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"
@@ -515,7 +516,7 @@ SCIP_RETCODE applyProbing(
    assert(!solvelp || (lpsolved!=NULL && lpobjvalue!=NULL && lperror!=NULL));
 
    /* get SCIP data structure of master problem */
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* varsol = SCIPgetRelaxSolVal(scip, probingvar); */
@@ -1006,7 +1007,7 @@ SCIP_RETCODE execRelpsprob(
    SCIPdebugMessage("execrelpsprob method called\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n");
 
    /* get SCIP pointer of master problem */
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* get branching rule data */
@@ -1487,7 +1488,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
    SCIPdebugMessage("include method of branchrelpsprob called.\n");
 
    assert(scip != NULL);
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /* create relpsprob branching rule data */
@@ -1591,7 +1592,7 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    /* find branching rule */
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /* execute branching rule */

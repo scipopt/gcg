@@ -86,7 +86,7 @@ SCIP_RETCODE getRootRelaxSol(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* allocate memory for master root LP solution */
@@ -126,7 +126,7 @@ SCIP_RETCODE calcMasterPscosts(
    int j;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable data */
@@ -241,7 +241,7 @@ SCIP_RETCODE calcPscostDownMaster(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -315,7 +315,7 @@ SCIP_RETCODE calcPscostUpMaster(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */

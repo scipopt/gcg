@@ -1544,9 +1544,9 @@ SCIP_RETCODE DECdecompCheckConsistency(
          SCIPdebugMessage("Cons <%s> in block %d = %d\n", SCIPconsGetName(cons), b, ((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1);  /*lint !e507*/
          assert(SCIPfindCons(scip, SCIPconsGetName(cons)) != NULL);
          assert(((int) (size_t) SCIPhashmapGetImage(DECdecompGetConstoblock(decdecomp), cons)) -1 == b); /*lint !e507*/
-         ncurvars = SCIPgetNVarsXXX(scip, cons);
+         ncurvars = GCGconsGetNVars(scip, cons);
          SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
 
          for( v = 0; v < ncurvars; ++v )
          {
@@ -1720,12 +1720,12 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
          continue;
 
       /* get variables of constraint */
-      ncurvars = SCIPgetNVarsXXX(scip, cons);
+      ncurvars = GCGconsGetNVars(scip, cons);
       curvars = NULL;
       if (ncurvars > 0)
       {
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, cons, curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, cons, curvars, ncurvars) );
       }
       assert(ncurvars >= 0);
       assert(ncurvars <= SCIPgetNVars(scip));
@@ -2351,12 +2351,12 @@ SCIP_RETCODE DECgetVarLockData(
          SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
          SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
 
-         SCIP_CALL( SCIPgetValsXXX(scip, curconss[j], curvals, ncurvars) );
+         SCIP_CALL( GCGconsGetVals(scip, curconss[j], curvals, ncurvars) );
          SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
          assert(success);
 
-         rhs = SCIPgetRhsXXX(scip, curconss[j]);
-         lhs = SCIPgetLhsXXX(scip, curconss[j]);
+         rhs = GCGconsGetRhs(scip, curconss[j]);
+         lhs = GCGconsGetLhs(scip, curconss[j]);
 
          for( v = 0; v < ncurvars; ++v )
          {
@@ -2386,12 +2386,12 @@ SCIP_RETCODE DECgetVarLockData(
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
 
-      SCIP_CALL( SCIPgetValsXXX(scip, curconss[j], curvals, ncurvars) );
+      SCIP_CALL( GCGconsGetVals(scip, curconss[j], curvals, ncurvars) );
       SCIP_CALL( SCIPgetConsVars(scip, curconss[j], curvars, ncurvars, &success) );
       assert(success);
 
-      rhs = SCIPgetRhsXXX(scip, curconss[j]);
-      lhs = SCIPgetLhsXXX(scip, curconss[j]);
+      rhs = GCGconsGetRhs(scip, curconss[j]);
+      lhs = GCGconsGetLhs(scip, curconss[j]);
 
       for( v = 0; v < ncurvars; ++v )
       {
@@ -2487,19 +2487,19 @@ SCIP_RETCODE DECevaluateDecomposition(
          SCIP_VAR** curvars;
          SCIP_VAR* var;
          int ncurvars;
-         ncurvars = SCIPgetNVarsXXX(scip, curconss[j]);
+         ncurvars = GCGconsGetNVars(scip, curconss[j]);
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, curconss[j], curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, curconss[j], curvars, ncurvars) );
 
          for( k = 0; k < ncurvars; ++k )
          {
             int block;
-            if( !SCIPisVarRelevant(curvars[k]) )
+            if( !GCGisVarRelevant(curvars[k]) )
                continue;
 
             var = SCIPvarGetProbvar(curvars[k]);
             assert(var != NULL);
-            if( !SCIPisVarRelevant(var) )
+            if( !GCGisVarRelevant(var) )
                continue;
 
             assert(SCIPvarIsActive(var));
@@ -2789,7 +2789,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) < SCIP_STAGE_PRESOLVED )
    {
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "No Dantzig-Wolfe reformulation applied. The problem was most likely already solved by the LP in the original problem.\n");
       return SCIP_OKAY;
@@ -2827,7 +2827,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    nblocksrelevant = nblocks;
    for( b = 0; b < nblocks; ++b )
    {
-      if( GCGrelaxGetNIdenticalBlocks(scip, b) == 0 )
+      if( GCGgetNIdenticalBlocks(scip, b) == 0 )
          nblocksrelevant -= 1;
    }
 
@@ -2841,10 +2841,10 @@ SCIP_RETCODE GCGprintDecompStatistics(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
    for( b = 0; b < nblocks; ++b )
    {
-      if( GCGrelaxIsPricingprobRelevant(scip, b) )
+      if( GCGisPricingprobRelevant(scip, b) )
       {
          SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10lld        : %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
-               DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, GCGrelaxGetNIdenticalBlocks(scip, b));
+               DECdecompGetNSubscipconss(decomp)[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, GCGgetNIdenticalBlocks(scip, b));
       }
    }
 

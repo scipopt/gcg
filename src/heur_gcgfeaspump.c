@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "heur_gcgfeaspump.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "gcgplugins.h"
 
@@ -706,7 +707,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DELAYED;

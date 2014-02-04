@@ -178,7 +178,7 @@ SCIP_RETCODE getMasterDownScore(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -235,7 +235,7 @@ SCIP_RETCODE getMasterUpScore(
    int i;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -345,7 +345,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
       return SCIP_OKAY;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get master variables */

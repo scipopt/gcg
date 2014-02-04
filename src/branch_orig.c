@@ -36,17 +36,16 @@
 #include <string.h>
 
 #include "branch_orig.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "cons_origbranch.h"
 #include "branch_relpsprob.h"
 #include "scip/cons_linear.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
 
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
-
 
 
 #define BRANCHRULE_NAME          "orig"
@@ -139,7 +138,7 @@ SCIP_RETCODE branchVar(
    assert(branchrule != NULL);
    assert(branchvar != NULL);
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
    chgVarUbNodeup = FALSE;
    chgVarUbNodedown = FALSE;
@@ -172,7 +171,7 @@ SCIP_RETCODE branchVar(
 
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
-   branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
+   branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
    branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
    branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
@@ -180,7 +179,7 @@ SCIP_RETCODE branchVar(
 
    branchdowndata->origvar = branchvar;
    branchdowndata->oldvalue = solval;
-   branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGrelaxGetMasterprob(scip));
+   branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
    branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
@@ -287,7 +286,7 @@ SCIP_RETCODE branchExtern(
    SCIPdebugMessage("Execrel method of orig branching\n");
 
    *result = SCIP_DIDNOTRUN;
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    /* get values of parameters */
@@ -329,7 +328,7 @@ SCIP_RETCODE branchExtern(
             continue;
 
          /* block is not unique (non-linking variables) */
-         if( !GCGvarIsLinking(branchcands[i]) && GCGrelaxGetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
+         if( !GCGvarIsLinking(branchcands[i]) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcands[i])) != 1 )
             continue;
 
          /* check that blocks of linking variable are unique */
@@ -346,7 +345,7 @@ SCIP_RETCODE branchExtern(
 
             unique = TRUE;
             for( j = 0; j < nvarblocks; ++j )
-               if( GCGrelaxGetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+               if( GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1 )
                   unique = FALSE;
 
             SCIPfreeBufferArray(scip, &varblocks);
@@ -470,7 +469,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
 
    assert(branchdata->origvar != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
@@ -502,8 +501,8 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
       ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
-   if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGrelaxGetMasterprob(scip)) == SCIP_STAGE_SOLVING
-      && SCIPisRelaxSolValid(GCGrelaxGetMasterprob(scip)) )
+   if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
+      && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
    {
       SCIP_CALL( SCIPupdateVarPseudocost(scip, branchdata->origvar,
             SCIPgetRelaxSolVal(scip, branchdata->origvar) - branchdata->oldvalue,
@@ -533,7 +532,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       (*branchdata)->cons = NULL;
    }
 
-   SCIPfreeMemoryNull(GCGpricerGetOrigprob(scip), branchdata);
+   SCIPfreeMemoryNull(GCGmasterGetOrigprob(scip), branchdata);
    *branchdata = NULL;
 
    return SCIP_OKAY;
@@ -552,7 +551,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
 
    SCIPdebugMessage("Execlp method of orig branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    feasible = FALSE;
 
    assert(origscip != NULL);
@@ -591,7 +590,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 
    SCIPdebugMessage("Execext method of orig branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    feasible = FALSE;
 
    assert(origscip != NULL);
@@ -622,7 +621,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 {
    SCIP* origprob;
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origprob != NULL);
 
@@ -653,7 +652,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    /* masterscip = scip; */
    assert(origscip != NULL);
 
@@ -681,7 +680,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGrelaxGetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];
@@ -716,7 +715,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
             unique = TRUE;
             for( j = 0; j < nvarblocks; ++j )
-               if( GCGrelaxGetNIdenticalBlocks(origscip, varblocks[j]) != 1 )
+               if( GCGgetNIdenticalBlocks(origscip, varblocks[j]) != 1 )
                   unique = FALSE;
 
             SCIPfreeBufferArray(origscip, &varblocks);
@@ -784,19 +783,19 @@ SCIP_RETCODE SCIPincludeBranchruleOrig(
          branchFreeOrig, branchInitOrig, branchExitOrig, branchInitsolOrig, branchExitsolOrig,
          branchExeclpOrig, branchExecextOrig, branchExecpsOrig, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/enforcebycons",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/enforcebycons",
          "should bounds on variables be enforced by constraints(TRUE) or by bounds(FALSE)",
          NULL, FALSE, DEFAULT_ENFORCEBYCONS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/mostfrac",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/mostfrac",
          "should branching be performed on the most fractional variable instead of the first variable?",
          NULL, FALSE, DEFAULT_MOSTFRAC, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepseudocosts",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepseudocosts",
          "should pseudocosts be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSEUDO, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGpricerGetOrigprob(scip), "branching/orig/usepsstrong",
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "branching/orig/usepsstrong",
          "should strong branching with propagation be used to determine the variable on which the branching is performed?",
          NULL, FALSE, DEFAULT_USEPSSTRONG, NULL, NULL) );
 

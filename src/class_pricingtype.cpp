@@ -127,11 +127,11 @@ SCIP_Real FarkasPricing::varGetObj(
 
 SCIP_RETCODE FarkasPricing::addParameters()
 {
-   SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundfarkas",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundfarkas",
          "maximal number of variables created in one farkas pricing round",
          &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDFARKAS, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/mipsrelfarkas",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelfarkas",
          "part of the submips that are solved before Farkas pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
          &mipsrel, FALSE, DEFAULT_MIPSRELFARKAS, 0.0, 1.0, NULL, NULL) );
 
@@ -177,30 +177,30 @@ SCIP_Real ReducedCostPricing::varGetObj(
 
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
-   SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxsuccessfulmipsredcost",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxsuccessfulmipsredcost",
          "maximal number of pricing mips leading to new variables solved solved in one redcost pricing round",
          &maxsuccessfulmips, FALSE, DEFAULT_MAXSUCCESSFULMIPSREDCOST, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcost",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcost",
          "maximal number of variables created in one redcost pricing round",
          &maxvarsround, FALSE, DEFAULT_MAXVARSROUNDREDCOST, 0, INT_MAX,
          NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcostroot",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxvarsroundredcostroot",
          "maximal number of variables created in one redcost pricing round at the root node",
          &maxvarsroundroot, FALSE, DEFAULT_MAXVARSROUNDREDCOSTROOT, 0, INT_MAX,
          NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/maxroundsredcost",
+   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",
          &maxrounds, FALSE, DEFAULT_MAXROUNDSREDCOST, 0, INT_MAX, NULL, NULL) );
 
 
-   SCIP_CALL( SCIPaddRealParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcostroot",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcostroot",
          "part of the submips that are solved before redcost pricing round is aborted at the root node, if variables have been found yed? (1.0 = solve all pricing MIPs)",
          &mipsrelroot, FALSE, DEFAULT_MIPSRELREDCOSTROOT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGpricerGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcost",
+   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip_), "pricing/masterpricer/mipsrelredcost",
          "part of the submips that are solved before redcost pricing round is aborted, if variables have been found yed? (1.0 = solve all pricing MIPs)",
          &mipsrel, FALSE, DEFAULT_MIPSRELREDCOST, 0.0, 1.0, NULL, NULL) );
 
@@ -238,11 +238,11 @@ SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
   ) const
 {
 
-   return !((((nfoundvars < maxvarsroundroot) || !isRootNode(scip_) ) && ((nfoundvars < maxvarsround) || isRootNode(scip_)))
+   return !((((nfoundvars < maxvarsroundroot) || !GCGisRootNode(scip_) ) && ((nfoundvars < maxvarsround) || GCGisRootNode(scip_)))
                && successfulmips < maxsuccessfulmips
                && successfulmips < successfulmipsrel * npricingprobsnotnull
-               && (nfoundvars == 0 || ( (isRootNode(scip_) || solvedmips < mipsrel * npricingprobsnotnull)
-                     && (!isRootNode(scip_) || solvedmips < mipsrelroot * npricingprobsnotnull))));
+               && (nfoundvars == 0 || ( (GCGisRootNode(scip_) || solvedmips < mipsrel * npricingprobsnotnull)
+                     && (!GCGisRootNode(scip_) || solvedmips < mipsrelroot * npricingprobsnotnull))));
 }
 
 SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(

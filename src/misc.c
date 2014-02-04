@@ -66,8 +66,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    assert(scip != NULL);
    assert(origsol != NULL);
 
-   masterprob = GCGrelaxGetMasterprob(scip);
-   npricingprobs = GCGrelaxGetNPricingprobs(scip);
+   masterprob = GCGgetMasterprob(scip);
+   npricingprobs = GCGgetNPricingprobs(scip);
 
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
 
@@ -448,20 +448,20 @@ SCIP_RETCODE GCGprintStatistics(
 {
    assert(scip != NULL);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\nMaster Program statistics:\n");
-   SCIP_CALL( SCIPprintStatistics(GCGrelaxGetMasterprob(scip), file) );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\nMaster Program statistics:\n");
+   SCIP_CALL( SCIPprintStatistics(GCGgetMasterprob(scip), file) );
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\nOriginal Program statistics:\n");
    SCIP_CALL( SCIPprintStatistics(scip, file) );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    if( SCIPgetStage(scip) >= SCIP_STAGE_SOLVING )
    {
-      SCIP_CALL( GCGpricerPrintSimplexIters(GCGrelaxGetMasterprob(scip), file) );
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+      SCIP_CALL( GCGmasterPrintSimplexIters(GCGgetMasterprob(scip), file) );
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
    }
    SCIP_CALL( GCGprintDetectorStatistics(scip, file) );
    if( SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING )
    {
-      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), file, "\n");
+      SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), file, "\n");
       SCIP_CALL( GCGprintDecompStatistics(scip, file) );
    }
    return SCIP_OKAY;

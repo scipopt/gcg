@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "heur_gcgzirounding.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 
 #define HEUR_NAME             "gcgzirounding"
@@ -486,7 +487,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;

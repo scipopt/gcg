@@ -242,13 +242,13 @@ SCIP_RETCODE writeData(
 
    for( i = 0; i < nconss; i++ )
    {
-      int ncurvars = SCIPgetNVarsXXX(scip, conss[i]);
+      int ncurvars = GCGconsGetNVars(scip, conss[i]);
       SCIP_VAR** curvars = NULL;
 
       if( ncurvars > 0 )
       {
          SCIP_CALL( SCIPallocBufferArray( scip, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars, ncurvars) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       }
 
       for( j = 0; j < ncurvars; j++ )

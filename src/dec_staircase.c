@@ -132,10 +132,10 @@ SCIP_RETCODE createGraph(
       SCIP_VAR** curvars1;
       int ncurvars1;
 
-      ncurvars1 = SCIPgetNVarsXXX(scip, conss[i]);
+      ncurvars1 = GCGconsGetNVars(scip, conss[i]);
       SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
 
-      SCIP_CALL( SCIPgetVarsXXX(scip, conss[i], curvars1, ncurvars1) );
+      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars1, ncurvars1) );
 
       SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
       for( j = i+1; j < nconss; ++j )
@@ -143,10 +143,10 @@ SCIP_RETCODE createGraph(
          SCIP_VAR** curvars2;
          int ncurvars2;
 
-         ncurvars2 = SCIPgetNVarsXXX(scip, conss[j]);
+         ncurvars2 = GCGconsGetNVars(scip, conss[j]);
          SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
 
-         SCIP_CALL( SCIPgetVarsXXX(scip, conss[j], curvars2, ncurvars2) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[j], curvars2, ncurvars2) );
 
          SCIPsortPtr((void**)curvars1, cmp, ncurvars1);
          for( v = 0; v < ncurvars2; ++v )

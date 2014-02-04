@@ -39,6 +39,7 @@
 #include "heur_origdiving.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
+#include "gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE
@@ -181,7 +182,7 @@ SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
 
 #ifdef SCIP_STATISTIC
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* get origdiving event handler and its data */
@@ -360,7 +361,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    assert(result != NULL);
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
 #ifdef SCIP_STATISTIC
@@ -395,7 +396,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    *result = SCIP_DIDNOTRUN;
 
    /* diving heuristics on the original variables are only applicable if blocks have not been aggregated */
-   if( GCGrelaxGetNRelPricingprobs(scip) != GCGrelaxGetNPricingprobs(scip) )
+   if( GCGgetNRelPricingprobs(scip) != GCGgetNPricingprobs(scip) )
       return SCIP_OKAY;
 
    /* get heuristic data */
@@ -1147,7 +1148,7 @@ SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
    SCIP_EVENTHDLR* eventhdlr;
 
    /* get master problem */
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    /* create master event handler data */

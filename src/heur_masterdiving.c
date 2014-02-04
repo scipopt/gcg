@@ -333,7 +333,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    assert(result != NULL);
 
    /* get original problem */
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(origprob != NULL);
 
 #ifdef SCIP_STATISTIC

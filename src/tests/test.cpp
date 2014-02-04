@@ -113,7 +113,7 @@ TEST_F(GcgTest, NameTest) {
 
 TEST_F(GcgTest, isGcgTest) {
    EXPECT_TRUE(GCGisOriginal(scip));
-   EXPECT_TRUE(GCGisMaster(GCGrelaxGetMasterprob(scip)));
+   EXPECT_TRUE(GCGisMaster(GCGgetMasterprob(scip)));
 }
 
 TEST_F(GcgTest, emptyProblem) {
@@ -133,8 +133,8 @@ TEST_F(GcgTest, detectEmptyProblem) {
 }
 
 TEST_F(GcgResultTest, numberOfBlocks) {
-   ASSERT_EQ(50, GCGrelaxGetNPricingprobs(scip) );
-   ASSERT_EQ(50, GCGrelaxGetNIdenticalBlocks(scip, 0));
+   ASSERT_EQ(50, GCGgetNPricingprobs(scip) );
+   ASSERT_EQ(50, GCGgetNIdenticalBlocks(scip, 0));
 }
 
 TEST_F(GcgResultTest, optimalSolutionValue) {

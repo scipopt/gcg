@@ -267,7 +267,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( !SCIPisVarRelevant(curvars[j]) )
+         if( !GCGisVarRelevant(curvars[j]) )
             continue;
 
          if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)

@@ -38,7 +38,7 @@
 #include <string.h>
 #include "cons_origbranch.h"
 #include "scip/cons_linear.h"
-#include "relax_gcg.h"
+#include "gcg.h"
 #include "cons_masterbranch.h"
 #include "branch_generic.h"
 #include "cons_masterbranch.h"
@@ -876,7 +876,7 @@ SCIP_RETCODE GCGconsOrigbranchAddPropBoundChg(
    /* mark the corresponding master node to be repropagated */
    if( consdata->mastercons != NULL )
    {
-      SCIP_CALL( SCIPrepropagateNode(GCGrelaxGetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
+      SCIP_CALL( SCIPrepropagateNode(GCGgetMasterprob(scip), GCGconsMasterbranchGetNode(consdata->mastercons)) );
    }
 
    return SCIP_OKAY;

@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "branch_ryanfoster.h"
+#include "gcg.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
@@ -55,7 +56,6 @@
 #include "pricer_gcg.h"
 #include "scip/cons_varbound.h"
 #include "type_branchgcg.h"
-#include "pub_gcgvar.h"
 
 #define BRANCHRULE_NAME          "ryanfoster"
 #define BRANCHRULE_DESC          "ryan and foster branching in generic column generation"
@@ -105,10 +105,10 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterRyanfoster)
    assert(branchdata->var1 != NULL);
    assert(branchdata->var2 != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
+   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
@@ -164,10 +164,10 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
-   pricingscip = GCGrelaxGetPricingprob(origscip, branchdata->blocknr);
+   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
    assert(pricingscip != NULL);
 
    SCIPdebugMessage("branchDeactiveMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
@@ -198,7 +198,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    assert(branchdata->var2 != NULL);
    assert(branchdata->pricecons != NULL);
 
-   assert(GCGpricerGetOrigprob(scip) != NULL);
+   assert(GCGmasterGetOrigprob(scip) != NULL);
 
    SCIPdebugMessage("branchPropMasterRyanfoster: %s(%s, %s)\n", ( branchdata->same ? "same" : "differ" ),
       SCIPvarGetName(branchdata->var1), SCIPvarGetName(branchdata->var2));
@@ -287,7 +287,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->pricecons != NULL )
    {
-      SCIP_CALL( SCIPreleaseCons(GCGrelaxGetPricingprob(scip, (*branchdata)->blocknr),
+      SCIP_CALL( SCIPreleaseCons(GCGgetPricingprob(scip, (*branchdata)->blocknr),
             &(*branchdata)->pricecons) );
    }
 
@@ -342,7 +342,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    origbranchcons = NULL;
    origbranchcons2 = NULL;
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    SCIPdebugMessage("Ryanfoster branching rule: branch on original variables %s and %s!\n",
@@ -458,13 +458,13 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
 
    SCIPdebugMessage("Execrel method of ryanfoster branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(origscip) && !GCGrelaxIsMasterSetPartitioning(origscip) )
+   if( !GCGisMasterSetCovering(origscip) && !GCGisMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
@@ -694,14 +694,14 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
    SCIPdebugMessage("Execps method of ryanfoster branching\n");
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
 
    *result = SCIP_DIDNOTRUN;
 
    /* do not perform Ryan & Foster branching if we have neither a set partitioning nor a set covering structure */
-   if( !GCGrelaxIsMasterSetCovering(origscip) || !GCGrelaxIsMasterSetPartitioning(origscip) )
+   if( !GCGisMasterSetCovering(origscip) || !GCGisMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Not executing Ryanfoster branching, master is neither set covering nor set partitioning\n");
       return SCIP_OKAY;
@@ -777,7 +777,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 {
    SCIP* origprob;
 
-   origprob = GCGpricerGetOrigprob(scip);
+   origprob = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origprob != NULL);
 

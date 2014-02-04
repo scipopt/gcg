@@ -228,16 +228,16 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplayAdditionalStatistics)
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "\nAdditional statistics:\n");
       if( DECdecompGetType(DECgetBestDecomp(scip)) == DEC_DECTYPE_DIAGONAL )
       {
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
 
       }
       else
       {
-         GCGpricerPrintStatistics(GCGrelaxGetMasterprob(scip), NULL);
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGrelaxGetMasterprob(scip)), NULL, "\n");
+         GCGpricerPrintStatistics(GCGgetMasterprob(scip), NULL);
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(GCGgetMasterprob(scip)), NULL, "\n");
          SCIP_CALL( GCGwriteDecompositionData(scip) );
-         SCIP_CALL( GCGwriteVarCreationDetails(GCGrelaxGetMasterprob(scip)) );
+         SCIP_CALL( GCGwriteVarCreationDetails(GCGgetMasterprob(scip)) );
       }
    }
    else
@@ -268,7 +268,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecDisplaySolvers)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   GCGpricerPrintListOfSolvers(GCGrelaxGetMasterprob(scip));
+   GCGpricerPrintListOfSolvers(GCGgetMasterprob(scip));
    SCIPdialogMessage(scip, NULL, "\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
@@ -281,7 +281,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
 {  /*lint --e{715}*/
    SCIP_CALL( SCIPdialoghdlrAddHistory(dialoghdlr, dialog, NULL, FALSE) );
 
-   if( SCIPgetStage(GCGrelaxGetMasterprob(scip)) != SCIP_STAGE_INIT )
+   if( SCIPgetStage(GCGgetMasterprob(scip)) != SCIP_STAGE_INIT )
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem shell is only possible before the solving process is started\n");
 
@@ -291,7 +291,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetMaster)
    }
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "switching to the master problem...\n");
-   SCIP_CALL( SCIPstartInteraction(GCGrelaxGetMasterprob(scip)) );
+   SCIP_CALL( SCIPstartInteraction(GCGgetMasterprob(scip)) );
    SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "back in the original problem...\n");
 
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
@@ -306,7 +306,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetLoadmaster)
    char* filename;
    SCIP_Bool endoffile;
 
-   masterprob = GCGrelaxGetMasterprob(scip);
+   masterprob = GCGgetMasterprob(scip);
    assert(masterprob != NULL);
 
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, "enter filename: ", &filename, &endoffile) );

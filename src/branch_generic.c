@@ -105,6 +105,37 @@ typedef struct GCG_Record GCG_RECORD;
 #define branchExitsolGeneric NULL
 
 
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntry(
+   SCIP_VAR*             mastervar,          /**< current mastervariable */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   assert(mastervar != NULL);
+   assert(origvar != NULL);
+
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   for( i = 0; i < norigvars; ++i )
+   {
+      if( origvars[i] == origvar )
+      {
+         return origvals[i];
+      }
+   }
+
+   return 0;
+}
+
 /** adds a variable to a branching constraint */
 static
 SCIP_RETCODE addVarToMasterbranch(
@@ -298,7 +329,7 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
    if( !GCGvarIsMaster(mastervar) )
       return SCIP_OKAY;
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    /*   SCIPdebugMessage("exec method of event_genericbranchvaradd\n"); */
@@ -358,35 +389,6 @@ SCIP_DECL_EVENTEXEC(eventExecGenericbranchvaradd)
  * branching specific interface methods
  */
 
-/** computes the generator of mastervar for the entry in origvar
- * @return entry of the generator corresponding to origvar */
-SCIP_Real getGeneratorEntry(
-   SCIP_VAR*             mastervar,          /**< current mastervariable */
-   SCIP_VAR*             origvar             /**< corresponding origvar */
-   )
-{
-   int i;
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
-
-   assert(mastervar != NULL);
-   assert(origvar != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   for( i = 0; i < norigvars; ++i )
-   {
-      if( origvars[i] == origvar )
-      {
-         return origvals[i];
-      }
-   }
-
-   return 0;
-}
 
 /** method for initializing the set of respected indices */
 static
@@ -1011,7 +1013,7 @@ SCIP_RETCODE Separate(
 
    muF = 0.0;
    for( j = 0; j < Fsize; ++j )
-      muF += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+      muF += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
 
    SCIPdebugPrintf("Fsize = %d; Ssize = %d, IndexSetSize = %d, nuF=%.6g \n", Fsize, Ssize, IndexSetSize, muF);
 
@@ -1049,7 +1051,7 @@ SCIP_RETCODE Separate(
 
          if( SCIPisGE(scip, generatorentry, median) )
          {
-            alpha[k] += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+            alpha[k] += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
          }
       }
       if( SCIPisGT(scip, alpha[k], 0.0) && SCIPisLT(scip, alpha[k], muF) )
@@ -1108,7 +1110,7 @@ SCIP_RETCODE Separate(
             for( l=0; l<Fsize; ++l )
             {
                if( SCIPisGE(scip, getGeneratorEntry(F[l], origvar), median) )
-                  mu_F += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[l]);
+                  mu_F += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[l]);
             }
             ++j;
 
@@ -1397,7 +1399,7 @@ double computeAlpha(
       if ( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, generatorentry, ivalue)) ||
            (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, generatorentry, ivalue)) )
       {
-         alpha_i += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+         alpha_i += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
       }
    }
 
@@ -1518,7 +1520,7 @@ SCIP_RETCODE Explore(
 
    for( j = 0; j < Fsize; ++j )
    {
-      muF += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[j]);
+      muF += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[j]);
    }
 
    /* SCIPdebugMessage("muF = %g\n", muF); */
@@ -1558,7 +1560,7 @@ SCIP_RETCODE Explore(
          if( (isense == GCG_COMPSENSE_GE && SCIPisGE(scip, getGeneratorEntry(F[l], origvar), ivalue) )
             || (isense == GCG_COMPSENSE_LT && SCIPisLT(scip, getGeneratorEntry(F[l], origvar), ivalue)) )
          {
-               nu_F += SCIPgetSolVal(GCGrelaxGetMasterprob(scip), NULL, F[l]);
+               nu_F += SCIPgetSolVal(GCGgetMasterprob(scip), NULL, F[l]);
          }
       }
 
@@ -1816,10 +1818,10 @@ SCIP_RETCODE ChooseSeparateMethod(
 
    if( record->recordsize <= 0 )
    {
-      SCIP_CALL( SCIPgetVarsData(GCGrelaxGetMasterprob(scip), &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+      SCIP_CALL( SCIPgetVarsData(GCGgetMasterprob(scip), &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
       ++ncheckedblocks;
-      assert(ncheckedblocks <= GCGrelaxGetNPricingprobs(scip)+1);
+      assert(ncheckedblocks <= GCGgetNPricingprobs(scip)+1);
 
       if( ncheckedblocks == 1 )
       {
@@ -1979,7 +1981,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
    /* release constraint that enforces the branching decision */
    if( (*branchdata)->mastercons != NULL )
    {
-      SCIP_CALL( SCIPreleaseCons(GCGrelaxGetMasterprob(scip), &(*branchdata)->mastercons) );
+      SCIP_CALL( SCIPreleaseCons(GCGgetMasterprob(scip), &(*branchdata)->mastercons) );
       (*branchdata)->mastercons = NULL;
    }
 
@@ -2170,12 +2172,12 @@ SCIP_RETCODE createChildNodesGeneric(
    nchildnodes = 0;
    L = 0;
 
-   pL = GCGrelaxGetNIdenticalBlocks(scip, blocknr);
+   pL = GCGgetNIdenticalBlocks(scip, blocknr);
    SCIPdebugMessage("Vanderbeck branching rule Node creation for blocknr %d with %.1f identical blocks \n", blocknr, pL);
 
 
    /*  get variable data of the master problem */
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
    SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    nmastervars2 = nmastervars;
@@ -2403,15 +2405,15 @@ SCIP_RETCODE createChildNodesGeneric(
      }
 
   }
-  if( !SCIPisEQ(scip, identicalcontrol, GCGrelaxGetNIdenticalBlocks(scip, blocknr)) )
+  if( !SCIPisEQ(scip, identicalcontrol, GCGgetNIdenticalBlocks(scip, blocknr)) )
   {
      SCIPdebugMessage("width of the block is only %g\n", identicalcontrol);
   }
 
-  assert( SCIPisEQ(scip, identicalcontrol, GCGrelaxGetNIdenticalBlocks(scip, blocknr)) );
+  assert( SCIPisEQ(scip, identicalcontrol, GCGgetNIdenticalBlocks(scip, blocknr)) );
 #endif
 
-   assert( SCIPisEQ(scip, lhsSum, 1.0*(GCGrelaxGetNIdenticalBlocks(scip, blocknr) + Ssize)) );
+   assert( SCIPisEQ(scip, lhsSum, 1.0*(GCGgetNIdenticalBlocks(scip, blocknr) + Ssize)) );
 
    SCIPfreeMemoryArray(scip, &mastervars2);
    SCIPfreeMemoryArray(scip, &copymastervars);
@@ -2445,7 +2447,7 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    char downchildname[SCIP_MAXSTRLEN];
    int bound;
 
-   masterscip = GCGrelaxGetMasterprob(scip);
+   masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
    bound = SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar)); /*lint -e524*/
@@ -2548,7 +2550,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    SCIPdebugMessage("get informations for Vanderbecks generic branching\n");
 
-   origscip = GCGpricerGetOrigprob(masterscip);
+   origscip = GCGmasterGetOrigprob(masterscip);
 
    assert(origscip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
@@ -2960,7 +2962,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
    SCIPdebugMessage("Execrel method of Vanderbecks generic branching\n");
@@ -2975,7 +2977,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpGeneric)
       return SCIP_OKAY;
    }
 
-   if( GCGrelaxIsMasterSetCovering(origscip) || GCGrelaxIsMasterSetPartitioning(origscip) )
+   if( GCGisMasterSetCovering(origscip) || GCGisMasterSetPartitioning(origscip) )
    {
       SCIPdebugMessage("Generic branching executed on a set covering or set partitioning problem\n");
    }
@@ -3052,7 +3054,7 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
 {
    SCIP* origscip;
 
-   origscip = GCGpricerGetOrigprob(scip);
+   origscip = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origscip != NULL);
 

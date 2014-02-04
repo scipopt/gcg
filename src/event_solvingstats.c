@@ -179,7 +179,7 @@ SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
 
    /* create bounds reader data */
    SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
-   eventhdlrdata->origprob = GCGpricerGetOrigprob(scip);
+   eventhdlrdata->origprob = GCGmasterGetOrigprob(scip);
    eventhdlrdata->file = NULL;
    eventhdlrdata->filename = NULL;
    eventhdlr = NULL;

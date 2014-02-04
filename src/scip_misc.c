@@ -37,7 +37,7 @@
 #include <string.h>
 
 /** returns TRUE if variable is relevant, FALSE otherwise */
-SCIP_Bool SCIPisVarRelevant(
+SCIP_Bool GCGisVarRelevant(
    SCIP_VAR*             var                 /**< variable to test */
    )
 {
@@ -46,7 +46,7 @@ SCIP_Bool SCIPisVarRelevant(
 }
 
 /** returns the type of an arbitrary SCIP constraint */
-consType SCIPconsGetType(
+consType GCGconsGetType(
    SCIP_CONS*            cons                /**< constraint to get type for */
    )
 {
@@ -98,7 +98,7 @@ consType SCIPconsGetType(
 }
 
 /** returns the rhs of an arbitrary SCIP constraint */
-SCIP_Real SCIPgetRhsXXX(
+SCIP_Real GCGconsGetRhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
@@ -154,7 +154,7 @@ SCIP_Real SCIPgetRhsXXX(
 }
 
 /** returns the lhs of an arbitrary SCIP constraint */
-SCIP_Real SCIPgetLhsXXX(
+SCIP_Real GCGconsGetLhs(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    )
@@ -209,7 +209,7 @@ SCIP_Real SCIPgetLhsXXX(
 }
 
 /** returns the number of variables in an arbitrary SCIP constraint */
-int SCIPgetNVarsXXX(
+int GCGconsGetNVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    )
@@ -259,7 +259,7 @@ int SCIPgetNVarsXXX(
 }
 
 /** returns the variable array of an arbitrary SCIP constraint */
-SCIP_RETCODE SCIPgetVarsXXX(
+SCIP_RETCODE GCGconsGetVars(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
    SCIP_VAR**            vars,               /**< array where variables are stored */
@@ -336,61 +336,12 @@ SCIP_RETCODE SCIPgetVarsXXX(
    return SCIP_OKAY;
 }
 
-/** returns the dual solution value of an arbitrary SCIP constraint */
-SCIP_Real SCIPgetDualsolXXX(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_CONS*            cons                /**< constraint to get dual solution */
-   )
-{
-   SCIP_CONSHDLR* conshdlr;
-   const char * conshdlrname;
-
-   assert(scip != NULL);
-   assert(cons != NULL);
-   conshdlr = SCIPconsGetHdlr(cons);
-   assert(conshdlr != NULL);
-   conshdlrname = SCIPconshdlrGetName(conshdlr);
-
-   if( strcmp(conshdlrname, "linear") == 0 )
-   {
-      return SCIPgetDualsolLinear(scip, cons);
-   }
-   else if( strcmp(conshdlrname, "setppc") == 0 )
-   {
-      return SCIPgetDualsolSetppc(scip, cons);
-   }
-   else if( strcmp(conshdlrname, "logicor") == 0 )
-   {
-      return SCIPgetDualsolLogicor(scip, cons);
-   }
-   else if( strcmp(conshdlrname, "knapsack") == 0 )
-   {
-      return SCIPgetDualsolKnapsack(scip, cons);
-   }
-   else if( strcmp(conshdlrname, "varbound") == 0 )
-   {
-      return SCIPgetDualsolVarbound(scip, cons);
-   }
-   else if( strcmp(conshdlrname, "SOS1") == 0 )
-   {
-      SCIPdebugMessage("WARNING: SOS1 NOT IMPLEMENTED\n");
-   }
-   else if( strcmp(conshdlrname, "SOS2") == 0 )
-   {
-      SCIPdebugMessage("WARNING: SOS2 NOT IMPLEMENTED\n");
-   }
-   else
-   {
-      SCIPdebugMessage("WARNING: NOT IMPLEMENTED: %s", conshdlrname);
-   }
-   return 0;
-}
 
 /**
  * Returns the value array of an arbitrary SCIP constraint
  * @todo SOS1 & SOS2 not implemented yet
  */
-SCIP_RETCODE SCIPgetValsXXX(
+SCIP_RETCODE GCGconsGetVals(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to get values from */
    SCIP_Real*            vals,               /**< array where values are stored */
@@ -477,7 +428,7 @@ SCIP_RETCODE SCIPgetValsXXX(
 
 
 /** returns true if the constraint should be a master constraint and false otherwise */
-SCIP_Bool SCIPgetConsIsSetppc(
+SCIP_Bool GCGgetConsIsSetppc(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
@@ -496,20 +447,20 @@ SCIP_Bool SCIPgetConsIsSetppc(
    *setppctype = SCIP_SETPPCTYPE_PACKING;
    SCIPdebugMessage("cons %s is ", SCIPconsGetName(cons));
 
-   if( SCIPconsGetType(cons) == setcovering || SCIPconsGetType(cons) == setpartitioning || SCIPconsGetType(cons) == logicor )
+   if( GCGconsGetType(cons) == setcovering || GCGconsGetType(cons) == setpartitioning || GCGconsGetType(cons) == logicor )
    {
       SCIPdebugPrintf("setcov, part or logicor.\n");
       return TRUE;
    }
-   nvars = SCIPgetNVarsXXX(scip, cons);
+   nvars = GCGconsGetNVars(scip, cons);
    vars = NULL;
    vals = NULL;
    if( nvars > 0 )
    {
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vars, nvars) );
       SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vals, nvars) );
-      SCIP_CALL_ABORT( SCIPgetVarsXXX(scip, cons, vars, nvars) );
-      SCIP_CALL_ABORT( SCIPgetValsXXX(scip, cons, vals, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVars(scip, cons, vars, nvars) );
+      SCIP_CALL_ABORT( GCGconsGetVals(scip, cons, vals, nvars) );
    }
 
    /* check vars and vals for integrality */
@@ -532,8 +483,8 @@ SCIP_Bool SCIPgetConsIsSetppc(
 
    if( relevant )
    {
-      SCIP_Real rhs = SCIPgetRhsXXX(scip, cons);
-      SCIP_Real lhs = SCIPgetLhsXXX(scip, cons);
+      SCIP_Real rhs = GCGconsGetRhs(scip, cons);
+      SCIP_Real lhs = GCGconsGetLhs(scip, cons);
       SCIPdebugPrintf("(lhs %.2f, rhs %.2f)", lhs, rhs);
 
       if( SCIPisEQ(scip, lhs, 1.0) && SCIPisEQ(scip, rhs, 1.0) )
@@ -563,7 +514,7 @@ SCIP_Bool SCIPgetConsIsSetppc(
 }
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
-SCIP_Bool isRootNode(
+SCIP_Bool GCGisRootNode(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
