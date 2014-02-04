@@ -307,7 +307,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    SCIP_Longint nsolsfound;
    SCIP_Longint nlpiterations;         /* lp iterations performed in one single diving loop */
    SCIP_Longint maxnlpiterations;
-   int npricerounds;                   /* pricing rounds performed in one single diving loop */
    int totalpricerounds;               /* pricing rounds performed in one call of the heuristic */
    int nlpcands;
    int startnlpcands;
@@ -481,7 +480,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    cutoff = FALSE;
    origfeas = FALSE;
    divedepth = 0;
-   npricerounds = 0;
    totalpricerounds = 0;
    startnlpcands = nlpcands;
 
@@ -517,8 +515,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       SCIP_CALL( SCIPlinkLPSol(scip, heurdata->sol) );
 
       bestcand = NULL;
-      bestcandsol = SCIP_INVALID;
-      bestfrac = SCIP_INVALID;
       bestcandmayround = TRUE;
 
       /* choose a variable to dive on */
@@ -598,6 +594,8 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
          if( !cutoff || backtracked || farkaspricing )
          {
+            int npricerounds;                   /* pricing rounds performed in one single diving loop */
+
             /* resolve the diving LP */
             /* Errors in the LP solver should not kill the overall solving process, if the LP is just needed for a heuristic.
              * Hence in optimized mode, the return code is caught and a warning is printed, only in debug mode, SCIP will stop.

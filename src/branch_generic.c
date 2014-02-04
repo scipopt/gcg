@@ -2513,7 +2513,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    )
 {
    SCIP* origscip;
-   SCIP_Bool feasible;
    SCIP_VAR** branchcands;
    SCIP_VAR** allorigvars;
    SCIP_VAR** mastervars;
@@ -2538,7 +2537,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    blocknr = -2;
    Ssize = 0;
    Fsize = 0;
-   feasible = TRUE;
    branchdata = NULL;
    S = NULL;
    C = NULL;
@@ -2624,13 +2622,9 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
    if( blocknr < -1 )
    {
-      feasible = TRUE;
-      SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
-
-      return -1;
+      SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
+      return SCIP_ERROR;
    }
-   else
-      feasible = FALSE;
 
    /* a special case; branch on copy of an origvar directly:- here say blocknr = -3 */
    if( blocknr == -1 && !GCGvarIsLinking(mastervar) )
@@ -2832,12 +2826,6 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
       /* SCIP_CALL( InducedLexicographicSort( scip, F, Fsize, NULL, 0, NULL ) ); */
       SCIP_CALL( ChooseSeparateMethod( origscip, F, Fsize, &S, &Ssize, NULL, 0, NULL, blocknr, branchrule, result, checkedblocks,
          ncheckedblocks, checkedblockssortstrips, checkedblocksnsortstrips) );
-   }
-
-   if( feasible )
-   {
-      SCIPdebugMessage("Vanderbeck generic branching rule could not find variables to branch on!\n");
-      return SCIP_ERROR;
    }
 
    /* create the |S|+1 child nodes in the branch-and-bound tree */

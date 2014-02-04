@@ -508,7 +508,6 @@ SCIP_RETCODE GCGapplyGcgrens(
    {
       SCIP_Real cutoff;                         /* objective cutoff for the subproblem             */
       SCIP_Real upperbound;
-      cutoff = SCIPinfinity(scip);
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);

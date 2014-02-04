@@ -543,8 +543,6 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
       SCIP_CALL( SCIPlinkRelaxSol(scip, heurdata->sol) );
 
       bestcand = NULL;
-      bestcandsol = SCIP_INVALID;
-      bestfrac = SCIP_INVALID;
       bestcandmayround = TRUE;
       bestcandroundup = FALSE;
 

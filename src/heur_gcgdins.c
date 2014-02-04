@@ -607,9 +607,11 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    SCIP_Real rootlpsolval;
    SCIP_Real mipsolval;
    SCIP_Real solval;
+#ifdef SCIP_STATISTIC
    SCIP_Real allfixingrate;                  /* percentage of all variables fixed               */
    SCIP_Real intfixingrate;                  /* percentage of integer variables fixed           */
    SCIP_Real zerofixingrate;                 /* percentage of variables fixed to zero           */
+#endif
 
    int ufcount;                              /* counts the number of true fixing flag entries                */
    int nvars;                                /* number of variables in original SCIP                         */
@@ -915,8 +917,10 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
          ufcount++;
    }
 
+#ifdef SCIP_STATISTIC
    intfixingrate = (SCIP_Real)fixingcounter / (SCIP_Real)(MAX(nbinvars + nintvars, 1));
    zerofixingrate = (SCIP_Real)zerocounter / MAX((SCIP_Real)fixingcounter, 1.0);
+#endif
 
    /* store the number of found solutions for next run */
    heurdata->lastnsolsfound = nsolsfound;
@@ -931,7 +935,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
    SCIPfreeBufferArray(scip, &fixed);
 
    /* add an objective cutoff */
-   cutoff = SCIPinfinity(scip);
    assert(!SCIPisInfinity(scip, SCIPgetUpperbound(scip)));
 
    if( !SCIPisInfinity(scip, -1.0*SCIPgetLowerbound(scip)) )
@@ -973,10 +976,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
 
    SCIPdebugMessage("GCG DINS presolved subproblem: %d vars, %d cons, success=%u\n", SCIPgetNVars(subscip), SCIPgetNConss(subscip), success);
 
+#ifdef SCIP_STATISTIC
    allfixingrate = (SCIPgetNOrigVars(subscip) - SCIPgetNVars(subscip)) / (SCIP_Real)SCIPgetNOrigVars(subscip);
 
    /* additional variables added in presolving may lead to the subSCIP having more variables than the original */
    allfixingrate = MAX(allfixingrate, 0.0);
+#endif
 
    /* solve the subproblem */
    SCIPdebugMessage("solving DINS sub-MIP with neighborhoodsize %d and maxnodes %"SCIP_LONGINT_FORMAT"\n", heurdata->neighborhoodsize, nsubnodes);
@@ -1016,9 +1021,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgdins)
             *result = SCIP_FOUNDSOL;
       }
 
+#ifdef SCIP_STATISTIC
       SCIPstatisticPrintf("GCG DINS statistic: fixed %6.3f integer variables (%6.3f zero), %6.3f all variables, needed %6.1f seconds, %"SCIP_LONGINT_FORMAT" nodes, found %d solutions, solution %10.4f found at node %"SCIP_LONGINT_FORMAT"\n",
          intfixingrate, zerofixingrate, allfixingrate, SCIPgetSolvingTime(subscip), SCIPgetNNodes(subscip), nsubsols,
          success ? SCIPgetPrimalbound(scip) : SCIPinfinity(scip), nsubsols > 0 ? SCIPsolGetNodenum(SCIPgetBestSol(subscip)) : -1 );
+#endif
+
    }
 
  TERMINATE:

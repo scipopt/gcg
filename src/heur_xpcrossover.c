@@ -818,7 +818,6 @@ SCIP_RETCODE initializeSubproblem(
 
       assert( !SCIPisInfinity(scip,SCIPgetUpperbound(scip)) );
 
-      cutoff = SCIPinfinity(scip);
       upperbound = SCIPgetUpperbound(scip) - SCIPsumepsilon(scip);
       if( !SCIPisInfinity(scip,-1.0*SCIPgetLowerbound(scip)) )
       {
