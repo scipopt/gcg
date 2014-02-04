@@ -531,6 +531,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       bestcandsol = SCIPgetSolVal(scip, heurdata->sol, bestcand);
       bestfrac = SCIPfeasFrac(scip, bestcandsol);
 
+      assert(SCIPisFeasGT(scip, bestcandsol, SCIPvarGetLbLocal(bestcand))
+         && SCIPisFeasLT(scip, bestcandsol, SCIPvarGetUbLocal(bestcand)));
+
       /* memorize selected variables up to the maximal depth for discrepancy search */
       if( divedepth-1 < heurdata->maxdiscdepth )
          selectedvars[divedepth-1] = bestcand;
@@ -559,21 +562,12 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          }
       }
 
-      /* if the variable is already fixed or if the solution value is outside the domain, numerical troubles may have
-       * occured or variable was fixed by propagation while backtracking => Abort diving!
-       */
+      /* If the variable is already fixed, numerical troubles may have occurred => abort diving! */
       if( SCIPvarGetLbLocal(bestcand) >= SCIPvarGetUbLocal(bestcand) - 0.5 )
       {
          SCIPdebugMessage("Selected variable <%s> already fixed to [%g,%g] (solval: %.9f), diving aborted \n",
             SCIPvarGetName(bestcand), SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand), bestcandsol);
          cutoff = TRUE;
-         break;
-      }
-      if( SCIPisFeasLT(scip, bestcandsol, SCIPvarGetLbLocal(bestcand)) || SCIPisFeasGT(scip, bestcandsol, SCIPvarGetUbLocal(bestcand)) )
-      {
-         SCIPdebugMessage("selected variable's <%s> solution value is outside the domain [%g,%g] (solval: %.9f), diving aborted\n",
-            SCIPvarGetName(bestcand), SCIPvarGetLbLocal(bestcand), SCIPvarGetUbLocal(bestcand), bestcandsol);
-         assert(backtracked);
          break;
       }
 
