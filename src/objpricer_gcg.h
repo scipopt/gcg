@@ -34,12 +34,12 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#ifndef GCG_OBJPRICER_GCG_H_
+#define GCG_OBJPRICER_GCG_H_
+
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "class_stabilization.h"
-
-#ifndef GCG_OBJPRICER_GCG_H
-#define GCG_OBJPRICER_GCG_H
 
 using gcg::Stabilization;
 
@@ -160,7 +160,7 @@ private:
       int                   solvedmips,         /**< number of MIPS solved so far */
       int                   successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Bool             optimal             /**< optimal or heuristic pricing */
-   );
+   ) const;
 
    SCIP_Real  computeRedCost(
       PricingType*          pricetype,          /**< type of pricing */
@@ -168,7 +168,7 @@ private:
       SCIP_Bool             solisray,           /**< is the solution a ray? */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-      );
+      ) const;
 
    /** counts the number of variables with negative reduced cost */
    int countPricedVariables(
@@ -177,17 +177,17 @@ private:
       SCIP_SOL**            sols,               /**< solutions which should be investigated */
       int                   nsols,              /**< number of solutions */
       SCIP_Bool*            solisray            /**< array indicating if a solution is a ray or not */
-     );
+     ) const;
 
    /** return TRUE or FALSE whether the master LP is solved to optimality */
-   SCIP_Bool isMasterLPOptimal();
+   SCIP_Bool isMasterLPOptimal() const;
 
 
    /** return TRUE or FALSE whether pricing problem has been solved to optimality */
    SCIP_Bool  isPricingOptimal(
       SCIP*                 scip,               /**< SCIP data structure */
       SCIP_STATUS           status              /**< status of problem */
-      );
+      ) const;
 
    /** ensures size of pricedvars array */
    SCIP_RETCODE ensureSizePricedvars(
@@ -215,7 +215,7 @@ private:
     * up we don't need to continue pricing since the best possible feasible
     * solution must have at least this value
     */
-   SCIP_Bool canPricingBeAborted();
+   SCIP_Bool canPricingBeAborted() const;
 
    /** sorts pricing problems according to their score */
    void sortPricingProblemsByScore();
@@ -233,7 +233,7 @@ private:
       SCIP_CLOCK**          clock,              /**< clock belonging to this setting */
       int**                 calls,              /**< calls belonging to this setting */
       GCG_DECL_SOLVERSOLVE((**solversolve))     /**< solving function belonging to this setting */
-      );
+      ) const;
 
    /** set subproblem timelimit */
    SCIP_RETCODE setPricingProblemTimelimit(
@@ -307,7 +307,7 @@ private:
       SCIP_CONS***          consstack,          /**< stack of branching constraints */
       int*                  nconsstack,         /**< size of the stack */
       SCIP_Real**           consduals           /**< dual values of the masterbranch solutions */
-      );
+      ) const;
 
    /** add bounds change from constraint from the pricing problem at this node
     * @note This message has to be threadsafe!
@@ -322,7 +322,7 @@ private:
       SCIP_SOL*             sol,                /**< solution to check */
       SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
       SCIP_Bool*            feasible            /**< check whether the solution is feasible */
-   );
+   ) const;
 
 };
 

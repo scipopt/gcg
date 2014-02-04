@@ -139,9 +139,8 @@ SCIP_RETCODE Stabilization::setNConvconss(
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE Stabilization::linkingconsGetDual(
-   int i,
-   SCIP_Real* dual
+SCIP_Real Stabilization::linkingconsGetDual(
+   int i
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -150,14 +149,11 @@ SCIP_RETCODE Stabilization::linkingconsGetDual(
 
    SCIP_CONS* cons = GCGgetVarLinkingconss(origprob)[i];
 
-   *dual = computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
-
-   return SCIP_OKAY;
+   return computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
 }
 
-SCIP_RETCODE Stabilization::consGetDual(
-   int i,
-   SCIP_Real* dual
+SCIP_Real Stabilization::consGetDual(
+   int i
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -165,7 +161,6 @@ SCIP_RETCODE Stabilization::consGetDual(
    int nconss =  GCGgetNMasterConss(origprob);
 #endif
    assert(i < nconss);
-   assert(dual != NULL);
 
    SCIP_CONS* cons = GCGgetMasterConss(origprob)[i];
 
@@ -174,21 +169,17 @@ SCIP_RETCODE Stabilization::consGetDual(
 
    assert(i < nstabcenterconss);
 
-   *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons) );
-
-   return SCIP_OKAY;
+   return computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons) );
 }
 
-SCIP_RETCODE Stabilization::rowGetDual(
-   int i,
-   SCIP_Real* dual
+SCIP_Real Stabilization::rowGetDual(
+   int i
    )
 {
 #ifndef NDEBUG
    int nrows = GCGsepaGetNCuts(scip_);
 #endif
    assert(i < nrows);
-   assert(dual != NULL);
 
    SCIP_ROW* row = GCGsepaGetMastercuts(scip_)[i];
 
@@ -197,14 +188,11 @@ SCIP_RETCODE Stabilization::rowGetDual(
 
    assert(i < nstabcentercuts);
 
-   *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row) );
-
-   return SCIP_OKAY;
+   return computeDual(stabcentercuts[i], pricingtype->rowGetDual(row) );
 }
 
-SCIP_RETCODE Stabilization::convGetDual(
-   int i,
-   SCIP_Real* dual
+SCIP_Real Stabilization::convGetDual(
+   int i
    )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
@@ -213,16 +201,13 @@ SCIP_RETCODE Stabilization::convGetDual(
 
    SCIP_CONS* cons = GCGgetConvCons(origprob, i);
 
-   *dual = computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons));
-
-   return SCIP_OKAY;
+   return computeDual(stabcenterconv[i], pricingtype->consGetDual(scip_, cons));
 }
 
 SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_Real lowerbound
    )
 {
-   SCIP_Real dualsol;
    SCIPdebugMessage("Updating stability center: ");
 
    /* in case the bound is not improving, do nothing */
@@ -251,32 +236,25 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_CALL( consGetDual(i, &dualsol) );
-
-      stabcenterconss[i] = dualsol;
+      stabcenterconss[i] = consGetDual(i);
    }
 
    for( int i = 0; i < ncuts; ++i )
    {
-      SCIP_CALL( rowGetDual(i, &dualsol) );
-
-      stabcentercuts[i] = dualsol;
+      stabcentercuts[i] = rowGetDual(i);
    }
 
    for( int i = 0; i < nstabcenterlinkingconss; ++i)
    {
-      SCIP_CALL( linkingconsGetDual(i, &dualsol) );
-
-      stabcenterlinkingconss[i] = dualsol;
+      stabcenterlinkingconss[i] = linkingconsGetDual(i);
    }
 
    for( int i = 0; i < nprobs; ++i )
    {
       if(!GCGisPricingprobRelevant(origprob, i))
          continue;
-      SCIP_CALL( convGetDual(i, &dualsol) );
 
-      stabcenterconv[i] = dualsol;
+      stabcenterconv[i] = convGetDual(i);
    }
 
    hasstabilitycenter = TRUE;

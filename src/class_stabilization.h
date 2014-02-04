@@ -68,19 +68,16 @@ public:
       );
    virtual ~Stabilization();
 
-   SCIP_RETCODE consGetDual(
-      int i,
-      SCIP_Real* dual
+   SCIP_Real consGetDual(
+      int i
       );
 
-   SCIP_RETCODE rowGetDual(
-      int i,
-      SCIP_Real* dual
+   SCIP_Real rowGetDual(
+      int i
       );
 
-   SCIP_RETCODE convGetDual(
-      int i,
-      SCIP_Real* dual
+   SCIP_Real convGetDual(
+      int i
       );
 
    SCIP_RETCODE updateStabilityCenter(
@@ -106,9 +103,8 @@ public:
          int nconvconssnew
          );
 
-   SCIP_RETCODE linkingconsGetDual(
-      int i,
-      SCIP_Real* dual
+   SCIP_Real linkingconsGetDual(
+      int i
       );
 
 private:
