@@ -88,7 +88,7 @@ SCIP_RETCODE PricingType::stopClock()
    return SCIP_OKAY;
 }
 
-SCIP_Real PricingType::getClockTime()
+SCIP_Real PricingType::getClockTime() const
 {
    return SCIPgetClockTime(scip_, clock);
 }
@@ -105,21 +105,21 @@ FarkasPricing::FarkasPricing(
 SCIP_Real FarkasPricing::consGetDual(
       SCIP* scip,
       SCIP_CONS* cons
-   )
+   ) const
 {
    return SCIPgetDualfarkasLinear(scip, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
       SCIP_Row* row
-   )
+   ) const
 {
    return SCIProwGetDualfarkas(row);
 }
 
 SCIP_Real FarkasPricing::varGetObj(
       SCIP_VAR* var
-   )
+   ) const
 {
    assert(var != NULL);
    return 0.0;
@@ -141,13 +141,13 @@ SCIP_RETCODE FarkasPricing::addParameters()
 SCIP_Real ReducedCostPricing::consGetDual(
       SCIP* scip,
       SCIP_CONS* cons
-   )
+   ) const
 {
    return SCIPgetDualsolLinear(scip, cons);
 }
 SCIP_Real ReducedCostPricing::rowGetDual(
       SCIP_ROW* row
-   )
+   ) const
 {
    return SCIProwGetDualsol(row);
 }
@@ -162,7 +162,7 @@ ReducedCostPricing::ReducedCostPricing(
 
 SCIP_Real ReducedCostPricing::varGetObj(
       SCIP_VAR* var
-   )
+   ) const
 {
    SCIP_VAR* origvar;
    assert(var != NULL);
@@ -213,7 +213,7 @@ SCIP_Bool FarkasPricing::canOptimalPricingBeAborted(
       int                  successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
       int                  npricingprobsnotnull
-      )
+      ) const
 {
    return !(nfoundvars < maxvarsround && (nfoundvars == 0 || solvedmips < mipsrel * npricingprobsnotnull));
 }
@@ -224,7 +224,7 @@ SCIP_Bool FarkasPricing::canHeuristicPricingBeAborted(
       int                  successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
       int                  npricingprobsnotnull
-      )
+      ) const
 {
    return canOptimalPricingBeAborted(nfoundvars, solvedmips, successfulmips, successfulmipsrel, npricingprobsnotnull);
 }
@@ -235,7 +235,7 @@ SCIP_Bool ReducedCostPricing::canOptimalPricingBeAborted(
       int                  successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
       int                  npricingprobsnotnull
-  )
+  ) const
 {
 
    return !((((nfoundvars < maxvarsroundroot) || !isRootNode(scip_) ) && ((nfoundvars < maxvarsround) || isRootNode(scip_)))
@@ -251,7 +251,7 @@ SCIP_Bool ReducedCostPricing::canHeuristicPricingBeAborted(
       int                  successfulmips,     /**< number of sucessful mips solved so far */
       SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
       int                  npricingprobsnotnull
-  )
+  ) const
 {
    return !((nfoundvars < maxvarsround)
             && successfulmips < maxsuccessfulmips

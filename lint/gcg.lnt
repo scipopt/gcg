@@ -32,6 +32,15 @@
 -i./lint/posix
 -i./lint/cpp
 //-i/usr/include
+--i"/usr/include/c++/4.6"
+--i"/usr/include/c++/4.6/x86_64-suse-linux"
+--i"/usr/include/c++/4.6/backward"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.6/include"
+--i"/usr/local/include"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.6/include-fixed"
+--i"/usr/lib64/gcc/x86_64-suse-linux/4.6/../../../../x86_64-suse-linux/include"
+--i"/usr/include"
+--i"lib/blissinc"
 
 +libh(cplex.h)
 +fll

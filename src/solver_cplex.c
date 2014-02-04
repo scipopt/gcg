@@ -33,15 +33,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <assert.h>
 #include <string.h>
 
 #include "scip/scip.h"
 #include "scip_misc.h"
 #include "type_solver.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
 #include "solver_cplex.h"
+
 #ifdef CPLEXSOLVER
 #include "cplex.h"
 

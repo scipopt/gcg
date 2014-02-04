@@ -61,7 +61,6 @@
 #include "branch_generic.h"
 #include "event_display.h"
 
-using gcg::Stabilization;
 #ifdef _OPENMP
 #include <omp.h>
 #endif

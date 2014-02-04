@@ -122,12 +122,12 @@ public:
          SCIP_Bool*     bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
          );
 
-    FarkasPricing *getFarkasPricing() const
+    const FarkasPricing *getFarkasPricing() const
     {
         return farkaspricing;
     }
 
-    ReducedCostPricing *getReducedCostPricing() const
+    const ReducedCostPricing *getReducedCostPricing() const
     {
         return reducedcostpricing;
     }
@@ -135,7 +135,7 @@ public:
     /** ensures size of solvers array */
     SCIP_RETCODE ensureSizeSolvers();
 
-   SCIP* getOrigprob() const
+   SCIP* getOrigprob()
    {
       return origprob;
    }
