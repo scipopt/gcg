@@ -366,9 +366,10 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
       int colveclen;
 
       mastervar = mastervars[i];
-      objdelta = ABS(SCIPfeasFrac(masterprob, SCIPgetSolVal(masterprob, masterlpsol, mastervar)) * SCIPvarGetObj(mastervar));
+      objdelta = SCIPfeasFrac(masterprob, SCIPgetSolVal(masterprob, masterlpsol, mastervar)) * SCIPvarGetObj(mastervar);
+      objdelta = ABS(objdelta);
       colveclen = (SCIPvarGetStatus(mastervar) == SCIP_VARSTATUS_COLUMN ? SCIPcolGetNNonz(SCIPvarGetCol(mastervar)) : 0);
-      divingdata->masterscores[i] = objdelta / colveclen;
+      divingdata->masterscores[i] = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
    }
 
    /* free memory */
