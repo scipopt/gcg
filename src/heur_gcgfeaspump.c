@@ -156,7 +156,7 @@ SCIP_RETCODE setupDivingSCIP(
    SCIP_CALL( SCIPsetBoolParam(*divingscip, "misc/catchctrlc", FALSE) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(*divingscip, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(*divingscip, "display/verblevel", 0) );
 
    /* disable cutting plane separation */
    SCIP_CALL( SCIPsetSeparating(*divingscip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -642,7 +642,7 @@ SCIP_Longint adjustedMaxNLPIterations(
 
 /** execution method of primal heuristic */
 static
-SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
+SCIP_DECL_HEUREXEC(heurExecGcgfeaspump) /*lint --e{715}*/
 {
    SCIP* masterprob;
    SCIP_HEURDATA* heurdata;
@@ -904,7 +904,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       SCIP_Real* pseudocandsfrac;
       int maxnflipcands;    /* maximal number of candidates to flip in the current pumping round */
       SCIP_Longint nlpiterationsleft;
-      int iterlimit;
+      SCIP_Longint iterlimit;
 
       /* decrease convex combination scalar */
       nloops++;
@@ -1111,7 +1111,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump)
       nlpiterationsleft = adjustedMaxNLPIterations(maxnlpiterations, nsolsfound, nstallloops) - heurdata->nlpiterations;
       iterlimit = MAX((int)nlpiterationsleft, MINLPITER);
       SCIP_CALL( SCIPsetLongintParam(divingscip, "lp/iterlim", iterlimit) );
-      SCIPdebugMessage(" -> solve LP with iteration limit %d\n", iterlimit);
+      SCIPdebugMessage(" -> solve LP with iteration limit %"SCIP_LONGINT_FORMAT"\n", iterlimit);
 
       if( heurdata->stage3 )
       {
