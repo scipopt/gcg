@@ -21,7 +21,7 @@
 
 -fdc       // do not Distinguish plain Char as a unique type.
            // i.e. char is either signed char or unsigned char
-           
+
             // while processing library headers
 -wlib(1)    // sets the warning level within library headers to 1
             // (no warnings, just syntax errors).  Comment out if you
@@ -69,6 +69,8 @@
 -emacro(681,SCIPdebugMessage) // Loop is not entered
 -emacro(506,SCIPdebugPrintf) // Constant value Boolean
 -emacro(681,SCIPdebugPrintf) // Loop is not entered
+-emacro(506,SCIPstatisticPrintf) // Constant value Boolean
+-emacro(681,SCIPstatisticPrintf) // Loop is not entered
 -emacro(506,SCIPdebugCheckRow) // Constant value Boolean
 -emacro(506,SCIPdebugCheckImplic) // Constant value Boolean
 -emacro(506,assert)       // Constant value Boolean
@@ -91,6 +93,7 @@
 -e793  // ANSI limit of 31 'function parameters' exceeded / ANSI limit of 8 '#include levels' exceeded
 -e834  // Operator followed by operator ist confusing
 -e655  // bit-wise operation uses (compatible) enum's
+-e1774 // static to dynamic cast
 
 // temporary
 -e818  // Pointer parameter could be declared as pointing to const
@@ -107,5 +110,7 @@
 //-e765  // external could be made static
 //-e788  // enum constant not used within defaulted switch
 //-e1065 // Symbol ... not declared as "C" conflicts with ...
+
+
 
 -restore_at_end

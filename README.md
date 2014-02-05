@@ -12,7 +12,7 @@ http://www.or.rwth-aachen.de/gcg.
 
 In order to compile GCG, you need
 
- * SCIP Optimization Suite >= 3.0.2
+ * SCIP Optimization Suite >= 3.1.0
  * bliss >= 0.72 ([Direct download](http://www.tcs.hut.fi/Software/bliss/bliss-0.72.zip))
 
 and optionally

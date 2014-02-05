@@ -58,7 +58,7 @@
  *
  *
  * <b> Latest Version </b>
- *  - The latest version is 1.8.0.1
+ *  - The latest version is 2.0.0
  *  - Get it \ref DOWNLOAD "here"
  *
  *
@@ -81,7 +81,7 @@
  * - \ref LICENSE      "Licensing information"
  * - \ref LITERATURE   "Papers dealing with GCG"
  *
- * @version  1.8.0.1
+ * @version  2.0.0
  *
  * <b>Further Documentation</b>
  * - \ref IMPORTANTMETHODS "Methods you should know for writing GCG plug-ins"
@@ -112,6 +112,7 @@
  *
  * GCG can be downloaded from two locations in two versions
  * - Standalone from the server at  RWTH Aachen
+ *  - <a href="download/gcg-2.0.0.tgz">gcg-2.0.0.tgz</a> (700K)
  *  - <a href="download/gcg-1.1.0.tgz">gcg-1.1.0.tgz</a> (680K)
  *  - <a href="download/gcg-1.0.0.tgz">gcg-1.0.0.tgz</a> (670K)
  * - Complete with SCIP in the SCIP Optimization Suite 3.1.0 from the Zuse Institute Berlin
