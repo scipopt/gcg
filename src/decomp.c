@@ -119,7 +119,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], int n)
 static
 SCIP_RETCODE fillOutVarsFromVartoblock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    int                   nblocks,            /**< number of blocks */
    SCIP_VAR**            vars,               /**< variable array */
@@ -135,7 +135,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    int i;
 
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(vartoblock != NULL);
    assert(nblocks >= 0);
    assert(vars != NULL);
@@ -195,7 +195,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( DECdecompSetLinkingvars(scip, decdecomp, linkingvars, nlinkingvars) );
+      SCIP_CALL( DECdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars) );
       *haslinking = TRUE;
    }
 
@@ -209,11 +209,11 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    }
    if( nblocks > 0 )
    {
-      SCIP_CALL( DECdecompSetSubscipvars(scip, decdecomp, subscipvars, nsubscipvars) );
+      SCIP_CALL( DECdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
    }
    SCIPfreeBufferArray(scip, &nsubscipvars);
 
-   DECdecompSetVartoblock(decdecomp, vartoblock);
+   DECdecompSetVartoblock(decomp, vartoblock);
 
    for( i = 0; i < nblocks; ++i )
    {
@@ -231,7 +231,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 static
 SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
    SCIP_CONS**           conss,              /**< constraint array */
@@ -248,14 +248,14 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    int nlinkingconss;
    int i;
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
    assert(conss != NULL);
    assert(nconss > 0);
    assert(haslinking != NULL);
 
-   DECdecompSetConstoblock(decdecomp, constoblock);
+   DECdecompSetConstoblock(decomp, constoblock);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &linkingconss, nconss) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
@@ -279,14 +279,14 @@ SCIP_RETCODE fillOutConsFromConstoblock(
 
       cons = conss[i];
       assert(cons != NULL);
-      if( !SCIPhashmapExists(decdecomp->constoblock, cons) )
+      if( !SCIPhashmapExists(decomp->constoblock, cons) )
       {
          block = nblocks+1;
-         SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) block) );
+         SCIP_CALL( SCIPhashmapInsert(decomp->constoblock, cons, (void*) (size_t) block) );
       }
       else
       {
-         block = (int)(size_t)SCIPhashmapGetImage(decdecomp->constoblock, cons); /*lint !e507*/
+         block = (int)(size_t)SCIPhashmapGetImage(decomp->constoblock, cons); /*lint !e507*/
       }
 
       assert(block > 0 && block <= nblocks+1);
@@ -309,12 +309,12 @@ SCIP_RETCODE fillOutConsFromConstoblock(
 
    if( nlinkingconss > 0 )
    {
-      retcode = DECdecompSetLinkingconss(scip, decdecomp, linkingconss, nlinkingconss);
+      retcode = DECdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss);
       *haslinking = TRUE;
    }
    if( nblocks > 0 )
    {
-      retcode = DECdecompSetSubscipconss(scip, decdecomp, subscipconss, nsubscipconss);
+      retcode = DECdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss);
    }
    SCIPfreeMemoryArray(scip, &linkingconss);
    SCIPfreeBufferArray(scip, &nsubscipconss);
@@ -338,34 +338,39 @@ const char *DECgetStrType(
    return names[type];
 }
 
-/** initializes the decdecomp structure to absolutely nothing */
+/** initializes the decomposition to absolutely nothing */
 SCIP_RETCODE DECdecompCreate(
-   SCIP*                 scip,               /**< Pointer to the SCIP instance */
-   DEC_DECOMP**          decomp              /**< Pointer to the decdecomp instance */
+   SCIP*                 scip,               /**< SCIP data structure */
+   DEC_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
    )
 {
-   assert(scip != NULL);
-   assert(decomp != NULL);
-   SCIP_CALL( SCIPallocMemory(scip, decomp) );
+   DEC_DECOMP* decomp;
 
-   (*decomp)->type = DEC_DECTYPE_UNKNOWN;
-   (*decomp)->constoblock = NULL;
-   (*decomp)->vartoblock = NULL;
-   (*decomp)->subscipvars = NULL;
-   (*decomp)->subscipconss = NULL;
-   (*decomp)->nsubscipconss = NULL;
-   (*decomp)->nsubscipvars = NULL;
-   (*decomp)->linkingconss = NULL;
-   (*decomp)->nlinkingconss = 0;
-   (*decomp)->linkingvars = NULL;
-   (*decomp)->nlinkingvars = 0;
-   (*decomp)->stairlinkingvars = NULL;
-   (*decomp)->nstairlinkingvars = NULL;
-   (*decomp)->nblocks = 0;
-   (*decomp)->presolved = (SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING);
-   (*decomp)->consindex = NULL;
-   (*decomp)->varindex = NULL;
-   (*decomp)->detector = NULL;
+   assert(scip != NULL);
+   assert(decdecomp != NULL);
+
+   SCIP_CALL( SCIPallocMemory(scip, decdecomp) );
+   assert(*decdecomp != NULL);
+   decomp = *decdecomp;
+
+   decomp->type = DEC_DECTYPE_UNKNOWN;
+   decomp->constoblock = NULL;
+   decomp->vartoblock = NULL;
+   decomp->subscipvars = NULL;
+   decomp->subscipconss = NULL;
+   decomp->nsubscipconss = NULL;
+   decomp->nsubscipvars = NULL;
+   decomp->linkingconss = NULL;
+   decomp->nlinkingconss = 0;
+   decomp->linkingvars = NULL;
+   decomp->nlinkingvars = 0;
+   decomp->stairlinkingvars = NULL;
+   decomp->nstairlinkingvars = NULL;
+   decomp->nblocks = 0;
+   decomp->presolved = (SCIPgetStage(scip) >= SCIP_STAGE_PRESOLVING);
+   decomp->consindex = NULL;
+   decomp->varindex = NULL;
+   decomp->detector = NULL;
 
    return SCIP_OKAY;
 }
@@ -373,7 +378,7 @@ SCIP_RETCODE DECdecompCreate(
 /** frees the decdecomp structure */
 SCIP_RETCODE DECdecompFree(
    SCIP*                 scip,               /**< pointer to the SCIP instance */
-   DEC_DECOMP**          decdecomp           /**< pointer to the decdecomp instance */
+   DEC_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
    )
 {
    DEC_DECOMP* decomp;
@@ -469,19 +474,19 @@ SCIP_RETCODE DECdecompFree(
 
 /** sets the type of the decomposition */
 SCIP_RETCODE DECdecompSetType(
-   DEC_DECOMP*           decdecomp,          /**< pointer to the decdecomp instance */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DECTYPE           type               /**< type of the decomposition */
    )
 {
    SCIP_Bool valid;
 
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
    switch( type )
    {
    case DEC_DECTYPE_DIAGONAL:
-      valid = decdecomp->nlinkingconss == 0 && decdecomp->linkingconss == NULL;
-      valid = valid && decdecomp->nlinkingvars == 0 && decdecomp->linkingvars == NULL;
+      valid = decomp->nlinkingconss == 0 && decomp->linkingconss == NULL;
+      valid = valid && decomp->nlinkingvars == 0 && decomp->linkingvars == NULL;
       break;
    case DEC_DECTYPE_ARROWHEAD:
       valid = TRUE;
@@ -490,10 +495,10 @@ SCIP_RETCODE DECdecompSetType(
       valid = FALSE;
       break;
    case DEC_DECTYPE_BORDERED:
-      valid = decdecomp->nlinkingvars == 0 && decdecomp->linkingvars == NULL;
+      valid = decomp->nlinkingvars == 0 && decomp->linkingvars == NULL;
       break;
    case DEC_DECTYPE_STAIRCASE:
-      valid = decdecomp->nlinkingconss == 0 && decdecomp->linkingconss == NULL;
+      valid = decomp->nlinkingconss == 0 && decomp->linkingconss == NULL;
       break;
    default:
       valid = FALSE;
@@ -506,70 +511,69 @@ SCIP_RETCODE DECdecompSetType(
       return SCIP_INVALIDDATA;
    }
 
-   decdecomp->type = type;
+   decomp->type = type;
 
    return SCIP_OKAY;
 }
 
 /** gets the type of the decomposition */
 DEC_DECTYPE DECdecompGetType(
-   DEC_DECOMP*           decdecomp           /**< Pointer to the decdecomp instance */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->type;
+   return decomp->type;
 }
-
 
 /** sets the presolved flag for decomposition */
 void DECdecompSetPresolved(
-   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Bool             presolved           /**< presolved flag for decomposition */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   decdecomp->presolved = presolved;
+   decomp->presolved = presolved;
 }
 
 /** gets the presolved flag for decomposition */
 SCIP_Bool DECdecompGetPresolved(
-   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->presolved;
+   return decomp->presolved;
 }
 
 /** sets the number of blocks for decomposition */
 void DECdecompSetNBlocks(
-   DEC_DECOMP*           decdecomp,          /**< Pointer to the decdecomp instance */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int                   nblocks             /**< number of blocks for decomposition */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(nblocks >= 0);
 
-   decdecomp->nblocks = nblocks;
+   decomp->nblocks = nblocks;
 }
 
 /** gets the number of blocks for decomposition */
 int DECdecompGetNBlocks(
-   DEC_DECOMP*           decdecomp           /**< Pointer to the decdecomp instance */
+      DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->nblocks;
+   return decomp->nblocks;
 }
 
-/** copies the input subscipvars array to the given decdecomp structure */
+/** copies the input subscipvars array to the given decomposition */
 SCIP_RETCODE DECdecompSetSubscipvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_VAR***           subscipvars,        /**< Subscipvars array  */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_VAR***           subscipvars,        /**< subscipvars array  */
    int*                  nsubscipvars        /**< number of subscipvars per block */
    )
 {
@@ -577,29 +581,29 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    int i;
    int b;
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(subscipvars != NULL);
    assert(nsubscipvars != NULL);
-   assert(decdecomp->nblocks > 0);
+   assert(decomp->nblocks > 0);
 
-   assert(decdecomp->subscipvars == NULL);
-   assert(decdecomp->nsubscipvars == NULL);
+   assert(decomp->subscipvars == NULL);
+   assert(decomp->nsubscipvars == NULL);
 
    valid = TRUE;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipvars, decdecomp->nblocks) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipvars, decdecomp->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipvars, decomp->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->nsubscipvars, decomp->nblocks) );
 
-   assert(decdecomp->subscipvars != NULL);
-   assert(decdecomp->nsubscipvars != NULL);
+   assert(decomp->subscipvars != NULL);
+   assert(decomp->nsubscipvars != NULL);
 
-   BMSclearMemoryArray(decdecomp->subscipvars, decdecomp->nblocks);
-   BMSclearMemoryArray(decdecomp->nsubscipvars, decdecomp->nblocks);
+   BMSclearMemoryArray(decomp->subscipvars, decomp->nblocks);
+   BMSclearMemoryArray(decomp->nsubscipvars, decomp->nblocks);
 
-   for( b = 0; b < decdecomp->nblocks; ++b )
+   for( b = 0; b < decomp->nblocks; ++b )
    {
       assert((subscipvars[b] == NULL) == (nsubscipvars[b] == 0));
-      decdecomp->nsubscipvars[b] = nsubscipvars[b];
+      decomp->nsubscipvars[b] = nsubscipvars[b];
 
       if( nsubscipvars[b] < 0 )
       {
@@ -609,11 +613,11 @@ SCIP_RETCODE DECdecompSetSubscipvars(
       else if( nsubscipvars[b] > 0 )
       {
          assert(subscipvars[b] != NULL);
-         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->subscipvars[b]), subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decomp->subscipvars[b]), subscipvars[b], nsubscipvars[b]) ); /*lint !e866*/
 
          for( i = 0; i < nsubscipvars[b]; ++i )
          {
-            SCIP_CALL( SCIPcaptureVar(scip, decdecomp->subscipvars[b][i]) );
+            SCIP_CALL( SCIPcaptureVar(scip, decomp->subscipvars[b][i]) );
          }
       }
    }
@@ -627,31 +631,31 @@ SCIP_RETCODE DECdecompSetSubscipvars(
    return SCIP_OKAY;
 }
 
-/** returns the subscipvars array of the given decdecomp structure */
-SCIP_VAR***  DECdecompGetSubscipvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the subscipvars array of the given decomposition */
+SCIP_VAR*** DECdecompGetSubscipvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->subscipvars;
+   return decomp->subscipvars;
 }
 
-/** returns the nsubscipvars array of the given decdecomp structure */
-int*  DECdecompGetNSubscipvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the nsubscipvars array of the given decomposition */
+int* DECdecompGetNSubscipvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->nsubscipvars;
+   return decomp->nsubscipvars;
 }
 
-/** copies the input subscipconss array to the given decdecomp structure */
+/** copies the input subscipconss array to the given decomposition */
 SCIP_RETCODE DECdecompSetSubscipconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_CONS***          subscipconss,       /**< Subscipconss array  */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_CONS***          subscipconss,       /**< subscipconss array  */
    int*                  nsubscipconss       /**< number of subscipconss per block */
    )
 {
@@ -659,26 +663,26 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    int i;
    int b;
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(subscipconss != NULL);
    assert(nsubscipconss != NULL);
 
-   assert(decdecomp->nblocks > 0);
-   assert(decdecomp->subscipconss == NULL);
-   assert(decdecomp->nsubscipconss == NULL);
+   assert(decomp->nblocks > 0);
+   assert(decomp->subscipconss == NULL);
+   assert(decomp->nsubscipconss == NULL);
 
    valid = TRUE;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->subscipconss, decdecomp->nblocks) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nsubscipconss, decdecomp->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->subscipconss, decomp->nblocks) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->nsubscipconss, decomp->nblocks) );
 
-   assert(decdecomp->subscipconss != NULL);
-   assert(decdecomp->nsubscipconss != NULL);
+   assert(decomp->subscipconss != NULL);
+   assert(decomp->nsubscipconss != NULL);
 
-   BMSclearMemoryArray(decdecomp->subscipconss, decdecomp->nblocks);
-   BMSclearMemoryArray(decdecomp->nsubscipconss, decdecomp->nblocks);
+   BMSclearMemoryArray(decomp->subscipconss, decomp->nblocks);
+   BMSclearMemoryArray(decomp->nsubscipconss, decomp->nblocks);
 
-   for( b = 0; b < decdecomp->nblocks; ++b )
+   for( b = 0; b < decomp->nblocks; ++b )
    {
       if( nsubscipconss[b] <= 0 || subscipconss[b] == NULL )
       {
@@ -686,15 +690,15 @@ SCIP_RETCODE DECdecompSetSubscipconss(
          valid = FALSE;
       }
 
-      decdecomp->nsubscipconss[b] = nsubscipconss[b];
+      decomp->nsubscipconss[b] = nsubscipconss[b];
 
       if( nsubscipconss[b] > 0 )
       {
          assert(subscipconss[b] != NULL);
-         SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) ); /*lint !e866*/
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &decomp->subscipconss[b], subscipconss[b], nsubscipconss[b]) ); /*lint !e866*/
          for( i = 0; i < nsubscipconss[b]; ++i )
          {
-            SCIP_CALL( SCIPcaptureCons(scip, decdecomp->subscipconss[b][i]) );
+            SCIP_CALL( SCIPcaptureCons(scip, decomp->subscipconss[b][i]) );
          }
       }
    }
@@ -705,52 +709,52 @@ SCIP_RETCODE DECdecompSetSubscipconss(
    return SCIP_OKAY;
 }
 
-/** returns the subscipconss array of the given decdecomp structure */
-SCIP_CONS***  DECdecompGetSubscipconss(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the subscipconss array of the given decomposition */
+SCIP_CONS*** DECdecompGetSubscipconss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   return decdecomp->subscipconss;
+   assert(decomp != NULL);
+   return decomp->subscipconss;
 }
 
-/** returns the nsubscipconss array of the given decdecomp structure */
-int*  DECdecompGetNSubscipconss(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the nsubscipconss array of the given decomposition */
+int* DECdecompGetNSubscipconss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   return decdecomp->nsubscipconss;
+   assert(decomp != NULL);
+   return decomp->nsubscipconss;
 }
 
-/** copies the input linkingconss array to the given decdecomp structure */
+/** copies the input linkingconss array to the given decomposition */
 SCIP_RETCODE DECdecompSetLinkingconss(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_CONS**           linkingconss,       /**< Linkingconss array  */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_CONS**           linkingconss,       /**< linkingconss array  */
    int                   nlinkingconss       /**< number of linkingconss per block */
    )
 {
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(linkingconss != NULL);
    assert(nlinkingconss >= 0);
 
-   assert(decdecomp->linkingconss == NULL);
-   assert(decdecomp->nlinkingconss == 0);
+   assert(decomp->linkingconss == NULL);
+   assert(decomp->nlinkingconss == 0);
 
-   decdecomp->nlinkingconss = nlinkingconss;
+   decomp->nlinkingconss = nlinkingconss;
 
    if( nlinkingconss > 0 )
    {
       int i;
       assert(linkingconss != NULL);
 
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingconss, linkingconss, nlinkingconss) );
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decomp->linkingconss, linkingconss, nlinkingconss) );
 
       for( i = 0; i < nlinkingconss; ++i )
       {
-         SCIP_CALL( SCIPcaptureCons(scip, decdecomp->linkingconss[i]) );
+         SCIP_CALL( SCIPcaptureCons(scip, decomp->linkingconss[i]) );
       }
    }
 
@@ -762,54 +766,55 @@ SCIP_RETCODE DECdecompSetLinkingconss(
    return SCIP_OKAY;
 }
 
-/** returns the linkingconss array of the given decdecomp structure */
-SCIP_CONS**  DECdecompGetLinkingconss(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the linkingconss array of the given decomposition */
+SCIP_CONS** DECdecompGetLinkingconss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->linkingconss;
+   return decomp->linkingconss;
 }
 
-/** returns the nlinkingconss array of the given decdecomp structure */
-int  DECdecompGetNLinkingconss(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the nlinkingconss array of the given decomposition */
+int DECdecompGetNLinkingconss(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   assert(decdecomp->nlinkingconss >= 0);
+   assert(decomp != NULL);
+   assert(decomp->nlinkingconss >= 0);
 
-   return decdecomp->nlinkingconss;
+   return decomp->nlinkingconss;
 }
+
 
 /** copies the input linkingvars array to the given decdecomp structure */
 SCIP_RETCODE DECdecompSetLinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_VAR**            linkingvars,        /**< Linkingvars array  */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_VAR**            linkingvars,        /**< linkingvars array  */
    int                   nlinkingvars        /**< number of linkingvars per block */
    )
 {
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(linkingvars != NULL || nlinkingvars == 0);
 
-   assert(decdecomp->linkingvars == NULL);
-   assert(decdecomp->nlinkingvars == 0);
+   assert(decomp->linkingvars == NULL);
+   assert(decomp->nlinkingvars == 0);
 
-   decdecomp->nlinkingvars = nlinkingvars;
+   decomp->nlinkingvars = nlinkingvars;
 
    if( nlinkingvars > 0 )
    {
       int i;
       assert(linkingvars != NULL);
 
-      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decdecomp->linkingvars, linkingvars, nlinkingvars) );
+      SCIP_CALL( SCIPduplicateMemoryArray(scip, &decomp->linkingvars, linkingvars, nlinkingvars) );
 
       for( i = 0; i < nlinkingvars; ++i )
       {
-         SCIP_CALL( SCIPcaptureVar(scip, decdecomp->linkingvars[i]) );
+         SCIP_CALL( SCIPcaptureVar(scip, decomp->linkingvars[i]) );
       }
    }
 
@@ -822,32 +827,32 @@ SCIP_RETCODE DECdecompSetLinkingvars(
    return SCIP_OKAY;
 }
 
-/** returns the linkingvars array of the given decdecomp structure */
-SCIP_VAR**  DECdecompGetLinkingvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the linkingvars array of the given decomposition */
+SCIP_VAR** DECdecompGetLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->linkingvars;
+   return decomp->linkingvars;
 }
 
-/** returns the nlinkingvars array of the given decdecomp structure */
-int  DECdecompGetNLinkingvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the nlinkingvars array of the given decomposition */
+int DECdecompGetNLinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   assert(decdecomp->nlinkingvars >= 0);
+   assert(decomp != NULL);
+   assert(decomp->nlinkingvars >= 0);
 
-   return decdecomp->nlinkingvars;
+   return decomp->nlinkingvars;
 }
 
-/** copies the input stairlinkingvars array to the given decdecomp structure */
+/** copies the input stairlinkingvars array to the given decomposition */
 SCIP_RETCODE DECdecompSetStairlinkingvars(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
-   SCIP_VAR***           stairlinkingvars,   /**< Linkingvars array  */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
+   SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
    int*                  nstairlinkingvars   /**< number of linkingvars per block */
    )
 {
@@ -855,46 +860,46 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    int b;
    int i;
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(stairlinkingvars != NULL);
    assert(nstairlinkingvars != NULL);
 
-   assert(decdecomp->nblocks > 0);
+   assert(decomp->nblocks > 0);
 
-   assert(decdecomp->stairlinkingvars == NULL);
-   assert(decdecomp->nstairlinkingvars == NULL);
+   assert(decomp->stairlinkingvars == NULL);
+   assert(decomp->nstairlinkingvars == NULL);
 
    valid = TRUE; /**@todo A valid check needs to be implemented */
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->stairlinkingvars, decdecomp->nblocks-1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nstairlinkingvars, decdecomp->nblocks-1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->stairlinkingvars, decomp->nblocks-1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &decomp->nstairlinkingvars, decomp->nblocks-1) );
 
-   assert(decdecomp->stairlinkingvars != NULL);
-   assert(decdecomp->nstairlinkingvars != NULL);
+   assert(decomp->stairlinkingvars != NULL);
+   assert(decomp->nstairlinkingvars != NULL);
 
-   BMSclearMemoryArray(decdecomp->stairlinkingvars, decdecomp->nblocks-1);
-   BMSclearMemoryArray(decdecomp->nstairlinkingvars, decdecomp->nblocks-1);
+   BMSclearMemoryArray(decomp->stairlinkingvars, decomp->nblocks-1);
+   BMSclearMemoryArray(decomp->nstairlinkingvars, decomp->nblocks-1);
 
-   for( b = 0; b < decdecomp->nblocks-1; ++b )
+   for( b = 0; b < decomp->nblocks-1; ++b )
    {
       assert(nstairlinkingvars[b] > 0 || stairlinkingvars[b] == NULL);
-      decdecomp->nstairlinkingvars[b] = nstairlinkingvars[b];
+      decomp->nstairlinkingvars[b] = nstairlinkingvars[b];
       if( stairlinkingvars[b] != NULL )
       {
-         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decdecomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
+         SCIP_CALL( SCIPduplicateMemoryArray(scip, &(decomp->stairlinkingvars[b]), stairlinkingvars[b], nstairlinkingvars[b]) ); /*lint !e866 */
       }
       else
       {
-         decdecomp->stairlinkingvars[b] = NULL;
+         decomp->stairlinkingvars[b] = NULL;
       }
    }
 
-   for( b = 0; b < decdecomp->nblocks-1; ++b )
+   for( b = 0; b < decomp->nblocks-1; ++b )
    {
       for( i = 0; i < nstairlinkingvars[b]; ++i )
       {
          assert(stairlinkingvars[b] != NULL);
-         SCIP_CALL( SCIPcaptureVar(scip, decdecomp->stairlinkingvars[b][i]) );
+         SCIP_CALL( SCIPcaptureVar(scip, decomp->stairlinkingvars[b][i]) );
       }
    }
    if( !valid ) /*lint !e774 it is always true, see above */
@@ -905,113 +910,113 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    return SCIP_OKAY;
 }
 
-/** returns the stairlinkingvars array of the given decdecomp structure */
-SCIP_VAR***  DECdecompGetStairlinkingvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the stairlinkingvars array of the given decomposition */
+SCIP_VAR*** DECdecompGetStairlinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   return decdecomp->stairlinkingvars;
+   assert(decomp != NULL);
+   return decomp->stairlinkingvars;
 }
 
-/** returns the nstairlinkingvars array of the given decdecomp structure */
-int*  DECdecompGetNStairlinkingvars(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the nstairlinkingvars array of the given decomposition */
+int* DECdecompGetNStairlinkingvars(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   assert(decdecomp->nstairlinkingvars != NULL );
-   return decdecomp->nstairlinkingvars;
+   assert(decomp != NULL);
+   assert(decomp->nstairlinkingvars != NULL );
+   return decomp->nstairlinkingvars;
 }
 
-/** sets the vartoblock hashmap of the given decdecomp structure */
-void  DECdecompSetVartoblock(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+/** sets the vartoblock hashmap of the given decomposition */
+void DECdecompSetVartoblock(
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock          /**< Vartoblock hashmap */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(vartoblock != NULL);
 
-   decdecomp->vartoblock = vartoblock;
+   decomp->vartoblock = vartoblock;
 }
 
-/** returns the vartoblock hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecompGetVartoblock(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the vartoblock hashmap of the given decomposition */
+SCIP_HASHMAP* DECdecompGetVartoblock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->vartoblock;
+   return decomp->vartoblock;
 }
 
-/** sets the constoblock hashmap of the given decdecomp structure */
-void  DECdecompSetConstoblock(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+/** sets the constoblock hashmap of the given decomposition */
+void DECdecompSetConstoblock(
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock         /**< Constoblock hashmap */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(constoblock != NULL);
 
-   decdecomp->constoblock = constoblock;
+   decomp->constoblock = constoblock;
 }
 
-/** returns the constoblock hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecompGetConstoblock(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the constoblock hashmap of the given decomposition */
+SCIP_HASHMAP* DECdecompGetConstoblock(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->constoblock;
+   return decomp->constoblock;
 }
 
-/** sets the varindex hashmap of the given decdecomp structure */
-void  DECdecompSetVarindex(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+/** sets the varindex hashmap of the given decomposition */
+void DECdecompSetVarindex(
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         varindex            /**< Varindex hashmap */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(varindex != NULL);
-   decdecomp->varindex = varindex;
+   decomp->varindex = varindex;
 }
 
-/** returns the varindex hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecompGetVarindex(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the varindex hashmap of the given decomposition */
+SCIP_HASHMAP* DECdecompGetVarindex(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   return decdecomp->varindex;
+   assert(decomp != NULL);
+   return decomp->varindex;
 }
 
-/** sets the consindex hashmap of the given decdecomp structure */
-void  DECdecompSetConsindex(
-   DEC_DECOMP*           decdecomp,          /**< DEC_DECOMP data structure */
+/** sets the consindex hashmap of the given decomposition */
+void DECdecompSetConsindex(
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         consindex           /**< Consindex hashmap */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(consindex != NULL);
-   decdecomp->consindex = consindex;
+   decomp->consindex = consindex;
 }
 
-/** returns the consindex hashmap of the given decdecomp structure */
-SCIP_HASHMAP*  DECdecompGetConsindex(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+/** returns the consindex hashmap of the given decomposition */
+SCIP_HASHMAP* DECdecompGetConsindex(
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
-   return decdecomp->consindex;
+   assert(decomp != NULL);
+   return decomp->consindex;
 }
 
-/** completely initializes decdecomp from the values of the hashmaps */
+/** completely initializes decomposition structure from the values of the hashmaps */
 SCIP_RETCODE DECfilloutDecompFromHashmaps(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
@@ -1041,7 +1046,7 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    int nconss;
 
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(vartoblock != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
@@ -1056,28 +1061,28 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    assert(conss != NULL);
    assert(nconss > 0);
 
-   DECdecompSetNBlocks(decdecomp, nblocks);
+   DECdecompSetNBlocks(decomp, nblocks);
 
-   SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_DIAGONAL) );
-   SCIP_CALL_QUIET( fillOutConsFromConstoblock(scip, decdecomp, constoblock, nblocks, conss, nconss, &haslinking) );
+   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_DIAGONAL) );
+   SCIP_CALL_QUIET( fillOutConsFromConstoblock(scip, decomp, constoblock, nblocks, conss, nconss, &haslinking) );
 
    if( haslinking )
    {
       SCIPdebugMessage("Decomposition has linking constraints and is bordered.\n");
-      SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_BORDERED) );
+      SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_BORDERED) );
    }
 
-   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decdecomp, vartoblock, nblocks, vars, nvars, &haslinking) );
+   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decomp, vartoblock, nblocks, vars, nvars, &haslinking) );
 
    if( haslinking )
    {
       SCIPdebugMessage("Decomposition has linking variables and is arrowhead.\n");
-      SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_ARROWHEAD) );
+      SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_ARROWHEAD) );
    }
 
    if( !staircase )
    {
-      SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+      SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
       return SCIP_OKAY;
    }
 
@@ -1092,9 +1097,9 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
       nstairlinkingvars[i] = 0;
    }
 
-   nsubscipconss = DECdecompGetNSubscipconss(decdecomp);
-   subscipconss = DECdecompGetSubscipconss(decdecomp);
-   nsubscipvars = DECdecompGetNSubscipvars(decdecomp);
+   nsubscipconss = DECdecompGetNSubscipconss(decomp);
+   subscipconss = DECdecompGetSubscipconss(decomp);
+   nsubscipvars = DECdecompGetNSubscipvars(decomp);
 
    cindex = 0;
    cumindex = 0;
@@ -1159,9 +1164,9 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
       }
    }
 
-   DECdecompSetVarindex(decdecomp, varindex);
-   DECdecompSetConsindex(decdecomp, consindex);
-   SCIP_CALL( DECdecompSetType(decdecomp, DEC_DECTYPE_STAIRCASE) );
+   DECdecompSetVarindex(decomp, varindex);
+   DECdecompSetConsindex(decomp, consindex);
+   SCIP_CALL( DECdecompSetType(decomp, DEC_DECTYPE_STAIRCASE) );
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1175,7 +1180,7 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
       }
    }
 
-   SCIP_CALL( DECdecompSetStairlinkingvars(scip, decdecomp, stairlinkingvars, nstairlinkingvars) );
+   SCIP_CALL( DECdecompSetStairlinkingvars(scip, decomp, stairlinkingvars, nstairlinkingvars) );
 
    for( b = 0; b < nblocks; ++b )
    {
@@ -1184,15 +1189,15 @@ SCIP_RETCODE DECfilloutDecompFromHashmaps(
    SCIPfreeMemoryArray(scip, &stairlinkingvars);
    SCIPfreeMemoryArray(scip, &nstairlinkingvars);
 
-   SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+   SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
 
    return SCIP_OKAY;
 }
 
-/** completely fills out detector structure from only the constraint partition */
+/** completely fills out decomposition structure from only the constraint partition */
 SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp,          /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap, start with 1 for first block and nblocks+1 for linking constraints */
    int                   nblocks,            /**< number of blocks */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
@@ -1210,7 +1215,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP_Bool success;
 
    assert(scip != NULL);
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
 
@@ -1290,36 +1295,36 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       }
    }
 
-   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decdecomp, vartoblock, constoblock, nblocks, staircase) );
+   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase) );
 
    return SCIP_OKAY;
 }
 
-/** sets the detector for the given decdecomp structure */
+/** sets the detector for the given decomposition */
 void DECdecompSetDetector(
-   DEC_DECOMP*           decdecomp,          /**< decdecomp instance */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DETECTOR*         detector            /**< detector data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   decdecomp->detector = detector;
+   decomp->detector = detector;
 }
 
-/** gets the detector for the given decdecomp structure */
+/** gets the detector for the given decomposition */
 DEC_DETECTOR* DECdecompGetDetector(
-   DEC_DECOMP*           decdecomp           /**< DEC_DECOMP data structure */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   assert(decdecomp != NULL);
+   assert(decomp != NULL);
 
-   return decdecomp->detector;
+   return decomp->detector;
 }
 
 /** transforms all constraints and variables, updating the arrays */
 SCIP_RETCODE DECdecompTransform(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decdecomp           /**< decdecomp instance */
+   DEC_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
    int b;
@@ -1335,39 +1340,39 @@ SCIP_RETCODE DECdecompTransform(
    SCIP_CALL( SCIPhashmapCreate(&newvartoblock, SCIPblkmem(scip), SCIPgetNVars(scip)) );
 
    /* transform all constraints and put them into constoblock */
-   for( b = 0; b < decdecomp->nblocks; ++b )
+   for( b = 0; b < decomp->nblocks; ++b )
    {
-      for( c = 0; c < decdecomp->nsubscipconss[b]; ++c )
+      for( c = 0; c < decomp->nsubscipconss[b]; ++c )
       {
          SCIP_CONS* newcons;
-         SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decdecomp->subscipconss[b][c]), SCIPconsIsTransformed(decdecomp->subscipconss[b][c])?"t":"o" );
-         assert(decdecomp->subscipconss[b][c] != NULL);
-         newcons = SCIPfindCons(scip, SCIPconsGetName(decdecomp->subscipconss[b][c]));
-         if( newcons != decdecomp->subscipconss[b][c] )
+         SCIPdebugMessage("%d, %d: %s (%s)\n", b, c, SCIPconsGetName(decomp->subscipconss[b][c]), SCIPconsIsTransformed(decomp->subscipconss[b][c])?"t":"o" );
+         assert(decomp->subscipconss[b][c] != NULL);
+         newcons = SCIPfindCons(scip, SCIPconsGetName(decomp->subscipconss[b][c]));
+         if( newcons != decomp->subscipconss[b][c] )
          {
             SCIP_CALL( SCIPcaptureCons(scip, newcons) );
-            SCIP_CALL( SCIPreleaseCons(scip, &(decdecomp->subscipconss[b][c])) );
-            decdecomp->subscipconss[b][c] = newcons;
+            SCIP_CALL( SCIPreleaseCons(scip, &(decomp->subscipconss[b][c])) );
+            decomp->subscipconss[b][c] = newcons;
          }
-         assert(decdecomp->subscipconss[b][c] != NULL);
-         assert(!SCIPhashmapExists(newconstoblock, decdecomp->subscipconss[b][c]));
-         SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decdecomp->subscipconss[b][c], (void*) (size_t) (b+1)) );
+         assert(decomp->subscipconss[b][c] != NULL);
+         assert(!SCIPhashmapExists(newconstoblock, decomp->subscipconss[b][c]));
+         SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->subscipconss[b][c], (void*) (size_t) (b+1)) );
       }
    }
    /* transform all variables and put them into vartoblock */
-   for( b = 0; b < decdecomp->nblocks; ++b )
+   for( b = 0; b < decomp->nblocks; ++b )
    {
       int idx;
-      for( v = 0, idx = 0; v < decdecomp->nsubscipvars[b]; ++v )
+      for( v = 0, idx = 0; v < decomp->nsubscipvars[b]; ++v )
       {
-         assert(decdecomp->subscipvars[b][v] != NULL);
+         assert(decomp->subscipvars[b][v] != NULL);
 
-         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][v]),
-            (void*)decdecomp->subscipvars[b][v], SCIPvarIsTransformed(decdecomp->subscipvars[b][v])?"t":"o" );
+         SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decomp->subscipvars[b][v]),
+            (void*)decomp->subscipvars[b][v], SCIPvarIsTransformed(decomp->subscipvars[b][v])?"t":"o" );
 
          /* make sure that newvar is a transformed variable */
-         SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->subscipvars[b][v], &newvar) );
-         SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->subscipvars[b][v])) );
+         SCIP_CALL( SCIPgetTransformedVar(scip, decomp->subscipvars[b][v], &newvar) );
+         SCIP_CALL( SCIPreleaseVar(scip, &(decomp->subscipvars[b][v])) );
 
          assert(newvar != NULL);
          assert(SCIPvarIsTransformed(newvar));
@@ -1381,75 +1386,75 @@ SCIP_RETCODE DECdecompTransform(
           */
          if( SCIPvarIsActive(newvar) && !SCIPhashmapExists(newvartoblock, newvar) )
          {
-            decdecomp->subscipvars[b][idx] = newvar;
+            decomp->subscipvars[b][idx] = newvar;
             SCIP_CALL( SCIPcaptureVar(scip, newvar) );
-            SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decdecomp->subscipvars[b][idx]),
-               (void*)decdecomp->subscipvars[b][idx], SCIPvarIsTransformed(decdecomp->subscipvars[b][idx])?"t":"o" );
+            SCIPdebugMessage("%d, %d: %s (%p, %s)\n", b, v, SCIPvarGetName(decomp->subscipvars[b][idx]),
+               (void*)decomp->subscipvars[b][idx], SCIPvarIsTransformed(decomp->subscipvars[b][idx])?"t":"o" );
 
-            assert(decdecomp->subscipvars[b][idx] != NULL);
-            assert(!SCIPhashmapExists(newvartoblock, decdecomp->subscipvars[b][idx]));
-            SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->subscipvars[b][idx], (void*) (size_t) (b+1)) );
+            assert(decomp->subscipvars[b][idx] != NULL);
+            assert(!SCIPhashmapExists(newvartoblock, decomp->subscipvars[b][idx]));
+            SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decomp->subscipvars[b][idx], (void*) (size_t) (b+1)) );
             ++idx;
          }
       }
-      decdecomp->nsubscipvars[b] = idx;
+      decomp->nsubscipvars[b] = idx;
    }
 
    /* transform all linking constraints */
-   for( c = 0; c < decdecomp->nlinkingconss; ++c )
+   for( c = 0; c < decomp->nlinkingconss; ++c )
    {
       SCIP_CONS* newcons;
 
-      SCIPdebugMessage("m, %d: %s (%s)\n", c, SCIPconsGetName(decdecomp->linkingconss[c]), SCIPconsIsTransformed(decdecomp->linkingconss[c])?"t":"o" );
-      assert(decdecomp->linkingconss[c] != NULL);
-      newcons = SCIPfindCons(scip, SCIPconsGetName(decdecomp->linkingconss[c]));
-      if( newcons != decdecomp->linkingconss[c] )
+      SCIPdebugMessage("m, %d: %s (%s)\n", c, SCIPconsGetName(decomp->linkingconss[c]), SCIPconsIsTransformed(decomp->linkingconss[c])?"t":"o" );
+      assert(decomp->linkingconss[c] != NULL);
+      newcons = SCIPfindCons(scip, SCIPconsGetName(decomp->linkingconss[c]));
+      if( newcons != decomp->linkingconss[c] )
       {
          SCIP_CALL( SCIPcaptureCons(scip, newcons) );
-         SCIP_CALL( SCIPreleaseCons(scip, &(decdecomp->linkingconss[c])) );
-         decdecomp->linkingconss[c] = newcons;
+         SCIP_CALL( SCIPreleaseCons(scip, &(decomp->linkingconss[c])) );
+         decomp->linkingconss[c] = newcons;
       }
-      SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decdecomp->linkingconss[c],(void*) (size_t) (decdecomp->nblocks+1) ) );
+      SCIP_CALL( SCIPhashmapSetImage(newconstoblock, decomp->linkingconss[c],(void*) (size_t) (decomp->nblocks+1) ) );
 
-      assert(decdecomp->linkingconss[c] != NULL);
+      assert(decomp->linkingconss[c] != NULL);
    }
 
    /* transform all linking variables */
-   for( v = 0; v < decdecomp->nlinkingvars; ++v )
+   for( v = 0; v < decomp->nlinkingvars; ++v )
    {
       int block;
-      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
-         (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
-      assert(decdecomp->linkingvars[v] != NULL);
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decomp->linkingvars[v]),
+         (void*)decomp->linkingvars[v], SCIPvarIsTransformed(decomp->linkingvars[v])?"t":"o");
+      assert(decomp->linkingvars[v] != NULL);
 
-      if( !SCIPvarIsTransformed(decdecomp->linkingvars[v]) )
+      if( !SCIPvarIsTransformed(decomp->linkingvars[v]) )
       {
-         SCIP_CALL( SCIPgetTransformedVar(scip, decdecomp->linkingvars[v], &newvar) );
+         SCIP_CALL( SCIPgetTransformedVar(scip, decomp->linkingvars[v], &newvar) );
          newvar = SCIPvarGetProbvar(newvar);
       }
       else
-         newvar = decdecomp->linkingvars[v];
+         newvar = decomp->linkingvars[v];
 
-      block = (int) (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[v]); /*lint !e507*/
-      assert(block == decdecomp->nblocks +1 || block == decdecomp->nblocks +2);
+      block = (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, decomp->linkingvars[v]); /*lint !e507*/
+      assert(block == decomp->nblocks +1 || block == decomp->nblocks +2);
       assert(newvar != NULL);
       assert(SCIPvarIsTransformed(newvar));
-      SCIP_CALL( SCIPreleaseVar(scip, &(decdecomp->linkingvars[v])) );
+      SCIP_CALL( SCIPreleaseVar(scip, &(decomp->linkingvars[v])) );
 
-      decdecomp->linkingvars[v] = newvar;
-      SCIP_CALL( SCIPcaptureVar(scip, decdecomp->linkingvars[v]) );
-      SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decdecomp->linkingvars[v], (void*) (size_t) (block) ) );
-      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decdecomp->linkingvars[v]),
-         (void*)decdecomp->linkingvars[v], SCIPvarIsTransformed(decdecomp->linkingvars[v])?"t":"o");
-      assert(decdecomp->linkingvars[v] != NULL);
+      decomp->linkingvars[v] = newvar;
+      SCIP_CALL( SCIPcaptureVar(scip, decomp->linkingvars[v]) );
+      SCIP_CALL( SCIPhashmapSetImage(newvartoblock, decomp->linkingvars[v], (void*) (size_t) (block) ) );
+      SCIPdebugMessage("m, %d: %s (%p, %s)\n", v, SCIPvarGetName(decomp->linkingvars[v]),
+         (void*)decomp->linkingvars[v], SCIPvarIsTransformed(decomp->linkingvars[v])?"t":"o");
+      assert(decomp->linkingvars[v] != NULL);
    }
 
-   SCIPhashmapFree(&decdecomp->constoblock);
-   decdecomp->constoblock = newconstoblock;
-   SCIPhashmapFree(&decdecomp->vartoblock);
-   decdecomp->vartoblock = newvartoblock;
+   SCIPhashmapFree(&decomp->constoblock);
+   decomp->constoblock = newconstoblock;
+   SCIPhashmapFree(&decomp->vartoblock);
+   decomp->vartoblock = newvartoblock;
 
-   SCIP_CALL( DECdecompCheckConsistency(scip, decdecomp) );
+   SCIP_CALL( DECdecompCheckConsistency(scip, decomp) );
 
    return SCIP_OKAY;
 }
@@ -1612,7 +1617,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
 /** creates a decomposition with all constraints in the master */
 SCIP_RETCODE DECcreateBasicDecomp(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp               /**< decomposition structure */
+   DEC_DECOMP**          decomp               /**< decomposition data structure */
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -1898,7 +1903,7 @@ SCIP_RETCODE fillConstoblock(
  */
 SCIP_RETCODE DECcreateDecompFromMasterconss(
    SCIP*                 scip,                /**< SCIP data structure */
-   DEC_DECOMP**          decomp,              /**< decomposition structure */
+   DEC_DECOMP**          decomp,              /**< decomposition data structure */
    SCIP_CONS**           masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss         /**< number of constraints in the master */
    )
@@ -1977,7 +1982,7 @@ SCIP_RETCODE DECcreateDecompFromMasterconss(
    return SCIP_OKAY;
 }
 
-/** increase the corresponding count of the */
+/** increase the corresponding count of the variable stats*/
 static
 void incVarsData(
    SCIP_VAR*              var,                /**< variable to consider */
@@ -2020,7 +2025,7 @@ void incVarsData(
 /** return the number of variables and binary, integer, implied integer, continuous variables of all subproblems */
 void DECgetSubproblemVarsData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nvars,              /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
    int*                  nbinvars,           /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
    int*                  nintvars,           /**< pointer to array of size nproblems to store number of integer subproblem vars or NULL */
@@ -2069,7 +2074,7 @@ void DECgetSubproblemVarsData(
 /** return the number of variables and binary, integer, implied integer, continuous variables of the master */
 void DECgetLinkingVarsData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nvars,              /**< pointer to store number of linking vars or NULL */
    int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
    int*                  nintvars,           /**< pointer to store number of integer linking vars or NULL */
@@ -2119,7 +2124,7 @@ void DECgetLinkingVarsData(
  */
 SCIP_RETCODE DECgetDensityData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< pointer to array to store constraints belonging to the density */
@@ -2291,7 +2296,7 @@ void increaseLock(
  */
 SCIP_RETCODE DECgetVarLockData(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition structure */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
    int                   nsubproblems,       /**< number of sub problems */
@@ -2602,6 +2607,7 @@ SCIP_RETCODE DECevaluateDecomposition(
    return SCIP_OKAY;
 }
 
+/** compute the density of variables in blocks and master */
 static
 SCIP_RETCODE computeVarDensities(
       SCIP*              scip,               /**< SCIP data structure */
@@ -2958,7 +2964,7 @@ int DECfilterSimilarDecompositions(
 /** returns the number of the block that the constraint is with respect to the decomposition */
 SCIP_RETCODE DECdetermineConsBlock(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    int                   *block              /**< block of the constraint (or nblocks for master) */
 )
@@ -3040,7 +3046,7 @@ SCIP_RETCODE DECdetermineConsBlock(
 /** move a master constraint to pricing problem */
 SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int                   consindex,          /**< index of constraint to move */
    int                   block               /**< block of the pricing problem where to move */
    )
@@ -3096,7 +3102,7 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
 /** tries to assign masterconss to pricing problem */
 SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  transferred         /**< number of master constraints reassigned */
    )
 {
@@ -3142,7 +3148,7 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
 /** removes a variable from the linking variable array */
 SCIP_RETCODE DECdecompRemoveLinkingVar(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR*             var,                /**< variable to remove */
    SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
    )
@@ -3187,10 +3193,10 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
    return SCIP_OKAY;
 }
 
-/** tries to assign masterconss to new and existing pricing problems */
+/** tries to assign masterconss to new pricing problem */
 SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DECOMP**          newdecomp,          /**< new decomposition, if successful */
    int*                  transferred         /**< number of master constraints reassigned */
    )
@@ -3246,7 +3252,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
 /** polish the decomposition and try to greedily assign master constraints to pricing problem where useful */
 SCIP_RETCODE DECcreatePolishedDecomp(
    SCIP*                 scip,               /**< SCIP data structure */
-   DEC_DECOMP*           decomp,             /**< decomposition */
+   DEC_DECOMP*           decomp,             /**< decomposition data structure */
    DEC_DECOMP**          newdecomp           /**< new decomposition, if successful */
    )
 {
