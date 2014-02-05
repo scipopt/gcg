@@ -70,11 +70,11 @@ Weights::~Weights()
    // TODO Auto-generated destructor stub
 }
 
-int Weights::calculate(SCIP_CONS* cons)
+int Weights::calculate(SCIP_CONS* cons) const
 {
    return consweight;
 }
-int Weights::calculate(SCIP_VAR* var)
+int Weights::calculate(SCIP_VAR* var) const
 
 {
    int weight;

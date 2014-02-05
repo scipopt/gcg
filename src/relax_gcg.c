@@ -1443,12 +1443,16 @@ SCIP_RETCODE createPricingprobConss(
    char name[SCIP_MAXSTRLEN];
    SCIP_Bool success;
 
+   assert(scip != NULL);
+   assert(relaxdata != NULL);
+
    subscipconss = DECdecompGetSubscipconss(relaxdata->decdecomp);
    nsubscipconss = DECdecompGetNSubscipconss(relaxdata->decdecomp);
    nblocks = DECdecompGetNBlocks(relaxdata->decdecomp);
 
    for( b = 0; b < nblocks; ++b )
    {
+      assert(hashorig2pricingvar != NULL);
       for( c = 0; c < nsubscipconss[b]; ++c )
       {
          SCIPdebugMessage("copying %s to pricing problem %d\n", SCIPconsGetName(subscipconss[b][c]), b);

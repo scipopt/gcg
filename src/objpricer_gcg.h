@@ -315,7 +315,7 @@ private:
    SCIP_RETCODE addBranchingBoundChangesToPricing(
       int                   prob,               /**< index of pricing problem */
       SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
-   );
+   ) const;
 
    SCIP_RETCODE checkBranchingBoundChanges(
       int                   prob,               /**< index of pricing problem */

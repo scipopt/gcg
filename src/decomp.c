@@ -56,10 +56,10 @@ typedef struct {
 #define ELEM_SWAP(a,b) { register SCIP_Real t=(a);(a)=(b);(b)=t; }
 
 static
-SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
+SCIP_Real quick_select_median(SCIP_Real arr[], int n)
 {
-   unsigned int low, high;
-   unsigned int median;
+   int low, high;
+   int median;
 
    low = 0;
    high = n - 1;
@@ -67,7 +67,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
 
    for( ;; )
    {
-      unsigned int middle, ll, hh;
+      int middle, ll, hh;
       if( high <= low ) /* One element only */
          return arr[median];
 
@@ -87,7 +87,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
       if( arr[middle] > arr[low] )
          ELEM_SWAP(arr[middle], arr[low]);
       /* Swap low item (now in position middle) into position (low+1) */
-      ELEM_SWAP(arr[middle], arr[low + 1]);
+      ELEM_SWAP(arr[middle], arr[(size_t)(low + 1)]);
       /* Nibble from each end towards middle, swapping items when stuck */
       ll = low + 1;
       hh = high;
@@ -112,8 +112,6 @@ SCIP_Real quick_select_median(SCIP_Real arr[], unsigned int n)
       if( hh >= median )
          high = hh - 1;
    }
-
-   return arr[median];
 }
 
 
@@ -866,7 +864,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
    assert(decdecomp->stairlinkingvars == NULL);
    assert(decdecomp->nstairlinkingvars == NULL);
 
-   valid = TRUE; /**@todo A valid check needs to be implemented */ /*lint !e774 */
+   valid = TRUE; /**@todo A valid check needs to be implemented */
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->stairlinkingvars, decdecomp->nblocks-1) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &decdecomp->nstairlinkingvars, decdecomp->nblocks-1) );
@@ -899,7 +897,7 @@ SCIP_RETCODE DECdecompSetStairlinkingvars(
          SCIP_CALL( SCIPcaptureVar(scip, decdecomp->stairlinkingvars[b][i]) );
       }
    }
-   if( !valid )
+   if( !valid ) /*lint !e774 it is always true, see above */
    {
       SCIPerrorMessage("The staircase linking variables are inconsistent.\n");
       return SCIP_INVALIDDATA;
@@ -1432,7 +1430,7 @@ SCIP_RETCODE DECdecompTransform(
       else
          newvar = decdecomp->linkingvars[v];
 
-      block = (int) (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[v]);
+      block = (int) (size_t) SCIPhashmapGetImage(decdecomp->vartoblock, decdecomp->linkingvars[v]); /*lint !e507*/
       assert(block == decdecomp->nblocks +1 || block == decdecomp->nblocks +2);
       assert(newvar != NULL);
       assert(SCIPvarIsTransformed(newvar));
@@ -1489,7 +1487,7 @@ SCIP_RETCODE DECdecompAddRemainingConss(
             }
             else
             {
-               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[block], decdecomp->nsubscipconss[block]+1) );
+               SCIP_CALL( SCIPreallocMemoryArray(scip, &decdecomp->subscipconss[block], decdecomp->nsubscipconss[block]+1) ); /*lint !e866*/
                decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
                decdecomp->nsubscipconss[block] += 1;
                SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
@@ -1577,7 +1575,7 @@ SCIP_RETCODE DECdecompCheckConsistency(
    for( v = 0; v < DECdecompGetNLinkingvars(decdecomp); ++v )
    {
       int varblock;
-      varblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v]);
+      varblock = (int) (size_t) SCIPhashmapGetImage(DECdecompGetVartoblock(decdecomp), DECdecompGetLinkingvars(decdecomp)[v]); /*lint !e507*/
       assert( varblock == DECdecompGetNBlocks(decdecomp) +1 || varblock == DECdecompGetNBlocks(decdecomp)+2); /*lint !e507*/
    }
    for (c = 0; c < DECdecompGetNLinkingconss(decdecomp); ++c)
@@ -2334,8 +2332,8 @@ SCIP_RETCODE DECgetVarLockData(
    BMSclearMemoryArray(masterlocksup, nvars);
    for( i = 0; i < nsubproblems; ++i )
    {
-      BMSclearMemoryArray(subsciplocksdown[i], nvars);
-      BMSclearMemoryArray(subsciplocksup[i], nvars);
+      BMSclearMemoryArray(subsciplocksdown[i], nvars); /*lint !e866*/
+      BMSclearMemoryArray(subsciplocksup[i], nvars); /*lint !e866*/
    }
 
    for( i = 0; i < DECdecompGetNBlocks(decomp); ++i )
@@ -2368,7 +2366,7 @@ SCIP_RETCODE DECgetVarLockData(
             assert(probindex >= 0);
             assert(probindex < nvars);
 
-            assert((size_t)SCIPhashmapGetImage(DECdecompGetVartoblock(decomp), var) > 0);
+            assert(SCIPhashmapExists(DECdecompGetVartoblock(decomp), var));
             increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
@@ -2648,8 +2646,8 @@ SCIP_RETCODE computeVarDensities(
 
    for( b = 0; b < nblocks; ++b )
    {
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]) );
-      BMSclearMemoryArray(vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]) ); /*lint !e866 !e666*/
+      BMSclearMemoryArray(vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]); /*lint !e866 */
    }
 
    for( v = 0; v < nvars; ++v )
@@ -2730,7 +2728,7 @@ SCIP_RETCODE computeVarDensities(
 
    for( b = 0; b < nblocks; ++b )
    {
-      SCIPfreeBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]);
+      SCIPfreeBlockMemoryArray(scip, &vardistribution[b], DECdecompGetNSubscipvars(decomp)[b]); /*lint !e866 */
    }
 
    SCIPfreeBlockMemoryArray(scip, &mastervardistribution, nvars);
@@ -2940,6 +2938,7 @@ int DECfilterSimilarDecompositions(
    nunique = ndecs;
    for( i = 0; i < nunique; ++i )
    {
+      /*lint -e{850} j is modified in the body of the for loop */
       for( j = i+1; j < nunique; ++j )
       {
          DEC_DECOMP* tmp;
@@ -3001,7 +3000,7 @@ SCIP_RETCODE DECdetermineConsBlock(
       int varblock;
 
       assert(SCIPhashmapExists(vartoblock, SCIPvarGetProbvar(curvars[i])));
-      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1;
+      varblock = ((int) (size_t) SCIPhashmapGetImage(vartoblock, SCIPvarGetProbvar(curvars[i])))-1; /*lint !e507 */
 
       /* if variable is linking skip*/
       if( varblock == nblocks+1 )
@@ -3068,7 +3067,7 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
    decomp->linkingconss[consindex] =  decomp->linkingconss[decomp->nlinkingconss-1];
    decomp->nlinkingconss -= 1;
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipconss[block], decomp->nsubscipconss[block]+1) ); /*lint !e866 */
    decomp->subscipconss[block][decomp->nsubscipconss[block]] = linkcons;
    decomp->nsubscipconss[block] += 1;
    SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t) (block+1)) );
@@ -3078,10 +3077,10 @@ SCIP_RETCODE DECdecompMoveLinkingConsToPricing(
       SCIP_VAR* probvar = SCIPvarGetProbvar(curvars[v]);
       assert(SCIPhashmapExists(decomp->vartoblock, probvar));
       /* if variable is in master only, move to subproblem */
-      if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 )
+      if( (int) (size_t) SCIPhashmapGetImage(decomp->vartoblock, probvar) == decomp->nblocks+1 ) /*lint !e507 */
       {
          SCIP_CALL( SCIPhashmapSetImage(decomp->vartoblock, probvar, (void*) (size_t) (block+1)) );
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->subscipvars[block], decomp->nsubscipvars[block] + 1) ) /*lint !e866 */;
          decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
          decomp->nsubscipvars[block] += 1;
          SCIP_CALL( DECdecompRemoveLinkingVar(scip, decomp, probvar, &success) );
@@ -3109,6 +3108,7 @@ SCIP_RETCODE DECtryAssignMasterconssToExistingPricing(
 
    *transferred = 0;
 
+   /*lint -e{850} c is modified in the body of the for loop */
    for( c = 0; c < decomp->nlinkingconss; ++c )
    {
       int block;
@@ -3181,7 +3181,7 @@ SCIP_RETCODE DECdecompRemoveLinkingVar(
       }
       else
       {
-         SCIPreallocMemoryArray(scip, &decomp->linkingvars, decomp->nlinkingvars);
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &decomp->linkingvars, decomp->nlinkingvars) );
       }
    }
    return SCIP_OKAY;
@@ -3227,7 +3227,7 @@ SCIP_RETCODE DECtryAssignMasterconssToNewPricing(
          int consblock;
          SCIP_CONS* cons = SCIPgetConss(scip)[i];
          assert(SCIPhashmapExists(decomp->constoblock, cons));
-         consblock = (int) (size_t) SCIPhashmapGetImage(decomp->constoblock, cons);
+         consblock = (int) (size_t) SCIPhashmapGetImage(decomp->constoblock, cons); /*lint !e507 */
          SCIPdebugMessage("Cons <%s> %d -> %d\n", SCIPconsGetName(cons), consblock, consblock+1);
 
          SCIP_CALL( SCIPhashmapSetImage(constoblock, cons, (void*) (size_t) (consblock+1)) );

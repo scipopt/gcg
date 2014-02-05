@@ -192,7 +192,7 @@ SCIP_DECL_CONSFREE(consFreeDecomp)
          SCIP_CALL( (*detector->exitDetection)(scip, detector) );
       }
       SCIP_CALL( SCIPfreeClock(scip, &(conshdlrdata->detectors[i]->dectime)) );
-      SCIPfreeBlockMemory(scip, &(conshdlrdata->detectors[i]));
+      SCIPfreeBlockMemory(scip, &(conshdlrdata->detectors[i])); /*lint !e866 */
    }
 
    if( conshdlrdata->ndecomps > 0 )
@@ -890,7 +890,7 @@ SCIP_RETCODE setDetectionDefault(
    SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
-{
+{ /*lint --e{715}*/
    int i;
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
@@ -913,7 +913,7 @@ SCIP_RETCODE setDetectionAggressive(
    SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
-{
+{ /*lint --e{715}*/
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
 
@@ -927,7 +927,7 @@ SCIP_RETCODE setDetectionOff(
    SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
-{
+{ /*lint --e{715}*/
    int i;
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
@@ -950,7 +950,7 @@ SCIP_RETCODE setDetectionFast(
    SCIP_CONSHDLRDATA*    conshdlrdata,       /**< constraint handler data structure */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    )
-{
+{ /*lint --e{715} */
    assert(scip != NULL);
    assert(conshdlrdata != NULL);
 

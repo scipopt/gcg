@@ -60,8 +60,8 @@ public:
    Weights();
 
    virtual ~Weights();
-   int calculate(SCIP_CONS* cons);
-   int calculate(SCIP_VAR* var);
+   int calculate(SCIP_CONS* cons) const;
+   int calculate(SCIP_VAR* var) const;
 };
 
 } /* namespace gcg */

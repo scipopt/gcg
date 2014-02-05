@@ -35,11 +35,10 @@
 #include <string.h>
 #include "event_bestsol.h"
 
+#ifdef SCIP_STATISTIC
 #define EVENTHDLR_NAME         "bestsol"
 #define EVENTHDLR_DESC         "event handler to record the best primal bound for each heuristic"
 
-
-#ifdef SCIP_STATISTIC
 /*
  * Data structures
  */

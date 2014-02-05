@@ -109,10 +109,12 @@ SCIP_RETCODE findRandomPartition(
    BMSclearMemoryArray(consblocks, nconss);
    
    if( detectordata->seed == -1 )
-      seed = SCIPround(scip, SCIPclockGetTimeOfDay());
+      seed = (unsigned int) SCIPround(scip, SCIPclockGetTimeOfDay());
    else
-      seed = detectordata->seed;
-
+   {
+      assert(detectordata->seed >= 0);
+      seed = (unsigned int) detectordata->seed;
+   }
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " (seed = %d)", seed);
 
    if( detectordata->maxblocks == -1 )
