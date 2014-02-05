@@ -924,18 +924,21 @@ SCIP_RETCODE fixVariables(
       SCIP_VAR** origvars;
       SCIP_Real* origvals;
       int norigvars;
+      int selidx;
 
       /* get the block that represents this block (in case of aggregation) */
       blockrep = GCGgetBlockRepresentative(scip, i);
 
       /* at least one extreme point must have been selected */
-      assert(selection[i * nusedpts] != -1);
+      selidx = i * nusedpts;
+      assert(selection[selidx] != -1);
 
       /* check whether the block would be fixed entirely to zero;
        * a neccessary condition is that only one extreme pt has been selected
        * (actual original variable values are checked later)
        */
-      if( selection[i * nusedpts + 1] == -1 )
+      selidx = i * nusedpts + 1;
+      if( selection[selidx] == -1 )
          zeroblocks[i] = TRUE;
       else
          zeroblocks[i] = FALSE;
@@ -943,8 +946,6 @@ SCIP_RETCODE fixVariables(
       /* compare the selected extreme points, where the first point is the reference point */
       for( j = 0; j < nusedpts; ++j )
       {
-         int selidx;
-
          selidx = i * nusedpts + j;
          if( selection[selidx] != -1 )
          {
