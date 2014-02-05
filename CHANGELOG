@@ -17,7 +17,7 @@ features
 - improved heuristics
 - copy solutions from original problem to master problem
 - improved handling of compile flags changes such as an automatic
-  recompilation of SCIP if, e.g., USRFLAGS change
+  recompilation if, e.g., USRFLAGS change
 - new solver for pricing problems that uses CPLEX to solve the MIP
   (enabled if LPS=cpx)
 
@@ -27,6 +27,8 @@ code cleanup
 - extracted graph methods for reuse
 - branching is now done in the master problem
 - remove code that was never called
+- Rename methods in order to state their intention
+- provide a gcg.h file to easily use the most common methods
 
 bug fixes
 - memory allocation bugs
@@ -35,7 +37,7 @@ bug fixes
 - fixed a lot of code checker issues
 - use an event handler to disable the master display
 - override PARASCIP=true if OPENMP=true
-- correct decomp documentation and simplify interfaces
+- correct decomp documentation and simplify decomposition interfaces
 
 
 GCG Version 1.1
