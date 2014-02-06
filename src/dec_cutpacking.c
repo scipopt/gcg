@@ -57,86 +57,86 @@
 #define DEC_SKIP              FALSE          /**< should detector be skipped if others found detections */
 
 /* Default parameter settings */
-#define DEFAULT_RANDSEED                  1     /**< random seed for the hmetis call */
-#define DEFAULT_TIDY                     TRUE   /**< whether to clean up afterwards */
-#define DEFAULT_FIXEDBLOCKS              FALSE   /**< whether the blocks should consist of a given number of constraints */
-#define DEFAULT_BLOCKSIZE                 200    /**< number of constraints per block */
-#define DEFAULT_ALGORITHM_METIS           1     /**< Should be used metis or the stoer-wagner algorithm */
+#define DEFAULT_RANDSEED              1      /**< random seed for the hmetis call */
+#define DEFAULT_TIDY               TRUE      /**< whether to clean up afterwards */
+#define DEFAULT_FIXEDBLOCKS       FALSE      /**< whether the blocks should consist of a given number of constraints */
+#define DEFAULT_BLOCKSIZE           200      /**< number of constraints per block */
+#define DEFAULT_ALGORITHM_METIS       1      /**< Should be used metis or the stoer-wagner algorithm */
 
-#define DEFAULT_METIS_UBFACTOR            5.0   /**< default unbalance factor given to metis on the commandline */
-#define DEFAULT_METIS_VERBOSE             FALSE /**< should metis be verbose */
-#define DEFAULT_METISUSEPTYPE_RB          TRUE  /**< Should metis use the rb or kway partitioning algorithm */
+#define DEFAULT_METIS_UBFACTOR      5.0      /**< default unbalance factor given to metis on the commandline */
+#define DEFAULT_METIS_VERBOSE     FALSE      /**< should metis be verbose */
+#define DEFAULT_METISUSEPTYPE_RB   TRUE      /**< Should metis use the rb or kway partitioning algorithm */
 
 /*
  * Data structures
  */
 
-/** graphstructure **/
-struct graphstructure
+/** graph structure **/
+struct Graph
 {
-   SCIP_HASHMAP** adjacencylist; /**< adjacencylists of the graph */
-   SCIP_CONS** conss;            /**< constraints (each constraint represents a vertice of the graph)*/
-   int nconss;                   /**< number of vertices */
-   SCIP_HASHMAP* constopos;      /**< assigns constraints to their poistion in conss */
+   SCIP_HASHMAP**        adjacencylist;      /**< adjacencylists of the graph */
+   SCIP_CONS**           conss;              /**< constraints (each constraint represents a vertice of the graph)*/
+   int                   nconss;             /**< number of vertices */
+   SCIP_HASHMAP*         constopos;          /**< assigns constraints to their poistion in conss */
 
-   int nedges;                   /**< number of edges */
+   int                   nedges;             /**< number of edges */
 
-   SCIP_CONS* cons1;             /**< */
-   SCIP_CONS* cons2;             /**< */
+   SCIP_CONS*            cons1;              /**< */
+   SCIP_CONS*            cons2;              /**< */
 };
-typedef struct graphstructure Graph;
+typedef struct Graph GRAPH;
 
 /** detector data */
 struct DEC_DetectorData
 {
-   int iter;
-   int algorithm;
-   int blocksize;
-   SCIP_Bool fixedblocks;
+   int                   iter;
+   int                   algorithm;
+   int                   blocksize;
+   SCIP_Bool             fixedblocks;
 
-   /* Stuff for the algorithm */
-   Graph* graphs;
-   int ngraphs;
-   SCIP_CONS*** subscipconss;
-   int* nsubscipconss;
-   SCIP_HASHMAP* constoblock;
+   /* stuff for the algorithm */
+   GRAPH*                graphs;
+   int                   ngraphs;
+   SCIP_CONS***          subscipconss;
+   int*                  nsubscipconss;
+   SCIP_HASHMAP*         constoblock;
 
-   int nblocks;
-   SCIP_HASHMAP* occupied;
-   int position;
-   int startblock;
-   int* partition;
+   int                   nblocks;
+   SCIP_HASHMAP*         occupied;
+   int                   position;
+   int                   startblock;
+   int*                  partition;
 
-   SCIP_HASHMAP** mergedconss;
-   SCIP_HASHMAP* representatives;
-   int nrepresentatives;
+   SCIP_HASHMAP**        mergedconss;
+   SCIP_HASHMAP*         representatives;
+   int                   nrepresentatives;
 
    /* general stuff */
-   SCIP_HASHMAP* vartopos;
-   int* nvarinconss;
-   SCIP_CONS*** varinconss;
-   SCIP_VAR** relvars;
-   int nrelvars;
-   int nrelconss;
+   SCIP_HASHMAP*         vartopos;
+   int*                  nvarinconss;
+   SCIP_CONS***          varinconss;
+   SCIP_VAR**            relvars;
+   int                   nrelvars;
+   int                   nrelconss;
 
    /* general parameters */
-   SCIP_Bool tidy;
+   SCIP_Bool             tidy;
 
-   /* Graph stuff for hmetis */
-   int randomseed;
-   SCIP_Real metisubfactor;
-   SCIP_Bool metisverbose;
-   SCIP_Bool metisuseptyperb;
-   SCIP_Bool found;
+   /* graph stuff for hmetis */
+   int                   randomseed;
+   SCIP_Real             metisubfactor;
+   SCIP_Bool             metisverbose;
+   SCIP_Bool             metisuseptyperb;
+   SCIP_Bool             found;
 
 };
 
 /*
  * Local methods
  */
-/* put your local methods here, and declare them static */
 
-static DEC_DECL_INITDETECTOR(initCutpacking)
+static
+DEC_DECL_INITDETECTOR(initCutpacking)
 {
    int i;
    int j;
@@ -275,7 +275,8 @@ static DEC_DECL_INITDETECTOR(initCutpacking)
 }
 
 /** presolving deinitialization method of presolver (called after presolving has been finished) */
-static DEC_DECL_EXITDETECTOR(exitCutpacking)
+static
+DEC_DECL_EXITDETECTOR(exitCutpacking)
 {
    int i;
    DEC_DETECTORDATA* detectordata;
@@ -326,7 +327,8 @@ static DEC_DECL_EXITDETECTOR(exitCutpacking)
 }
 
 /** builds the graph from the given scip instance */
-static SCIP_RETCODE buildGraphStructure(
+static
+SCIP_RETCODE buildGraphStructure(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata        /**< detectordata data structure */
    )
@@ -337,7 +339,7 @@ static SCIP_RETCODE buildGraphStructure(
    int k;
    int nedges;
    long int cost;
-   Graph graph;
+   GRAPH graph;
    SCIP_CONS*** varinconss;
 
    graph = detectordata->graphs[0];
@@ -397,7 +399,8 @@ static SCIP_RETCODE buildGraphStructure(
 }
 
 /** copies hashmap hm1 to hashmap hm2 */
-static SCIP_RETCODE copyhashmap(
+static
+SCIP_RETCODE copyhashmap(
    SCIP_HASHMAP*         hm1,                /**< pointer to first hashmap */
    SCIP_HASHMAP*         hm2                 /**< pointer to second hashmap */
 )
@@ -424,7 +427,8 @@ static SCIP_RETCODE copyhashmap(
 }
 
 /** returns the next element of the hashmap hm */
-static SCIP_HASHMAPLIST* hashmapiteration(
+static
+SCIP_HASHMAPLIST* hashmapIteration(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
    SCIP_HASHMAP*         hm,                 /**< the hashmap */
@@ -459,7 +463,8 @@ static SCIP_HASHMAPLIST* hashmapiteration(
 }
 
 /** inserts element into hashmap if it doesn't already exist */
-static SCIP_RETCODE hashmapinsert(
+static
+SCIP_RETCODE hashmapInsert(
    SCIP_HASHMAP*         hm,                 /**< pointer to hashmap */
    void*                 origin,             /**< key to store */
    void*                 image               /**< image to store */
@@ -475,12 +480,13 @@ static SCIP_RETCODE hashmapinsert(
 
 
 /** builds a new adjacencylist */
-static SCIP_RETCODE buildnewadjacencylist(
+static
+SCIP_RETCODE buildNewAdjacencyList(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    int                   pos,                /**< position */
    int                   nconss,             /**< number of constraints */
-   Graph                 graph,              /**< current graph */
+   GRAPH                 graph,              /**< current graph */
    SCIP_HASHMAP*         consslink,          /**< */
    SCIP_HASHMAP*         consslink2          /**< */
    )
@@ -490,7 +496,7 @@ static SCIP_RETCODE buildnewadjacencylist(
    int nedges;
    SCIP_HASHMAPLIST* list;
    SCIP_CONS* representative;
-   Graph newgraph;
+   GRAPH newgraph;
 
    newgraph = detectordata->graphs[pos];
    representative = NULL;
@@ -517,7 +523,7 @@ static SCIP_RETCODE buildnewadjacencylist(
             list = NULL;
             do
             {
-               list = hashmapiteration(scip, detectordata, graph.adjacencylist[(long int)SCIPhashmapGetImage(graph.constopos, newgraph.conss[i])], list);
+               list = hashmapIteration(scip, detectordata, graph.adjacencylist[(long int)SCIPhashmapGetImage(graph.constopos, newgraph.conss[i])], list);
                if( list == NULL )
                   break;
                if( !SCIPhashmapExists(consslink, SCIPhashmapListGetOrigin(list)) )
@@ -564,7 +570,7 @@ static SCIP_RETCODE buildnewadjacencylist(
       list = NULL;
       do
       {
-         list = hashmapiteration(scip, detectordata, newgraph.adjacencylist[i], list);
+         list = hashmapIteration(scip, detectordata, newgraph.adjacencylist[i], list);
          if( list == NULL )
             break;
          if( SCIPhashmapExists(consslink, SCIPhashmapListGetOrigin(list)) )
@@ -587,7 +593,7 @@ static SCIP_RETCODE buildnewadjacencylist(
    list = NULL;
    do
    {
-      list = hashmapiteration(scip, detectordata, newgraph.constopos, list);
+      list = hashmapIteration(scip, detectordata, newgraph.constopos, list);
       if( list == NULL )
          break;
       newgraph.conss[(long int)SCIPhashmapListGetImage(list)] = (SCIP_CONS*)SCIPhashmapListGetOrigin(list);
@@ -612,7 +618,8 @@ static SCIP_RETCODE buildnewadjacencylist(
 }
 
 /** frees graph at position pos */
-static SCIP_RETCODE FreeGraph(
+static
+SCIP_RETCODE freeGraph(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
    int                   pos,                /**< */
@@ -633,7 +640,8 @@ static SCIP_RETCODE FreeGraph(
 }
 
 /** allocates memory at position pos to facilitate saving a graph with nconss vertices */
-static SCIP_RETCODE AllocateMemoryGraph(
+static
+SCIP_RETCODE allocateMemoryGraph(
    SCIP*                scip,             /**< SCIP data structure */
    DEC_DETECTORDATA*    detectordata,     /**< detectordata data structure */
    int                  pos,              /**< */
@@ -655,7 +663,8 @@ static SCIP_RETCODE AllocateMemoryGraph(
 }
 
 /** assigns the right linking constraint to the graph at position pos */
-static SCIP_RETCODE SetLinkingCons(
+static
+SCIP_RETCODE setLinkingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    int                   cas,                /**< */
@@ -711,7 +720,8 @@ static SCIP_RETCODE SetLinkingCons(
 }
 
 /** sets the startblock */
-static SCIP_RETCODE SetStartblock(
+static
+SCIP_RETCODE setStartBlock(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
    SCIP_CONS*            cons                /**< constraint */
@@ -725,7 +735,8 @@ static SCIP_RETCODE SetStartblock(
 }
 
 /** copies constraints of a the graph at position pos to subscipconss */
-static SCIP_RETCODE CopyConss(
+static
+SCIP_RETCODE copyConss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
    int                   pos,                /**< position of constraint */
@@ -745,7 +756,8 @@ static SCIP_RETCODE CopyConss(
 
 
 /** builds the new graphs which result from the last found cut */
-static SCIP_RETCODE buildnewgraphs(
+static
+SCIP_RETCODE buildNewGraphs(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata        /**< detectordata data structure */
    )
@@ -758,7 +770,7 @@ static SCIP_RETCODE buildnewgraphs(
    int stop2;
 
    int* partition;
-   Graph graph;
+   GRAPH graph;
 
    int nconss1;
    SCIP_HASHMAP* consslink1;
@@ -812,8 +824,8 @@ static SCIP_RETCODE buildnewgraphs(
       }
    }
 
-   SCIP_CALL( AllocateMemoryGraph(scip, detectordata, pos1, nconss1) );
-   SCIP_CALL( AllocateMemoryGraph(scip, detectordata, pos2, nconss2) );
+   SCIP_CALL( allocateMemoryGraph(scip, detectordata, pos1, nconss1) );
+   SCIP_CALL( allocateMemoryGraph(scip, detectordata, pos2, nconss2) );
 
    assert( nconss1 + nconss2 == graph.nconss );
    assert( (nconss1 != 0) && (nconss2 != 0) );
@@ -832,13 +844,13 @@ static SCIP_RETCODE buildnewgraphs(
 
       do
       {
-         list = hashmapiteration(scip, detectordata, adja, list);
+         list = hashmapIteration(scip, detectordata, adja, list);
          if( list == NULL )
             break;
          if( SCIPhashmapExists(detectordata->graphs[pos2].constopos, SCIPhashmapListGetOrigin(list)) )
          {
-            SCIP_CALL( hashmapinsert(consslink1, detectordata->graphs[pos1].conss[i], NULL) );
-            SCIP_CALL( hashmapinsert(consslink2, SCIPhashmapListGetOrigin(list), NULL) );
+            SCIP_CALL( hashmapInsert(consslink1, detectordata->graphs[pos1].conss[i], NULL) );
+            SCIP_CALL( hashmapInsert(consslink2, SCIPhashmapListGetOrigin(list), NULL) );
          }
       }
       while (list != NULL);
@@ -858,10 +870,10 @@ static SCIP_RETCODE buildnewgraphs(
          || (SCIPhashmapExists(detectordata->graphs[pos2].constopos, graph.cons1)
          && SCIPhashmapExists(detectordata->graphs[pos2].constopos, graph.cons2)) )
       {
-         SCIP_CALL( CopyConss(scip, detectordata, detectordata->position, graph.nconss) );
+         SCIP_CALL( copyConss(scip, detectordata, detectordata->position, graph.nconss) );
          detectordata->ngraphs--;
-         SCIP_CALL( FreeGraph(scip, detectordata, pos1, nconss1) );
-         SCIP_CALL( FreeGraph(scip, detectordata, pos2, nconss2) );
+         SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
+         SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
          SCIPhashmapFree(&consslink1);
          SCIPhashmapFree(&consslink2);
          return SCIP_OKAY;
@@ -915,47 +927,47 @@ static SCIP_RETCODE buildnewgraphs(
 
    if( (nconss1 > 1) && !stop1 )
    {
-      SCIP_CALL( buildnewadjacencylist(scip, detectordata, pos1, nconss1, graph, consslink1, consslink2) );
-      SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 1, pos1, graph.cons1, graph.cons2) );
+      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, pos1, nconss1, graph, consslink1, consslink2) );
+      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 1, pos1, graph.cons1, graph.cons2) );
    }
    else if( stop1 )
    {
-      SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 0, pos1, graph.cons1, graph.cons2) );
+      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos1, graph.cons1, graph.cons2) );
    }
 
    if( (nconss2 > 1) && !stop2 )
    {
-      SCIP_CALL( buildnewadjacencylist(scip, detectordata, pos2, nconss2, graph, consslink2, consslink1) );
-      SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 2, pos2, graph.cons2, graph.cons1) );
+      SCIP_CALL( buildNewAdjacencyList(scip, detectordata, pos2, nconss2, graph, consslink2, consslink1) );
+      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 2, pos2, graph.cons2, graph.cons1) );
    }
    else if( stop2 )
    {
-      SCIP_CALL( SetLinkingCons(scip, detectordata, cas, 0, pos2, graph.cons2, graph.cons1) );
+      SCIP_CALL( setLinkingCons(scip, detectordata, cas, 0, pos2, graph.cons2, graph.cons1) );
    }
 
    if( ((nconss1 < 2) && (nconss2 < 2)) || (stop1 && stop2 ) )
    {
-      SCIP_CALL( CopyConss(scip, detectordata, pos1, nconss1) );
-      SCIP_CALL( SetStartblock(scip, detectordata,detectordata->graphs[pos1].cons1) );
-      SCIP_CALL( CopyConss(scip, detectordata, pos2, nconss2) );
+      SCIP_CALL( copyConss(scip, detectordata, pos1, nconss1) );
+      SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos1].cons1) );
+      SCIP_CALL( copyConss(scip, detectordata, pos2, nconss2) );
       detectordata->ngraphs--;
-      SCIP_CALL( SetStartblock(scip, detectordata,detectordata->graphs[pos2].cons1) );
-      SCIP_CALL( FreeGraph(scip, detectordata, pos1, nconss1) );
-      SCIP_CALL( FreeGraph(scip, detectordata, pos2, nconss2) );
+      SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos2].cons1) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
    }
    else if( (nconss1 < 2) || (stop1 && (stop2 == 0)) )
    {
-      SCIP_CALL( CopyConss(scip, detectordata, pos1, nconss1) );
-      SCIP_CALL( SetStartblock(scip, detectordata,detectordata->graphs[pos1].cons1) );
+      SCIP_CALL( copyConss(scip, detectordata, pos1, nconss1) );
+      SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos1].cons1) );
       SCIP_CALL( SCIPhashmapInsert(detectordata->occupied,(void*) (size_t) (pos2 + 1), NULL) );
-      SCIP_CALL( FreeGraph(scip, detectordata, pos1, nconss1) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos1, nconss1) );
    }
    else if( (nconss2 < 2) || ((stop1 == 0) && stop2) )
    {
-      SCIP_CALL( CopyConss(scip, detectordata, pos2, nconss2) );
-      SCIP_CALL( SetStartblock(scip, detectordata,detectordata->graphs[pos2].cons1) );
+      SCIP_CALL( copyConss(scip, detectordata, pos2, nconss2) );
+      SCIP_CALL( setStartBlock(scip, detectordata,detectordata->graphs[pos2].cons1) );
       SCIP_CALL( SCIPhashmapInsert(detectordata->occupied,(void*) (size_t) (pos1 + 1), NULL) );
-      SCIP_CALL( FreeGraph(scip, detectordata, pos2, nconss2) );
+      SCIP_CALL( freeGraph(scip, detectordata, pos2, nconss2) );
    }
    else
    {
@@ -964,7 +976,7 @@ static SCIP_RETCODE buildnewgraphs(
       detectordata->ngraphs++;
    }
 
-   SCIP_CALL( FreeGraph(scip, detectordata, detectordata->position, graph.nconss) );
+   SCIP_CALL( freeGraph(scip, detectordata, detectordata->position, graph.nconss) );
    SCIPhashmapFree(&consslink1);
    SCIPhashmapFree(&consslink2);
 
@@ -973,7 +985,7 @@ static SCIP_RETCODE buildnewgraphs(
 
 /** adds the merged constraints to the right blocks */
 static
-SCIP_RETCODE getmergedconss(
+SCIP_RETCODE getMergedConss(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata        /**< detectordata data structure */
    )
@@ -995,7 +1007,7 @@ SCIP_RETCODE getmergedconss(
    {
       for( j = 0; j < detectordata->nsubscipconss[i]; ++j )
       {
-         SCIP_CALL( hashmapinsert(constoblock, subscipconss[i][j], (void *) (size_t) (i+1)) );
+         SCIP_CALL( hashmapInsert(constoblock, subscipconss[i][j], (void *) (size_t) (i+1)) );
       }
    }
 
@@ -1007,14 +1019,14 @@ SCIP_RETCODE getmergedconss(
 
       do
       {
-         list = hashmapiteration(scip, detectordata, mergedconss[i - 1], list);
+         list = hashmapIteration(scip, detectordata, mergedconss[i - 1], list);
          if( list == NULL )
             break;
          if( (SCIP_CONS*)SCIPhashmapGetImage(representatives, (void*)(size_t)i) != (SCIP_CONS*)SCIPhashmapListGetOrigin(list) )
          {
             subscipconss[block - 1][detectordata->nsubscipconss[block - 1]] = (SCIP_CONS*)SCIPhashmapListGetOrigin(list);
             detectordata->nsubscipconss[block - 1]++;
-            SCIP_CALL( hashmapinsert(constoblock,(SCIP_CONS*)SCIPhashmapListGetOrigin(list),(void*) (size_t) block) );
+            SCIP_CALL( hashmapInsert(constoblock,(SCIP_CONS*)SCIPhashmapListGetOrigin(list),(void*) (size_t) block) );
          }
       } while (list != NULL);
    }
@@ -1034,7 +1046,7 @@ SCIP_RETCODE getmergedconss(
 
 /** arranges the constraints as prescribed by the cuts */
 static
-SCIP_RETCODE GetConsindex(
+SCIP_RETCODE getConsIndex(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
@@ -1167,7 +1179,8 @@ SCIP_RETCODE GetConsindex(
 
 
 /** gets the variables which are linking */
-static SCIP_RETCODE GetLinkingVars(
+static
+SCIP_RETCODE getLinkingVars(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
@@ -1269,7 +1282,8 @@ static SCIP_RETCODE GetLinkingVars(
 }
 
 /** assigns the constraints and variables to blocks if a fixed blocksize is given */
-static SCIP_RETCODE FixedBlocks(
+static
+SCIP_RETCODE fixedBlocks(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data structure */
    DEC_DECOMP*           decdecomp           /**< decdecomp pointer */
@@ -1336,7 +1350,8 @@ static SCIP_RETCODE FixedBlocks(
 }
 
 /** will find a minimum cut via the Stoer-Wagner algorithm */
-static SCIP_RETCODE StoerWagner(
+static
+SCIP_RETCODE applyStoerWagner(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata        /**< presolver data data structure */
    )
@@ -1354,7 +1369,7 @@ static SCIP_RETCODE StoerWagner(
    int nrepres_conss;
    SCIP_CONS*** merged_conss;
    int* nmerged_conss;
-   Graph graph;
+   GRAPH graph;
    SCIP_CONS* s;
    SCIP_CONS* t;
    SCIP_CONS* cut;
@@ -1425,7 +1440,7 @@ static SCIP_RETCODE StoerWagner(
 
       do
       {
-         list = hashmapiteration(scip, detectordata, constopos, list);
+         list = hashmapIteration(scip, detectordata, constopos, list);
          if( list == NULL )
             break;
          if( SCIPhashmapListGetOrigin(list) != s )
@@ -1446,7 +1461,7 @@ static SCIP_RETCODE StoerWagner(
          list = NULL;
          do
          {
-            list = hashmapiteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
+            list = hashmapIteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
             if( list == NULL )
                break;
             assert( SCIPhashmapExists(constopos, SCIPhashmapListGetOrigin(list)) );
@@ -1462,7 +1477,7 @@ static SCIP_RETCODE StoerWagner(
          list = NULL;
          do
          {
-            list = hashmapiteration(scip, detectordata, tightness, list);
+            list = hashmapIteration(scip, detectordata, tightness, list);
             if( list == NULL )
                break;
             if( (long int)SCIPhashmapListGetImage(list) >= tight )
@@ -1481,7 +1496,7 @@ static SCIP_RETCODE StoerWagner(
       list = NULL;
       do
       {
-         list = hashmapiteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
+         list = hashmapIteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
          if( list == NULL )
             break;
          assert( SCIPhashmapListGetOrigin(list) != last );
@@ -1536,7 +1551,7 @@ static SCIP_RETCODE StoerWagner(
       list = NULL;
       do
       {
-         list = hashmapiteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
+         list = hashmapIteration(scip, detectordata, adja[(long int)SCIPhashmapGetImage(constopos, last)], list);
          if( list == NULL )
             break;
          if( SCIPhashmapExists(adja[(long int)SCIPhashmapGetImage(constopos, next_to_last)], SCIPhashmapListGetOrigin(list)) )
@@ -1612,7 +1627,8 @@ static SCIP_RETCODE StoerWagner(
 
 
 /** will call hmetis via a system call */
-static SCIP_RETCODE callMetis(
+static
+SCIP_RETCODE callMetis(
    SCIP*                 scip,               /**< SCIP data struture */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
    SCIP_RESULT*          result              /**< result pointer */
@@ -1675,7 +1691,7 @@ static SCIP_RETCODE callMetis(
 
       do
       {
-         list = hashmapiteration(scip, detectordata, adja[i], list);
+         list = hashmapIteration(scip, detectordata, adja[i], list);
          if( list == NULL )
             break;
          entry = SCIPhashmapGetImage(constopos, SCIPhashmapListGetOrigin(list));
@@ -1833,26 +1849,26 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
             }
             else
             {
-               SCIP_CALL( StoerWagner(scip, detectordata) );
+               SCIP_CALL( applyStoerWagner(scip, detectordata) );
                SCIPdebugMessage("StoerWagner successful \n");
             }
 
-            SCIP_CALL( buildnewgraphs(scip, detectordata) );
-            SCIPdebugMessage("buildnewgraphs successful \n");
+            SCIP_CALL( buildNewGraphs(scip, detectordata) );
+            SCIPdebugMessage("buildNewGraphs successful \n");
          }
       }
    }
-   /** add merged conss */
-   SCIP_CALL( getmergedconss(scip, detectordata) );
-   SCIPdebugMessage("getmergedconss successful \n");
+   /* add merged conss */
+   SCIP_CALL( getMergedConss(scip, detectordata) );
+   SCIPdebugMessage("getMergedConss successful \n");
 
-   /** get subscipvars, copy data to decdecomp */
-   SCIP_CALL( GetConsindex(scip, detectordata, (*decdecomps)[0]) );
+   /* get subscipvars, copy data to decdecomp */
+   SCIP_CALL( getConsIndex(scip, detectordata, (*decdecomps)[0]) );
 
    if( detectordata->fixedblocks )
    {
-        SCIP_CALL( FixedBlocks(scip, detectordata, (*decdecomps)[0]) );
-        SCIP_CALL( GetLinkingVars(scip, detectordata, (*decdecomps)[0]) );
+        SCIP_CALL( fixedBlocks(scip, detectordata, (*decdecomps)[0]) );
+        SCIP_CALL( getLinkingVars(scip, detectordata, (*decdecomps)[0]) );
    }
 
    detectordata->found = TRUE;
@@ -1862,7 +1878,7 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    return SCIP_OKAY;
 }
 
-/** creates the cutpacking presolver and includes it in SCIP */
+/** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionCutpacking(
    SCIP*                 scip                /**< SCIP data structure */
    )
@@ -1877,17 +1893,36 @@ SCIP_RETCODE SCIPincludeDetectionCutpacking(
    detectordata->partition = NULL;
    detectordata->nblocks = -1;
 
-   SCIP_CALL( DECincludeDetector(scip, DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP, detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
+   /* include structure detector */
+   SCIP_CALL( DECincludeDetector(scip,
+      DEC_DETECTORNAME, DEC_DECCHAR, DEC_DESC, DEC_PRIORITY, DEC_ENABLED, DEC_SKIP,
+      detectordata, detectAndBuildCutpacking, initCutpacking, exitCutpacking) );
 
-   /* add staircase presolver parameters */
-      SCIP_CALL( SCIPaddIntParam(scip, "staircase/algorithm", "should the stoer-wagner algorithm or metis be used for finding a minimal cut", &detectordata->algorithm, FALSE, DEFAULT_ALGORITHM_METIS,  INT_MIN, INT_MAX, NULL, NULL) );
-      SCIP_CALL( SCIPaddBoolParam(scip, "staircase/fixedblocks", "Should the blocks consist of a certain number of constraints", &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
-      SCIP_CALL( SCIPaddIntParam(scip, "staircase/blocksize", "number of constraints per block", &detectordata->blocksize, FALSE, DEFAULT_BLOCKSIZE,  1.0, INT_MAX, NULL, NULL) );
-      SCIP_CALL( SCIPaddBoolParam(scip, "staircase/tidy", "Whether to clean up temporary files", &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
-      SCIP_CALL( SCIPaddIntParam(scip, "staircase/randomseed", "random seed for hmetis", &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
-      SCIP_CALL( SCIPaddRealParam(scip, "staircase/ubfactor", "Unbalance factor for metis", &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
-      SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisverbose", "Should the metis output be displayed", &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
-      SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
+   /* add cutpacking detector parameters */
+   SCIP_CALL( SCIPaddIntParam(scip, "staircase/algorithm",
+      "should the stoer-wagner algorithm or metis be used for finding a minimal cut",
+      &detectordata->algorithm, FALSE, DEFAULT_ALGORITHM_METIS,  INT_MIN, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/fixedblocks",
+      "Should the blocks consist of a certain number of constraints",
+      &detectordata->fixedblocks, FALSE, DEFAULT_FIXEDBLOCKS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "staircase/blocksize",
+      "number of constraints per block",
+      &detectordata->blocksize, FALSE, DEFAULT_BLOCKSIZE,  1.0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/tidy",
+      "Whether to clean up temporary files",
+      &detectordata->tidy, FALSE, DEFAULT_TIDY, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "staircase/randomseed",
+      "random seed for hmetis",
+      &detectordata->randomseed, FALSE, DEFAULT_RANDSEED, -1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(scip, "staircase/ubfactor",
+      "Unbalance factor for metis",
+      &detectordata->metisubfactor, FALSE, DEFAULT_METIS_UBFACTOR, 0.0, 1E20, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisverbose",
+      "Should the metis output be displayed",
+      &detectordata->metisverbose, FALSE, DEFAULT_METIS_VERBOSE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(scip, "staircase/metisuseptyperb",
+      "Should the rb or kway method be used for partitioning by metis",
+      &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
 
    return SCIP_OKAY;
 }
