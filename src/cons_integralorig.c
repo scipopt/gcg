@@ -83,9 +83,10 @@ SCIP_RETCODE GCGcreateBranchruleConsOrig(
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   if( conshdlrdata->nbranchrules <= 0 )
+   assert(conshdlrdata->nbranchrules >= 0);
+   if( conshdlrdata->nbranchrules == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->branchrules), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->branchrules), 1) ); /*lint !e506*/
       conshdlrdata->nbranchrules = 1;
    }
    else
