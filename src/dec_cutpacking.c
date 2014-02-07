@@ -1169,11 +1169,7 @@ SCIP_RETCODE fixedBlocks(
    SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->subscipconss, block) );
    for( i = 0; i < block; ++i )
    {
-      SCIP_CONS** subconss;
-
-      subconss = detectordata->subscipconss[i];
-      SCIPreallocMemoryArray(scip, &subconss, blocksize);
-      detectordata->subscipconss[i] = subconss;
+      SCIPreallocMemoryArray(scip, &(detectordata->subscipconss[i]), blocksize); /*lint !e522*/
       detectordata->nsubscipconss[i] = 0;
    }
 
@@ -1741,7 +1737,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
    /* get number of relevant variables */
    /* vartopos */
    SCIP_CALL( SCIPhashmapCreate(&detectordata->vartopos, SCIPblkmem(scip),nallvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->relvars, nallvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->relvars, nallvars) ); /*lint !e522*/
    vartopos = detectordata->vartopos;
    relvars = detectordata->relvars;
    j = 0;
@@ -1791,7 +1787,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
       }
    }
 
-   SCIPreallocMemoryArray(scip, &newconss, k);
+   SCIPreallocMemoryArray(scip, &newconss, k); /*lint !e522*/
    detectordata->nrelconss = k;
    detectordata->graphs[0].nconss = k;
    detectordata->graphs[0].conss = newconss;
