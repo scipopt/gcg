@@ -465,10 +465,10 @@ ifneq ($(USRCXXFLAGS),$(LAST_USRCXXFLAGS))
 		@-touch $(ALLSRC)
 endif
 ifneq ($(USRLDFLAGS),$(LAST_USRLDFLAGS))
-		@-touch $(GCGLIBOBJFILES) $(MAINOBJFILES)
+		@-touch -c $(GCGLIBOBJFILES) $(MAINOBJFILES)
 endif
 ifneq ($(USRARFLAGS),$(LAST_USRARFLAGS))
-		@-touch $(GCGLIBOBJFILES) $(MAINOBJFILES)
+		@-touch -c $(GCGLIBOBJFILES) $(MAINOBJFILES)
 endif
 ifneq ($(OPENMP),$(LAST_OPENMP))
 		@-touch $(ALLSRC)
