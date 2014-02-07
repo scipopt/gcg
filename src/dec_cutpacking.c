@@ -1169,7 +1169,11 @@ SCIP_RETCODE fixedBlocks(
    SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->subscipconss, block) );
    for( i = 0; i < block; ++i )
    {
-      SCIPreallocMemoryArray(scip, &(detectordata->subscipconss[i]), blocksize); /*lint !e522*/
+      SCIP_CONS** subconss;
+
+      subconss = detectordata->subscipconss[i];
+      SCIPreallocMemoryArray(scip, &subconss, blocksize); /*lint !e522*/
+      detectordata->subscipconss[i] = subconss;
       detectordata->nsubscipconss[i] = 0;
    }
 
@@ -1752,7 +1756,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
       }
    }
    detectordata->nrelvars = j;
-   SCIPreallocMemoryArray(scip, &(detectordata->relvars), j);
+   SCIPreallocMemoryArray(scip, &(detectordata->relvars), j); /*lint !e522*/
 
    /* get number of relevant conss */
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs, nconss+1) );
