@@ -981,8 +981,8 @@ SCIP_RETCODE getConsIndex(
       for( j = 0; j < nconss; ++j )
          newconss[j] = conss[j];
 
-      newsubscipconss[detectordata->nblocks-counter] = newconss;
-      nnewsubscipconss[detectordata->nblocks-counter] = nconss;
+      newsubscipconss[detectordata->nblocks-counter] = newconss; /*lint !e679*/
+      nnewsubscipconss[detectordata->nblocks-counter] = nconss; /*lint !e679*/
 
       oldblock = block;
       block = newblock;
@@ -1169,7 +1169,11 @@ SCIP_RETCODE fixedBlocks(
    SCIP_CALL( SCIPreallocMemoryArray(scip, &detectordata->subscipconss, block) );
    for( i = 0; i < block; ++i )
    {
-      SCIPreallocMemoryArray(scip, &(detectordata->subscipconss[i]), blocksize); /*lint !e866*/
+      SCIP_CONS** subconss;
+
+      subconss = detectordata->subscipconss[i];
+      SCIPreallocMemoryArray(scip, &subconss, blocksize);
+      detectordata->subscipconss[i] = subconss;
       detectordata->nsubscipconss[i] = 0;
    }
 
@@ -1541,7 +1545,7 @@ SCIP_RETCODE callMetis(
    assert( adja != NULL );
    assert( constopos != NULL );
 
-   SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
+   (void) SCIPsnprintf(tempfile, SCIP_MAXSTRLEN, "gcg-metis-XXXXXX");
    temp_filedes = mkstemp(tempfile);
    if( temp_filedes < 0 )
    {
@@ -1590,7 +1594,7 @@ SCIP_RETCODE callMetis(
       return SCIP_WRITEERROR;
    }
 
-   SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
+   (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"hmetis %s %d -seed %d -ptype %s -ufactor %f %s\"", tempfile, 2,
       detectordata->randomseed, detectordata->metisuseptyperb ? "rb" : "kway", detectordata->metisubfactor,
       detectordata->metisverbose ? "" : "> /dev/null");
 
@@ -1645,7 +1649,7 @@ SCIP_RETCODE callMetis(
    assert(detectordata->partition != NULL);
    partition = detectordata->partition;
 
-   SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, 2);
+   (void) SCIPsnprintf(metisout, SCIP_MAXSTRLEN, "%s.part.%d", tempfile, 2);
 
    zfile = SCIPfopen(metisout, "r");
    i = 0;
@@ -1706,6 +1710,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
    int nconss;
    SCIP_Bool ishandled;
    SCIP_CONS** conss;
+   SCIP_CONS** newconss;
    SCIP_VAR** vars;
    SCIP_VAR** allvars;
    SCIP_VAR** relvars;
@@ -1755,7 +1760,7 @@ DEC_DECL_INITDETECTOR(initCutpacking)
 
    /* get number of relevant conss */
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs, nconss+1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(detectordata->graphs[0].conss), nconss) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &newconss, nconss) ); /*lint !e522*/
    k = 0;
    for( i = 0; i < nconss; ++i )
    {
@@ -1778,16 +1783,18 @@ DEC_DECL_INITDETECTOR(initCutpacking)
 
          if( ishandled )
          {
-            detectordata->graphs[0].conss[k] = conss[i];
+            newconss[k] = conss[i];
             k++;
          }
 
          /* SCIPfreeMemoryArrayNull(scip, &vars); */
       }
    }
+
+   SCIPreallocMemoryArray(scip, &newconss, k);
    detectordata->nrelconss = k;
    detectordata->graphs[0].nconss = k;
-   SCIPreallocMemoryArray(scip, &(detectordata->graphs[0].conss), k);
+   detectordata->graphs[0].conss = newconss;
 
    /* alloc */
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, k) );
