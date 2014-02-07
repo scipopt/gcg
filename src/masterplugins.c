@@ -127,7 +127,6 @@
 #include "branch_orig.h"
 #include "branch_relpsprob.h"
 #include "branch_generic.h"
-#include "cons_origbranch.h"
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"

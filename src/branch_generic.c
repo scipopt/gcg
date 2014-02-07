@@ -694,7 +694,7 @@ int ILOcomp(
          {
             int l;
             CopyC[k] = NULL;
-            SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) );
+            SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) ); /*lint !e866*/
             for( l = 0; l < sequencesizes[j]; ++l )
             {
                CopyC[k][l] = C[j][l];
@@ -740,7 +740,7 @@ int ILOcomp(
          {
             int l;
             CopyC[k] = NULL;
-            SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) );
+            SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(CopyC[k]), sequencesizes[j]) ); /*lint !e866*/
             for( l = 0; l < sequencesizes[j]; ++l )
             {
                CopyC[k][l] = C[j][l];
@@ -842,7 +842,7 @@ SCIP_RETCODE partition(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            J,                  /**< array of variables which belong to the discriminating components */
    int*                  Jsize,              /**< pointer to the number of discriminating components */
-   int*                  priority,           /**< branching priorities */
+   SCIP_Longint*         priority,           /**< branching priorities */
    SCIP_VAR**            F,                  /**< set of fractional solutions satisfying bounds */
    int                   Fsize,              /**< size of list of fractional solutions satisfying bounds */
    SCIP_VAR**            origvar,            /**< pointer to store the variable which belongs to a discriminating component with maximum priority */
@@ -856,8 +856,8 @@ SCIP_RETCODE partition(
 
    do
    {
-      SCIP_Real maxPriority = INT_MIN;
-      min = INT_MAX;
+      SCIP_Longint maxPriority = SCIP_LONGINT_MIN;
+      min = SCIPinfinity(scip);
 
       /* max-min priority */
       for ( j = 0; j < *Jsize; ++j )
@@ -878,7 +878,7 @@ SCIP_RETCODE partition(
       *median = GetMedian(scip, compvalues, Fsize, min);
       SCIPfreeBufferArray(scip, &compvalues);
 
-      assert(min != INT_MAX);
+      assert(!SCIPisInfinity(scip, min));
 
       if ( !SCIPisEQ(scip, *median, 0.0) )
       {
@@ -925,15 +925,15 @@ SCIP_RETCODE addToRecord(
 
    if( record->recordsize == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record), 1) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->sequencesizes), 1) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record), 1) ); /*lint !e866 !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(record->sequencesizes), 1) ); /*lint !e866 !e506*/
    }
    else
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), record->recordsize+1) );
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), record->recordsize+1) );
    }
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record[record->recordsize]), Ssize) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record[record->recordsize]), Ssize) ); /*lint !e866*/
    for( i=0; i<Ssize;++i )
    {
       record->record[record->recordsize][i].component = S[i].component;
@@ -971,7 +971,7 @@ SCIP_RETCODE Separate(
    SCIP_Real min;
    int Fupper;
    int Flower;
-   int* priority;
+   SCIP_Longint* priority;
    SCIP_VAR* origvar;
    SCIP_VAR** copyF;
    GCG_COMPSEQUENCE* upperLowerS;
@@ -988,7 +988,7 @@ SCIP_RETCODE Separate(
    Jsize = 0;
    Fupper = 0;
    Flower = 0;
-   min = INT_MAX;
+   min = SCIPinfinity(scip);
    found = FALSE;
    priority = NULL;
    compvalues = NULL;
@@ -1168,19 +1168,21 @@ SCIP_RETCODE Separate(
    SCIP_CALL( SCIPallocMemoryArray(scip, &priority, Jsize) );
    for( j = 0; j < Jsize; ++j )
    {
-      SCIP_Real maxcomp;
-      SCIP_Real mincomp;
+      SCIP_Longint maxcomp;
+      SCIP_Longint mincomp;
 
-      maxcomp = -SCIPinfinity(scip);
-      mincomp = SCIPinfinity(scip);
+      maxcomp = SCIP_LONGINT_MIN;
+      mincomp = SCIP_LONGINT_MAX;
 
       origvar = J[j];
 
       for( l = 0; l < Fsize; ++l )
       {
-         SCIP_Real generatorentry;
+         SCIP_Longint generatorentry;
 
-         generatorentry = getGeneratorEntry(F[l], origvar);
+         assert(SCIPisIntegral(scip, getGeneratorEntry(F[l], origvar)));
+
+         generatorentry = (SCIP_Longint) (getGeneratorEntry(F[l], origvar) + 0.5);
 
          if( generatorentry > maxcomp )
             maxcomp = generatorentry;
@@ -1188,7 +1190,7 @@ SCIP_RETCODE Separate(
          if( generatorentry < mincomp )
             mincomp = generatorentry;
       }
-      priority[j] = maxcomp-mincomp;
+      priority[j] = maxcomp -mincomp;
    }
 
    SCIP_CALL( partition(scip, J, &Jsize, priority, F, Fsize, &origvar, &median) );
@@ -1286,12 +1288,12 @@ SCIP_RETCODE ChoseS(
    )
 {
    int minSizeOfMaxPriority;  /* needed if the last comp priority is equal to the one in other bound sequences */
-   int maxPriority;
+   SCIP_Longint maxPriority;
    int i;
    int Index;
 
    minSizeOfMaxPriority = INT_MAX;
-   maxPriority = INT_MIN;
+   maxPriority = SCIP_LONGINT_MIN;
    Index = -1;
 
    SCIPdebugMessage("Chose S \n");
@@ -1318,8 +1320,8 @@ SCIP_RETCODE ChoseS(
             }
       }
    }
-   assert(maxPriority != INT_MIN);
-   assert(minSizeOfMaxPriority != INT_MAX);
+   assert(maxPriority > SCIP_LONGINT_MIN);
+   assert(minSizeOfMaxPriority < INT_MAX);
    assert(Index >= 0);
 
    *Ssize = minSizeOfMaxPriority;
@@ -1878,7 +1880,7 @@ SCIP_RETCODE ChooseSeparateMethod(
             }
             assert(strips != NULL);
 
-            SCIP_CALL( SCIPallocBuffer(scip, &(strips[nstrips-1])) );
+            SCIP_CALL( SCIPallocBuffer(scip, &(strips[nstrips-1])) ); /*lint !e866*/
             assert(strips[nstrips-1] != NULL);
 
             strips[nstrips-1]->C = NULL;
@@ -1893,14 +1895,14 @@ SCIP_RETCODE ChooseSeparateMethod(
 
       checkedblocksnsortstrips[ncheckedblocks-1] = nstrips;
 
-      SCIP_CALL( SCIPallocBufferArray(scip, &(checkedblockssortstrips[ncheckedblocks-1]), nstrips) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &(checkedblockssortstrips[ncheckedblocks-1]), nstrips) ); /*lint !e866*/
 
       /* sort the direct copied origvars at the end */
 
       for( i = 0; i < nstrips; ++i )
       {
          assert(strips != NULL);
-         SCIP_CALL( SCIPallocBuffer(scip, &(checkedblockssortstrips[ncheckedblocks-1][i])) );
+         SCIP_CALL( SCIPallocBuffer(scip, &(checkedblockssortstrips[ncheckedblocks-1][i])) ); /*lint !e866*/
          checkedblockssortstrips[ncheckedblocks-1][i] = strips[i];
       }
 
@@ -2306,7 +2308,7 @@ SCIP_RETCODE createChildNodesGeneric(
             }
          }
 
-         if( p == Ssize-1 )
+         if( p == Ssize-1 ) /*lint !e866 !e850*/
          {
             L = SCIPceil(scip, mu);
             SCIPdebugMessage("mu = %g, \n", mu);
@@ -2450,16 +2452,16 @@ SCIP_RETCODE branchDirectlyOnMastervar(
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 
-   bound = SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar)); /*lint -e524*/
+   bound = (int) (SCIPceil( scip, SCIPgetSolVal(masterscip, NULL, mastervar)) + 0.5); /*lint -e524*/
 
    /*  allocate branchdata for child and store information */
    SCIP_CALL( initNodeBranchdata(&branchupchilddata, -3) );
    SCIP_CALL( initNodeBranchdata(&branchdownchilddata, -3) );
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchupchilddata->consS), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchupchilddata->consS), 1) ); /*lint !e506*/
    branchupchilddata->consSsize = 1;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchdownchilddata->consS), 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(branchdownchilddata->consS), 1) ); /*lint !e506*/
       branchdownchilddata->consSsize = 1;
 
    branchupchilddata->consS[0].component = mastervar;
@@ -2745,6 +2747,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
             for( c = 0; c < Csize && !SinC; ++c )
             {
                SinC = TRUE;
+               assert(sequencesizes != NULL);
                if( branchdata->consSsize == sequencesizes[c] )
                {
                   for( i = 0; i < branchdata->consSsize; ++i )
@@ -2767,7 +2770,7 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
                SCIP_CALL( SCIPreallocMemoryArray(origscip, &sequencesizes, Csize) );
                assert(sequencesizes != NULL);
                C[Csize-1] = NULL;
-               SCIP_CALL( SCIPallocMemoryArray(origscip, &(C[Csize-1]), branchdata->consSsize) );
+               SCIP_CALL( SCIPallocMemoryArray(origscip, &(C[Csize-1]), branchdata->consSsize) ); /*lint !e866*/
 
                /** @todo copy memory */
                for( i = 0; i < branchdata->consSsize; ++i )
