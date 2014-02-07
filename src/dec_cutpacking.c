@@ -135,197 +135,6 @@ struct DEC_DetectorData
  * Local methods
  */
 
-static
-DEC_DECL_INITDETECTOR(initCutpacking)
-{
-   int i;
-   int j;
-   int k;
-   int nallvars;
-   int nconss;
-   SCIP_Bool ishandled;
-   SCIP_CONS** conss;
-   SCIP_VAR** vars;
-   SCIP_VAR** allvars;
-   SCIP_VAR** relvars;
-   int nvars;
-   SCIP_HASHMAP* vartopos;
-   SCIP_CONS*** varinconss;
-   int* nvarinconss;
-
-   DEC_DETECTORDATA* detectordata;
-   assert( scip != NULL );
-
-   detectordata = DECdetectorGetData(detector);
-   assert( detectordata != NULL );
-   assert( strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0 );
-
-   nallvars = SCIPgetNVars(scip);
-   allvars = SCIPgetVars(scip);
-   nconss = SCIPgetNConss(scip);
-   conss = SCIPgetConss(scip);
-
-   detectordata->nblocks = 0;
-   detectordata->ngraphs = 0;
-   detectordata->position = -1;
-   detectordata->nrepresentatives = 0;
-   detectordata->nrelvars = 0;
-   detectordata->startblock = -1;
-
-   /* get number of relevant variables */
-   /* vartopos */
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartopos, SCIPblkmem(scip),nallvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->relvars, nallvars) );
-   vartopos = detectordata->vartopos;
-   relvars = detectordata->relvars;
-   j = 0;
-
-   for( i = 0; i < nallvars; ++i )
-   {
-      if( GCGisVarRelevant(allvars[i]) )
-      {
-         relvars[j] = SCIPvarGetProbvar(allvars[i]);
-         SCIP_CALL( SCIPhashmapInsert(vartopos, SCIPvarGetProbvar(allvars[i]), (void*) (size_t) j) );
-         j++;
-      }
-   }
-   detectordata->nrelvars = j;
-   SCIPreallocMemoryArray(scip, &(detectordata->relvars), j);
-
-   /* get number of relevant conss */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs, nconss+1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(detectordata->graphs[0].conss), nconss) );
-   k = 0;
-   for( i = 0; i < nconss; ++i )
-   {
-      assert(conss[i] != NULL);
-      if( !SCIPconsIsActive(conss[i]) )
-      {
-         continue;
-      }
-
-      nvars = GCGconsGetNVars(scip, conss[i]);
-      if( nvars > 0 )
-      {
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
-         SCIP_CALL( GCGconsGetVars(scip, conss[i], vars, nvars) );
-      }
-      ishandled = FALSE;
-
-      for( j = 0; (j < nvars) && (ishandled == FALSE); ++j )
-      {
-         ishandled = GCGisVarRelevant(vars[j]);
-      }
-
-      if( ishandled )
-      {
-         detectordata->graphs[0].conss[k] = conss[i];
-         k++;
-      }
-      /* SCIPfreeMemoryArrayNull(scip, &vars); */
-   }
-   detectordata->nrelconss = k;
-   detectordata->graphs[0].nconss = k;
-   SCIPreallocMemoryArray(scip, &(detectordata->graphs[0].conss), k);
-
-   /* alloc */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, k) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip),k) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->representatives, SCIPblkmem(scip),k) );
-   SCIP_CALL( SCIPhashmapCreate(&detectordata->occupied, SCIPblkmem(scip),k) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss, k) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->mergedconss, k) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nsubscipconss, k) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nvarinconss, detectordata->nrelvars) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varinconss, detectordata->nrelvars) );
-
-   varinconss = detectordata->varinconss;
-   nvarinconss = detectordata->nvarinconss;
-
-   for( i = 0; i < k; i++ )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss[i], k) );
-      SCIP_CALL( SCIPhashmapCreate(&detectordata->mergedconss[i], SCIPblkmem(scip),k) );
-   }
-
-   /* varinconss */
-   for( i = 0; i < detectordata->nrelvars; i++ )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varinconss[i], k) );
-      detectordata->nvarinconss[i] = 0;
-   }
-
-   for( i = 0; i < k; ++i )
-   {
-      nvars = GCGconsGetNVars(scip, detectordata->graphs[0].conss[i]);
-      SCIP_CALL( SCIPallocMemoryArray(scip,&vars,nvars) );
-      SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], vars, nvars) );
-      for( j = 0; j < nvars; ++j )
-      {
-         if( GCGisVarRelevant(vars[j]) )
-         {
-            (varinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))])[nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))]] = detectordata->graphs[0].conss[i];
-            ++nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))];
-         }
-      }
-      SCIPfreeMemoryArrayNull(scip, &vars);
-   }
-
-   return SCIP_OKAY;
-}
-
-/** presolving deinitialization method of presolver (called after presolving has been finished) */
-static
-DEC_DECL_EXITDETECTOR(exitCutpacking)
-{
-   int i;
-   DEC_DETECTORDATA* detectordata;
-
-   assert(scip != NULL);
-   detectordata = DECdetectorGetData(detector);
-   assert(detectordata != NULL);
-
-   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
-
-   /* copy data to decomp structure */
-   if( !detectordata->found )
-   {
-      SCIPfreeMemory(scip, &detectordata);
-      return SCIP_OKAY;
-   }
-
-   /* free presolver data */
-
-   for( i = 0; i < detectordata->nrelconss; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &detectordata->subscipconss[i]);
-   }
-   for( i = 0; i < detectordata->nrelvars; ++i )
-   {
-      SCIPfreeMemoryArray(scip, &detectordata->varinconss[i]);
-   }
-
-   SCIPfreeMemoryArray(scip, &detectordata->nsubscipconss);
-   SCIPfreeMemoryArray(scip, &detectordata->subscipconss);
-   SCIPfreeMemoryArray(scip, &detectordata->partition);
-   SCIPfreeMemoryArray(scip, &detectordata->graphs);
-   SCIPfreeMemoryArray(scip, &detectordata->varinconss);
-   SCIPfreeMemoryArray(scip, &detectordata->nvarinconss);
-   SCIPfreeMemoryArray(scip, &detectordata->relvars);
-   SCIPhashmapFree(&detectordata->vartopos);
-   SCIPhashmapFree(&detectordata->representatives);
-   SCIPhashmapFree(&detectordata->occupied);
-
-   for( i = 0; i < detectordata->nrelconss; i++ )
-   {
-      SCIPhashmapFree(&detectordata->mergedconss[i]);
-   }
-   SCIPfreeMemoryArray(scip, &detectordata->mergedconss);
-   SCIPfreeMemory(scip, &detectordata);
-
-   return SCIP_OKAY;
-}
-
 /** builds the graph from the given scip instance */
 static
 SCIP_RETCODE buildGraphStructure(
@@ -435,30 +244,29 @@ SCIP_HASHMAPLIST* hashmapIteration(
    SCIP_HASHMAPLIST*     list                /**< current iteration list */
    )
 {
-      assert(detectordata->iter < SCIPhashmapGetNLists(hm)+1);
-      assert((detectordata->iter == 0)||(list != 0));
+   assert(detectordata->iter < SCIPhashmapGetNLists(hm)+1);
+   assert((detectordata->iter == 0)||(list != 0));
 
+   if( list != NULL )
+   {
+      list = SCIPhashmapListGetNext(list);
       if( list != NULL )
+         return list;
+   }
+   else
+   {
+      int j;
+      for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
       {
-         list = SCIPhashmapListGetNext(list);
-         if( list != NULL )
-            return list;
-      }
-
-      if( list == NULL )
-      {
-         int j;
-         for( j = detectordata->iter; j < SCIPhashmapGetNLists(hm); ++j )
+         list = SCIPhashmapGetList(hm,j);
+         ++detectordata->iter;
+         if( SCIPhashmapListGetNEntries(list) > 0 )
          {
-            list = SCIPhashmapGetList(hm,j);
-            ++detectordata->iter;
-            if( SCIPhashmapListGetNEntries(list) > 0 )
-            {
-               assert(list != NULL);
-               return list;
-            }
+            assert(list != NULL);
+            return list;
          }
       }
+   }
    return NULL;
 }
 
@@ -1813,6 +1621,203 @@ SCIP_RETCODE callMetis(
 }
 
 
+/*
+ * detector callback methods
+ */
+
+/** detection initialization function of detector (called when detection is about to begin) */
+static
+DEC_DECL_INITDETECTOR(initCutpacking)
+{
+   int i;
+   int j;
+   int k;
+   int nallvars;
+   int nconss;
+   SCIP_Bool ishandled;
+   SCIP_CONS** conss;
+   SCIP_VAR** vars;
+   SCIP_VAR** allvars;
+   SCIP_VAR** relvars;
+   int nvars;
+   SCIP_HASHMAP* vartopos;
+   SCIP_CONS*** varinconss;
+   int* nvarinconss;
+
+   DEC_DETECTORDATA* detectordata;
+   assert( scip != NULL );
+
+   detectordata = DECdetectorGetData(detector);
+   assert( detectordata != NULL );
+   assert( strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0 );
+
+   nallvars = SCIPgetNVars(scip);
+   allvars = SCIPgetVars(scip);
+   nconss = SCIPgetNConss(scip);
+   conss = SCIPgetConss(scip);
+
+   detectordata->nblocks = 0;
+   detectordata->ngraphs = 0;
+   detectordata->position = -1;
+   detectordata->nrepresentatives = 0;
+   detectordata->nrelvars = 0;
+   detectordata->startblock = -1;
+
+   /* get number of relevant variables */
+   /* vartopos */
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->vartopos, SCIPblkmem(scip),nallvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->relvars, nallvars) );
+   vartopos = detectordata->vartopos;
+   relvars = detectordata->relvars;
+   j = 0;
+
+   for( i = 0; i < nallvars; ++i )
+   {
+      if( GCGisVarRelevant(allvars[i]) )
+      {
+         relvars[j] = SCIPvarGetProbvar(allvars[i]);
+         SCIP_CALL( SCIPhashmapInsert(vartopos, SCIPvarGetProbvar(allvars[i]), (void*) (size_t) j) );
+         j++;
+      }
+   }
+   detectordata->nrelvars = j;
+   SCIPreallocMemoryArray(scip, &(detectordata->relvars), j);
+
+   /* get number of relevant conss */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->graphs, nconss+1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(detectordata->graphs[0].conss), nconss) );
+   k = 0;
+   for( i = 0; i < nconss; ++i )
+   {
+      assert(conss[i] != NULL);
+      if( !SCIPconsIsActive(conss[i]) )
+      {
+         continue;
+      }
+
+      nvars = GCGconsGetNVars(scip, conss[i]);
+      if( nvars > 0 )
+      {
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
+         SCIP_CALL( GCGconsGetVars(scip, conss[i], vars, nvars) );
+
+         ishandled = FALSE;
+
+         for( j = 0; (j < nvars) && (ishandled == FALSE); ++j )
+            ishandled = GCGisVarRelevant(vars[j]);
+
+         if( ishandled )
+         {
+            detectordata->graphs[0].conss[k] = conss[i];
+            k++;
+         }
+
+         /* SCIPfreeMemoryArrayNull(scip, &vars); */
+      }
+   }
+   detectordata->nrelconss = k;
+   detectordata->graphs[0].nconss = k;
+   SCIPreallocMemoryArray(scip, &(detectordata->graphs[0].conss), k);
+
+   /* alloc */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->partition, k) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->constoblock, SCIPblkmem(scip),k) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->representatives, SCIPblkmem(scip),k) );
+   SCIP_CALL( SCIPhashmapCreate(&detectordata->occupied, SCIPblkmem(scip),k) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss, k) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->mergedconss, k) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nsubscipconss, k) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->nvarinconss, detectordata->nrelvars) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varinconss, detectordata->nrelvars) );
+
+   varinconss = detectordata->varinconss;
+   nvarinconss = detectordata->nvarinconss;
+
+   for( i = 0; i < k; i++ )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->subscipconss[i], k) );
+      SCIP_CALL( SCIPhashmapCreate(&detectordata->mergedconss[i], SCIPblkmem(scip),k) );
+   }
+
+   /* varinconss */
+   for( i = 0; i < detectordata->nrelvars; i++ )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->varinconss[i], k) );
+      detectordata->nvarinconss[i] = 0;
+   }
+
+   for( i = 0; i < k; ++i )
+   {
+      nvars = GCGconsGetNVars(scip, detectordata->graphs[0].conss[i]);
+      SCIP_CALL( SCIPallocMemoryArray(scip,&vars,nvars) );
+      SCIP_CALL( GCGconsGetVars(scip,detectordata->graphs[0].conss[i], vars, nvars) );
+      for( j = 0; j < nvars; ++j )
+      {
+         if( GCGisVarRelevant(vars[j]) )
+         {
+            (varinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))])[nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))]] = detectordata->graphs[0].conss[i];
+            ++nvarinconss[(long int)SCIPhashmapGetImage(vartopos, SCIPvarGetProbvar(vars[j]))];
+         }
+      }
+      SCIPfreeMemoryArrayNull(scip, &vars);
+   }
+
+   return SCIP_OKAY;
+}
+
+/** detection deinitialization method of detector (called when detection is finished) */
+static
+DEC_DECL_EXITDETECTOR(exitCutpacking)
+{
+   int i;
+   DEC_DETECTORDATA* detectordata;
+
+   assert(scip != NULL);
+   detectordata = DECdetectorGetData(detector);
+   assert(detectordata != NULL);
+
+   assert(strcmp(DECdetectorGetName(detector), DEC_DETECTORNAME) == 0);
+
+   /* copy data to decomp structure */
+   if( !detectordata->found )
+   {
+      SCIPfreeMemory(scip, &detectordata);
+      return SCIP_OKAY;
+   }
+
+   /* free presolver data */
+
+   for( i = 0; i < detectordata->nrelconss; ++i )
+   {
+      SCIPfreeMemoryArray(scip, &detectordata->subscipconss[i]);
+   }
+   for( i = 0; i < detectordata->nrelvars; ++i )
+   {
+      SCIPfreeMemoryArray(scip, &detectordata->varinconss[i]);
+   }
+
+   SCIPfreeMemoryArray(scip, &detectordata->nsubscipconss);
+   SCIPfreeMemoryArray(scip, &detectordata->subscipconss);
+   SCIPfreeMemoryArray(scip, &detectordata->partition);
+   SCIPfreeMemoryArray(scip, &detectordata->graphs);
+   SCIPfreeMemoryArray(scip, &detectordata->varinconss);
+   SCIPfreeMemoryArray(scip, &detectordata->nvarinconss);
+   SCIPfreeMemoryArray(scip, &detectordata->relvars);
+   SCIPhashmapFree(&detectordata->vartopos);
+   SCIPhashmapFree(&detectordata->representatives);
+   SCIPhashmapFree(&detectordata->occupied);
+
+   for( i = 0; i < detectordata->nrelconss; i++ )
+   {
+      SCIPhashmapFree(&detectordata->mergedconss[i]);
+   }
+   SCIPfreeMemoryArray(scip, &detectordata->mergedconss);
+   SCIPfreeMemory(scip, &detectordata);
+
+   return SCIP_OKAY;
+}
+
+/** detection function of detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
 {
@@ -1877,6 +1882,11 @@ DEC_DECL_DETECTSTRUCTURE(detectAndBuildCutpacking)
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
 }
+
+
+/*
+ * detection specific interface methods
+ */
 
 /** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionCutpacking(
