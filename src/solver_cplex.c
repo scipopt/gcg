@@ -263,9 +263,9 @@ SCIP_RETCODE buildProblem(
       solverdata->pricingconss[probnr][c] = conss[c];
       SCIP_CALL( SCIPcaptureCons(pricingprob, conss[c]) );
 
-      nnonzeros += SCIPgetNVarsXXX(scip, conss[c]);
-      lhs = SCIPgetLhsXXX(pricingprob, conss[c]);
-      rhs = SCIPgetRhsXXX(pricingprob, conss[c]);
+      nnonzeros += GCGconsGetNVars(scip, conss[c]);
+      lhs = GCGconsGetLhs(pricingprob, conss[c]);
+      rhs = GCGconsGetRhs(pricingprob, conss[c]);
       SCIP_CALL( SCIPduplicateBufferArray(scip, &consnames[c], SCIPconsGetName(conss[c]),
             (int)(strlen(SCIPconsGetName(conss[c]))+1)) );
 
@@ -308,9 +308,9 @@ SCIP_RETCODE buildProblem(
    /* collect nonzeros */
    for( c = 0, idx = 0; c < nconss; ++c )
    {
-      nconsvars = SCIPgetNVarsXXX(scip, conss[c]);
-      SCIP_CALL( SCIPgetValsXXX(pricingprob, conss[c], consvals, nvars) );
-      SCIP_CALL( SCIPgetVarsXXX(pricingprob, conss[c], consvars, nvars) );
+      nconsvars = GCGconsGetNVars(scip, conss[c]);
+      SCIP_CALL( GCGconsGetVals(pricingprob, conss[c], consvals, nvars) );
+      SCIP_CALL( GCGconsGetVars(pricingprob, conss[c], consvars, nvars) );
 
       /* get coefficients */
       for( v = 0; v < nconsvars; ++v )
@@ -513,9 +513,9 @@ SCIP_RETCODE updateProblem(
       considx = c - nbasicpricingconss;
       assert(considx >= 0);
 
-      nconsvars = SCIPgetNVarsXXX(scip, conss[c]);
-      lhs = SCIPgetLhsXXX(pricingprob, conss[c]);
-      rhs = SCIPgetRhsXXX(pricingprob, conss[c]);
+      nconsvars = GCGconsGetNVars(scip, conss[c]);
+      lhs = GCGconsGetLhs(pricingprob, conss[c]);
+      rhs = GCGconsGetRhs(pricingprob, conss[c]);
       SCIP_CALL( SCIPduplicateBufferArray(scip, &newconsnames[considx], SCIPconsGetName(conss[c]),
             (int)(strlen(SCIPconsGetName(conss[c]))+1)) );
 
@@ -567,9 +567,9 @@ SCIP_RETCODE updateProblem(
          continue;
       }
 
-      nconsvars = SCIPgetNVarsXXX(scip, conss[c]);
-      SCIP_CALL( SCIPgetVarsXXX(pricingprob, conss[c], consvars, nvars) );
-      SCIP_CALL( SCIPgetValsXXX(pricingprob, conss[c], consvals, nvars) );
+      nconsvars = GCGconsGetNVars(scip, conss[c]);
+      SCIP_CALL( GCGconsGetVars(pricingprob, conss[c], consvars, nvars) );
+      SCIP_CALL( GCGconsGetVals(pricingprob, conss[c], consvals, nvars) );
 
       /* get coefficients */
       for( v = 0; v < nconsvars; ++v )
@@ -810,7 +810,7 @@ static GCG_DECL_SOLVERINITSOL(solverInitsolCplex)
    solverdata = GCGsolverGetSolverdata(solver);
    assert(solverdata != NULL);
 
-   solverdata->npricingprobs = GCGrelaxGetNPricingprobs(solverdata->origprob);
+   solverdata->npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
    npricingprobs = solverdata->npricingprobs;
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cpxenv), npricingprobs) );
@@ -848,7 +848,7 @@ static GCG_DECL_SOLVEREXITSOL(solverExitsolCplex)
 
    retval = SCIP_OKAY;
 
-   npricingprobs = GCGrelaxGetNPricingprobs(solverdata->origprob);
+   npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
 
    /* free pricing problems */
    for( i = 0; i < npricingprobs; ++i )
@@ -956,7 +956,7 @@ SCIP_RETCODE GCGincludeSolverCplex(
    GCG_SOLVERDATA* data;
 
    SCIP_CALL( SCIPallocMemory(scip, &data) );
-   data->origprob = GCGpricerGetOrigprob(scip);
+   data->origprob = GCGmasterGetOrigprob(scip);
    data->masterprob = scip;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
