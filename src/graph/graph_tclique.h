@@ -47,7 +47,9 @@ private:
    TCLIQUE_GRAPH* graph;
 
 public:
+
    GraphTclique();
+
    virtual ~GraphTclique();
    virtual int getNNodes();
    virtual int getNEdges();
