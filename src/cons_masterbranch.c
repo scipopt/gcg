@@ -950,40 +950,40 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
-   if( (*consdata)->nchildconss > 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, (*consdata)->nchildconss) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childconss, (*consdata)->nchildconss) );
-   }
-   for( i = 0; i< (*consdata)->nchildconss; ++i )
-   {
-      if( (*consdata)->childconss != NULL && (*consdata)->childconss[i] != NULL )
-      {
-         childconsdatas[i] = SCIPconsGetData((*consdata)->childconss[i]);
-         childconss[i] = (*consdata)->childconss[i];
-      }
-      else
-      {
-         childconsdatas[i] = NULL;
-         childconss[i] = NULL;
-      }
-   }
    nchildconss = (*consdata)->nchildconss;
 
-   /* delete childnodes */
-   for( i = 0; i < nchildconss; ++i )
-   {
-      SCIPdebugMessage("Deleting %d childnodes\n", nchildconss);
-
-      if( childconss[i] != NULL )
-      {
-         /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
-         SCIP_CALL( SCIPreleaseCons(scip, &childconss[i]) );
-         childconss[i] = NULL;
-      }
-   }
    if( nchildconss > 0 )
    {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, nchildconss) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childconss, nchildconss) );
+
+      for( i = 0; i < nchildconss; ++i )
+      {
+         if( (*consdata)->childconss != NULL && (*consdata)->childconss[i] != NULL )
+         {
+            childconsdatas[i] = SCIPconsGetData((*consdata)->childconss[i]);
+            childconss[i] = (*consdata)->childconss[i];
+         }
+         else
+         {
+            childconsdatas[i] = NULL;
+            childconss[i] = NULL;
+         }
+      }
+
+      /* delete childnodes */
+      for( i = 0; i < nchildconss; ++i )
+      {
+         SCIPdebugMessage("Deleting %d childnodes\n", nchildconss);
+
+         if( childconss[i] != NULL )
+         {
+            /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
+            SCIP_CALL( SCIPreleaseCons(scip, &childconss[i]) );
+            childconss[i] = NULL;
+         }
+      }
+
       SCIPfreeMemoryArrayNull(scip, &childconsdatas);
       SCIPfreeMemoryArrayNull(scip, &childconss);
    }
