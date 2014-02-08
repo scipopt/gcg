@@ -1017,7 +1017,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          consdata2->probingtmpcons = NULL;
       }
 
-      for( i = 0; i<consdata2->nchildconss; ++i )
+      for( i = 0; i < consdata2->nchildconss; ++i )
       {
          if( consdata2->childconss[i] == cons )
          {
@@ -1884,7 +1884,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->addPropBoundChg = 0;
    consdata->chgVarNodeVar = NULL;
    consdata->chgVarNodeBound = 0;
-   consdata->addPropBoundChgBoundtype = 0;
+   consdata->addPropBoundChgBoundtype = SCIP_BOUNDTYPE_LOWER;
    consdata->addPropBoundChgBound = 0;
 
 
