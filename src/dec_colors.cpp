@@ -118,7 +118,7 @@ SCIP_DECL_SORTPTRCOMP(sortCons)
    CONSDATA* dat1 = (CONSDATA*)elem1;
    CONSDATA* dat2 = (CONSDATA*)elem2;
 
-   int result = strncmp(dat1->conshdlrname, dat2->conshdlrname, SCIP_MAXSTRLEN);
+   int result = strncmp(dat1->conshdlrname, dat2->conshdlrname, (size_t) SCIP_MAXSTRLEN);
    if( result == 0)
    {
          if( SCIPisLT(dat1->scip, dat1->lhs, dat2->lhs) )
@@ -146,7 +146,7 @@ SCIP_RETCODE assignConsColors(
       int*                  colors,             /**< assignment of constrainst to colors */
       int*                  ncolors             /**< number of colors */
 )
-{
+{ /*lint -esym(593, data)*/
 
    CONSDATA** colordata = NULL;
    int pos;
@@ -182,7 +182,7 @@ SCIP_RETCODE assignConsColors(
       SCIP_CONS* cons = conss[i];
       CONSDATA* data = new CONSDATA(scip, cons);
 
-      SCIPsortedvecFindPtr( (void**) colordata, sortCons, data, *ncolors, &pos);
+      (void) SCIPsortedvecFindPtr( (void**) colordata, sortCons, data, *ncolors, &pos);
       colors[i] = pos;
       SCIPdebugMessage("Conss <%s> has color %d\n", SCIPconsGetName(conss[i]), pos);
       delete data;
@@ -253,7 +253,7 @@ static
 bool nextBitmask(
    std::vector<bool>& bit_mask
    )
-{
+{ /*lint -esym(1793,std::_Bit_reference::operator=)*/
    std::size_t i = 0;
    for( ; (i < bit_mask.size()) && bit_mask[i]; ++i )
       bit_mask[i] = false;
@@ -268,16 +268,14 @@ bool nextBitmask(
 
 static
 std::set<int> getSetFromBits(
-   std::vector<bool> bits,
-   int* colors,
-   int ncolors
+   std::vector<bool> bits
 )
 {
    std::set<int> set;
    for( size_t i = 0; i < bits.size(); ++i )
    {
       if( bits[i] )
-         set.insert(i);
+         (void) set.insert(int(i));
    }
    return set;
 }
@@ -322,13 +320,13 @@ SCIP_RETCODE findColorsComponents(
    *decomps = 0;
    *result = SCIP_DIDNOTFIND;
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colors, SCIPgetNConss(scip)) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &colors, SCIPgetNConss(scip)) ); /*lint !e666 */
 
    SCIP_CALL( assignConsColors(scip, SCIPgetConss(scip), SCIPgetNConss(scip), colors, &ncolors) );
 
-   std::vector<bool> bit_mask(ncolors);
+   std::vector<bool> bit_mask((size_t)ncolors);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, decomps, 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, decomps, 1) ); /*lint !e506*/
 
    int nbits = 2;
 
@@ -340,10 +338,10 @@ SCIP_RETCODE findColorsComponents(
 
       do
       {
-         if( std::count(bit_mask.begin(), bit_mask.end(), true) != subsetsize )
+         if( std::count(bit_mask.begin(), bit_mask.end(), true) != subsetsize ) /*lint !e864*/
             continue;
 
-         std::set<int> colorset = getSetFromBits(bit_mask, colors, ncolors);
+         std::set<int> colorset = getSetFromBits(bit_mask);
 #ifdef SCIP_DEBUG
          SCIPdebugMessage("Colors:");
          for( std::set<int>::iterator it = colorset.begin(); it != colorset.end(); ++it)
@@ -407,7 +405,7 @@ DEC_DECL_INITDETECTOR(initColors)
 /** detection function of detector */
 static
 DEC_DECL_DETECTSTRUCTURE(detectColors)
-{
+{ /*lint -e715*/
    *result = SCIP_DIDNOTFIND;
 
    *ndecdecomps = 0;
@@ -440,6 +438,7 @@ DEC_DECL_DETECTSTRUCTURE(detectColors)
  */
 
 /** creates the handler for colors constraints and includes it in SCIP */
+extern "C"
 SCIP_RETCODE SCIPincludeDetectionColors(
    SCIP*                 scip                /**< SCIP data structure */
    )
