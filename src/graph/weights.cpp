@@ -71,7 +71,7 @@ Weights::~Weights()
 }
 
 int Weights::calculate(SCIP_CONS* cons) const
-{
+{ /*lint -e715*/
    return consweight;
 }
 int Weights::calculate(SCIP_VAR* var) const

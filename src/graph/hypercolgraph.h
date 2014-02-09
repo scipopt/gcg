@@ -67,7 +67,7 @@ public:
     */
    SCIP_RETCODE writeToFile(
       int                fd,                 /**< filename where the graph should be written to */
-      SCIP_Bool          edgeweights = FALSE /**< whether to write edgeweights */
+      SCIP_Bool          edgeweights         /**< whether to write edgeweights */
     );
 
    /** return the number of nodes */
@@ -97,12 +97,6 @@ public:
    {
       SCIP_CALL( this->graph.readPartition(filename) );
       return SCIP_OKAY;
-   }
-
-   /** return a partition of the nodes */
-   virtual std::vector<int> getPartition()
-   {
-      return this->graph.getPartition();
    }
 
    virtual SCIP_RETCODE createFromMatrix(

@@ -32,7 +32,7 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /*#define SCIP_DEBUG*/
-
+/*lint -e39*/
 #include "bipartitegraph_def.h"
 #include "columngraph_def.h"
 #include "rowgraph_def.h"

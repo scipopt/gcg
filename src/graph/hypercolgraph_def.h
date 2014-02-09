@@ -40,11 +40,9 @@
 
 #include "hypercolgraph.h"
 #include <set>
-#include <fstream>
 #include <algorithm>
 #include <vector>
 
-using std::ifstream;
 namespace gcg
 {
 template <class T>
@@ -230,7 +228,7 @@ SCIP_RETCODE HypercolGraph<T>::createDecompFromPartition(
    int nblocks;
 
    assert(decomp != NULL);
-   std::vector<int> partition = getPartition();
+   std::vector<int> partition = this->getPartition();
    conss = SCIPgetConss(this->scip_);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );

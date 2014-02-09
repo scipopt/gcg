@@ -115,9 +115,6 @@ public:
       int                i                   /**< the given node */
       );
 
-   /** return a partition of the nodes */
-   std::vector<int> getPartition();
-
    /** assigns partition to a given node*/
    virtual void setPartition(int i, int ID);
 
@@ -134,7 +131,7 @@ public:
     */
    virtual SCIP_RETCODE writeToFile(
       int                fd,                  /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      SCIP_Bool          writeweights        /**< whether to write weights */
     );
 
    /**

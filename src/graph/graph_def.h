@@ -39,9 +39,6 @@
 
 #include "scip/scip.h"
 #include "graph.h"
-#include <fstream>
-
-using std::ifstream;
 
 namespace gcg {
 
@@ -127,12 +124,6 @@ std::vector<int> Graph<T>::getNeighbors(int i) {
    assert(i >= 0);
 
    return graph->getNeighbors(i);
-}
-
-template <class T>
-std::vector<int> Graph<T>::getPartition()
-{
-   return partition;
 }
 
 template <class T>

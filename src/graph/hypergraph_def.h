@@ -38,9 +38,6 @@
 
 #include "scip/scip.h"
 #include "hypergraph.h"
-#include <fstream>
-
-using std::ifstream;
 
 namespace gcg {
 
@@ -175,12 +172,6 @@ int Hypergraph<T>::getNHyperedgeNodes(
    )
 {
    return graph->getNNeighbors(hedges[i]);
-}
-
-template <class T>
-std::vector<int> Hypergraph<T>::getPartition()
-{
-   return partition;
 }
 
 template <class T>

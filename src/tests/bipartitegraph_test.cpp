@@ -81,7 +81,7 @@ TEST_F(BipartiteTest, WriteFileTest) {
    gcg::BipartiteGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd) );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd, FALSE) );
    fclose(file);
 
    ASSERT_TRUE( SCIPfileExists("graph.g") );
