@@ -224,7 +224,7 @@ SCIP_Bool getNextLine(
    /* read next line */
    refinput->linepos = 0;
    refinput->linebuf[REF_MAX_LINELEN-2] = '\0';
-   if( SCIPfgets(refinput->linebuf, sizeof(refinput->linebuf), refinput->file) == NULL )
+   if( SCIPfgets(refinput->linebuf, REF_MAX_LINELEN, refinput->file) == NULL )
       return FALSE;
    refinput->linenumber++;
    if( refinput->linebuf[REF_MAX_LINELEN-2] != '\0' )

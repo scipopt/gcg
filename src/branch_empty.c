@@ -194,7 +194,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL)
+   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
    {
       SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
    }
@@ -224,7 +224,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
 
 
-   if(masterbranchcons == NULL)
+   if( masterbranchcons == NULL )
    {
       return SCIP_OKAY;
    }

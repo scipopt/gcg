@@ -207,7 +207,7 @@ SCIP_Bool getNextLine(
    /* read next line */
    decinput->linepos = 0;
    decinput->linebuf[DEC_MAX_LINELEN - 2] = '\0';
-   if( SCIPfgets(decinput->linebuf, sizeof (decinput->linebuf), decinput->file) == NULL )
+   if( SCIPfgets(decinput->linebuf, DEC_MAX_LINELEN, decinput->file) == NULL )
       return FALSE;
    decinput->linenumber ++;
    if( decinput->linebuf[DEC_MAX_LINELEN - 2] != '\0' )

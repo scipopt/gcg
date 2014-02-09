@@ -360,7 +360,7 @@ SCIP_DECL_CONSACTIVE(consActiveOrigbranch)
    /* put constraint on the stack */
    if( conshdlrData->nstack >= conshdlrData->maxstacksize )
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), 2*(conshdlrData->maxstacksize)) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrData->stack), (2*(size_t)conshdlrData->maxstacksize)) );
       conshdlrData->maxstacksize = 2*(conshdlrData->maxstacksize);
       SCIPdebugMessage("reallocating Memory for stack! %d --> %d\n", conshdlrData->maxstacksize/2, conshdlrData->maxstacksize);
    }

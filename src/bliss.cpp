@@ -139,7 +139,7 @@ SCIP_DECL_SORTPTRCOMP(sortptrval)
 {
    AUT_COEF* aut1 = (AUT_COEF*) elem1;
    AUT_COEF* aut2 = (AUT_COEF*) elem2;
-   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal());
+   return comp(aut1->getScip(), aut1->getVal(), aut2->getVal()); /*lint !e864*/
 }
 
 /** default constructor */
@@ -157,11 +157,11 @@ SCIP_RETCODE struct_colorinformation::insert(
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(this->ptrarrayvars, sortptrvar, svar, this->lenvarsarray, &pos) )
+   if( !SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, svar, lenvarsarray, &pos) )
    {
-      SCIPsortedvecInsertPtr(this->ptrarrayvars, sortptrvar, svar, &this->lenvarsarray, NULL);
+      SCIPsortedvecInsertPtr(ptrarrayvars, sortptrvar, svar, &lenvarsarray, NULL);
       *added = TRUE;
-      this->color++;
+      color++;
    }
    else
       *added = FALSE;
@@ -176,13 +176,13 @@ SCIP_RETCODE struct_colorinformation::insert(
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(this->ptrarrayconss, sortptrcons, scons,
-         this->lenconssarray, &pos) )
+   if( !SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, scons,
+         lenconssarray, &pos) )
    {
-      SCIPsortedvecInsertPtr(this->ptrarrayconss, sortptrcons, scons,
-            &this->lenconssarray, NULL);
+      SCIPsortedvecInsertPtr(ptrarrayconss, sortptrcons, scons,
+            &lenconssarray, NULL);
       *added = TRUE;
-      this->color++;
+      color++;
    }
    else
       *added = FALSE;
@@ -197,18 +197,18 @@ SCIP_RETCODE struct_colorinformation::insert(
    )
 {
    int pos;
-   if( !SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, scoef, this->lencoefsarray, &pos) )
+   if( !SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, scoef, lencoefsarray, &pos) )
    {
-      int size = SCIPcalcMemGrowSize(scoef->getScip(), this->alloccoefsarray+1);
-      if( this->alloccoefsarray == 0 || this->lencoefsarray % this->alloccoefsarray == 0)
+      int size = SCIPcalcMemGrowSize(scoef->getScip(), alloccoefsarray+1);
+      if( alloccoefsarray == 0 || lencoefsarray % alloccoefsarray == 0)
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &this->ptrarraycoefs, size) );
-         this->alloccoefsarray = size;
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &ptrarraycoefs, size) );
+         alloccoefsarray = size;
       }
 
-      SCIPsortedvecInsertPtr(this->ptrarraycoefs, sortptrval, scoef, &this->lencoefsarray, NULL);
+      SCIPsortedvecInsertPtr(ptrarraycoefs, sortptrval, scoef, &lencoefsarray, NULL);
       *added = TRUE;
-      this->color++;
+      color++;
    }
    else
       *added = FALSE;
@@ -222,7 +222,7 @@ int struct_colorinformation::get(
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarrayvars, sortptrvar, &svar, this->lenvarsarray, &pos);
+   found = SCIPsortedvecFindPtr(ptrarrayvars, sortptrvar, &svar, lenvarsarray, &pos);
    return found ? pos : -1;
 }
 
@@ -232,7 +232,7 @@ int struct_colorinformation::get(
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarrayconss, sortptrcons, &scons, this->lenconssarray, &pos);
+   found = SCIPsortedvecFindPtr(ptrarrayconss, sortptrcons, &scons, lenconssarray, &pos);
    return found ? pos : -1;
 }
 
@@ -242,7 +242,7 @@ int struct_colorinformation::get(
 {
    int pos;
    SCIP_Bool found;
-   found = SCIPsortedvecFindPtr(this->ptrarraycoefs, sortptrval, &scoef, this->lencoefsarray, &pos);
+   found = SCIPsortedvecFindPtr(ptrarraycoefs, sortptrval, &scoef, lencoefsarray, &pos);
    return found ? pos : -1;
 }
 
@@ -258,32 +258,32 @@ int struct_colorinformation::getLenCons()
 
 SCIP_CONS* struct_cons::getCons()
 {
-   return this->cons;
+   return cons;
 }
 
 SCIP* struct_cons::getScip()
 {
-   return this->scip;
+   return scip;
 }
 
-SCIP_VAR* struct_var::getVar()
+SCIP_VAR* struct_var::getVar ()
 {
-   return this->var;
+   return var;
 }
 
 SCIP* struct_var::getScip()
 {
-   return this->scip;
+   return scip;
 }
 
 SCIP* struct_coef::getScip()
 {
-   return this->scip;
+   return scip;
 }
 
 SCIP_Real struct_coef::getVal()
 {
-   return this->val;
+   return val;
 }
 
 /** constructor of the variable struct */
@@ -318,6 +318,7 @@ struct_coef::struct_coef(
 
 
 /** returns bliss version */
+extern "C"
 const char* GCGgetBlissVersion(void)
 {
    return bliss::version;

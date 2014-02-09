@@ -79,7 +79,7 @@ SCIP_RETCODE setHeuristicsAggressive(
    if( SCIPfindHeur(scip, "gcgrins") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetIntParam(scip, "heuristics/gcgrins/nodesofs", (SCIP_Longint)2000) );
+      SCIP_CALL( SCIPsetIntParam(scip, "heuristics/gcgrins/nodesofs", 2000) );
       SCIP_CALL( SCIPsetRealParam(scip, "heuristics/gcgrins/minfixingrate", 0.3) );
    }
 

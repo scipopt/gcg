@@ -865,9 +865,9 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
    if( vardata->data.origvardata.maxmastervars == vardata->data.origvardata.nmastervars )
    {
       SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervars),
-            2*vardata->data.origvardata.maxmastervars) );
+            2*(size_t)vardata->data.origvardata.maxmastervars) );
       SCIP_CALL( SCIPreallocMemoryArray(pricerdata->origprob, &(vardata->data.origvardata.mastervals),
-            2*vardata->data.origvardata.maxmastervars) );
+            2*(size_t)vardata->data.origvardata.maxmastervars) );
       SCIPdebugMessage("mastervars array of var %s resized from %d to %d\n", SCIPvarGetName(origvar),
          vardata->data.origvardata.maxmastervars, 2*vardata->data.origvardata.maxmastervars);
       vardata->data.origvardata.maxmastervars = 2*vardata->data.origvardata.maxmastervars;

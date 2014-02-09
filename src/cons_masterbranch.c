@@ -2228,7 +2228,7 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    assert(conshdlrData->stack != NULL);
 
 
-   if(conshdlrData->nstack == 0)
+   if( conshdlrData->nstack == 0 )
    {
       return NULL;
    }
