@@ -277,6 +277,25 @@ else
 			done'
 endif
 
+.PHONY: tlint
+tlint:		$(ALLSRC)
+		-rm -f lint.out
+ifeq ($(FILES),)
+		$(SHELL) -ec 'for i in $^; \
+			do \
+			echo $$i; \
+			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
+			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			done'
+else
+		$(SHELL) -ec  'for i in $(FILES); \
+			do \
+			echo $$i; \
+			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
+			$(FLAGS) -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			done'
+endif
+
 .PHONY: scip
 scip:
 		@$(MAKE) -C $(SCIPDIR) $^ libs
