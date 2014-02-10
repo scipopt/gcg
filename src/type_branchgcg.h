@@ -47,6 +47,14 @@ extern "C" {
 typedef struct GCG_BranchData GCG_BRANCHDATA;   /**< branching data */
 typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching rule */
 
+/** type of variable bound: lower or upper bound */
+enum GCG_BoundType
+{
+   GCG_BOUNDTYPE_LOWER = 0,            /**< lower bound */
+   GCG_BOUNDTYPE_UPPER = 1,            /**< upper bound */
+   GCG_BOUNDTYPE_NONE = 2              /**< no bound */
+};
+typedef enum GCG_BoundType GCG_BOUNDTYPE;
 
 /** activation method for branchrule, called when a node in the master problem is activated,
  *  should perform changes to the current node's problem due to the branchdata

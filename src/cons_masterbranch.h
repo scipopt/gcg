@@ -56,7 +56,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_Bool             addPropBoundChg,    /**< whether a propagated bound change was added */
    SCIP_VAR*             chgVarNodeVar,      /**< the variable changed */
    SCIP_Real             chgVarNodeBound,    /**< the new bound */
-   SCIP_BOUNDTYPE        addPropBoundChgBoundtype, /**< the type of the bound change */
+   GCG_BOUNDTYPE         addPropBoundChgBoundtype, /**< the type of the bound change */
    SCIP_Real             addPropBoundChgBound /**< the propagated bound */
    );
 
@@ -86,12 +86,12 @@ SCIP_Real GCGmasterbranchGetBoundChg(
    );
 
 extern
-SCIP_BOUNDTYPE GCGmasterbranchGetProbBoundType(
+GCG_BOUNDTYPE GCGmasterbranchGetPropBoundType(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
 
 extern
-SCIP_Real GCGmasterbranchGetProbBound(
+SCIP_Real GCGmasterbranchGetPropBound(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    );
 

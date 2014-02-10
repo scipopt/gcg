@@ -147,10 +147,12 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    }
    if( GCGmasterbranchGetPropBoundChg(masterbranchchildcons) )
    {
+      assert(GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
+
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
             GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
-            GCGmasterbranchGetProbBoundType(masterbranchchildcons),
-            GCGmasterbranchGetProbBound(masterbranchchildcons)) );
+            (SCIP_BOUNDTYPE) GCGmasterbranchGetPropBoundType(masterbranchchildcons),
+            GCGmasterbranchGetPropBound(masterbranchchildcons)) );
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);

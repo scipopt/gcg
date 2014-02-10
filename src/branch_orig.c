@@ -63,7 +63,7 @@
 struct GCG_BranchData
 {
    SCIP_VAR*             origvar;            /**< original variable on which the branching is done */
-   SCIP_BOUNDTYPE        boundtype;          /**< type of the new bound of original variable */
+   GCG_BOUNDTYPE         boundtype;          /**< type of the new bound of original variable */
    SCIP_Real             newbound;           /**< new lower/upper bound of the original variable */
    SCIP_Real             oldbound;           /**< old lower/upper bound of the pricing variable */
    SCIP_Real             oldvalue;           /**< old value of the original variable */
@@ -172,7 +172,7 @@ SCIP_RETCODE branchVar(
    branchupdata->origvar = branchvar;
    branchupdata->oldvalue = solval;
    branchupdata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
-   branchupdata->boundtype = SCIP_BOUNDTYPE_LOWER;
+   branchupdata->boundtype = GCG_BOUNDTYPE_LOWER;
    branchupdata->newbound = SCIPceil(scip, solval);
    branchupdata->oldbound = SCIPvarGetLbLocal(branchvar);
    branchupdata->cons = cons1;
@@ -180,7 +180,7 @@ SCIP_RETCODE branchVar(
    branchdowndata->origvar = branchvar;
    branchdowndata->oldvalue = solval;
    branchdowndata->olddualbound = SCIPgetLocalLowerbound(GCGgetMasterprob(scip));
-   branchdowndata->boundtype = SCIP_BOUNDTYPE_UPPER;
+   branchdowndata->boundtype = GCG_BOUNDTYPE_UPPER;
    branchdowndata->newbound = SCIPfloor(scip, solval);
    branchdowndata->oldbound = SCIPvarGetUbLocal(branchvar);
    branchdowndata->cons = cons2;
@@ -473,7 +473,7 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterOrig)
    assert(origscip != NULL);
 
    SCIPdebugMessage("branchActiveMasterOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
    /* transform constraint to the master variable space */
    SCIP_CALL( GCGrelaxTransOrigToMasterCons(origscip, branchdata->cons, &mastercons) );
@@ -499,7 +499,7 @@ GCG_DECL_BRANCHMASTERSOLVED(branchMasterSolvedOrig)
    assert(branchdata->origvar != NULL);
 
    SCIPdebugMessage("branchMasterSolvedOrig: %s %s %f\n", SCIPvarGetName(branchdata->origvar),
-      ( branchdata->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
+      ( branchdata->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), branchdata->newbound);
 
    if( !SCIPisInfinity(scip, newlowerbound) && SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING
       && SCIPisRelaxSolValid(GCGgetMasterprob(scip)) )
@@ -523,7 +523,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
       return SCIP_OKAY;
 
    SCIPdebugMessage("branchDataDeleteOrig: %s %s %f\n", SCIPvarGetName((*branchdata)->origvar),
-      ( (*branchdata)->boundtype == SCIP_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
+      ( (*branchdata)->boundtype == GCG_BOUNDTYPE_LOWER ? ">=" : "<=" ), (*branchdata)->newbound);
 
    /* release constraint */
    if( (*branchdata)->cons != NULL )
