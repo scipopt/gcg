@@ -35,6 +35,8 @@
 #include <assert.h>
 
 #include "solver_xyz.h"
+#include "type_solver.h"
+#include "pricer_gcg.h"
 
 #define SOLVER_NAME          "xyz"
 #define SOLVER_DESC          "xyz solver for pricing problems"
@@ -94,6 +96,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolXyz)
 #endif
 
 /** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
+#if 0
 static
 GCG_DECL_SOLVEREXITSOL(solverExitsolXyz)
 {  /*lint --e{715}*/
@@ -121,6 +124,7 @@ GCG_DECL_SOLVERINIT(solverInitXyz)
 #endif
 
 /** deinitialization method of pricing solver (called before transformed problem is freed and solver is active) */
+#if 0
 static
 GCG_DECL_SOLVEREXIT(solverExitXyz)
 {  /*lint --e{715}*/

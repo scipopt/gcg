@@ -147,10 +147,12 @@ SCIP_RETCODE GCGcreateConsOrigbranchNode(
    }
    if( GCGmasterbranchGetPropBoundChg(masterbranchchildcons) )
    {
+      assert(GCGmasterbranchGetPropBoundType(masterbranchchildcons) != GCG_BOUNDTYPE_NONE);
+
       SCIP_CALL( GCGconsOrigbranchAddPropBoundChg(scip, origbranch,
             GCGmasterbranchGetBoundChgVar(masterbranchchildcons),
-            GCGmasterbranchGetProbBoundType(masterbranchchildcons),
-            GCGmasterbranchGetProbBound(masterbranchchildcons)) );
+            (SCIP_BOUNDTYPE) GCGmasterbranchGetPropBoundType(masterbranchchildcons),
+            GCGmasterbranchGetPropBound(masterbranchchildcons)) );
    }
 
    GCGconsOrigbranchSetMastercons(origbranch, masterbranchchildcons);
@@ -194,7 +196,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
-   if( GCGrelaxGetCurrentOrigSol(scip) == NULL)
+   if( GCGrelaxGetCurrentOrigSol(scip) == NULL )
    {
       SCIP_CALL( GCGrelaxUpdateCurrentSol(scip, &feasible) );
    }
@@ -224,7 +226,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
 
 
-   if(masterbranchcons == NULL)
+   if( masterbranchcons == NULL )
    {
       return SCIP_OKAY;
    }

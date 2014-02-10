@@ -51,6 +51,14 @@
   <h3>Contributors</h3>
   <table class="desc">
     <tr>
+      <td width="180px">
+        <a href="http://www.or.rwth-aachen.de/team/staff/michael-bastubbe/">Michael Bastubbe</a>
+      </td>
+      <td>
+	Graph library methods
+      </td>
+    </tr>
+    <tr>
       <td>
 	Alexander Gross
       </td>

@@ -42,8 +42,8 @@
 extern "C" {
 #endif
 
-extern
-/** creates the cutpacking presolver and includes it in SCIP */
+EXTERN
+/** creates the cutpacking detector and includes it in SCIP */
 SCIP_RETCODE SCIPincludeDetectionCutpacking(
       SCIP*                 scip                /**< SCIP data structure */
    );

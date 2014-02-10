@@ -56,7 +56,7 @@ TEST_F(ColumnTest, WriteFileTest) {
    gcg::ColumnGraph<gcg::GraphTclique> graph(scip, weights );
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd) );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd, FALSE) );
    fclose(file);
    ASSERT_TRUE( SCIPfileExists("columngraph.g") );
    int tmp[] = {3, 2, 2, 3, 1, 1};

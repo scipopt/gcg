@@ -253,7 +253,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenNonempty) {
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(2, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeMemoryArray(scip, &vars);
+   SCIPfreeMemoryArray(scip, &vardata.data.pricingvardata.origvars);
 }
 
 TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
@@ -270,7 +270,7 @@ TEST_F(GcgVarTest, PricingVarAddOriginalVarWhenEmpty) {
 
    SCIP_CALL_EXPECT(GCGpricingVarAddOrigVar(scip, &var, &ovar));
    ASSERT_EQ(1, GCGpricingVarGetNOrigvars(&var));
-   SCIPfreeMemoryArray(scip, &vars);
+   SCIPfreeMemoryArray(scip, &vardata.data.pricingvardata.origvars);
 }
 
 TEST_F(GcgVarTest, OriginalVarGetNMastervars) {
@@ -657,6 +657,7 @@ TEST_F(GcgVarTest, CreateMasterVar)
    SCIP_VARDATA pvardata[2];
    SCIP_VARDATA* ovardata[2] = {&ovard1, &ovard2};
    SCIP_VAR* ovars[2] ={&ovar1, &ovar2};
+   SCIP_VARDATA* mvardata;
 
    for( int i = 0; i < 2; ++i)
    {
@@ -699,6 +700,10 @@ TEST_F(GcgVarTest, CreateMasterVar)
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &(solvars[0])));
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &(solvars[1])));
+   mvardata = SCIPvarGetData(newvar);
+   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals);
+   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars);
+
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &newvar));
 
    for(int i = 0; i < 2; ++i)
@@ -714,6 +719,7 @@ TEST_F(GcgVarTest, CreateInitialLinkingMasterVar)
    SCIP_VAR* mvar = NULL;
    SCIP_VAR* ovar;
    SCIP_VARDATA ovardata;
+   SCIP_VARDATA *mvardata;
    ovardata.blocknr = -2;
    ovardata.vartype = GCG_VARTYPE_ORIGINAL;
    ovardata.data.origvardata.pricingvar = NULL;
@@ -735,8 +741,10 @@ TEST_F(GcgVarTest, CreateInitialLinkingMasterVar)
    ASSERT_EQ(1.0, GCGmasterVarGetOrigvals(mvar)[0]);
 
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &ovar));
+   mvardata = SCIPvarGetData(mvar);
+   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvals);
+   SCIPfreeMemoryArrayNull(scip, &mvardata->data.mastervardata.origvars);
    SCIP_CALL_EXPECT(SCIPreleaseVar(scip, &mvar));
-
 }
 
 TEST_F(GcgVarTest, SetCreationNode)

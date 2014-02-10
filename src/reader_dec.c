@@ -207,7 +207,7 @@ SCIP_Bool getNextLine(
    /* read next line */
    decinput->linepos = 0;
    decinput->linebuf[DEC_MAX_LINELEN - 2] = '\0';
-   if( SCIPfgets(decinput->linebuf, sizeof (decinput->linebuf), decinput->file) == NULL )
+   if( SCIPfgets(decinput->linebuf, DEC_MAX_LINELEN, decinput->file) == NULL )
       return FALSE;
    decinput->linenumber ++;
    if( decinput->linebuf[DEC_MAX_LINELEN - 2] != '\0' )
@@ -650,7 +650,7 @@ SCIP_RETCODE readBlock(
       assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t) LINKINGVALUE);
 
       SCIPdebugMessage("cons %s is in block %d\n", SCIPconsGetName(cons), blockid);
-      SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t) (blockid+1))) );
+      SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t)blockid+1)) );
    }
 
    return SCIP_OKAY;
@@ -740,7 +740,7 @@ SCIP_RETCODE fillDecompStruct(
       if( blockid == LINKINGVALUE )
       {
          blockid = decinput->nblocks+1;
-         SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*)(size_t) (nblocks+1)) );
+         SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*) ((size_t)nblocks+1)) );
       }
 
       SCIP_CALL( SCIPhashmapSetImage(constoblock, conss[i], (void*)(size_t) blockid) );

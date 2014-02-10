@@ -38,11 +38,8 @@
 
 #include "hyperrowcolgraph.h"
 #include "scip_misc.h"
-#include <fstream>
 #include <algorithm>
 #include <set>
-
-using std::ifstream;
 
 namespace gcg {
 template <class T>
@@ -210,7 +207,7 @@ class function {
    int diff;
 public:
    function(int i):diff(i) {}
-   int operator()(int i) { return i-diff;}
+   int operator()(int i) const { return i-diff;}
 };
 
 template <class T>

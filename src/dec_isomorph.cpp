@@ -95,9 +95,6 @@ struct struct_hook
    /** setter for the bool aut */
    void setBool(SCIP_Bool aut);
 
-   /** getter for the number of nodes */
-   int getNNodes();
-
    /** getter for the SCIP */
    SCIP* getScip();
 };
@@ -118,27 +115,28 @@ struct_hook::struct_hook(
    aut = aut_;
    n = n_;
    scip = scip_;
-   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, SCIPgetNConss(scip)) );
+   SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &conssperm, SCIPgetNConss(scip)) ); /*lint !e666*/
 
 }
 struct_hook::~struct_hook()
-{
-   SCIPfreeMemoryArrayNull(scip_, &conssperm);
+{   /*lint -esym(1540,struct_hook::conssperm) */
+   SCIPfreeMemoryArrayNull(scip, &conssperm);
+   scip = NULL;
 }
 /** hook function to save the permutation of the graph */
 static
-void hook(
+void fhook(
    void*                 user_param,         /**< data structure to save hashmaps with permutation */
    unsigned int          N,                  /**< number of permutations */
    const unsigned int*   aut                 /**< array of permutations */
    )
-{
+{ /*lint -e715*/
    int i;
    int nconss;
    SCIP_CONS** conss;
    AUT_HOOK* hook = (AUT_HOOK*) user_param;
    int auti;
-   int index;
+   int ind;
 
    nconss = SCIPgetNConss(hook->getScip());
    assert(nconss == SCIPgetNConss(hook->getScip()));
@@ -153,15 +151,15 @@ void hook(
 
          SCIPdebugMessage("%d <%s> <-> %d <%s>\n", i, SCIPconsGetName(conss[i]), auti, SCIPconsGetName(conss[auti]));
 
-         index = MIN(i, auti);
+         ind = MIN(i, auti);
 
          if( hook->conssperm[i] != -1)
-            index = MIN(index, hook->conssperm[i]);
+            ind = MIN(ind, hook->conssperm[i]);
          if( hook->conssperm[auti] != -1 )
-            index = MIN(index, hook->conssperm[auti]);
+            ind = MIN(ind, hook->conssperm[auti]);
 
-         hook->conssperm[i] = index;
-         hook->conssperm[auti] = index;
+         hook->conssperm[i] = ind;
+         hook->conssperm[auti] = ind;
          hook->setBool(TRUE);
       }
    }
@@ -184,7 +182,7 @@ SCIP_RETCODE allocMemory(
 
 /** destructor for colorinfo */
 static
-SCIP_RETCODE freeMemory(
+void freeMemory(
    SCIP*                 scip,               /**< SCIP data structure */
    AUT_COLOR*            colorinfo           /**< struct to save intermediate information */
 )
@@ -210,7 +208,6 @@ SCIP_RETCODE freeMemory(
    SCIPfreeMemoryArray(scip, &colorinfo->ptrarraycoefs);
    SCIPfreeMemoryArray(scip, &colorinfo->ptrarrayconss);
    SCIPfreeMemoryArray(scip, &colorinfo->ptrarrayvars);
-   return SCIP_OKAY;
 }
 
 /** set up a help structure for graph creation */
@@ -220,7 +217,7 @@ SCIP_RETCODE setuparrays(
    AUT_COLOR*            colorinfo,          /**< data structure to save intermediate data */
    SCIP_RESULT*          result              /**< result pointer to indicate success or failure */
    )
-{
+{ /*lint -esym(593,scoef) */
    int i;
    int j;
    int nconss;
@@ -254,7 +251,7 @@ SCIP_RETCODE setuparrays(
    //save the properties of constraints in a struct array and in a sorted pointer array
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
    {
-      SCIP_Real* curvals;
+      SCIP_Real* curvals = NULL;
       int ncurvars = GCGconsGetNVars(scip, conss[i]);
       if( ncurvars == 0 )
          continue;
@@ -268,13 +265,14 @@ SCIP_RETCODE setuparrays(
          delete scons;
 
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
-      GCGconsGetVals(scip, conss[i], curvals, ncurvars);
+      SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
       //save the properties of variables of the constraints in a struct array and in a sorted pointer array
       for( j = 0; j < ncurvars; j++ )
       {
+         added = FALSE;
          scoef = new AUT_COEF(scip, curvals[j]);
          //test, whether the coefficient is not zero
-         if( !SCIPisEQ(scip, scoef->getVal(), 0) )
+         if( !SCIPisZero(scip, scoef->getVal()) )
          {
             //add to pointer array iff it doesn't exist
             SCIP_CALL( colorinfo->insert(scoef, &added) );
@@ -283,6 +281,7 @@ SCIP_RETCODE setuparrays(
          //otherwise free allocated memory
          if( !added )
             delete scoef;
+
       }
       SCIPfreeMemoryArray(scip, &curvals);
    }
@@ -307,8 +306,8 @@ static SCIP_RETCODE createGraph(
    int color;
    SCIP_CONS** conss;
    SCIP_VAR** vars;
-   SCIP_VAR** curvars;
-   SCIP_Real* curvals;
+   SCIP_VAR** curvars = NULL;
+   SCIP_Real* curvals = NULL;
    unsigned int nnodes;
    nnodes = 0;
    //building the graph out of the arrays
@@ -335,7 +334,8 @@ static SCIP_RETCODE createGraph(
          break;
       }
 
-      h->add_vertex(color);
+      assert(color >= 0);
+      (void)h->add_vertex((unsigned int) color);
       nnodes++;
    }
    //add a node for every variable
@@ -349,7 +349,7 @@ static SCIP_RETCODE createGraph(
          *result = SCIP_DIDNOTFIND;
          break;
       }
-      h->add_vertex(colorinfo.getLenCons() + color);
+      (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + color));
       nnodes++;
    }
    //connecting the nodes with an additional node in the middle
@@ -361,9 +361,9 @@ static SCIP_RETCODE createGraph(
       if( ncurvars == 0 )
          continue;
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvars, ncurvars) );
-      GCGconsGetVars(scip, conss[i], curvars, ncurvars);
+      SCIP_CALL( GCGconsGetVars(scip, conss[i], curvars, ncurvars) );
       SCIP_CALL( SCIPallocMemoryArray(scip, &curvals, ncurvars) );
-      GCGconsGetVals(scip, conss[i], curvals, ncurvars);
+      SCIP_CALL( GCGconsGetVals(scip, conss[i], curvals, ncurvars) );
 
       for( j = 0; j < ncurvars; j++ )
       {
@@ -378,17 +378,17 @@ static SCIP_RETCODE createGraph(
             break;
          }
          curvar = SCIPvarGetProbindex(curvars[j]);
-         h->add_vertex(colorinfo.getLenCons() + colorinfo.getLenVar() + color);
+         (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + colorinfo.getLenVar() + color)); /*lint !e864 */
          nnodes++;
-         h->add_edge(i, nconss + nvars + z);
-         h->add_edge(nconss + nvars + z, nconss + curvar);
+         h->add_edge((unsigned int)i, (unsigned int) (nconss + nvars + z));
+         h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
          SCIPdebugMessage(
                "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
                SCIPconsGetName(conss[i]), i, colorinfo.get(scons),
                nconss + nvars + z, scoef.getVal(),
-               color + colorinfo.getLenCons() + colorinfo.getLenVar(),
+               color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
                SCIPvarGetName(curvars[j]), nconss + curvar,
-               colorinfo.get(svar) + colorinfo.getLenCons());
+               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
          z++;
 
       }
@@ -396,7 +396,7 @@ static SCIP_RETCODE createGraph(
       SCIPfreeMemoryArray(scip, &curvals);
       SCIPfreeMemoryArray(scip, &curvars);
    }
-   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar());
+   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
    assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
 
    //free all allocated memory
@@ -498,7 +498,7 @@ void collapsePermutation(
 
 /** detection function of detector */
 static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
-{
+{ /*lint -esym(429,ptrhook)*/
    bliss::Graph graph;
    bliss::Stats bstats;
    AUT_HOOK *ptrhook;
@@ -520,7 +520,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       ptrhook->conssperm[i] = -1;
    }
 
-   graph.find_automorphisms(bstats, hook, ptrhook);
+   graph.find_automorphisms(bstats, fhook, ptrhook);
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;
@@ -529,12 +529,12 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
    {
       DEC_DECOMP* newdecomp;
       int nmasterconss;
-      SCIP_CONS** masterconss;
+      SCIP_CONS** masterconss = NULL;
 
       // assign to a permutation circle only one number
       collapsePermutation(ptrhook->conssperm, nconss);
       // renumbering from 0 to number of permutations
-      renumberPermutations(ptrhook->conssperm, nconss);
+      (void) renumberPermutations(ptrhook->conssperm, nconss);
       // create decomposition for every permutation
       SCIP_CALL( SCIPallocMemoryArray(scip, decdecomps, detectordata->numofsol) ); /*lint !e506*/
       SCIP_CALL( SCIPallocMemoryArray(scip, &masterconss, nconss) );
@@ -558,7 +558,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
       SCIP_CALL( DECcreatePolishedDecomp(scip, (*decdecomps)[0], &newdecomp) );
       if( newdecomp != NULL )
       {
-         DECdecompFree(scip, &((*decdecomps)[0]) );
+         SCIP_CALL( DECdecompFree(scip, &((*decdecomps)[0])) );
          (*decdecomps)[0] = newdecomp;
       }
 
@@ -593,6 +593,7 @@ static DEC_DECL_DETECTSTRUCTURE(detectIsomorphism)
  */
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
+extern "C"
 SCIP_RETCODE SCIPincludeDetectionIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    )

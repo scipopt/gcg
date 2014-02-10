@@ -37,9 +37,6 @@
 
 #include "scip/scip.h"
 #include "matrixgraph.h"
-#include <fstream>
-
-using std::ifstream;
 
 namespace gcg {
 

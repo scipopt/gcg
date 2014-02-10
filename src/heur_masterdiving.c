@@ -622,7 +622,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 
             /* update iteration counts */
             heurdata->nlpiterations += SCIPgetNLPIterations(scip) - nlpiterations;
-            heurdata->npricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
+            heurdata->npricerounds += (SCIP_Longint) SCIPgetNPriceRounds(scip) - (SCIP_Longint) npricerounds;
             totalpricerounds += SCIPgetNPriceRounds(scip) - npricerounds;
             SCIPstatistic( totallpiters += SCIPgetNLPIterations(scip) - nlpiterations );
 

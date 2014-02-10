@@ -300,7 +300,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
                {
                   char buffer[SCIP_MAXSTRLEN];
 
-                  (void)SCIPfgets(buffer, sizeof(buffer), file);
+                  (void)SCIPfgets(buffer, SCIP_MAXSTRLEN, file);
                   if( buffer[0] != '\0' )
                   {
                      SCIP_CALL( SCIPaddDialogInputLine(scip, buffer) );

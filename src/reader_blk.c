@@ -252,7 +252,7 @@ SCIP_Bool getNextLine(
    /* read next line */
    blkinput->linepos = 0;
    blkinput->linebuf[BLK_MAX_LINELEN-2] = '\0';
-   if( SCIPfgets(blkinput->linebuf, sizeof(blkinput->linebuf), blkinput->file) == NULL )
+   if( SCIPfgets(blkinput->linebuf, BLK_MAX_LINELEN, blkinput->file) == NULL )
       return FALSE;
    blkinput->linenumber++;
    if( blkinput->linebuf[BLK_MAX_LINELEN-2] != '\0' )
@@ -696,7 +696,7 @@ SCIP_RETCODE readBlock(
          assert(oldblock == LINKINGVALUE);
          assert(readerdata->nlinkingvarsblocks[varidx] >= 2);
          assert(readerdata->linkingvarsblocks[varidx] != NULL);
-         SCIP_CALL( SCIPreallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], readerdata->nlinkingvarsblocks[varidx] + 1) ); /*lint !e866*/
+         SCIP_CALL( SCIPreallocMemoryArray(scip, &readerdata->linkingvarsblocks[varidx], (size_t) readerdata->nlinkingvarsblocks[varidx] + 1) ); /*lint !e866*/
          readerdata->linkingvarsblocks[varidx][readerdata->nlinkingvarsblocks[varidx]] = blockid;
          ++(readerdata->nlinkingvarsblocks[varidx]);
       }
@@ -733,7 +733,7 @@ SCIP_RETCODE readMasterconss(
       else
       {
          assert(SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*)(size_t)NOVALUE);
-         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*)(size_t) (blkinput->nblocks +1)) );
+         SCIP_CALL( SCIPhashmapSetImage(readerdata->constoblock, cons, (void*) ((size_t)blkinput->nblocks +1)) );
       }
    }
 
@@ -790,7 +790,7 @@ SCIP_RETCODE fillDecompStruct(
 
       if( SCIPhashmapGetImage(readerdata->constoblock, cons) == (void*) (size_t) LINKINGVALUE )
       {
-         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
+         SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) ((size_t)nblocks+1)) );
 
          SCIPdebugMessage("cons %s is linking\n", SCIPconsGetName(cons));
       }
@@ -858,14 +858,14 @@ SCIP_RETCODE fillDecompStruct(
 
          if( blocknr == -1 )
          {
-            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (nblocks+1)) );
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) ((size_t)nblocks+1)) );
 
             SCIPdebugMessage("constraint <%s> is a linking constraint\n",
                SCIPconsGetName(cons));
          }
          else
          {
-            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) (size_t) (blocknr+1)) );
+            SCIP_CALL( SCIPhashmapInsert(constoblock, cons, (void*) ((size_t)blocknr+1)) );
             SCIPdebugMessage("constraint <%s> is assigned to block %d\n", SCIPconsGetName(cons), blocknr);
          }
       }

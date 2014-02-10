@@ -6,6 +6,26 @@ OPTHOST	   	 := $(shell uname -n | sed 's/\(.zib.de\)//g' | tr '[:upper:]' '[:lo
 
 PERMUTE		=	0
 
+.PHONY: tlint
+tlint:		$(ALLSRC)
+		-rm -f lint.out
+ifeq ($(FILES),)
+		$(SHELL) -ec 'for i in $^; \
+			do \
+			echo $$i; \
+			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
+			$(FLAGS) -dCPLEXSOLVER -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			done'
+else
+		$(SHELL) -ec  'for i in $(FILES); \
+			do \
+			echo $$i; \
+			$(LINT) lint/co-gcc.lnt lint/$(MAINNAME)-test.lnt +os\(lint.out\) -u -zero \
+			$(FLAGS) -dCPLEXSOLVER -UNDEBUG -UWITH_READLINE -UROUNDING_FE $$i; \
+			done'
+endif
+
+
 .PHONY: testdip
 testdip:
 		cd check; \

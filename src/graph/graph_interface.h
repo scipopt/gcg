@@ -42,7 +42,9 @@
 #include "weights.h"
 
 #include <vector>
+#include <fstream>
 
+using std::ifstream;
 namespace gcg {
 
 class GraphInterface {
@@ -55,7 +57,7 @@ public:
    virtual ~GraphInterface() {};
 
    /** return a partition of the nodes */
-   std::vector<int> getPartition() { return partition; };
+   virtual std::vector<int> getPartition() const { return partition; };
 
    /** assigns partition to a given node*/
    virtual void setPartition(int i, int nodeid) = 0;
@@ -65,7 +67,7 @@ public:
     */
    virtual SCIP_RETCODE writeToFile(
       int                fd,                  /**< filename where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      SCIP_Bool          writeweights        /**< whether to write weights */
     ) = 0;
 
    /**
@@ -81,7 +83,7 @@ public:
    virtual SCIP_RETCODE createDecompFromPartition(
       DEC_DECOMP**       decomp              /**< decomposition structure to generate */
    )
-   {
+   { /*lint -e715*/
       return SCIP_ERROR;
    }
 

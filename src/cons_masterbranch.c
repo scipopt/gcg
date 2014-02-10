@@ -79,8 +79,8 @@ struct SCIP_ConsData
    SCIP_NODE*            node;               /**< the node at which the cons is sticking */
    SCIP_CONS*            parentcons;         /**< the masterbranch constraint of the parent node */
 
-   SCIP_CONS**           childcons;          /**< array of the masterbranch constraints of child nodes */
-   int                   nchildcons;         /**< number of the masterbranch constraints of child nodes */
+   SCIP_CONS**           childconss;         /**< array of the masterbranch constraints of child nodes */
+   int                   nchildconss;        /**< number of the masterbranch constraints of child nodes */
 
    SCIP_CONS*            probingtmpcons;     /**< pointer to save the last (second) child if the child2cons pointer is overwritten in probing mode */
    SCIP_CONS*            origcons;           /**< the corresponding origbranch cons in the original program */
@@ -116,7 +116,7 @@ struct SCIP_ConsData
    SCIP_Bool             addPropBoundChg;    /**< whether a bound change was added */
    SCIP_VAR*             chgVarNodeVar;      /**< the variables for whicht the bounds where changed */
    SCIP_Real             chgVarNodeBound;    /**< the new bound*/
-   SCIP_BOUNDTYPE        addPropBoundChgBoundtype; /**< the type of the propagated bound change */
+   GCG_BOUNDTYPE         addPropBoundChgBoundtype; /**< the type of the propagated bound change */
    SCIP_Real             addPropBoundChgBound; /**< the bound from the propagated bound change */
 
 };
@@ -189,8 +189,8 @@ SCIP_RETCODE createConsData(
 
    if( GCGconsOrigbranchGetNChildcons(origcons) == 0 )
    {
-      consdata->nchildcons = 0;
-      consdata->childcons = NULL;
+      consdata->nchildconss = 0;
+      consdata->childconss = NULL;
    }
 
    /*GCGconsOrigbranchSetMastercons(origcons, cons);*/
@@ -221,7 +221,7 @@ SCIP_RETCODE createConsData(
    assert(consdata->parentcons == NULL ||
       SCIPconsGetData(consdata->parentcons)->origcons == GCGconsOrigbranchGetParentcons(consdata->origcons));
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->nboundchangestreated, conshdlrData->nstack+1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->nboundchangestreated, (size_t)conshdlrData->nstack+1) );
 
    domchg = SCIPnodeGetDomchg(GCGconsOrigbranchGetNode(origcons));
    consdata->nboundchanges = SCIPdomchgGetNBoundchgs(domchg);
@@ -282,10 +282,10 @@ SCIP_RETCODE createConsData(
 
             diff = ndomboundchgs - parentdata->nboundchangestreated[i];
 
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->newbounds, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->newbounds, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, (size_t)consdata->nboundchanges + diff) );
 
             /* add bound changes to the boundchanges array */
             for( j = 0; j < ndomboundchgs; ++j )
@@ -936,8 +936,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
    SCIP_CONSDATA* consdata2;
    SCIP_CONSDATA** childconsdatas;
-   SCIP_CONS** childcons;
-   int nchildcons;
+   SCIP_CONS** childconss;
+   int nchildconss;
    int i;
 
    assert(scip != NULL);
@@ -950,45 +950,45 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    SCIPdebugMessage("Deleting masterbranch constraint: <%s>.\n", (*consdata)->name);
 
-   if( (*consdata)->nchildcons > 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, (*consdata)->nchildcons) );
-      SCIP_CALL( SCIPallocMemoryArray(scip, &childcons, (*consdata)->nchildcons) );
-   }
-   for( i=0; i< (*consdata)->nchildcons; ++i )
-   {
-      if( (*consdata)->childcons != NULL && (*consdata)->childcons[i] != NULL )
-      {
-         childconsdatas[i] = SCIPconsGetData((*consdata)->childcons[i]);
-         childcons[i] = (*consdata)->childcons[i];
-      }
-      else
-      {
-         childconsdatas[i] = NULL;
-         childcons[i] = NULL;
-      }
-   }
-   nchildcons = (*consdata)->nchildcons;
+   nchildconss = (*consdata)->nchildconss;
 
-   /*delete childnodes */
-   for( i=0; i < nchildcons; ++i )
+   if( nchildconss > 0 )
    {
-      SCIPdebugMessage("Deleting %d childnodes\n", nchildcons);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childconsdatas, nchildconss) );
+      SCIP_CALL( SCIPallocMemoryArray(scip, &childconss, nchildconss) );
 
-      if( childcons[i] != NULL )
+      for( i = 0; i < nchildconss; ++i )
       {
-         /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
-         SCIP_CALL( SCIPreleaseCons(scip, &childcons[i]) );
-         childcons[i] = NULL;
+         if( (*consdata)->childconss != NULL && (*consdata)->childconss[i] != NULL )
+         {
+            childconsdatas[i] = SCIPconsGetData((*consdata)->childconss[i]);
+            childconss[i] = (*consdata)->childconss[i];
+         }
+         else
+         {
+            childconsdatas[i] = NULL;
+            childconss[i] = NULL;
+         }
       }
-   }
-   if( nchildcons > 0 )
-   {
+
+      /* delete childnodes */
+      for( i = 0; i < nchildconss; ++i )
+      {
+         SCIPdebugMessage("Deleting %d childnodes\n", nchildconss);
+
+         if( childconss[i] != NULL )
+         {
+            /*SCIP_CALL( consDeleteMasterbranch(scip, conshdlr, childcons[i], &childconsdatas[i]) );*/
+            SCIP_CALL( SCIPreleaseCons(scip, &childconss[i]) );
+            childconss[i] = NULL;
+         }
+      }
+
       SCIPfreeMemoryArrayNull(scip, &childconsdatas);
-      SCIPfreeMemoryArrayNull(scip, &childcons);
+      SCIPfreeMemoryArrayNull(scip, &childconss);
    }
 
-   assert((*consdata)->nchildcons == 0);
+   assert((*consdata)->nchildconss == 0);
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
@@ -1017,14 +1017,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          consdata2->probingtmpcons = NULL;
       }
 
-      for( i=0; i<consdata2->nchildcons; ++i )
+      for( i = 0; i < consdata2->nchildconss; ++i )
       {
-         if( consdata2->childcons[i] == cons )
+         if( consdata2->childconss[i] == cons )
          {
-            consdata2->childcons[i] = consdata2->childcons[consdata2->nchildcons-1];/*NULL;*/
+            consdata2->childconss[i] = consdata2->childconss[consdata2->nchildconss-1];/*NULL;*/
 
-            consdata2->childcons[consdata2->nchildcons-1] = NULL;
-            consdata2->nchildcons--;
+            consdata2->childconss[consdata2->nchildconss-1] = NULL;
+            consdata2->nchildconss--;
 #ifndef NDEBUG
           childdeleted = TRUE;
 #endif
@@ -1037,7 +1037,8 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
 
    /* delete branchdata, if the corresponding origcons was already deleted, otherwise, it will be deleted by the
-    * corresponding origbranch constraint */
+    * corresponding origbranch constraint
+    */
    if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(GCGmasterGetOrigprob(scip), (*consdata)->branchrule, &(*consdata)->branchdata) );
@@ -1078,7 +1079,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    }
 
    SCIPfreeMemoryArrayNull(scip, &(*consdata)->nboundchangestreated);
-   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childcons);
+   SCIPfreeMemoryArrayNull(scip, &(*consdata)->childconss);
 
    BMSfreeBlockMemoryArrayNull(SCIPblkmem(scip), &(*consdata)->name, strlen((*consdata)->name)+1);
 
@@ -1852,8 +1853,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->node = node;
    consdata->parentcons = parentcons;
 
-   consdata->childcons = NULL;
-   consdata->nchildcons = 0;
+   consdata->childconss = NULL;
+   consdata->nchildconss = 0;
 
    consdata->probingtmpcons = NULL;
    consdata->created = FALSE;
@@ -1883,9 +1884,8 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->addPropBoundChg = 0;
    consdata->chgVarNodeVar = NULL;
    consdata->chgVarNodeBound = 0;
-   consdata->addPropBoundChgBoundtype = 0;
+   consdata->addPropBoundChgBoundtype = GCG_BOUNDTYPE_NONE;
    consdata->addPropBoundChgBound = 0;
-
 
 
    SCIPdebugMessage("Creating masterbranch constraint with parent %p.\n", (void*) parentcons);
@@ -1907,20 +1907,20 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
       }
       else
       {
-         ++parentdata->nchildcons;
-         if( parentdata->nchildcons == 1 )
+         ++parentdata->nchildconss;
+         if( parentdata->nchildconss == 1 )
          {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-            parentdata->childcons[0] = NULL;
+            SCIP_CALL( SCIPallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            parentdata->childconss[0] = NULL;
          }
          else
          {
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childcons), parentdata->nchildcons) );
-            parentdata->childcons[parentdata->nchildcons - 1] = NULL;
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(parentdata->childconss), parentdata->nchildconss) );
+            parentdata->childconss[parentdata->nchildconss - 1] = NULL;
          }
 
-         assert(parentdata->childcons[parentdata->nchildcons - 1] == NULL);
-         parentdata->childcons[parentdata->nchildcons - 1] = *cons;
+         assert(parentdata->childconss[parentdata->nchildconss - 1] == NULL);
+         parentdata->childconss[parentdata->nchildconss - 1] = *cons;
       }
    }
 
@@ -1979,7 +1979,7 @@ SCIP_RETCODE GCGconsMasterbranchSetOrigConsData(
    SCIP_Bool             addPropBoundChg,    /**< whether a propagated bound change was added */
    SCIP_VAR*             chgVarNodeVar,      /**< the variable changed */
    SCIP_Real             chgVarNodeBound,    /**< the new bound */
-   SCIP_BOUNDTYPE        addPropBoundChgBoundtype, /**< the type of the bound change */
+   GCG_BOUNDTYPE         addPropBoundChgBoundtype, /**< the type of the bound change */
    SCIP_Real             addPropBoundChgBound /**< the propagated bound */
    )
 {
@@ -2070,7 +2070,7 @@ SCIP_Real GCGmasterbranchGetBoundChg(
    return consdata->chgVarNodeBound;
 }
 
-SCIP_BOUNDTYPE GCGmasterbranchGetProbBoundType(
+GCG_BOUNDTYPE GCGmasterbranchGetPropBoundType(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2083,7 +2083,7 @@ SCIP_BOUNDTYPE GCGmasterbranchGetProbBoundType(
    return consdata->addPropBoundChgBoundtype;
 }
 
-SCIP_Real GCGmasterbranchGetProbBound(
+SCIP_Real GCGmasterbranchGetPropBound(
    SCIP_CONS*            cons                /**< constraint for which the consdata is setted */
    )
 {
@@ -2228,7 +2228,7 @@ SCIP_CONS* GCGconsMasterbranchGetActiveCons(
    assert(conshdlrData->stack != NULL);
 
 
-   if(conshdlrData->nstack == 0)
+   if( conshdlrData->nstack == 0 )
    {
       return NULL;
    }
@@ -2336,7 +2336,7 @@ int GCGconsMasterbranchGetNChildcons(
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   return consdata->nchildcons;
+   return consdata->nchildconss;
 }
 
 /** returns the masterbranch constraint of the vanderbeckchild of the node at which the
@@ -2350,11 +2350,11 @@ SCIP_CONS* GCGconsMasterbranchGetChildcons(
 
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
-   assert(consdata->childcons != NULL);
+   assert(consdata->childconss != NULL);
 
-   assert(consdata->nchildcons > childnr);
+   assert(consdata->nchildconss > childnr);
 
-   return consdata->childcons[childnr];
+   return consdata->childconss[childnr];
 }
 
 /** returns the origbranch constraint of the node in the original program corresponding to the node

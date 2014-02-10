@@ -32,6 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+/*lint -e39*/
 #include <cassert>
 #include "graph_tclique.h"
 
@@ -63,8 +64,8 @@ namespace gcg {
 
 GraphTclique::GraphTclique()
 {
-   tcliqueCreate(&graph);
-   }
+   TCLIQUE_CALL_EXC( tcliqueCreate(&graph) );
+}
 
 GraphTclique::~GraphTclique()
 {
@@ -92,7 +93,7 @@ SCIP_Bool GraphTclique::isEdge(int i, int j)
 int GraphTclique::getNNeighbors(int i)
 {
    assert( i >= 0);
-   return tcliqueGetLastAdjedge(graph,i)-tcliqueGetFirstAdjedge(graph, i)+1;
+   return int( tcliqueGetLastAdjedge(graph,i)-tcliqueGetFirstAdjedge(graph, i)+1 );
 }
 
 std::vector<int> GraphTclique::getNeighbors(int i)
@@ -105,14 +106,12 @@ std::vector<int> GraphTclique::getNeighbors(int i)
 SCIP_RETCODE GraphTclique::addNode(int i, int weight)
 {
    assert(i >= getNNodes());
-   if(tcliqueAddNode(graph,i,weight))
-      return SCIP_OKAY;
-   else
-      return SCIP_ERROR;
+   TCLIQUE_CALL( tcliqueAddNode(graph,i,weight) );
+   return SCIP_OKAY;
 }
 
 SCIP_RETCODE GraphTclique::deleteNode(int i)
-{
+{ /*lint -e715*/
    return SCIP_ERROR;
 }
 
@@ -123,24 +122,22 @@ SCIP_RETCODE GraphTclique::addEdge(int i, int j)
    assert(j >=0);
    assert(j < getNNodes());
 
-   if(tcliqueAddEdge(graph,i,j))
-      return SCIP_OKAY;
-   else
-      return SCIP_ERROR;
+   TCLIQUE_CALL( tcliqueAddEdge(graph,i,j) );
+   return SCIP_OKAY;
+
 }
 
 SCIP_RETCODE GraphTclique::deleteEdge(int i, int j)
-{
+{ /*lint -e715*/
    return SCIP_ERROR;
 }
 
 
 SCIP_RETCODE GraphTclique::flush()
 {
-   if(tcliqueFlush(graph))
-      return SCIP_OKAY;
-   else
-      return SCIP_ERROR;
+   TCLIQUE_CALL( tcliqueFlush(graph) );
+
+   return SCIP_OKAY;
 }
 
 int GraphTclique::graphGetWeights(int i)

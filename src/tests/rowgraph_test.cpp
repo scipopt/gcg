@@ -59,7 +59,7 @@ TEST_F(RowTest, WriteFileTest) {
 
    SCIP_CALL_EXPECT( graph.createFromMatrix(SCIPgetConss(scip), SCIPgetVars(scip), SCIPgetNConss(scip), SCIPgetNVars(scip)) );
 
-   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd) );
+   ASSERT_EQ( SCIP_OKAY, graph.writeToFile(fd, FALSE) );
    fclose(file);
    ASSERT_TRUE( SCIPfileExists("rowgraph.g") );
 

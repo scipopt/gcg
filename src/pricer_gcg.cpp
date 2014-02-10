@@ -336,7 +336,7 @@ SCIP_RETCODE ObjPricerGcg::ensureSizeSolvers()
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), pricerdata->nsolvers+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), (size_t)pricerdata->nsolvers+1) );
    }
 
    return SCIP_OKAY;
@@ -558,7 +558,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    nrows = SCIPgetNLPRows(scip_);
    cols = SCIPgetLPCols(scip_);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &indizes, ncols+nrows) );
+   SCIP_CALL( SCIPallocMemoryArray(scip_, &indizes, (size_t)ncols+nrows) );
 
    for( i = 0; i < ncols+nrows; i++ )
    {
@@ -930,7 +930,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( stabilize )
       {
-         dualsol = stabilization->consGetDual(i);
+         SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
       }
       else
       {
@@ -984,7 +984,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( stabilize )
       {
-         dualsol = stabilization->rowGetDual(i);
+         SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
       }
       else
       {
@@ -1279,7 +1279,9 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 }
 
 /* computes the objective value of the current (stabilized) dual variables) in the dual program */
-SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
+ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
+    SCIP_Real*           stabdualval         /**< pointer to store stabilized dual objective value */
+)
 {
    SCIP_Real dualobjval;
    SCIP_Real dualsol;
@@ -1292,6 +1294,8 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    int nmastercuts;
    int i;
 
+   assert( stabdualval != NULL );
+   *stabdualval = 0.0;
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -1340,7 +1344,7 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmasterconss; i++ )
    {
-      dualsol = stabilization->consGetDual(i);
+      SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
 
       if(SCIPisFeasPositive(scip_, dualsol))
       {
@@ -1365,7 +1369,7 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )
    {
-      dualsol = stabilization->rowGetDual(i);
+      SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
 
       if(SCIPisFeasPositive(scip_, dualsol))
       {
@@ -1381,7 +1385,9 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
       dualobjval += boundval*dualsol;
    }
 
-   return dualobjval;
+   *stabdualval = dualobjval;
+
+   return SCIP_OKAY;
 }
 
 /** creates a new master variable corresponding to the given solution and problem */
@@ -1690,8 +1696,8 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
       /* check if branching decision belongs to current pricing problem */
       if(consblocknr == prob)
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (*nconsstack) +1) );
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (*nconsstack) +1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (size_t)(*nconsstack) +1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (size_t)(*nconsstack) +1) );
 
          (*consstack)[*nconsstack] = masterbranchcons;
          (*consduals)[*nconsstack] = pricetype->consGetDual(scip_, mastercons);
@@ -2052,9 +2058,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
          SCIP_Real lowerboundcandidate;
+         SCIP_Real stabdualval = 0.0;
          assert(lowerbound != NULL);
-         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", getStabilizedDualObjectiveValue(), bestredcost, dualconvsum);
-         lowerboundcandidate = getStabilizedDualObjectiveValue() + bestredcost + dualconvsum;
+         SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
+         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
+         lowerboundcandidate = stabdualval + bestredcost + dualconvsum;
 
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
@@ -2569,7 +2577,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
 /** reduced cost pricing method of variable pricer for feasible LPs */
 SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
-{
+{ /*lint -esym(715, stopearly)*/
    SCIP_RETCODE retcode;
 
    assert(scip == scip_);
@@ -2672,10 +2680,13 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    return retcode;
 }
 
-void ObjPricerGcg::createPricingTypes()
+SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 {
    farkaspricing = new FarkasPricing(scip_);
+   SCIP_CALL( farkaspricing->addParameters() );
    reducedcostpricing = new ReducedCostPricing(scip_);
+   SCIP_CALL( reducedcostpricing->addParameters() );
+   return SCIP_OKAY;
 }
 
 void ObjPricerGcg::createStabilization()
@@ -2709,7 +2720,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    /* include variable pricer */
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
 
-   pricer->createPricingTypes();
+   SCIP_CALL( pricer->createPricingTypes() );
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,

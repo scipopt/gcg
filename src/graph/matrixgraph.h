@@ -75,8 +75,8 @@ public:
     *  The format is graph dependent
     */
    virtual SCIP_RETCODE writeToFile(
-      int                fd,           /**< file descriptor where the graph should be written to */
-      SCIP_Bool          writeweights = FALSE /**< whether to write weights */
+      int                fd,                 /**< file descriptor where the graph should be written to */
+      SCIP_Bool          writeweights        /**< whether to write weights */
       )
    {
       SCIP_CALL(graphiface->writeToFile(fd, writeweights) );

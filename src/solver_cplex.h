@@ -46,7 +46,7 @@ extern "C" {
 extern
 SCIP_RETCODE GCGincludeSolverCplex(
    SCIP*                 scip                /**< SCIP data structure */
-   );
+);
 
 #ifdef __cplusplus
 }

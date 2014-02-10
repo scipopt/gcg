@@ -336,7 +336,7 @@ SCIP_RETCODE SCIPconshdlrDecompAddDecdecomp(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, conshdlrdata->ndecomps+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->decdecomps, (size_t)conshdlrdata->ndecomps+1) );
       conshdlrdata->decdecomps[conshdlrdata->ndecomps] = conshdlrdata->decdecomps[0];
       conshdlrdata->decdecomps[0] = decdecomp;
       conshdlrdata->ndecomps += 1;
@@ -505,8 +505,8 @@ SCIP_RETCODE DECincludeDetector(
    (void) SCIPsnprintf(descstr, SCIP_MAXSTRLEN, "priority of detector <%s>", name);
    SCIP_CALL( SCIPaddIntParam(scip, setstr, descstr, &(detector->priority), FALSE, priority, INT_MIN, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, conshdlrdata->ndetectors+1) );
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities, conshdlrdata->ndetectors+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->detectors, (size_t)conshdlrdata->ndetectors+1) );
+   SCIP_CALL( SCIPreallocMemoryArray(scip, &conshdlrdata->priorities,(size_t) conshdlrdata->ndetectors+1) );
 
    conshdlrdata->detectors[conshdlrdata->ndetectors] = detector;
    conshdlrdata->ndetectors = conshdlrdata->ndetectors+1;
@@ -621,7 +621,7 @@ SCIP_RETCODE DECdetectStructure(
             }
             SCIPdebugPrintf("%d after filtering!\n", ndecdecomps);
 
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), (conshdlrdata->ndecomps+ndecdecomps)) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->decdecomps), ((size_t)conshdlrdata->ndecomps+ndecdecomps)) );
             BMScopyMemoryArray(&(conshdlrdata->decdecomps[conshdlrdata->ndecomps]), decdecomps, ndecdecomps); /*lint !e866*/
             conshdlrdata->ndecomps += ndecdecomps;
             detector->ndecomps = ndecdecomps;

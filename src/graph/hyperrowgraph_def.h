@@ -42,10 +42,7 @@
 #include "hyperrowgraph.h"
 #include "scip_misc.h"
 #include <set>
-#include <fstream>
 #include <algorithm>
-
-using std::ifstream;
 
 namespace gcg
 {

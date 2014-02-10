@@ -358,7 +358,7 @@ SCIP_RETCODE constructCuts(
       int dist;
       dist = getDistance(start, i, distance);
       SCIPdebugPrintf("from %d to %d = %d (%s = %d)\n", start, i, dist, SCIPconsGetName(conss[i]), dist+1 );
-      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*)(size_t) (dist+1)) );
+      SCIP_CALL( SCIPhashmapInsert(detectordata->constoblock, conss[i], (void*) ((size_t)dist+1)) );
    }
 
    return SCIP_OKAY;
@@ -390,8 +390,8 @@ SCIP_RETCODE findStaircaseComponents(
    SCIP_CALL( SCIPallocMemoryArray(scip, &distance, nconss) );
    for( i = 0; i < nconss; ++i )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), i+1) ); /*lint !e866*/
-      BMSclearMemoryArray(distance[i], i+1); /*lint !e866*/
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(distance[i]), (size_t)i+1) ); /*lint !e866*/
+      BMSclearMemoryArray(distance[i], (size_t)i+1); /*lint !e866*/
    }
 
    for( i = 0; i < nconss; ++i )

@@ -200,14 +200,14 @@ SCIP_RETCODE GCGincludeGraphEntries(
 
    (void)static_cast<gcg::MatrixGraph<T>*>((G<T>*)0); /* assure we only get descendants of type Graph */
 
-   SCIPdialogFindEntry(SCIPgetRootDialog(scip), "graph", &graphdialog);
+   (void) SCIPdialogFindEntry(SCIPgetRootDialog(scip), "graph", &graphdialog);
    assert(graphdialog != NULL);
 
-   SCIPdialogFindEntry(graphdialog, "write", &subdialog);
+   (void) SCIPdialogFindEntry(graphdialog, "write", &subdialog);
    assert(subdialog != NULL);
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraphs<T,G>(scip), true) );
 
-   SCIPdialogFindEntry(graphdialog, "read", &subdialog);
+   (void) SCIPdialogFindEntry(graphdialog, "read", &subdialog);
    assert(subdialog != NULL);
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadGraphs<T,G >(scip), true) );
 
@@ -215,6 +215,7 @@ SCIP_RETCODE GCGincludeGraphEntries(
 }
 
 /** inludes all graph submenu entries */
+extern "C"
 SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP*              scip                /**< SCIP data structure */
    )
@@ -223,12 +224,12 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP_DIALOG* subdialog;
    dialog = SCIPgetRootDialog(scip);
    SCIP_CALL( SCIPincludeObjDialog(scip, dialog, new gcg::DialogGraph(scip), TRUE) );
-   SCIPdialogFindEntry(dialog, "graph", &subdialog);
+   (void) SCIPdialogFindEntry(dialog, "graph", &subdialog);
    assert(subdialog != NULL);
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraph(scip), TRUE) );
    SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadPartition(scip), TRUE) );
 
-   /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::RowGraph>(scip) );
+   SCIP_CALL( (GCGincludeGraphEntries<gcg::GraphTclique,gcg::RowGraph>(scip)) );
 #if 0
    /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::BipartiteGraph>(scip) );
    /*SCIP_CALL*/( GCGincludeGraphEntries<gcg::GraphTclique,gcg::ColumnGraph>(scip) );

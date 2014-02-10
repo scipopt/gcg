@@ -224,7 +224,7 @@ SCIP_Bool getNextLine(
    /* read next line */
    refinput->linepos = 0;
    refinput->linebuf[REF_MAX_LINELEN-2] = '\0';
-   if( SCIPfgets(refinput->linebuf, sizeof(refinput->linebuf), refinput->file) == NULL )
+   if( SCIPfgets(refinput->linebuf, REF_MAX_LINELEN, refinput->file) == NULL )
       return FALSE;
    refinput->linenumber++;
    if( refinput->linebuf[REF_MAX_LINELEN-2] != '\0' )
@@ -510,7 +510,7 @@ SCIP_RETCODE readBlocks(
                continue;
             }
 
-            SCIP_CALL( SCIPhashmapSetImage(refinput->constoblock, cons, (void*) (size_t) (refinput->blocknr+1) ) );
+            SCIP_CALL( SCIPhashmapSetImage(refinput->constoblock, cons, (void*) ((size_t)refinput->blocknr+1) ) );
 
             for( v = 0; v < nvars; v++ )
             {
@@ -526,12 +526,12 @@ SCIP_RETCODE readBlocks(
                   if( block != refinput->blocknr+1 && block != refinput->nblocks+1 )
                   {
                      SCIP_CALL( SCIPhashmapRemove(refinput->vartoblock, var) );
-                     SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->nblocks+1)) );
+                     SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) ((size_t)refinput->nblocks+1)) );
                   }
                }
                else
                {
-                  SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) (size_t) (refinput->blocknr+1)) );
+                  SCIP_CALL( SCIPhashmapSetImage(refinput->vartoblock, var, (void*) ((size_t)refinput->blocknr+1)) );
                }
                refinput->nassignedvars++;
             }
