@@ -88,7 +88,8 @@ public:
 
    /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
-      SCIP_Real lowerbound
+      SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
+      SCIP_Real*            dualsolconv         /**< corresponding feasible dual solution for convexity constraints */
    );
 
    /** updates the alpha after unsuccessful pricing */
