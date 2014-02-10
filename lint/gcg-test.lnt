@@ -88,7 +88,9 @@
 -e39
 -e1763
 -e1762
--esym(451,cassert)
+
+-esym(451,cassert) // include guard
+-esym(451,assert.h) // include guard
 
 -e537  // Repeated include file
 -e631  // tag defined differently

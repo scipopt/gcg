@@ -97,7 +97,6 @@ FarkasPricing::FarkasPricing(
       SCIP* scip
    ) : PricingType(scip)
 {
-   SCIP_CALL_ABORT( addParameters() );
    type = GCG_PRICETYPE_FARKAS;
 }
 
@@ -155,7 +154,6 @@ ReducedCostPricing::ReducedCostPricing(
       SCIP* p_scip
    ) : PricingType(p_scip)
 {
-   SCIP_CALL_ABORT( addParameters() );
    type = GCG_PRICETYPE_REDCOST;
 }
 
@@ -213,7 +211,7 @@ SCIP_Bool FarkasPricing::canOptimalPricingBeAborted(
       SCIP_Real            successfulmipsrel,     /**< number of sucessful mips solved so far */
       int                  npricingprobsnotnull
       ) const
-{
+{ /*lint -esym(715,successfulmips,successfulmipsrel) */
    return !(nfoundvars < maxvarsround && (nfoundvars == 0 || solvedmips < mipsrel * npricingprobsnotnull));
 }
 

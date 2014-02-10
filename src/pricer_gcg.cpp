@@ -2680,10 +2680,13 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    return retcode;
 }
 
-void ObjPricerGcg::createPricingTypes()
+SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 {
    farkaspricing = new FarkasPricing(scip_);
+   SCIP_CALL( farkaspricing->addParameters() );
    reducedcostpricing = new ReducedCostPricing(scip_);
+   SCIP_CALL( reducedcostpricing->addParameters() );
+   return SCIP_OKAY;
 }
 
 void ObjPricerGcg::createStabilization()
@@ -2717,7 +2720,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    /* include variable pricer */
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
 
-   pricer->createPricingTypes();
+   SCIP_CALL( pricer->createPricingTypes() );
 
    /* include event handler into master SCIP */
    SCIP_CALL( SCIPincludeEventhdlr(scip, EVENTHDLR_NAME, EVENTHDLR_DESC,

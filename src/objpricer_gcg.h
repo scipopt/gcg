@@ -140,7 +140,10 @@ public:
       return origprob;
    }
 
-   void createPricingTypes();
+   /** create the pointers for the pricing types */
+   SCIP_RETCODE createPricingTypes();
+
+   /** create the pointers for the stabilization */
    void createStabilization();
 
 
