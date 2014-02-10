@@ -36,7 +36,9 @@
 #include <string.h>
 
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg.h"
+#include "pricer_gcg.h"
+#include "scip_misc.h" /*lint --e{766}*/ /* needed for GCGconsGetRhs(), and many more */
 #include "type_solver.h"
 #include "solver_cplex.h"
 

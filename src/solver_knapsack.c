@@ -69,7 +69,7 @@ SCIP_RETCODE solveKnapsack(
    int*                  nsols,              /**< pointer to store number of solutions */
    SCIP_STATUS*          result              /**< pointer to store pricing problem status */
    )
-{
+{ /*lint -e715 */
    SCIP_CONS* cons;
    SCIP_VAR** consvars;
    int nconsvars;

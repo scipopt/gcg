@@ -65,6 +65,15 @@ Stabilization::~Stabilization()
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcentercuts, stabcentercutssize);
    SCIPfreeMemoryArrayNull(scip_, &stabcenterlinkingconss);
    SCIPfreeBlockMemoryArrayNull(scip_, &stabcenterconv, nstabcenterconv);
+   scip_=NULL;
+   stabcenterconss = NULL;
+   stabcentercuts = NULL;
+   stabcenterlinkingconss = NULL;
+   stabcenterconv = NULL;
+   pricingtype = NULL;
+   node = NULL;
+
+
 }
 
 SCIP_RETCODE Stabilization::updateStabcenterconss()
@@ -83,7 +92,8 @@ SCIP_RETCODE Stabilization::updateStabcenterconss()
       stabcenterconsssize = SCIPcalcMemGrowSize(scip_, nconss);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcenterconss, oldsize, stabcenterconsssize) );
    }
-   BMSclearMemoryArray(&stabcenterconss[nstabcenterconss], nconss-nstabcenterconss);
+   assert(stabcenterconss != NULL);
+   BMSclearMemoryArray(&stabcenterconss[nstabcenterconss], nconss-nstabcenterconss); /*lint !e866*/
 
    nstabcenterconss = nconss;
 
@@ -105,8 +115,8 @@ SCIP_RETCODE Stabilization::updateStabcentercuts()
       stabcentercutssize = SCIPcalcMemGrowSize(scip_, ncuts);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentercuts, oldsize, stabcentercutssize) );
    }
-
-   BMSclearMemoryArray(&stabcentercuts[nstabcentercuts], ncuts-nstabcentercuts);
+   assert(stabcentercuts != NULL);
+   BMSclearMemoryArray(&stabcentercuts[nstabcentercuts], ncuts-nstabcentercuts); /*lint !e866*/
 
    nstabcentercuts = ncuts;
 
@@ -399,6 +409,8 @@ SCIP_Real Stabilization::calculateSubgradient(
             val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
          }
+         assert(stabcenterconss != NULL);
+         assert(vals != NULL);
          gradientproduct += (stabcenterconss[i] - dual) * vals[j] * val;
       }
 
@@ -461,6 +473,8 @@ SCIP_Real Stabilization::calculateSubgradient(
             val = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
             assert(!SCIPisInfinity(scip_, ABS(val)));
          }
+         assert(stabcentercuts != NULL);
+         assert(vals != NULL);
          gradientproduct += (stabcentercuts[i] -dual) * vals[j] * val;
       }
 
@@ -495,6 +509,7 @@ SCIP_Real Stabilization::calculateSubgradient(
       SCIP* pricingprob = GCGgetPricingprob(origprob, block);
       assert(pricingprob != NULL);
 
+      assert(stabcenterlinkingconss != NULL);
       SCIP_Real dual = stabcenterlinkingconss[i] - pricingtype->consGetDual(scip_, linkingcons);
       SCIP_Real masterval = SCIPgetSolVal(scip_, NULL, mastervar);
       SCIP_Real pricingval = SCIPgetSolVal(pricingprob, pricingsols[block], pricingvar);
