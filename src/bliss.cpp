@@ -117,7 +117,7 @@ int comp(
    return 0;
 }
 
-
+/** SCIP interface method for sorting the constraints */
 static
 SCIP_DECL_SORTPTRCOMP(sortptrcons)
 {
@@ -126,6 +126,7 @@ SCIP_DECL_SORTPTRCOMP(sortptrcons)
    return comp(aut1->getScip(), aut1, aut2);
 }
 
+/** SCIP interface method for sorting the variables */
 static
 SCIP_DECL_SORTPTRCOMP(sortptrvar)
 {
@@ -134,6 +135,7 @@ SCIP_DECL_SORTPTRCOMP(sortptrvar)
    return comp(aut1->getScip(), aut1, aut2);
 }
 
+/** SCIP interface method for sorting the constraint coefficients*/
 static
 SCIP_DECL_SORTPTRCOMP(sortptrval)
 {

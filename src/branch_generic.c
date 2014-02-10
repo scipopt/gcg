@@ -1758,18 +1758,18 @@ SCIP_RETCODE ChooseSeparateMethod(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            F                   /**< strip of fractional columns */,
    int                   Fsize,              /**< size of the strips */
-   GCG_COMPSEQUENCE**    S,                  /**< */
-   int*                  Ssize,              /**< */
+   GCG_COMPSEQUENCE**    S,                  /**< array of existing bound sequences */
+   int*                  Ssize,              /**< size of existing bound sequences */
    GCG_COMPSEQUENCE**    C,                  /**< array of component bounds sequences*/
    int                   Csize,              /**< number of component bounds sequences*/
    int*                  CompSizes,          /**< array of sizes of component bounds sequences */
    int                   blocknr,            /**< id of the pricing problem (or block) in which we want to branch */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int*                  checkedblocks,
-   int                   ncheckedblocks,
-   GCG_STRIP***          checkedblockssortstrips,
-   int*                  checkedblocksnsortstrips
+   int*                  checkedblocks,      /**< array to store which blocks have been checked */
+   int                   ncheckedblocks,     /**< number of blocks that have beend checked */
+   GCG_STRIP***          checkedblockssortstrips, /**< sorted strips of checked blocks */
+   int*                  checkedblocksnsortstrips /**< size of the strips */
    )
 {
    int i;
@@ -2510,10 +2510,10 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
    SCIP*                 masterscip,         /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int*                  checkedblocks,
-   int                   ncheckedblocks,
-   GCG_STRIP***          checkedblockssortstrips,
-   int*                  checkedblocksnsortstrips
+   int*                  checkedblocks,      /**< blocks that have been checked */
+   int                   ncheckedblocks,     /**< number of checked blocks */
+   GCG_STRIP***          checkedblockssortstrips, /**< sorted strips of checked blocks */
+   int*                  checkedblocksnsortstrips /**< sizes of the strips */
    )
 {
    SCIP* origscip;

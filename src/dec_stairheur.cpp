@@ -255,7 +255,7 @@ SCIP_RETCODE indexmapInit(
    int                   nvars,              /**< number of variables */
    SCIP_CONS**           conss,              /**< array of constraints */
    int                   nconss,             /**< number of constraints */
-   int*                  hashmapindices
+   int*                  hashmapindices      /**< indices of variables and constraints */
    )
 {
    int i;
@@ -583,14 +583,12 @@ SCIP_RETCODE createColumnindexList(
  *
  * It also works for the column ordering. In this case the terms row<->column have to be exchanged.
  *
- * @param columnindices A vector of the nonzero entries in each column.
- * @param nrows The number of rows of the constraint matrix (=number of relevant constraints)
  * @return A vector with the new row order. E.g. (2 3 1) means the second row comes first now, and so on. */
 static
 vector<int> rowOrdering(
    SCIP*                 scip,               /**< SCIP data structure */
-   vector<vector<int> >  &columnindices,
-   int                   nrows               /**< number of rows */
+   vector<vector<int> >  &columnindices,     /**< A vector of the nonzero entries in each column */
+   int                   nrows               /**< The number of rows of the constraint matrix (=number of relevant constraints) */
    )
 {
    vector<int> roworder;
@@ -914,18 +912,14 @@ int getMinColIndex(
 
 /** determines if a blocking at 'block_at_row' is a valid blocking
  *
- * @param detectordata detectordata data structure
- * @param prev_block_first_row first row of the previous block
- * @param prev_block_last_row last row of the previous block
- * @param block_at_row the row for which you want to determine if the blocking is valid
  * @return TRUE if blocking is valid, else FALSE
  */
 static
 SCIP_Bool isValidBlocking(
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
-   int                   prev_block_first_row,
-   int                   prev_block_last_row,
-   int                   block_at_row
+   int                   prev_block_first_row, /**< first row of the previous block */
+   int                   prev_block_last_row, /**< last row of the previous block */
+   int                   block_at_row        /**< the row for which you want to determine if the blocking is valid */
    )
 {
    int last_column_prev_block;
@@ -943,17 +937,14 @@ SCIP_Bool isValidBlocking(
 
 /** this functions looks for rows to block at, which creates block of size min_block_size or bigger
  *
- * @param it_constrictions Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions)
- * @param min_block_size minimum number of rows to be in a block
- * @param prev_block_last_row the last row of the preceding block
  * @return Iterator pointing to a node which contains a suitable row for blocking; If the iterator points after the last element, no candidate was found
  */
 static
 vector<int>::iterator findBlockingCandidate(
-   vector<int>::iterator it_constrictions,
-   vector<int>*          it_vector,
-   int                   min_block_size,
-   int                   prev_block_last_row
+   vector<int>::iterator it_constrictions,   /**< Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions) */
+   vector<int>*          it_vector,          /**< minimum number of rows to be in a block */
+   int                   min_block_size,     /**< the last row of the preceding block */
+   int                   prev_block_last_row /**< the last row of the preceding block */
    )
 {
    for( ;; )
@@ -981,7 +972,7 @@ static
 vector<int>::iterator nextRowToBlockAt(
    DEC_DETECTORDATA*     detectordata,       /**< detector data structure */
    vector<int>::iterator it_constrictions,   /**< Iterator pointing to a vector of constraints (detectordata->rowsWithConstrictions) */
-   vector<int>*          it_vector,
+   vector<int>*          it_vector,          /**< vector of constrictions */
    int                   min_block_size,     /**< minimum number of rows to be in a block */
    int                   prev_block_first_row, /**< the first row of the preceding block */
    int                   prev_block_last_row /**< the last row of the preceding block*/

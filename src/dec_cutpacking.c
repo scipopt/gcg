@@ -310,8 +310,8 @@ SCIP_RETCODE buildNewAdjacencyList(
    int                   pos,                /**< position */
    int                   nconss,             /**< number of constraints */
    GRAPH                 graph,              /**< current graph */
-   SCIP_HASHMAP*         consslink,          /**< */
-   SCIP_HASHMAP*         consslink2          /**< */
+   SCIP_HASHMAP*         consslink,          /**< hashmap for first linking constraints */
+   SCIP_HASHMAP*         consslink2          /**< hashmap for second linking constraints */
    )
 {
    int i;
@@ -461,8 +461,8 @@ static
 SCIP_RETCODE freeGraph(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< detectordata data structure */
-   int                   pos,                /**< */
-   int                   nconss              /**< */
+   int                   pos,                /**< position of graph */
+   int                   nconss              /**< number of vertices */
    )
 {
    int i;
@@ -483,8 +483,8 @@ static
 SCIP_RETCODE allocateMemoryGraph(
    SCIP*                scip,             /**< SCIP data structure */
    DEC_DETECTORDATA*    detectordata,     /**< detectordata data structure */
-   int                  pos,              /**< */
-   int                  nconss            /**< */
+   int                  pos,              /**< position in graph array */
+   int                  nconss            /**< number of vertices */
    )
 {
    int i;
@@ -506,11 +506,11 @@ static
 SCIP_RETCODE setLinkingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    DEC_DETECTORDATA*     detectordata,       /**< presolver data data structure */
-   int                   cas,                /**< */
-   int                   cas2,               /**< */
-   int                   pos,                /**< */
-   SCIP_CONS*            cons1,              /**< */
-   SCIP_CONS*            cons2               /**< */
+   int                   cas,                /**< first parameter for case distiction */
+   int                   cas2,               /**< second case distinction */
+   int                   pos,                /**< position of graph */
+   SCIP_CONS*            cons1,              /**< first constraint */
+   SCIP_CONS*            cons2               /**< second constraint */
    )
 {
    switch( cas2 )
