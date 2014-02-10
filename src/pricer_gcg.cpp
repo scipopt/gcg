@@ -930,7 +930,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( stabilize )
       {
-         dualsol = stabilization->consGetDual(i);
+         SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
       }
       else
       {
@@ -984,7 +984,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( stabilize )
       {
-         dualsol = stabilization->rowGetDual(i);
+         SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
       }
       else
       {
@@ -1340,7 +1340,7 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmasterconss; i++ )
    {
-      dualsol = stabilization->consGetDual(i);
+      SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
 
       if(SCIPisFeasPositive(scip_, dualsol))
       {
@@ -1365,7 +1365,7 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmastercuts; i++ )
    {
-      dualsol = stabilization->rowGetDual(i);
+      SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
 
       if(SCIPisFeasPositive(scip_, dualsol))
       {

@@ -97,8 +97,7 @@ FarkasPricing::FarkasPricing(
       SCIP* scip
    ) : PricingType(scip)
 {
-   addParameters();
-
+   SCIP_CALL_ABORT( addParameters() );
    type = GCG_PRICETYPE_FARKAS;
 }
 
@@ -156,7 +155,7 @@ ReducedCostPricing::ReducedCostPricing(
       SCIP* p_scip
    ) : PricingType(p_scip)
 {
-   addParameters();
+   SCIP_CALL_ABORT( addParameters() );
    type = GCG_PRICETYPE_REDCOST;
 }
 

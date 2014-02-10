@@ -68,12 +68,14 @@ public:
       );
    virtual ~Stabilization();
 
-   SCIP_Real consGetDual(
-      int i
+   SCIP_RETCODE consGetDual(
+         int             i,                  /* index of the constraint */
+         SCIP_Real*      dual                /* return pointer for dual value */
       );
 
-   SCIP_Real rowGetDual(
-      int i
+   SCIP_RETCODE rowGetDual(
+         int             i,                  /* index of the row */
+         SCIP_Real*      dual                /* return pointer for dual value */
       );
 
    SCIP_Real convGetDual(

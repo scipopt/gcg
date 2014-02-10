@@ -152,15 +152,17 @@ SCIP_Real Stabilization::linkingconsGetDual(
    return computeDual(stabcenterlinkingconss[i], pricingtype->consGetDual(scip_, cons));
 }
 
-SCIP_Real Stabilization::consGetDual(
-   int i
-   )
+SCIP_RETCODE Stabilization::consGetDual(
+   int                   i,                  /* index of the constraint */
+   SCIP_Real*            dual                /* return pointer for dual value */
+)
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
 #ifndef NDEBUG
    int nconss =  GCGgetNMasterConss(origprob);
 #endif
    assert(i < nconss);
+   assert(dual != NULL);
 
    SCIP_CONS* cons = GCGgetMasterConss(origprob)[i];
 
@@ -169,17 +171,21 @@ SCIP_Real Stabilization::consGetDual(
 
    assert(i < nstabcenterconss);
 
-   return computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons) );
+   *dual = computeDual(stabcenterconss[i], pricingtype->consGetDual(scip_, cons));
+   return SCIP_OKAY;
+
 }
 
-SCIP_Real Stabilization::rowGetDual(
-   int i
-   )
+SCIP_RETCODE Stabilization::rowGetDual(
+   int                   i,                  /* index of the row */
+   SCIP_Real*            dual                /* return pointer for dual value */
+)
 {
 #ifndef NDEBUG
    int nrows = GCGsepaGetNCuts(scip_);
 #endif
    assert(i < nrows);
+   assert(dual != NULL);
 
    SCIP_ROW* row = GCGsepaGetMastercuts(scip_)[i];
 
@@ -187,8 +193,9 @@ SCIP_Real Stabilization::rowGetDual(
       SCIP_CALL( updateStabcentercuts() );
 
    assert(i < nstabcentercuts);
+   *dual = computeDual(stabcentercuts[i], pricingtype->rowGetDual(row));
 
-   return computeDual(stabcentercuts[i], pricingtype->rowGetDual(row) );
+   return SCIP_OKAY;
 }
 
 SCIP_Real Stabilization::convGetDual(
@@ -236,12 +243,12 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( int i = 0; i < nconss; ++i )
    {
-      stabcenterconss[i] = consGetDual(i);
+      SCIP_CALL( consGetDual(i, &stabcenterconss[i]) );
    }
 
    for( int i = 0; i < ncuts; ++i )
    {
-      stabcentercuts[i] = rowGetDual(i);
+      SCIP_CALL( rowGetDual(i, &stabcentercuts[i]) );
    }
 
    for( int i = 0; i < nstabcenterlinkingconss; ++i)
