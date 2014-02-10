@@ -62,67 +62,94 @@ private:
    SCIP_Bool hasstabilitycenter;
 
 public:
+   /** constructor */
    Stabilization(
-      SCIP* scip,
-      PricingType* pricingtype
-      );
+      SCIP*              scip,               /**< SCIP data structure */
+      PricingType*       pricingtype         /**< the pricing type when the stabilization should run */
+   );
    virtual ~Stabilization();
 
+   /** gets the stabilized dual solution of constraint at position i */
    SCIP_RETCODE consGetDual(
-         int             i,                  /* index of the constraint */
-         SCIP_Real*      dual                /* return pointer for dual value */
-      );
+      int                i,                  /**< index of the constraint */
+      SCIP_Real*         dual                /**< return pointer for dual value */
+   );
 
+   /** gets the stabilized dual solution of cut at position i */
    SCIP_RETCODE rowGetDual(
-         int             i,                  /* index of the row */
-         SCIP_Real*      dual                /* return pointer for dual value */
-      );
+      int                i,                  /**< index of the row */
+      SCIP_Real*         dual                /**< return pointer for dual value */
+   );
 
+   /** gets the stabilized dual of the convexity constraint at position i */
    SCIP_Real convGetDual(
       int i
-      );
+   );
 
+   /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real lowerbound
-      );
+   );
+
+   /** updates the alpha after unsuccessful pricing */
    void updateAlphaMisprice();
+
+   /** updates the alpha after successful pricing */
    void updateAlpha(
       SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
-      );
+   );
+
+   /** returns whether the stabilization is active */
    SCIP_Bool isStabilized();
 
+   /** sets the variable linking constraints in the master */
    SCIP_RETCODE setLinkingConss(
-      SCIP_CONS** linkingconss,
-      int* linkingconsblock,
-      int nlinkingconss
-      );
+      SCIP_CONS**        linkingconss,       /**< array of linking master constraints */
+      int*               linkingconsblock,   /**< block of the linking constraints */
+      int                nlinkingconss       /**< size of the array */
+   );
 
+   /** increases the number of new variable linking constraints */
    SCIP_RETCODE setNLinkingconss(
-      int nlinkingconssnew
-      );
+      int                nlinkingconssnew    /**< number of new linking constraints */
+   );
 
+   /** increases the number of new convexity constraints */
    SCIP_RETCODE setNConvconss(
-         int nconvconssnew
-         );
+      int nconvconssnew
+   );
 
+   /** gets the dual of variable linking constraints at index i */
    SCIP_Real linkingconsGetDual(
       int i
       );
 
 private:
+   /** updates the number of iterations */
    void updateIterationCount();
-   SCIP_RETCODE updateStabcenterconss();
-   SCIP_RETCODE updateStabcentercuts();
-   void increaseAlpha();
-   void decreaseAlpha();
-   SCIP_Real calculateSubgradient(
-      SCIP_SOL**            pricingsols         /**< solutions of the pricing problems */
-      );
 
+   /** updates the constraints in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenterconss();
+
+   /** updates the cuts in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcentercuts();
+
+   /** increase the alpha value */
+   void increaseAlpha();
+
+   /** decrease the alpha value */
+   void decreaseAlpha();
+
+   /** calculates the subgradient (with linking variables */
+   SCIP_Real calculateSubgradient(
+      SCIP_SOL**         pricingsols         /**< solutions of the pricing problems */
+   );
+
+   /** computes the new dual value based on the current and the stability center values */
    SCIP_Real computeDual(
-      SCIP_Real center,
-      SCIP_Real current
-      );
+      SCIP_Real          center,             /**< value of stabilility center */
+      SCIP_Real          current             /**< current dual value */
+   );
 };
 
 } /* namespace gcg */

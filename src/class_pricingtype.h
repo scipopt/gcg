@@ -53,12 +53,32 @@ protected:
    SCIP *scip_;
 
 public:
+   /** constructor */
    PricingType(SCIP *p_scip);
+
+   /** destructor */
    virtual ~PricingType();
-   virtual double consGetDual(SCIP *scip, SCIP_CONS *cons) const =0;
-   virtual double rowGetDual(SCIP_ROW *row) const =0;
-   virtual double varGetObj(SCIP_VAR *var) const =0;
+
+   /** get dual value of a constraint */
+   virtual double consGetDual(
+      SCIP*              scip,               /**< SCIP data structure */
+      SCIP_CONS*         cons                /**< constraint to get dual for */
+   ) const =0;
+
+   /** get dual value of a row */
+   virtual double rowGetDual(
+      SCIP_ROW*          row                 /**< row to get dual value for */
+   ) const =0;
+
+   /** get objective value of variable */
+   virtual double varGetObj(
+      SCIP_VAR*          var                 /**< variable to get objective value for */
+   ) const =0;
+
+   /** adds parameters to the SCIP data structure */
    virtual SCIP_RETCODE addParameters() =0;
+
+   /** returns whether the optimal pricing can be aborted */
    virtual SCIP_Bool canOptimalPricingBeAborted(
       int               nfoundvars,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
@@ -67,6 +87,7 @@ public:
       int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    ) const = 0;
 
+   /** returns whether the heuristic pricing can be aborted */
    virtual SCIP_Bool canHeuristicPricingBeAborted(
       int               nfoundvars,         /**< number of variables found so far */
       int               solvedmips,         /**< number of MIPS solved so far */
@@ -74,60 +95,76 @@ public:
       SCIP_Real         successfulmipsrel,  /**< number of sucessful mips solved so far */
       int               npricingprobsnotnull /**< number of non-Null pricing problems*/
    ) const = 0 ;
-    virtual SCIP_RETCODE startClock();
-    virtual SCIP_RETCODE stopClock();
-    virtual double getClockTime() const;
 
-    int getMaxrounds() const
-    {
-        return maxrounds;
-    }
+   /** starts the clock */
+   virtual SCIP_RETCODE startClock();
 
-    int getMaxsuccessfulmips() const
-    {
-        return maxsuccessfulmips;
-    }
+   /** stops the clock */
+   virtual SCIP_RETCODE stopClock();
 
-    int getMaxvarsroundroot() const
-    {
-        return maxvarsroundroot;
-    }
+   /** returns the time of the clock */
+   virtual double getClockTime() const;
 
-    double getMipsrel() const
-    {
-        return mipsrel;
-    }
+   /** returns the maximal number of rounds */
+   int getMaxrounds() const
+   {
+      return maxrounds;
+   }
 
-    double getMipsrelroot() const
-    {
-        return mipsrelroot;
-    }
+   /** returns the maximal number of successful mip solutions */
+   int getMaxsuccessfulmips() const
+   {
+      return maxsuccessfulmips;
+   }
 
-    GCG_PRICETYPE getType() const
-    {
-        return type;
-    }
+   /** returns the maximal number of variables at the root node */
+   int getMaxvarsroundroot() const
+   {
+      return maxvarsroundroot;
+   }
 
-    int getCalls() const
-    {
-        return calls;
-    }
+   /** returns the relative ratio of MIPs to be solved */
+   double getMipsrel() const
+   {
+      return mipsrel;
+   }
 
-    int getMaxvarsround() const
-    {
-        return maxvarsround;
-    }
+   /** returns the relative ratio of MIPs to be solved at the root node */
+   double getMipsrelroot() const
+   {
+      return mipsrelroot;
+   }
 
-    virtual void incCalls()
-    {
-        calls++;
-    }
+   /** returns the type of this pricing type */
+   GCG_PRICETYPE getType() const
+   {
+      return type;
+   }
 
-    SCIP_RETCODE resetCalls() {
-       calls = 0;
-       SCIP_CALL( SCIPresetClock(scip_, clock) );
-       return SCIP_OKAY;
-    };
+   /** returns the number of calls so far */
+   int getCalls() const
+   {
+      return calls;
+   }
+
+   /** returns the maximal number of vars per pricing round */
+   int getMaxvarsround() const
+   {
+      return maxvarsround;
+   }
+
+   /** increases the number of calls */
+   virtual void incCalls()
+   {
+      calls++;
+   }
+
+   /** resets the number of calls and the clock for a restart */
+   SCIP_RETCODE resetCalls() {
+      calls = 0;
+      SCIP_CALL( SCIPresetClock(scip_, clock) );
+      return SCIP_OKAY;
+   };
 
 };
 
