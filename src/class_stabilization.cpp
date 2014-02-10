@@ -93,7 +93,7 @@ SCIP_RETCODE Stabilization::updateStabcenterconss()
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcenterconss, oldsize, stabcenterconsssize) );
    }
    assert(stabcenterconss != NULL);
-   BMSclearMemoryArray(&stabcenterconss[nstabcenterconss], nconss-nstabcenterconss); /*lint !e866*/
+   BMSclearMemoryArray(&stabcenterconss[nstabcenterconss], (size_t)nconss-nstabcenterconss); /*lint !e866*/
 
    nstabcenterconss = nconss;
 
@@ -116,7 +116,7 @@ SCIP_RETCODE Stabilization::updateStabcentercuts()
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentercuts, oldsize, stabcentercutssize) );
    }
    assert(stabcentercuts != NULL);
-   BMSclearMemoryArray(&stabcentercuts[nstabcentercuts], ncuts-nstabcentercuts); /*lint !e866*/
+   BMSclearMemoryArray(&stabcentercuts[nstabcentercuts], (size_t)ncuts-nstabcentercuts); /*lint !e866*/
 
    nstabcentercuts = ncuts;
 

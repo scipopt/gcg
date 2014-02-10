@@ -88,9 +88,20 @@
 -esym(1712,function)          // default constructor not defined for -class
 -esym(1712,*Graph*)          // default constructor not defined for class
 -esym(1712,Stabilization)          // default constructor not defined for -class
+-esym(1712,struct*)          // default constructor not defined for class
+-esym(1712,ConsData)          // default constructor not defined for class
+
+-esym(1719,gcg::Graph*) // assignment operator &
+-esym(1720,gcg::Graph*) //assignment operator const
+-esym(1719,gcg::Hypergraph*) // assignment operator &
+-esym(1720,gcg::Hypergraph*) //assignment operator const
+
 
 -esym(451,cassert) // include guard
 -esym(451,assert.h) // include guard
+
+-esym(39,std::__*)
+-esym(39,__gnu_cxx::__*)
 
 -e537  // Repeated include file
 -e631  // tag defined differently
@@ -110,14 +121,10 @@
 -e818  // Pointer parameter could be declared as pointing to const
 -e801  // Use of goto is deprecated
 -e740  // Unusual pointer cast (incompatible indirect types)
--e571
-//-e1712
+-e571  // suspicious cast
 
-//-e1719
-//-e1720
--e39
--e1763
--e1762
+-e1763  // function indirectly modified through const
+-e1762  // function can be made const
 
 //-e506  // Constant value Boolean
 //-e534  // Ignoring return value of function
