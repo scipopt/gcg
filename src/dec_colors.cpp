@@ -224,7 +224,7 @@ SCIP_RETCODE createMasterconssArray(
 
    for (i = 0; i < nconss; ++i)
    {
-      if( colorset.find(colors[i]) != colorset.end() )
+      if( colorset.find(colors[i]) != colorset.end() ) /*lint !e1702 std::pair*/
       {
          SCIPdebugMessage("Constraint <%s> to be placed in master.\n", SCIPconsGetName(conss[i]));
          (*masterconss)[*nmasterconss] = conss[i];

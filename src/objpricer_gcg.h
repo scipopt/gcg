@@ -145,7 +145,9 @@ public:
 
 
    /* computes the objective value of the current (stabilized) dual variables) in the dual program */
-   SCIP_Real getStabilizedDualObjectiveValue();
+   SCIP_RETCODE getStabilizedDualObjectiveValue(
+      SCIP_Real*         stabdualval         /**< pointer to store stabilized dual objective value */
+   );
 private:
    ReducedCostPricing *reducedcostpricing;
    FarkasPricing *farkaspricing;

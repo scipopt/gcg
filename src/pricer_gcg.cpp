@@ -1279,7 +1279,9 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 }
 
 /* computes the objective value of the current (stabilized) dual variables) in the dual program */
-SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
+ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
+    SCIP_Real*           stabdualval         /**< pointer to store stabilized dual objective value */
+)
 {
    SCIP_Real dualobjval;
    SCIP_Real dualsol;
@@ -1292,6 +1294,8 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
    int nmastercuts;
    int i;
 
+   assert( stabdualval != NULL );
+   *stabdualval = 0.0;
    /* get the constraints of the master problem and the corresponding constraints in the original problem */
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -1381,7 +1385,9 @@ SCIP_Real ObjPricerGcg::getStabilizedDualObjectiveValue()
       dualobjval += boundval*dualsol;
    }
 
-   return dualobjval;
+   *stabdualval = dualobjval;
+
+   return SCIP_OKAY;
 }
 
 /** creates a new master variable corresponding to the given solution and problem */
@@ -2052,9 +2058,11 @@ SCIP_RETCODE ObjPricerGcg::performPricing(
       if( stabilized && (pricetype->getType() == GCG_PRICETYPE_REDCOST))
       {
          SCIP_Real lowerboundcandidate;
+         SCIP_Real stabdualval = 0.0;
          assert(lowerbound != NULL);
-         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", getStabilizedDualObjectiveValue(), bestredcost, dualconvsum);
-         lowerboundcandidate = getStabilizedDualObjectiveValue() + bestredcost + dualconvsum;
+         SCIP_CALL( getStabilizedDualObjectiveValue(&stabdualval) );
+         SCIPdebugMessage("candidate: %.8g bestredcost %.8g, dualconvsum %.8g\n", stabdualval, bestredcost, dualconvsum);
+         lowerboundcandidate = stabdualval + bestredcost + dualconvsum;
 
          //SCIPinfoMessage(scip_, NULL, "Checking whether stabilization information must be updated (stabilized = %d, nfoundvars = %d, optimal = %d, boundcandidate = %f\n", stabilized, nfoundvars, optimal, lowerboundcandidate);
 
@@ -2569,7 +2577,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
 /** reduced cost pricing method of variable pricer for feasible LPs */
 SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
-{
+{ /*lint -esym(715, stopearly)*/
    SCIP_RETCODE retcode;
 
    assert(scip == scip_);
