@@ -425,7 +425,7 @@ SCIP_RETCODE GCGpricingVarAddOrigVar(
    if( vardata->data.pricingvardata.norigvars >= 1 )
    {
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.pricingvardata.origvars),
-            vardata->data.pricingvardata.norigvars + 1) );
+            (size_t)vardata->data.pricingvardata.norigvars + 1) );
    }
    vardata->data.pricingvardata.origvars[vardata->data.pricingvardata.norigvars] = origvar;
    vardata->data.pricingvardata.norigvars++;
@@ -558,8 +558,8 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), vardata->data.origvardata.ncoefs+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), vardata->data.origvardata.ncoefs+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.coefs), (size_t)vardata->data.origvardata.ncoefs+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(vardata->data.origvardata.masterconss), (size_t)vardata->data.origvardata.ncoefs+1) );
    }
 
    assert(vardata->data.origvardata.coefs != NULL);

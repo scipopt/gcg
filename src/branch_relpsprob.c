@@ -898,8 +898,8 @@ SCIP_RETCODE addBranchcandsToData(
          if( !SCIPhashmapExists(branchruledata->varhashmap, var) )
          {
             SCIP_CALL( SCIPhashmapInsert(branchruledata->varhashmap, var, (void*) (size_t)nvars) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarprobings, nvars + 1) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarbranchings, nvars + 1) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarprobings, (size_t)nvars + 1) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &branchruledata->nvarbranchings, (size_t)nvars + 1) );
 
             branchruledata->nvarprobings[nvars] = 0;
             branchruledata->nvarbranchings[nvars] = 0;

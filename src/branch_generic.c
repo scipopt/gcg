@@ -930,8 +930,8 @@ SCIP_RETCODE addToRecord(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), record->recordsize+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), record->recordsize+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->record), (size_t)record->recordsize+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(record->sequencesizes), (size_t)record->recordsize+1) );
    }
    SCIP_CALL( SCIPallocMemoryArray(scip, &(record->record[record->recordsize]), Ssize) ); /*lint !e866*/
    for( i=0; i<Ssize;++i )
@@ -1071,7 +1071,7 @@ SCIP_RETCODE Separate(
           * ********************************** */
 
          /* copy S */
-         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, Ssize+1) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, (size_t)Ssize+1) );
          for( l = 0; l < Ssize; ++l )
          {
             copyS[l] = S[l];
@@ -1195,9 +1195,9 @@ SCIP_RETCODE Separate(
 
    SCIP_CALL( partition(scip, J, &Jsize, priority, F, Fsize, &origvar, &median) );
 
-   /** @todo mb: this is a copy of S for the recursive call below */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, Ssize+1) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &upperS, Ssize+1) );
+   /** this is a copy of S for the recursive call below */
+   SCIP_CALL( SCIPallocMemoryArray(scip, &upperLowerS, (size_t)Ssize+1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &upperS, (size_t)Ssize+1) );
    for( l=0; l < Ssize; ++l )
    {
       upperLowerS[l] = S[l];
@@ -1572,7 +1572,7 @@ SCIP_RETCODE Explore(
 
       if( SCIPisGT(scip, nu_F - SCIPfloor(scip, nu_F), 0.0) )
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, *Ssize+1) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &copyS, (size_t)*Ssize+1) );
          for( l = 0; l < *Ssize; ++l )
          {
             copyS[l] = (*S)[l];
@@ -2212,7 +2212,7 @@ SCIP_RETCODE createChildNodesGeneric(
       }
       else
       {
-         SCIP_CALL( SCIPallocMemoryArray(scip, &(branchchilddata->consS), p+1) );
+         SCIP_CALL( SCIPallocMemoryArray(scip, &(branchchilddata->consS), (size_t)p+1) );
          branchchilddata->consSsize = p+1;
       }
       for( k = 0; k <= p; ++k )
@@ -2686,11 +2686,11 @@ SCIP_RETCODE GCGbranchGenericInitbranch(
 
             if( Fsize == 0 )
             {
-               SCIP_CALL( SCIPallocMemoryArray(origscip, &F, Fsize+1) );
+               SCIP_CALL( SCIPallocMemoryArray(origscip, &F, (size_t)Fsize+1) );
             }
             else
             {
-               SCIP_CALL( SCIPreallocMemoryArray(origscip, &F, Fsize+1) );
+               SCIP_CALL( SCIPreallocMemoryArray(origscip, &F, (size_t)Fsize+1) );
             }
             F[Fsize] = mastervar;
             ++Fsize;

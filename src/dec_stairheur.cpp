@@ -1428,7 +1428,7 @@ DEC_DECL_INITDETECTOR(initStairheur)
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->jmax, nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->minV, nconss-1) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->width, nconss) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->hashmapindices, MAX(nvars, nconss) + 1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->hashmapindices, (size_t)MAX(nvars, nconss) + 1) );
    for( i = 0; i < MAX(nvars, nconss)+1; ++i )
    {
       detectordata->hashmapindices[i] = i;

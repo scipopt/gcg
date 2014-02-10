@@ -221,7 +221,7 @@ SCIP_RETCODE createConsData(
    assert(consdata->parentcons == NULL ||
       SCIPconsGetData(consdata->parentcons)->origcons == GCGconsOrigbranchGetParentcons(consdata->origcons));
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->nboundchangestreated, conshdlrData->nstack+1) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &consdata->nboundchangestreated, (size_t)conshdlrData->nstack+1) );
 
    domchg = SCIPnodeGetDomchg(GCGconsOrigbranchGetNode(origcons));
    consdata->nboundchanges = SCIPdomchgGetNBoundchgs(domchg);
@@ -282,10 +282,10 @@ SCIP_RETCODE createConsData(
 
             diff = ndomboundchgs - parentdata->nboundchangestreated[i];
 
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->newbounds, consdata->nboundchanges + diff) );
-            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundchgvars, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->boundtypes, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->newbounds, (size_t)consdata->nboundchanges + diff) );
+            SCIP_CALL( SCIPreallocMemoryArray(scip, &consdata->oldbounds, (size_t)consdata->nboundchanges + diff) );
 
             /* add bound changes to the boundchanges array */
             for( j = 0; j < ndomboundchgs; ++j )

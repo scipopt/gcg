@@ -83,11 +83,11 @@
 -esym(1712,Hyper*)          // default constructor not defined for class
 -esym(1712,Col*)          // default constructor not defined for class
 -esym(1712,Row*)          // default constructor not defined for class
--e1719
--e1720
--e39
--e1763
--e1762
+-esym(1712,*Pricing*)          // default constructor not defined for class
+-esym(1712,Dialog*) // default constructor not defined for -class
+-esym(1712,function)          // default constructor not defined for -class
+-esym(1712,*Graph*)          // default constructor not defined for class
+-esym(1712,Stabilization)          // default constructor not defined for -class
 
 -esym(451,cassert) // include guard
 -esym(451,assert.h) // include guard
@@ -111,8 +111,13 @@
 -e801  // Use of goto is deprecated
 -e740  // Unusual pointer cast (incompatible indirect types)
 -e571
--e776
--e1712
+//-e1712
+
+//-e1719
+//-e1720
+-e39
+-e1763
+-e1762
 
 //-e506  // Constant value Boolean
 //-e534  // Ignoring return value of function

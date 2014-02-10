@@ -334,7 +334,7 @@ SCIP_RETCODE findColorsComponents(
    {
       int size = nChooseK(ncolors, subsetsize);
 
-      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, *ndecomps + size) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, decomps, (size_t)*ndecomps + size) );
 
       do
       {

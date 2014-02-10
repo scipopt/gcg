@@ -91,7 +91,7 @@ SCIP_RETCODE GCGcreateBranchruleConsOrig(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->branchrules), conshdlrdata->nbranchrules+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->branchrules), (size_t)conshdlrdata->nbranchrules+1) );
       ++conshdlrdata->nbranchrules;
    }
 

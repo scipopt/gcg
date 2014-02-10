@@ -336,7 +336,7 @@ SCIP_RETCODE ObjPricerGcg::ensureSizeSolvers()
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), pricerdata->nsolvers+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip_, &(pricerdata->solvers), (size_t)pricerdata->nsolvers+1) );
    }
 
    return SCIP_OKAY;
@@ -558,7 +558,7 @@ SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    nrows = SCIPgetNLPRows(scip_);
    cols = SCIPgetLPCols(scip_);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip_, &indizes, ncols+nrows) );
+   SCIP_CALL( SCIPallocMemoryArray(scip_, &indizes, (size_t)ncols+nrows) );
 
    for( i = 0; i < ncols+nrows; i++ )
    {
@@ -1696,8 +1696,8 @@ SCIP_RETCODE ObjPricerGcg::computeGenericBranchingconssStack(
       /* check if branching decision belongs to current pricing problem */
       if(consblocknr == prob)
       {
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (*nconsstack) +1) );
-         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (*nconsstack) +1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consstack, (size_t)(*nconsstack) +1) );
+         SCIP_CALL( SCIPreallocMemoryArray(scip_, consduals, (size_t)(*nconsstack) +1) );
 
          (*consstack)[*nconsstack] = masterbranchcons;
          (*consduals)[*nconsstack] = pricetype->consGetDual(scip_, mastercons);

@@ -424,7 +424,7 @@ SCIP_RETCODE ensureSizeBranchrules(
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->branchrules), relaxdata->nbranchrules+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->branchrules), (size_t)relaxdata->nbranchrules+1) );
    }
 
    return SCIP_OKAY;
@@ -1059,8 +1059,8 @@ SCIP_RETCODE createLinkingPricingVars(
       assert(GCGvarIsPricing(var));
       SCIP_CALL( SCIPaddVar(relaxdata->pricingprobs[i], var) );
       SCIP_CALL( SCIPaddCons(relaxdata->masterprob, linkcons) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconss, relaxdata->nvarlinkconss+1) );
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconsblock, relaxdata->nvarlinkconss+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconss, (size_t)relaxdata->nvarlinkconss+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &relaxdata->varlinkconsblock, (size_t)relaxdata->nvarlinkconss+1) );
 
       relaxdata->varlinkconss[relaxdata->nvarlinkconss] = linkcons;
       relaxdata->varlinkconsblock[relaxdata->nvarlinkconss] = i;
