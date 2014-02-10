@@ -215,7 +215,7 @@ TEST_F(GcgDecompTest, RemoveLinkingVar) {
    ASSERT_EQ(1, decomp->nlinkingvars);
    ASSERT_EQ((SCIP_VAR*) 0xDEADCAFF, decomp->linkingvars[0]);
 
-   SCIPfreeMemoryArray(scip, &vars);
+   SCIPfreeMemoryArray(scip, &decomp->linkingvars);
    decomp->linkingvars = NULL;
    decomp->nlinkingvars = 0;
 }

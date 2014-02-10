@@ -267,6 +267,13 @@ SCIP_RETCODE GCGorigVarCreateData(
    SCIP_CALL( SCIPallocMemoryArray(scip, &(vardata->data.origvardata.mastervals),
          vardata->data.origvardata.maxmastervars) );
 
+   if( SCIPvarGetData(var) != NULL )
+   {
+      SCIP_VARDATA* oldvardata;
+      oldvardata = SCIPvarGetData(var);
+
+      SCIP_CALL( GCGvarDelOrig(scip, var, &oldvardata) );
+   }
    SCIPvarSetData(var, vardata);
    if( SCIPvarIsOriginal(var) )
    {
@@ -1114,11 +1121,6 @@ SCIP_RETCODE GCGcreateMasterVar(
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, *newvar, solvals[i]) );
          j++;
-
-         /**
-          * TODO: TEST
-          */
-
       }
    }
    if( trivialsol )

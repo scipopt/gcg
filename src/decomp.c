@@ -1213,6 +1213,7 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
    SCIP_VAR** curvars;
    int ncurvars;
    SCIP_Bool success;
+   SCIP_RETCODE retcode;
 
    assert(scip != NULL);
    assert(decomp != NULL);
@@ -1295,7 +1296,12 @@ SCIP_RETCODE DECfilloutDecompFromConstoblock(
       }
    }
 
-   SCIP_CALL_QUIET( DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase) );
+   retcode = DECfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase);
+   if(retcode != SCIP_OKAY)
+   {
+      SCIPhashmapFree(&vartoblock);
+      return retcode;
+   }
 
    return SCIP_OKAY;
 }
